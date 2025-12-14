@@ -112,8 +112,14 @@ const App: React.FC = () => {
   // Load theme preference on startup
   useEffect(() => {
     const loadTheme = async () => {
-      const { theme } = await window.electronAPI.getTheme();
-      setIsDarkTheme(theme === 'dark');
+      try {
+        const { theme } = await window.electronAPI.getTheme();
+        setIsDarkTheme(theme === 'dark');
+      } catch (error) {
+        console.error('Failed to load theme preference:', error);
+        // Default to dark theme if settings service is not available
+        setIsDarkTheme(true);
+      }
     };
     loadTheme();
   }, []);
