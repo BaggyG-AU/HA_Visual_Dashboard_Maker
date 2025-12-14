@@ -1,0 +1,68 @@
+{
+  "name": "ha-visual-dashboard-maker",
+  "productName": "HA Visual Dashboard Maker",
+  "version": "0.1.0",
+  "description": "A visual WYSIWYG editor for Home Assistant dashboards with support for custom cards",
+  "main": ".vite/build/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "eslint --ext .ts,.tsx .",
+    "test": "echo 'Test configuration pending'"
+  },
+  "keywords": [
+    "home-assistant",
+    "dashboard",
+    "lovelace",
+    "editor",
+    "electron",
+    "react",
+    "typescript"
+  ],
+  "author": {
+    "name": "BaggyG-AU",
+    "email": "72800646+BaggyG-AU@users.noreply.github.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.10.2",
+    "@electron-forge/maker-deb": "^7.10.2",
+    "@electron-forge/maker-rpm": "^7.10.2",
+    "@electron-forge/maker-squirrel": "^7.10.2",
+    "@electron-forge/maker-zip": "^7.10.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.10.2",
+    "@electron-forge/plugin-fuses": "^7.10.2",
+    "@electron-forge/plugin-vite": "^7.10.2",
+    "@electron/fuses": "^1.8.0",
+    "@types/electron-squirrel-startup": "^1.0.2",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "electron": "39.2.7",
+    "eslint": "^8.57.1",
+    "eslint-plugin-import": "^2.32.0",
+    "typescript": "~4.5.4",
+    "vite": "^5.4.21"
+  },
+  "dependencies": {
+    "antd": "^6.1.0",
+    "electron-squirrel-startup": "^1.0.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  }
+}
