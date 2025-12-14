@@ -1,5 +1,6 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'node:path';
+import fs from 'node:fs/promises';
 import started from 'electron-squirrel-startup';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -7,13 +8,85 @@ if (started) {
   app.quit();
 }
 
+// ===== IPC Handlers - Register BEFORE creating window =====
+
+// Handle file open dialog
+ipcMain.handle('dialog:openFile', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [
+      { name: 'YAML Files', extensions: ['yaml', 'yml'] },
+      { name: 'JSON Files', extensions: ['json'] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  });
+
+  if (result.canceled) {
+    return { canceled: true };
+  }
+
+  return { canceled: false, filePath: result.filePaths[0] };
+});
+
+// Handle file save dialog
+ipcMain.handle('dialog:saveFile', async (event, defaultPath?: string) => {
+  const result = await dialog.showSaveDialog({
+    defaultPath,
+    filters: [
+      { name: 'YAML Files', extensions: ['yaml', 'yml'] },
+      { name: 'JSON Files', extensions: ['json'] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  });
+
+  if (result.canceled) {
+    return { canceled: true };
+  }
+
+  return { canceled: false, filePath: result.filePath };
+});
+
+// Handle file read
+ipcMain.handle('fs:readFile', async (event, filePath: string) => {
+  try {
+    const content = await fs.readFile(filePath, 'utf-8');
+    return { success: true, content };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Handle file write
+ipcMain.handle('fs:writeFile', async (event, filePath: string, content: string) => {
+  try {
+    await fs.writeFile(filePath, content, 'utf-8');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Handle check if file exists
+ipcMain.handle('fs:exists', async (event, filePath: string) => {
+  try {
+    await fs.access(filePath);
+    return { exists: true };
+  } catch {
+    return { exists: false };
+  }
+});
+
+// ===== End IPC Handlers =====
+
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1400,
+    height: 900,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
     },
   });
 
@@ -51,6 +124,3 @@ app.on('activate', () => {
     createWindow();
   }
 });
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
