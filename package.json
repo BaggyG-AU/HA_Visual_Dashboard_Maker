@@ -1,5 +1,5 @@
 {
-  "name": "ha-visual-dashboard-editor",
+  "name": "ha-visual-dashboard-maker",
   "version": "0.1.0",
   "description": "A visual WYSIWYG editor for Home Assistant dashboards with support for custom cards",
   "main": "dist/main/index.js",
@@ -30,9 +30,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/HA_Visual_Dashboard_Maker.git"
+    "url": "git+https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/HA_Visual_Dashboard_Maker/issues"
+    "url": "https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker/issues"
   }
 }

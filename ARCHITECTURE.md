@@ -1,8 +1,16 @@
-# Home Assistant Visual Dashboard Editor - Technical Architecture
+# HA Visual Dashboard Maker - Technical Architecture
 
 ## Executive Summary
 
 This document outlines the technical architecture for a cross-platform desktop application that provides a visual WYSIWYG editor for Home Assistant dashboards with support for popular custom cards.
+
+**Key Architecture Decisions (Based on User Requirements)**:
+1. **Offline-First Workflow**: Work on local dashboard copies with explicit "Deploy to Production" action
+2. **Real-Time Bidirectional Sync**: Changes in YAML immediately reflect in visual editor and vice versa
+3. **Full Card Rendering**: Actual card previews with dummy entity data (not simplified mockups)
+4. **Entity Validation**: Visual warnings (exclamation icons) for missing/invalid entities
+5. **Framework**: Electron + React + TypeScript (prioritizing development speed)
+6. **Custom Card Priority**: ApexCharts → Bubble → Button → Card-mod → Power-flow-plus → Mushroom/Mini-graph
 
 ## Research Findings
 
@@ -209,58 +217,140 @@ src/
 
 ### Key Design Decisions
 
-#### 1. Dashboard Configuration Approach
+#### 1. Dashboard Configuration Approach (UPDATED: Offline-First)
 
 **Challenge**: No official API to read/write dashboards
 
-**Solutions** (in priority order):
-1. **YAML File Mode** (Primary for MVP):
-   - User provides path to HA config directory
-   - Direct read/write to ui-lovelace.yaml files
-   - Requires HA restart or manual refresh
-   - **Pros**: Reliable, no API limitations
-   - **Cons**: Not real-time, requires file system access
+**Solution - Offline-First with Explicit Deploy**:
 
-2. **WebSocket Exploration** (Post-MVP):
-   - Investigate undocumented WebSocket commands
-   - May use `lovelace/config` subscription (if exists)
-   - **Risk**: Undocumented, may break with HA updates
+**Local Workspace (Primary)**:
+- All editing happens on local copy of dashboard
+- User explicitly loads dashboard from:
+  - YAML file
+  - JSON file
+  - HA instance (download to local)
+- Changes saved to local workspace automatically
+- Visual indicator shows "local" vs "synced with HA"
 
-3. **HTTP REST API** (Post-MVP):
-   - Explore `/api/lovelace/config` endpoints
-   - May require authentication escalation
-   - **Risk**: Undocumented
+**Deploy to Production**:
+- Explicit "Deploy to Production" button
+- Deployment workflow:
+  1. Validate configuration
+  2. Connect to HA instance
+  3. Create backup of current production dashboard
+  4. Preview changes (diff view)
+  5. User confirms deployment
+  6. Upload to HA instance
+  7. Verify deployment success
+  8. Option to rollback if issues detected
 
-**MVP Decision**: Focus on YAML file editing with clear user instructions for setup.
+**Import/Export**:
+- Export to YAML (for YAML mode dashboards)
+- Export to JSON (for storage mode dashboards)
+- Import from both formats
+- Support for dashboard cloning
 
-#### 2. Custom Card Detection
+**MVP Decision**: Offline-first editing with explicit deploy workflow. No real-time sync to prevent accidental production changes.
+
+#### 2. Custom Card Detection & Unsupported Cards
 
 **Challenge**: No API to detect installed HACS cards
 
 **Solution**:
-- Manual selection: User indicates which custom cards are installed
-- File system scanning (if user provides www/ directory path):
-  - Scan for `custom-cards/` directory
-  - Detect `.js` files matching known card patterns
-- Future: Parse `ui-lovelace.yaml` resources section
+- **Auto-detection from HA**: Fetch installed custom cards from HA instance
+- **Manual selection**: User can manually enable/disable card support in editor
+- **Unsupported card handling** (per user requirement):
+  - Display message with card type details
+  - Provide link to GitHub Issues to request support
+  - Track what cards users want
+  - Allow basic YAML editing for unsupported cards
+  - Show visual placeholder with card type name
 
-#### 3. Card Rendering for Preview
+#### 3. Card Rendering for Preview (UPDATED: Full Rendering)
 
-**Options**:
-1. **Embedded HA Instance** (Future): Embed actual HA frontend - complex but accurate
-2. **Mock Rendering** (MVP): Simplified visual representations
-3. **Screenshot/Iframe** (Post-MVP): Connect to live HA for real preview
+**User Requirement**: Render full card previews with dummy data for entities (not simplified representations)
 
-**MVP Decision**: Mock rendering with clear visual indicators. Real preview requires embedding HA frontend (complex).
+**Implementation Strategy**:
+1. **Card Component Library**: Build React components that mimic actual HA card rendering
+2. **Dummy Data System**: Generate realistic dummy data for entity types:
+   - sensor.temperature → "21.5°C"
+   - light.living_room → {state: "on", brightness: 80}
+   - switch.fan → {state: "off"}
+3. **Entity Type Detection**: Infer entity type from entity_id pattern
+4. **Style Replication**: Match HA card styles as closely as possible
+5. **Card-Specific Renderers**: Custom renderer for each supported card type
 
-#### 4. Undo/Redo System
+**Challenges**:
+- Maintaining visual parity with actual HA cards
+- Handling card-mod CSS styling in preview
+- ApexCharts rendering without real historical data
+
+**Solution**:
+- Start with best-effort visual approximation
+- Iterate based on user feedback
+- Document differences between preview and actual HA rendering
+
+#### 4. Entity Validation System (NEW)
+
+**User Requirement**: Validate entities exist and show exclamation icon for missing entities
+
+**Implementation**:
+1. **Entity Registry Cache**: Fetch and cache available entities from HA
+2. **Validation Service**:
+   - Check each entity_id in dashboard config
+   - Compare against registry cache
+   - Track validation state per card
+3. **Visual Indicators**:
+   - Exclamation icon overlay on cards with missing entities
+   - Tooltip showing which entities are missing
+   - Color-coded warnings (yellow for missing, red for invalid format)
+4. **Validation Panel**:
+   - List all validation issues
+   - Click to navigate to problematic card
+   - Suggestions for fixing (typos, similar entities)
+5. **Offline Handling**:
+   - If no HA connection, show "Unable to validate" status
+   - Don't block editing for missing entities
+   - Warn on deploy if entities can't be validated
+
+**Validation Triggers**:
+- On dashboard load
+- On entity property change
+- On explicit "Validate" button click
+- Before deployment to production
+
+#### 5. Real-Time YAML ↔ Visual Sync (NEW)
+
+**User Requirement**: Changes in YAML immediately reflected in visual editor
+
+**Implementation Strategy**:
+1. **Single Source of Truth**: Dashboard config object in state
+2. **Bidirectional Watchers**:
+   - Visual changes → Update state → Update YAML view
+   - YAML changes → Parse → Update state → Update visual view
+3. **Change Detection**: Debounce YAML parsing (500ms) to avoid excessive re-renders
+4. **Error Handling**:
+   - Invalid YAML → Show inline errors, don't update visual
+   - Visual changes → Always valid, safe to update YAML
+5. **Cursor Preservation**: Maintain YAML cursor position on updates
+
+**Technical Approach**:
+- Use React state management (Zustand/Redux)
+- YAML parser with validation
+- Monaco Editor change events
+- Optimized re-rendering with React.memo
+
+#### 6. Undo/Redo System
+
+**User Requirement**: Full undo/redo support
 
 **Implementation**:
 - Command pattern for all edit operations
 - History stack in state management
 - Support for complex operations (multi-card moves, property changes)
+- Keyboard shortcuts (Ctrl+Z, Ctrl+Y)
 
-#### 5. Card-mod Handling
+#### 7. Card-mod Handling
 
 **Challenge**: CSS styling layer on top of other cards
 
@@ -272,36 +362,70 @@ src/
 
 ## Data Flow
 
-### Dashboard Loading Flow
+### Dashboard Loading Flow (Offline-First)
 ```
-User Action: Open Dashboard
+User Action: Open Dashboard (from file/HA/new)
   ↓
-[File Service] Read YAML file
+[Import Service] Fetch from source (YAML/JSON/HA API)
   ↓
-[YAML Service] Parse YAML → JS Object
+[YAML/JSON Parser] Parse → JS Object
   ↓
 [Validation Service] Validate schema
   ↓
+[Local Workspace] Save to local workspace
+  ↓
 [Dashboard Store] Load into state
   ↓
-[Editor Canvas] Render visual representation
+[Entity Validation] Check entities (if HA connected)
+  ↓
+[Editor Canvas] Render visual representation with warnings
+  ↓
+[YAML View] Display synchronized YAML
 ```
 
-### Dashboard Saving Flow
+### Real-Time Edit Flow
 ```
-User Action: Save Dashboard
+User Action: Edit in Visual Editor OR Edit YAML
   ↓
-[Dashboard Store] Serialize current state
+[Change Handler] Detect change
   ↓
-[Validation Service] Validate configuration
+[Dashboard Store] Update state (single source of truth)
   ↓
-[Backup Service] Create backup of original
+[Bidirectional Sync]
+  ├─→ [Visual View] Re-render cards (if YAML changed)
+  └─→ [YAML View] Update Monaco editor (if visual changed)
   ↓
-[YAML Service] Convert to YAML
+[Entity Validation] Re-validate affected entities
   ↓
-[File Service] Write to file
+[Auto-Save] Save to local workspace
   ↓
-[Notification] Inform user to refresh HA
+[Status Indicator] Mark as "Modified (not deployed)"
+```
+
+### Deploy to Production Flow
+```
+User Action: Click "Deploy to Production"
+  ↓
+[Pre-Deploy Validation]
+  ├─→ Validate YAML syntax
+  ├─→ Validate entities exist
+  └─→ Check HA connection
+  ↓
+[Deploy Service] Connect to HA instance
+  ↓
+[Backup Service] Download current production dashboard
+  ↓
+[Diff View] Show changes to user
+  ↓
+[User Confirmation] Approve deployment
+  ↓
+[Upload] Send to HA instance (REST/WebSocket)
+  ↓
+[Verification] Confirm deployment successful
+  ↓
+[Status Update] Mark workspace as "Synced with HA"
+  ↓
+[Notification] "Deployment successful" (or show rollback option)
 ```
 
 ### Home Assistant Connection Flow (Future)

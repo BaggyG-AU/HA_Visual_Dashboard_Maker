@@ -1,29 +1,43 @@
-# Project Plan - HA Visual Dashboard Editor
+# Project Plan - HA Visual Dashboard Maker
 
 ## Overview
 
-This document outlines the phased development plan for the Home Assistant Visual Dashboard Editor.
+This document outlines the phased development plan for the HA Visual Dashboard Maker, based on confirmed user requirements.
+
+## Key Design Principles (from Requirements)
+
+1. **Offline-first workflow**: Work on local dashboard copy, explicit deployment to "production" HA instance
+2. **Full validation**: Entity existence validation with visual indicators for missing entities
+3. **Real-time sync**: YAML ↔ Visual editor changes reflected immediately
+4. **Actual card rendering**: Full card previews with dummy entity data (not simplified representations)
+5. **Framework**: Electron + React + TypeScript (prioritizing development speed)
 
 ## Development Phases
 
-### Phase 0: Foundation (Current)
-**Status**: In Progress
+### Phase 0: Foundation ✅ COMPLETE
+**Status**: Complete
 **Goal**: Establish project requirements, architecture, and initial structure
 
 **Tasks**:
 - [x] Requirements gathering questionnaire
 - [x] Architecture design and documentation
-- [x] Technology stack selection
+- [x] Technology stack selection (Electron + React + TypeScript)
 - [x] Initial project structure
-- [ ] Answer requirements questionnaire (user input needed)
-- [ ] Finalize MVP scope based on user requirements
-- [ ] Project initialization with Electron + React + TypeScript
+- [x] User requirements collected and analyzed
+- [x] MVP scope finalized
+- [x] Git repository created and pushed to GitHub
 
 **Deliverables**:
-- REQUIREMENTS_QUESTIONNAIRE.md
+- REQUIREMENTS_QUESTIONNAIRE.md (completed with user answers)
 - ARCHITECTURE.md
 - README.md
-- Initial git repository
+- Git repository: https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker
+
+**Key Decisions Made**:
+- Framework: Electron + React + TypeScript
+- Offline-first workflow with explicit deploy
+- Entity validation with visual warnings
+- Custom card priority: ApexCharts → Bubble → Button → Card-mod → Power-flow-plus
 
 ---
 
@@ -191,9 +205,37 @@ This document outlines the phased development plan for the Home Assistant Visual
 
 ---
 
-### Phase 7: Bubble Card Support
+### Phase 7: ApexCharts Card Support (Priority #1)
 **Timeline**: TBD
-**Goal**: Full support for Bubble Card custom card
+**Goal**: Data visualization with ApexCharts (User Priority: First)
+
+**Tasks**:
+1. Analyze ApexCharts card schema
+2. TypeScript types for ApexCharts
+3. Visual renderer with dummy data preview
+4. Property editor for:
+   - Chart type selection
+   - Series configuration
+   - Time ranges
+   - Options
+5. Series editor UI
+6. Chart preview (mock data)
+
+**Deliverables**:
+- ApexCharts card implementation
+- Chart configuration UI
+
+**Acceptance Criteria**:
+- Can create ApexCharts cards
+- Configure multiple series
+- Select chart types
+- Visual preview shows chart with dummy data
+
+---
+
+### Phase 8: Bubble Card Support (Priority #2)
+**Timeline**: TBD
+**Goal**: Full support for Bubble Card custom card (User Priority: Second)
 
 **Tasks**:
 1. Analyze Bubble Card configuration schema
@@ -221,9 +263,9 @@ This document outlines the phased development plan for the Home Assistant Visual
 
 ---
 
-### Phase 8: Button Card Support (Basic)
+### Phase 9: Button Card Support (Priority #3)
 **Timeline**: TBD
-**Goal**: Basic Button Card support without templates
+**Goal**: Basic Button Card support without templates (User Priority: Third)
 
 **Tasks**:
 1. Analyze Button Card schema
@@ -248,9 +290,9 @@ This document outlines the phased development plan for the Home Assistant Visual
 
 ---
 
-### Phase 9: Card-mod Support
+### Phase 10: Card-mod Support (Priority #4)
 **Timeline**: TBD
-**Goal**: CSS styling layer for all cards
+**Goal**: CSS styling layer for all cards (User Priority: Fourth)
 
 **Tasks**:
 1. Analyze card-mod structure
@@ -273,35 +315,44 @@ This document outlines the phased development plan for the Home Assistant Visual
 
 ---
 
-### Phase 10: ApexCharts Card Support
+### Phase 11: Power Flow Card Plus Support (Priority #5)
 **Timeline**: TBD
-**Goal**: Data visualization with ApexCharts
+**Goal**: Power flow visualization (User Priority: Sixth)
 
 **Tasks**:
-1. Analyze ApexCharts card schema
-2. TypeScript types for ApexCharts
-3. Visual renderer (simplified chart representation)
-4. Property editor for:
-   - Chart type selection
-   - Series configuration
-   - Time ranges
-   - Options
-5. Series editor UI
-6. Chart preview (mock data)
+1. Analyze power-flow-card-plus schema
+2. TypeScript types
+3. Visual renderer with dummy energy data
+4. Property editor for power flows
+5. Entity mapping for solar/grid/battery
 
 **Deliverables**:
-- ApexCharts card implementation
-- Chart configuration UI
+- Power Flow Card Plus implementation
 
 **Acceptance Criteria**:
-- Can create ApexCharts cards
-- Configure multiple series
-- Select chart types
-- Visual preview shows chart structure
+- Can create power flow cards
+- Configure energy entities
+- Visual preview shows flow diagram
 
 ---
 
-### Phase 11: Home Assistant Connection
+### Phase 12: Mushroom & Mini-Graph Cards (Priority #6)
+**Timeline**: TBD
+**Goal**: Support for Mushroom cards and mini-graph-card (User Priority: Seventh)
+
+**Tasks**:
+1. Mushroom card family support
+2. Mini-graph-card support
+3. Property editors for both
+4. Visual renderers
+
+**Deliverables**:
+- Mushroom cards support
+- Mini-graph-card support
+
+---
+
+### Phase 13: Home Assistant Connection
 **Timeline**: TBD
 **Goal**: Connect to live HA instance
 
@@ -328,7 +379,59 @@ This document outlines the phased development plan for the Home Assistant Visual
 
 ---
 
-### Phase 12: Advanced Features
+### Phase 14: Deploy to Production Feature
+**Timeline**: TBD
+**Goal**: Implement offline-first workflow with explicit deploy
+
+**Tasks**:
+1. Local dashboard cache/workspace system
+2. "Deploy to Production" button and workflow
+3. Backup creation before deployment
+4. Deployment validation and preview
+5. Connection test and error handling
+6. Deployment confirmation dialogs
+7. Rollback capability
+
+**Deliverables**:
+- Offline workspace system
+- Deploy to production feature
+- Backup and rollback
+
+**Acceptance Criteria**:
+- Can work on dashboards offline
+- Explicit user action required to deploy
+- Creates backup before deployment
+- Clear deployment status and errors
+- Can rollback failed deployments
+
+---
+
+### Phase 15: Entity Validation & Warnings
+**Timeline**: TBD
+**Goal**: Validate entities exist and show visual warnings
+
+**Tasks**:
+1. Entity existence validation against HA instance
+2. Visual warning indicators (exclamation icons) on cards
+3. Entity validation panel/report
+4. Missing entity highlighting in properties
+5. Batch entity validation
+6. Entity suggestions for typos
+
+**Deliverables**:
+- Entity validation system
+- Visual warning indicators
+- Validation report UI
+
+**Acceptance Criteria**:
+- Missing entities shown with exclamation icon
+- Validation runs on entity changes
+- Clear indication of which entities are missing
+- Works with or without HA connection
+
+---
+
+### Phase 16: Advanced Features
 **Timeline**: TBD
 **Goal**: Polish and advanced functionality
 
@@ -356,7 +459,32 @@ This document outlines the phased development plan for the Home Assistant Visual
 
 ---
 
-### Phase 13: Beta Release
+### Phase 17: Template & Sharing System
+**Timeline**: TBD
+**Goal**: Dashboard templates and community sharing
+
+**Tasks**:
+1. Template export/import system
+2. Template library UI
+3. Community template repository integration
+4. Template preview
+5. Template metadata (author, description, tags)
+6. Template version management
+
+**Deliverables**:
+- Template system
+- Template library
+- Community integration
+
+**Acceptance Criteria**:
+- Can save dashboards as templates
+- Can browse and import templates
+- Templates include metadata
+- Community repository accessible
+
+---
+
+### Phase 18: Beta Release
 **Timeline**: TBD
 **Goal**: Public beta release
 
@@ -367,8 +495,8 @@ This document outlines the phased development plan for the Home Assistant Visual
    - User manual
    - Installation guide
    - Tutorial videos
-4. Build installers (Windows, Linux)
-5. Auto-update system
+4. Build portable executables (Windows, Linux)
+5. Update notification system (notify only, no auto-update)
 6. Beta program setup
 7. Feedback collection system
 
@@ -381,43 +509,61 @@ This document outlines the phased development plan for the Home Assistant Visual
 - Stable on Windows and Linux
 - All MVP features working
 - Clear documentation
-- Installation packages
+- Portable executables
 
 ---
 
 ## Success Metrics
 
 ### MVP Success (Phases 1-6)
-- Load and display HA dashboard visually
+- Load and display HA dashboard visually with real-time YAML sync
 - Edit card positions and properties
-- Save changes to YAML
+- Save changes to YAML and JSON
 - Support 5+ standard card types
+- Offline-first editing workflow
 
-### Custom Card Success (Phases 7-10)
-- Full support for 4 target custom cards
-- Visual property editors for each
-- Accurate configuration export
+### Custom Card Success (Phases 7-12)
+- ApexCharts (Priority 1)
+- Bubble Card (Priority 2)
+- Button Card (Priority 3)
+- Card-mod (Priority 4)
+- Power Flow Card Plus (Priority 5)
+- Mushroom & Mini-Graph (Priority 6)
+- Full visual property editors with dummy data previews
 
-### Integration Success (Phase 11)
-- Connect to HA instance
-- Entity browser
+### Integration Success (Phase 13-15)
+- Connect to HA instance (local/remote/cloud)
+- Entity browser with validation
+- Entity existence warnings with visual indicators
+- Deploy to production with backup/rollback
 - Secure credential storage
 
-### Production Ready (Phases 12-13)
-- Professional UX
+### Production Ready (Phases 16-18)
+- Professional UX matching HA theme
+- Template system with community sharing
+- Undo/redo functionality
 - Stable and tested
 - Complete documentation
-- Active user base
+- Portable executables for Windows/Linux
 
-## Dependencies
+## Dependencies & Prioritization
 
-**Critical Path**:
+### Critical Path (Must Complete in Order):
 Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 (MVP)
 
-**Parallel Work** (after MVP):
-- Phases 7-10 (custom cards) can be done in parallel
-- Phase 11 (HA connection) independent
-- Phase 12 can start after Phase 6
+### After MVP - Custom Cards (Can parallelize by priority):
+1. Phase 7: ApexCharts (PRIORITY 1)
+2. Phase 8: Bubble Card (PRIORITY 2)
+3. Phase 9: Button Card (PRIORITY 3)
+4. Phase 10: Card-mod (PRIORITY 4)
+5. Phase 11: Power Flow Card Plus (PRIORITY 5)
+6. Phase 12: Mushroom & Mini-Graph (PRIORITY 6)
+
+### After MVP - Integration Features (Sequential):
+Phase 13 (HA Connection) → Phase 14 (Deploy to Production) → Phase 15 (Entity Validation)
+
+### Polish Phase (After core features):
+Phase 16 (Advanced Features) → Phase 17 (Templates) → Phase 18 (Beta Release)
 
 ## Risk Management
 
@@ -431,15 +577,27 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 (MVP)
 2. **Custom Card Support**: Limit to 4 cards initially
 
 ### User Adoption Risks
-1. **HA Compatibility**: Support recent HA versions (2023.9+)
+1. **HA Compatibility**: Target HA 2025.12+ (per user requirements)
 2. **Learning Curve**: Create tutorials and documentation
+3. **Card Rendering Complexity**: Full card previews with dummy data is complex - may need iterative approach
 
-## Next Steps
+### Scope Risks
+1. **Offline-First + Deploy**: Complex workflow requiring careful state management
+2. **Entity Validation**: Requires connection to HA, handle gracefully when offline
+3. **Real-time YAML Sync**: Bidirectional sync is technically challenging
 
-1. **User**: Answer REQUIREMENTS_QUESTIONNAIRE.md
-2. **Developer**: Review answers and finalize Phase 1 scope
-3. **Initialize**: Set up Electron project
-4. **Begin Development**: Start Phase 1 tasks
+## Next Steps - READY TO START
+
+✅ **Phase 0 Complete** - Requirements gathered and documented
+
+### Immediate Next Actions:
+1. **Initialize Electron Project** (Phase 1 start)
+   - Set up Electron Forge with React + TypeScript
+   - Configure development environment
+   - Create basic application shell
+
+2. **Set up project structure** matching architecture
+3. **Begin Phase 1 development**
 
 ## Notes
 
