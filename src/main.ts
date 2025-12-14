@@ -1,7 +1,8 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, Menu, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import started from 'electron-squirrel-startup';
+import { createApplicationMenu } from './menu';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -76,6 +77,11 @@ ipcMain.handle('fs:exists', async (event, filePath: string) => {
   }
 });
 
+// Handle opening external URLs
+ipcMain.handle('shell:openExternal', async (event, url: string) => {
+  await shell.openExternal(url);
+});
+
 // ===== End IPC Handlers =====
 
 const createWindow = () => {
@@ -101,6 +107,12 @@ const createWindow = () => {
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
+
+  // Set up application menu
+  const menu = createApplicationMenu(mainWindow);
+  Menu.setApplicationMenu(menu);
+
+  return mainWindow;
 };
 
 // This method will be called when Electron has finished

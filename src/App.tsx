@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ConfigProvider, Layout, theme, Button, Space, message } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { ConfigProvider, Layout, theme, Button, Space, message, Modal } from 'antd';
 import { FolderOpenOutlined, SaveOutlined } from '@ant-design/icons';
 import { fileService } from './services/fileService';
 
@@ -8,6 +8,7 @@ const { Header, Content, Sider } = Layout;
 const App: React.FC = () => {
   const [fileContent, setFileContent] = useState<string>('');
   const [currentFilePath, setCurrentFilePath] = useState<string>('');
+  const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
 
   const handleOpenFile = async () => {
     try {
@@ -39,10 +40,81 @@ views:
     }
   };
 
+  const handleSave = async () => {
+    if (currentFilePath) {
+      try {
+        const result = await window.electronAPI.writeFile(currentFilePath, fileContent);
+        if (result.success) {
+          message.success('File saved successfully!');
+        } else {
+          message.error(`Failed to save file: ${result.error}`);
+        }
+      } catch (error) {
+        message.error(`Failed to save file: ${(error as Error).message}`);
+      }
+    } else {
+      handleSaveFile();
+    }
+  };
+
+  const handleToggleTheme = () => {
+    setIsDarkTheme(!isDarkTheme);
+    message.info(`Switched to ${!isDarkTheme ? 'dark' : 'light'} theme`);
+  };
+
+  const handleShowAbout = () => {
+    Modal.info({
+      title: 'About HA Visual Dashboard Maker',
+      content: (
+        <div>
+          <p><strong>Version:</strong> 0.1.0</p>
+          <p><strong>Author:</strong> BaggyG-AU</p>
+          <p>A visual WYSIWYG editor for Home Assistant dashboards with support for custom cards.</p>
+          <p style={{ marginTop: '16px' }}>
+            <a href="https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker"
+               onClick={(e) => { e.preventDefault(); window.electronAPI.openExternal?.('https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker'); }}>
+              View on GitHub
+            </a>
+          </p>
+        </div>
+      ),
+      okText: 'Close'
+    });
+  };
+
+  // Set up menu event listeners
+  useEffect(() => {
+    const handleMenuOpenFile = () => handleOpenFile();
+    const handleMenuSave = () => handleSave();
+    const handleMenuSaveFileAs = () => handleSaveFile();
+    const handleMenuToggleTheme = () => {
+      setIsDarkTheme(prev => {
+        message.info(`Switched to ${!prev ? 'dark' : 'light'} theme`);
+        return !prev;
+      });
+    };
+    const handleMenuShowAbout = () => handleShowAbout();
+
+    const unsubOpenFile = window.electronAPI.onMenuOpenFile(handleMenuOpenFile);
+    const unsubSaveFile = window.electronAPI.onMenuSaveFile(handleMenuSave);
+    const unsubSaveFileAs = window.electronAPI.onMenuSaveFileAs(handleMenuSaveFileAs);
+    const unsubToggleTheme = window.electronAPI.onMenuToggleTheme(handleMenuToggleTheme);
+    const unsubShowAbout = window.electronAPI.onMenuShowAbout(handleMenuShowAbout);
+
+    // Cleanup listeners when component unmounts
+    return () => {
+      unsubOpenFile();
+      unsubSaveFile();
+      unsubSaveFileAs();
+      unsubToggleTheme();
+      unsubShowAbout();
+    };
+  }, []);
+
   return (
     <ConfigProvider
       theme={{
-        algorithm: theme.darkAlgorithm,
+        algorithm: isDarkTheme ? theme.darkAlgorithm : theme.defaultAlgorithm,
       }}
     >
       <Layout style={{ height: '100vh' }}>
@@ -77,7 +149,8 @@ views:
                 <li>✅ Ant Design UI library added</li>
                 <li>✅ Basic application layout created</li>
                 <li>✅ File system integration via IPC</li>
-                <li>⏳ Next: Application menu</li>
+                <li>✅ Application menu with keyboard shortcuts</li>
+                <li>⏳ Next: Window state persistence & settings</li>
               </ul>
 
               <h3 style={{ color: '#00d9ff', marginBottom: '16px' }}>Test File Operations:</h3>
