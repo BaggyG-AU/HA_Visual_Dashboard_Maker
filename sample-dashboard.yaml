@@ -1,4 +1,4 @@
-title: My Home
+title: My Home (Modified)
 views:
   - title: Home
     path: home
@@ -20,7 +20,6 @@ views:
           - sensor.temperature
           - sensor.humidity
           - sensor.pressure
-
   - title: Lights
     path: lights
     icon: mdi:lightbulb
@@ -37,7 +36,6 @@ views:
         name: All Lights
         tap_action:
           action: toggle
-
   - title: Climate
     path: climate
     icon: mdi:thermometer

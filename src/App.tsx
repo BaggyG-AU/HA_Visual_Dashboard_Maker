@@ -231,6 +231,15 @@ const App: React.FC = () => {
                         Open
                       </Button>
                       <Button
+                        onClick={() => {
+                          if (config) {
+                            updateConfig({ ...config, title: (config.title || 'Dashboard') + ' (Modified)' });
+                          }
+                        }}
+                      >
+                        Test Edit
+                      </Button>
+                      <Button
                         type="primary"
                         icon={<SaveOutlined />}
                         onClick={handleSave}
