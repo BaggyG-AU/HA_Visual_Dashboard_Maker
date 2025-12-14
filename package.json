@@ -1,0 +1,38 @@
+{
+  "name": "ha-visual-dashboard-editor",
+  "version": "0.1.0",
+  "description": "A visual WYSIWYG editor for Home Assistant dashboards with support for custom cards",
+  "main": "dist/main/index.js",
+  "author": "HA Dashboard Editor Team",
+  "license": "MIT",
+  "private": true,
+  "keywords": [
+    "home-assistant",
+    "dashboard",
+    "lovelace",
+    "editor",
+    "electron",
+    "react",
+    "typescript"
+  ],
+  "scripts": {
+    "dev": "echo 'Development setup pending - project structure initialization'",
+    "build": "echo 'Build configuration pending'",
+    "start": "echo 'Start command pending'",
+    "test": "echo 'Test configuration pending'",
+    "lint": "echo 'Linting configuration pending'"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/HA_Visual_Dashboard_Maker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/HA_Visual_Dashboard_Maker/issues"
+  }
+}
