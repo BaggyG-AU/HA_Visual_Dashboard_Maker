@@ -1,0 +1,53 @@
+title: My Home
+views:
+  - title: Home
+    path: home
+    icon: mdi:home
+    cards:
+      - type: entities
+        title: Living Room
+        entities:
+          - light.living_room
+          - climate.living_room
+          - sensor.living_room_temperature
+      - type: button
+        entity: light.living_room
+        name: Living Room Light
+        icon: mdi:lightbulb
+      - type: glance
+        title: Climate
+        entities:
+          - sensor.temperature
+          - sensor.humidity
+          - sensor.pressure
+
+  - title: Lights
+    path: lights
+    icon: mdi:lightbulb
+    cards:
+      - type: entities
+        title: All Lights
+        entities:
+          - light.living_room
+          - light.bedroom
+          - light.kitchen
+          - light.bathroom
+      - type: button
+        entity: light.all_lights
+        name: All Lights
+        tap_action:
+          action: toggle
+
+  - title: Climate
+    path: climate
+    icon: mdi:thermometer
+    cards:
+      - type: entities
+        title: Thermostats
+        entities:
+          - climate.living_room
+          - climate.bedroom
+      - type: markdown
+        content: |
+          ## Climate Control
+          Adjust temperature and humidity for optimal comfort.
