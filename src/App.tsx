@@ -57,9 +57,11 @@ views:
     }
   };
 
-  const handleToggleTheme = () => {
-    setIsDarkTheme(!isDarkTheme);
-    message.info(`Switched to ${!isDarkTheme ? 'dark' : 'light'} theme`);
+  const handleToggleTheme = async () => {
+    const newTheme = !isDarkTheme;
+    setIsDarkTheme(newTheme);
+    await window.electronAPI.setTheme(newTheme ? 'dark' : 'light');
+    message.info(`Switched to ${newTheme ? 'dark' : 'light'} theme`);
   };
 
   const handleShowAbout = () => {
@@ -82,17 +84,21 @@ views:
     });
   };
 
+  // Load theme preference on startup
+  useEffect(() => {
+    const loadTheme = async () => {
+      const { theme } = await window.electronAPI.getTheme();
+      setIsDarkTheme(theme === 'dark');
+    };
+    loadTheme();
+  }, []);
+
   // Set up menu event listeners
   useEffect(() => {
     const handleMenuOpenFile = () => handleOpenFile();
     const handleMenuSave = () => handleSave();
     const handleMenuSaveFileAs = () => handleSaveFile();
-    const handleMenuToggleTheme = () => {
-      setIsDarkTheme(prev => {
-        message.info(`Switched to ${!prev ? 'dark' : 'light'} theme`);
-        return !prev;
-      });
-    };
+    const handleMenuToggleTheme = () => handleToggleTheme();
     const handleMenuShowAbout = () => handleShowAbout();
 
     const unsubOpenFile = window.electronAPI.onMenuOpenFile(handleMenuOpenFile);
@@ -142,7 +148,7 @@ views:
               }}
             >
               <h1 style={{ color: '#00d9ff' }}>Welcome to HA Visual Dashboard Maker</h1>
-              <p>Phase 1: Core Application Setup - In Progress</p>
+              <p>Phase 1: Core Application Setup - Complete ✅</p>
               <ul style={{ marginTop: '16px', marginBottom: '24px' }}>
                 <li>✅ Electron Forge initialized</li>
                 <li>✅ React + TypeScript configured</li>
@@ -150,8 +156,9 @@ views:
                 <li>✅ Basic application layout created</li>
                 <li>✅ File system integration via IPC</li>
                 <li>✅ Application menu with keyboard shortcuts</li>
-                <li>⏳ Next: Window state persistence & settings</li>
+                <li>✅ Window state & theme persistence</li>
               </ul>
+              <p style={{ marginTop: '16px', color: '#00d9ff' }}>Ready for Phase 2: YAML Dashboard Loading</p>
 
               <h3 style={{ color: '#00d9ff', marginBottom: '16px' }}>Test File Operations:</h3>
               <Space style={{ marginBottom: '16px' }}>

@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import started from 'electron-squirrel-startup';
 import { createApplicationMenu } from './menu';
+import { settingsService } from './services/settingsService';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -82,18 +83,68 @@ ipcMain.handle('shell:openExternal', async (event, url: string) => {
   await shell.openExternal(url);
 });
 
+// Handle getting theme preference
+ipcMain.handle('settings:getTheme', async () => {
+  return { theme: settingsService.getTheme() };
+});
+
+// Handle setting theme preference
+ipcMain.handle('settings:setTheme', async (event, theme: 'light' | 'dark') => {
+  settingsService.setTheme(theme);
+  return { success: true };
+});
+
 // ===== End IPC Handlers =====
 
 const createWindow = () => {
+  // Get saved window state
+  const windowState = settingsService.getWindowState();
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    x: windowState.x,
+    y: windowState.y,
+    width: windowState.width,
+    height: windowState.height,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
+  });
+
+  // Restore maximized state
+  if (windowState.isMaximized) {
+    mainWindow.maximize();
+  }
+
+  // Save window state on resize and move
+  const saveWindowState = () => {
+    const bounds = mainWindow.getBounds();
+    settingsService.setWindowState({
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+      isMaximized: mainWindow.isMaximized()
+    });
+  };
+
+  // Debounce to avoid excessive writes
+  let saveTimer: NodeJS.Timeout | null = null;
+  const debouncedSave = () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveWindowState, 500);
+  };
+
+  mainWindow.on('resize', debouncedSave);
+  mainWindow.on('move', debouncedSave);
+  mainWindow.on('maximize', saveWindowState);
+  mainWindow.on('unmaximize', saveWindowState);
+
+  // Save state before closing
+  mainWindow.on('close', () => {
+    saveWindowState();
   });
 
   // and load the index.html of the app.

@@ -18,6 +18,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Shell APIs
   openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
 
+  // Settings APIs
+  getTheme: () => ipcRenderer.invoke('settings:getTheme'),
+  setTheme: (theme: 'light' | 'dark') => ipcRenderer.invoke('settings:setTheme', theme),
+
   // Menu event listeners
   onMenuOpenFile: (callback: () => void) => {
     ipcRenderer.on('menu:open-file', callback);
@@ -49,6 +53,8 @@ export interface ElectronAPI {
   writeFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
   fileExists: (filePath: string) => Promise<{ exists: boolean }>;
   openExternal: (url: string) => Promise<void>;
+  getTheme: () => Promise<{ theme: 'light' | 'dark' }>;
+  setTheme: (theme: 'light' | 'dark') => Promise<{ success: boolean }>;
   onMenuOpenFile: (callback: () => void) => (() => void);
   onMenuSaveFile: (callback: () => void) => (() => void);
   onMenuSaveFileAs: (callback: () => void) => (() => void);
