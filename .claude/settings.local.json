@@ -6,7 +6,14 @@
       "Bash(cat:*)",
       "Bash(npm start)",
       "Bash(git config:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nPhase 1 (Partial): Core Application Setup with React + Ant Design\n\n- Initialized Electron Forge with Vite + TypeScript template\n- Added React 19 and React DOM\n- Added Ant Design UI library\n- Created basic 3-panel layout (Card Palette | Canvas | Properties)\n- Configured dark theme matching Home Assistant style\n- Set up renderer process with React\n- Updated package.json with project metadata\n\nCompleted tasks:\n✅ Electron Forge initialized\n✅ React + TypeScript configured  \n✅ Ant Design UI library added\n✅ Basic application layout created\n✅ Dark theme configured\n\nNext steps:\n⏳ File system integration via IPC\n⏳ Application menu\n⏳ Settings/preferences\n\nPhase 1 - In Progress\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git remote add:*)",
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
