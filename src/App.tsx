@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs } from 'antd';
-import { FolderOpenOutlined, SaveOutlined } from '@ant-design/icons';
+import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge } from 'antd';
+import { FolderOpenOutlined, SaveOutlined, ApiOutlined } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
 import { yamlService } from './services/yamlService';
 import { GridCanvas } from './components/GridCanvas';
 import { CardPalette } from './components/CardPalette';
+import { PropertiesPanel } from './components/PropertiesPanel';
+import { ConnectionDialog } from './components/ConnectionDialog';
 import { cardRegistry } from './services/cardRegistry';
+import { haConnectionService } from './services/haConnectionService';
 
 const { Header, Content, Sider } = Layout;
 
 const App: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
   const [ignoreNextLayoutChange, setIgnoreNextLayoutChange] = useState<boolean>(false);
+  const [connectionDialogVisible, setConnectionDialogVisible] = useState<boolean>(false);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
 
   // Dashboard store
   const {
@@ -235,7 +240,54 @@ const App: React.FC = () => {
     handleCardAdd(cardType, x, y);
   };
 
-  // Load theme preference on startup
+  const handleCardUpdate = (updatedCard: any) => {
+    if (!config || selectedViewIndex === null || selectedCardIndex === null) return;
+
+    console.log('=== UPDATING CARD ===');
+    console.log('Updated card:', updatedCard);
+
+    const updatedViews = [...config.views];
+    const currentView = updatedViews[selectedViewIndex];
+
+    if (currentView.cards && currentView.cards[selectedCardIndex]) {
+      // Preserve layout information
+      const existingLayout = currentView.cards[selectedCardIndex].layout;
+      currentView.cards[selectedCardIndex] = {
+        ...updatedCard,
+        layout: existingLayout,
+      };
+
+      updatedViews[selectedViewIndex] = currentView;
+      updateConfig({ ...config, views: updatedViews });
+
+      message.success('Card properties updated');
+    }
+  };
+
+  const handlePropertiesCancel = () => {
+    // Deselect card
+    if (selectedViewIndex !== null) {
+      setSelectedCard(selectedViewIndex, null);
+    }
+  };
+
+  const handleOpenConnectionDialog = () => {
+    setConnectionDialogVisible(true);
+  };
+
+  const handleConnect = (url: string, token: string) => {
+    setIsConnected(true);
+    message.success(`Connected to Home Assistant at ${url}`);
+  };
+
+  const handleDisconnect = async () => {
+    await window.electronAPI.clearHAConnection();
+    haConnectionService.disconnect();
+    setIsConnected(false);
+    message.info('Disconnected from Home Assistant');
+  };
+
+  // Load theme preference and HA connection on startup
   useEffect(() => {
     const loadTheme = async () => {
       try {
@@ -247,7 +299,22 @@ const App: React.FC = () => {
         setIsDarkTheme(true);
       }
     };
+
+    const loadHAConnection = async () => {
+      try {
+        const saved = await window.electronAPI.getHAConnection();
+        if (saved.url && saved.token) {
+          haConnectionService.setConfig({ url: saved.url, token: saved.token });
+          setIsConnected(true);
+          console.log('Restored HA connection:', saved.url);
+        }
+      } catch (error) {
+        console.error('Failed to load HA connection:', error);
+      }
+    };
+
     loadTheme();
+    loadHAConnection();
   }, []);
 
   // Set up menu event listeners
@@ -281,10 +348,22 @@ const App: React.FC = () => {
       }}
     >
       <Layout style={{ height: '100vh' }}>
-        <Header style={{ display: 'flex', alignItems: 'center', padding: '0 24px' }}>
+        <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
           <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>
             HA Visual Dashboard Maker
           </div>
+          <Space>
+            <Badge status={isConnected ? 'success' : 'default'} text={isConnected ? 'Connected' : 'Not Connected'} style={{ color: '#888' }} />
+            {isConnected ? (
+              <Button size="small" onClick={handleDisconnect}>
+                Disconnect
+              </Button>
+            ) : (
+              <Button type="primary" size="small" icon={<ApiOutlined />} onClick={handleOpenConnectionDialog}>
+                Connect to HA
+              </Button>
+            )}
+          </Space>
         </Header>
         <Layout>
           <Sider width={280} theme="dark" style={{ height: '100vh', overflow: 'hidden' }}>
@@ -391,13 +470,24 @@ const App: React.FC = () => {
             </Content>
           </Layout>
           <Sider width={300} theme="dark">
-            <div style={{ padding: '16px', color: 'white' }}>
-              <h3 style={{ color: 'white', marginBottom: '16px' }}>Properties Panel</h3>
-              <p style={{ fontSize: '12px', color: '#888' }}>Coming Soon</p>
-            </div>
+            <PropertiesPanel
+              card={
+                config && selectedViewIndex !== null && selectedCardIndex !== null
+                  ? config.views[selectedViewIndex]?.cards?.[selectedCardIndex] || null
+                  : null
+              }
+              cardIndex={selectedCardIndex}
+              onSave={handleCardUpdate}
+              onCancel={handlePropertiesCancel}
+            />
           </Sider>
         </Layout>
       </Layout>
+      <ConnectionDialog
+        visible={connectionDialogVisible}
+        onClose={() => setConnectionDialogVisible(false)}
+        onConnect={handleConnect}
+      />
     </ConfigProvider>
   );
 };

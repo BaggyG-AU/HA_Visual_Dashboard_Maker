@@ -94,6 +94,51 @@ ipcMain.handle('settings:setTheme', async (event, theme: 'light' | 'dark') => {
   return { success: true };
 });
 
+// Handle getting HA connection
+ipcMain.handle('ha:getConnection', async () => {
+  return {
+    url: settingsService.getHAUrl(),
+    token: settingsService.getHAToken(),
+  };
+});
+
+// Handle setting HA connection
+ipcMain.handle('ha:setConnection', async (event, url: string, token: string) => {
+  settingsService.setHAConnection(url, token);
+  return { success: true };
+});
+
+// Handle clearing HA connection
+ipcMain.handle('ha:clearConnection', async () => {
+  settingsService.clearHAConnection();
+  return { success: true };
+});
+
+// Handle HA API fetch (to bypass CORS)
+ipcMain.handle('ha:fetch', async (event, url: string, token: string) => {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    return {
+      success: response.ok,
+      status: response.status,
+      data: data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
 // ===== End IPC Handlers =====
 
 const createWindow = () => {

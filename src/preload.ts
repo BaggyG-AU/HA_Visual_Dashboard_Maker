@@ -22,6 +22,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getTheme: () => ipcRenderer.invoke('settings:getTheme'),
   setTheme: (theme: 'light' | 'dark') => ipcRenderer.invoke('settings:setTheme', theme),
 
+  // Home Assistant connection APIs
+  getHAConnection: () => ipcRenderer.invoke('ha:getConnection'),
+  setHAConnection: (url: string, token: string) => ipcRenderer.invoke('ha:setConnection', url, token),
+  clearHAConnection: () => ipcRenderer.invoke('ha:clearConnection'),
+  haFetch: (url: string, token: string) => ipcRenderer.invoke('ha:fetch', url, token),
+
   // Menu event listeners
   onMenuOpenFile: (callback: () => void) => {
     ipcRenderer.on('menu:open-file', callback);
@@ -55,6 +61,10 @@ export interface ElectronAPI {
   openExternal: (url: string) => Promise<void>;
   getTheme: () => Promise<{ theme: 'light' | 'dark' }>;
   setTheme: (theme: 'light' | 'dark') => Promise<{ success: boolean }>;
+  getHAConnection: () => Promise<{ url?: string; token?: string }>;
+  setHAConnection: (url: string, token: string) => Promise<{ success: boolean }>;
+  clearHAConnection: () => Promise<{ success: boolean }>;
+  haFetch: (url: string, token: string) => Promise<{ success: boolean; status?: number; data?: any; error?: string }>;
   onMenuOpenFile: (callback: () => void) => (() => void);
   onMenuSaveFile: (callback: () => void) => (() => void);
   onMenuSaveFileAs: (callback: () => void) => (() => void);

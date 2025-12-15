@@ -121,37 +121,70 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 
 ---
 
-### Phase 4: Standard Card Support
-**Timeline**: TBD
+### Phase 4: Standard Card Support ✅ COMPLETE
+**Status**: Complete
 **Goal**: Support for Home Assistant's built-in card types
 
 **Tasks**:
-1. Implement card type registry
-2. Create visual renderers for standard cards:
+1. ✅ Implement card type registry
+2. ✅ Create visual renderers for standard cards:
    - Entities card
    - Button card (standard)
    - Picture card
    - Markdown card
    - Horizontal/Vertical stack
    - Grid card
-3. Property editor panel (right sidebar)
-4. Form-based property editing for each card type
-5. Real-time preview updates
+   - And 16 more card types (22 total)
+3. ✅ Property editor panel (right sidebar)
+4. ✅ Form-based property editing for each card type
+5. ✅ Real-time preview updates
 
 **Deliverables**:
-- 6-8 standard card type implementations
-- Property editor UI
-- Card palette/library
+- ✅ 22 standard card type implementations
+- ✅ Property editor UI
+- ✅ Card palette/library
 
 **Acceptance Criteria**:
-- Can add standard HA cards from palette
-- Property editor shows card-specific options
-- Changes reflect immediately in canvas
-- Card properties validated
+- ✅ Can add standard HA cards from palette
+- ✅ Property editor shows card-specific options
+- ✅ Changes reflect immediately in canvas
+- ✅ Card properties validated
 
 ---
 
-### Phase 5: YAML Code Editor
+### Phase 4.5: Properties Panel (Completed Out of Order) ✅ COMPLETE
+**Status**: Complete (Implemented December 2025)
+**Goal**: Visual property editing for standard card types
+
+**Note**: This was implemented before Phase 5 (YAML Code Editor) to provide immediate value to users who need to edit card properties.
+
+**Tasks**:
+1. ✅ Create properties panel UI in right sidebar
+2. ✅ Implement form-based property editing
+3. ✅ Add support for 15+ standard card types:
+   - Entities, Glance, Button, Markdown
+   - Sensor, Gauge, History Graph
+   - Picture, Picture Entity, Picture Glance
+   - Light, Thermostat
+   - Media Control, Weather Forecast, Map
+4. ✅ Real-time property updates with apply/cancel buttons
+5. ✅ Change tracking (dirty state management)
+
+**Deliverables**:
+- ✅ Properties panel component
+- ✅ Card-specific property editors for 15+ card types
+- ✅ Form validation
+
+**Acceptance Criteria**:
+- ✅ Select card to view/edit properties
+- ✅ Property changes apply immediately
+- ✅ Changes mark dashboard as dirty
+- ✅ Can cancel changes to revert
+- ✅ Form validation for required fields
+
+---
+
+### Phase 5: YAML Code Editor (Deferred)
 **Timeline**: TBD
 **Goal**: Dual view with visual and code editing
 

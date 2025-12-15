@@ -95,8 +95,9 @@ First alpha release of HA Visual Dashboard Maker - a visual WYSIWYG editor for H
 This is an **alpha release** with the following known limitations:
 
 ### Not Yet Implemented
-- ❌ **Properties Panel** - Cannot edit card properties (entities, titles, etc.) in the UI
-  - Workaround: Edit the YAML file directly in a text editor
+- ✅ **Properties Panel** - **NOW AVAILABLE** for most standard card types:
+  - Supported: Entities, Glance, Button, Markdown, Sensor, Gauge, History Graph, Picture, Picture Entity, Picture Glance, Light, Thermostat, Media Control, Weather Forecast, Map
+  - Not yet supported: Layout cards (Horizontal Stack, Vertical Stack, Grid) - these require nested card editing
 - ❌ **Real-time drag repositioning** - When dragging from palette, existing cards don't move aside automatically
   - Current: Cards appear at bottom, then manually reposition
   - This feature is in the backlog for a future release
@@ -104,11 +105,11 @@ This is an **alpha release** with the following known limitations:
   - Workaround: Edit YAML directly
 - ❌ **Undo/Redo** - No undo/redo functionality
 - ❌ **Custom card support** - Only standard HA cards supported
-  - HACS and custom cards planned for Phase 13
+  - HACS and custom cards planned for Phase 7-12
 
 ### Limitations
 - YAML file must be valid Home Assistant dashboard format
-- Card properties cannot be edited visually (only layout)
+- Layout cards (stacks, grids) require YAML editing for nested cards
 - Some card types may not have accurate preview icons
 - No validation of entity IDs or card configurations
 
@@ -118,22 +119,23 @@ This is an **alpha release** with the following known limitations:
 
 ## 📝 Phase Status
 
-This release completes Phases 1-4 of the development roadmap:
+This release completes Phases 1-5 of the development roadmap:
 
 - ✅ **Phase 1:** Core Application Setup with React + Ant Design
 - ✅ **Phase 2:** YAML Dashboard Loading
 - ✅ **Phase 3:** Settings & Persistence
 - ✅ **Phase 4:** Standard Card Support with Drag-and-Drop
-- ⏳ **Phase 5:** Properties Panel (next priority)
+- ✅ **Phase 5:** Properties Panel (15+ card types supported)
 
-## 🔮 Coming Soon (Phase 5)
+## 🔮 Coming Soon (Phase 6+)
 
-The next release will focus on the **Properties Panel**:
-- Edit card properties visually (entities, titles, icons, etc.)
-- Entity browser with autocomplete
-- Icon picker for cards
-- Validation of entity IDs
-- Real-time preview of changes
+Future releases will focus on:
+- **Card deletion** - Remove cards from the canvas
+- **Undo/Redo** - Comprehensive undo/redo functionality
+- **Entity validation** - Connection to Home Assistant for entity validation
+- **Entity browser** - Autocomplete and entity picker
+- **Icon picker** - Visual icon selection
+- **Custom card support** - ApexCharts, Bubble Card, Button Card, Card-mod, and more
 
 ## 📋 System Requirements
 

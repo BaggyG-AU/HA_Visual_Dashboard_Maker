@@ -12,6 +12,8 @@ interface AppSettings {
   windowState: WindowState;
   theme: 'light' | 'dark';
   recentFiles: string[];
+  haUrl?: string;
+  haToken?: string;
 }
 
 const schema = {
@@ -99,6 +101,25 @@ class SettingsService {
 
   clearRecentFiles(): void {
     this.store.set('recentFiles', []);
+  }
+
+  // Home Assistant connection methods
+  getHAUrl(): string | undefined {
+    return this.store.get('haUrl');
+  }
+
+  getHAToken(): string | undefined {
+    return this.store.get('haToken');
+  }
+
+  setHAConnection(url: string, token: string): void {
+    this.store.set('haUrl', url);
+    this.store.set('haToken', token);
+  }
+
+  clearHAConnection(): void {
+    this.store.delete('haUrl');
+    this.store.delete('haToken');
   }
 }
 
