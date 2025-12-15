@@ -17,6 +17,12 @@ export interface BaseCard {
   double_tap_action?: Action;
 }
 
+// Spacer card for layout purposes (internal use only, not exported to YAML)
+export interface SpacerCard extends BaseCard {
+  type: 'spacer';
+  _isSpacer?: boolean;
+}
+
 // Action types
 export interface Action {
   action: 'more-info' | 'toggle' | 'call-service' | 'navigate' | 'url' | 'none';

@@ -4,38 +4,94 @@ views:
     path: home
     icon: mdi:home
     cards:
+      - type: spacer
+        _isSpacer: true
+        layout:
+          x: 0
+          y: 0
+          w: 6
+          h: 4
       - type: entities
         title: Living Room
         entities:
           - light.living_room
           - climate.living_room
           - sensor.living_room_temperature
+        layout:
+          x: 6
+          y: 0
+          w: 6
+          h: 4
       - type: button
         entity: light.living_room
         name: Living Room Light
         icon: mdi:lightbulb
+        layout:
+          x: 0
+          y: 4
+          w: 6
+          h: 4
       - type: glance
         title: Climate
         entities:
           - sensor.temperature
           - sensor.humidity
           - sensor.pressure
+        layout:
+          x: 6
+          y: 4
+          w: 6
+          h: 4
   - title: Lights
     path: lights
     icon: mdi:lightbulb
     cards:
+      - type: markdown
+        content: |
+          ## 💡 Lighting Control Center
+          Manage all lights in your home from this dashboard.
+        layout:
+          x: 0
+          y: 0
+          w: 12
+          h: 3
       - type: entities
-        title: All Lights
+        title: Living Room
         entities:
           - light.living_room
+        layout:
+          x: 0
+          y: 3
+          w: 3
+          h: 4
+      - type: entities
+        title: Bedroom
+        entities:
           - light.bedroom
+        layout:
+          x: 3
+          y: 3
+          w: 3
+          h: 4
+      - type: entities
+        title: Kitchen
+        entities:
           - light.kitchen
-          - light.bathroom
+        layout:
+          x: 6
+          y: 3
+          w: 3
+          h: 4
       - type: button
         entity: light.all_lights
         name: All Lights
         tap_action:
           action: toggle
+        layout:
+          x: 9
+          y: 3
+          w: 3
+          h: 4
   - title: Climate
     path: climate
     icon: mdi:thermometer

@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tree } from 'antd';
-import { FolderOpenOutlined, SaveOutlined, FileOutlined, FolderOutlined } from '@ant-design/icons';
+import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs } from 'antd';
+import { FolderOpenOutlined, SaveOutlined } from '@ant-design/icons';
+import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
 import { yamlService } from './services/yamlService';
+import { GridCanvas } from './components/GridCanvas';
+import { CardPalette } from './components/CardPalette';
+import { cardRegistry } from './services/cardRegistry';
 
 const { Header, Content, Sider } = Layout;
 
 const App: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
+  const [ignoreNextLayoutChange, setIgnoreNextLayoutChange] = useState<boolean>(false);
 
   // Dashboard store
   const {
@@ -16,10 +21,15 @@ const App: React.FC = () => {
     filePath,
     error,
     isDirty,
+    selectedViewIndex,
+    selectedCardIndex,
     loadDashboard,
     updateConfig,
     clearDashboard,
-    markClean
+    markClean,
+    setSelectedView,
+    setSelectedCard,
+    markDirty
   } = useDashboardStore();
 
   const handleOpenFile = async () => {
@@ -109,6 +119,122 @@ const App: React.FC = () => {
     });
   };
 
+  const handleCardSelect = (cardIndex: number) => {
+    if (selectedViewIndex !== null) {
+      setSelectedCard(selectedViewIndex, cardIndex);
+    }
+  };
+
+  const handleLayoutChange = (layout: GridLayoutType[]) => {
+    if (!config || selectedViewIndex === null) return;
+
+    console.log('=== LAYOUT CHANGE ===');
+    console.log('New layout from grid:', layout);
+    console.log('ignoreNextLayoutChange:', ignoreNextLayoutChange);
+
+    // Skip this layout change if we just added a card
+    if (ignoreNextLayoutChange) {
+      console.log('IGNORING layout change (just added a card)');
+      setIgnoreNextLayoutChange(false);
+      return;
+    }
+
+    // Update the layout information in the config
+    const updatedViews = [...config.views];
+    const currentView = updatedViews[selectedViewIndex];
+
+    if (currentView.cards) {
+      currentView.cards = currentView.cards.map((card, index) => {
+        const layoutItem = layout.find((item) => item.i === `card-${index}`);
+        if (layoutItem) {
+          return {
+            ...card,
+            layout: {
+              x: layoutItem.x,
+              y: layoutItem.y,
+              w: layoutItem.w,
+              h: layoutItem.h,
+            },
+          };
+        }
+        return card;
+      });
+      console.log('Updated cards after layout change:', currentView.cards);
+    }
+
+    updatedViews[selectedViewIndex] = currentView;
+    updateConfig({ ...config, views: updatedViews });
+  };
+
+  const handleCardAdd = (cardType: string, gridX: number = 0, gridY: number = 0) => {
+    if (!config) {
+      message.warning('Please load a dashboard first');
+      return;
+    }
+
+    if (selectedViewIndex === null) {
+      message.warning('Please select a view first');
+      return;
+    }
+
+    // Get card metadata from registry
+    const cardMetadata = cardRegistry.get(cardType);
+    if (!cardMetadata) {
+      message.error(`Unknown card type: ${cardType}`);
+      return;
+    }
+
+    console.log('=== ADDING CARD ===');
+    console.log('Card type:', cardType);
+    console.log('Drop position:', { gridX, gridY });
+
+    // Create new card with default properties
+    const newCard: any = {
+      type: cardType,
+      ...cardMetadata.defaultProps,
+      layout: {
+        x: gridX,
+        y: gridY,
+        w: 6,
+        h: 4,
+      },
+    };
+
+    console.log('New card object:', newCard);
+
+    // Add title for certain card types
+    if (['entities', 'glance'].includes(cardType)) {
+      newCard.title = `New ${cardMetadata.name}`;
+    }
+
+    // Update the config
+    const updatedViews = [...config.views];
+    const currentView = updatedViews[selectedViewIndex];
+
+    if (!currentView.cards) {
+      currentView.cards = [];
+    }
+
+    currentView.cards.push(newCard);
+    updatedViews[selectedViewIndex] = currentView;
+
+    console.log('Updated cards array:', currentView.cards);
+
+    // Set flag to ignore the next layout change event
+    setIgnoreNextLayoutChange(true);
+
+    updateConfig({ ...config, views: updatedViews });
+
+    // Select the newly added card
+    setSelectedCard(selectedViewIndex, currentView.cards.length - 1);
+
+    message.success(`Added ${cardMetadata.name} card at (${gridX}, ${gridY})`);
+  };
+
+  const handleCardDrop = (cardType: string, x: number, y: number) => {
+    handleCardAdd(cardType, x, y);
+  };
+
   // Load theme preference on startup
   useEffect(() => {
     const loadTheme = async () => {
@@ -161,11 +287,8 @@ const App: React.FC = () => {
           </div>
         </Header>
         <Layout>
-          <Sider width={250} theme="dark">
-            <div style={{ padding: '16px', color: 'white' }}>
-              <h3 style={{ color: 'white', marginBottom: '16px' }}>Card Palette</h3>
-              <p style={{ fontSize: '12px', color: '#888' }}>Coming Soon</p>
-            </div>
+          <Sider width={280} theme="dark" style={{ height: '100vh', overflow: 'hidden' }}>
+            <CardPalette onCardAdd={handleCardAdd} />
           </Sider>
           <Layout style={{ padding: '24px' }}>
             <Content
@@ -191,7 +314,7 @@ const App: React.FC = () => {
               {!config && !error && (
                 <>
                   <h1 style={{ color: '#00d9ff' }}>Welcome to HA Visual Dashboard Maker</h1>
-                  <p>Phase 2: YAML Dashboard Loading - In Progress</p>
+                  <p>Phase 4: Standard Card Support - In Progress</p>
 
                   <div style={{ marginTop: '24px' }}>
                     <Button
@@ -231,15 +354,6 @@ const App: React.FC = () => {
                         Open
                       </Button>
                       <Button
-                        onClick={() => {
-                          if (config) {
-                            updateConfig({ ...config, title: (config.title || 'Dashboard') + ' (Modified)' });
-                          }
-                        }}
-                      >
-                        Test Edit
-                      </Button>
-                      <Button
                         type="primary"
                         icon={<SaveOutlined />}
                         onClick={handleSave}
@@ -250,41 +364,27 @@ const App: React.FC = () => {
                     </Space>
                   </div>
 
-                  <div style={{ marginTop: '24px' }}>
-                    <h3 style={{ color: '#00d9ff', marginBottom: '12px' }}>
-                      Dashboard Structure ({config.views.length} views)
-                    </h3>
-                    {config.views.map((view, viewIndex) => (
-                      <div
-                        key={viewIndex}
-                        style={{
-                          background: '#1f1f1f',
-                          padding: '12px',
-                          borderRadius: '4px',
-                          marginBottom: '8px'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                          <FolderOutlined style={{ marginRight: '8px', color: '#00d9ff' }} />
-                          <strong>{view.title || view.path || `View ${viewIndex + 1}`}</strong>
-                        </div>
-                        {view.cards && view.cards.length > 0 && (
-                          <div style={{ paddingLeft: '24px', fontSize: '12px', color: '#aaa' }}>
-                            {view.cards.map((card, cardIndex) => (
-                              <div key={cardIndex} style={{ padding: '4px 0' }}>
-                                <FileOutlined style={{ marginRight: '8px' }} />
-                                {card.type} {card.name ? `- ${card.name}` : ''}
-                              </div>
-                            ))}
+                  <div style={{ height: 'calc(100vh - 250px)' }}>
+                    <Tabs
+                      activeKey={selectedViewIndex?.toString() || '0'}
+                      onChange={(key) => setSelectedView(parseInt(key))}
+                      items={config.views.map((view, index) => ({
+                        key: index.toString(),
+                        label: view.title || view.path || `View ${index + 1}`,
+                        children: (
+                          <div style={{ height: 'calc(100vh - 310px)' }}>
+                            <GridCanvas
+                              view={view}
+                              selectedCardIndex={selectedCardIndex}
+                              onCardSelect={handleCardSelect}
+                              onLayoutChange={handleLayoutChange}
+                              onCardDrop={handleCardDrop}
+                            />
                           </div>
-                        )}
-                        {(!view.cards || view.cards.length === 0) && (
-                          <div style={{ paddingLeft: '24px', fontSize: '12px', color: '#666', fontStyle: 'italic' }}>
-                            No cards
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                        ),
+                      }))}
+                      style={{ height: '100%' }}
+                    />
                   </div>
                 </>
               )}
