@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Space, Typography, Divider } from 'antd';
 import { Card } from '../types/dashboard';
 import { cardRegistry } from '../services/cardRegistry';
+import { EntitySelect } from './EntitySelect';
+import { EntityMultiSelect } from './EntityMultiSelect';
+import { IconSelect } from './IconSelect';
 
 const { Title, Text } = Typography;
 
@@ -21,10 +24,38 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const [form] = Form.useForm();
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Helper function to normalize entities for form display
+  const normalizeCardForForm = (card: Card): any => {
+    const normalized = { ...card };
+
+    // Handle entities field - can be array, object, or missing
+    if (normalized.entities) {
+      // Case 1: Array of entities (most common for simple cards)
+      if (Array.isArray(normalized.entities)) {
+        normalized.entities = normalized.entities.map((entity: any) => {
+          // If it's an object with an entity property, extract the entity ID
+          if (typeof entity === 'object' && entity?.entity) {
+            return entity.entity;
+          }
+          // If it's already a string, keep it
+          return entity;
+        }).filter(e => typeof e === 'string'); // Remove any non-strings
+      }
+      // Case 2: Object (complex cards like power-flow-card-plus)
+      // Don't try to normalize - leave as-is for YAML editor
+      else if (typeof normalized.entities === 'object') {
+        // Keep the complex object structure intact
+        // The form won't show EntityMultiSelect for these
+      }
+    }
+
+    return normalized;
+  };
+
   // Reset form when card changes
   useEffect(() => {
     if (card) {
-      form.setFieldsValue(card);
+      form.setFieldsValue(normalizeCardForForm(card));
       setHasChanges(false);
     }
   }, [card, cardIndex, form]);
@@ -42,7 +73,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
   const handleCancel = () => {
     if (card) {
-      form.setFieldsValue(card);
+      form.setFieldsValue(normalizeCardForForm(card));
       setHasChanges(false);
     }
     onCancel();
@@ -98,26 +129,27 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 <Input placeholder="Card title" />
               </Form.Item>
 
-              <Form.Item
-                label={<span style={{ color: 'white' }}>Entities</span>}
-                name="entities"
-                help={<span style={{ color: '#666' }}>One entity per line</span>}
-              >
-                <Input.TextArea
-                  placeholder="light.living_room&#10;sensor.temperature&#10;climate.thermostat"
-                  rows={4}
-                  onChange={(e) => {
-                    // Convert text area to array
-                    const lines = e.target.value.split('\n').filter(line => line.trim());
-                    form.setFieldValue('entities', lines);
-                  }}
-                  value={
-                    Array.isArray(form.getFieldValue('entities'))
-                      ? form.getFieldValue('entities').join('\n')
-                      : ''
-                  }
+              {/* Only show EntityMultiSelect if entities is an array */}
+              {Array.isArray(card.entities) && (
+                <Form.Item
+                  label={<span style={{ color: 'white' }}>Entities</span>}
+                  name="entities"
+                  help={<span style={{ color: '#666' }}>Select entities from your Home Assistant instance</span>}
+                >
+                  <EntityMultiSelect placeholder="Select entities" />
+                </Form.Item>
+              )}
+
+              {/* Show warning if entities is complex object */}
+              {card.entities && typeof card.entities === 'object' && !Array.isArray(card.entities) && (
+                <Alert
+                  message="Complex Entity Configuration"
+                  description="This card uses a complex entity structure. Use the YAML editor to modify entities."
+                  type="info"
+                  showIcon
+                  style={{ marginBottom: '16px' }}
                 />
-              </Form.Item>
+              )}
             </>
           )}
 
@@ -128,7 +160,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="entity"
                 rules={[{ required: true, message: 'Entity is required' }]}
               >
-                <Input placeholder="light.living_room" />
+                <EntitySelect placeholder="Select entity" />
               </Form.Item>
 
               <Form.Item
@@ -142,7 +174,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Icon</span>}
                 name="icon"
               >
-                <Input placeholder="mdi:lightbulb" />
+                <IconSelect placeholder="mdi:lightbulb" />
               </Form.Item>
             </>
           )}
@@ -166,7 +198,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="entity"
                 rules={[{ required: true, message: 'Entity is required' }]}
               >
-                <Input placeholder="sensor.temperature" />
+                <EntitySelect placeholder="Select sensor" filterDomains={['sensor', 'binary_sensor']} />
               </Form.Item>
 
               <Form.Item
@@ -180,7 +212,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Icon</span>}
                 name="icon"
               >
-                <Input placeholder="mdi:thermometer" />
+                <IconSelect placeholder="mdi:thermometer" />
               </Form.Item>
 
               {card.type === 'gauge' && (
@@ -215,21 +247,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               <Form.Item
                 label={<span style={{ color: 'white' }}>Entities</span>}
                 name="entities"
-                help={<span style={{ color: '#666' }}>One entity per line</span>}
+                help={<span style={{ color: '#666' }}>Select entities to show history for</span>}
               >
-                <Input.TextArea
-                  placeholder="sensor.temperature&#10;sensor.humidity"
-                  rows={4}
-                  onChange={(e) => {
-                    const lines = e.target.value.split('\n').filter(line => line.trim());
-                    form.setFieldValue('entities', lines);
-                  }}
-                  value={
-                    Array.isArray(form.getFieldValue('entities'))
-                      ? form.getFieldValue('entities').join('\n')
-                      : ''
-                  }
-                />
+                <EntityMultiSelect placeholder="Select entities" />
               </Form.Item>
 
               <Form.Item
@@ -258,7 +278,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="entity"
                     rules={[{ required: true, message: 'Entity is required' }]}
                   >
-                    <Input placeholder="light.living_room" />
+                    <EntitySelect placeholder="Select entity" />
                   </Form.Item>
 
                   <Form.Item
@@ -292,21 +312,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               <Form.Item
                 label={<span style={{ color: 'white' }}>Entities</span>}
                 name="entities"
-                help={<span style={{ color: '#666' }}>One entity per line</span>}
+                help={<span style={{ color: '#666' }}>Select entities to display over image</span>}
               >
-                <Input.TextArea
-                  placeholder="light.living_room&#10;sensor.temperature"
-                  rows={4}
-                  onChange={(e) => {
-                    const lines = e.target.value.split('\n').filter(line => line.trim());
-                    form.setFieldValue('entities', lines);
-                  }}
-                  value={
-                    Array.isArray(form.getFieldValue('entities'))
-                      ? form.getFieldValue('entities').join('\n')
-                      : ''
-                  }
-                />
+                <EntityMultiSelect placeholder="Select entities" />
               </Form.Item>
             </>
           )}
@@ -318,7 +326,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="entity"
                 rules={[{ required: true, message: 'Entity is required' }]}
               >
-                <Input placeholder="light.living_room" />
+                <EntitySelect placeholder="Select light" filterDomains={['light']} />
               </Form.Item>
 
               <Form.Item
@@ -332,7 +340,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Icon</span>}
                 name="icon"
               >
-                <Input placeholder="mdi:lightbulb" />
+                <IconSelect placeholder="mdi:lightbulb" />
               </Form.Item>
             </>
           )}
@@ -344,7 +352,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="entity"
                 rules={[{ required: true, message: 'Entity is required' }]}
               >
-                <Input placeholder="climate.thermostat" />
+                <EntitySelect placeholder="Select climate entity" filterDomains={['climate']} />
               </Form.Item>
 
               <Form.Item
@@ -363,7 +371,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="entity"
                 rules={[{ required: true, message: 'Entity is required' }]}
               >
-                <Input placeholder="media_player.living_room" />
+                <EntitySelect placeholder="Select media player" filterDomains={['media_player']} />
               </Form.Item>
             </>
           )}
@@ -375,7 +383,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="entity"
                 rules={[{ required: true, message: 'Entity is required' }]}
               >
-                <Input placeholder="weather.home" />
+                <EntitySelect placeholder="Select weather entity" filterDomains={['weather']} />
               </Form.Item>
 
               <Form.Item
@@ -399,20 +407,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               <Form.Item
                 label={<span style={{ color: 'white' }}>Entities</span>}
                 name="entities"
-                help={<span style={{ color: '#666' }}>One entity per line (device_tracker, person, zone)</span>}
+                help={<span style={{ color: '#666' }}>Select entities to track on map</span>}
               >
-                <Input.TextArea
-                  placeholder="person.john&#10;device_tracker.phone"
-                  rows={4}
-                  onChange={(e) => {
-                    const lines = e.target.value.split('\n').filter(line => line.trim());
-                    form.setFieldValue('entities', lines);
-                  }}
-                  value={
-                    Array.isArray(form.getFieldValue('entities'))
-                      ? form.getFieldValue('entities').join('\n')
-                      : ''
-                  }
+                <EntityMultiSelect
+                  placeholder="Select entities"
+                  filterDomains={['device_tracker', 'person', 'zone']}
                 />
               </Form.Item>
             </>

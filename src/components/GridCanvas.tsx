@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import GridLayout, { Layout } from 'react-grid-layout';
 import { View, Card } from '../types/dashboard';
 import { BaseCard } from './BaseCard';
+import { generateMasonryLayout } from '../utils/cardDimensions';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import './GridCanvas.css';
@@ -15,42 +16,41 @@ interface GridCanvasProps {
 }
 
 // Generate layout positions for cards
-// If cards don't have layout info, we'll position them in a 2-column grid
+// Uses smart masonry-like layout based on card content
 const generateLayout = (cards: Card[]): Layout[] => {
-  const layouts = cards.map((card, index) => {
-    // Check if card has layout information
-    const hasLayout = 'layout' in card && card.layout;
+  // Check if cards already have layout information
+  const hasExistingLayout = cards.some(card => 'layout' in card && card.layout);
 
-    if (hasLayout) {
-      const layout = card.layout as any;
-      const result = {
+  if (hasExistingLayout) {
+    // Use existing layout information
+    const layouts = cards.map((card, index) => {
+      if ('layout' in card && card.layout) {
+        const layout = card.layout as any;
+        return {
+          i: `card-${index}`,
+          x: layout.x || 0,
+          y: layout.y || 0,
+          w: layout.w || 6,
+          h: layout.h || 4,
+        };
+      }
+      // Fallback for cards without layout
+      return {
         i: `card-${index}`,
-        x: layout.x || 0,
-        y: layout.y || 0,
-        w: layout.w || 6,
-        h: layout.h || 4,
+        x: 0,
+        y: index * 4,
+        w: 6,
+        h: 4,
       };
-      console.log(`generateLayout: card-${index} (${card.type}) has layout:`, result);
-      return result;
-    }
+    });
+    console.log('generateLayout: Using existing layout information');
+    return layouts;
+  }
 
-    // Auto-layout: 2 cards per row, 6 columns each (12-column grid)
-    const row = Math.floor(index / 2);
-    const col = (index % 2) * 6;
-
-    const result = {
-      i: `card-${index}`,
-      x: col,
-      y: row * 4,
-      w: 6, // Half of 12 columns
-      h: 4, // 4 rows high
-    };
-    console.log(`generateLayout: card-${index} (${card.type}) auto-layout:`, result);
-    return result;
-  });
-
-  console.log('generateLayout: total layouts generated:', layouts);
-  return layouts;
+  // Generate smart masonry layout based on card content
+  const masonryLayout = generateMasonryLayout(cards);
+  console.log('generateLayout: Generated masonry layout:', masonryLayout);
+  return masonryLayout;
 };
 
 export const GridCanvas: React.FC<GridCanvasProps> = ({

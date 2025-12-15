@@ -28,6 +28,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   clearHAConnection: () => ipcRenderer.invoke('ha:clearConnection'),
   haFetch: (url: string, token: string) => ipcRenderer.invoke('ha:fetch', url, token),
 
+  // Home Assistant WebSocket APIs
+  haWsConnect: (url: string, token: string) => ipcRenderer.invoke('ha:ws:connect', url, token),
+  haWsListDashboards: () => ipcRenderer.invoke('ha:ws:listDashboards'),
+  haWsGetDashboardConfig: (urlPath: string | null) => ipcRenderer.invoke('ha:ws:getDashboardConfig', urlPath),
+  haWsClose: () => ipcRenderer.invoke('ha:ws:close'),
+  haWsIsConnected: () => ipcRenderer.invoke('ha:ws:isConnected'),
+
   // Menu event listeners
   onMenuOpenFile: (callback: () => void) => {
     ipcRenderer.on('menu:open-file', callback);
@@ -65,6 +72,11 @@ export interface ElectronAPI {
   setHAConnection: (url: string, token: string) => Promise<{ success: boolean }>;
   clearHAConnection: () => Promise<{ success: boolean }>;
   haFetch: (url: string, token: string) => Promise<{ success: boolean; status?: number; data?: any; error?: string }>;
+  haWsConnect: (url: string, token: string) => Promise<{ success: boolean; error?: string }>;
+  haWsListDashboards: () => Promise<{ success: boolean; dashboards?: any[]; error?: string }>;
+  haWsGetDashboardConfig: (urlPath: string | null) => Promise<{ success: boolean; config?: any; error?: string }>;
+  haWsClose: () => Promise<{ success: boolean; error?: string }>;
+  haWsIsConnected: () => Promise<{ connected: boolean }>;
   onMenuOpenFile: (callback: () => void) => (() => void);
   onMenuSaveFile: (callback: () => void) => (() => void);
   onMenuSaveFileAs: (callback: () => void) => (() => void);

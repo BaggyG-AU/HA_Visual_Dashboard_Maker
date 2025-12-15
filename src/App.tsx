@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge } from 'antd';
-import { FolderOpenOutlined, SaveOutlined, ApiOutlined } from '@ant-design/icons';
+import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
@@ -9,6 +9,8 @@ import { GridCanvas } from './components/GridCanvas';
 import { CardPalette } from './components/CardPalette';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { ConnectionDialog } from './components/ConnectionDialog';
+import { DeployDialog } from './components/DeployDialog';
+import { DashboardBrowser } from './components/DashboardBrowser';
 import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
 
@@ -18,6 +20,8 @@ const App: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
   const [ignoreNextLayoutChange, setIgnoreNextLayoutChange] = useState<boolean>(false);
   const [connectionDialogVisible, setConnectionDialogVisible] = useState<boolean>(false);
+  const [deployDialogVisible, setDeployDialogVisible] = useState<boolean>(false);
+  const [dashboardBrowserVisible, setDashboardBrowserVisible] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
   // Dashboard store
@@ -287,6 +291,40 @@ const App: React.FC = () => {
     message.info('Disconnected from Home Assistant');
   };
 
+  const handleOpenDeployDialog = () => {
+    if (!config) {
+      message.warning('No dashboard loaded to deploy');
+      return;
+    }
+    if (!isConnected) {
+      message.warning('Please connect to Home Assistant first');
+      return;
+    }
+    setDeployDialogVisible(true);
+  };
+
+  const handleCloseDeployDialog = () => {
+    setDeployDialogVisible(false);
+  };
+
+  const handleOpenDashboardBrowser = () => {
+    if (!isConnected) {
+      message.warning('Please connect to Home Assistant first');
+      return;
+    }
+    setDashboardBrowserVisible(true);
+  };
+
+  const handleCloseDashboardBrowser = () => {
+    setDashboardBrowserVisible(false);
+  };
+
+  const handleDashboardDownload = (dashboardYaml: string, dashboardTitle: string, dashboardId: string) => {
+    // Load the downloaded dashboard into the editor
+    loadDashboard(dashboardYaml, `${dashboardTitle} (${dashboardId})`);
+    message.success(`Dashboard "${dashboardTitle}" loaded successfully!`);
+  };
+
   // Load theme preference and HA connection on startup
   useEffect(() => {
     const loadTheme = async () => {
@@ -396,18 +434,28 @@ const App: React.FC = () => {
                   <p>Phase 4: Standard Card Support - In Progress</p>
 
                   <div style={{ marginTop: '24px' }}>
-                    <Button
-                      type="primary"
-                      size="large"
-                      icon={<FolderOpenOutlined />}
-                      onClick={handleOpenFile}
-                    >
-                      Open Dashboard
-                    </Button>
+                    <Space size="large">
+                      <Button
+                        type="primary"
+                        size="large"
+                        icon={<FolderOpenOutlined />}
+                        onClick={handleOpenFile}
+                      >
+                        Open Local File
+                      </Button>
+                      <Button
+                        size="large"
+                        icon={<AppstoreOutlined />}
+                        onClick={handleOpenDashboardBrowser}
+                        disabled={!isConnected}
+                      >
+                        Browse HA Dashboards
+                      </Button>
+                    </Space>
                   </div>
 
                   <div style={{ marginTop: '32px', color: '#888', fontSize: '14px' }}>
-                    <p>Open a Home Assistant dashboard YAML file to begin editing.</p>
+                    <p>Open a local YAML file or browse dashboards from your Home Assistant instance.</p>
                     <p style={{ marginTop: '8px' }}>Supported file types: .yaml, .yml</p>
                   </div>
                 </>
@@ -433,12 +481,26 @@ const App: React.FC = () => {
                         Open
                       </Button>
                       <Button
+                        icon={<DownloadOutlined />}
+                        onClick={handleOpenDashboardBrowser}
+                        disabled={!isConnected}
+                      >
+                        Download
+                      </Button>
+                      <Button
                         type="primary"
                         icon={<SaveOutlined />}
                         onClick={handleSave}
                         disabled={!isDirty}
                       >
                         Save
+                      </Button>
+                      <Button
+                        icon={<CloudUploadOutlined />}
+                        onClick={handleOpenDeployDialog}
+                        disabled={!isConnected}
+                      >
+                        Deploy
                       </Button>
                     </Space>
                   </div>
@@ -487,6 +549,17 @@ const App: React.FC = () => {
         visible={connectionDialogVisible}
         onClose={() => setConnectionDialogVisible(false)}
         onConnect={handleConnect}
+      />
+      <DeployDialog
+        visible={deployDialogVisible}
+        onClose={handleCloseDeployDialog}
+        dashboardYaml={config ? yamlService.serializeDashboard(config) : ''}
+        dashboardTitle={config?.title}
+      />
+      <DashboardBrowser
+        visible={dashboardBrowserVisible}
+        onClose={handleCloseDashboardBrowser}
+        onDashboardDownload={handleDashboardDownload}
       />
     </ConfigProvider>
   );

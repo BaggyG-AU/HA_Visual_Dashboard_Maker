@@ -52,6 +52,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "electron": "39.2.7",
@@ -69,6 +70,11 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-grid-layout": "^2.0.0",
+    "ws": "^8.18.3",
     "zustand": "^5.0.9"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.9",
+    "utf-8-validate": "^6.0.5"
   }
 }

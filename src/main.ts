@@ -124,7 +124,21 @@ ipcMain.handle('ha:fetch', async (event, url: string, token: string) => {
       },
     });
 
-    const data = await response.json();
+    // Get the response text first
+    const text = await response.text();
+
+    // Try to parse as JSON
+    let data;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (parseError) {
+      console.error('Failed to parse JSON response:', text);
+      return {
+        success: false,
+        status: response.status,
+        error: `Invalid JSON response: ${text.substring(0, 100)}`,
+      };
+    }
 
     return {
       success: response.ok,
@@ -137,6 +151,66 @@ ipcMain.handle('ha:fetch', async (event, url: string, token: string) => {
       error: (error as Error).message,
     };
   }
+});
+
+// Home Assistant WebSocket API handlers
+import { haWebSocketService } from './services/haWebSocketService';
+
+// Connect to HA WebSocket
+ipcMain.handle('ha:ws:connect', async (event, url: string, token: string) => {
+  try {
+    await haWebSocketService.connect(url, token);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+// List dashboards via WebSocket
+ipcMain.handle('ha:ws:listDashboards', async () => {
+  try {
+    const dashboards = await haWebSocketService.listDashboards();
+    return { success: true, dashboards };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+// Get dashboard config via WebSocket
+ipcMain.handle('ha:ws:getDashboardConfig', async (event, urlPath: string | null) => {
+  try {
+    const config = await haWebSocketService.getDashboardConfig(urlPath);
+    return { success: true, config };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+// Close WebSocket connection
+ipcMain.handle('ha:ws:close', async () => {
+  try {
+    haWebSocketService.close();
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+// Check WebSocket connection status
+ipcMain.handle('ha:ws:isConnected', async () => {
+  return { connected: haWebSocketService.isConnected() };
 });
 
 // ===== End IPC Handlers =====
