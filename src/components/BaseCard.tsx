@@ -4,6 +4,7 @@ import { EntitiesCardRenderer } from './cards/EntitiesCardRenderer';
 import { ButtonCardRenderer } from './cards/ButtonCardRenderer';
 import { GlanceCardRenderer } from './cards/GlanceCardRenderer';
 import { MarkdownCardRenderer } from './cards/MarkdownCardRenderer';
+import { ApexChartsCardRenderer } from './cards/ApexChartsCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
 
 interface BaseCardProps {
@@ -57,6 +58,9 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
 
     case 'markdown':
       return <MarkdownCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'custom:apexcharts-card':
+      return <ApexChartsCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
 
     // Add more supported card types here as they are implemented
     // case 'gauge':
