@@ -5,6 +5,7 @@ import { ButtonCardRenderer } from './cards/ButtonCardRenderer';
 import { GlanceCardRenderer } from './cards/GlanceCardRenderer';
 import { MarkdownCardRenderer } from './cards/MarkdownCardRenderer';
 import { ApexChartsCardRenderer } from './cards/ApexChartsCardRenderer';
+import { PowerFlowCardRenderer } from './cards/PowerFlowCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
 
 interface BaseCardProps {
@@ -61,6 +62,10 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
 
     case 'custom:apexcharts-card':
       return <ApexChartsCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'custom:power-flow-card-plus':
+    case 'custom:power-flow-card':
+      return <PowerFlowCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
 
     // Add more supported card types here as they are implemented
     // case 'gauge':
