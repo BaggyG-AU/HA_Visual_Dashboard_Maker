@@ -1,18 +1,25 @@
 /**
  * Card Sizing Contract - Defines how cards declare their size constraints
- * Based on Home Assistant's getCardSize() pattern where 1 unit ≈ 50px
+ * Based on Home Assistant's official grid specifications
  *
- * This follows the pattern from the HA rendering architecture:
+ * SOURCE: https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card
+ *
+ * HA uses TWO different sizing systems:
+ * 1. Masonry View: getCardSize() where 1 unit = 50px height
+ * 2. Sections View (Grid): getGridOptions() where 1 row = 56px height, 1 column ≈ 30px width
+ *
+ * This implementation uses the Sections Grid system (56px rows):
+ * - 12 columns (each ~30px wide)
+ * - Row height: 56px
+ * - Gap: 8px between cells
  * - Cards provide constraints + heuristics, not fixed pixels
  * - Layout engine decides actual placement based on constraints
- * - Masonry: uses height units for column balancing
- * - Grid/Sections: uses min/max/default sizing for grid fitting
  */
 
 export interface CardSizeConstraints {
-  // Grid dimensions (12-column grid)
+  // Grid dimensions (12-column grid, matching HA Sections view)
   w: number;           // Default width in grid columns
-  h: number;           // Default height in grid rows (1 row ≈ 50px to match HA)
+  h: number;           // Default height in grid rows (1 row = 56px in HA sections grid)
   minW?: number;       // Minimum width
   maxW?: number;       // Maximum width
   minH?: number;       // Minimum height
@@ -23,10 +30,12 @@ export interface CardSizeConstraints {
  * Calculate size constraints for a card based on its type and content
  * Returns constraints that the layout engine can use for placement
  *
- * Key differences from previous approach:
- * - 1 grid row = 50px (matches HA's 1 unit ≈ 50px)
+ * Based on HA Sections Grid specifications:
+ * - 1 grid row = 56px (official HA measurement)
+ * - 1 column ≈ 30px (section width / 12)
+ * - Gap = 8px between cells
  * - Returns constraints (min/max) not just fixed sizes
- * - Heights are heuristic estimates, not precise measurements
+ * - Heights are heuristic estimates based on typical HA card sizes
  */
 export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
   const cardType = card.type;
@@ -56,8 +65,8 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       // Height based on number of entities + title
       const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
       const titleRows = card.title ? 1 : 0;
-      // Each entity ≈ 48px in HA, so 48/50 ≈ 1 row per entity
-      height = Math.max(2, titleRows + entityCount + 1); // +1 for padding
+      // Each entity ≈ 48px in HA, so 48/56 ≈ 0.86 rows per entity
+      height = Math.max(2, Math.ceil(titleRows + (entityCount * 0.86) + 0.5)); // +0.5 for padding
       minH = 2;
       maxH = 30;
       width = 6;
@@ -67,8 +76,8 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
 
     case 'button':
       // Buttons are small and square-ish
-      // HA renders buttons at ~120px tall, so 120/50 ≈ 2.5 rows
-      height = 3;
+      // HA renders buttons at ~120px tall, so 120/56 ≈ 2.14 rows
+      height = 2;
       width = 3;
       minW = 2;
       maxW = 6;
@@ -81,8 +90,8 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       const glanceEntities = Array.isArray(card.entities) ? card.entities.length : 0;
       const columns = card.columns || 5;
       const rows = Math.ceil(glanceEntities / columns);
-      // Each row in glance ≈ 60px in HA, so 60/50 ≈ 1.2 rows
-      height = Math.max(2, rows * 1.2 + (card.title ? 1 : 0));
+      // Each row in glance ≈ 60px in HA, so 60/56 ≈ 1.07 rows
+      height = Math.max(2, Math.ceil(rows * 1.07 + (card.title ? 1 : 0)));
       width = 6;
       minW = 4;
       maxW = 12;
@@ -94,8 +103,8 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       // Estimate based on content length
       const content = card.content || '';
       const lines = content.split('\n').length;
-      // Assume ~20px per line, so lines * 20 / 50 = lines * 0.4
-      height = Math.max(2, Math.min(15, Math.ceil(lines * 0.5) + (card.title ? 1 : 0)));
+      // Assume ~20px per line, so lines * 20 / 56 = lines * 0.36
+      height = Math.max(2, Math.min(15, Math.ceil(lines * 0.36) + (card.title ? 1 : 0)));
       width = 6;
       minW = 4;
       maxW = 12;
@@ -106,9 +115,9 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
     case 'custom:apexcharts-card':
       // Use configured height from apex_config
       const apexHeight = card.apex_config?.chart?.height || 280;
-      // Convert pixels to grid rows (50px per row) + header
+      // Convert pixels to grid rows (56px per row) + header
       // HA renders charts at their configured pixel height
-      height = Math.ceil(apexHeight / 50) + (card.header?.show !== false ? 1 : 0);
+      height = Math.ceil(apexHeight / 56) + (card.header?.show !== false ? 1 : 0);
       width = 6;
       minW = 4;
       maxW = 12;
@@ -119,7 +128,7 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
     case 'custom:power-flow-card-plus':
     case 'custom:power-flow-card':
       // Power flow cards in HA are ~300-350px tall
-      // 300 / 50 = 6 rows
+      // 320 / 56 ≈ 5.7 rows
       height = 6;
       width = 6;
       minW = 4;
@@ -169,6 +178,7 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
 
     case 'thermostat':
       // Thermostats are medium sized (~250px in HA)
+      // 250 / 56 ≈ 4.5 rows
       height = 5;
       width = 4;
       minW = 3;
@@ -178,8 +188,9 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       break;
 
     case 'gauge':
-      // Gauges are compact
-      height = 4;
+      // Gauges are compact (~180px)
+      // 180 / 56 ≈ 3.2 rows
+      height = 3;
       width = 3;
       minW = 2;
       maxW = 6;
@@ -198,7 +209,8 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
 
     case 'weather-forecast':
       // Weather cards are medium-tall (~400px in HA)
-      height = 8;
+      // 400 / 56 ≈ 7.1 rows
+      height = 7;
       width = 6;
       minW = 4;
       maxW = 12;
@@ -220,7 +232,8 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       // Custom cards and unknown types
       if (cardType.startsWith('custom:')) {
         // Most custom cards are medium-large (~400px)
-        height = 8;
+        // 400 / 56 ≈ 7.1 rows
+        height = 7;
         width = 6;
         minH = 4;
         maxH = 20;

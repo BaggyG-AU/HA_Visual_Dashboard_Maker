@@ -1,7 +1,12 @@
 /**
  * DEPRECATED: This file is kept for backward compatibility
  * New code should use cardSizingContract.ts which implements
- * Home Assistant's constraint-based sizing approach (1 unit ≈ 50px)
+ * Home Assistant's constraint-based sizing approach
+ *
+ * Official HA grid specifications (Sections view):
+ * - Row height: 56px
+ * - Column width: ~30px (section width / 12)
+ * - Gap: 8px between cells
  *
  * This file used 30px per row which didn't match HA's actual rendering
  */
