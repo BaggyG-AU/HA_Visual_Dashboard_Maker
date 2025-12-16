@@ -4,7 +4,7 @@ import {
   ThunderboltOutlined,
   SunOutlined,
   HomeOutlined,
-  BatteryChargingOutlined,
+  ThunderboltFilled,
   ApiOutlined,
 } from '@ant-design/icons';
 
@@ -242,7 +242,7 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <FlowLine active={Math.abs(mockValues.battery) > 0} />
               <PowerNode
-                icon={<BatteryChargingOutlined />}
+                icon={<ThunderboltFilled />}
                 label="Battery"
                 value={mockValues.battery}
                 color={mockValues.battery < 0 ? '#52c41a' : '#722ed1'}
