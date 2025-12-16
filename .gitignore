@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+node_modules.back/
 jspm_packages/
 npm-debug.log*
 yarn-debug.log*
