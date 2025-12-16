@@ -64,15 +64,16 @@ export const calculateCardDimensions = (card: any): CardDimensions => {
       // Use configured height from apex_config
       const apexHeight = card.apex_config?.chart?.height || 280;
       // Convert pixels to grid rows (30px per row) + header
-      // Reduce by ~40% to match HA's more compact rendering
-      height = Math.ceil((apexHeight * 0.6) / 30) + (card.header?.show ? 1.5 : 0);
+      // Reduce significantly to match HA's compact rendering
+      height = Math.ceil((apexHeight * 0.35) / 30) + (card.header?.show !== false ? 2 : 0);
       width = 6;
       break;
 
     case 'custom:power-flow-card-plus':
-      // Power flow cards are typically larger but not huge
-      // Approximately 400px in HA / 30px per row
-      height = 8;
+    case 'custom:power-flow-card':
+      // Power flow cards in HA are actually quite compact
+      // Approximately 300-350px in HA / 30px per row
+      height = 6;
       width = 6;
       break;
 

@@ -193,7 +193,7 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
         transition: 'all 0.3s ease',
       }}
       bodyStyle={{
-        padding: showHeader ? '12px' : '16px',
+        padding: showHeader ? '8px' : '12px',
         height: showHeader ? 'calc(100% - 46px)' : '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -201,20 +201,13 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
       onClick={onClick}
       hoverable
     >
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <ReactApexChart
           options={options}
           series={series}
           type={(card.apex_config?.chart?.type as any) || 'line'}
           height="100%"
         />
-      </div>
-
-      {/* Show series info */}
-      <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #434343' }}>
-        <Text type="secondary" style={{ fontSize: '10px' }}>
-          Entities: {card.series?.map(s => s.entity.split('.')[1]).join(', ')}
-        </Text>
       </div>
     </AntCard>
   );

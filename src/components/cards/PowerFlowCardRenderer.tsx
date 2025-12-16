@@ -94,32 +94,27 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '4px',
+        gap: '2px',
       }}
     >
       <div
         style={{
-          width: '48px',
-          height: '48px',
+          width: '36px',
+          height: '36px',
           borderRadius: '50%',
           backgroundColor: color,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '20px',
+          fontSize: '16px',
           color: '#fff',
-          boxShadow: `0 0 12px ${color}`,
+          boxShadow: `0 0 8px ${color}`,
         }}
       >
         {icon}
       </div>
-      <Text style={{ fontSize: '11px', fontWeight: 500, color: '#e6e6e6' }}>{label}</Text>
-      <Text style={{ fontSize: '13px', fontWeight: 600, color: color }}>{formatPower(value)}</Text>
-      {entity && (
-        <Text type="secondary" style={{ fontSize: '9px' }} ellipsis>
-          {entity.entity.split('.')[1]?.substring(0, 15)}
-        </Text>
-      )}
+      <Text style={{ fontSize: '10px', fontWeight: 500, color: '#e6e6e6' }}>{label}</Text>
+      <Text style={{ fontSize: '11px', fontWeight: 600, color: color }}>{formatPower(value)}</Text>
     </div>
   );
 
@@ -170,7 +165,7 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
         transition: 'all 0.3s ease',
       }}
       bodyStyle={{
-        padding: '16px',
+        padding: '8px',
         height: 'calc(100% - 46px)',
         display: 'flex',
         flexDirection: 'column',
@@ -184,13 +179,13 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '20px',
+          gap: '12px',
           alignItems: 'center',
         }}
       >
         {/* Top Row: Solar */}
         {entities.solar && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
             <PowerNode
               icon={<SunOutlined />}
               label="Solar"
@@ -207,7 +202,7 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '16px',
+            gap: '8px',
             width: '100%',
             justifyContent: 'space-evenly',
           }}
