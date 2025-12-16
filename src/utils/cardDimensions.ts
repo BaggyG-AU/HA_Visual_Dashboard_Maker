@@ -1,195 +1,32 @@
-import { Card } from '../types/dashboard';
-
 /**
- * Calculate card dimensions based on content
- * This attempts to match Home Assistant's masonry layout behavior
- * by estimating heights based on card type and content
+ * DEPRECATED: This file is kept for backward compatibility
+ * New code should use cardSizingContract.ts which implements
+ * Home Assistant's constraint-based sizing approach (1 unit ≈ 50px)
+ *
+ * This file used 30px per row which didn't match HA's actual rendering
  */
+
+import { getCardSizeConstraints, generateMasonryLayout as generateMasonryLayoutNew } from './cardSizingContract';
 
 interface CardDimensions {
   w: number; // width in grid columns (out of 12)
-  h: number; // height in grid rows (1 row = 30px by default)
+  h: number; // height in grid rows
 }
 
+/**
+ * @deprecated Use getCardSizeConstraints from cardSizingContract.ts instead
+ */
 export const calculateCardDimensions = (card: any): CardDimensions => {
-  const cardType = card.type;
-
-  // Check if card already has explicit layout
-  if ('layout' in card && card.layout) {
-    return {
-      w: card.layout.w || 6,
-      h: card.layout.h || 4,
-    };
-  }
-
-  // Default dimensions
-  let width = 6; // Half width by default
-  let height = 4; // Default height
-
-  switch (cardType) {
-    case 'entities':
-      // Height based on number of entities + title
-      const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
-      const titleRows = card.title ? 2 : 0;
-      // Each entity ≈ 1.5 rows (48px per entity / 30px per row)
-      // Minimum 2 rows for empty cards
-      height = Math.max(2, Math.ceil(titleRows + (entityCount * 1.5)));
-      width = 6; // Standard half-width
-      break;
-
-    case 'button':
-      // Buttons are typically small and square-ish
-      height = 4;
-      width = 3; // Quarter width
-      break;
-
-    case 'glance':
-      // Glance cards are compact
-      const glanceEntities = Array.isArray(card.entities) ? card.entities.length : 0;
-      const columns = card.columns || 5;
-      const rows = Math.ceil(glanceEntities / columns);
-      height = Math.max(3, rows * 1.5 + (card.title ? 1.5 : 0));
-      width = 6;
-      break;
-
-    case 'markdown':
-      // Estimate based on content length
-      const content = card.content || '';
-      const lines = content.split('\n').length;
-      height = Math.max(3, Math.min(12, Math.ceil(lines * 0.6) + (card.title ? 1.5 : 0)));
-      width = 6;
-      break;
-
-    case 'custom:apexcharts-card':
-      // Use configured height from apex_config
-      const apexHeight = card.apex_config?.chart?.height || 280;
-      // Convert pixels to grid rows (30px per row) + header
-      // Reduce significantly to match HA's compact rendering
-      height = Math.ceil((apexHeight * 0.35) / 30) + (card.header?.show !== false ? 2 : 0);
-      width = 6;
-      break;
-
-    case 'custom:power-flow-card-plus':
-    case 'custom:power-flow-card':
-      // Power flow cards in HA are actually quite compact
-      // Approximately 300-350px in HA / 30px per row
-      height = 6;
-      width = 6;
-      break;
-
-    case 'vertical-stack':
-      // Sum heights of child cards (estimate)
-      const childCards = card.cards || [];
-      height = childCards.reduce((total: number, child: any) => {
-        const childDim = calculateCardDimensions(child);
-        return total + childDim.h;
-      }, 0);
-      // Reduce total by 20% to account for compact rendering
-      height = Math.ceil(height * 0.8);
-      height = Math.max(4, Math.min(30, height)); // Clamp between 4 and 30
-      width = 6;
-      break;
-
-    case 'horizontal-stack':
-      // Horizontal stacks take full width
-      width = 12;
-      height = 4;
-      break;
-
-    case 'grid':
-      // Grid cards with sub-cards
-      const gridCards = card.cards || [];
-      const gridColumns = card.columns || 2;
-      const gridRows = Math.ceil(gridCards.length / gridColumns);
-      height = Math.max(4, gridRows * 4);
-      width = 12; // Full width for grid layouts
-      break;
-
-    case 'thermostat':
-      // Thermostats are medium sized
-      height = 6;
-      width = 4;
-      break;
-
-    case 'gauge':
-      // Gauges are compact
-      height = 4;
-      width = 3;
-      break;
-
-    case 'conditional':
-      // Use dimensions of the wrapped card
-      if (card.card) {
-        return calculateCardDimensions(card.card);
-      }
-      height = 4;
-      width = 6;
-      break;
-
-    case 'weather-forecast':
-      // Weather cards are medium-tall
-      height = 8;
-      width = 6;
-      break;
-
-    default:
-      // Custom cards and unknown types: default medium size
-      if (cardType.startsWith('custom:')) {
-        // Most custom cards are medium-large
-        height = 8;
-        width = 6;
-      } else {
-        // Unknown standard cards
-        height = 4;
-        width = 6;
-      }
-      break;
-  }
-
+  const constraints = getCardSizeConstraints(card);
   return {
-    w: Math.min(12, width), // Clamp to max 12 columns
-    h: Math.max(2, height), // Minimum 2 rows
+    w: constraints.w,
+    h: constraints.h,
   };
 };
 
 /**
- * Generate masonry-like layout for cards
- * Places cards in columns trying to balance heights
+ * @deprecated Use generateMasonryLayout from cardSizingContract.ts instead
  */
 export const generateMasonryLayout = (cards: any[]): Array<{ i: string; x: number; y: number; w: number; h: number }> => {
-  const columnHeights = [0, 0]; // Track height of each column (2 columns)
-  const layouts: Array<{ i: string; x: number; y: number; w: number; h: number }> = [];
-
-  cards.forEach((card, index) => {
-    const dimensions = calculateCardDimensions(card);
-
-    // Determine which column to place card in
-    let column = 0;
-    let y = 0;
-
-    if (dimensions.w >= 12) {
-      // Full-width cards span both columns
-      column = 0;
-      y = Math.max(columnHeights[0], columnHeights[1]);
-      // Update both column heights
-      columnHeights[0] = y + dimensions.h;
-      columnHeights[1] = y + dimensions.h;
-    } else {
-      // Place in shorter column
-      column = columnHeights[0] <= columnHeights[1] ? 0 : 1;
-      y = columnHeights[column];
-      // Update column height
-      columnHeights[column] = y + dimensions.h;
-    }
-
-    layouts.push({
-      i: `card-${index}`,
-      x: column * 6, // Column 0 = x:0, Column 1 = x:6
-      y: y,
-      w: dimensions.w,
-      h: dimensions.h,
-    });
-  });
-
-  return layouts;
+  return generateMasonryLayoutNew(cards);
 };

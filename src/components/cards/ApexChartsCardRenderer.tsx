@@ -193,7 +193,7 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
         transition: 'all 0.3s ease',
       }}
       bodyStyle={{
-        padding: showHeader ? '8px' : '12px',
+        padding: '12px',
         height: showHeader ? 'calc(100% - 46px)' : '100%',
         display: 'flex',
         flexDirection: 'column',

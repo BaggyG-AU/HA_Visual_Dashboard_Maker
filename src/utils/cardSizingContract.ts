@@ -1,0 +1,310 @@
+/**
+ * Card Sizing Contract - Defines how cards declare their size constraints
+ * Based on Home Assistant's getCardSize() pattern where 1 unit ≈ 50px
+ *
+ * This follows the pattern from the HA rendering architecture:
+ * - Cards provide constraints + heuristics, not fixed pixels
+ * - Layout engine decides actual placement based on constraints
+ * - Masonry: uses height units for column balancing
+ * - Grid/Sections: uses min/max/default sizing for grid fitting
+ */
+
+export interface CardSizeConstraints {
+  // Grid dimensions (12-column grid)
+  w: number;           // Default width in grid columns
+  h: number;           // Default height in grid rows (1 row ≈ 50px to match HA)
+  minW?: number;       // Minimum width
+  maxW?: number;       // Maximum width
+  minH?: number;       // Minimum height
+  maxH?: number;       // Maximum height
+}
+
+/**
+ * Calculate size constraints for a card based on its type and content
+ * Returns constraints that the layout engine can use for placement
+ *
+ * Key differences from previous approach:
+ * - 1 grid row = 50px (matches HA's 1 unit ≈ 50px)
+ * - Returns constraints (min/max) not just fixed sizes
+ * - Heights are heuristic estimates, not precise measurements
+ */
+export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
+  const cardType = card.type;
+
+  // Check if card already has explicit constraints from layout
+  if ('layout' in card && card.layout) {
+    return {
+      w: card.layout.w || 6,
+      h: card.layout.h || 4,
+      minW: card.layout.minW || 3,
+      maxW: card.layout.maxW || 12,
+      minH: card.layout.minH || 2,
+      maxH: card.layout.maxH || 20,
+    };
+  }
+
+  // Default constraints
+  let width = 6;      // Half width by default
+  let height = 4;     // Default height (4 rows × 50px = 200px)
+  let minW = 3;       // Minimum 3 columns
+  let maxW = 12;      // Maximum 12 columns (full width)
+  let minH = 2;       // Minimum 2 rows
+  let maxH = 20;      // Maximum 20 rows
+
+  switch (cardType) {
+    case 'entities':
+      // Height based on number of entities + title
+      const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
+      const titleRows = card.title ? 1 : 0;
+      // Each entity ≈ 48px in HA, so 48/50 ≈ 1 row per entity
+      height = Math.max(2, titleRows + entityCount + 1); // +1 for padding
+      minH = 2;
+      maxH = 30;
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      break;
+
+    case 'button':
+      // Buttons are small and square-ish
+      // HA renders buttons at ~120px tall, so 120/50 ≈ 2.5 rows
+      height = 3;
+      width = 3;
+      minW = 2;
+      maxW = 6;
+      minH = 2;
+      maxH = 4;
+      break;
+
+    case 'glance':
+      // Glance cards are compact horizontal displays
+      const glanceEntities = Array.isArray(card.entities) ? card.entities.length : 0;
+      const columns = card.columns || 5;
+      const rows = Math.ceil(glanceEntities / columns);
+      // Each row in glance ≈ 60px in HA, so 60/50 ≈ 1.2 rows
+      height = Math.max(2, rows * 1.2 + (card.title ? 1 : 0));
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 2;
+      maxH = 10;
+      break;
+
+    case 'markdown':
+      // Estimate based on content length
+      const content = card.content || '';
+      const lines = content.split('\n').length;
+      // Assume ~20px per line, so lines * 20 / 50 = lines * 0.4
+      height = Math.max(2, Math.min(15, Math.ceil(lines * 0.5) + (card.title ? 1 : 0)));
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 2;
+      maxH = 20;
+      break;
+
+    case 'custom:apexcharts-card':
+      // Use configured height from apex_config
+      const apexHeight = card.apex_config?.chart?.height || 280;
+      // Convert pixels to grid rows (50px per row) + header
+      // HA renders charts at their configured pixel height
+      height = Math.ceil(apexHeight / 50) + (card.header?.show !== false ? 1 : 0);
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 4;
+      maxH = 20;
+      break;
+
+    case 'custom:power-flow-card-plus':
+    case 'custom:power-flow-card':
+      // Power flow cards in HA are ~300-350px tall
+      // 300 / 50 = 6 rows
+      height = 6;
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 5;
+      maxH = 10;
+      break;
+
+    case 'vertical-stack':
+      // Sum heights of child cards
+      const childCards = card.cards || [];
+      height = childCards.reduce((total: number, child: any) => {
+        const childConstraints = getCardSizeConstraints(child);
+        return total + childConstraints.h;
+      }, 0);
+      // No reduction factor - vertical stacks should show full height
+      height = Math.max(4, Math.min(30, height));
+      width = 6;
+      minW = 3;
+      maxW = 12;
+      minH = 4;
+      maxH = 40;
+      break;
+
+    case 'horizontal-stack':
+      // Horizontal stacks take full width
+      width = 12;
+      height = 4;
+      minW = 6;
+      maxW = 12;
+      minH = 3;
+      maxH = 10;
+      break;
+
+    case 'grid':
+      // Grid cards with sub-cards
+      const gridCards = card.cards || [];
+      const gridColumns = card.columns || 2;
+      const gridRows = Math.ceil(gridCards.length / gridColumns);
+      height = Math.max(4, gridRows * 4);
+      width = 12;
+      minW = 6;
+      maxW = 12;
+      minH = 4;
+      maxH = 30;
+      break;
+
+    case 'thermostat':
+      // Thermostats are medium sized (~250px in HA)
+      height = 5;
+      width = 4;
+      minW = 3;
+      maxW = 6;
+      minH = 4;
+      maxH = 8;
+      break;
+
+    case 'gauge':
+      // Gauges are compact
+      height = 4;
+      width = 3;
+      minW = 2;
+      maxW = 6;
+      minH = 3;
+      maxH = 6;
+      break;
+
+    case 'conditional':
+      // Use dimensions of the wrapped card
+      if (card.card) {
+        return getCardSizeConstraints(card.card);
+      }
+      height = 4;
+      width = 6;
+      break;
+
+    case 'weather-forecast':
+      // Weather cards are medium-tall (~400px in HA)
+      height = 8;
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 6;
+      maxH = 12;
+      break;
+
+    case 'spacer':
+      // Spacers are minimal
+      height = 2;
+      width = 6;
+      minW = 1;
+      maxW = 12;
+      minH = 1;
+      maxH = 2;
+      break;
+
+    default:
+      // Custom cards and unknown types
+      if (cardType.startsWith('custom:')) {
+        // Most custom cards are medium-large (~400px)
+        height = 8;
+        width = 6;
+        minH = 4;
+        maxH = 20;
+      } else {
+        // Unknown standard cards - conservative defaults
+        height = 4;
+        width = 6;
+      }
+      break;
+  }
+
+  return {
+    w: Math.min(12, width),
+    h: Math.max(2, height),
+    minW: Math.max(1, minW),
+    maxW: Math.min(12, maxW),
+    minH: Math.max(1, minH),
+    maxH,
+  };
+};
+
+/**
+ * Generate masonry-like layout for cards using size constraints
+ * Places cards in columns trying to balance heights
+ * Uses constraint-based sizing instead of fixed dimensions
+ */
+export const generateMasonryLayout = (cards: any[]): Array<{
+  i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  minW?: number;
+  maxW?: number;
+  minH?: number;
+  maxH?: number;
+}> => {
+  const columnHeights = [0, 0]; // Track height of each column (2 columns)
+  const layouts: Array<{
+    i: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    minW?: number;
+    maxW?: number;
+    minH?: number;
+    maxH?: number;
+  }> = [];
+
+  cards.forEach((card, index) => {
+    const constraints = getCardSizeConstraints(card);
+
+    // Determine which column to place card in
+    let column = 0;
+    let y = 0;
+
+    if (constraints.w >= 12) {
+      // Full-width cards span both columns
+      column = 0;
+      y = Math.max(columnHeights[0], columnHeights[1]);
+      // Update both column heights
+      columnHeights[0] = y + constraints.h;
+      columnHeights[1] = y + constraints.h;
+    } else {
+      // Place in shorter column
+      column = columnHeights[0] <= columnHeights[1] ? 0 : 1;
+      y = columnHeights[column];
+      // Update column height
+      columnHeights[column] = y + constraints.h;
+    }
+
+    layouts.push({
+      i: `card-${index}`,
+      x: column * 6, // Column 0 = x:0, Column 1 = x:6
+      y: y,
+      w: constraints.w,
+      h: constraints.h,
+      minW: constraints.minW,
+      maxW: constraints.maxW,
+      minH: constraints.minH,
+      maxH: constraints.maxH,
+    });
+  });
+
+  return layouts;
+};

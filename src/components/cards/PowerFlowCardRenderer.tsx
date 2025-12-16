@@ -165,7 +165,7 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
         transition: 'all 0.3s ease',
       }}
       bodyStyle={{
-        padding: '8px',
+        padding: '12px',
         height: 'calc(100% - 46px)',
         display: 'flex',
         flexDirection: 'column',

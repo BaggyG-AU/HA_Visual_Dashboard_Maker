@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import GridLayout, { Layout } from 'react-grid-layout';
 import { View, Card } from '../types/dashboard';
 import { BaseCard } from './BaseCard';
-import { generateMasonryLayout } from '../utils/cardDimensions';
+import { generateMasonryLayout, getCardSizeConstraints } from '../utils/cardSizingContract';
 import { isLayoutCardGrid, convertLayoutCardToGridLayout } from '../utils/layoutCardParser';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -34,34 +34,44 @@ const generateLayout = (view: View, cards: Card[]): Layout[] => {
   const hasExistingLayout = cards.some(card => 'layout' in card && card.layout);
 
   if (hasExistingLayout) {
-    // Use existing layout information
+    // Use existing layout information with constraints
     const layouts = cards.map((card, index) => {
       if ('layout' in card && card.layout) {
         const layout = card.layout as any;
+        const constraints = getCardSizeConstraints(card);
         return {
           i: `card-${index}`,
           x: layout.x || 0,
           y: layout.y || 0,
-          w: layout.w || 6,
-          h: layout.h || 4,
+          w: layout.w || constraints.w,
+          h: layout.h || constraints.h,
+          minW: constraints.minW,
+          maxW: constraints.maxW,
+          minH: constraints.minH,
+          maxH: constraints.maxH,
         };
       }
-      // Fallback for cards without layout
+      // Fallback for cards without layout - use constraints
+      const constraints = getCardSizeConstraints(card);
       return {
         i: `card-${index}`,
         x: 0,
         y: index * 4,
-        w: 6,
-        h: 4,
+        w: constraints.w,
+        h: constraints.h,
+        minW: constraints.minW,
+        maxW: constraints.maxW,
+        minH: constraints.minH,
+        maxH: constraints.maxH,
       };
     });
-    console.log('generateLayout: Using existing internal layout');
+    console.log('generateLayout: Using existing internal layout with constraints');
     return layouts;
   }
 
-  // Mode 3: Generate smart masonry layout based on card content
+  // Mode 3: Generate smart masonry layout based on card content with constraints
   const masonryLayout = generateMasonryLayout(cards);
-  console.log('generateLayout: Generated smart masonry layout');
+  console.log('generateLayout: Generated smart masonry layout with constraints');
   return masonryLayout;
 };
 
@@ -126,7 +136,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
           className="layout"
           layout={[]}
           cols={12}
-          rowHeight={30}
+          rowHeight={50}
           width={1200}
           onLayoutChange={handleLayoutChange}
           isDraggable={false}
@@ -170,7 +180,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         className="layout"
         layout={layout}
         cols={12}
-        rowHeight={30}
+        rowHeight={50}
         width={1200}
         onLayoutChange={handleLayoutChange}
         onDragStop={handleLayoutChange}
