@@ -30,9 +30,10 @@ export const calculateCardDimensions = (card: any): CardDimensions => {
     case 'entities':
       // Height based on number of entities + title
       const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
-      const titleRows = card.title ? 1.5 : 0;
-      // Each entity ≈ 0.8 rows, minimum 3 rows
-      height = Math.max(3, Math.ceil(titleRows + (entityCount * 0.8)));
+      const titleRows = card.title ? 2 : 0;
+      // Each entity ≈ 1.5 rows (48px per entity / 30px per row)
+      // Minimum 2 rows for empty cards
+      height = Math.max(2, Math.ceil(titleRows + (entityCount * 1.5)));
       width = 6; // Standard half-width
       break;
 
@@ -63,13 +64,15 @@ export const calculateCardDimensions = (card: any): CardDimensions => {
       // Use configured height from apex_config
       const apexHeight = card.apex_config?.chart?.height || 280;
       // Convert pixels to grid rows (30px per row) + header
-      height = Math.ceil(apexHeight / 30) + (card.header?.show ? 2 : 0);
+      // Reduce by ~40% to match HA's more compact rendering
+      height = Math.ceil((apexHeight * 0.6) / 30) + (card.header?.show ? 1.5 : 0);
       width = 6;
       break;
 
     case 'custom:power-flow-card-plus':
-      // Power flow cards are typically larger
-      height = 12;
+      // Power flow cards are typically larger but not huge
+      // Approximately 400px in HA / 30px per row
+      height = 8;
       width = 6;
       break;
 
@@ -80,7 +83,9 @@ export const calculateCardDimensions = (card: any): CardDimensions => {
         const childDim = calculateCardDimensions(child);
         return total + childDim.h;
       }, 0);
-      height = Math.max(4, Math.min(20, height)); // Clamp between 4 and 20
+      // Reduce total by 20% to account for compact rendering
+      height = Math.ceil(height * 0.8);
+      height = Math.max(4, Math.min(30, height)); // Clamp between 4 and 30
       width = 6;
       break;
 

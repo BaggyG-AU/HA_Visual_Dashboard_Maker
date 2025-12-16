@@ -40,22 +40,23 @@ export const UnsupportedCard: React.FC<UnsupportedCardProps> = ({
         transition: 'all 0.3s ease',
       }}
       bodyStyle={{
-        padding: '16px',
+        padding: '12px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
-        height: '100%',
+        height: 'calc(100% - 40px)', // Account for header
+        overflow: 'hidden',
       }}
       onClick={onClick}
       hoverable
     >
-      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+      <Space direction="vertical" size="small" style={{ width: '100%' }}>
         <div
           style={{
-            width: '60px',
-            height: '60px',
+            width: '40px',
+            height: '40px',
             borderRadius: '50%',
             backgroundColor: 'rgba(250, 173, 20, 0.1)',
             border: '2px dashed #faad14',
@@ -65,64 +66,28 @@ export const UnsupportedCard: React.FC<UnsupportedCardProps> = ({
             margin: '0 auto',
           }}
         >
-          <QuestionCircleOutlined style={{ fontSize: '32px', color: '#faad14' }} />
+          <QuestionCircleOutlined style={{ fontSize: '20px', color: '#faad14' }} />
         </div>
 
         <div>
-          <Text strong style={{ color: '#fff', fontSize: '14px' }}>
+          <Text strong style={{ color: '#fff', fontSize: '12px', display: 'block' }}>
             {card.type}
           </Text>
           {card.name && (
-            <div style={{ marginTop: '4px' }}>
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                {card.name}
-              </Text>
-            </div>
+            <Text type="secondary" style={{ fontSize: '10px', display: 'block', marginTop: '2px' }}>
+              {card.name}
+            </Text>
           )}
         </div>
 
-        <Paragraph
-          style={{
-            color: '#999',
-            fontSize: '12px',
-            marginBottom: '8px',
-            lineHeight: '1.5',
-          }}
-        >
-          {isCustomCard ? (
-            <>
-              This is a custom HACS card ({cardTypeName}) that is not yet supported by the visual
-              editor.
-            </>
-          ) : (
-            <>
-              This card type ({cardTypeName}) is not yet supported by the visual editor.
-            </>
-          )}
-        </Paragraph>
-
-        <div style={{ fontSize: '11px', color: '#666', lineHeight: '1.6' }}>
-          <div style={{ marginBottom: '8px' }}>
-            • You can still edit this card using the YAML editor
-          </div>
-          <div>
-            • The card's position and size are preserved
-          </div>
+        <div style={{ fontSize: '10px', color: '#999', lineHeight: '1.4', marginTop: '4px' }}>
+          {isCustomCard ? 'Custom HACS card' : 'Standard card'} - not yet supported
         </div>
 
-        <Button
-          type="link"
-          size="small"
-          icon={<GithubOutlined />}
-          style={{ fontSize: '11px', padding: '0', height: 'auto' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            // TODO: Open GitHub issues page to request support
-            console.log('Request support for card type:', card.type);
-          }}
-        >
-          Request Support for This Card
-        </Button>
+        <div style={{ fontSize: '9px', color: '#666', lineHeight: '1.3', marginTop: '4px' }}>
+          <div>• Edit via YAML editor</div>
+          <div>• Position preserved</div>
+        </div>
       </Space>
     </AntCard>
   );
