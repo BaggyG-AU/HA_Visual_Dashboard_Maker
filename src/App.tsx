@@ -13,6 +13,8 @@ import { DeployDialog } from './components/DeployDialog';
 import { DashboardBrowser } from './components/DashboardBrowser';
 import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
+import { isLayoutCardGrid } from './utils/layoutCardParser';
+import { convertGridLayoutToViewLayout } from './utils/layoutCardParser';
 
 const { Header, Content, Sider } = Layout;
 
@@ -152,23 +154,49 @@ const App: React.FC = () => {
     const updatedViews = [...config.views];
     const currentView = updatedViews[selectedViewIndex];
 
+    // Check if using layout-card grid system
+    const usingLayoutCard = isLayoutCardGrid(currentView);
+
     if (currentView.cards) {
-      currentView.cards = currentView.cards.map((card, index) => {
-        const layoutItem = layout.find((item) => item.i === `card-${index}`);
-        if (layoutItem) {
-          return {
-            ...card,
-            layout: {
-              x: layoutItem.x,
-              y: layoutItem.y,
-              w: layoutItem.w,
-              h: layoutItem.h,
-            },
-          };
-        }
-        return card;
-      });
-      console.log('Updated cards after layout change:', currentView.cards);
+      if (usingLayoutCard) {
+        // Convert to view_layout format
+        const viewLayouts = convertGridLayoutToViewLayout(layout, 12);
+
+        currentView.cards = currentView.cards.map((card, index) => {
+          const viewLayout = viewLayouts[index];
+          if (viewLayout) {
+            // Remove internal layout property and add view_layout
+            const { layout: _, ...cardWithoutLayout } = card as any;
+            return {
+              ...cardWithoutLayout,
+              view_layout: {
+                grid_column: viewLayout.grid_column,
+                grid_row: viewLayout.grid_row,
+              },
+            };
+          }
+          return card;
+        });
+        console.log('Updated cards with view_layout:', currentView.cards);
+      } else {
+        // Use internal layout property
+        currentView.cards = currentView.cards.map((card, index) => {
+          const layoutItem = layout.find((item) => item.i === `card-${index}`);
+          if (layoutItem) {
+            return {
+              ...card,
+              layout: {
+                x: layoutItem.x,
+                y: layoutItem.y,
+                w: layoutItem.w,
+                h: layoutItem.h,
+              },
+            } as any;
+          }
+          return card;
+        });
+        console.log('Updated cards with internal layout:', currentView.cards);
+      }
     }
 
     updatedViews[selectedViewIndex] = currentView;

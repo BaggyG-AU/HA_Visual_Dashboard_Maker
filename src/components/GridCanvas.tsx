@@ -3,6 +3,7 @@ import GridLayout, { Layout } from 'react-grid-layout';
 import { View, Card } from '../types/dashboard';
 import { BaseCard } from './BaseCard';
 import { generateMasonryLayout } from '../utils/cardDimensions';
+import { isLayoutCardGrid, convertLayoutCardToGridLayout } from '../utils/layoutCardParser';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import './GridCanvas.css';
@@ -16,9 +17,20 @@ interface GridCanvasProps {
 }
 
 // Generate layout positions for cards
-// Uses smart masonry-like layout based on card content
-const generateLayout = (cards: Card[]): Layout[] => {
-  // Check if cards already have layout information
+// Supports three layout modes:
+// 1. Layout-card grid (view_layout with grid positioning)
+// 2. Internal layout (custom layout property)
+// 3. Smart masonry (auto-calculated based on content)
+const generateLayout = (view: View, cards: Card[]): Layout[] => {
+  // Mode 1: Check if using layout-card grid system
+  if (isLayoutCardGrid(view)) {
+    const gridLayout = convertLayoutCardToGridLayout(view);
+    console.log('generateLayout: Using layout-card grid system');
+    console.log('Grid layout:', gridLayout);
+    return gridLayout;
+  }
+
+  // Mode 2: Check if cards have internal layout property
   const hasExistingLayout = cards.some(card => 'layout' in card && card.layout);
 
   if (hasExistingLayout) {
@@ -43,13 +55,13 @@ const generateLayout = (cards: Card[]): Layout[] => {
         h: 4,
       };
     });
-    console.log('generateLayout: Using existing layout information');
+    console.log('generateLayout: Using existing internal layout');
     return layouts;
   }
 
-  // Generate smart masonry layout based on card content
+  // Mode 3: Generate smart masonry layout based on card content
   const masonryLayout = generateMasonryLayout(cards);
-  console.log('generateLayout: Generated masonry layout:', masonryLayout);
+  console.log('generateLayout: Generated smart masonry layout');
   return masonryLayout;
 };
 
@@ -67,8 +79,8 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   // Generate layout for all cards
   const layout = useMemo(() => {
     console.log('useMemo running - generating layout for', cards.length, 'cards');
-    return generateLayout(cards);
-  }, [cards]);
+    return generateLayout(view, cards);
+  }, [view, cards]);
 
   const handleLayoutChange = (newLayout: Layout[]) => {
     onLayoutChange(newLayout);

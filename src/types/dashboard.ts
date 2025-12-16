@@ -2,6 +2,15 @@
  * TypeScript type definitions for Home Assistant Dashboard (Lovelace) structure
  */
 
+// Layout-card view_layout configuration
+export interface ViewLayout {
+  grid_column?: string;    // e.g., "1 / 7" or "span 6"
+  grid_row?: string;       // e.g., "1 / 5" or "span 4"
+  grid_area?: string;      // Named grid area
+  place_self?: string;     // CSS place-self property
+  [key: string]: any;      // Allow any grid-* properties
+}
+
 // Base card configuration
 export interface BaseCard {
   type: string;
@@ -15,6 +24,7 @@ export interface BaseCard {
   tap_action?: Action;
   hold_action?: Action;
   double_tap_action?: Action;
+  view_layout?: ViewLayout; // Layout-card positioning
 }
 
 // Spacer card for layout purposes (internal use only, not exported to YAML)
@@ -122,6 +132,20 @@ export type Card =
   | ConditionalCard
   | CustomCard;
 
+// Layout-card layout configuration
+export interface LayoutCardConfig {
+  layout_type?: 'grid' | 'masonry' | 'horizontal' | 'vertical';
+  layout?: {
+    grid_template_columns?: string;
+    grid_template_rows?: string;
+    grid_template_areas?: string;
+    grid_gap?: string;
+    grid_auto_rows?: string;
+    mediaquery?: Record<string, any>;
+    [key: string]: any; // Allow any CSS grid properties
+  };
+}
+
 // View configuration
 export interface View {
   title?: string;
@@ -132,8 +156,19 @@ export interface View {
   panel?: boolean;
   theme?: string;
   background?: string;
-  type?: string;
+  type?: string; // 'masonry', 'custom:layout-card', 'sections', etc.
   visible?: boolean | Condition[];
+  // Layout-card specific properties
+  layout_type?: 'grid' | 'masonry' | 'horizontal' | 'vertical';
+  layout?: {
+    grid_template_columns?: string;
+    grid_template_rows?: string;
+    grid_template_areas?: string;
+    grid_gap?: string;
+    grid_auto_rows?: string;
+    mediaquery?: Record<string, any>;
+    [key: string]: any;
+  };
 }
 
 export interface BadgeConfig {
