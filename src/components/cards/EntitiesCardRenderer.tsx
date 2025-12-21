@@ -54,20 +54,20 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
         borderRadius: '12px',
       }}
       headStyle={{
-        padding: card.title ? '16px 16px 12px 16px' : '0',
-        minHeight: card.title ? '48px' : '0',
+        padding: card.title ? '12px 16px 8px 16px' : '0',
+        minHeight: card.title ? '40px' : '0',
         borderBottom: 'none',
       }}
       bodyStyle={{
-        padding: '0 16px 16px 16px',
-        paddingTop: card.title ? '0' : '16px',
-        height: card.title ? 'calc(100% - 48px)' : '100%',
+        padding: '0 16px 12px 16px',
+        paddingTop: card.title ? '0' : '12px',
+        height: card.title ? 'calc(100% - 40px)' : '100%',
         overflowY: 'auto',
       }}
       onClick={onClick}
       hoverable
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
         {Array.isArray(card.entities) && card.entities.slice(0, 10).map((entity, idx) => {
           const entityId = getEntityId(entity);
           const entityName =
@@ -82,9 +82,10 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                minHeight: '48px',
+                minHeight: '40px',
                 padding: '0 8px',
                 gap: '12px',
+                borderBottom: idx < (Array.isArray(card.entities) ? Math.min(card.entities.length, 10) - 1 : 0) ? '1px solid rgba(255,255,255,0.05)' : 'none',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, overflow: 'hidden' }}>

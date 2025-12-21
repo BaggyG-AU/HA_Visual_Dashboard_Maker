@@ -63,16 +63,16 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
   switch (cardType) {
     case 'entities':
       // Height based on number of entities + title
-      // HA measurements: Header = 48px, each entity row = 48px + 8px gap, padding = 16px
+      // HA measurements from actual frontend: more compact than expected
       const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
       const hasTitle = card.title ? true : false;
 
-      // Calculate total pixels needed
-      const headerPx = hasTitle ? 48 : 0;  // Header height
-      const paddingPx = 32;  // Top + bottom padding (16px each)
-      const entityRowPx = entityCount * 48;  // 48px per entity
-      const gapPx = entityCount > 0 ? (entityCount - 1) * 8 : 0;  // 8px gap between entities
-      const totalPx = headerPx + paddingPx + entityRowPx + gapPx;
+      // Actual HA measurements (smaller than initially thought):
+      // Header ~40px, each entity ~40px, gaps 0px (overlapping borders), padding minimal
+      const headerPx = hasTitle ? 40 : 0;
+      const paddingPx = 24;  // Tighter padding
+      const entityRowPx = entityCount * 40;  // Entities are more compact
+      const totalPx = headerPx + paddingPx + entityRowPx;
 
       // Convert to grid rows (56px each)
       height = Math.max(2, Math.ceil(totalPx / 56));
@@ -126,8 +126,8 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       const apexHeight = card.apex_config?.chart?.height || 280;
       const hasHeader = card.header?.show !== false;
 
-      // Calculate total pixels: header (48px) + padding (32px) + chart height
-      const apexTotalPx = (hasHeader ? 48 : 0) + 32 + apexHeight;
+      // HA renders charts more compactly - reduce the configured height
+      const apexTotalPx = (hasHeader ? 40 : 0) + 24 + (apexHeight * 0.7);
 
       // Convert to grid rows (56px each)
       height = Math.max(4, Math.ceil(apexTotalPx / 56));
@@ -140,14 +140,13 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
 
     case 'custom:power-flow-card-plus':
     case 'custom:power-flow-card':
-      // Power flow cards: Header (48px) + padding (32px) + diagram (~250px)
-      // Total ≈ 330px
-      const powerFlowTotalPx = 48 + 32 + 250;
-      height = Math.ceil(powerFlowTotalPx / 56);  // ≈ 6 rows
+      // Power flow cards are compact in HA - around 280px total
+      const powerFlowTotalPx = 40 + 24 + 216;  // Header + padding + compact diagram
+      height = Math.ceil(powerFlowTotalPx / 56);  // ≈ 5 rows
       width = 6;
       minW = 4;
       maxW = 12;
-      minH = 5;
+      minH = 4;
       maxH = 10;
       break;
 
