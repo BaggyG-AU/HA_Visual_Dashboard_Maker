@@ -1,10 +1,7 @@
 import React, { useMemo } from 'react';
-import { Card as AntCard, Typography, Tag } from 'antd';
-import { LineChartOutlined } from '@ant-design/icons';
+import { Card as AntCard } from 'antd';
 import ReactApexChart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
-
-const { Text } = Typography;
 
 interface ApexChartsSeries {
   entity: string;
@@ -78,7 +75,6 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
 }) => {
   const title = card.header?.title || 'Chart';
   const showHeader = card.header?.show !== false;
-  const seriesCount = card.series?.length || 0;
   const chartHeight = card.apex_config?.chart?.height || 280;
 
   // Generate mock data for demonstration
@@ -90,7 +86,7 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
 
     const apexOptions: ApexOptions = {
       chart: {
-        type: card.apex_config?.chart?.type || 'line',
+        type: (card.apex_config?.chart?.type as any) || 'line',
         height: chartHeight,
         background: 'transparent',
         toolbar: {
@@ -176,12 +172,13 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
       size="small"
       title={
         showHeader ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <LineChartOutlined style={{ color: '#00d9ff' }} />
-            <span style={{ fontSize: '14px' }}>{title}</span>
-            <Tag color="purple" style={{ fontSize: '10px', marginLeft: 'auto' }}>
-              {seriesCount} {seriesCount === 1 ? 'series' : 'series'}
-            </Tag>
+          <div style={{
+            fontSize: '16px',
+            fontWeight: 500,
+            color: '#e1e1e1',
+            padding: '0',
+          }}>
+            {title}
           </div>
         ) : undefined
       }
@@ -191,10 +188,17 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
         backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
         transition: 'all 0.3s ease',
+        borderRadius: '12px',
+      }}
+      headStyle={{
+        padding: showHeader ? '16px 16px 12px 16px' : '0',
+        minHeight: showHeader ? '48px' : '0',
+        borderBottom: 'none',
       }}
       bodyStyle={{
-        padding: '12px',
-        height: showHeader ? 'calc(100% - 46px)' : '100%',
+        padding: '16px',
+        paddingTop: showHeader ? '0' : '16px',
+        height: showHeader ? 'calc(100% - 48px)' : '100%',
         display: 'flex',
         flexDirection: 'column',
       }}

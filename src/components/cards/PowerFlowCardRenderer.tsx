@@ -149,12 +149,13 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
     <AntCard
       size="small"
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ThunderboltOutlined style={{ color: '#faad14' }} />
-          <span style={{ fontSize: '14px' }}>Energy Flow</span>
-          <Tag color="orange" style={{ fontSize: '10px', marginLeft: 'auto' }}>
-            {Object.keys(entities).length} sources
-          </Tag>
+        <div style={{
+          fontSize: '16px',
+          fontWeight: 500,
+          color: '#e1e1e1',
+          padding: '0',
+        }}>
+          Energy Flow
         </div>
       }
       style={{
@@ -163,10 +164,17 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
         backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
         transition: 'all 0.3s ease',
+        borderRadius: '12px',
+      }}
+      headStyle={{
+        padding: '16px 16px 12px 16px',
+        minHeight: '48px',
+        borderBottom: 'none',
       }}
       bodyStyle={{
-        padding: '12px',
-        height: 'calc(100% - 46px)',
+        padding: '16px',
+        paddingTop: '0',
+        height: 'calc(100% - 48px)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',

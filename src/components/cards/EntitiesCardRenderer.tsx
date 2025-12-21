@@ -34,13 +34,16 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
     <AntCard
       size="small"
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <AppstoreOutlined style={{ color: '#00d9ff' }} />
-          <span style={{ fontSize: '14px' }}>{title}</span>
-          <Tag color="blue" style={{ fontSize: '10px', marginLeft: 'auto' }}>
-            {entityCount} {entityCount === 1 ? 'entity' : 'entities'}
-          </Tag>
-        </div>
+        card.title ? (
+          <div style={{
+            fontSize: '16px',
+            fontWeight: 500,
+            color: '#e1e1e1',
+            padding: '0',
+          }}>
+            {title}
+          </div>
+        ) : undefined
       }
       style={{
         height: '100%',
@@ -48,16 +51,23 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
         backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
         transition: 'all 0.3s ease',
+        borderRadius: '12px',
+      }}
+      headStyle={{
+        padding: card.title ? '16px 16px 12px 16px' : '0',
+        minHeight: card.title ? '48px' : '0',
+        borderBottom: 'none',
       }}
       bodyStyle={{
-        padding: '8px 12px',
-        maxHeight: 'calc(100% - 46px)',
+        padding: '0 16px 16px 16px',
+        paddingTop: card.title ? '0' : '16px',
+        height: card.title ? 'calc(100% - 48px)' : '100%',
         overflowY: 'auto',
       }}
       onClick={onClick}
       hoverable
     >
-      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {Array.isArray(card.entities) && card.entities.slice(0, 10).map((entity, idx) => {
           const entityId = getEntityId(entity);
           const entityName =
@@ -71,36 +81,42 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '6px 8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                borderRadius: '4px',
-                fontSize: '12px',
+                justifyContent: 'space-between',
+                minHeight: '48px',
+                padding: '0 8px',
+                gap: '12px',
               }}
             >
-              <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '12px' }} />
-              <div style={{ flex: 1, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, overflow: 'hidden' }}>
+                <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '16px', flexShrink: 0 }} />
                 <Text
-                  style={{ color: '#e6e6e6', fontSize: '12px', textTransform: 'capitalize' }}
+                  style={{
+                    color: '#e1e1e1',
+                    fontSize: '14px',
+                    textTransform: 'capitalize',
+                    fontWeight: 400,
+                  }}
                   ellipsis={{ tooltip: entityName }}
                 >
                   {entityName}
                 </Text>
-                <div>
-                  <Text type="secondary" style={{ fontSize: '10px' }} ellipsis>
-                    {entityId}
-                  </Text>
-                </div>
               </div>
+              <Text style={{
+                color: '#9e9e9e',
+                fontSize: '14px',
+                flexShrink: 0,
+              }}>
+                on
+              </Text>
             </div>
           );
         })}
         {entityCount > 10 && (
-          <Text type="secondary" style={{ fontSize: '11px', paddingLeft: '8px' }}>
-            +{entityCount - 10} more {entityCount - 10 === 1 ? 'entity' : 'entities'}
+          <Text type="secondary" style={{ fontSize: '12px', padding: '8px' }}>
+            +{entityCount - 10} more
           </Text>
         )}
-      </Space>
+      </div>
     </AntCard>
   );
 };
