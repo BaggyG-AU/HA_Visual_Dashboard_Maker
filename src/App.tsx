@@ -454,18 +454,38 @@ const App: React.FC = () => {
 
     const loadHAConnection = async () => {
       try {
-        const saved = await window.electronAPI.getHAConnection();
-        if (saved.url && saved.token) {
-          haConnectionService.setConfig({ url: saved.url, token: saved.token });
+        // Try to load last used credential from secure storage
+        const lastUsedResult = await window.electronAPI.credentialsGetLastUsed();
+        if (lastUsedResult.success && lastUsedResult.credential) {
+          const { url, token, name } = lastUsedResult.credential;
+          console.log(`Auto-reconnecting to: ${name} (${url})`);
+
+          haConnectionService.setConfig({ url, token });
+
           // Also connect WebSocket for live preview functionality
           try {
-            await haWebSocketService.connect(saved.url, saved.token);
-            setHaUrl(saved.url);
+            await haWebSocketService.connect(url, token);
+            setHaUrl(url);
+            setIsConnected(true);
+            console.log('Successfully restored HA connection from saved credentials');
           } catch (wsError) {
             console.error('Failed to reconnect WebSocket:', wsError);
           }
-          setIsConnected(true);
-          console.log('Restored HA connection:', saved.url);
+        } else {
+          // Fallback to old settings method for backward compatibility
+          const saved = await window.electronAPI.getHAConnection();
+          if (saved.url && saved.token) {
+            haConnectionService.setConfig({ url: saved.url, token: saved.token });
+            // Also connect WebSocket for live preview functionality
+            try {
+              await haWebSocketService.connect(saved.url, saved.token);
+              setHaUrl(saved.url);
+            } catch (wsError) {
+              console.error('Failed to reconnect WebSocket:', wsError);
+            }
+            setIsConnected(true);
+            console.log('Restored HA connection from old settings:', saved.url);
+          }
         }
       } catch (error) {
         console.error('Failed to load HA connection:', error);

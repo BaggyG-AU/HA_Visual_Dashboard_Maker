@@ -156,6 +156,9 @@ ipcMain.handle('ha:fetch', async (event, url: string, token: string) => {
 // Home Assistant WebSocket API handlers
 import { haWebSocketService } from './services/haWebSocketService';
 
+// Credentials service
+import { credentialsService } from './services/credentialsService';
+
 // Connect to HA WebSocket
 ipcMain.handle('ha:ws:connect', async (event, url: string, token: string) => {
   try {
@@ -211,6 +214,95 @@ ipcMain.handle('ha:ws:close', async () => {
 // Check WebSocket connection status
 ipcMain.handle('ha:ws:isConnected', async () => {
   return { connected: haWebSocketService.isConnected() };
+});
+
+// Credentials API handlers
+ipcMain.handle('credentials:save', async (event, name: string, url: string, token: string, id?: string) => {
+  try {
+    const credential = credentialsService.saveCredential(name, url, token, id);
+    return { success: true, credential };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+ipcMain.handle('credentials:getAll', async () => {
+  try {
+    const credentials = credentialsService.getAllCredentials();
+    return { success: true, credentials };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+ipcMain.handle('credentials:get', async (event, id: string) => {
+  try {
+    const credential = credentialsService.getCredential(id);
+    if (!credential) {
+      return {
+        success: false,
+        error: 'Credential not found',
+      };
+    }
+    return { success: true, credential };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+ipcMain.handle('credentials:getLastUsed', async () => {
+  try {
+    const credential = credentialsService.getLastUsedCredential();
+    return { success: true, credential };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+ipcMain.handle('credentials:markAsUsed', async (event, id: string) => {
+  try {
+    credentialsService.markAsUsed(id);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+ipcMain.handle('credentials:delete', async (event, id: string) => {
+  try {
+    const deleted = credentialsService.deleteCredential(id);
+    if (!deleted) {
+      return {
+        success: false,
+        error: 'Credential not found',
+      };
+    }
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+ipcMain.handle('credentials:isEncryptionAvailable', async () => {
+  return { available: credentialsService.isEncryptionAvailable() };
 });
 
 // ===== End IPC Handlers =====

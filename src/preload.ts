@@ -35,6 +35,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   haWsClose: () => ipcRenderer.invoke('ha:ws:close'),
   haWsIsConnected: () => ipcRenderer.invoke('ha:ws:isConnected'),
 
+  // Credentials APIs
+  credentialsSave: (name: string, url: string, token: string, id?: string) => ipcRenderer.invoke('credentials:save', name, url, token, id),
+  credentialsGetAll: () => ipcRenderer.invoke('credentials:getAll'),
+  credentialsGet: (id: string) => ipcRenderer.invoke('credentials:get', id),
+  credentialsGetLastUsed: () => ipcRenderer.invoke('credentials:getLastUsed'),
+  credentialsMarkAsUsed: (id: string) => ipcRenderer.invoke('credentials:markAsUsed', id),
+  credentialsDelete: (id: string) => ipcRenderer.invoke('credentials:delete', id),
+  credentialsIsEncryptionAvailable: () => ipcRenderer.invoke('credentials:isEncryptionAvailable'),
+
   // Menu event listeners
   onMenuOpenFile: (callback: () => void) => {
     ipcRenderer.on('menu:open-file', callback);
@@ -77,6 +86,13 @@ export interface ElectronAPI {
   haWsGetDashboardConfig: (urlPath: string | null) => Promise<{ success: boolean; config?: any; error?: string }>;
   haWsClose: () => Promise<{ success: boolean; error?: string }>;
   haWsIsConnected: () => Promise<{ connected: boolean }>;
+  credentialsSave: (name: string, url: string, token: string, id?: string) => Promise<{ success: boolean; credential?: any; error?: string }>;
+  credentialsGetAll: () => Promise<{ success: boolean; credentials?: any[]; error?: string }>;
+  credentialsGet: (id: string) => Promise<{ success: boolean; credential?: any; error?: string }>;
+  credentialsGetLastUsed: () => Promise<{ success: boolean; credential?: any; error?: string }>;
+  credentialsMarkAsUsed: (id: string) => Promise<{ success: boolean; error?: string }>;
+  credentialsDelete: (id: string) => Promise<{ success: boolean; error?: string }>;
+  credentialsIsEncryptionAvailable: () => Promise<{ available: boolean }>;
   onMenuOpenFile: (callback: () => void) => (() => void);
   onMenuSaveFile: (callback: () => void) => (() => void);
   onMenuSaveFileAs: (callback: () => void) => (() => void);

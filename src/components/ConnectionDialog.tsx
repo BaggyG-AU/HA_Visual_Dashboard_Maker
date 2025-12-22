@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Button, Alert, Space, Spin } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, Button, Alert, Space, Select, Checkbox, Divider, Popconfirm } from 'antd';
+import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, SaveOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 import { HAConnectionStatus } from '../types/homeassistant';
 
@@ -18,25 +18,34 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
   const [form] = Form.useForm();
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<HAConnectionStatus | null>(null);
+  const [savedCredentials, setSavedCredentials] = useState<any[]>([]);
+  const [selectedCredentialId, setSelectedCredentialId] = useState<string | null>(null);
+  const [saveCredential, setSaveCredential] = useState(false);
+  const [credentialName, setCredentialName] = useState('');
 
-  // Load saved connection when dialog opens
+  // Load saved credentials when dialog opens
   useEffect(() => {
     if (visible) {
-      loadSavedConnection();
+      loadSavedCredentials();
     }
   }, [visible]);
 
-  const loadSavedConnection = async () => {
+  const loadSavedCredentials = async () => {
     try {
-      const saved = await window.electronAPI.getHAConnection();
-      if (saved.url) {
-        form.setFieldsValue({
-          url: saved.url,
-          token: saved.token || '',
-        });
+      const result = await window.electronAPI.credentialsGetAll();
+      if (result.success && result.credentials) {
+        setSavedCredentials(result.credentials);
+
+        // Try to load last used credential
+        const lastUsedResult = await window.electronAPI.credentialsGetLastUsed();
+        if (lastUsedResult.success && lastUsedResult.credential) {
+          const { id, url, token } = lastUsedResult.credential;
+          setSelectedCredentialId(id);
+          form.setFieldsValue({ url, token });
+        }
       }
     } catch (error) {
-      console.error('Failed to load saved connection:', error);
+      console.error('Failed to load saved credentials:', error);
     }
   };
 
@@ -55,11 +64,53 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
     }
   };
 
+  const handleCredentialSelect = async (id: string) => {
+    setSelectedCredentialId(id);
+    try {
+      const result = await window.electronAPI.credentialsGet(id);
+      if (result.success && result.credential) {
+        const { url, token, name } = result.credential;
+        form.setFieldsValue({ url, token });
+        setCredentialName(name);
+        setTestResult(null); // Clear test result when switching credentials
+      }
+    } catch (error) {
+      console.error('Failed to load credential:', error);
+    }
+  };
+
+  const handleCredentialDelete = async (id: string) => {
+    try {
+      const result = await window.electronAPI.credentialsDelete(id);
+      if (result.success) {
+        // Reload credentials list
+        await loadSavedCredentials();
+        // Clear form if deleted credential was selected
+        if (selectedCredentialId === id) {
+          setSelectedCredentialId(null);
+          form.resetFields();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to delete credential:', error);
+    }
+  };
+
   const handleConnect = async () => {
     try {
       const values = await form.validateFields();
 
-      // Save connection settings
+      // Save credential if checkbox is checked
+      if (saveCredential && credentialName) {
+        await window.electronAPI.credentialsSave(
+          credentialName,
+          values.url,
+          values.token,
+          selectedCredentialId || undefined
+        );
+      }
+
+      // Also save to settings for backward compatibility
       await window.electronAPI.setHAConnection(values.url, values.token);
 
       // Set in service
@@ -97,6 +148,55 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           token: '',
         }}
       >
+        {savedCredentials.length > 0 && (
+          <>
+            <Form.Item label="Saved Connections">
+              <Select
+                placeholder="Select a saved connection"
+                value={selectedCredentialId}
+                onChange={handleCredentialSelect}
+                allowClear
+                onClear={() => {
+                  setSelectedCredentialId(null);
+                  setCredentialName('');
+                  form.resetFields();
+                }}
+                options={savedCredentials.map(cred => ({
+                  value: cred.id,
+                  label: (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div>{cred.name}</div>
+                        <div style={{ fontSize: '12px', color: '#888' }}>{cred.url}</div>
+                      </div>
+                      <Popconfirm
+                        title="Delete this connection?"
+                        description="This action cannot be undone."
+                        onConfirm={(e) => {
+                          e?.stopPropagation();
+                          handleCredentialDelete(cred.id);
+                        }}
+                        okText="Delete"
+                        cancelText="Cancel"
+                        okButtonProps={{ danger: true }}
+                      >
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          danger
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </Popconfirm>
+                    </div>
+                  ),
+                }))}
+              />
+            </Form.Item>
+            <Divider style={{ margin: '16px 0' }}>Or enter new connection</Divider>
+          </>
+        )}
+
         <Form.Item
           label="Home Assistant URL"
           name="url"
@@ -160,6 +260,26 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
             style={{ marginBottom: '16px' }}
           />
         )}
+
+        <div style={{ marginBottom: '16px' }}>
+          <Checkbox
+            checked={saveCredential}
+            onChange={(e) => setSaveCredential(e.target.checked)}
+          >
+            <Space>
+              <SaveOutlined />
+              Save this connection
+            </Space>
+          </Checkbox>
+          {saveCredential && (
+            <Input
+              placeholder="Connection name (e.g., 'Home HA', 'Remote HA')"
+              value={credentialName}
+              onChange={(e) => setCredentialName(e.target.value)}
+              style={{ marginTop: '8px' }}
+            />
+          )}
+        </div>
 
         <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
           <Button onClick={handleCancel}>Cancel</Button>
