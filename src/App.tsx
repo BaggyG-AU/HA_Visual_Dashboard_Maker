@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge } from 'antd';
-import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined } from '@ant-design/icons';
+import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
@@ -11,10 +11,11 @@ import { PropertiesPanel } from './components/PropertiesPanel';
 import { ConnectionDialog } from './components/ConnectionDialog';
 import { DeployDialog } from './components/DeployDialog';
 import { DashboardBrowser } from './components/DashboardBrowser';
+import { HADashboardIframe } from './components/HADashboardIframe';
 import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
-import { isLayoutCardGrid } from './utils/layoutCardParser';
-import { convertGridLayoutToViewLayout } from './utils/layoutCardParser';
+import { haWebSocketService } from './services/haWebSocketService';
+import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
 
 const { Header, Content, Sider } = Layout;
 
@@ -25,6 +26,9 @@ const App: React.FC = () => {
   const [deployDialogVisible, setDeployDialogVisible] = useState<boolean>(false);
   const [dashboardBrowserVisible, setDashboardBrowserVisible] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [livePreviewMode, setLivePreviewMode] = useState<boolean>(false);
+  const [tempDashboardPath, setTempDashboardPath] = useState<string | null>(null);
+  const [haUrl, setHaUrl] = useState<string>('');
 
   // Dashboard store
   const {
@@ -203,7 +207,7 @@ const App: React.FC = () => {
     updateConfig({ ...config, views: updatedViews });
   };
 
-  const handleCardAdd = (cardType: string, gridX: number = 0, gridY: number = 0) => {
+  const handleCardAdd = (cardType: string, gridX = 0, gridY = 0) => {
     if (!config) {
       message.warning('Please load a dashboard first');
       return;
@@ -307,15 +311,25 @@ const App: React.FC = () => {
     setConnectionDialogVisible(true);
   };
 
-  const handleConnect = (url: string, token: string) => {
-    setIsConnected(true);
-    message.success(`Connected to Home Assistant at ${url}`);
+  const handleConnect = async (url: string, token: string) => {
+    try {
+      // Connect to WebSocket
+      await haWebSocketService.connect(url, token);
+      setIsConnected(true);
+      setHaUrl(url);
+      message.success(`Connected to Home Assistant at ${url}`);
+    } catch (error) {
+      message.error(`Failed to connect: ${(error as Error).message}`);
+      throw error;
+    }
   };
 
   const handleDisconnect = async () => {
     await window.electronAPI.clearHAConnection();
     haConnectionService.disconnect();
+    haWebSocketService.close();
     setIsConnected(false);
+    setHaUrl('');
     message.info('Disconnected from Home Assistant');
   };
 
@@ -353,6 +367,78 @@ const App: React.FC = () => {
     message.success(`Dashboard "${dashboardTitle}" loaded successfully!`);
   };
 
+  const handleEnterLivePreview = async () => {
+    if (!config) {
+      message.warning('No dashboard loaded');
+      return;
+    }
+    if (!isConnected || !haWebSocketService.isConnected()) {
+      message.warning('Please connect to Home Assistant first');
+      return;
+    }
+
+    try {
+      message.loading({ content: 'Creating temporary dashboard...', key: 'livepreview' });
+
+      // Create temporary dashboard in HA
+      const tempPath = await haWebSocketService.createTempDashboard(config);
+      setTempDashboardPath(tempPath);
+      setLivePreviewMode(true);
+
+      message.success({ content: 'Live preview mode activated!', key: 'livepreview', duration: 2 });
+    } catch (error) {
+      message.error({ content: `Failed to create temp dashboard: ${(error as Error).message}`, key: 'livepreview' });
+    }
+  };
+
+  const handleExitLivePreview = async () => {
+    if (tempDashboardPath) {
+      try {
+        // Delete temp dashboard
+        await haWebSocketService.deleteTempDashboard(tempDashboardPath);
+        message.info('Temporary dashboard deleted');
+      } catch (error) {
+        console.error('Failed to delete temp dashboard:', error);
+      }
+    }
+
+    setLivePreviewMode(false);
+    setTempDashboardPath(null);
+  };
+
+  const handleDeployFromLivePreview = async () => {
+    if (!tempDashboardPath) {
+      message.error('No temporary dashboard to deploy');
+      return;
+    }
+
+    try {
+      message.loading({ content: 'Deploying to production...', key: 'deploy' });
+
+      // Deploy temp dashboard to production (null for default dashboard)
+      const result = await haWebSocketService.deployDashboard(tempDashboardPath, null);
+
+      if (result.success) {
+        message.success({
+          content: `Dashboard deployed successfully! Backup saved to: ${result.backupPath}`,
+          key: 'deploy',
+          duration: 5,
+        });
+
+        // Exit live preview mode
+        setLivePreviewMode(false);
+        setTempDashboardPath(null);
+
+        // Mark as clean since we just deployed
+        markClean();
+      } else {
+        message.error({ content: `Deployment failed: ${result.error}`, key: 'deploy' });
+      }
+    } catch (error) {
+      message.error({ content: `Deployment failed: ${(error as Error).message}`, key: 'deploy' });
+    }
+  };
+
   // Load theme preference and HA connection on startup
   useEffect(() => {
     const loadTheme = async () => {
@@ -371,6 +457,13 @@ const App: React.FC = () => {
         const saved = await window.electronAPI.getHAConnection();
         if (saved.url && saved.token) {
           haConnectionService.setConfig({ url: saved.url, token: saved.token });
+          // Also connect WebSocket for live preview functionality
+          try {
+            await haWebSocketService.connect(saved.url, saved.token);
+            setHaUrl(saved.url);
+          } catch (wsError) {
+            console.error('Failed to reconnect WebSocket:', wsError);
+          }
           setIsConnected(true);
           console.log('Restored HA connection:', saved.url);
         }
@@ -530,10 +623,28 @@ const App: React.FC = () => {
                       >
                         Deploy
                       </Button>
+                      <Button
+                        type={livePreviewMode ? 'primary' : 'default'}
+                        icon={<EyeOutlined />}
+                        onClick={handleEnterLivePreview}
+                        disabled={!isConnected || livePreviewMode}
+                      >
+                        Live Preview
+                      </Button>
                     </Space>
                   </div>
 
                   <div style={{ height: 'calc(100vh - 250px)' }}>
+                    {livePreviewMode && selectedViewIndex !== null ? (
+                      <HADashboardIframe
+                        view={config.views[selectedViewIndex]}
+                        haUrl={haUrl}
+                        tempDashboardPath={tempDashboardPath}
+                        onLayoutChange={handleLayoutChange}
+                        onDeploy={handleDeployFromLivePreview}
+                        onClose={handleExitLivePreview}
+                      />
+                    ) : (
                     <Tabs
                       activeKey={selectedViewIndex?.toString() || '0'}
                       onChange={(key) => setSelectedView(parseInt(key))}
@@ -554,6 +665,7 @@ const App: React.FC = () => {
                       }))}
                       style={{ height: '100%' }}
                     />
+                    )}
                   </div>
                 </>
               )}

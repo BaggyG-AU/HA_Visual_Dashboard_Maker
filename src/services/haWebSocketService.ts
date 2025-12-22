@@ -174,6 +174,113 @@ export class HAWebSocketService {
   isConnected(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
   }
+
+  /**
+   * Save/update Lovelace dashboard configuration
+   * @param urlPath - Dashboard URL path (e.g., 'temp_dashboard_editor_123456')
+   * @param config - Dashboard configuration object
+   */
+  async saveDashboardConfig(urlPath: string, config: any): Promise<void> {
+    await this.sendAndWait<void>({
+      type: 'lovelace/config/save',
+      url_path: urlPath,
+      config: config,
+    });
+
+    console.log(`Saved dashboard config for ${urlPath}`);
+  }
+
+  /**
+   * Delete a Lovelace dashboard
+   * @param urlPath - Dashboard URL path to delete
+   */
+  async deleteDashboardConfig(urlPath: string): Promise<void> {
+    await this.sendAndWait<void>({
+      type: 'lovelace/config/delete',
+      url_path: urlPath,
+    });
+
+    console.log(`Deleted dashboard: ${urlPath}`);
+  }
+
+  /**
+   * Create a temporary dashboard for editing
+   * @param baseConfig - Base dashboard configuration to copy
+   * @returns URL path of the temporary dashboard
+   */
+  async createTempDashboard(baseConfig: any): Promise<string> {
+    const tempUrlPath = `temp_dashboard_editor_${Date.now()}`;
+
+    const tempConfig = {
+      ...baseConfig,
+      title: `${baseConfig.title || 'Dashboard'} (Editing)`,
+    };
+
+    await this.saveDashboardConfig(tempUrlPath, tempConfig);
+
+    console.log(`Created temporary dashboard: ${tempUrlPath}`);
+    return tempUrlPath;
+  }
+
+  /**
+   * Deploy temporary dashboard to production
+   * 1. Backup current production dashboard
+   * 2. Copy temp dashboard to production
+   * 3. Delete temp dashboard
+   *
+   * @param tempUrlPath - Temporary dashboard URL path
+   * @param productionUrlPath - Production dashboard URL path (null for default dashboard)
+   * @returns Result object with success status and backup path
+   */
+  async deployDashboard(
+    tempUrlPath: string,
+    productionUrlPath: string | null
+  ): Promise<{ success: boolean; backupPath?: string; error?: string }> {
+    try {
+      // 1. Get current production config for backup
+      const productionConfig = await this.getDashboardConfig(productionUrlPath);
+
+      // 2. Create backup with timestamp
+      const backupPath = `${productionUrlPath || 'default'}_backup_${Date.now()}`;
+      await this.saveDashboardConfig(backupPath, productionConfig);
+      console.log(`Backed up production dashboard to: ${backupPath}`);
+
+      // 3. Get temp dashboard config
+      const tempConfig = await this.getDashboardConfig(tempUrlPath);
+
+      // 4. Save temp config to production
+      await this.saveDashboardConfig(productionUrlPath || 'lovelace', tempConfig);
+      console.log(`Deployed temp dashboard to production: ${productionUrlPath || 'default'}`);
+
+      // 5. Delete temp dashboard
+      await this.deleteDashboardConfig(tempUrlPath);
+      console.log(`Deleted temporary dashboard: ${tempUrlPath}`);
+
+      return { success: true, backupPath };
+    } catch (error: any) {
+      console.error('Failed to deploy dashboard:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Delete temporary dashboard (cleanup)
+   * @param tempUrlPath - Temporary dashboard URL path to delete
+   */
+  async deleteTempDashboard(tempUrlPath: string): Promise<void> {
+    await this.deleteDashboardConfig(tempUrlPath);
+    console.log(`Deleted temporary dashboard: ${tempUrlPath}`);
+  }
+
+  /**
+   * Update temporary dashboard with new config (for live updates during editing)
+   * @param tempUrlPath - Temporary dashboard URL path
+   * @param config - Updated dashboard configuration
+   */
+  async updateTempDashboard(tempUrlPath: string, config: any): Promise<void> {
+    await this.saveDashboardConfig(tempUrlPath, config);
+    console.log(`Updated temporary dashboard: ${tempUrlPath}`);
+  }
 }
 
 // Export a singleton instance
