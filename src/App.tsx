@@ -16,6 +16,7 @@ import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
 import { haWebSocketService } from './services/haWebSocketService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
+import { HAEntityProvider } from './contexts/HAEntityContext';
 
 const { Header, Content, Sider } = Layout;
 
@@ -144,6 +145,7 @@ const App: React.FC = () => {
     if (!config || selectedViewIndex === null) return;
 
     console.log('=== LAYOUT CHANGE ===');
+    console.log('Live Preview Mode:', livePreviewMode);
     console.log('New layout from grid:', layout);
     console.log('ignoreNextLayoutChange:', ignoreNextLayoutChange);
 
@@ -313,8 +315,12 @@ const App: React.FC = () => {
 
   const handleConnect = async (url: string, token: string) => {
     try {
-      // Connect to WebSocket
-      await haWebSocketService.connect(url, token);
+      // Connect to WebSocket via IPC (runs in main process)
+      const result = await window.electronAPI.haWsConnect(url, token);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to connect');
+      }
+
       setIsConnected(true);
       setHaUrl(url);
       message.success(`Connected to Home Assistant at ${url}`);
@@ -327,7 +333,7 @@ const App: React.FC = () => {
   const handleDisconnect = async () => {
     await window.electronAPI.clearHAConnection();
     haConnectionService.disconnect();
-    haWebSocketService.close();
+    await window.electronAPI.haWsClose();
     setIsConnected(false);
     setHaUrl('');
     message.info('Disconnected from Home Assistant');
@@ -372,7 +378,10 @@ const App: React.FC = () => {
       message.warning('No dashboard loaded');
       return;
     }
-    if (!isConnected || !haWebSocketService.isConnected()) {
+
+    // Check WebSocket connection via IPC
+    const wsStatus = await window.electronAPI.haWsIsConnected();
+    if (!isConnected || !wsStatus.connected) {
       message.warning('Please connect to Home Assistant first');
       return;
     }
@@ -380,9 +389,17 @@ const App: React.FC = () => {
     try {
       message.loading({ content: 'Creating temporary dashboard...', key: 'livepreview' });
 
-      // Create temporary dashboard in HA
-      const tempPath = await haWebSocketService.createTempDashboard(config);
-      setTempDashboardPath(tempPath);
+      // Debug: Log current config to see if layout is preserved
+      console.log('=== ENTERING LIVE PREVIEW ===');
+      console.log('Current config before creating temp dashboard:', JSON.stringify(config, null, 2));
+
+      // Create temporary dashboard in HA via IPC
+      const result = await window.electronAPI.haWsCreateTempDashboard(config);
+      if (!result.success || !result.tempPath) {
+        throw new Error(result.error || 'Failed to create temp dashboard');
+      }
+
+      setTempDashboardPath(result.tempPath);
       setLivePreviewMode(true);
 
       message.success({ content: 'Live preview mode activated!', key: 'livepreview', duration: 2 });
@@ -394,9 +411,11 @@ const App: React.FC = () => {
   const handleExitLivePreview = async () => {
     if (tempDashboardPath) {
       try {
-        // Delete temp dashboard
-        await haWebSocketService.deleteTempDashboard(tempDashboardPath);
-        message.info('Temporary dashboard deleted');
+        // Delete temp dashboard via IPC
+        const result = await window.electronAPI.haWsDeleteTempDashboard(tempDashboardPath);
+        if (result.success) {
+          message.info('Temporary dashboard deleted');
+        }
       } catch (error) {
         console.error('Failed to delete temp dashboard:', error);
       }
@@ -415,8 +434,8 @@ const App: React.FC = () => {
     try {
       message.loading({ content: 'Deploying to production...', key: 'deploy' });
 
-      // Deploy temp dashboard to production (null for default dashboard)
-      const result = await haWebSocketService.deployDashboard(tempDashboardPath, null);
+      // Deploy temp dashboard to production via IPC (null for default dashboard)
+      const result = await window.electronAPI.haWsDeployDashboard(tempDashboardPath, null);
 
       if (result.success) {
         message.success({
@@ -462,12 +481,16 @@ const App: React.FC = () => {
 
           haConnectionService.setConfig({ url, token });
 
-          // Also connect WebSocket for live preview functionality
+          // Also connect WebSocket for live preview functionality (via IPC)
           try {
-            await haWebSocketService.connect(url, token);
-            setHaUrl(url);
-            setIsConnected(true);
-            console.log('Successfully restored HA connection from saved credentials');
+            const wsResult = await window.electronAPI.haWsConnect(url, token);
+            if (wsResult.success) {
+              setHaUrl(url);
+              setIsConnected(true);
+              console.log('Successfully restored HA connection from saved credentials');
+            } else {
+              console.error('Failed to reconnect WebSocket:', wsResult.error);
+            }
           } catch (wsError) {
             console.error('Failed to reconnect WebSocket:', wsError);
           }
@@ -476,15 +499,19 @@ const App: React.FC = () => {
           const saved = await window.electronAPI.getHAConnection();
           if (saved.url && saved.token) {
             haConnectionService.setConfig({ url: saved.url, token: saved.token });
-            // Also connect WebSocket for live preview functionality
+            // Also connect WebSocket for live preview functionality (via IPC)
             try {
-              await haWebSocketService.connect(saved.url, saved.token);
-              setHaUrl(saved.url);
+              const wsResult = await window.electronAPI.haWsConnect(saved.url, saved.token);
+              if (wsResult.success) {
+                setHaUrl(saved.url);
+                setIsConnected(true);
+                console.log('Restored HA connection from old settings:', saved.url);
+              } else {
+                console.error('Failed to reconnect WebSocket:', wsResult.error);
+              }
             } catch (wsError) {
               console.error('Failed to reconnect WebSocket:', wsError);
             }
-            setIsConnected(true);
-            console.log('Restored HA connection from old settings:', saved.url);
           }
         }
       } catch (error) {
@@ -526,6 +553,7 @@ const App: React.FC = () => {
         algorithm: isDarkTheme ? theme.darkAlgorithm : theme.defaultAlgorithm,
       }}
     >
+      <HAEntityProvider enabled={isConnected}>
       <Layout style={{ height: '100vh' }}>
         <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
           <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>
@@ -721,6 +749,7 @@ const App: React.FC = () => {
         onClose={handleCloseDashboardBrowser}
         onDashboardDownload={handleDashboardDownload}
       />
+      </HAEntityProvider>
     </ConfigProvider>
   );
 };
