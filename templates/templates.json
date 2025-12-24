@@ -1,0 +1,215 @@
+{
+  "templates": [
+    {
+      "id": "home-overview",
+      "name": "Home Overview",
+      "description": "Central hub showing at-a-glance status of the entire home with weather, presence, quick actions, and summaries",
+      "category": "overview",
+      "difficulty": "beginner",
+      "file": "home-overview.yaml",
+      "preview": "home-overview.png",
+      "features": [
+        "Weather forecast",
+        "Person tracking",
+        "Quick action scenes",
+        "Status summaries",
+        "Energy overview",
+        "Security status",
+        "Calendar events"
+      ],
+      "requiredEntities": [
+        "weather.forecast_home",
+        "person.john",
+        "sensor.lights_on_count",
+        "alarm_control_panel.home"
+      ],
+      "tags": ["overview", "main", "dashboard", "home"]
+    },
+    {
+      "id": "energy-management",
+      "name": "Energy Management",
+      "description": "Monitor and optimize energy consumption, solar production, and costs with detailed analytics",
+      "category": "utility",
+      "difficulty": "intermediate",
+      "file": "energy-management.yaml",
+      "preview": "energy-management.png",
+      "features": [
+        "Power flow visualization",
+        "Real-time consumption",
+        "Solar tracking",
+        "Device breakdown",
+        "Cost monitoring",
+        "Historical trends"
+      ],
+      "requiredEntities": [
+        "sensor.grid_power",
+        "sensor.solar_power",
+        "sensor.home_power",
+        "sensor.current_power_usage"
+      ],
+      "tags": ["energy", "solar", "power", "monitoring", "cost"]
+    },
+    {
+      "id": "security-surveillance",
+      "name": "Security & Surveillance",
+      "description": "Complete security monitoring with cameras, locks, alarms, and motion sensors",
+      "category": "security",
+      "difficulty": "intermediate",
+      "file": "security-surveillance.yaml",
+      "preview": "security-surveillance.png",
+      "features": [
+        "Alarm panel control",
+        "Live camera feeds",
+        "Door lock management",
+        "Motion detection",
+        "Window sensors",
+        "Event history"
+      ],
+      "requiredEntities": [
+        "alarm_control_panel.home",
+        "camera.front_door",
+        "lock.front_door",
+        "binary_sensor.front_door_motion"
+      ],
+      "tags": ["security", "cameras", "alarm", "locks", "surveillance"]
+    },
+    {
+      "id": "climate-hvac",
+      "name": "Climate & HVAC",
+      "description": "Control heating, cooling, and monitor climate conditions throughout your home",
+      "category": "climate",
+      "difficulty": "intermediate",
+      "file": "climate-hvac.yaml",
+      "preview": "climate-hvac.png",
+      "features": [
+        "Multi-zone thermostats",
+        "Temperature monitoring",
+        "Humidity tracking",
+        "HVAC status",
+        "Energy usage",
+        "Automation controls"
+      ],
+      "requiredEntities": [
+        "climate.living_room_thermostat",
+        "sensor.living_room_temperature",
+        "sensor.living_room_humidity",
+        "sensor.hvac_action"
+      ],
+      "tags": ["climate", "hvac", "thermostat", "temperature", "heating", "cooling"]
+    },
+    {
+      "id": "lighting-control",
+      "name": "Lighting Control",
+      "description": "Master control panel for all lights with scenes, groups, and automation",
+      "category": "lighting",
+      "difficulty": "beginner",
+      "file": "lighting-control.yaml",
+      "preview": "lighting-control.png",
+      "features": [
+        "Room-based controls",
+        "Scene buttons",
+        "Brightness control",
+        "Color control",
+        "Energy monitoring",
+        "Automation toggles"
+      ],
+      "requiredEntities": [
+        "light.living_room_ceiling",
+        "scene.bright",
+        "sensor.lights_on_count"
+      ],
+      "tags": ["lights", "lighting", "scenes", "automation", "control"]
+    },
+    {
+      "id": "living-room",
+      "name": "Living Room",
+      "description": "Comprehensive room dashboard with lights, climate, media, and more",
+      "category": "room",
+      "difficulty": "beginner",
+      "file": "living-room.yaml",
+      "preview": "living-room.png",
+      "features": [
+        "All room lights",
+        "Thermostat",
+        "Media controls",
+        "Window blinds",
+        "Room scenes",
+        "Status monitoring"
+      ],
+      "requiredEntities": [
+        "light.living_room_ceiling",
+        "climate.living_room_thermostat",
+        "media_player.living_room_tv",
+        "cover.living_room_blinds_left"
+      ],
+      "tags": ["room", "living room", "lights", "media", "climate"]
+    },
+    {
+      "id": "media-entertainment",
+      "name": "Media & Entertainment",
+      "description": "Control all media players, TVs, speakers, and streaming devices",
+      "category": "media",
+      "difficulty": "beginner",
+      "file": "media-entertainment.yaml",
+      "preview": "media-entertainment.png",
+      "features": [
+        "Media player controls",
+        "Whole home audio",
+        "Streaming services",
+        "Activity scenes",
+        "Remote controls",
+        "AV equipment"
+      ],
+      "requiredEntities": [
+        "media_player.living_room_tv",
+        "media_player.living_room_soundbar",
+        "media_player.spotify"
+      ],
+      "tags": ["media", "entertainment", "tv", "audio", "music", "streaming"]
+    }
+  ],
+  "categories": [
+    {
+      "id": "overview",
+      "name": "Overview",
+      "description": "Main dashboards showing overall home status",
+      "icon": "home"
+    },
+    {
+      "id": "utility",
+      "name": "Utilities",
+      "description": "Energy, water, and resource monitoring",
+      "icon": "flash"
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "description": "Security systems, cameras, and monitoring",
+      "icon": "shield-check"
+    },
+    {
+      "id": "climate",
+      "name": "Climate",
+      "description": "Temperature, humidity, and HVAC control",
+      "icon": "thermometer"
+    },
+    {
+      "id": "lighting",
+      "name": "Lighting",
+      "description": "Light control and scenes",
+      "icon": "lightbulb"
+    },
+    {
+      "id": "room",
+      "name": "Rooms",
+      "description": "Room-specific comprehensive controls",
+      "icon": "sofa"
+    },
+    {
+      "id": "media",
+      "name": "Media",
+      "description": "Entertainment and media control",
+      "icon": "play-circle"
+    }
+  ]
+}

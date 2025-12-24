@@ -78,6 +78,17 @@ ipcMain.handle('fs:exists', async (event, filePath: string) => {
   }
 });
 
+// Handle get template path
+ipcMain.handle('fs:getTemplatePath', async (event, filename: string) => {
+  try {
+    const path = await import('path');
+    const templatePath = path.join(__dirname, '..', '..', 'templates', filename);
+    return templatePath;
+  } catch (error) {
+    throw new Error(`Failed to get template path: ${(error as Error).message}`);
+  }
+});
+
 // Handle opening external URLs
 ipcMain.handle('shell:openExternal', async (event, url: string) => {
   await shell.openExternal(url);

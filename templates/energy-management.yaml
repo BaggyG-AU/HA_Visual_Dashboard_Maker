@@ -1,0 +1,176 @@
+# Energy Management Dashboard Template
+# Monitor and optimize energy consumption, solar production, and costs
+#
+# This template provides:
+# - Energy distribution visualization
+# - Real-time power consumption
+# - Solar production tracking (if applicable)
+# - Individual device consumption
+# - Cost tracking and projections
+# - Historical trends
+
+title: Energy Management
+views:
+  - title: Energy
+    path: energy
+    type: custom:grid-layout
+    layout:
+      grid_template_columns: repeat(12, 1fr)
+      grid_template_rows: repeat(auto-fill, 56px)
+      grid_gap: 8px
+    cards:
+      # Power Flow Card (for solar setups)
+      - type: custom:power-flow-card
+        view_layout:
+          grid_column: 1 / 13
+          grid_row: 1 / 7
+        entities:
+          grid:
+            entity: sensor.grid_power
+          solar:
+            entity: sensor.solar_power
+          home:
+            entity: sensor.home_power
+          battery:
+            entity: sensor.battery_power
+
+      # Real-time Power Usage
+      - type: gauge
+        entity: sensor.current_power_usage
+        name: Current Usage
+        view_layout:
+          grid_column: 1 / 5
+          grid_row: 7 / 10
+        min: 0
+        max: 10000
+        severity:
+          green: 0
+          yellow: 5000
+          red: 8000
+        unit: W
+
+      # Daily Energy Consumption
+      - type: gauge
+        entity: sensor.daily_energy_consumption
+        name: Today's Consumption
+        view_layout:
+          grid_column: 5 / 9
+          grid_row: 7 / 10
+        min: 0
+        max: 50
+        unit: kWh
+
+      # Today's Cost
+      - type: sensor
+        entity: sensor.daily_energy_cost
+        name: Cost Today
+        view_layout:
+          grid_column: 9 / 13
+          grid_row: 7 / 10
+        icon: mdi:currency-usd
+        graph: none
+
+      # Energy Usage Graph (24 hours)
+      - type: history-graph
+        title: Power Usage (24 Hours)
+        view_layout:
+          grid_column: 1 / 13
+          grid_row: 10 / 15
+        entities:
+          - entity: sensor.home_power
+            name: Home Power
+          - entity: sensor.solar_power
+            name: Solar Production
+          - entity: sensor.grid_power
+            name: Grid Power
+        hours_to_show: 24
+        refresh_interval: 60
+
+      # Individual Device Consumption
+      - type: entities
+        title: Device Consumption
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 15 / 20
+        entities:
+          - entity: sensor.hvac_power
+            name: HVAC
+            secondary_info: last-changed
+          - entity: sensor.water_heater_power
+            name: Water Heater
+            secondary_info: last-changed
+          - entity: sensor.washing_machine_power
+            name: Washing Machine
+            secondary_info: last-changed
+          - entity: sensor.dryer_power
+            name: Dryer
+            secondary_info: last-changed
+          - entity: sensor.dishwasher_power
+            name: Dishwasher
+            secondary_info: last-changed
+          - entity: sensor.refrigerator_power
+            name: Refrigerator
+            secondary_info: last-changed
+
+      # Energy Statistics
+      - type: entities
+        title: Energy Statistics
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 15 / 20
+        entities:
+          - entity: sensor.daily_energy_consumption
+            name: Today
+            icon: mdi:calendar-today
+          - entity: sensor.weekly_energy_consumption
+            name: This Week
+            icon: mdi:calendar-week
+          - entity: sensor.monthly_energy_consumption
+            name: This Month
+            icon: mdi:calendar-month
+          - entity: sensor.yearly_energy_consumption
+            name: This Year
+            icon: mdi:calendar
+          - type: divider
+          - entity: sensor.daily_energy_cost
+            name: Cost Today
+          - entity: sensor.monthly_energy_cost
+            name: Cost This Month
+          - entity: sensor.monthly_cost_projection
+            name: Projected Monthly Cost
+
+      # Solar Production (if applicable)
+      - type: entities
+        title: Solar Production
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 20 / 24
+        entities:
+          - entity: sensor.solar_production_today
+            name: Today
+            icon: mdi:solar-power
+          - entity: sensor.solar_production_month
+            name: This Month
+          - entity: sensor.solar_self_consumption_percent
+            name: Self Consumption
+          - entity: sensor.grid_export_today
+            name: Exported Today
+          - entity: sensor.grid_import_today
+            name: Imported Today
+
+      # Battery Status (if applicable)
+      - type: entities
+        title: Battery Storage
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 20 / 24
+        entities:
+          - entity: sensor.battery_level
+            name: Battery Level
+            icon: mdi:battery
+          - entity: sensor.battery_power
+            name: Battery Power
+          - entity: sensor.battery_charging_status
+            name: Status
+          - entity: sensor.battery_capacity
+            name: Capacity

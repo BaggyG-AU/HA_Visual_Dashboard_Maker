@@ -1,0 +1,175 @@
+# Climate & HVAC Dashboard Template
+# Control heating, cooling, and monitor climate conditions
+#
+# This template provides:
+# - Thermostat controls for each zone
+# - Temperature and humidity monitoring
+# - HVAC system status
+# - Energy usage tracking
+# - Historical temperature trends
+
+title: Climate Control
+views:
+  - title: Climate
+    path: climate
+    type: custom:grid-layout
+    layout:
+      grid_template_columns: repeat(12, 1fr)
+      grid_template_rows: repeat(auto-fill, 56px)
+      grid_gap: 8px
+    cards:
+      # Main Floor Thermostat
+      - type: thermostat
+        entity: climate.living_room_thermostat
+        name: Main Floor
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 1 / 6
+
+      # Upstairs Thermostat
+      - type: thermostat
+        entity: climate.bedroom_thermostat
+        name: Upstairs
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 1 / 6
+
+      # Basement Thermostat
+      - type: thermostat
+        entity: climate.basement_thermostat
+        name: Basement
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 6 / 11
+
+      # Indoor Climate Summary
+      - type: glance
+        title: Indoor Climate
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 6 / 8
+        entities:
+          - entity: sensor.average_indoor_temperature
+            name: Avg Temp
+          - entity: sensor.average_indoor_humidity
+            name: Avg Humidity
+          - entity: sensor.outdoor_temperature
+            name: Outdoor
+          - entity: sensor.outdoor_humidity
+            name: Outdoor RH
+
+      # HVAC Status
+      - type: entities
+        title: HVAC System Status
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 8 / 11
+        entities:
+          - entity: sensor.hvac_action
+            name: Current Action
+          - entity: sensor.hvac_mode
+            name: Mode
+          - entity: sensor.hvac_fan_state
+            name: Fan State
+          - entity: binary_sensor.hvac_filter_clean
+            name: Filter Status
+
+      # Room Temperatures
+      - type: entities
+        title: Room Temperatures
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 11 / 17
+        entities:
+          - entity: sensor.living_room_temperature
+            name: Living Room
+            icon: mdi:sofa
+          - entity: sensor.kitchen_temperature
+            name: Kitchen
+            icon: mdi:silverware-fork-knife
+          - entity: sensor.bedroom_temperature
+            name: Bedroom
+            icon: mdi:bed
+          - entity: sensor.guest_room_temperature
+            name: Guest Room
+            icon: mdi:bed-empty
+          - entity: sensor.bathroom_temperature
+            name: Bathroom
+            icon: mdi:shower
+          - entity: sensor.basement_temperature
+            name: Basement
+            icon: mdi:home-floor-b
+          - entity: sensor.garage_temperature
+            name: Garage
+            icon: mdi:garage
+
+      # Room Humidity
+      - type: entities
+        title: Room Humidity
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 11 / 17
+        entities:
+          - entity: sensor.living_room_humidity
+            name: Living Room
+          - entity: sensor.kitchen_humidity
+            name: Kitchen
+          - entity: sensor.bedroom_humidity
+            name: Bedroom
+          - entity: sensor.guest_room_humidity
+            name: Guest Room
+          - entity: sensor.bathroom_humidity
+            name: Bathroom
+          - entity: sensor.basement_humidity
+            name: Basement
+
+      # Temperature History Graph
+      - type: history-graph
+        title: Temperature Trends (24 Hours)
+        view_layout:
+          grid_column: 1 / 13
+          grid_row: 17 / 22
+        entities:
+          - entity: sensor.living_room_temperature
+            name: Living Room
+          - entity: sensor.bedroom_temperature
+            name: Bedroom
+          - entity: sensor.outdoor_temperature
+            name: Outdoor
+        hours_to_show: 24
+
+      # HVAC Energy Usage
+      - type: entities
+        title: HVAC Energy Usage
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 22 / 26
+        entities:
+          - entity: sensor.hvac_runtime_today
+            name: Runtime Today
+          - entity: sensor.hvac_energy_today
+            name: Energy Today
+          - entity: sensor.hvac_energy_week
+            name: Energy This Week
+          - entity: sensor.hvac_energy_month
+            name: Energy This Month
+          - entity: sensor.hvac_cost_today
+            name: Cost Today
+
+      # Climate Automation
+      - type: entities
+        title: Climate Automation
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 22 / 26
+        entities:
+          - entity: input_boolean.eco_mode
+            name: Eco Mode
+          - entity: input_boolean.away_mode_climate
+            name: Away Mode
+          - entity: input_boolean.smart_recovery
+            name: Smart Recovery
+          - entity: input_number.eco_temperature_heat
+            name: Eco Heat Temp
+          - entity: input_number.eco_temperature_cool
+            name: Eco Cool Temp

@@ -1,0 +1,164 @@
+# Media & Entertainment Dashboard Template
+# Control TVs, speakers, streaming devices, and media players
+#
+# This template provides:
+# - Media player controls for each room
+# - Now playing information
+# - Volume controls
+# - Source selection
+# - Activity scenes
+
+title: Media & Entertainment
+views:
+  - title: Media
+    path: media
+    type: custom:grid-layout
+    layout:
+      grid_template_columns: repeat(12, 1fr)
+      grid_template_rows: repeat(auto-fill, 56px)
+      grid_gap: 8px
+    cards:
+      # Living Room Media
+      - type: media-control
+        entity: media_player.living_room_tv
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 1 / 6
+
+      # Living Room Audio
+      - type: media-control
+        entity: media_player.living_room_soundbar
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 1 / 6
+
+      # Bedroom TV
+      - type: media-control
+        entity: media_player.bedroom_tv
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 6 / 11
+
+      # Kitchen Speaker
+      - type: media-control
+        entity: media_player.kitchen_speaker
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 6 / 11
+
+      # Whole Home Audio
+      - type: entities
+        title: Whole Home Audio
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 11 / 16
+        entities:
+          - entity: media_player.house_audio
+            name: All Speakers
+          - entity: media_player.downstairs_audio
+            name: Downstairs Group
+          - entity: media_player.upstairs_audio
+            name: Upstairs Group
+          - entity: input_boolean.audio_follow_me
+            name: Follow Me Mode
+          - entity: input_select.default_audio_source
+            name: Default Source
+
+      # Streaming Services
+      - type: entities
+        title: Streaming Services
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 11 / 16
+        entities:
+          - entity: media_player.spotify
+            name: Spotify
+          - entity: media_player.plex
+            name: Plex
+          - entity: media_player.youtube_music
+            name: YouTube Music
+          - entity: media_player.apple_music
+            name: Apple Music
+
+      # Activity Scenes
+      - type: horizontal-stack
+        view_layout:
+          grid_column: 1 / 13
+          grid_row: 16 / 18
+        cards:
+          - type: button
+            entity: scene.movie_night
+            name: Movie Night
+            icon: mdi:movie-open
+            tap_action:
+              action: toggle
+          - type: button
+            entity: scene.gaming
+            name: Gaming
+            icon: mdi:gamepad-variant
+            tap_action:
+              action: toggle
+          - type: button
+            entity: scene.music_party
+            name: Music Party
+            icon: mdi:music
+            tap_action:
+              action: toggle
+          - type: button
+            entity: scene.tv_time
+            name: TV Time
+            icon: mdi:television
+            tap_action:
+              action: toggle
+
+      # Remote Controls
+      - type: entities
+        title: Remote Controls
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 18 / 22
+        entities:
+          - entity: remote.living_room_tv
+            name: Living Room TV
+          - entity: remote.bedroom_tv
+            name: Bedroom TV
+          - entity: remote.samsung_tv
+            name: Samsung Remote
+          - entity: remote.apple_tv
+            name: Apple TV
+          - entity: remote.nvidia_shield
+            name: NVIDIA Shield
+
+      # AV Equipment
+      - type: entities
+        title: AV Equipment
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 18 / 22
+        entities:
+          - entity: switch.av_receiver
+            name: AV Receiver
+          - entity: switch.subwoofer
+            name: Subwoofer
+          - entity: switch.xbox
+            name: Xbox
+          - entity: switch.playstation
+            name: PlayStation
+          - entity: switch.nintendo_switch
+            name: Nintendo Switch
+
+      # Now Playing
+      - type: glance
+        title: Now Playing
+        view_layout:
+          grid_column: 1 / 13
+          grid_row: 22 / 24
+        entities:
+          - entity: media_player.living_room_tv
+            name: Living Room
+          - entity: media_player.bedroom_tv
+            name: Bedroom
+          - entity: media_player.kitchen_speaker
+            name: Kitchen
+          - entity: media_player.bathroom_speaker
+            name: Bathroom

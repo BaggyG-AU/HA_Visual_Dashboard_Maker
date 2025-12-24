@@ -18,7 +18,8 @@
       "Bash(npm run make:*)",
       "Bash(ls:*)",
       "Bash(npm run)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(grep:*)"
     ]
   }
 }

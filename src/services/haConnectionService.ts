@@ -206,6 +206,47 @@ class HAConnectionService {
   }
 
   /**
+   * Fetch Home Assistant configuration
+   */
+  async fetchConfig(): Promise<HAConfig> {
+    if (!this.config) {
+      throw new Error('Not connected to Home Assistant. Please configure connection first.');
+    }
+
+    try {
+      const result = await window.electronAPI.haFetch(`${this.config.url}/api/config`, this.config.token);
+
+      if (!result.success) {
+        throw new Error(`Failed to fetch config: ${result.error || `HTTP ${result.status}`}`);
+      }
+
+      return result.data as HAConfig;
+    } catch (error) {
+      throw new Error(`Failed to fetch config: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Check if a component is enabled in Home Assistant
+   */
+  async isComponentEnabled(componentName: string): Promise<boolean> {
+    try {
+      const config = await this.fetchConfig();
+      return config.components.includes(componentName);
+    } catch (error) {
+      console.error(`Failed to check component ${componentName}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if stream component is enabled (required for camera live streaming)
+   */
+  async isStreamComponentEnabled(): Promise<boolean> {
+    return this.isComponentEnabled('stream');
+  }
+
+  /**
    * Clear cached entities
    */
   clearCache(): void {

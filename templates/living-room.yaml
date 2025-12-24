@@ -1,0 +1,167 @@
+# Living Room Dashboard Template
+# Comprehensive control of all devices in the living room
+#
+# This template provides:
+# - All living room lights
+# - Thermostat control
+# - Media player controls
+# - Window blinds
+# - Room-specific scenes
+# - Climate monitoring
+
+title: Living Room
+views:
+  - title: Living Room
+    path: living_room
+    type: custom:grid-layout
+    layout:
+      grid_template_columns: repeat(12, 1fr)
+      grid_template_rows: repeat(auto-fill, 56px)
+      grid_gap: 8px
+    cards:
+      # Room Quick Actions
+      - type: horizontal-stack
+        view_layout:
+          grid_column: 1 / 13
+          grid_row: 1 / 3
+        cards:
+          - type: button
+            entity: scene.living_room_bright
+            name: Bright
+            icon: mdi:brightness-7
+            tap_action:
+              action: toggle
+          - type: button
+            entity: scene.living_room_movie
+            name: Movie
+            icon: mdi:movie
+            tap_action:
+              action: toggle
+          - type: button
+            entity: scene.living_room_reading
+            name: Reading
+            icon: mdi:book-open
+            tap_action:
+              action: toggle
+          - type: button
+            entity: scene.living_room_relax
+            name: Relax
+            icon: mdi:sofa
+            tap_action:
+              action: toggle
+          - type: button
+            entity: scene.living_room_off
+            name: All Off
+            icon: mdi:power
+            tap_action:
+              action: toggle
+
+      # Lighting Controls
+      - type: entities
+        title: Lighting
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 3 / 8
+        entities:
+          - entity: light.living_room_ceiling
+            name: Ceiling Light
+          - entity: light.living_room_lamp_left
+            name: Left Lamp
+          - entity: light.living_room_lamp_right
+            name: Right Lamp
+          - entity: light.living_room_led_strip
+            name: LED Strip
+          - entity: light.living_room_floor_lamp
+            name: Floor Lamp
+          - entity: light.living_room_all
+            name: All Lights
+            icon: mdi:lightbulb-group
+
+      # Climate Control
+      - type: thermostat
+        entity: climate.living_room_thermostat
+        name: Temperature
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 3 / 7
+
+      # Climate Sensors
+      - type: glance
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 7 / 8
+        entities:
+          - entity: sensor.living_room_temperature
+            name: Temp
+          - entity: sensor.living_room_humidity
+            name: Humidity
+          - entity: sensor.living_room_air_quality
+            name: Air Quality
+
+      # Media Player
+      - type: media-control
+        entity: media_player.living_room_tv
+        view_layout:
+          grid_column: 1 / 13
+          grid_row: 8 / 12
+
+      # Window Blinds
+      - type: entities
+        title: Window Coverings
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 12 / 15
+        entities:
+          - entity: cover.living_room_blinds_left
+            name: Left Window
+          - entity: cover.living_room_blinds_right
+            name: Right Window
+          - entity: cover.living_room_blinds_all
+            name: All Blinds
+            icon: mdi:blinds
+
+      # Additional Controls
+      - type: entities
+        title: Other Controls
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 12 / 15
+        entities:
+          - entity: fan.living_room_ceiling_fan
+            name: Ceiling Fan
+          - entity: switch.living_room_fireplace
+            name: Fireplace
+          - entity: switch.living_room_air_purifier
+            name: Air Purifier
+
+      # Room Status
+      - type: entities
+        title: Room Status
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 15 / 18
+        entities:
+          - entity: binary_sensor.living_room_motion
+            name: Motion
+          - entity: binary_sensor.living_room_window_left
+            name: Left Window
+          - entity: binary_sensor.living_room_window_right
+            name: Right Window
+          - entity: sensor.living_room_light_level
+            name: Light Level
+
+      # Energy Usage
+      - type: entities
+        title: Energy Usage
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 15 / 18
+        entities:
+          - entity: sensor.living_room_power
+            name: Current Power
+          - entity: sensor.living_room_energy_today
+            name: Energy Today
+          - entity: sensor.living_room_lights_power
+            name: Lights Power
+          - entity: sensor.living_room_av_power
+            name: A/V Equipment Power

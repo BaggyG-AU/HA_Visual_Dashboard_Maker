@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge } from 'antd';
-import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined } from '@ant-design/icons';
+import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
@@ -11,6 +11,7 @@ import { PropertiesPanel } from './components/PropertiesPanel';
 import { ConnectionDialog } from './components/ConnectionDialog';
 import { DeployDialog } from './components/DeployDialog';
 import { DashboardBrowser } from './components/DashboardBrowser';
+import { YamlEditorDialog } from './components/YamlEditorDialog';
 import { HADashboardIframe } from './components/HADashboardIframe';
 import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
@@ -26,6 +27,7 @@ const App: React.FC = () => {
   const [connectionDialogVisible, setConnectionDialogVisible] = useState<boolean>(false);
   const [deployDialogVisible, setDeployDialogVisible] = useState<boolean>(false);
   const [dashboardBrowserVisible, setDashboardBrowserVisible] = useState<boolean>(false);
+  const [yamlEditorVisible, setYamlEditorVisible] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [livePreviewMode, setLivePreviewMode] = useState<boolean>(false);
   const [tempDashboardPath, setTempDashboardPath] = useState<string | null>(null);
@@ -373,6 +375,69 @@ const App: React.FC = () => {
     message.success(`Dashboard "${dashboardTitle}" loaded successfully!`);
   };
 
+  const handleNewDashboard = () => {
+    // Check if there are unsaved changes
+    if (isDirty && config) {
+      Modal.confirm({
+        title: 'Unsaved Changes',
+        content: 'You have unsaved changes. Do you want to create a new dashboard anyway? Your current changes will be lost.',
+        okText: 'Create New',
+        cancelText: 'Cancel',
+        okButtonProps: { danger: true },
+        onOk: () => createNewDashboard(),
+      });
+    } else {
+      createNewDashboard();
+    }
+  };
+
+  const createNewDashboard = () => {
+    // Create a blank dashboard with one empty view
+    const blankDashboard = {
+      title: 'New Dashboard',
+      views: [
+        {
+          title: 'Home',
+          path: 'home',
+          type: 'custom:grid-layout',
+          layout: {
+            grid_template_columns: 'repeat(12, 1fr)',
+            grid_template_rows: 'repeat(auto-fill, 56px)',
+            grid_gap: '8px',
+          },
+          cards: [],
+        },
+      ],
+    };
+
+    const yamlContent = yamlService.serializeDashboard(blankDashboard);
+    loadDashboard(yamlContent, null); // null filePath means it's unsaved
+    message.success('New blank dashboard created!');
+  };
+
+  const handleOpenYamlEditor = () => {
+    if (!config) {
+      message.warning('No dashboard loaded to edit');
+      return;
+    }
+    setYamlEditorVisible(true);
+  };
+
+  const handleCloseYamlEditor = () => {
+    setYamlEditorVisible(false);
+  };
+
+  const handleApplyYamlChanges = (newYaml: string) => {
+    // Reload the dashboard with the new YAML
+    loadDashboard(newYaml, filePath);
+    setYamlEditorVisible(false);
+
+    // The dashboard will be marked as dirty since it was modified
+    if (error) {
+      message.error(`Failed to apply YAML changes: ${error}`);
+    }
+  };
+
   const handleEnterLivePreview = async () => {
     if (!config) {
       message.warning('No dashboard loaded');
@@ -607,6 +672,13 @@ const App: React.FC = () => {
                       <Button
                         type="primary"
                         size="large"
+                        icon={<FileAddOutlined />}
+                        onClick={handleNewDashboard}
+                      >
+                        New Dashboard
+                      </Button>
+                      <Button
+                        size="large"
                         icon={<FolderOpenOutlined />}
                         onClick={handleOpenFile}
                       >
@@ -624,7 +696,7 @@ const App: React.FC = () => {
                   </div>
 
                   <div style={{ marginTop: '32px', color: '#888', fontSize: '14px' }}>
-                    <p>Open a local YAML file or browse dashboards from your Home Assistant instance.</p>
+                    <p>Create a new blank dashboard, open a local YAML file, or browse dashboards from your Home Assistant instance.</p>
                     <p style={{ marginTop: '8px' }}>Supported file types: .yaml, .yml</p>
                   </div>
                 </>
@@ -642,7 +714,13 @@ const App: React.FC = () => {
                         {filePath}
                       </p>
                     </div>
-                    <Space>
+                    <Space wrap>
+                      <Button
+                        icon={<FileAddOutlined />}
+                        onClick={handleNewDashboard}
+                      >
+                        New
+                      </Button>
                       <Button
                         icon={<FolderOpenOutlined />}
                         onClick={handleOpenFile}
@@ -655,6 +733,12 @@ const App: React.FC = () => {
                         disabled={!isConnected}
                       >
                         Download
+                      </Button>
+                      <Button
+                        icon={<CodeOutlined />}
+                        onClick={handleOpenYamlEditor}
+                      >
+                        Edit YAML
                       </Button>
                       <Button
                         type="primary"
@@ -748,6 +832,12 @@ const App: React.FC = () => {
         visible={dashboardBrowserVisible}
         onClose={handleCloseDashboardBrowser}
         onDashboardDownload={handleDashboardDownload}
+      />
+      <YamlEditorDialog
+        visible={yamlEditorVisible}
+        dashboardYaml={config ? yamlService.serializeDashboard(config) : ''}
+        onClose={handleCloseYamlEditor}
+        onApply={handleApplyYamlChanges}
       />
       </HAEntityProvider>
     </ConfigProvider>

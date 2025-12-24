@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card as AntCard, Typography } from 'antd';
-import { PictureOutlined } from '@ant-design/icons';
+import { PictureOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import { PictureGlanceCard, EntityConfig } from '../../types/dashboard';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 
@@ -28,6 +28,8 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
   const title = card.title;
   const showState = card.show_state !== false;
   const hasImage = card.image && card.image.length > 0;
+  const hasCameraImage = card.camera_image && card.camera_image.length > 0;
+  const cameraView = card.camera_view || 'auto';
 
   // Get entity data
   const entityData = entities.map(entityConfig => {
@@ -159,7 +161,7 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
           </div>
         </div>
       ) : (
-        // No image placeholder
+        // No image placeholder - show camera icon if camera is configured
         <div style={{
           width: '100%',
           flex: 1,
@@ -167,12 +169,26 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          color: '#666',
+          color: hasCameraImage ? '#1890ff' : '#666',
           flexDirection: 'column',
           gap: '8px',
         }}>
-          <PictureOutlined style={{ fontSize: '48px' }} />
-          <div style={{ fontSize: '12px' }}>No image configured</div>
+          {hasCameraImage ? (
+            <>
+              <VideoCameraOutlined style={{ fontSize: '48px' }} />
+              <div style={{ fontSize: '12px' }}>
+                Camera: {card.camera_image?.split('.')[1]?.replace(/_/g, ' ')}
+              </div>
+              <div style={{ fontSize: '11px', color: '#888' }}>
+                View: {cameraView === 'live' ? 'Live Stream' : 'Auto (Snapshot)'}
+              </div>
+            </>
+          ) : (
+            <>
+              <PictureOutlined style={{ fontSize: '48px' }} />
+              <div style={{ fontSize: '12px' }}>No image configured</div>
+            </>
+          )}
         </div>
       )}
 

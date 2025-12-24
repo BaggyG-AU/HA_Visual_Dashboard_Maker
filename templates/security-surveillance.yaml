@@ -1,0 +1,194 @@
+# Security & Surveillance Dashboard Template
+# Monitor home security, cameras, locks, and alarm status
+#
+# This template provides:
+# - Alarm panel control
+# - Live camera feeds
+# - Door lock controls
+# - Motion detector status
+# - Door/window sensor status
+# - Security event history
+
+title: Security & Surveillance
+views:
+  - title: Security
+    path: security
+    type: custom:grid-layout
+    layout:
+      grid_template_columns: repeat(12, 1fr)
+      grid_template_rows: repeat(auto-fill, 56px)
+      grid_gap: 8px
+    cards:
+      # Alarm Panel
+      - type: alarm-panel
+        entity: alarm_control_panel.home
+        name: Home Security System
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 1 / 5
+        states:
+          - armed_home
+          - armed_away
+          - armed_night
+          - disarmed
+
+      # Quick Security Actions
+      - type: entities
+        title: Quick Actions
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 1 / 5
+        entities:
+          - entity: script.lock_all_doors
+            name: Lock All Doors
+            icon: mdi:lock
+          - entity: script.unlock_all_doors
+            name: Unlock All Doors
+            icon: mdi:lock-open
+          - entity: script.lights_on_security
+            name: All Lights On
+            icon: mdi:lightbulb-on
+          - entity: script.check_windows
+            name: Check Windows
+            icon: mdi:window-closed
+
+      # Front Door Camera
+      - type: picture-entity
+        entity: camera.front_door
+        camera_image: camera.front_door
+        camera_view: live
+        name: Front Door
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 5 / 10
+        show_state: true
+        show_name: true
+
+      # Back Door Camera
+      - type: picture-entity
+        entity: camera.back_door
+        camera_image: camera.back_door
+        camera_view: live
+        name: Back Door
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 5 / 10
+        show_state: true
+        show_name: true
+
+      # Garage Camera
+      - type: picture-entity
+        entity: camera.garage
+        camera_image: camera.garage
+        camera_view: live
+        name: Garage
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 10 / 15
+        show_state: true
+        show_name: true
+
+      # Backyard Camera
+      - type: picture-entity
+        entity: camera.backyard
+        camera_image: camera.backyard
+        camera_view: live
+        name: Backyard
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 10 / 15
+        show_state: true
+        show_name: true
+
+      # Door Locks
+      - type: entities
+        title: Door Locks
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 15 / 19
+        entities:
+          - entity: lock.front_door
+            name: Front Door
+          - entity: lock.back_door
+            name: Back Door
+          - entity: lock.garage_door
+            name: Garage Door
+          - entity: binary_sensor.front_door
+            name: Front Door Sensor
+          - entity: binary_sensor.back_door
+            name: Back Door Sensor
+          - entity: binary_sensor.garage_door
+            name: Garage Door Sensor
+
+      # Window Sensors
+      - type: entities
+        title: Windows
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 15 / 19
+        entities:
+          - entity: binary_sensor.living_room_window
+            name: Living Room
+          - entity: binary_sensor.bedroom_window
+            name: Bedroom
+          - entity: binary_sensor.kitchen_window
+            name: Kitchen
+          - entity: binary_sensor.bathroom_window
+            name: Bathroom
+          - entity: binary_sensor.basement_window
+            name: Basement
+
+      # Motion Sensors
+      - type: glance
+        title: Motion Sensors
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 19 / 21
+        entities:
+          - entity: binary_sensor.front_door_motion
+            name: Front Door
+          - entity: binary_sensor.back_door_motion
+            name: Back Door
+          - entity: binary_sensor.garage_motion
+            name: Garage
+          - entity: binary_sensor.living_room_motion
+            name: Living Room
+          - entity: binary_sensor.hallway_motion
+            name: Hallway
+
+      # Recent Security Events
+      - type: history-graph
+        title: Security Events (24 Hours)
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 19 / 23
+        entities:
+          - entity: binary_sensor.front_door_motion
+            name: Front Motion
+          - entity: binary_sensor.front_door
+            name: Front Door
+          - entity: lock.front_door
+            name: Front Lock
+        hours_to_show: 24
+
+      # Security Summary
+      - type: entities
+        title: Security Summary
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 21 / 25
+        entities:
+          - entity: sensor.doors_open_count
+            name: Doors Open
+            icon: mdi:door-open
+          - entity: sensor.windows_open_count
+            name: Windows Open
+            icon: mdi:window-open
+          - entity: sensor.motion_detected_count
+            name: Motion Detected
+            icon: mdi:motion-sensor
+          - entity: sensor.last_motion_time
+            name: Last Motion
+            icon: mdi:clock
+          - entity: sensor.security_system_status
+            name: System Status

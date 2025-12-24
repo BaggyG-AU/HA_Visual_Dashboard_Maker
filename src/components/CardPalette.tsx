@@ -54,7 +54,7 @@ const categoryConfig: Record<CardCategory, { icon: React.ReactNode; label: strin
 
 export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeKeys, setActiveKeys] = useState<string[]>(['layout', 'sensor', 'control']);
+  const [activeKeys, setActiveKeys] = useState<string[]>([]);
 
   // Get all cards and group by category
   const allCards = cardRegistry.getAll();
@@ -106,7 +106,7 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
         />
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', paddingLeft: '16px', paddingRight: '16px' }}>
+      <div style={{ flex: 1, overflow: 'auto', paddingLeft: '16px', paddingRight: '16px', paddingBottom: '16px' }}>
         <Collapse
           activeKey={activeKeys}
           onChange={keys => setActiveKeys(keys as string[])}

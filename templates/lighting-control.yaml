@@ -1,0 +1,199 @@
+# Lighting Control Dashboard Template
+# Control all lights, scenes, and create ambiance throughout your home
+#
+# This template provides:
+# - Room-based light controls
+# - Scene buttons for different moods
+# - Brightness and color controls
+# - Light group management
+# - Energy monitoring for lights
+
+title: Lighting Control
+views:
+  - title: Lights
+    path: lights
+    type: custom:grid-layout
+    layout:
+      grid_template_columns: repeat(12, 1fr)
+      grid_template_rows: repeat(auto-fill, 56px)
+      grid_gap: 8px
+    cards:
+      # Quick Scene Buttons
+      - type: horizontal-stack
+        view_layout:
+          grid_column: 1 / 13
+          grid_row: 1 / 3
+        cards:
+          - type: button
+            entity: scene.bright
+            name: Bright
+            icon: mdi:brightness-7
+            tap_action:
+              action: toggle
+          - type: button
+            entity: scene.dim
+            name: Dim
+            icon: mdi:brightness-4
+            tap_action:
+              action: toggle
+          - type: button
+            entity: scene.movie_time
+            name: Movie
+            icon: mdi:movie
+            tap_action:
+              action: toggle
+          - type: button
+            entity: scene.dinner
+            name: Dinner
+            icon: mdi:silverware-fork-knife
+            tap_action:
+              action: toggle
+          - type: button
+            entity: scene.reading
+            name: Reading
+            icon: mdi:book-open-variant
+            tap_action:
+              action: toggle
+          - type: button
+            entity: scene.all_off
+            name: All Off
+            icon: mdi:lightbulb-off
+            tap_action:
+              action: toggle
+
+      # Living Room Lights
+      - type: entities
+        title: Living Room
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 3 / 8
+        entities:
+          - entity: light.living_room_ceiling
+            name: Ceiling Light
+          - entity: light.living_room_lamp_left
+            name: Left Lamp
+          - entity: light.living_room_lamp_right
+            name: Right Lamp
+          - entity: light.living_room_led_strip
+            name: LED Strip
+          - entity: light.living_room_all
+            name: All Lights
+            icon: mdi:lightbulb-group
+
+      # Kitchen Lights
+      - type: entities
+        title: Kitchen
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 3 / 8
+        entities:
+          - entity: light.kitchen_ceiling
+            name: Ceiling Light
+          - entity: light.kitchen_cabinet_lights
+            name: Cabinet Lights
+          - entity: light.kitchen_island_pendant
+            name: Island Pendant
+          - entity: light.kitchen_all
+            name: All Lights
+            icon: mdi:lightbulb-group
+
+      # Bedroom Lights
+      - type: entities
+        title: Bedroom
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 8 / 12
+        entities:
+          - entity: light.bedroom_ceiling
+            name: Ceiling Light
+          - entity: light.bedside_lamp_left
+            name: Left Bedside
+          - entity: light.bedside_lamp_right
+            name: Right Bedside
+          - entity: light.bedroom_closet
+            name: Closet Light
+
+      # Bathroom Lights
+      - type: entities
+        title: Bathroom
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 8 / 12
+        entities:
+          - entity: light.bathroom_vanity
+            name: Vanity Light
+          - entity: light.bathroom_shower
+            name: Shower Light
+          - entity: light.bathroom_exhaust_fan_light
+            name: Exhaust Fan Light
+
+      # Outdoor Lights
+      - type: entities
+        title: Outdoor
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 12 / 16
+        entities:
+          - entity: light.front_porch
+            name: Front Porch
+          - entity: light.back_porch
+            name: Back Porch
+          - entity: light.garage_exterior
+            name: Garage
+          - entity: light.driveway_lights
+            name: Driveway
+          - entity: light.pathway_lights
+            name: Pathway
+          - entity: light.outdoor_all
+            name: All Outdoor
+            icon: mdi:lightbulb-group
+
+      # Hallway & Stairway
+      - type: entities
+        title: Hallway & Stairs
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 12 / 16
+        entities:
+          - entity: light.hallway_upstairs
+            name: Upstairs Hallway
+          - entity: light.hallway_downstairs
+            name: Downstairs Hallway
+          - entity: light.stairway
+            name: Stairway
+          - entity: light.basement_stairs
+            name: Basement Stairs
+
+      # Light Summary
+      - type: glance
+        title: Light Summary
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 16 / 18
+        entities:
+          - entity: sensor.lights_on_count
+            name: Lights On
+          - entity: sensor.lights_total_power
+            name: Total Power
+          - entity: sensor.lights_energy_today
+            name: Energy Today
+          - entity: binary_sensor.circadian_lighting_active
+            name: Circadian Mode
+
+      # Automation Controls
+      - type: entities
+        title: Automation & Settings
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 16 / 20
+        entities:
+          - entity: input_boolean.circadian_lighting
+            name: Circadian Lighting
+          - entity: input_boolean.motion_activated_lights
+            name: Motion Activated
+          - entity: input_boolean.auto_off_lights
+            name: Auto Off (30 min)
+          - entity: input_number.default_brightness
+            name: Default Brightness
+          - entity: input_select.default_color_temp
+            name: Default Color Temp
