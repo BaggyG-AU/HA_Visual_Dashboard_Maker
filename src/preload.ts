@@ -34,6 +34,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   haWsGetDashboardConfig: (urlPath: string | null) => ipcRenderer.invoke('ha:ws:getDashboardConfig', urlPath),
   haWsClose: () => ipcRenderer.invoke('ha:ws:close'),
   haWsIsConnected: () => ipcRenderer.invoke('ha:ws:isConnected'),
+  haWsCreateTempDashboard: (config: any) => ipcRenderer.invoke('ha:ws:createTempDashboard', config),
+  haWsUpdateTempDashboard: (tempPath: string, config: any) => ipcRenderer.invoke('ha:ws:updateTempDashboard', tempPath, config),
+  haWsDeployDashboard: (tempPath: string, productionPath: string | null) => ipcRenderer.invoke('ha:ws:deployDashboard', tempPath, productionPath),
+  haWsDeleteTempDashboard: (tempPath: string) => ipcRenderer.invoke('ha:ws:deleteTempDashboard', tempPath),
 
   // Credentials APIs
   credentialsSave: (name: string, url: string, token: string, id?: string) => ipcRenderer.invoke('credentials:save', name, url, token, id),
@@ -86,6 +90,10 @@ export interface ElectronAPI {
   haWsGetDashboardConfig: (urlPath: string | null) => Promise<{ success: boolean; config?: any; error?: string }>;
   haWsClose: () => Promise<{ success: boolean; error?: string }>;
   haWsIsConnected: () => Promise<{ connected: boolean }>;
+  haWsCreateTempDashboard: (config: any) => Promise<{ success: boolean; tempPath?: string; error?: string }>;
+  haWsUpdateTempDashboard: (tempPath: string, config: any) => Promise<{ success: boolean; error?: string }>;
+  haWsDeployDashboard: (tempPath: string, productionPath: string | null) => Promise<{ success: boolean; backupPath?: string; error?: string }>;
+  haWsDeleteTempDashboard: (tempPath: string) => Promise<{ success: boolean; error?: string }>;
   credentialsSave: (name: string, url: string, token: string, id?: string) => Promise<{ success: boolean; credential?: any; error?: string }>;
   credentialsGetAll: () => Promise<{ success: boolean; credentials?: any[]; error?: string }>;
   credentialsGet: (id: string) => Promise<{ success: boolean; credential?: any; error?: string }>;

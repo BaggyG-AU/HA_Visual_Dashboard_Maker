@@ -16,7 +16,9 @@
       "Bash(git commit:*)",
       "Bash(git tag:*)",
       "Bash(npm run make:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm run)",
+      "Bash(python:*)"
     ]
   }
 }

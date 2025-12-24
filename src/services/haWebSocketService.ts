@@ -16,6 +16,21 @@ interface DashboardListItem {
   mode: string;
 }
 
+export interface EntityState {
+  entity_id: string;
+  state: string;
+  attributes: Record<string, any>;
+  last_changed: string;
+  last_updated: string;
+  context: {
+    id: string;
+    parent_id: string | null;
+    user_id: string | null;
+  };
+}
+
+export type EntityStates = Record<string, EntityState>;
+
 /**
  * Home Assistant WebSocket Service
  * Handles WebSocket connections to Home Assistant for retrieving dashboard configurations
@@ -24,6 +39,9 @@ export class HAWebSocketService {
   private ws: WebSocket | null = null;
   private messageId = 1;
   private pendingMessages = new Map<number, { resolve: (value: any) => void; reject: (reason: any) => void }>();
+  private entitySubscriptionId: number | null = null;
+  private entityStateCallbacks: Set<(entities: EntityStates) => void> = new Set();
+  private currentEntityStates: EntityStates = {};
 
   /**
    * Connect to Home Assistant WebSocket API
@@ -59,6 +77,32 @@ export class HAWebSocketService {
           console.error('Authentication failed:', message);
           this.close();
           reject(new Error('Authentication failed: ' + (message.message || 'Invalid token')));
+        } else if (message.type === 'event' && message.id === this.entitySubscriptionId) {
+          // Handle entity state change events
+          const event = message.event;
+          if (event && event.a) {
+            // Update changed entities
+            Object.assign(this.currentEntityStates, event.a);
+          }
+          if (event && event.r) {
+            // Remove deleted entities
+            event.r.forEach((entityId: string) => {
+              delete this.currentEntityStates[entityId];
+            });
+          }
+          if (event && event.c) {
+            // Update changed properties
+            Object.entries(event.c).forEach(([entityId, changes]) => {
+              if (this.currentEntityStates[entityId]) {
+                Object.assign(this.currentEntityStates[entityId], changes);
+              }
+            });
+          }
+
+          // Notify all subscribers
+          this.entityStateCallbacks.forEach(callback => {
+            callback({ ...this.currentEntityStates });
+          });
         } else if (message.id !== undefined) {
           // Handle response to a specific request
           const pending = this.pendingMessages.get(message.id);
@@ -176,6 +220,26 @@ export class HAWebSocketService {
   }
 
   /**
+   * Create a new Lovelace dashboard resource
+   * @param urlPath - Dashboard URL path (e.g., 'temp_dashboard_editor_123456')
+   * @param title - Dashboard title
+   * @param icon - Dashboard icon (optional)
+   */
+  async createDashboardResource(urlPath: string, title: string, icon?: string): Promise<void> {
+    await this.sendAndWait<void>({
+      type: 'lovelace/dashboards/create',
+      url_path: urlPath,
+      title: title,
+      icon: icon || 'mdi:view-dashboard',
+      mode: 'storage', // Use storage mode for programmatic dashboards
+      require_admin: false,
+      show_in_sidebar: false, // Don't show temp dashboards in sidebar
+    });
+
+    console.log(`Created dashboard resource: ${urlPath}`);
+  }
+
+  /**
    * Save/update Lovelace dashboard configuration
    * @param urlPath - Dashboard URL path (e.g., 'temp_dashboard_editor_123456')
    * @param config - Dashboard configuration object
@@ -191,13 +255,13 @@ export class HAWebSocketService {
   }
 
   /**
-   * Delete a Lovelace dashboard
+   * Delete a Lovelace dashboard (both resource and config)
    * @param urlPath - Dashboard URL path to delete
    */
   async deleteDashboardConfig(urlPath: string): Promise<void> {
     await this.sendAndWait<void>({
-      type: 'lovelace/config/delete',
-      url_path: urlPath,
+      type: 'lovelace/dashboards/delete',
+      dashboard_id: urlPath,
     });
 
     console.log(`Deleted dashboard: ${urlPath}`);
@@ -209,11 +273,17 @@ export class HAWebSocketService {
    * @returns URL path of the temporary dashboard
    */
   async createTempDashboard(baseConfig: any): Promise<string> {
-    const tempUrlPath = `temp_dashboard_editor_${Date.now()}`;
+    // HA requires URL paths to contain hyphens, not underscores
+    const tempUrlPath = `temp-dashboard-editor-${Date.now()}`;
+    const tempTitle = `${baseConfig.title || 'Dashboard'} (Editing)`;
 
+    // Step 1: Create the dashboard resource
+    await this.createDashboardResource(tempUrlPath, tempTitle, 'mdi:pencil');
+
+    // Step 2: Save the dashboard config to the newly created resource
     const tempConfig = {
       ...baseConfig,
-      title: `${baseConfig.title || 'Dashboard'} (Editing)`,
+      title: tempTitle,
     };
 
     await this.saveDashboardConfig(tempUrlPath, tempConfig);
@@ -240,15 +310,20 @@ export class HAWebSocketService {
       // 1. Get current production config for backup
       const productionConfig = await this.getDashboardConfig(productionUrlPath);
 
-      // 2. Create backup with timestamp
+      // 2. Create backup dashboard with timestamp
       const backupPath = `${productionUrlPath || 'default'}_backup_${Date.now()}`;
+      const backupTitle = `${productionConfig.title || 'Dashboard'} (Backup)`;
+
+      // Create backup dashboard resource first
+      await this.createDashboardResource(backupPath, backupTitle, 'mdi:backup-restore');
+      // Then save the production config to the backup
       await this.saveDashboardConfig(backupPath, productionConfig);
       console.log(`Backed up production dashboard to: ${backupPath}`);
 
       // 3. Get temp dashboard config
       const tempConfig = await this.getDashboardConfig(tempUrlPath);
 
-      // 4. Save temp config to production
+      // 4. Save temp config to production (no need to create resource, it already exists)
       await this.saveDashboardConfig(productionUrlPath || 'lovelace', tempConfig);
       console.log(`Deployed temp dashboard to production: ${productionUrlPath || 'default'}`);
 
@@ -280,6 +355,99 @@ export class HAWebSocketService {
   async updateTempDashboard(tempUrlPath: string, config: any): Promise<void> {
     await this.saveDashboardConfig(tempUrlPath, config);
     console.log(`Updated temporary dashboard: ${tempUrlPath}`);
+  }
+
+  /**
+   * Subscribe to entity state changes
+   * Returns the current state immediately and updates whenever state changes
+   *
+   * @param callback - Function called with all entity states when they change
+   * @returns Unsubscribe function to stop receiving updates
+   */
+  async subscribeToEntityStates(callback: (entities: EntityStates) => void): Promise<() => void> {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      throw new Error('WebSocket is not connected');
+    }
+
+    // Add callback to set
+    this.entityStateCallbacks.add(callback);
+
+    // If this is the first subscription, subscribe to state_changed events
+    if (this.entitySubscriptionId === null) {
+      const id = this.messageId++;
+      this.entitySubscriptionId = id;
+
+      // Subscribe to state_changed events
+      this.send({
+        id: id,
+        type: 'subscribe_entities',
+      });
+
+      // Wait for initial state
+      try {
+        const initialStates = await this.sendAndWait<EntityStates>({
+          type: 'get_states',
+        });
+
+        // Convert array to object keyed by entity_id
+        if (Array.isArray(initialStates)) {
+          this.currentEntityStates = initialStates.reduce((acc: EntityStates, entity: EntityState) => {
+            acc[entity.entity_id] = entity;
+            return acc;
+          }, {});
+        } else {
+          this.currentEntityStates = initialStates;
+        }
+
+        // Send initial state to this callback
+        callback({ ...this.currentEntityStates });
+
+        // Also notify any other existing callbacks
+        this.entityStateCallbacks.forEach(cb => {
+          if (cb !== callback) {
+            cb({ ...this.currentEntityStates });
+          }
+        });
+      } catch (error) {
+        console.error('Failed to get initial entity states:', error);
+        this.entityStateCallbacks.delete(callback);
+        throw error;
+      }
+    } else {
+      // Already subscribed, just send current state to new callback
+      callback({ ...this.currentEntityStates });
+    }
+
+    // Return unsubscribe function
+    return () => {
+      this.entityStateCallbacks.delete(callback);
+
+      // If no more callbacks, unsubscribe from websocket
+      if (this.entityStateCallbacks.size === 0 && this.entitySubscriptionId !== null) {
+        this.send({
+          id: this.entitySubscriptionId,
+          type: 'unsubscribe_events',
+          subscription: this.entitySubscriptionId,
+        });
+        this.entitySubscriptionId = null;
+        this.currentEntityStates = {};
+      }
+    };
+  }
+
+  /**
+   * Get current entity states (cached from subscription)
+   * Returns empty object if not subscribed
+   */
+  getCurrentEntityStates(): EntityStates {
+    return { ...this.currentEntityStates };
+  }
+
+  /**
+   * Get a specific entity state
+   */
+  getEntityState(entityId: string): EntityState | null {
+    return this.currentEntityStates[entityId] || null;
   }
 }
 

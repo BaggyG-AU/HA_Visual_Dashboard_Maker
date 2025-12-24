@@ -1,0 +1,744 @@
+title: Home Energy & EV
+views:
+  - title: Energy Monitoring & Control
+    path: energy-monitoring-control
+    icon: mdi:home-battery
+    theme: Backend-selected
+    type: masonry
+    cards:
+      - type: custom:power-flow-card-plus
+        entities:
+          battery:
+            entity: sensor.sigen_plant_battery_power
+            state_of_charge: sensor.sigen_plant_battery_state_of_charge
+            invert_state: true
+          grid:
+            entity: sensor.sigen_plant_grid_active_power
+          solar:
+            entity: sensor.sigen_plant_pv_power
+            display_zero_state: true
+            secondary_info: {}
+          individual:
+            - entity: sensor.sigen_inverter_dc_charger_output_power
+              secondary_info: {}
+              icon: mdi:ev-plug-ccs2
+              name: EV Charger
+              display_zero: true
+          home:
+            secondary_info: {}
+            entity: sensor.sigen_plant_consumed_power
+        clickable_entities: true
+        display_zero_lines: true
+        use_new_flow_rate_model: true
+        w_decimals: 0
+        kw_decimals: 1
+        min_flow_rate: 0.75
+        max_flow_rate: 6
+        max_expected_power: 2000
+        min_expected_power: 0.01
+        watt_threshold: 1000
+        transparency_zero_lines: 0
+        sort_individual_devices: false
+        layout:
+          x: 0
+          'y': 0
+          w: 1
+          h: 1
+      - type: custom:apexcharts-card
+        experimental:
+          color_threshold: true
+        header:
+          title: Energy — PV · Load · Import · Export
+          show: true
+          show_states: true
+          colorize_states: true
+        graph_span: 6h
+        update_interval: 10s
+        yaxis:
+          - id: power
+            min: ~0
+            apex_config:
+              tickAmount: 5
+            decimals: 2
+        apex_config:
+          chart:
+            height: 280
+          stroke:
+            width: 1
+        series:
+          - entity: sensor.sigen_plant_pv_power
+            name: PV
+            type: line
+            stroke_width: 1
+            group_by:
+              func: avg
+              duration: 5min
+          - entity: sensor.sigen_plant_consumed_power
+            name: Load
+            type: line
+            stroke_width: 1
+            group_by:
+              func: avg
+              duration: 5min
+          - entity: sensor.sigen_plant_grid_import_power
+            name: Grid Import
+            type: line
+            stroke_width: 1
+            group_by:
+              func: avg
+              duration: 5min
+          - entity: sensor.sigen_plant_grid_export_power
+            name: Grid Export
+            type: line
+            stroke_width: 1
+            group_by:
+              func: avg
+              duration: 5min
+        layout:
+          x: 6
+          'y': 0
+          w: 1
+          h: 1
+      - type: custom:apexcharts-card
+        header:
+          title: Daily Energy — PV · Load · Import · Export · Battery
+          show: true
+          show_states: true
+          colorize_states: true
+        graph_span: 7d
+        update_interval: 60s
+        yaxis:
+          - id: energy
+            apex_config:
+              tickAmount: 5
+            decimals: 1
+        apex_config:
+          chart:
+            height: 280
+          stroke:
+            width: 1
+        series:
+          - entity: sensor.sigen_plant_daily_pv_energy
+            name: PV energy
+            type: line
+            stroke_width: 1
+            group_by:
+              func: last
+              duration: 1d
+          - entity: sensor.sigen_plant_daily_load_consumption
+            name: Load
+            type: line
+            stroke_width: 1
+            group_by:
+              func: last
+              duration: 1d
+          - entity: sensor.sigen_plant_daily_grid_import_energy
+            name: Grid import
+            type: line
+            stroke_width: 1
+            group_by:
+              func: last
+              duration: 1d
+          - entity: sensor.sigen_plant_daily_grid_export_energy
+            name: Grid export
+            type: line
+            stroke_width: 1
+            group_by:
+              func: last
+              duration: 1d
+          - entity: sensor.sigen_plant_daily_battery_charge_energy
+            name: Battery charge
+            type: line
+            stroke_width: 1
+            group_by:
+              func: last
+              duration: 1d
+          - entity: sensor.sigen_plant_daily_battery_discharge_energy
+            name: Battery discharge
+            type: line
+            stroke_width: 1
+            group_by:
+              func: last
+              duration: 1d
+        layout:
+          x: 1
+          'y': 0
+          w: 1
+          h: 1
+      - type: entities
+        title: Amber Import/Export Price ($/kWh)
+        show_header_toggle: false
+        state_color: false
+        entities:
+          - type: custom:template-entity-row
+            entity: sensor.home_general_price_2dp
+            name: Import Price
+            icon: mdi:transmission-tower-import
+            state: |
+              {{ "$" ~ states(config.entity) ~ " /kWh" }}
+            card_mod:
+              style: |
+                :host {
+                  font-size: 1.3em;
+                }
+          - type: custom:template-entity-row
+            entity: sensor.home_feed_in_price_2dp
+            name: Export Price
+            icon: mdi:transmission-tower-export
+            state: |
+              {{ "$" ~ states(config.entity) ~ " /kWh" }}
+            card_mod:
+              style: |
+                :host {
+                  font-size: 1.3em;
+                }
+        layout:
+          x: 6
+          'y': 1
+          w: 1
+          h: 1
+      - type: custom:apexcharts-card
+        header:
+          title: Amber — Import & Feed-in Price (c/kWh)
+          show: true
+          show_states: false
+          colorize_states: true
+        graph_span: 24h
+        update_interval: 60s
+        yaxis:
+          - id: price
+            apex_config:
+              tickAmount: 5
+            decimals: 2
+        apex_config:
+          chart:
+            height: 220
+          stroke:
+            width: 1
+        series:
+          - entity: sensor.home_general_price
+            name: Import price
+            type: line
+            stroke_width: 1
+            group_by:
+              func: avg
+              duration: 5min
+          - entity: sensor.home_feed_in_price
+            name: Feed-in price
+            type: line
+            stroke_width: 1
+            group_by:
+              func: avg
+              duration: 5min
+        layout:
+          x: 0
+          'y': 1
+          w: 1
+          h: 1
+      - type: custom:apexcharts-card
+        header:
+          title: Grid Import & Export Energy (kWh)
+          show: true
+        graph_span: 7d
+        update_interval: 60s
+        yaxis:
+          - id: energy
+            apex_config:
+              tickAmount: 5
+            decimals: 1
+        apex_config:
+          chart:
+            height: 220
+          stroke:
+            width: 1
+        series:
+          - entity: sensor.sigen_plant_daily_grid_import_energy
+            name: Grid import
+            type: column
+            yaxis_id: energy
+            group_by:
+              func: last
+              duration: 1d
+          - entity: sensor.sigen_plant_daily_grid_export_energy
+            name: Grid export
+            type: column
+            yaxis_id: energy
+            group_by:
+              func: last
+              duration: 1d
+        layout:
+          x: 5
+          'y': 0
+          w: 1
+          h: 1
+  - title: Environmental Monitoring & Control
+    path: environmental-monitoring-control
+    icon: mdi:home-thermometer
+    type: masonry
+    cards:
+      - type: custom:apexcharts-card
+        header:
+          title: Room Temperatures (24h)
+          show: true
+        graph_span: 24h
+        all_series_config:
+          stroke_width: 1
+          unit: °C
+        series:
+          - entity: climate.zone_sensor_0
+            name: Living Room
+            type: line
+            attribute: current_temperature
+          - entity: climate.master_bedroom
+            name: Master Bedroom
+            type: line
+            attribute: current_temperature
+          - entity: climate.theatre_room
+            name: Theatre Room
+            type: line
+            attribute: current_temperature
+          - entity: climate.bedroom_2
+            name: Bedroom 2
+            type: line
+            attribute: current_temperature
+      - type: custom:apexcharts-card
+        header:
+          title: Room Humidity (24h)
+          show: true
+        graph_span: 24h
+        all_series_config:
+          stroke_width: 1
+          unit: '%'
+        series:
+          - entity: climate.zone_sensor_0
+            name: Living Room
+            type: line
+            attribute: current_humidity
+          - entity: climate.master_bedroom
+            name: Master Bedroom
+            type: line
+            attribute: current_humidity
+          - entity: climate.theatre_room
+            name: Theatre Room
+            type: line
+            attribute: current_humidity
+          - entity: climate.bedroom_2
+            name: Bedroom 2
+            type: line
+            attribute: current_humidity
+      - type: thermostat
+        entity: climate.neo_24b03226
+        features:
+          - type: climate-hvac-modes
+            hvac_modes:
+              - cool
+              - heat
+              - fan_only
+              - auto
+              - 'off'
+      - type: grid
+        square: false
+        columns: 2
+        cards:
+          - type: custom:better-thermostat-ui-card
+            entity: climate.zone_sensor_0
+            name: Living Room
+          - type: custom:better-thermostat-ui-card
+            entity: climate.master_bedroom
+            name: Master Bedroom
+          - type: custom:better-thermostat-ui-card
+            entity: climate.theatre_room
+            name: Theatre Room
+          - type: custom:better-thermostat-ui-card
+            entity: climate.bedroom_2
+            name: Bedroom 2
+      - type: markdown
+        content: |
+          <div class="wx-header">
+            <div class="wx-icon">
+              <ha-icon icon="mdi:weather-sunny"></ha-icon>
+            </div>
+
+            <div class="wx-temp">{{ states('sensor.mckenzie_hill_now_temp_now') }}°</div>
+
+            <div class="wx-location">McKenzie Hill, VIC</div>
+
+            <div class="wx-summary">
+              Feels like {{ states('sensor.bom_feels_like') }}° ·
+              {{ states('weather.mckenzie_hill') }}
+            </div>
+          </div>
+        card_mod:
+          style: |
+            ha-card {
+              border-radius: 20px;
+              padding: 24px;
+              background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+              color: white;
+              text-align: center;
+              box-shadow: none;
+            }
+
+            .wx-icon ha-icon {
+              --mdc-icon-size: 48px;
+              color: white;
+              margin-bottom: 8px;
+            }
+
+            .wx-temp {
+              font-size: 48px;
+              font-weight: 600;
+              line-height: 1;
+              margin-bottom: 8px;
+            }
+
+            .wx-location {
+              font-size: 20px;
+              font-weight: 500;
+              margin-bottom: 4px;
+            }
+
+            .wx-summary {
+              font-size: 16px;
+              opacity: 0.9;
+            }
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-template-card
+            entity: weather.mckenzie_hill
+            layout: horizontal
+            fill_container: true
+            icon: |
+              {{ states('sensor.mckenzie_hill_mdi_icon_0') }}
+            icon_color: |
+              {% set cond = states('weather.mckenzie_hill') %} {% if cond in ['sunny', 'clear'] %}
+                amber
+              {% elif cond in ['partlycloudy', 'partly_cloudy'] %}
+                yellow
+              {% elif cond in ['cloudy', 'overcast'] %}
+                blue-grey
+              {% elif cond in ['rain', 'showers', 'pouring'] %}
+                blue
+              {% else %}
+                teal
+              {% endif %}
+            primary: McKenzie Hill
+            secondary: |
+              {{ states('sensor.mckenzie_hill_now_temp_now') }}°C · {{ states('weather.mckenzie_hill')|title }}
+            multiline_secondary: false
+            tap_action:
+              action: more-info
+          - type: custom:mushroom-template-card
+            entity: sensor.mckenzie_hill_extended_text_0
+            icon: mdi:text-long
+            icon_color: grey
+            layout: vertical
+            primary: |
+              {{ states('sensor.mckenzie_hill_extended_text_0') }}
+            secondary: ''
+            multiline_primary: true
+            fill_container: true
+          - type: grid
+            columns: 3
+            square: false
+            cards:
+              - type: custom:mushroom-entity-card
+                entity: sensor.mckenzie_hill_temp_max_0
+                name: Max
+                icon: mdi:thermometer-high
+              - type: custom:mushroom-entity-card
+                entity: sensor.mckenzie_hill_temp_min_0
+                name: Min
+                icon: mdi:thermometer-low
+              - type: custom:mushroom-entity-card
+                entity: sensor.mckenzie_hill_rain_amount_range_0
+                name: Rain (mm)
+                icon: mdi:weather-rainy
+              - type: custom:mushroom-entity-card
+                entity: sensor.mckenzie_hill_rain_chance_0
+                name: Rain %
+                icon: mdi:weather-pouring
+              - type: custom:mushroom-entity-card
+                entity: sensor.mckenzie_hill_uv_category_0
+                name: UV
+                icon: mdi:weather-sunny-alert
+              - type: custom:mushroom-entity-card
+                entity: sensor.mckenzie_hill_fire_danger_0
+                name: Fire danger
+                icon: mdi:fire-alert
+          - type: weather-forecast
+            entity: weather.mckenzie_hill
+            name: ''
+  - title: EV Overview
+    path: ev-overview
+    icon: mdi:ev-station
+    type: masonry
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: custom:mushroom-template-card
+            primary: Intelligent EV Charging
+            secondary: '{{ states(''sensor.ev_active_scenario'') | replace(''_'', '' '') | title }}'
+            icon: |-
+              {% set scenario = states('sensor.ev_active_scenario') %}
+              {% if 'cheap' in scenario %}
+                mdi:lightning-bolt
+              {% elif 'surplus' in scenario %}
+                mdi:solar-power
+              {% elif 'manual' in scenario %}
+                mdi:hand-back-right
+              {% elif scenario == 'not_applicable' %}
+                mdi:ev-plug-type2
+              {% else %}
+                mdi:ev-station
+              {% endif %}
+            icon_color: |-
+              {% if is_state('switch.sigen_inverter_dc_charger_dc_charging', 'on') %}
+                green
+              {% else %}
+                grey
+              {% endif %}
+            badge_icon: |-
+              {% set scenario = states('sensor.ev_active_scenario') %}
+              {% if 'cheap' in scenario %}
+                mdi:currency-usd
+              {% elif 'surplus' in scenario %}
+                mdi:solar-power-variant
+              {% elif 'manual' in scenario %}
+                mdi:gesture-tap
+              {% endif %}
+            badge_color: |-
+              {% set scenario = states('sensor.ev_active_scenario') %}
+              {% if 'cheap' in scenario %}
+                blue
+              {% elif 'surplus' in scenario %}
+                amber
+              {% elif 'manual' in scenario %}
+                red
+              {% endif %}
+            layout: horizontal
+            tap_action:
+              action: more-info
+              entity: sensor.ev_active_scenario
+          - type: horizontal-stack
+            cards:
+              - type: gauge
+                name: EV Battery
+                entity: sensor.ev5_ev_battery_level
+                min: 0
+                max: 100
+              - type: entity
+                name: Range
+                entity: sensor.ev5_ev_range
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: switch.sigen_inverter_dc_charger_dc_charging
+                state: 'on'
+            card:
+              type: button
+              name: Stop Charging
+              icon: mdi:stop-circle
+              tap_action:
+                action: toggle
+              entity: switch.sigen_inverter_dc_charger_dc_charging
+              show_state: false
+              icon_height: 40px
+              card_mod:
+                style: |
+                  ha-card {
+                    --card-background-color: rgba(244, 67, 54, 0.1);
+                    --primary-text-color: #f44336;
+                  }     
+          - type: glance
+            entities:
+              - entity: sensor.sigen_inverter_dc_charger_output_power
+                name: Charger Power
+              - entity: sensor.sigen_inverter_dc_charger_vehicle_soc
+                name: EV SOC
+              - entity: binary_sensor.ev_charger_plugged_in_local
+                name: Plugged In
+              - entity: number.sigen_plant_grid_import_limitation
+                name: Grid Limit
+            columns: 4
+            show_name: true
+            show_icon: true
+            show_state: true
+          - type: custom:mushroom-template-card
+            primary: Charge Now (Manual Override)
+            secondary: |-
+              {% if is_state('input_boolean.ev_charge_now_override', 'on') %}
+                Using {{ states('input_select.ev_charging_mode') }} mode
+              {% else %}
+                Tap to start charging with selected mode
+              {% endif %}
+            icon: mdi:flash
+            icon_color: |-
+              {% if is_state('input_boolean.ev_charge_now_override', 'on') %}
+                red
+              {% else %}
+                grey
+              {% endif %}
+            layout: horizontal
+            tap_action:
+              action: call-service
+              service: input_boolean.toggle
+              service_data:
+                entity_id: input_boolean.ev_charge_now_override
+            hold_action:
+              action: more-info
+              entity: input_boolean.ev_charge_now_override
+          - type: entities
+            title: Scenario Conditions
+            show_header_toggle: false
+            entities:
+              - entity: sensor.ev_active_scenario
+                name: Active Scenario
+                icon: mdi:traffic-light
+              - type: divider
+              - entity: sensor.ev_current_price
+                name: Electricity Price
+                icon: mdi:currency-usd
+              - entity: sensor.sigen_plant_battery_state_of_charge
+                name: Battery SOC
+                icon: mdi:battery
+              - entity: sensor.ev_surplus_pv_5min_avg
+                name: Surplus PV (5min avg)
+                icon: mdi:solar-power
+              - entity: sensor.ev_house_load_only
+                name: House Load Only
+                icon: mdi:home-lightning-bolt
+              - entity: binary_sensor.ev_charger_plugged_in_local
+                name: EV Plugged In
+                icon: mdi:ev-plug-type2
+              - entity: sensor.sigen_inverter_dc_charger_vehicle_soc
+                name: EV SOC
+                icon: mdi:battery-charging
+          - type: entities
+            title: EV Charging Summary
+            show_header_toggle: false
+            entities:
+              - entity: switch.sigen_inverter_dc_charger_dc_charging
+                name: Charger Status
+              - entity: sensor.sigen_inverter_dc_charger_output_power
+                name: Charging Power
+              - entity: sensor.ev_charging_source
+                name: Power Source
+              - entity: sensor.ev5_estimated_charge_duration
+                name: Time Remaining
+              - type: divider
+              - entity: sensor.ev_recommended_grid_limit
+                name: Recommended Grid Limit
+              - entity: number.sigen_plant_grid_import_limitation
+                name: Actual Grid Limit
+              - entity: sensor.sigen_plant_grid_import_power
+                name: Current Grid Import
+          - type: entities
+            title: Vehicle & Connection
+            show_header_toggle: false
+            entities:
+              - entity: binary_sensor.ev_charger_plugged_in_local
+                name: Cable Connected (Local)
+              - entity: sensor.sigen_inverter_dc_charger_vehicle_battery_voltage
+                name: Cable Voltage
+                icon: mdi:sine-wave
+              - type: divider
+              - entity: sensor.ev5_ev_battery_level
+                name: EV Battery (Cloud)
+              - entity: sensor.sigen_inverter_dc_charger_vehicle_soc
+                name: EV Battery (Local)
+              - entity: binary_sensor.ev5_ev_battery_charge
+                name: Charging (Cloud)
+              - type: divider
+              - entity: lock.ev5_door_lock
+                name: Door Lock
+          - type: entities
+            title: Charging Settings
+            show_header_toggle: false
+            entities:
+              - entity: input_select.ev_charging_mode
+                name: Mode (for manual override)
+              - type: divider
+              - entity: input_number.ev_target_soc
+                name: Target SOC
+              - entity: input_number.ev_battery_healthy_threshold
+                name: Battery Healthy Threshold
+              - type: divider
+              - entity: input_number.ev_cheap_price_start
+                name: Cheap Price Start
+              - entity: input_number.ev_cheap_price_stop
+                name: Cheap Price Stop
+          - type: custom:apexcharts-card
+            header:
+              title: EV Charging · PV Surplus · Grid Limit
+              show: true
+              show_states: true
+              colorize_states: true
+            graph_span: 6h
+            update_interval: 30s
+            yaxis:
+              - id: power
+                min: 0
+                apex_config:
+                  tickAmount: 5
+                decimals: 1
+            apex_config:
+              chart:
+                height: 280
+              stroke:
+                width: 2
+              annotations:
+                yaxis:
+                  - 'y': 0
+                    borderColor: '#999'
+                    strokeDashArray: 0
+            series:
+              - entity: sensor.sigen_inverter_dc_charger_output_power
+                name: EV Charger Power
+                type: line
+                stroke_width: 2
+                color: green
+                group_by:
+                  func: avg
+                  duration: 5min
+              - entity: sensor.ev_surplus_pv_5min_avg
+                name: PV Surplus (curtailment-aware)
+                type: line
+                stroke_width: 2
+                color: orange
+                group_by:
+                  func: avg
+                  duration: 5min
+              - entity: number.sigen_plant_grid_import_limitation
+                name: Grid Import Limit
+                type: line
+                stroke_width: 1
+                color: red
+                curve: stepline
+                group_by:
+                  func: last
+                  duration: 5min
+          - type: custom:apexcharts-card
+            header:
+              title: Spot Price for EV Charging ($/kWh)
+              show: true
+            graph_span: 24h
+            update_interval: 60s
+            yaxis:
+              - id: price
+                apex_config:
+                  tickAmount: 5
+                decimals: 2
+            apex_config:
+              chart:
+                height: 220
+              stroke:
+                width: 1
+            series:
+              - entity: sensor.home_general_price
+                name: Spot price
+                type: line
+                stroke_width: 1
+                group_by:
+                  func: avg
+                  duration: 5min

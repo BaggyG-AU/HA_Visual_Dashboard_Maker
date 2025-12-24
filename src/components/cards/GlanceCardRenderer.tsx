@@ -55,10 +55,12 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
         backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
         transition: 'all 0.3s ease',
       }}
-      bodyStyle={{
+      styles={{
+        body: {
         padding: '12px',
         maxHeight: card.title ? 'calc(100% - 46px)' : '100%',
         overflowY: 'auto',
+      },
       }}
       onClick={onClick}
       hoverable

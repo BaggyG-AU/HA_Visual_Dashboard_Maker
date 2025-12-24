@@ -1,0 +1,136 @@
+import React from 'react';
+import { Card as AntCard, Typography } from 'antd';
+import { BorderVerticleOutlined } from '@ant-design/icons';
+import { VerticalStackCard } from '../../types/dashboard';
+import { BaseCard } from '../BaseCard';
+
+const { Text } = Typography;
+
+interface VerticalStackCardRendererProps {
+  card: VerticalStackCard;
+  isSelected?: boolean;
+  onClick?: () => void;
+}
+
+/**
+ * Visual renderer for Vertical Stack card type
+ * Displays child cards in a vertical column
+ * Matches Home Assistant's vertical-stack behavior
+ */
+export const VerticalStackCardRenderer: React.FC<VerticalStackCardRendererProps> = ({
+  card,
+  isSelected = false,
+  onClick,
+}) => {
+  const childCards = card.cards || [];
+  const hasTitle = !!card.title;
+
+  // If no child cards, show placeholder
+  if (childCards.length === 0) {
+    return (
+      <AntCard
+        size="small"
+        style={{
+          height: '100%',
+          cursor: 'pointer',
+          border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
+          backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+          transition: 'all 0.3s ease',
+        }}
+        styles={{
+        body: {
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          gap: '8px',
+        },
+      }}
+        onClick={onClick}
+        hoverable
+      >
+        <BorderVerticleOutlined style={{ fontSize: '32px', color: '#666' }} />
+        <Text type="secondary" style={{ fontSize: '12px' }}>
+          Vertical Stack
+        </Text>
+        <Text type="secondary" style={{ fontSize: '11px' }}>
+          (No cards)
+        </Text>
+      </AntCard>
+    );
+  }
+
+  return (
+    <AntCard
+      size="small"
+      title={hasTitle ? card.title : undefined}
+      style={{
+        height: '100%',
+        cursor: 'pointer',
+        border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
+        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        transition: 'all 0.3s ease',
+      }}
+      headStyle={{
+        borderBottom: '1px solid #434343',
+        color: '#e6e6e6',
+        fontSize: '14px',
+        fontWeight: 'bold',
+      }}
+      bodyStyle={{
+        padding: '12px',
+        height: hasTitle ? 'calc(100% - 48px)' : '100%',
+        overflow: 'auto',
+      }}
+      onClick={onClick}
+      hoverable
+    >
+      {/* Vertical layout container */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        height: '100%',
+      }}>
+        {childCards.map((childCard, index) => (
+          <div
+            key={index}
+            style={{
+              minHeight: '100px',
+            }}
+          >
+            <BaseCard
+              card={childCard}
+              isSelected={false}
+              onClick={(e) => {
+                e?.stopPropagation();
+              }}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Stack indicator overlay when selected */}
+      {isSelected && (
+        <div style={{
+          position: 'absolute',
+          top: '8px',
+          right: '8px',
+          padding: '4px 8px',
+          backgroundColor: 'rgba(0, 217, 255, 0.2)',
+          border: '1px solid #00d9ff',
+          borderRadius: '4px',
+          fontSize: '10px',
+          color: '#00d9ff',
+          fontWeight: 'bold',
+          pointerEvents: 'none',
+        }}>
+          <BorderVerticleOutlined style={{ marginRight: '4px' }} />
+          VERTICAL STACK
+        </div>
+      )}
+    </AntCard>
+  );
+};

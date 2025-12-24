@@ -35,14 +35,16 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
         backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
         transition: 'all 0.3s ease',
       }}
-      bodyStyle={{
-        padding: '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100%',
-        gap: '12px',
+      styles={{
+        body: {
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          gap: '12px',
+        },
       }}
       onClick={onClick}
       hoverable

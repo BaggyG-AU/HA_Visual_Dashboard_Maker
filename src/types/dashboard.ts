@@ -15,7 +15,7 @@ export interface ViewLayout {
 export interface BaseCard {
   type: string;
   entity?: string;
-  entities?: string[];
+  entities?: any[]; // Can be string[] or (string | EntityConfig)[]
   name?: string;
   icon?: string;
   show_name?: boolean;
@@ -104,6 +104,97 @@ export interface PictureCard extends BaseCard {
   theme?: string;
 }
 
+export interface GaugeCard extends BaseCard {
+  type: 'gauge';
+  entity: string;
+  name?: string;
+  min?: number;
+  max?: number;
+  severity?: {
+    green?: number;
+    yellow?: number;
+    red?: number;
+  };
+  unit?: string;
+  needle?: boolean;
+  theme?: string;
+}
+
+export interface LightCard extends BaseCard {
+  type: 'light';
+  entity: string;
+  name?: string;
+  theme?: string;
+}
+
+export interface SensorCard extends BaseCard {
+  type: 'sensor';
+  entity: string;
+  name?: string;
+  graph?: 'line' | 'none';
+  detail?: number;
+  hours_to_show?: number;
+  theme?: string;
+}
+
+export interface HistoryGraphCard extends BaseCard {
+  type: 'history-graph';
+  entities: (string | EntityConfig)[];
+  title?: string;
+  hours_to_show?: number;
+  refresh_interval?: number;
+  theme?: string;
+}
+
+export interface WeatherForecastCard extends BaseCard {
+  type: 'weather-forecast';
+  entity: string;
+  name?: string;
+  show_forecast?: boolean;
+  theme?: string;
+}
+
+export interface MapCard extends BaseCard {
+  type: 'map';
+  entities?: (string | EntityConfig)[];
+  title?: string;
+  aspect_ratio?: string;
+  default_zoom?: number;
+  dark_mode?: boolean;
+  theme?: string;
+}
+
+export interface ThermostatCard extends BaseCard {
+  type: 'thermostat';
+  entity: string;
+  name?: string;
+  theme?: string;
+  features?: Array<{
+    type: string;
+    [key: string]: any;
+  }>;
+}
+
+export interface HorizontalStackCard extends BaseCard {
+  type: 'horizontal-stack';
+  cards: Card[];
+  title?: string;
+}
+
+export interface VerticalStackCard extends BaseCard {
+  type: 'vertical-stack';
+  cards: Card[];
+  title?: string;
+}
+
+export interface GridCard extends BaseCard {
+  type: 'grid';
+  cards: Card[];
+  title?: string;
+  columns?: number;
+  square?: boolean;
+}
+
 export interface ConditionalCard extends BaseCard {
   type: 'conditional';
   conditions: Condition[];
@@ -114,6 +205,54 @@ export interface Condition {
   entity: string;
   state?: string;
   state_not?: string;
+}
+
+export interface PictureEntityCard extends BaseCard {
+  type: 'picture-entity';
+  entity: string;
+  image?: string;
+  camera_image?: string;
+  camera_view?: 'auto' | 'live';
+  name?: string;
+  show_name?: boolean;
+  show_state?: boolean;
+  tap_action?: Action;
+  hold_action?: Action;
+  theme?: string;
+}
+
+export interface PictureGlanceCard extends BaseCard {
+  type: 'picture-glance';
+  entities: (string | EntityConfig)[];
+  image?: string;
+  camera_image?: string;
+  camera_view?: 'auto' | 'live';
+  title?: string;
+  show_state?: boolean;
+  state_image?: Record<string, string>;
+  theme?: string;
+}
+
+export interface MediaPlayerCard extends BaseCard {
+  type: 'media-control';
+  entity: string;
+  name?: string;
+  theme?: string;
+}
+
+export interface AlarmPanelCard extends BaseCard {
+  type: 'alarm-panel';
+  entity: string;
+  name?: string;
+  states?: string[];
+  theme?: string;
+}
+
+export interface PlantStatusCard extends BaseCard {
+  type: 'plant-status';
+  entity: string;
+  name?: string;
+  theme?: string;
 }
 
 // Custom card types (to be extended)
@@ -129,6 +268,21 @@ export type Card =
   | GlanceCard
   | MarkdownCard
   | PictureCard
+  | PictureEntityCard
+  | PictureGlanceCard
+  | GaugeCard
+  | LightCard
+  | SensorCard
+  | HistoryGraphCard
+  | WeatherForecastCard
+  | MapCard
+  | ThermostatCard
+  | MediaPlayerCard
+  | AlarmPanelCard
+  | PlantStatusCard
+  | HorizontalStackCard
+  | VerticalStackCard
+  | GridCard
   | ConditionalCard
   | CustomCard;
 

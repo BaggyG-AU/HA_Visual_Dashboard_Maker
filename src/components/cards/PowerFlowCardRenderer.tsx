@@ -166,18 +166,20 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
         transition: 'all 0.3s ease',
         borderRadius: '12px',
       }}
-      headStyle={{
-        padding: '16px 16px 12px 16px',
-        minHeight: '48px',
-        borderBottom: 'none',
-      }}
-      bodyStyle={{
-        padding: '16px',
-        paddingTop: '0',
-        height: 'calc(100% - 48px)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
+      styles={{
+        header: {
+          padding: '16px 16px 12px 16px',
+          minHeight: '48px',
+          borderBottom: 'none',
+        },
+        body: {
+          padding: '16px',
+          paddingTop: '0',
+          height: 'calc(100% - 48px)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+        },
       }}
       onClick={onClick}
       hoverable

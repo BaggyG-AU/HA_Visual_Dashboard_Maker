@@ -6,6 +6,27 @@ import { GlanceCardRenderer } from './cards/GlanceCardRenderer';
 import { MarkdownCardRenderer } from './cards/MarkdownCardRenderer';
 import { ApexChartsCardRenderer } from './cards/ApexChartsCardRenderer';
 import { PowerFlowCardRenderer } from './cards/PowerFlowCardRenderer';
+import { ThermostatCardRenderer } from './cards/ThermostatCardRenderer';
+import { BetterThermostatCardRenderer } from './cards/BetterThermostatCardRenderer';
+import { HorizontalStackCardRenderer } from './cards/HorizontalStackCardRenderer';
+import { VerticalStackCardRenderer } from './cards/VerticalStackCardRenderer';
+import { GridCardRenderer } from './cards/GridCardRenderer';
+import { MushroomCardRenderer } from './cards/MushroomCardRenderer';
+import { MiniGraphCardRenderer } from './cards/MiniGraphCardRenderer';
+import { BubbleCardRenderer } from './cards/BubbleCardRenderer';
+import { GaugeCardRenderer } from './cards/GaugeCardRenderer';
+import { LightCardRenderer } from './cards/LightCardRenderer';
+import { SensorCardRenderer } from './cards/SensorCardRenderer';
+import { ConditionalCardRenderer } from './cards/ConditionalCardRenderer';
+import { HistoryGraphCardRenderer } from './cards/HistoryGraphCardRenderer';
+import { WeatherForecastCardRenderer } from './cards/WeatherForecastCardRenderer';
+import { MapCardRenderer } from './cards/MapCardRenderer';
+import { PictureCardRenderer } from './cards/PictureCardRenderer';
+import { PictureEntityCardRenderer } from './cards/PictureEntityCardRenderer';
+import { PictureGlanceCardRenderer } from './cards/PictureGlanceCardRenderer';
+import { MediaPlayerCardRenderer } from './cards/MediaPlayerCardRenderer';
+import { AlarmPanelCardRenderer } from './cards/AlarmPanelCardRenderer';
+import { PlantStatusCardRenderer } from './cards/PlantStatusCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
 
 interface BaseCardProps {
@@ -60,12 +81,86 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
     case 'markdown':
       return <MarkdownCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
 
+    case 'gauge':
+      return <GaugeCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'light':
+      return <LightCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'sensor':
+      return <SensorCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'thermostat':
+      return <ThermostatCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'conditional':
+      return <ConditionalCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'history-graph':
+      return <HistoryGraphCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'weather-forecast':
+      return <WeatherForecastCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'map':
+      return <MapCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'picture':
+      return <PictureCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'picture-entity':
+      return <PictureEntityCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'picture-glance':
+      return <PictureGlanceCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'media-control':
+      return <MediaPlayerCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'alarm-panel':
+      return <AlarmPanelCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'plant-status':
+      return <PlantStatusCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'horizontal-stack':
+      return <HorizontalStackCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'vertical-stack':
+      return <VerticalStackCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'grid':
+      return <GridCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
     case 'custom:apexcharts-card':
       return <ApexChartsCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
 
     case 'custom:power-flow-card-plus':
     case 'custom:power-flow-card':
       return <PowerFlowCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'custom:better-thermostat-ui-card':
+      return <BetterThermostatCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'custom:mini-graph-card':
+      return <MiniGraphCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    case 'custom:bubble-card':
+      return <BubbleCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    // Mushroom cards - handle all mushroom card types
+    case 'custom:mushroom-entity-card':
+    case 'custom:mushroom-light-card':
+    case 'custom:mushroom-fan-card':
+    case 'custom:mushroom-cover-card':
+    case 'custom:mushroom-climate-card':
+    case 'custom:mushroom-media-player-card':
+    case 'custom:mushroom-lock-card':
+    case 'custom:mushroom-alarm-control-panel-card':
+    case 'custom:mushroom-template-card':
+    case 'custom:mushroom-title-card':
+    case 'custom:mushroom-chips-card':
+      return <MushroomCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
 
     // Add more supported card types here as they are implemented
     // case 'gauge':

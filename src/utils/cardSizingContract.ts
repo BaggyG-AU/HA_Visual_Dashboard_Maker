@@ -231,6 +231,94 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       maxH = 12;
       break;
 
+    case 'history-graph':
+      // History graph cards need space for timeline (~280px in HA)
+      // 280 / 56 ≈ 5 rows
+      height = 5;
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 4;
+      maxH = 12;
+      break;
+
+    case 'map':
+      // Map cards need significant space for visualization (~350px in HA)
+      // 350 / 56 ≈ 6.25 rows
+      height = 6;
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 5;
+      maxH = 15;
+      break;
+
+    case 'picture':
+      // Picture cards are flexible, typically 3:2 aspect ratio (~280px in HA)
+      // 280 / 56 ≈ 5 rows
+      height = 5;
+      width = 6;
+      minW = 3;
+      maxW = 12;
+      minH = 3;
+      maxH = 12;
+      break;
+
+    case 'picture-entity':
+      // Picture entity cards similar to picture but with entity overlay (~300px in HA)
+      // 300 / 56 ≈ 5.4 rows
+      height = 5;
+      width = 6;
+      minW = 3;
+      maxW = 12;
+      minH = 4;
+      maxH = 12;
+      break;
+
+    case 'picture-glance':
+      // Picture glance cards have entity icons at bottom (~320px in HA)
+      // 320 / 56 ≈ 5.7 rows
+      height = 6;
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 5;
+      maxH = 12;
+      break;
+
+    case 'media-control':
+      // Media player cards are medium-tall with album art and controls (~400px in HA)
+      // 400 / 56 ≈ 7.1 rows
+      height = 7;
+      width = 6;
+      minW = 4;
+      maxW = 8;
+      minH = 6;
+      maxH = 10;
+      break;
+
+    case 'alarm-panel':
+      // Alarm panel cards need space for state display and buttons (~420px in HA)
+      // 420 / 56 ≈ 7.5 rows
+      height = 8;
+      width = 4;
+      minW = 3;
+      maxW = 6;
+      minH = 7;
+      maxH = 12;
+      break;
+
+    case 'plant-status':
+      // Plant status cards show multiple metrics (~450px in HA)
+      // 450 / 56 ≈ 8 rows
+      height = 8;
+      width = 4;
+      minW = 3;
+      maxW = 6;
+      minH = 7;
+      maxH = 12;
+      break;
+
     case 'spacer':
       // Spacers are minimal
       height = 2;
@@ -239,6 +327,60 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       maxW = 12;
       minH = 1;
       maxH = 2;
+      break;
+
+    case 'custom:better-thermostat-ui-card':
+      // Better Thermostat UI card is taller than standard thermostat (~350px)
+      // 350 / 56 ≈ 6.25 rows
+      height = 6;
+      width = 4;
+      minW = 3;
+      maxW = 6;
+      minH = 5;
+      maxH = 10;
+      break;
+
+    case 'custom:mini-graph-card':
+      // Mini graph card is compact but needs space for the graph (~200px)
+      // 200 / 56 ≈ 3.6 rows
+      height = 4;
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 3;
+      maxH = 10;
+      break;
+
+    case 'custom:bubble-card':
+      // Bubble cards are compact, single-row buttons (~80px)
+      // 80 / 56 ≈ 1.4 rows
+      height = 2;
+      width = 3;
+      minW = 2;
+      maxW = 6;
+      minH = 2;
+      maxH = 4;
+      break;
+
+    // Mushroom cards - all types are compact (~100px)
+    // 100 / 56 ≈ 1.8 rows
+    case 'custom:mushroom-entity-card':
+    case 'custom:mushroom-light-card':
+    case 'custom:mushroom-fan-card':
+    case 'custom:mushroom-cover-card':
+    case 'custom:mushroom-climate-card':
+    case 'custom:mushroom-media-player-card':
+    case 'custom:mushroom-lock-card':
+    case 'custom:mushroom-alarm-control-panel-card':
+    case 'custom:mushroom-template-card':
+    case 'custom:mushroom-title-card':
+    case 'custom:mushroom-chips-card':
+      height = 2;
+      width = 3;
+      minW = 2;
+      maxW = 6;
+      minH = 2;
+      maxH = 5;
       break;
 
     default:

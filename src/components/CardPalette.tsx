@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Collapse, Input, Badge, Tooltip } from 'antd';
+import type { CollapseProps } from 'antd';
 import {
   AppstoreOutlined,
   DashboardOutlined,
@@ -111,30 +112,28 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
           onChange={keys => setActiveKeys(keys as string[])}
           ghost
           style={{ background: 'transparent' }}
-        >
-          {Object.entries(filteredCardsByCategory).map(([category, cards]) => {
+          items={Object.entries(filteredCardsByCategory).map(([category, cards]) => {
             const config = categoryConfig[category as CardCategory];
-            return (
-              <Panel
-                key={category}
-                header={
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ color: config.color }}>{config.icon}</span>
-                    <span style={{ color: 'white', fontWeight: 500 }}>{config.label}</span>
-                    <Badge
-                      count={cards.length}
-                      style={{
-                        backgroundColor: config.color,
-                        marginLeft: '4px',
-                      }}
-                    />
-                  </div>
-                }
-                style={{
-                  borderBottom: '1px solid #434343',
-                  marginBottom: '4px',
-                }}
-              >
+            return {
+              key: category,
+              label: (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: config.color }}>{config.icon}</span>
+                  <span style={{ color: 'white', fontWeight: 500 }}>{config.label}</span>
+                  <Badge
+                    count={cards.length}
+                    style={{
+                      backgroundColor: config.color,
+                      marginLeft: '4px',
+                    }}
+                  />
+                </div>
+              ),
+              style: {
+                borderBottom: '1px solid #434343',
+                marginBottom: '4px',
+              },
+              children: (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {cards.map(card => (
                     <Tooltip key={card.type} title={card.description} placement="right">
@@ -193,10 +192,10 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
                     </Tooltip>
                   ))}
                 </div>
-              </Panel>
-            );
+              ),
+            };
           })}
-        </Collapse>
+        />
       </div>
 
       <div

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Card as AntCard, Typography, Space, Tag } from 'antd';
-import { AppstoreOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, CheckCircleOutlined, CloseCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { EntitiesCard } from '../../types/dashboard';
+import { useHAEntities } from '../../contexts/HAEntityContext';
 
 const { Text } = Typography;
 
@@ -23,11 +24,56 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
   const title = card.title || card.name || 'Entities';
   const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
 
+  // Get live entity states (if available)
+  const { getEntity, isLoading } = useHAEntities();
+
   // Extract entity IDs for display
   const getEntityId = (entity: any): string => {
     if (typeof entity === 'string') return entity;
     if (typeof entity === 'object' && entity?.entity) return entity.entity;
     return 'unknown';
+  };
+
+  // Get state icon and color based on entity state
+  const getStateIcon = (state: string, domain: string) => {
+    if (isLoading) {
+      return <QuestionCircleOutlined style={{ color: '#9e9e9e', fontSize: '16px', flexShrink: 0 }} />;
+    }
+
+    // Domain-specific icons and colors
+    switch (domain) {
+      case 'light':
+        return state === 'on'
+          ? <CheckCircleOutlined style={{ color: '#ffc107', fontSize: '16px', flexShrink: 0 }} />
+          : <CloseCircleOutlined style={{ color: '#666', fontSize: '16px', flexShrink: 0 }} />;
+      case 'switch':
+      case 'input_boolean':
+        return state === 'on'
+          ? <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '16px', flexShrink: 0 }} />
+          : <CloseCircleOutlined style={{ color: '#666', fontSize: '16px', flexShrink: 0 }} />;
+      case 'binary_sensor':
+        return state === 'on'
+          ? <CheckCircleOutlined style={{ color: '#ff9800', fontSize: '16px', flexShrink: 0 }} />
+          : <CloseCircleOutlined style={{ color: '#666', fontSize: '16px', flexShrink: 0 }} />;
+      default:
+        return <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '16px', flexShrink: 0 }} />;
+    }
+  };
+
+  // Format state value for display
+  const formatState = (state: string, domain: string) => {
+    // For binary states
+    if (['on', 'off'].includes(state.toLowerCase())) {
+      return state.charAt(0).toUpperCase() + state.slice(1);
+    }
+
+    // For numeric states, keep as is
+    if (!isNaN(Number(state))) {
+      return state;
+    }
+
+    // Capitalize first letter
+    return state.charAt(0).toUpperCase() + state.slice(1);
   };
 
   return (
@@ -58,11 +104,13 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
         minHeight: card.title ? '40px' : '0',
         borderBottom: 'none',
       }}
-      bodyStyle={{
+      styles={{
+        body: {
         padding: '0 16px 12px 16px',
         paddingTop: card.title ? '0' : '12px',
         height: card.title ? 'calc(100% - 40px)' : '100%',
         overflowY: 'auto',
+      },
       }}
       onClick={onClick}
       hoverable
@@ -70,10 +118,20 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
         {Array.isArray(card.entities) && card.entities.slice(0, 10).map((entity, idx) => {
           const entityId = getEntityId(entity);
+          const domain = entityId.split('.')[0];
           const entityName =
             typeof entity === 'object' && entity?.name
               ? entity.name
               : entityId.split('.')[1]?.replace(/_/g, ' ');
+
+          // Get live state from HA
+          const entityState = getEntity(entityId);
+          const state = entityState?.state || 'unknown';
+          const stateDisplay = formatState(state, domain);
+
+          // Get unit of measurement from attributes
+          const unit = entityState?.attributes?.unit_of_measurement || '';
+          const displayValue = unit ? `${stateDisplay} ${unit}` : stateDisplay;
 
           return (
             <div
@@ -89,7 +147,7 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, overflow: 'hidden' }}>
-                <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '16px', flexShrink: 0 }} />
+                {getStateIcon(state, domain)}
                 <Text
                   style={{
                     color: '#e1e1e1',
@@ -103,11 +161,12 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
                 </Text>
               </div>
               <Text style={{
-                color: '#9e9e9e',
+                color: state === 'unavailable' || state === 'unknown' ? '#ff5252' : '#9e9e9e',
                 fontSize: '14px',
                 flexShrink: 0,
+                fontWeight: state === 'on' ? 500 : 400,
               }}>
-                on
+                {displayValue}
               </Text>
             </div>
           );

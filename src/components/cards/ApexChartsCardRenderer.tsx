@@ -190,17 +190,19 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
         transition: 'all 0.3s ease',
         borderRadius: '12px',
       }}
-      headStyle={{
-        padding: showHeader ? '16px 16px 12px 16px' : '0',
-        minHeight: showHeader ? '48px' : '0',
-        borderBottom: 'none',
-      }}
-      bodyStyle={{
-        padding: '16px',
-        paddingTop: showHeader ? '0' : '16px',
-        height: showHeader ? 'calc(100% - 48px)' : '100%',
-        display: 'flex',
-        flexDirection: 'column',
+      styles={{
+        header: {
+          padding: showHeader ? '16px 16px 12px 16px' : '0',
+          minHeight: showHeader ? '48px' : '0',
+          borderBottom: 'none',
+        },
+        body: {
+          padding: '16px',
+          paddingTop: showHeader ? '0' : '16px',
+          height: showHeader ? 'calc(100% - 48px)' : '100%',
+          display: 'flex',
+          flexDirection: 'column',
+        },
       }}
       onClick={onClick}
       hoverable

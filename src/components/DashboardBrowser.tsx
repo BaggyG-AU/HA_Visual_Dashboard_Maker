@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, List, Button, Alert, Space, Typography, Spin, Tag, Empty } from 'antd';
+import { Modal, Flex, Button, Alert, Space, Typography, Spin, Tag, Empty } from 'antd';
 import { DownloadOutlined, FileTextOutlined, ReloadOutlined, HomeOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 import * as yaml from 'js-yaml';
@@ -157,44 +157,43 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
     const isDownloading = downloading === dashboard.id;
 
     return (
-      <List.Item
-        actions={[
-          <Button
-            key="download"
-            type="primary"
-            icon={<DownloadOutlined />}
-            onClick={() => handleDownloadDashboard(dashboard)}
-            loading={isDownloading}
-            disabled={downloading !== null && !isDownloading}
-          >
-            {isDownloading ? 'Downloading...' : 'Download'}
-          </Button>,
-        ]}
+      <div
+        key={dashboard.id}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 16px',
+          background: '#1a1a1a',
+          borderRadius: '8px',
+          border: '1px solid #434343',
+        }}
       >
-        <List.Item.Meta
-          avatar={
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                background: dashboard.id === 'lovelace' ? '#1890ff' : '#00d9ff',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {dashboard.icon ? (
-                <span
-                  className={`mdi ${dashboard.icon.replace('mdi:', 'mdi-')}`}
-                  style={{ fontSize: '24px', color: 'white' }}
-                />
-              ) : (
-                <FileTextOutlined style={{ fontSize: '24px', color: 'white' }} />
-              )}
-            </div>
-          }
-          title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+          {/* Avatar */}
+          <div
+            style={{
+              width: '40px',
+              height: '40px',
+              background: dashboard.id === 'lovelace' ? '#1890ff' : '#00d9ff',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {dashboard.icon ? (
+              <span
+                className={`mdi ${dashboard.icon.replace('mdi:', 'mdi-')}`}
+                style={{ fontSize: '24px', color: 'white' }}
+              />
+            ) : (
+              <FileTextOutlined style={{ fontSize: '24px', color: 'white' }} />
+            )}
+          </div>
+
+          {/* Content */}
+          <div style={{ flex: 1 }}>
             <Space>
               <Text strong style={{ fontSize: '15px' }}>
                 {dashboard.title}
@@ -206,14 +205,25 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
               )}
               {dashboard.require_admin && <Tag color="red">Admin Only</Tag>}
             </Space>
-          }
-          description={
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              URL: /lovelace/{dashboard.url_path}
-            </Text>
-          }
-        />
-      </List.Item>
+            <div>
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                URL: /lovelace/{dashboard.url_path}
+              </Text>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <Button
+          type="primary"
+          icon={<DownloadOutlined />}
+          onClick={() => handleDownloadDashboard(dashboard)}
+          loading={isDownloading}
+          disabled={downloading !== null && !isDownloading}
+        >
+          {isDownloading ? 'Downloading...' : 'Download'}
+        </Button>
+      </div>
     );
   };
 
@@ -240,7 +250,7 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
     >
       {!haConnectionService.isConnected() && (
         <Alert
-          message="Not Connected"
+          title="Not Connected"
           description="Please connect to Home Assistant first to browse dashboards."
           type="warning"
           showIcon
@@ -249,7 +259,7 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
       )}
 
       <Alert
-        message="How to Load Your Dashboards"
+        title="How to Load Your Dashboards"
         description={
           <div style={{ fontSize: '12px' }}>
             <p style={{ marginTop: '8px', marginBottom: '8px' }}>
@@ -270,7 +280,7 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
 
       {error && (
         <Alert
-          message="Error Loading Dashboards"
+          title="Error Loading Dashboards"
           description={error}
           type="error"
           showIcon
@@ -291,7 +301,7 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description={
-            <Space direction="vertical">
+            <Space orientation="vertical">
               <Text type="secondary">No dashboards found</Text>
               <Text type="secondary" style={{ fontSize: '12px' }}>
                 Connect to Home Assistant and click Refresh
@@ -308,15 +318,16 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
             </Text>
           </div>
 
-          <List
-            itemLayout="horizontal"
-            dataSource={dashboards}
-            renderItem={renderDashboardItem}
+          <Flex
+            vertical
+            gap="small"
             style={{
               maxHeight: '500px',
               overflowY: 'auto',
             }}
-          />
+          >
+            {dashboards.map(renderDashboardItem)}
+          </Flex>
         </>
       )}
 

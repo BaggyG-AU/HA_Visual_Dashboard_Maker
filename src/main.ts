@@ -216,6 +216,58 @@ ipcMain.handle('ha:ws:isConnected', async () => {
   return { connected: haWebSocketService.isConnected() };
 });
 
+// Create temporary dashboard
+ipcMain.handle('ha:ws:createTempDashboard', async (event, config: any) => {
+  try {
+    const tempPath = await haWebSocketService.createTempDashboard(config);
+    return { success: true, tempPath };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+// Update temporary dashboard
+ipcMain.handle('ha:ws:updateTempDashboard', async (event, tempPath: string, config: any) => {
+  try {
+    await haWebSocketService.updateTempDashboard(tempPath, config);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+// Deploy temporary dashboard
+ipcMain.handle('ha:ws:deployDashboard', async (event, tempPath: string, productionPath: string | null) => {
+  try {
+    const result = await haWebSocketService.deployDashboard(tempPath, productionPath);
+    return result;
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+// Delete temporary dashboard
+ipcMain.handle('ha:ws:deleteTempDashboard', async (event, tempPath: string) => {
+  try {
+    await haWebSocketService.deleteTempDashboard(tempPath);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
 // Credentials API handlers
 ipcMain.handle('credentials:save', async (event, name: string, url: string, token: string, id?: string) => {
   try {
