@@ -1,0 +1,34 @@
+title: Layout Card Test Dashboard
+views:
+  - title: Grid Layout
+    path: grid
+    type: custom:grid-layout
+    layout:
+      grid_template_columns: repeat(12, 1fr)
+      grid_template_rows: repeat(auto-fill, 30px)
+      grid_gap: 8px
+    cards:
+      - type: entities
+        title: Left Panel
+        view_layout:
+          grid_column: 1 / 7
+          grid_row: 1 / 5
+        entities:
+          - entity: light.living_room
+          - entity: light.bedroom
+
+      - type: button
+        entity: scene.movie_mode
+        name: Movie Mode
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 1 / 3
+
+      - type: glance
+        title: Status
+        view_layout:
+          grid_column: 7 / 13
+          grid_row: 3 / 5
+        entities:
+          - entity: sensor.temperature
+          - entity: sensor.humidity

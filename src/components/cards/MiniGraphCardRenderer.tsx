@@ -49,18 +49,18 @@ export const MiniGraphCardRenderer: React.FC<MiniGraphCardRendererProps> = ({
   // Generate simple graph visualization
   const generateGraphPoints = () => {
     const numPoints = Math.floor(hours * points);
-    const points: { x: number; y: number }[] = [];
+    const dataPoints: { x: number; y: number }[] = [];
 
     // Generate random-ish data for visualization (in real app, would come from history)
     const baseValue = parseFloat(state) || 50;
     for (let i = 0; i < Math.min(numPoints, 48); i++) {
       const variance = (Math.sin(i / 5) + Math.random() - 0.5) * 10;
-      points.push({
+      dataPoints.push({
         x: (i / numPoints) * 100,
         y: 50 + (baseValue - 50) / 2 + variance,
       });
     }
-    return points;
+    return dataPoints;
   };
 
   const graphPoints = generateGraphPoints();

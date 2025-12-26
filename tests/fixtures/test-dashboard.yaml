@@ -1,0 +1,35 @@
+title: Test Dashboard
+views:
+  - title: Main View
+    path: main
+    cards:
+      - type: entities
+        title: Test Entities
+        entities:
+          - entity: light.living_room
+            name: Living Room Light
+          - entity: sensor.temperature
+            name: Temperature
+          - entity: switch.fan
+            name: Ceiling Fan
+
+      - type: button
+        entity: light.bedroom
+        name: Bedroom Light
+        icon: mdi:lightbulb
+
+      - type: glance
+        title: Quick View
+        entities:
+          - entity: sensor.temperature
+          - entity: sensor.humidity
+          - entity: binary_sensor.motion
+
+      - type: markdown
+        content: |
+          # Test Dashboard
+          This is a test dashboard for automated testing.
+
+          - Item 1
+          - Item 2
+          - Item 3

@@ -140,7 +140,7 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
                       <div
                         draggable
                         onDragStart={e => handleDragStart(e, card.type)}
-                        onClick={() => handleCardClick(card.type)}
+                        onDoubleClick={() => handleCardClick(card.type)}
                         style={{
                           padding: '12px',
                           background: '#1f1f1f',
