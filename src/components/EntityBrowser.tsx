@@ -100,7 +100,7 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
 
   // Filter entities based on search and active tab
   const filteredEntities = useMemo(() => {
-    let entitiesToFilter = activeTab === 'all'
+    const entitiesToFilter = activeTab === 'all'
       ? entities
       : entitiesByDomain[activeTab] || [];
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal, Button, Alert, Space, message } from 'antd';
-import { CodeOutlined, CheckOutlined, CloseOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { CodeOutlined, CheckOutlined, DatabaseOutlined } from '@ant-design/icons';
+import Editor from '@monaco-editor/react';
 import { yamlService } from '../services/yamlService';
 
 interface YamlEditorDialogProps {
@@ -14,8 +15,9 @@ interface YamlEditorDialogProps {
 /**
  * YAML Editor Dialog - Edit dashboard YAML directly
  * Features:
- * - Syntax-highlighted YAML editor using textarea
+ * - Syntax-highlighted YAML editor using Monaco Editor
  * - Real-time validation
+ * - Entity browser integration with cursor-aware insertion
  * - Confirmation before applying changes
  * - Error reporting
  */
@@ -30,7 +32,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
   const [hasChanges, setHasChanges] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const monacoEditorRef = useRef<any>(null);
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -83,23 +85,14 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
   };
 
   const handleInsertEntity = (entityId: string) => {
-    if (!textareaRef.current) return;
+    const editor = monacoEditorRef.current;
+    if (!editor) return;
 
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = textarea.value;
-
-    // Insert entity ID at cursor position
-    const newText = text.substring(0, start) + entityId + text.substring(end);
-    setYamlContent(newText);
-
-    // Set cursor position after the inserted entity ID
-    setTimeout(() => {
-      textarea.focus();
-      const newCursorPos = start + entityId.length;
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-    }, 0);
+    const selection = editor.getSelection();
+    const id = { major: 1, minor: 1 };
+    const op = { identifier: id, range: selection, text: entityId, forceMoveMarkers: true };
+    editor.executeEdits("insert-entity", [op]);
+    editor.focus();
 
     message.success(`Inserted entity: ${entityId}`);
   };
@@ -191,25 +184,26 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
           />
         )}
 
-        <div style={{ marginBottom: '16px' }}>
-          <textarea
-            ref={textareaRef}
+        <div style={{ marginBottom: '16px', border: '1px solid #434343', borderRadius: '4px' }}>
+          <Editor
+            height="500px"
+            language="yaml"
+            theme="vs-dark"
             value={yamlContent}
-            onChange={(e) => setYamlContent(e.target.value)}
-            style={{
-              width: '100%',
-              height: '500px',
-              fontFamily: 'Consolas, Monaco, "Courier New", monospace',
-              fontSize: '13px',
-              padding: '12px',
-              backgroundColor: '#1e1e1e',
-              color: '#d4d4d4',
-              border: '1px solid #434343',
-              borderRadius: '4px',
-              resize: 'vertical',
-              outline: 'none',
+            onChange={(value) => setYamlContent(value || '')}
+            onMount={(editor) => {
+              monacoEditorRef.current = editor;
             }}
-            spellCheck={false}
+            options={{
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              fontSize: 13,
+              lineNumbers: 'on',
+              wordWrap: 'on',
+              automaticLayout: true,
+              tabSize: 2,
+              insertSpaces: true,
+            }}
           />
         </div>
 

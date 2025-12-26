@@ -19,7 +19,27 @@
       "Bash(ls:*)",
       "Bash(npm run)",
       "Bash(python:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx playwright:*)",
+      "Bash(tree:*)",
+      "Bash(move testsdebug-app.spec.ts testse2edebug-app.spec.ts)",
+      "Bash(npm run package:*)",
+      "Bash(npm run test:e2e:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run lint:*)",
+      "Bash(timeout 30 npm start:*)",
+      "Bash(DEBUG=pw:api npx playwright test:*)",
+      "Bash(node -e:*)",
+      "Bash(npx electron:*)",
+      "Bash(timeout 40 npm start:*)",
+      "Bash(timeout 5 npx electron:*)",
+      "Bash(rm:*)",
+      "Bash(node --version:*)",
+      "Bash(npm:*)",
+      "Bash(PWDEBUG=1 npx playwright test:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
