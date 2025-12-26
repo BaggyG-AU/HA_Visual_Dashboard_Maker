@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { DashboardConfig, DashboardState } from '../types/dashboard';
 import { yamlService } from '../services/yamlService';
 
+interface HistoryState {
+  past: DashboardConfig[];
+  future: DashboardConfig[];
+}
+
 interface DashboardActions {
   loadDashboard: (yamlContent: string, filePath: string) => void;
   updateConfig: (config: DashboardConfig) => void;
@@ -11,11 +16,15 @@ interface DashboardActions {
   markClean: () => void;
   clearDashboard: () => void;
   setError: (error: string | null) => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
 }
 
-type DashboardStore = DashboardState & DashboardActions;
+type DashboardStore = DashboardState & DashboardActions & HistoryState;
 
-const initialState: DashboardState = {
+const initialState: DashboardState & HistoryState = {
   config: null,
   filePath: null,
   isLoading: false,
@@ -23,6 +32,8 @@ const initialState: DashboardState = {
   isDirty: false,
   selectedViewIndex: null,
   selectedCardIndex: null,
+  past: [],
+  future: [],
 };
 
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
@@ -54,10 +65,22 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   },
 
   updateConfig: (config: DashboardConfig) => {
-    set({
-      config,
-      isDirty: true,
-    });
+    const currentConfig = get().config;
+
+    // Only add to history if there's a current config
+    if (currentConfig) {
+      set((state) => ({
+        past: [...state.past, currentConfig],
+        future: [], // Clear future when making a new change
+        config,
+        isDirty: true,
+      }));
+    } else {
+      set({
+        config,
+        isDirty: true,
+      });
+    }
   },
 
   setSelectedView: (index: number | null) => {
@@ -88,5 +111,43 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
 
   setError: (error: string | null) => {
     set({ error });
+  },
+
+  undo: () => {
+    const state = get();
+    if (state.past.length === 0) return;
+
+    const previous = state.past[state.past.length - 1];
+    const newPast = state.past.slice(0, state.past.length - 1);
+
+    set({
+      past: newPast,
+      future: state.config ? [state.config, ...state.future] : state.future,
+      config: previous,
+      isDirty: true,
+    });
+  },
+
+  redo: () => {
+    const state = get();
+    if (state.future.length === 0) return;
+
+    const next = state.future[0];
+    const newFuture = state.future.slice(1);
+
+    set({
+      past: state.config ? [...state.past, state.config] : state.past,
+      future: newFuture,
+      config: next,
+      isDirty: true,
+    });
+  },
+
+  canUndo: () => {
+    return get().past.length > 0;
+  },
+
+  canRedo: () => {
+    return get().future.length > 0;
   },
 }));

@@ -78,6 +78,61 @@ ipcMain.handle('fs:exists', async (event, filePath: string) => {
   }
 });
 
+// Handle creating backup of file before save
+ipcMain.handle('fs:createBackup', async (event, filePath: string) => {
+  try {
+    // Check if original file exists
+    try {
+      await fs.access(filePath);
+    } catch {
+      // File doesn't exist, no backup needed
+      return { success: true, message: 'No existing file to backup' };
+    }
+
+    // Create .backup folder next to the file
+    const dir = path.dirname(filePath);
+    const backupDir = path.join(dir, '.backup');
+
+    // Create backup directory if it doesn't exist
+    try {
+      await fs.mkdir(backupDir, { recursive: true });
+    } catch (error) {
+      return { success: false, error: `Failed to create backup directory: ${(error as Error).message}` };
+    }
+
+    // Create backup filename with timestamp
+    const filename = path.basename(filePath);
+    const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
+    const backupFilename = `${filename}.${timestamp}.backup`;
+    const backupPath = path.join(backupDir, backupFilename);
+
+    // Copy file to backup
+    await fs.copyFile(filePath, backupPath);
+
+    // Keep only last 5 backups - get all backup files for this file
+    const files = await fs.readdir(backupDir);
+    const backupFiles = files
+      .filter(f => f.startsWith(filename) && f.endsWith('.backup'))
+      .map(f => ({
+        name: f,
+        path: path.join(backupDir, f),
+      }));
+
+    // Sort by name (which includes timestamp) and remove oldest
+    if (backupFiles.length > 5) {
+      backupFiles.sort((a, b) => a.name.localeCompare(b.name));
+      const toDelete = backupFiles.slice(0, backupFiles.length - 5);
+      for (const file of toDelete) {
+        await fs.unlink(file.path);
+      }
+    }
+
+    return { success: true, backupPath };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
 // Handle get template path
 ipcMain.handle('fs:getTemplatePath', async (event, filename: string) => {
   try {
@@ -102,6 +157,35 @@ ipcMain.handle('settings:getTheme', async () => {
 // Handle setting theme preference
 ipcMain.handle('settings:setTheme', async (event, theme: 'light' | 'dark') => {
   settingsService.setTheme(theme);
+  return { success: true };
+});
+
+// Handle getting recent files
+ipcMain.handle('settings:getRecentFiles', async () => {
+  return { files: settingsService.getRecentFiles() };
+});
+
+// Handle adding recent file
+ipcMain.handle('settings:addRecentFile', async (event, filePath: string) => {
+  settingsService.addRecentFile(filePath);
+  // Update menu to reflect new recent files
+  const mainWindow = BrowserWindow.getAllWindows()[0];
+  if (mainWindow) {
+    const menu = createApplicationMenu(mainWindow);
+    Menu.setApplicationMenu(menu);
+  }
+  return { success: true };
+});
+
+// Handle clearing recent files
+ipcMain.handle('settings:clearRecentFiles', async () => {
+  settingsService.clearRecentFiles();
+  // Update menu to reflect cleared recent files
+  const mainWindow = BrowserWindow.getAllWindows()[0];
+  if (mainWindow) {
+    const menu = createApplicationMenu(mainWindow);
+    Menu.setApplicationMenu(menu);
+  }
   return { success: true };
 });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge } from 'antd';
-import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined } from '@ant-design/icons';
+import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
@@ -55,7 +55,11 @@ const App: React.FC = () => {
     markClean,
     setSelectedView,
     setSelectedCard,
-    markDirty
+    markDirty,
+    undo,
+    redo,
+    canUndo,
+    canRedo
   } = useDashboardStore();
 
   const handleOpenFile = async () => {
@@ -69,7 +73,39 @@ const App: React.FC = () => {
           message.error(`Failed to parse dashboard: ${error}`);
         } else {
           message.success(`Dashboard loaded: ${result.filePath}`);
+          // Add to recent files
+          await window.electronAPI.addRecentFile(result.filePath);
         }
+      }
+    } catch (error) {
+      message.error(`Failed to open file: ${(error as Error).message}`);
+    }
+  };
+
+  const handleOpenRecentFile = async (filePath: string) => {
+    try {
+      // Check if file exists
+      const fileExists = await window.electronAPI.fileExists(filePath);
+      if (!fileExists.exists) {
+        message.error(`File not found: ${filePath}`);
+        return;
+      }
+
+      // Read file content
+      const result = await window.electronAPI.readFile(filePath);
+      if (result.success && result.content) {
+        // Load dashboard into store
+        loadDashboard(result.content, filePath);
+
+        if (error) {
+          message.error(`Failed to parse dashboard: ${error}`);
+        } else {
+          message.success(`Dashboard loaded: ${filePath}`);
+          // Add to recent files (moves it to top)
+          await window.electronAPI.addRecentFile(filePath);
+        }
+      } else {
+        message.error(`Failed to read file: ${result.error}`);
       }
     } catch (error) {
       message.error(`Failed to open file: ${(error as Error).message}`);
@@ -102,6 +138,12 @@ const App: React.FC = () => {
 
     if (filePath) {
       try {
+        // Create backup before saving
+        const backupResult = await window.electronAPI.createBackup(filePath);
+        if (backupResult.success && backupResult.backupPath) {
+          console.log('Created backup:', backupResult.backupPath);
+        }
+
         const yamlContent = yamlService.serializeDashboard(config);
         const result = await window.electronAPI.writeFile(filePath, yamlContent);
         if (result.success) {
@@ -730,12 +772,14 @@ const App: React.FC = () => {
     const handleMenuSaveFileAs = () => handleSaveFile();
     const handleMenuToggleTheme = () => handleToggleTheme();
     const handleMenuShowAbout = () => handleShowAbout();
+    const handleMenuOpenRecentFile = (filePath: string) => handleOpenRecentFile(filePath);
 
     const unsubOpenFile = window.electronAPI.onMenuOpenFile(handleMenuOpenFile);
     const unsubSaveFile = window.electronAPI.onMenuSaveFile(handleMenuSave);
     const unsubSaveFileAs = window.electronAPI.onMenuSaveFileAs(handleMenuSaveFileAs);
     const unsubToggleTheme = window.electronAPI.onMenuToggleTheme(handleMenuToggleTheme);
     const unsubShowAbout = window.electronAPI.onMenuShowAbout(handleMenuShowAbout);
+    const unsubOpenRecentFile = window.electronAPI.onMenuOpenRecentFile(handleMenuOpenRecentFile);
 
     // Cleanup listeners when component unmounts
     return () => {
@@ -744,6 +788,7 @@ const App: React.FC = () => {
       unsubSaveFileAs();
       unsubToggleTheme();
       unsubShowAbout();
+      unsubOpenRecentFile();
     };
   }, []);
 
@@ -758,8 +803,29 @@ const App: React.FC = () => {
         return;
       }
 
+      // Ctrl+S: Save
+      if (event.ctrlKey && event.key === 's') {
+        event.preventDefault();
+        handleSave();
+      }
+      // Ctrl+Z: Undo
+      else if (event.ctrlKey && !event.shiftKey && event.key === 'z') {
+        event.preventDefault();
+        if (canUndo()) {
+          undo();
+          message.info('Undo');
+        }
+      }
+      // Ctrl+Y or Ctrl+Shift+Z: Redo
+      else if ((event.ctrlKey && event.key === 'y') || (event.ctrlKey && event.shiftKey && event.key === 'z')) {
+        event.preventDefault();
+        if (canRedo()) {
+          redo();
+          message.info('Redo');
+        }
+      }
       // Ctrl+C: Copy
-      if (event.ctrlKey && event.key === 'c') {
+      else if (event.ctrlKey && event.key === 'c') {
         event.preventDefault();
         handleCardCopy();
       }
@@ -785,7 +851,7 @@ const App: React.FC = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedViewIndex, selectedCardIndex, clipboard, config]);
+  }, [selectedViewIndex, selectedCardIndex, clipboard, config, handleSave, undo, redo, canUndo, canRedo]);
 
   return (
     <ConfigProvider
@@ -796,8 +862,32 @@ const App: React.FC = () => {
       <HAEntityProvider enabled={isConnected}>
       <Layout style={{ height: '100vh' }}>
         <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
-          <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>
-            HA Visual Dashboard Maker
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>
+              HA Visual Dashboard Maker
+            </div>
+            <Space>
+              <Button
+                size="small"
+                icon={<UndoOutlined />}
+                onClick={() => {
+                  undo();
+                  message.info('Undo');
+                }}
+                disabled={!canUndo()}
+                title="Undo (Ctrl+Z)"
+              />
+              <Button
+                size="small"
+                icon={<RedoOutlined />}
+                onClick={() => {
+                  redo();
+                  message.info('Redo');
+                }}
+                disabled={!canRedo()}
+                title="Redo (Ctrl+Y)"
+              />
+            </Space>
           </div>
           <Space>
             <Badge status={isConnected ? 'success' : 'default'} text={isConnected ? 'Connected' : 'Not Connected'} style={{ color: '#888' }} />

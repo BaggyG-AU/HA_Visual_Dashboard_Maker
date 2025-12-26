@@ -1,7 +1,34 @@
 import { app, Menu, shell, BrowserWindow, MenuItemConstructorOptions } from 'electron';
+import { settingsService } from './services/settingsService';
+import path from 'node:path';
 
 export function createApplicationMenu(mainWindow: BrowserWindow): Menu {
   const isMac = process.platform === 'darwin';
+
+  // Get recent files and create menu items
+  const recentFiles = settingsService.getRecentFiles();
+  const recentFilesMenuItems: MenuItemConstructorOptions[] = recentFiles.length > 0
+    ? [
+        ...recentFiles.map((filePath, index) => ({
+          label: `${index + 1}. ${path.basename(filePath)}`,
+          click: () => {
+            mainWindow.webContents.send('menu:open-recent-file', filePath);
+          },
+          // Show full path in tooltip (not all platforms support this)
+          sublabel: filePath,
+        })),
+        { type: 'separator' as const },
+        {
+          label: 'Clear Recent Files',
+          click: async () => {
+            settingsService.clearRecentFiles();
+            // Rebuild menu after clearing
+            const newMenu = createApplicationMenu(mainWindow);
+            Menu.setApplicationMenu(newMenu);
+          },
+        },
+      ]
+    : [{ label: 'No recent files', enabled: false }];
 
   const template: MenuItemConstructorOptions[] = [
     // App Menu (macOS only)
@@ -49,9 +76,7 @@ export function createApplicationMenu(mainWindow: BrowserWindow): Menu {
         { type: 'separator' },
         {
           label: 'Recent Files',
-          submenu: [
-            { label: 'No recent files', enabled: false }
-          ]
+          submenu: recentFilesMenuItems
         },
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' }

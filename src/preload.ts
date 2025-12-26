@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readFile: (filePath: string) => ipcRenderer.invoke('fs:readFile', filePath),
   writeFile: (filePath: string, content: string) => ipcRenderer.invoke('fs:writeFile', filePath, content),
   fileExists: (filePath: string) => ipcRenderer.invoke('fs:exists', filePath),
+  createBackup: (filePath: string) => ipcRenderer.invoke('fs:createBackup', filePath),
   getTemplatePath: (filename: string) => ipcRenderer.invoke('fs:getTemplatePath', filename),
 
   // Shell APIs
@@ -22,6 +23,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Settings APIs
   getTheme: () => ipcRenderer.invoke('settings:getTheme'),
   setTheme: (theme: 'light' | 'dark') => ipcRenderer.invoke('settings:setTheme', theme),
+  getRecentFiles: () => ipcRenderer.invoke('settings:getRecentFiles'),
+  addRecentFile: (filePath: string) => ipcRenderer.invoke('settings:addRecentFile', filePath),
+  clearRecentFiles: () => ipcRenderer.invoke('settings:clearRecentFiles'),
 
   // Home Assistant connection APIs
   getHAConnection: () => ipcRenderer.invoke('ha:getConnection'),
@@ -70,6 +74,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('menu:show-about', callback);
     return () => ipcRenderer.removeListener('menu:show-about', callback);
   },
+  onMenuOpenRecentFile: (callback: (filePath: string) => void) => {
+    ipcRenderer.on('menu:open-recent-file', (_event, filePath) => callback(filePath));
+    return () => ipcRenderer.removeAllListeners('menu:open-recent-file');
+  },
 });
 
 // Type definitions for TypeScript
@@ -79,9 +87,13 @@ export interface ElectronAPI {
   readFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
   writeFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
   fileExists: (filePath: string) => Promise<{ exists: boolean }>;
+  createBackup: (filePath: string) => Promise<{ success: boolean; backupPath?: string; message?: string; error?: string }>;
   openExternal: (url: string) => Promise<void>;
   getTheme: () => Promise<{ theme: 'light' | 'dark' }>;
   setTheme: (theme: 'light' | 'dark') => Promise<{ success: boolean }>;
+  getRecentFiles: () => Promise<{ files: string[] }>;
+  addRecentFile: (filePath: string) => Promise<{ success: boolean }>;
+  clearRecentFiles: () => Promise<{ success: boolean }>;
   getHAConnection: () => Promise<{ url?: string; token?: string }>;
   setHAConnection: (url: string, token: string) => Promise<{ success: boolean }>;
   clearHAConnection: () => Promise<{ success: boolean }>;
@@ -107,6 +119,7 @@ export interface ElectronAPI {
   onMenuSaveFileAs: (callback: () => void) => (() => void);
   onMenuToggleTheme: (callback: () => void) => (() => void);
   onMenuShowAbout: (callback: () => void) => (() => void);
+  onMenuOpenRecentFile: (callback: (filePath: string) => void) => (() => void);
 }
 
 declare global {
