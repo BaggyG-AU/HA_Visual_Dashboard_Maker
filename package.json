@@ -11,7 +11,14 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
-    "test": "echo 'Test configuration pending'"
+    "test": "playwright test",
+    "test:e2e": "playwright test --project=electron-e2e",
+    "test:integration": "playwright test --project=electron-integration",
+    "test:unit": "playwright test --project=electron-unit",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report test-results/html"
   },
   "keywords": [
     "home-assistant",
@@ -48,6 +55,7 @@
     "@electron-forge/plugin-fuses": "^7.10.2",
     "@electron-forge/plugin-vite": "^7.10.2",
     "@electron/fuses": "^1.8.0",
+    "@playwright/test": "^1.57.0",
     "@types/electron-squirrel-startup": "^1.0.2",
     "@types/js-yaml": "^4.0.9",
     "@types/react": "^19.2.7",
@@ -58,6 +66,7 @@
     "electron": "39.2.7",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
+    "playwright": "^1.57.0",
     "typescript": "~4.5.4",
     "vite": "^5.4.21"
   },
