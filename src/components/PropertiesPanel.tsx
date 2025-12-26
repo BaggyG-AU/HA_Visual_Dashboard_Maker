@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Space, Typography, Divider, Select, Alert } from 'antd';
+import React, { useState, useEffect, useRef } from 'react';
+import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message } from 'antd';
+import { UndoOutlined, FormatPainterOutlined } from '@ant-design/icons';
+import Editor from '@monaco-editor/react';
+import * as yaml from 'js-yaml';
 import { Card } from '../types/dashboard';
 import { cardRegistry } from '../services/cardRegistry';
 import { EntitySelect } from './EntitySelect';
@@ -25,6 +28,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const [form] = Form.useForm();
   const [hasChanges, setHasChanges] = useState(false);
   const [streamComponentEnabled, setStreamComponentEnabled] = useState<boolean | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('form');
+  const [yamlContent, setYamlContent] = useState<string>('');
+  const [yamlError, setYamlError] = useState<string | null>(null);
+  const [undoStack, setUndoStack] = useState<Card[]>([]);
+  const isUpdatingFromForm = useRef(false);
+  const isUpdatingFromYaml = useRef(false);
 
   // Helper function to normalize entities for form display
   const normalizeCardForForm = (card: Card): any => {
@@ -54,6 +63,66 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     return normalized;
   };
 
+  // Convert card to YAML string
+  const cardToYaml = (card: Card): string => {
+    try {
+      return yaml.dump(card, {
+        indent: 2,
+        lineWidth: -1,
+        noRefs: true,
+        sortKeys: false,
+      });
+    } catch (error) {
+      console.error('Error converting card to YAML:', error);
+      return '';
+    }
+  };
+
+  // Parse YAML string to card object
+  const yamlToCard = (yamlStr: string): Card | null => {
+    try {
+      const parsed = yaml.load(yamlStr) as Card;
+      setYamlError(null);
+      return parsed;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Invalid YAML';
+      setYamlError(errorMessage);
+      return null;
+    }
+  };
+
+  // Format YAML (prettify)
+  const formatYaml = () => {
+    if (!card) return;
+    const formatted = cardToYaml(card);
+    setYamlContent(formatted);
+    message.success('YAML formatted');
+  };
+
+  // Undo last change
+  const handleUndo = () => {
+    if (undoStack.length === 0) {
+      message.info('Nothing to undo');
+      return;
+    }
+
+    const previousCard = undoStack[undoStack.length - 1];
+    setUndoStack(prev => prev.slice(0, -1));
+
+    // Update form and YAML
+    form.setFieldsValue(normalizeCardForForm(previousCard));
+    setYamlContent(cardToYaml(previousCard));
+
+    // Auto-save
+    onSave(previousCard);
+    message.success('Undo successful');
+  };
+
+  // Save current state to undo stack
+  const saveToUndoStack = (currentCard: Card) => {
+    setUndoStack(prev => [...prev, { ...currentCard }].slice(-10)); // Keep last 10 states
+  };
+
   // Check if stream component is enabled when component mounts
   useEffect(() => {
     const checkStreamComponent = async () => {
@@ -68,16 +137,65 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     checkStreamComponent();
   }, []);
 
-  // Reset form when card changes
+  // Reset form and YAML when card changes
   useEffect(() => {
     if (card) {
       form.setFieldsValue(normalizeCardForForm(card));
+      setYamlContent(cardToYaml(card));
       setHasChanges(false);
+      setUndoStack([]); // Clear undo stack when switching cards
     }
   }, [card, cardIndex, form]);
 
+  // Handle form value changes - sync to YAML and auto-save
   const handleValuesChange = () => {
+    if (isUpdatingFromYaml.current) return;
+
     setHasChanges(true);
+    isUpdatingFromForm.current = true;
+
+    const values = form.getFieldsValue();
+    const updatedCard = { ...card, ...values };
+
+    // Save to undo stack before updating
+    if (card) {
+      saveToUndoStack(card);
+    }
+
+    // Update YAML
+    setYamlContent(cardToYaml(updatedCard as Card));
+
+    // Auto-save
+    onSave(updatedCard as Card);
+
+    setTimeout(() => {
+      isUpdatingFromForm.current = false;
+    }, 0);
+  };
+
+  // Handle YAML changes - sync to form and auto-save
+  const handleYamlChange = (value: string | undefined) => {
+    if (!value || isUpdatingFromForm.current) return;
+
+    setYamlContent(value);
+    isUpdatingFromYaml.current = true;
+
+    const parsedCard = yamlToCard(value);
+    if (parsedCard && card) {
+      // Save to undo stack before updating
+      saveToUndoStack(card);
+
+      // Update form
+      form.setFieldsValue(normalizeCardForForm(parsedCard));
+
+      // Auto-save
+      onSave(parsedCard);
+      setHasChanges(true);
+    }
+
+    setTimeout(() => {
+      isUpdatingFromYaml.current = false;
+    }, 0);
   };
 
   const handleSave = () => {
@@ -113,11 +231,34 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
   return (
     <div style={{ padding: '16px', color: 'white', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Title level={4} style={{ color: 'white', marginTop: 0 }}>
-        Properties
-      </Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <Title level={4} style={{ color: 'white', marginTop: 0, marginBottom: 0 }}>
+          Properties
+        </Title>
+        <Space>
+          <Button
+            size="small"
+            icon={<UndoOutlined />}
+            onClick={handleUndo}
+            disabled={undoStack.length === 0}
+            title="Undo last change"
+          >
+            Undo
+          </Button>
+          {activeTab === 'yaml' && (
+            <Button
+              size="small"
+              icon={<FormatPainterOutlined />}
+              onClick={formatYaml}
+              title="Format YAML"
+            >
+              Format
+            </Button>
+          )}
+        </Space>
+      </div>
 
-      <div style={{ marginBottom: '16px' }}>
+      <div style={{ marginBottom: '12px' }}>
         <Text strong style={{ color: '#00d9ff' }}>
           {cardName}
         </Text>
@@ -129,12 +270,20 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
       <Divider style={{ margin: '12px 0', borderColor: '#434343' }} />
 
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        <Form
-          form={form}
-          layout="vertical"
-          onValuesChange={handleValuesChange}
-        >
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        items={[
+          {
+            key: 'form',
+            label: 'Form',
+            children: (
+              <div style={{ height: 'calc(100vh - 280px)', overflow: 'auto' }}>
+                <Form
+                  form={form}
+                  layout="vertical"
+                  onValuesChange={handleValuesChange}
+                >
           {/* Common Properties */}
           {(card.type === 'entities' || card.type === 'glance') && (
             <>
@@ -531,8 +680,1057 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
+          {card.type === 'alarm-panel' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect placeholder="Select alarm panel" filterDomains={['alarm_control_panel']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input placeholder="Display name" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>States</span>}
+                name="states"
+                help={<span style={{ color: '#666' }}>Alarm states to display (comma-separated)</span>}
+              >
+                <Select
+                  mode="multiple"
+                  placeholder="Select states"
+                  options={[
+                    { value: 'armed_home', label: 'Armed Home' },
+                    { value: 'armed_away', label: 'Armed Away' },
+                    { value: 'armed_night', label: 'Armed Night' },
+                    { value: 'armed_vacation', label: 'Armed Vacation' },
+                    { value: 'armed_custom_bypass', label: 'Armed Custom Bypass' },
+                    { value: 'disarmed', label: 'Disarmed' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'plant-status' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect placeholder="Select plant" filterDomains={['plant']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input placeholder="Display name" />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'custom:mini-graph-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entities</span>}
+                name="entities"
+                rules={[{ required: true, message: 'At least one entity is required' }]}
+                help={<span style={{ color: '#666' }}>Select entities to graph</span>}
+              >
+                <EntityMultiSelect placeholder="Select entities" filterDomains={['sensor', 'binary_sensor']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input placeholder="Graph title" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Hours to Show</span>}
+                name="hours_to_show"
+              >
+                <Input type="number" placeholder="24" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Points per Hour</span>}
+                name="points_per_hour"
+                help={<span style={{ color: '#666' }}>Data point density (default: 0.5)</span>}
+              >
+                <Input type="number" step="0.1" placeholder="0.5" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Line Width</span>}
+                name="line_width"
+              >
+                <Input type="number" placeholder="5" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Animate</span>}
+                name="animate"
+                help={<span style={{ color: '#666' }}>Enable graph animations</span>}
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Enabled' },
+                    { value: false, label: 'Disabled' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show State</span>}
+                name="show_state"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'custom:button-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+              >
+                <EntitySelect placeholder="Select entity (optional for template buttons)" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input placeholder="Button name" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon</span>}
+                name="icon"
+              >
+                <IconSelect placeholder="mdi:lightbulb" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Color Type</span>}
+                name="color_type"
+                help={<span style={{ color: '#666' }}>How to color the button</span>}
+              >
+                <Select
+                  placeholder="Select color type"
+                  options={[
+                    { value: 'icon', label: 'Icon' },
+                    { value: 'card', label: 'Card' },
+                    { value: 'label-card', label: 'Label Card' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Color</span>}
+                name="color"
+                help={<span style={{ color: '#666' }}>Button color (auto, rgb(255,0,0), or CSS color)</span>}
+              >
+                <Input placeholder="auto" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Size</span>}
+                name="size"
+                help={<span style={{ color: '#666' }}>Button size percentage</span>}
+              >
+                <Input placeholder="40%" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Name</span>}
+                name="show_name"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show State</span>}
+                name="show_state"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Icon</span>}
+                name="show_icon"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'custom:mushroom-entity-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect placeholder="Select entity" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input placeholder="Display name" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon</span>}
+                name="icon"
+              >
+                <IconSelect placeholder="mdi:mushroom" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon Color</span>}
+                name="icon_color"
+              >
+                <Select
+                  placeholder="Select color"
+                  options={[
+                    { value: 'primary', label: 'Primary' },
+                    { value: 'accent', label: 'Accent' },
+                    { value: 'info', label: 'Info' },
+                    { value: 'success', label: 'Success' },
+                    { value: 'warning', label: 'Warning' },
+                    { value: 'danger', label: 'Danger' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Layout</span>}
+                name="layout"
+              >
+                <Select
+                  placeholder="Select layout"
+                  options={[
+                    { value: 'vertical', label: 'Vertical' },
+                    { value: 'horizontal', label: 'Horizontal' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Fill Container</span>}
+                name="fill_container"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Yes' },
+                    { value: false, label: 'No' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'custom:mushroom-light-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect placeholder="Select light" filterDomains={['light']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input placeholder="Display name" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon</span>}
+                name="icon"
+              >
+                <IconSelect placeholder="mdi:lightbulb" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Use Light Color</span>}
+                name="use_light_color"
+                help={<span style={{ color: '#666' }}>Use the light's current color for the icon</span>}
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Yes' },
+                    { value: false, label: 'No' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Brightness Control</span>}
+                name="show_brightness_control"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Color Control</span>}
+                name="show_color_control"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Color Temperature Control</span>}
+                name="show_color_temp_control"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'custom:mushroom-climate-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect placeholder="Select climate entity" filterDomains={['climate']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input placeholder="Display name" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon</span>}
+                name="icon"
+              >
+                <IconSelect placeholder="mdi:thermostat" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Temperature Control</span>}
+                name="show_temperature_control"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>HVAC Modes</span>}
+                name="hvac_modes"
+                help={<span style={{ color: '#666' }}>Climate modes to display</span>}
+              >
+                <Select
+                  mode="multiple"
+                  placeholder="Select modes"
+                  options={[
+                    { value: 'auto', label: 'Auto' },
+                    { value: 'heat', label: 'Heat' },
+                    { value: 'cool', label: 'Cool' },
+                    { value: 'heat_cool', label: 'Heat/Cool' },
+                    { value: 'dry', label: 'Dry' },
+                    { value: 'fan_only', label: 'Fan Only' },
+                    { value: 'off', label: 'Off' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'custom:mushroom-cover-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect placeholder="Select cover entity" filterDomains={['cover']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input placeholder="Display name" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon</span>}
+                name="icon"
+              >
+                <IconSelect placeholder="mdi:window-shutter" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Position Control</span>}
+                name="show_position_control"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Tilt Position Control</span>}
+                name="show_tilt_position_control"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'custom:mushroom-fan-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect placeholder="Select fan entity" filterDomains={['fan']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input placeholder="Display name" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon</span>}
+                name="icon"
+              >
+                <IconSelect placeholder="mdi:fan" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon Animation</span>}
+                name="icon_animation"
+                help={<span style={{ color: '#666' }}>Animate icon when fan is on</span>}
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Enabled' },
+                    { value: false, label: 'Disabled' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Percentage Control</span>}
+                name="show_percentage_control"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Oscillate Control</span>}
+                name="show_oscillate_control"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'custom:mushroom-switch-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect placeholder="Select switch entity" filterDomains={['switch', 'input_boolean']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input placeholder="Display name" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon</span>}
+                name="icon"
+              >
+                <IconSelect placeholder="mdi:light-switch" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon Color</span>}
+                name="icon_color"
+              >
+                <Select
+                  placeholder="Select color"
+                  options={[
+                    { value: 'primary', label: 'Primary' },
+                    { value: 'accent', label: 'Accent' },
+                    { value: 'info', label: 'Info' },
+                    { value: 'success', label: 'Success' },
+                    { value: 'warning', label: 'Warning' },
+                    { value: 'danger', label: 'Danger' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Layout</span>}
+                name="layout"
+              >
+                <Select
+                  placeholder="Select layout"
+                  options={[
+                    { value: 'vertical', label: 'Vertical' },
+                    { value: 'horizontal', label: 'Horizontal' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {(card.type === 'horizontal-stack' || card.type === 'vertical-stack') && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input placeholder="Stack title (optional)" />
+              </Form.Item>
+
+              <Alert
+                message="Nested Cards Configuration"
+                description="This stack contains other cards. Add or edit cards using the canvas. The cards are stacked in the order they appear in the YAML."
+                type="info"
+                showIcon
+                style={{ marginBottom: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'grid' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input placeholder="Grid title (optional)" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Columns</span>}
+                name="columns"
+                help={<span style={{ color: '#666' }}>Number of columns in the grid</span>}
+              >
+                <Input type="number" placeholder="3" min={1} max={12} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Square</span>}
+                name="square"
+                help={<span style={{ color: '#666' }}>Force square aspect ratio</span>}
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Yes' },
+                    { value: false, label: 'No' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Alert
+                message="Nested Cards Configuration"
+                description="This grid contains other cards. Add or edit cards using the canvas. The cards will be arranged in a grid layout."
+                type="info"
+                showIcon
+                style={{ marginBottom: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'conditional' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name={['conditions', 0, 'entity']}
+                help={<span style={{ color: '#666' }}>Entity to check condition on</span>}
+              >
+                <EntitySelect placeholder="Select entity" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>State</span>}
+                name={['conditions', 0, 'state']}
+                help={<span style={{ color: '#666' }}>Show card when entity matches this state</span>}
+              >
+                <Input placeholder="on" />
+              </Form.Item>
+
+              <Alert
+                message="Complex Conditional Configuration"
+                description="For advanced conditions (multiple conditions, state_not, etc.), use the YAML editor. This form supports basic single-condition configuration."
+                type="info"
+                showIcon
+                style={{ marginBottom: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:apexcharts-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Graph Span</span>}
+                name="graph_span"
+                help={<span style={{ color: '#666' }}>Time span to display (e.g., 1h, 12h, 1d, 1w)</span>}
+              >
+                <Input placeholder="1d" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Header Title</span>}
+                name={['header', 'title']}
+              >
+                <Input placeholder="Chart title" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Header</span>}
+                name={['header', 'show']}
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Alert
+                message="Advanced Chart Configuration"
+                description="ApexCharts cards require series configuration. Use the YAML editor to configure chart series, entities, and advanced options."
+                type="info"
+                showIcon
+                style={{ marginBottom: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:bubble-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Card Type</span>}
+                name="card_type"
+                rules={[{ required: true, message: 'Card type is required' }]}
+                help={<span style={{ color: '#666' }}>Type of bubble card</span>}
+              >
+                <Select
+                  placeholder="Select card type"
+                  options={[
+                    { value: 'button', label: 'Button' },
+                    { value: 'cover', label: 'Cover' },
+                    { value: 'empty-column', label: 'Empty Column' },
+                    { value: 'horizontal-buttons-stack', label: 'Horizontal Buttons Stack' },
+                    { value: 'pop-up', label: 'Pop-up' },
+                    { value: 'separator', label: 'Separator' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+              >
+                <EntitySelect placeholder="Select entity (if applicable)" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input placeholder="Display name" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon</span>}
+                name="icon"
+              >
+                <IconSelect placeholder="mdi:bubble" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show State</span>}
+                name="show_state"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'custom:better-thermostat-ui-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect placeholder="Select climate entity" filterDomains={['climate']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input placeholder="Display name" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Disable Window</span>}
+                name="disable_window"
+                help={<span style={{ color: '#666' }}>Hide window open indicator</span>}
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Yes' },
+                    { value: false, label: 'No' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Disable Summer</span>}
+                name="disable_summer"
+                help={<span style={{ color: '#666' }}>Hide summer mode indicator</span>}
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Yes' },
+                    { value: false, label: 'No' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Disable Heat</span>}
+                name="disable_heat"
+                help={<span style={{ color: '#666' }}>Hide heating indicator</span>}
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Yes' },
+                    { value: false, label: 'No' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'custom:power-flow-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Grid Entity</span>}
+                name={['entities', 'grid']}
+                help={<span style={{ color: '#666' }}>Entity showing grid power consumption</span>}
+              >
+                <EntitySelect placeholder="Select grid entity" filterDomains={['sensor']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Solar Entity</span>}
+                name={['entities', 'solar']}
+                help={<span style={{ color: '#666' }}>Entity showing solar power production</span>}
+              >
+                <EntitySelect placeholder="Select solar entity" filterDomains={['sensor']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Battery Entity</span>}
+                name={['entities', 'battery']}
+                help={<span style={{ color: '#666' }}>Entity showing battery power</span>}
+              >
+                <EntitySelect placeholder="Select battery entity" filterDomains={['sensor']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Home Entity</span>}
+                name={['entities', 'home']}
+                help={<span style={{ color: '#666' }}>Entity showing home power consumption</span>}
+              >
+                <EntitySelect placeholder="Select home entity" filterDomains={['sensor']} />
+              </Form.Item>
+
+              <Alert
+                message="Complex Entity Configuration"
+                description="Power Flow cards support many entity configurations. Use the YAML editor for advanced setups including individual appliances."
+                type="info"
+                showIcon
+                style={{ marginBottom: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:webrtc-camera' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>URL</span>}
+                name="url"
+                rules={[{ required: true, message: 'URL is required' }]}
+                help={<span style={{ color: '#666' }}>WebRTC stream URL</span>}
+              >
+                <Input placeholder="rtsp://camera.local/stream" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                help={<span style={{ color: '#666' }}>Camera entity (optional)</span>}
+              >
+                <EntitySelect placeholder="Select camera entity" filterDomains={['camera']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Poster</span>}
+                name="poster"
+                help={<span style={{ color: '#666' }}>Poster image URL (shown before stream loads)</span>}
+              >
+                <Input placeholder="/local/camera-poster.jpg" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Muted</span>}
+                name="muted"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Muted' },
+                    { value: false, label: 'Unmuted' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'custom:surveillance-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input placeholder="Surveillance" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Update Interval</span>}
+                name="update_interval"
+                help={<span style={{ color: '#666' }}>Update interval in seconds</span>}
+              >
+                <Input type="number" placeholder="1" />
+              </Form.Item>
+
+              <Alert
+                message="Camera Configuration"
+                description="Surveillance cards require a cameras array. Use the YAML editor to configure multiple camera entities and their display options."
+                type="info"
+                showIcon
+                style={{ marginBottom: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:frigate-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Frigate URL</span>}
+                name="frigate_url"
+                help={<span style={{ color: '#666' }}>URL to your Frigate instance</span>}
+              >
+                <Input placeholder="http://frigate.local:5000" />
+              </Form.Item>
+
+              <Alert
+                message="Camera Configuration"
+                description="Frigate cards require cameras array and advanced configuration. Use the YAML editor to configure camera entities, views, live providers, and other Frigate-specific options."
+                type="info"
+                showIcon
+                style={{ marginBottom: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:camera-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect placeholder="Select camera entity" filterDomains={['camera']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input placeholder="Camera name" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Camera View</span>}
+                name="camera_view"
+                help={<span style={{ color: '#666' }}>Display mode for camera feed</span>}
+              >
+                <Select
+                  placeholder="Select view mode"
+                  options={[
+                    { value: 'auto', label: 'Auto' },
+                    { value: 'live', label: 'Live' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show State</span>}
+                name="show_state"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Name</span>}
+                name="show_name"
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: true, label: 'Show' },
+                    { value: false, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'spacer' && (
+            <Alert
+              message="Spacer Card"
+              description="This is an empty spacer card used for layout. It has no configurable properties."
+              type="info"
+              showIcon
+            />
+          )}
+
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.
@@ -545,19 +1743,46 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Text>
             </div>
           )}
-        </Form>
-      </div>
-
-      <Divider style={{ margin: '12px 0', borderColor: '#434343' }} />
-
-      <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
-        <Button onClick={handleCancel} disabled={!hasChanges}>
-          Cancel
-        </Button>
-        <Button type="primary" onClick={handleSave} disabled={!hasChanges}>
-          Apply
-        </Button>
-      </Space>
+                </Form>
+              </div>
+            ),
+          },
+          {
+            key: 'yaml',
+            label: 'YAML',
+            children: (
+              <div>
+                {yamlError && (
+                  <Alert
+                    message="YAML Error"
+                    description={yamlError}
+                    type="error"
+                    showIcon
+                    style={{ marginBottom: '12px' }}
+                  />
+                )}
+                <Editor
+                  height="calc(100vh - 280px)"
+                  language="yaml"
+                  theme="vs-dark"
+                  value={yamlContent}
+                  onChange={handleYamlChange}
+                  options={{
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    fontSize: 13,
+                    lineNumbers: 'on',
+                    wordWrap: 'on',
+                    automaticLayout: true,
+                    tabSize: 2,
+                    insertSpaces: true,
+                  }}
+                />
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 };
