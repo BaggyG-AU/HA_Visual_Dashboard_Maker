@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import GridLayout, { Layout } from 'react-grid-layout';
 import { View, Card } from '../types/dashboard';
 import { BaseCard } from './BaseCard';
+import { CardContextMenu } from './CardContextMenu';
 import { generateMasonryLayout, getCardSizeConstraints } from '../utils/cardSizingContract';
 import { isLayoutCardGrid, convertLayoutCardToGridLayout } from '../utils/layoutCardParser';
 import 'react-grid-layout/css/styles.css';
@@ -14,6 +15,11 @@ interface GridCanvasProps {
   onCardSelect: (cardIndex: number) => void;
   onLayoutChange: (layout: Layout[]) => void;
   onCardDrop?: (cardType: string, x: number, y: number) => void;
+  onCardCut?: () => void;
+  onCardCopy?: () => void;
+  onCardPaste?: () => void;
+  onCardDelete?: () => void;
+  canPaste?: boolean;
 }
 
 // Generate layout positions for cards
@@ -81,6 +87,11 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   onCardSelect,
   onLayoutChange,
   onCardDrop,
+  onCardCut,
+  onCardCopy,
+  onCardPaste,
+  onCardDelete,
+  canPaste,
 }) => {
   const cards = view.cards || [];
 
@@ -200,11 +211,31 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
       >
         {cards.map((card, index) => (
           <div key={`card-${index}`} style={{ overflow: 'hidden' }}>
-            <BaseCard
-              card={card}
-              isSelected={selectedCardIndex === index}
-              onClick={() => onCardSelect(index)}
-            />
+            <CardContextMenu
+              onCut={() => {
+                onCardSelect(index);
+                onCardCut?.();
+              }}
+              onCopy={() => {
+                onCardSelect(index);
+                onCardCopy?.();
+              }}
+              onPaste={() => {
+                onCardSelect(index);
+                onCardPaste?.();
+              }}
+              onDelete={() => {
+                onCardSelect(index);
+                onCardDelete?.();
+              }}
+              canPaste={canPaste ?? false}
+            >
+              <BaseCard
+                card={card}
+                isSelected={selectedCardIndex === index}
+                onClick={() => onCardSelect(index)}
+              />
+            </CardContextMenu>
           </div>
         ))}
       </GridLayout>

@@ -33,6 +33,14 @@ const App: React.FC = () => {
   const [tempDashboardPath, setTempDashboardPath] = useState<string | null>(null);
   const [haUrl, setHaUrl] = useState<string>('');
 
+  // Clipboard state for cut/copy/paste operations
+  const [clipboard, setClipboard] = useState<{
+    card: any | null;
+    isCut: boolean;
+    sourceViewIndex: number | null;
+    sourceCardIndex: number | null;
+  }>({ card: null, isCut: false, sourceViewIndex: null, sourceCardIndex: null });
+
   // Dashboard store
   const {
     config,
@@ -309,6 +317,133 @@ const App: React.FC = () => {
     if (selectedViewIndex !== null) {
       setSelectedCard(selectedViewIndex, null);
     }
+  };
+
+  // Clipboard operations
+  const handleCardCut = () => {
+    if (!config || selectedViewIndex === null || selectedCardIndex === null) {
+      message.warning('No card selected');
+      return;
+    }
+
+    const currentView = config.views[selectedViewIndex];
+    if (!currentView.cards || !currentView.cards[selectedCardIndex]) {
+      return;
+    }
+
+    const cardToCut = currentView.cards[selectedCardIndex];
+    setClipboard({
+      card: { ...cardToCut },
+      isCut: true,
+      sourceViewIndex: selectedViewIndex,
+      sourceCardIndex: selectedCardIndex,
+    });
+
+    message.info('Card cut to clipboard');
+  };
+
+  const handleCardCopy = () => {
+    if (!config || selectedViewIndex === null || selectedCardIndex === null) {
+      message.warning('No card selected');
+      return;
+    }
+
+    const currentView = config.views[selectedViewIndex];
+    if (!currentView.cards || !currentView.cards[selectedCardIndex]) {
+      return;
+    }
+
+    const cardToCopy = currentView.cards[selectedCardIndex];
+    setClipboard({
+      card: { ...cardToCopy },
+      isCut: false,
+      sourceViewIndex: selectedViewIndex,
+      sourceCardIndex: selectedCardIndex,
+    });
+
+    message.info('Card copied to clipboard');
+  };
+
+  const handleCardPaste = () => {
+    if (!clipboard.card) {
+      message.warning('Clipboard is empty');
+      return;
+    }
+
+    if (!config || selectedViewIndex === null) {
+      message.warning('Please select a view first');
+      return;
+    }
+
+    const updatedViews = [...config.views];
+    const currentView = updatedViews[selectedViewIndex];
+
+    if (!currentView.cards) {
+      currentView.cards = [];
+    }
+
+    // Create new card from clipboard (remove old layout, will get new position)
+    const { layout: _, ...cardWithoutLayout } = clipboard.card;
+    const pastedCard = {
+      ...cardWithoutLayout,
+      layout: {
+        x: 0,
+        y: Infinity, // Place at bottom
+        w: clipboard.card.layout?.w || 6,
+        h: clipboard.card.layout?.h || 4,
+      },
+    };
+
+    // If it was a cut operation, remove the source card
+    if (clipboard.isCut && clipboard.sourceViewIndex !== null && clipboard.sourceCardIndex !== null) {
+      const sourceView = updatedViews[clipboard.sourceViewIndex];
+      if (sourceView.cards) {
+        sourceView.cards.splice(clipboard.sourceCardIndex, 1);
+        updatedViews[clipboard.sourceViewIndex] = sourceView;
+      }
+    }
+
+    // Add pasted card to current view
+    currentView.cards.push(pastedCard);
+    updatedViews[selectedViewIndex] = currentView;
+
+    updateConfig({ ...config, views: updatedViews });
+
+    // Clear clipboard if it was a cut operation
+    if (clipboard.isCut) {
+      setClipboard({ card: null, isCut: false, sourceViewIndex: null, sourceCardIndex: null });
+      message.success('Card moved');
+    } else {
+      message.success('Card pasted');
+    }
+
+    // Select the newly pasted card
+    setSelectedCard(selectedViewIndex, currentView.cards.length - 1);
+  };
+
+  const handleCardDelete = () => {
+    if (!config || selectedViewIndex === null || selectedCardIndex === null) {
+      message.warning('No card selected');
+      return;
+    }
+
+    const updatedViews = [...config.views];
+    const currentView = updatedViews[selectedViewIndex];
+
+    if (!currentView.cards || !currentView.cards[selectedCardIndex]) {
+      return;
+    }
+
+    // Remove the card
+    currentView.cards.splice(selectedCardIndex, 1);
+    updatedViews[selectedViewIndex] = currentView;
+
+    updateConfig({ ...config, views: updatedViews });
+
+    // Deselect card
+    setSelectedCard(selectedViewIndex, null);
+
+    message.success('Card deleted');
   };
 
   const handleOpenConnectionDialog = () => {
@@ -612,6 +747,46 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // Keyboard shortcuts for card operations
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle keyboard shortcuts when a card is selected and not in an input field
+      const target = event.target as HTMLElement;
+      const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+      if (isInputField) {
+        return;
+      }
+
+      // Ctrl+C: Copy
+      if (event.ctrlKey && event.key === 'c') {
+        event.preventDefault();
+        handleCardCopy();
+      }
+      // Ctrl+X: Cut
+      else if (event.ctrlKey && event.key === 'x') {
+        event.preventDefault();
+        handleCardCut();
+      }
+      // Ctrl+V: Paste
+      else if (event.ctrlKey && event.key === 'v') {
+        event.preventDefault();
+        handleCardPaste();
+      }
+      // Delete: Delete card
+      else if (event.key === 'Delete') {
+        event.preventDefault();
+        handleCardDelete();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedViewIndex, selectedCardIndex, clipboard, config]);
+
   return (
     <ConfigProvider
       theme={{
@@ -791,6 +966,11 @@ const App: React.FC = () => {
                               onCardSelect={handleCardSelect}
                               onLayoutChange={handleLayoutChange}
                               onCardDrop={handleCardDrop}
+                              onCardCut={handleCardCut}
+                              onCardCopy={handleCardCopy}
+                              onCardPaste={handleCardPaste}
+                              onCardDelete={handleCardDelete}
+                              canPaste={clipboard.card !== null}
                             />
                           </div>
                         ),

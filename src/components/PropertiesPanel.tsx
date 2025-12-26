@@ -1528,11 +1528,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
-          {card.type === 'custom:power-flow-card' && (
+          {(card.type === 'custom:power-flow-card' || card.type === 'custom:power-flow-card-plus') && (
             <>
               <Form.Item
                 label={<span style={{ color: 'white' }}>Grid Entity</span>}
-                name={['entities', 'grid']}
+                name={['entities', 'grid', 'entity']}
                 help={<span style={{ color: '#666' }}>Entity showing grid power consumption</span>}
               >
                 <EntitySelect placeholder="Select grid entity" filterDomains={['sensor']} />
@@ -1540,7 +1540,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Solar Entity</span>}
-                name={['entities', 'solar']}
+                name={['entities', 'solar', 'entity']}
                 help={<span style={{ color: '#666' }}>Entity showing solar power production</span>}
               >
                 <EntitySelect placeholder="Select solar entity" filterDomains={['sensor']} />
@@ -1548,7 +1548,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Battery Entity</span>}
-                name={['entities', 'battery']}
+                name={['entities', 'battery', 'entity']}
                 help={<span style={{ color: '#666' }}>Entity showing battery power</span>}
               >
                 <EntitySelect placeholder="Select battery entity" filterDomains={['sensor']} />
@@ -1556,7 +1556,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Home Entity</span>}
-                name={['entities', 'home']}
+                name={['entities', 'home', 'entity']}
                 help={<span style={{ color: '#666' }}>Entity showing home power consumption</span>}
               >
                 <EntitySelect placeholder="Select home entity" filterDomains={['sensor']} />
@@ -1564,7 +1564,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
               <Alert
                 message="Complex Entity Configuration"
-                description="Power Flow cards support many entity configurations. Use the YAML editor for advanced setups including individual appliances."
+                description="Power Flow cards support many entity configurations including individual devices. Use the YAML editor to configure individual appliances, state_of_charge sensors, display options, and advanced settings."
                 type="info"
                 showIcon
                 style={{ marginBottom: '16px' }}
@@ -1720,6 +1720,461 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
+          {/* New Mushroom Cards */}
+          {card.type === 'custom:mushroom-title-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+                help={<span style={{ color: '#666' }}>Section title text</span>}
+              >
+                <Input placeholder="Enter title" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Subtitle</span>}
+                name="subtitle"
+                help={<span style={{ color: '#666' }}>Optional subtitle text</span>}
+              >
+                <Input placeholder="Enter subtitle" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Alignment</span>}
+                name="alignment"
+                help={<span style={{ color: '#666' }}>Text alignment</span>}
+              >
+                <Select
+                  placeholder="Select alignment"
+                  options={[
+                    { value: 'start', label: 'Left' },
+                    { value: 'center', label: 'Center' },
+                    { value: 'end', label: 'Right' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {(card.type === 'custom:mushroom-select-card' ||
+            card.type === 'custom:mushroom-number-card' ||
+            card.type === 'custom:mushroom-person-card' ||
+            card.type === 'custom:mushroom-media-player-card' ||
+            card.type === 'custom:mushroom-lock-card' ||
+            card.type === 'custom:mushroom-alarm-control-panel-card' ||
+            card.type === 'custom:mushroom-vacuum-card') && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                help={<span style={{ color: '#666' }}>Entity to control</span>}
+              >
+                <EntitySelect placeholder="Select entity" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+                help={<span style={{ color: '#666' }}>Override entity name</span>}
+              >
+                <Input placeholder="Card name (optional)" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon</span>}
+                name="icon"
+                help={<span style={{ color: '#666' }}>Override entity icon</span>}
+              >
+                <IconSelect placeholder="Select icon" />
+              </Form.Item>
+            </>
+          )}
+
+          {/* Tier 1 Cards */}
+          {card.type === 'custom:mini-media-player' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                help={<span style={{ color: '#666' }}>Media player entity</span>}
+              >
+                <EntitySelect placeholder="Select media player" filterDomains={['media_player']} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+                help={<span style={{ color: '#666' }}>Override entity name</span>}
+              >
+                <Input placeholder="Card name (optional)" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon</span>}
+                name="icon"
+                help={<span style={{ color: '#666' }}>Override entity icon</span>}
+              >
+                <IconSelect placeholder="Select icon" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Source</span>}
+                name="hide_source"
+                help={<span style={{ color: '#666' }}>Show source selection</span>}
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: false, label: 'Show' },
+                    { value: true, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Volume</span>}
+                name="hide_volume"
+                help={<span style={{ color: '#666' }}>Show volume slider</span>}
+              >
+                <Select
+                  placeholder="Select option"
+                  options={[
+                    { value: false, label: 'Show' },
+                    { value: true, label: 'Hide' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Alert
+                message="Advanced Configuration"
+                description="Use the YAML editor for advanced options like shortcuts, artwork, and sound modes."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:slider-entity-row' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                help={<span style={{ color: '#666' }}>Entity to control with slider</span>}
+              >
+                <EntitySelect placeholder="Select entity" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+                help={<span style={{ color: '#666' }}>Override entity name</span>}
+              >
+                <Input placeholder="Entity name (optional)" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Minimum</span>}
+                name="min"
+                help={<span style={{ color: '#666' }}>Minimum slider value</span>}
+              >
+                <Input type="number" placeholder="0" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Maximum</span>}
+                name="max"
+                help={<span style={{ color: '#666' }}>Maximum slider value</span>}
+              >
+                <Input type="number" placeholder="100" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Step</span>}
+                name="step"
+                help={<span style={{ color: '#666' }}>Slider step increment</span>}
+              >
+                <Input type="number" placeholder="1" />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'custom:battery-state-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+                help={<span style={{ color: '#666' }}>Card title</span>}
+              >
+                <Input placeholder="Battery Levels" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entities</span>}
+                name="entities"
+                help={<span style={{ color: '#666' }}>Battery entities to monitor</span>}
+              >
+                <EntityMultiSelect placeholder="Select battery entities" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Sort By Level</span>}
+                name="sort_by_level"
+                help={<span style={{ color: '#666' }}>Sort entities by battery level</span>}
+              >
+                <Select
+                  placeholder="Select sort order"
+                  options={[
+                    { value: 'asc', label: 'Ascending (Low to High)' },
+                    { value: 'desc', label: 'Descending (High to Low)' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Collapse</span>}
+                name="collapse"
+                help={<span style={{ color: '#666' }}>Number of entities to show (rest are collapsed)</span>}
+              >
+                <Input type="number" placeholder="5" />
+              </Form.Item>
+
+              <Alert
+                message="Battery Monitoring"
+                description="This card automatically detects battery level attributes. Use filter patterns in YAML for advanced entity filtering."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:card-mod' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Style (CSS)</span>}
+                name="style"
+                help={<span style={{ color: '#666' }}>Custom CSS styling for the card</span>}
+              >
+                <Input.TextArea
+                  placeholder="ha-card { ... }"
+                  rows={6}
+                  style={{ fontFamily: 'monospace' }}
+                />
+              </Form.Item>
+
+              <Alert
+                message="CSS Styling"
+                description="Card-mod allows you to apply custom CSS to any card. Use the YAML editor for complex card configurations with nested card_mod."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            </>
+          )}
+
+          {(card.type === 'custom:vertical-stack-in-card' || card.type === 'custom:simple-swipe-card') && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+                help={<span style={{ color: '#666' }}>Card title (optional)</span>}
+              >
+                <Input placeholder="Enter title" />
+              </Form.Item>
+
+              <Alert
+                message="Container Card"
+                description={`This card contains other cards. Use the YAML editor to add and configure nested cards in the "cards" array.`}
+                type="info"
+                showIcon
+              />
+            </>
+          )}
+
+          {card.type === 'custom:auto-entities' && (
+            <>
+              <Alert
+                message="Auto-Entities Card"
+                description="This card automatically populates entities based on filter criteria. Use the YAML editor to configure include/exclude filters, sorting, and the card type to display."
+                type="info"
+                showIcon
+              />
+
+              <Alert
+                message="Example Configuration"
+                description={
+                  <div style={{ fontFamily: 'monospace', fontSize: '11px', marginTop: '8px' }}>
+                    filter:<br />
+                    &nbsp;&nbsp;include:<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;- domain: light<br />
+                    &nbsp;&nbsp;exclude:<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;- state: unavailable<br />
+                    card:<br />
+                    &nbsp;&nbsp;type: entities
+                  </div>
+                }
+                type="info"
+                showIcon
+                style={{ marginTop: '12px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:multiple-entity-row' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                help={<span style={{ color: '#666' }}>Primary entity</span>}
+              >
+                <EntitySelect placeholder="Select entity" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+                help={<span style={{ color: '#666' }}>Override entity name</span>}
+              >
+                <Input placeholder="Entity name (optional)" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Secondary Info</span>}
+                name="secondary_info"
+                help={<span style={{ color: '#666' }}>Secondary information to display</span>}
+              >
+                <Select
+                  placeholder="Select secondary info"
+                  options={[
+                    { value: 'entity-id', label: 'Entity ID' },
+                    { value: 'last-changed', label: 'Last Changed' },
+                    { value: 'last-updated', label: 'Last Updated' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Alert
+                message="Multiple Entities"
+                description="Use the YAML editor to add additional entities in the 'entities' array to display multiple entity states on a single row."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:fold-entity-row' && (
+            <>
+              <Alert
+                message="Collapsible Row"
+                description="This creates a collapsible section in an entities card. Use the YAML editor to configure the 'head' entity and 'items' array."
+                type="info"
+                showIcon
+              />
+
+              <Alert
+                message="Example Configuration"
+                description={
+                  <div style={{ fontFamily: 'monospace', fontSize: '11px', marginTop: '8px' }}>
+                    head:<br />
+                    &nbsp;&nbsp;type: section<br />
+                    &nbsp;&nbsp;label: Living Room<br />
+                    items:<br />
+                    &nbsp;&nbsp;- entity: light.living_room<br />
+                    &nbsp;&nbsp;- entity: switch.tv
+                  </div>
+                }
+                type="info"
+                showIcon
+                style={{ marginTop: '12px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:decluttering-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Template Name</span>}
+                name="template"
+                help={<span style={{ color: '#666' }}>Name of the template to use</span>}
+              >
+                <Input placeholder="template_name" />
+              </Form.Item>
+
+              <Alert
+                message="Template Card"
+                description="Decluttering card uses templates defined in your dashboard configuration. Use the YAML editor to pass variables to the template."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:mushroom-chips-card' && (
+            <>
+              <Alert
+                message="Chips Card"
+                description="Mushroom Chips card displays compact chip-style controls. Use the YAML editor to configure the 'chips' array with various chip types (entity, back, spacer, weather, etc.)."
+                type="info"
+                showIcon
+              />
+
+              <Alert
+                message="Example Configuration"
+                description={
+                  <div style={{ fontFamily: 'monospace', fontSize: '11px', marginTop: '8px' }}>
+                    chips:<br />
+                    &nbsp;&nbsp;- type: entity<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;entity: light.kitchen<br />
+                    &nbsp;&nbsp;- type: weather<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;entity: weather.home
+                  </div>
+                }
+                type="info"
+                showIcon
+                style={{ marginTop: '12px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:mushroom-template-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Primary Text</span>}
+                name="primary"
+                help={<span style={{ color: '#666' }}>Primary text (supports templates)</span>}
+              >
+                <Input placeholder="Template text" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Secondary Text</span>}
+                name="secondary"
+                help={<span style={{ color: '#666' }}>Secondary text (supports templates)</span>}
+              >
+                <Input placeholder="Template text" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon</span>}
+                name="icon"
+                help={<span style={{ color: '#666' }}>Icon to display</span>}
+              >
+                <IconSelect placeholder="Select icon" />
+              </Form.Item>
+
+              <Alert
+                message="Template Card"
+                description="Template card supports Jinja2 templates for dynamic content. Use the YAML editor for advanced templating with entity states and attributes."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            </>
+          )}
+
           {card.type === 'spacer' && (
             <Alert
               message="Spacer Card"
@@ -1730,7 +2185,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.
