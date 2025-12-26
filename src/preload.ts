@@ -27,6 +27,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   addRecentFile: (filePath: string) => ipcRenderer.invoke('settings:addRecentFile', filePath),
   clearRecentFiles: () => ipcRenderer.invoke('settings:clearRecentFiles'),
 
+  // Entity caching APIs
+  getCachedEntities: () => ipcRenderer.invoke('entities:getCached'),
+  cacheEntities: (entities: any[]) => ipcRenderer.invoke('entities:cache', entities),
+
   // Home Assistant connection APIs
   getHAConnection: () => ipcRenderer.invoke('ha:getConnection'),
   setHAConnection: (url: string, token: string) => ipcRenderer.invoke('ha:setConnection', url, token),
@@ -43,6 +47,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   haWsUpdateTempDashboard: (tempPath: string, config: any) => ipcRenderer.invoke('ha:ws:updateTempDashboard', tempPath, config),
   haWsDeployDashboard: (tempPath: string, productionPath: string | null) => ipcRenderer.invoke('ha:ws:deployDashboard', tempPath, productionPath),
   haWsDeleteTempDashboard: (tempPath: string) => ipcRenderer.invoke('ha:ws:deleteTempDashboard', tempPath),
+  haWsFetchEntities: () => ipcRenderer.invoke('ha:ws:fetchEntities'),
 
   // Credentials APIs
   credentialsSave: (name: string, url: string, token: string, id?: string) => ipcRenderer.invoke('credentials:save', name, url, token, id),
@@ -94,6 +99,8 @@ export interface ElectronAPI {
   getRecentFiles: () => Promise<{ files: string[] }>;
   addRecentFile: (filePath: string) => Promise<{ success: boolean }>;
   clearRecentFiles: () => Promise<{ success: boolean }>;
+  getCachedEntities: () => Promise<{ success: boolean; entities?: any[]; error?: string }>;
+  cacheEntities: (entities: any[]) => Promise<{ success: boolean; error?: string }>;
   getHAConnection: () => Promise<{ url?: string; token?: string }>;
   setHAConnection: (url: string, token: string) => Promise<{ success: boolean }>;
   clearHAConnection: () => Promise<{ success: boolean }>;
@@ -107,6 +114,7 @@ export interface ElectronAPI {
   haWsUpdateTempDashboard: (tempPath: string, config: any) => Promise<{ success: boolean; error?: string }>;
   haWsDeployDashboard: (tempPath: string, productionPath: string | null) => Promise<{ success: boolean; backupPath?: string; error?: string }>;
   haWsDeleteTempDashboard: (tempPath: string) => Promise<{ success: boolean; error?: string }>;
+  haWsFetchEntities: () => Promise<{ success: boolean; entities?: any[]; error?: string }>;
   credentialsSave: (name: string, url: string, token: string, id?: string) => Promise<{ success: boolean; credential?: any; error?: string }>;
   credentialsGetAll: () => Promise<{ success: boolean; credentials?: any[]; error?: string }>;
   credentialsGet: (id: string) => Promise<{ success: boolean; credential?: any; error?: string }>;

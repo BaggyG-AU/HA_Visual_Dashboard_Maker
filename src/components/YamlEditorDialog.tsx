@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal, Button, Alert, Space, message } from 'antd';
-import { CodeOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { CodeOutlined, CheckOutlined, CloseOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { yamlService } from '../services/yamlService';
 
 interface YamlEditorDialogProps {
@@ -8,6 +8,7 @@ interface YamlEditorDialogProps {
   dashboardYaml: string;
   onClose: () => void;
   onApply: (newYaml: string) => void;
+  onOpenEntityBrowser?: (insertCallback: (entityId: string) => void) => void;
 }
 
 /**
@@ -23,11 +24,13 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
   dashboardYaml,
   onClose,
   onApply,
+  onOpenEntityBrowser,
 }) => {
   const [yamlContent, setYamlContent] = useState(dashboardYaml);
   const [hasChanges, setHasChanges] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -79,6 +82,34 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
     setShowConfirmation(false);
   };
 
+  const handleInsertEntity = (entityId: string) => {
+    if (!textareaRef.current) return;
+
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+
+    // Insert entity ID at cursor position
+    const newText = text.substring(0, start) + entityId + text.substring(end);
+    setYamlContent(newText);
+
+    // Set cursor position after the inserted entity ID
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + entityId.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+
+    message.success(`Inserted entity: ${entityId}`);
+  };
+
+  const handleOpenEntityBrowserClick = () => {
+    if (onOpenEntityBrowser) {
+      onOpenEntityBrowser(handleInsertEntity);
+    }
+  };
+
   const handleClose = () => {
     if (hasChanges) {
       Modal.confirm({
@@ -108,6 +139,14 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
         width={1000}
         style={{ top: 20 }}
         footer={[
+          <Button
+            key="insertEntity"
+            icon={<DatabaseOutlined />}
+            onClick={handleOpenEntityBrowserClick}
+            disabled={!onOpenEntityBrowser}
+          >
+            Insert Entity
+          </Button>,
           <Button key="close" onClick={handleClose}>
             Cancel
           </Button>,
@@ -154,6 +193,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
 
         <div style={{ marginBottom: '16px' }}>
           <textarea
+            ref={textareaRef}
             value={yamlContent}
             onChange={(e) => setYamlContent(e.target.value)}
             style={{

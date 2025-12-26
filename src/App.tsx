@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge } from 'antd';
-import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined } from '@ant-design/icons';
+import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
@@ -8,6 +8,7 @@ import { yamlService } from './services/yamlService';
 import { GridCanvas } from './components/GridCanvas';
 import { CardPalette } from './components/CardPalette';
 import { PropertiesPanel } from './components/PropertiesPanel';
+import { EntityBrowser } from './components/EntityBrowser';
 import { ConnectionDialog } from './components/ConnectionDialog';
 import { DeployDialog } from './components/DeployDialog';
 import { DashboardBrowser } from './components/DashboardBrowser';
@@ -28,6 +29,8 @@ const App: React.FC = () => {
   const [deployDialogVisible, setDeployDialogVisible] = useState<boolean>(false);
   const [dashboardBrowserVisible, setDashboardBrowserVisible] = useState<boolean>(false);
   const [yamlEditorVisible, setYamlEditorVisible] = useState<boolean>(false);
+  const [entityBrowserVisible, setEntityBrowserVisible] = useState<boolean>(false);
+  const [entityInsertCallback, setEntityInsertCallback] = useState<((entityId: string) => void) | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [livePreviewMode, setLivePreviewMode] = useState<boolean>(false);
   const [tempDashboardPath, setTempDashboardPath] = useState<string | null>(null);
@@ -503,10 +506,39 @@ const App: React.FC = () => {
       setIsConnected(true);
       setHaUrl(url);
       message.success(`Connected to Home Assistant at ${url}`);
+
+      // Fetch and cache entities in the background
+      fetchAndCacheEntities();
     } catch (error) {
       message.error(`Failed to connect: ${(error as Error).message}`);
       throw error;
     }
+  };
+
+  const fetchAndCacheEntities = async () => {
+    try {
+      console.log('Fetching entities from Home Assistant...');
+      const result = await window.electronAPI.haWsFetchEntities();
+      if (result.success) {
+        console.log(`Cached ${result.entities?.length || 0} entities`);
+      }
+    } catch (error) {
+      console.error('Failed to fetch entities:', error);
+      // Don't show error to user - this is a background operation
+    }
+  };
+
+  const handleOpenEntityBrowser = (insertCallback: (entityId: string) => void) => {
+    setEntityInsertCallback(() => insertCallback);
+    setEntityBrowserVisible(true);
+  };
+
+  const handleEntitySelected = (entityId: string) => {
+    if (entityInsertCallback) {
+      entityInsertCallback(entityId);
+      setEntityInsertCallback(null);
+    }
+    setEntityBrowserVisible(false);
   };
 
   const handleDisconnect = async () => {
@@ -887,6 +919,14 @@ const App: React.FC = () => {
                 disabled={!canRedo()}
                 title="Redo (Ctrl+Y)"
               />
+              <Button
+                size="small"
+                icon={<DatabaseOutlined />}
+                onClick={() => setEntityBrowserVisible(true)}
+                title="Entity Browser"
+              >
+                Entities
+              </Button>
             </Space>
           </div>
           <Space>
@@ -1083,6 +1123,7 @@ const App: React.FC = () => {
               cardIndex={selectedCardIndex}
               onSave={handleCardUpdate}
               onCancel={handlePropertiesCancel}
+              onOpenEntityBrowser={handleOpenEntityBrowser}
             />
           </Sider>
         </Layout>
@@ -1108,6 +1149,17 @@ const App: React.FC = () => {
         dashboardYaml={config ? yamlService.serializeDashboard(config) : ''}
         onClose={handleCloseYamlEditor}
         onApply={handleApplyYamlChanges}
+        onOpenEntityBrowser={handleOpenEntityBrowser}
+      />
+      <EntityBrowser
+        visible={entityBrowserVisible}
+        onClose={() => {
+          setEntityBrowserVisible(false);
+          setEntityInsertCallback(null);
+        }}
+        onSelect={handleEntitySelected}
+        isConnected={isConnected}
+        onRefresh={fetchAndCacheEntities}
       />
       </HAEntityProvider>
     </ConfigProvider>

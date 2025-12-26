@@ -14,6 +14,7 @@ interface AppSettings {
   recentFiles: string[];
   haUrl?: string;
   haToken?: string;
+  cachedEntities?: any[];
 }
 
 const schema = {
@@ -121,6 +122,19 @@ class SettingsService {
   clearHAConnection(): void {
     this.store.delete('haUrl');
     this.store.delete('haToken');
+  }
+
+  // Entity caching methods
+  getCachedEntities(): any[] {
+    return this.store.get('cachedEntities', []);
+  }
+
+  setCachedEntities(entities: any[]): void {
+    this.store.set('cachedEntities', entities);
+  }
+
+  clearCachedEntities(): void {
+    this.store.set('cachedEntities', []);
   }
 }
 

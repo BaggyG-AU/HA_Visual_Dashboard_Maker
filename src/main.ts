@@ -177,6 +177,26 @@ ipcMain.handle('settings:addRecentFile', async (event, filePath: string) => {
   return { success: true };
 });
 
+// Handle getting cached entities
+ipcMain.handle('entities:getCached', async () => {
+  try {
+    const entities = settingsService.getCachedEntities();
+    return { success: true, entities };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Handle caching entities
+ipcMain.handle('entities:cache', async (event, entities: any[]) => {
+  try {
+    settingsService.setCachedEntities(entities);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
 // Handle clearing recent files
 ipcMain.handle('settings:clearRecentFiles', async () => {
   settingsService.clearRecentFiles();
@@ -355,6 +375,21 @@ ipcMain.handle('ha:ws:deleteTempDashboard', async (event, tempPath: string) => {
   try {
     await haWebSocketService.deleteTempDashboard(tempPath);
     return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+// Handle fetching all entities from HA
+ipcMain.handle('ha:ws:fetchEntities', async () => {
+  try {
+    const entities = await haWebSocketService.fetchAllEntities();
+    // Cache entities for offline use
+    settingsService.setCachedEntities(entities);
+    return { success: true, entities };
   } catch (error) {
     return {
       success: false,

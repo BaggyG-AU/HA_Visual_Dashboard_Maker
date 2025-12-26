@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message } from 'antd';
-import { UndoOutlined, FormatPainterOutlined } from '@ant-design/icons';
+import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import * as yaml from 'js-yaml';
 import { Card } from '../types/dashboard';
@@ -17,6 +17,7 @@ interface PropertiesPanelProps {
   cardIndex: number | null;
   onSave: (updatedCard: Card) => void;
   onCancel: () => void;
+  onOpenEntityBrowser?: (insertCallback: (entityId: string) => void) => void;
 }
 
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
@@ -24,6 +25,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   cardIndex,
   onSave,
   onCancel,
+  onOpenEntityBrowser,
 }) => {
   const [form] = Form.useForm();
   const [hasChanges, setHasChanges] = useState(false);
@@ -34,6 +36,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const [undoStack, setUndoStack] = useState<Card[]>([]);
   const isUpdatingFromForm = useRef(false);
   const isUpdatingFromYaml = useRef(false);
+  const monacoEditorRef = useRef<any>(null);
 
   // Helper function to normalize entities for form display
   const normalizeCardForForm = (card: Card): any => {
@@ -211,6 +214,25 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       setHasChanges(false);
     }
     onCancel();
+  };
+
+  const handleInsertEntity = (entityId: string) => {
+    const editor = monacoEditorRef.current;
+    if (!editor) return;
+
+    const selection = editor.getSelection();
+    const id = { major: 1, minor: 1 };
+    const op = { identifier: id, range: selection, text: entityId, forceMoveMarkers: true };
+    editor.executeEdits("insert-entity", [op]);
+    editor.focus();
+
+    message.success(`Inserted entity: ${entityId}`);
+  };
+
+  const handleOpenEntityBrowserClick = () => {
+    if (onOpenEntityBrowser) {
+      onOpenEntityBrowser(handleInsertEntity);
+    }
   };
 
   if (!card) {
@@ -2207,6 +2229,16 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             label: 'YAML',
             children: (
               <div>
+                <div style={{ marginBottom: '12px' }}>
+                  <Button
+                    icon={<DatabaseOutlined />}
+                    onClick={handleOpenEntityBrowserClick}
+                    disabled={!onOpenEntityBrowser}
+                    size="small"
+                  >
+                    Insert Entity
+                  </Button>
+                </div>
                 {yamlError && (
                   <Alert
                     message="YAML Error"
@@ -2222,6 +2254,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   theme="vs-dark"
                   value={yamlContent}
                   onChange={handleYamlChange}
+                  onMount={(editor) => {
+                    monacoEditorRef.current = editor;
+                  }}
                   options={{
                     minimap: { enabled: false },
                     scrollBeyondLastLine: false,

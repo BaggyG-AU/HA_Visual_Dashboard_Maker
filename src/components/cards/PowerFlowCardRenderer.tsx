@@ -61,7 +61,8 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
   onClick,
 }) => {
   const entities = card.entities || {};
-  const individualCount = entities.individual?.length || 0;
+  const individual = entities.individual || [];
+  const individualCount = individual.length;
 
   // Generate mock power values for demonstration
   const mockValues = {
@@ -260,6 +261,9 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
         {/* Individual Devices */}
         {individualCount > 0 && (
           <div style={{ marginTop: '8px', width: '100%' }}>
+            <Text type="secondary" style={{ fontSize: '10px', display: 'block', marginBottom: '4px', textAlign: 'center' }}>
+              Individual Devices
+            </Text>
             <div
               style={{
                 display: 'flex',
@@ -271,9 +275,9 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
                 borderRadius: '6px',
               }}
             >
-              {entities.individual?.map((device, idx) => (
+              {individual.map((device, idx) => (
                 <Tag key={idx} color="blue" style={{ fontSize: '10px', margin: 0 }}>
-                  {device.name || device.entity.split('.')[1]?.replace(/_/g, ' ')}
+                  {device.name || device.entity?.split('.')[1]?.replace(/_/g, ' ') || `Device ${idx + 1}`}
                 </Tag>
               ))}
             </div>

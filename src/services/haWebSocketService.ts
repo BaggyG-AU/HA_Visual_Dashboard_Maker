@@ -449,6 +449,19 @@ export class HAWebSocketService {
   getEntityState(entityId: string): EntityState | null {
     return this.currentEntityStates[entityId] || null;
   }
+
+  /**
+   * Fetch all entity states from Home Assistant
+   * @returns Array of all entity states
+   */
+  async fetchAllEntities(): Promise<EntityState[]> {
+    const states = await this.sendAndWait<EntityState[]>({
+      type: 'get_states',
+    });
+
+    console.log(`Fetched ${states.length} entities from Home Assistant`);
+    return states;
+  }
 }
 
 // Export a singleton instance
