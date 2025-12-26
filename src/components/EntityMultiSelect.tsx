@@ -33,10 +33,13 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [validationMap, setValidationMap] = useState<Map<string, HAEntity | null>>(new Map());
 
+  // Check connection status (must be before any conditional returns)
+  const isConnected = haConnectionService.isConnected();
+
   // Load entities from Home Assistant
   useEffect(() => {
     const loadEntities = async () => {
-      if (!haConnectionService.isConnected()) {
+      if (!isConnected) {
         return;
       }
 
@@ -55,7 +58,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
     };
 
     loadEntities();
-  }, []);
+  }, [isConnected]);
 
   // Validate all selected entities
   useEffect(() => {
@@ -107,6 +110,25 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
       };
     });
   }, [filteredEntities]);
+
+  // Ensure value is always an array
+  const safeValue = Array.isArray(value) ? value : [];
+
+  // Sort options to show selected entities first
+  const sortedOptions = useMemo(() => {
+    const selected: typeof options = [];
+    const unselected: typeof options = [];
+
+    options.forEach(option => {
+      if (safeValue.includes(option.value)) {
+        selected.push(option);
+      } else {
+        unselected.push(option);
+      }
+    });
+
+    return [...selected, ...unselected];
+  }, [options, safeValue]);
 
   // Handle entity selection
   const handleChange = (newValue: string[]) => {
@@ -187,11 +209,8 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
     );
   };
 
-  // Ensure value is always an array
-  const safeValue = Array.isArray(value) ? value : [];
-
   // Show warning if not connected to HA
-  if (!haConnectionService.isConnected()) {
+  if (!isConnected) {
     return (
       <div>
         <Select
@@ -235,22 +254,6 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
       </div>
     );
   }
-
-  // Sort options to show selected entities first
-  const sortedOptions = useMemo(() => {
-    const selected: typeof options = [];
-    const unselected: typeof options = [];
-
-    options.forEach(option => {
-      if (safeValue.includes(option.value)) {
-        selected.push(option);
-      } else {
-        unselected.push(option);
-      }
-    });
-
-    return [...selected, ...unselected];
-  }, [options, safeValue]);
 
   // Custom tag render to show friendly names
   const tagRender = (props: any) => {
