@@ -26,6 +26,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getRecentFiles: () => ipcRenderer.invoke('settings:getRecentFiles'),
   addRecentFile: (filePath: string) => ipcRenderer.invoke('settings:addRecentFile', filePath),
   clearRecentFiles: () => ipcRenderer.invoke('settings:clearRecentFiles'),
+  getSelectedTheme: () => ipcRenderer.invoke('settings:getSelectedTheme'),
+  setSelectedTheme: (themeName: string) => ipcRenderer.invoke('settings:setSelectedTheme', themeName),
+  getThemeDarkMode: () => ipcRenderer.invoke('settings:getThemeDarkMode'),
+  setThemeDarkMode: (darkMode: boolean) => ipcRenderer.invoke('settings:setThemeDarkMode', darkMode),
+  getThemeSyncWithHA: () => ipcRenderer.invoke('settings:getThemeSyncWithHA'),
+  setThemeSyncWithHA: (sync: boolean) => ipcRenderer.invoke('settings:setThemeSyncWithHA', sync),
 
   // Entity caching APIs
   getCachedEntities: () => ipcRenderer.invoke('entities:getCached'),
@@ -48,6 +54,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   haWsDeployDashboard: (tempPath: string, productionPath: string | null) => ipcRenderer.invoke('ha:ws:deployDashboard', tempPath, productionPath),
   haWsDeleteTempDashboard: (tempPath: string) => ipcRenderer.invoke('ha:ws:deleteTempDashboard', tempPath),
   haWsFetchEntities: () => ipcRenderer.invoke('ha:ws:fetchEntities'),
+  haWsGetThemes: () => ipcRenderer.invoke('ha:ws:getThemes'),
+  haWsSubscribeToThemes: (callback: (themes: any) => void) => {
+    const channel = 'ha:ws:themesUpdated';
+    ipcRenderer.on(channel, (_event, themes) => callback(themes));
+    ipcRenderer.invoke('ha:ws:subscribeToThemes');
+    return () => {
+      ipcRenderer.removeAllListeners(channel);
+      ipcRenderer.invoke('ha:ws:unsubscribeFromThemes');
+    };
+  },
 
   // Credentials APIs
   credentialsSave: (name: string, url: string, token: string, id?: string) => ipcRenderer.invoke('credentials:save', name, url, token, id),
@@ -103,6 +119,12 @@ export interface ElectronAPI {
   getRecentFiles: () => Promise<{ files: string[] }>;
   addRecentFile: (filePath: string) => Promise<{ success: boolean }>;
   clearRecentFiles: () => Promise<{ success: boolean }>;
+  getSelectedTheme: () => Promise<{ theme?: string }>;
+  setSelectedTheme: (themeName: string) => Promise<{ success: boolean }>;
+  getThemeDarkMode: () => Promise<{ darkMode: boolean }>;
+  setThemeDarkMode: (darkMode: boolean) => Promise<{ success: boolean }>;
+  getThemeSyncWithHA: () => Promise<{ sync: boolean }>;
+  setThemeSyncWithHA: (sync: boolean) => Promise<{ success: boolean }>;
   getCachedEntities: () => Promise<{ success: boolean; entities?: any[]; error?: string }>;
   cacheEntities: (entities: any[]) => Promise<{ success: boolean; error?: string }>;
   getHAConnection: () => Promise<{ url?: string; token?: string }>;
@@ -119,6 +141,8 @@ export interface ElectronAPI {
   haWsDeployDashboard: (tempPath: string, productionPath: string | null) => Promise<{ success: boolean; backupPath?: string; error?: string }>;
   haWsDeleteTempDashboard: (tempPath: string) => Promise<{ success: boolean; error?: string }>;
   haWsFetchEntities: () => Promise<{ success: boolean; entities?: any[]; error?: string }>;
+  haWsGetThemes: () => Promise<{ success: boolean; themes?: any; error?: string }>;
+  haWsSubscribeToThemes: (callback: (themes: any) => void) => (() => void);
   credentialsSave: (name: string, url: string, token: string, id?: string) => Promise<{ success: boolean; credential?: any; error?: string }>;
   credentialsGetAll: () => Promise<{ success: boolean; credentials?: any[]; error?: string }>;
   credentialsGet: (id: string) => Promise<{ success: boolean; credential?: any; error?: string }>;

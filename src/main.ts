@@ -160,6 +160,34 @@ ipcMain.handle('settings:setTheme', async (event, theme: 'light' | 'dark') => {
   return { success: true };
 });
 
+// Handle theme preference persistence
+ipcMain.handle('settings:getSelectedTheme', async () => {
+  return { theme: settingsService.getSelectedTheme() };
+});
+
+ipcMain.handle('settings:setSelectedTheme', async (event, themeName: string) => {
+  settingsService.setSelectedTheme(themeName);
+  return { success: true };
+});
+
+ipcMain.handle('settings:getThemeDarkMode', async () => {
+  return { darkMode: settingsService.getThemeDarkMode() };
+});
+
+ipcMain.handle('settings:setThemeDarkMode', async (event, darkMode: boolean) => {
+  settingsService.setThemeDarkMode(darkMode);
+  return { success: true };
+});
+
+ipcMain.handle('settings:getThemeSyncWithHA', async () => {
+  return { sync: settingsService.getThemeSyncWithHA() };
+});
+
+ipcMain.handle('settings:setThemeSyncWithHA', async (event, sync: boolean) => {
+  settingsService.setThemeSyncWithHA(sync);
+  return { success: true };
+});
+
 // Handle getting recent files
 ipcMain.handle('settings:getRecentFiles', async () => {
   return { files: settingsService.getRecentFiles() };
@@ -390,6 +418,58 @@ ipcMain.handle('ha:ws:fetchEntities', async () => {
     // Cache entities for offline use
     settingsService.setCachedEntities(entities);
     return { success: true, entities };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+// Handle fetching themes from HA
+ipcMain.handle('ha:ws:getThemes', async () => {
+  try {
+    const themes = await haWebSocketService.getThemes();
+    return { success: true, themes };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+// Handle subscribing to theme updates
+let themeUnsubscribe: (() => void) | null = null;
+ipcMain.handle('ha:ws:subscribeToThemes', async (event) => {
+  try {
+    // Unsubscribe from previous subscription if exists
+    if (themeUnsubscribe) {
+      themeUnsubscribe();
+    }
+
+    themeUnsubscribe = await haWebSocketService.subscribeToThemes((themes) => {
+      // Send themes to renderer process
+      event.sender.send('ha:ws:themesUpdated', themes);
+    });
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+// Handle unsubscribing from theme updates
+ipcMain.handle('ha:ws:unsubscribeFromThemes', async () => {
+  try {
+    if (themeUnsubscribe) {
+      themeUnsubscribe();
+      themeUnsubscribe = null;
+    }
+    return { success: true };
   } catch (error) {
     return {
       success: false,

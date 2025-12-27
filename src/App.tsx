@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge, Tooltip } from 'antd';
 import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
@@ -19,6 +19,11 @@ import { haConnectionService } from './services/haConnectionService';
 import { haWebSocketService } from './services/haWebSocketService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
 import { HAEntityProvider } from './contexts/HAEntityContext';
+import { ThemeSelector } from './components/ThemeSelector';
+import { ThemeSettingsDialog } from './components/ThemeSettingsDialog';
+import { ThemePreviewPanel } from './components/ThemePreviewPanel';
+import { useThemeStore } from './store/themeStore';
+import { themeService } from './services/themeService';
 
 const { Header, Content, Sider } = Layout;
 
@@ -31,6 +36,7 @@ const App: React.FC = () => {
   const [yamlEditorVisible, setYamlEditorVisible] = useState<boolean>(false);
   const [entityBrowserVisible, setEntityBrowserVisible] = useState<boolean>(false);
   const [entityInsertCallback, setEntityInsertCallback] = useState<((entityId: string) => void) | null>(null);
+  const [themeSettingsVisible, setThemeSettingsVisible] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [livePreviewMode, setLivePreviewMode] = useState<boolean>(false);
   const [tempDashboardPath, setTempDashboardPath] = useState<string | null>(null);
@@ -64,6 +70,77 @@ const App: React.FC = () => {
     canUndo,
     canRedo
   } = useDashboardStore();
+
+  // Theme store
+  const {
+    currentTheme,
+    darkMode,
+    setAvailableThemes
+  } = useThemeStore();
+
+  // Ref for canvas container to apply theme
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+
+  // Apply theme to canvas when theme or mode changes
+  useEffect(() => {
+    if (canvasContainerRef.current && currentTheme) {
+      themeService.applyThemeToElement(
+        canvasContainerRef.current,
+        currentTheme,
+        darkMode
+      );
+      console.log('Applied theme to canvas container');
+    }
+
+    return () => {
+      if (canvasContainerRef.current) {
+        themeService.clearThemeFromElement(canvasContainerRef.current);
+      }
+    };
+  }, [currentTheme, darkMode]);
+
+  // Load theme preferences on startup
+  useEffect(() => {
+    const loadThemePreferences = async () => {
+      try {
+        const darkModeResult = await window.electronAPI.getThemeDarkMode();
+        const syncResult = await window.electronAPI.getThemeSyncWithHA();
+
+        useThemeStore.setState({
+          darkMode: darkModeResult.darkMode,
+          syncWithHA: syncResult.sync,
+        });
+
+        console.log('Loaded theme preferences:', darkModeResult, syncResult);
+      } catch (error) {
+        console.error('Failed to load theme preferences:', error);
+      }
+    };
+
+    loadThemePreferences();
+  }, []);
+
+  // Subscribe to live theme updates from HA
+  useEffect(() => {
+    if (!isConnected) return;
+
+    let unsubscribe: (() => void) | null = null;
+
+    const subscribe = () => {
+      unsubscribe = window.electronAPI.haWsSubscribeToThemes((themes) => {
+        setAvailableThemes(themes);
+        console.log('Themes updated from Home Assistant');
+      });
+    };
+
+    subscribe();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [isConnected, setAvailableThemes]);
 
   const handleOpenFile = async () => {
     try {
@@ -509,6 +586,9 @@ const App: React.FC = () => {
 
       // Fetch and cache entities in the background
       fetchAndCacheEntities();
+
+      // Fetch themes in the background
+      fetchThemes();
     } catch (error) {
       message.error(`Failed to connect: ${(error as Error).message}`);
       throw error;
@@ -524,6 +604,22 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to fetch entities:', error);
+      // Don't show error to user - this is a background operation
+    }
+  };
+
+  const fetchThemes = async () => {
+    if (!isConnected) return;
+
+    try {
+      console.log('Fetching themes from Home Assistant...');
+      const result = await window.electronAPI.haWsGetThemes();
+      if (result.success && result.themes) {
+        setAvailableThemes(result.themes);
+        console.log(`Loaded ${Object.keys(result.themes.themes || {}).length} themes from HA`);
+      }
+    } catch (error) {
+      console.error('Failed to fetch themes:', error);
       // Don't show error to user - this is a background operation
     }
   };
@@ -768,6 +864,8 @@ const App: React.FC = () => {
                 try {
                   await fetchAndCacheEntities();
                   console.log('Entity cache updated on startup');
+                  await fetchThemes();
+                  console.log('Themes loaded on startup');
                 } catch (err) {
                   console.error('Failed to fetch entities on startup:', err);
                 }
@@ -796,6 +894,8 @@ const App: React.FC = () => {
                   try {
                     await fetchAndCacheEntities();
                     console.log('Entity cache updated on startup');
+                    await fetchThemes();
+                    console.log('Themes loaded on startup');
                   } catch (err) {
                     console.error('Failed to fetch entities on startup:', err);
                   }
@@ -953,6 +1053,12 @@ const App: React.FC = () => {
             </Space>
           </div>
           <Space>
+            {isConnected && (
+              <ThemeSelector
+                onRefreshThemes={fetchThemes}
+                onOpenSettings={() => setThemeSettingsVisible(true)}
+              />
+            )}
             <Badge status={isConnected ? 'success' : 'default'} text={isConnected ? 'Connected' : 'Not Connected'} style={{ color: '#888' }} />
             {isConnected ? (
               <Button size="small" onClick={handleDisconnect}>
@@ -971,6 +1077,7 @@ const App: React.FC = () => {
           </Sider>
           <Layout style={{ padding: '24px' }}>
             <Content
+              ref={canvasContainerRef}
               style={{
                 padding: 24,
                 margin: 0,
@@ -1106,10 +1213,11 @@ const App: React.FC = () => {
                           type={livePreviewMode ? 'primary' : 'default'}
                           icon={<EyeOutlined />}
                           onClick={handleEnterLivePreview}
-                        disabled={!isConnected || livePreviewMode}
-                      >
-                        Live Preview
-                      </Button>
+                          disabled={!isConnected || livePreviewMode}
+                        >
+                          Live Preview
+                        </Button>
+                      </Tooltip>
                     </Space>
                   </div>
 
@@ -1155,7 +1263,7 @@ const App: React.FC = () => {
               )}
             </Content>
           </Layout>
-          <Sider width={300} theme="dark">
+          <Sider width={300} theme="dark" style={{ overflow: 'auto', height: 'calc(100vh - 64px)' }}>
             <PropertiesPanel
               card={
                 config && selectedViewIndex !== null && selectedCardIndex !== null
@@ -1167,6 +1275,7 @@ const App: React.FC = () => {
               onCancel={handlePropertiesCancel}
               onOpenEntityBrowser={handleOpenEntityBrowser}
             />
+            {isConnected && <ThemePreviewPanel />}
           </Sider>
         </Layout>
       </Layout>
@@ -1202,6 +1311,10 @@ const App: React.FC = () => {
         onSelect={handleEntitySelected}
         isConnected={isConnected}
         onRefresh={fetchAndCacheEntities}
+      />
+      <ThemeSettingsDialog
+        visible={themeSettingsVisible}
+        onClose={() => setThemeSettingsVisible(false)}
       />
       </HAEntityProvider>
     </ConfigProvider>

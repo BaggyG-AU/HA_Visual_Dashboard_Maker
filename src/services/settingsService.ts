@@ -15,6 +15,9 @@ interface AppSettings {
   haUrl?: string;
   haToken?: string;
   cachedEntities?: any[];
+  selectedTheme?: string;
+  themeDarkMode?: boolean;
+  themeSyncWithHA?: boolean;
 }
 
 const schema = {
@@ -135,6 +138,31 @@ class SettingsService {
 
   clearCachedEntities(): void {
     this.store.set('cachedEntities', []);
+  }
+
+  // Theme preference methods
+  getSelectedTheme(): string | undefined {
+    return this.store.get('selectedTheme');
+  }
+
+  setSelectedTheme(themeName: string): void {
+    this.store.set('selectedTheme', themeName);
+  }
+
+  getThemeDarkMode(): boolean {
+    return this.store.get('themeDarkMode', true);
+  }
+
+  setThemeDarkMode(darkMode: boolean): void {
+    this.store.set('themeDarkMode', darkMode);
+  }
+
+  getThemeSyncWithHA(): boolean {
+    return this.store.get('themeSyncWithHA', true);
+  }
+
+  setThemeSyncWithHA(sync: boolean): void {
+    this.store.set('themeSyncWithHA', sync);
   }
 }
 

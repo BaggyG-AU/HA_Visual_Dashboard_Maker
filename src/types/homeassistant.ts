@@ -61,3 +61,32 @@ export interface EntityDomain {
   domain: string;
   entities: HAEntity[];
 }
+
+// Theme types
+export interface ThemeVars {
+  "primary-color": string;
+  "text-primary-color": string;
+  "accent-color": string;
+  "primary-background-color": string;
+  "card-background-color": string;
+  "secondary-text-color": string;
+  [key: string]: string; // Additional custom variables
+}
+
+export interface ThemeMode {
+  light?: ThemeVars;
+  dark?: ThemeVars;
+}
+
+export interface Theme {
+  [key: string]: string | ThemeMode;
+  modes?: ThemeMode;
+}
+
+export interface Themes {
+  default_theme: string;
+  default_dark_theme: string | null;
+  themes: Record<string, Theme>;
+  darkMode: boolean;
+  theme: string;
+}

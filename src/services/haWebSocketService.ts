@@ -462,6 +462,65 @@ export class HAWebSocketService {
     console.log(`Fetched ${states.length} entities from Home Assistant`);
     return states;
   }
+
+  /**
+   * Fetch all installed themes from Home Assistant
+   */
+  async getThemes(): Promise<any> {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      throw new Error('Not connected to Home Assistant');
+    }
+
+    const result = await this.sendAndWait<any>({
+      type: 'frontend/get_themes',
+    });
+
+    console.log('Fetched themes from HA:', Object.keys(result.themes || {}));
+    return result;
+  }
+
+  /**
+   * Subscribe to theme updates
+   * @param callback - Function called when themes are updated
+   * @returns Unsubscribe function
+   */
+  async subscribeToThemes(callback: (themes: any) => void): Promise<() => void> {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      throw new Error('Not connected to Home Assistant');
+    }
+
+    // Initial fetch
+    const themes = await this.getThemes();
+    callback(themes);
+
+    // Subscribe to updates
+    const id = this.messageId++;
+    this.send({
+      id,
+      type: 'subscribe_events',
+      event_type: 'themes_updated',
+    });
+
+    // Handle theme update events
+    const handler = (msg: any) => {
+      if (msg.id === id && msg.event) {
+        // Refresh themes when updated
+        this.getThemes().then(callback).catch(console.error);
+      }
+    };
+
+    // Store handler for cleanup
+    const eventHandlerId = id;
+
+    // Return unsubscribe function
+    return () => {
+      this.send({
+        id: eventHandlerId,
+        type: 'unsubscribe_events',
+        subscription: eventHandlerId,
+      });
+    };
+  }
 }
 
 // Export a singleton instance
