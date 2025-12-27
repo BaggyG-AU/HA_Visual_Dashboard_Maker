@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Button, Alert, Space, Select, Checkbox, Divider, Popconfirm } from 'antd';
+import { Modal, Form, Input, Button, Alert, Space, Select, Checkbox, Divider, Popconfirm, Tooltip } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, SaveOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 import { HAConnectionStatus } from '../types/homeassistant';
@@ -180,13 +180,15 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
                         cancelText="Cancel"
                         okButtonProps={{ danger: true }}
                       >
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<DeleteOutlined />}
-                          danger
-                          onClick={(e) => e.stopPropagation()}
-                        />
+                        <Tooltip title="Delete this saved connection">
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            danger
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </Tooltip>
                       </Popconfirm>
                     </div>
                   ),

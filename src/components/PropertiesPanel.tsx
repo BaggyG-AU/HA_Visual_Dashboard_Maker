@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message } from 'antd';
+import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip } from 'antd';
 import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import * as yaml from 'js-yaml';
@@ -258,24 +258,26 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           Properties
         </Title>
         <Space>
-          <Button
-            size="small"
-            icon={<UndoOutlined />}
-            onClick={handleUndo}
-            disabled={undoStack.length === 0}
-            title="Undo last change"
-          >
-            Undo
-          </Button>
-          {activeTab === 'yaml' && (
+          <Tooltip title="Undo last change to card properties">
             <Button
               size="small"
-              icon={<FormatPainterOutlined />}
-              onClick={formatYaml}
-              title="Format YAML"
+              icon={<UndoOutlined />}
+              onClick={handleUndo}
+              disabled={undoStack.length === 0}
             >
-              Format
+              Undo
             </Button>
+          </Tooltip>
+          {activeTab === 'yaml' && (
+            <Tooltip title="Auto-format YAML with proper indentation">
+              <Button
+                size="small"
+                icon={<FormatPainterOutlined />}
+                onClick={formatYaml}
+              >
+                Format
+              </Button>
+            </Tooltip>
           )}
         </Space>
       </div>

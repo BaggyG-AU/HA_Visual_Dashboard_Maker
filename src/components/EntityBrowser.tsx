@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Modal, Input, Table, Button, Space, Badge, message, Tabs, Empty } from 'antd';
+import { Modal, Input, Table, Button, Space, Badge, message, Tabs, Empty, Tooltip } from 'antd';
 import { SearchOutlined, ReloadOutlined, CheckOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -182,13 +182,13 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
   return (
     <Modal
       title={
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <span>Entity Browser</span>
-          <Space>
-            <Badge
-              status={isConnected ? 'success' : 'default'}
-              text={isConnected ? 'Connected' : 'Offline (Cached)'}
-            />
+          <Badge
+            status={isConnected ? 'success' : 'default'}
+            text={isConnected ? 'Connected' : 'Offline (Cached)'}
+          />
+          <Tooltip title="Refresh entity list from Home Assistant">
             <Button
               size="small"
               icon={<ReloadOutlined />}
@@ -198,7 +198,7 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
             >
               Refresh
             </Button>
-          </Space>
+          </Tooltip>
         </div>
       }
       open={visible}
@@ -219,7 +219,7 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
         </Button>,
       ]}
     >
-      <Space direction="vertical" style={{ width: '100%' }} size="middle">
+      <Space orientation="vertical" style={{ width: '100%' }} size="middle">
         <Input
           placeholder="Search entities by ID, name, state, or device class..."
           prefix={<SearchOutlined />}

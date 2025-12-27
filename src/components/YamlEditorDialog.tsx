@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Modal, Button, Alert, Space, message } from 'antd';
+import { Modal, Button, Alert, Space, message, Tooltip } from 'antd';
 import { CodeOutlined, CheckOutlined, DatabaseOutlined } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import { yamlService } from '../services/yamlService';
@@ -132,26 +132,30 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
         width={1000}
         style={{ top: 20 }}
         footer={[
-          <Button
-            key="insertEntity"
-            icon={<DatabaseOutlined />}
-            onClick={handleOpenEntityBrowserClick}
-            disabled={!onOpenEntityBrowser}
-          >
-            Insert Entity
-          </Button>,
+          <Tooltip key="insertEntity-tooltip" title="Open entity browser and insert selected entity ID at cursor position">
+            <Button
+              key="insertEntity"
+              icon={<DatabaseOutlined />}
+              onClick={handleOpenEntityBrowserClick}
+              disabled={!onOpenEntityBrowser}
+            >
+              Insert Entity
+            </Button>
+          </Tooltip>,
           <Button key="close" onClick={handleClose}>
             Cancel
           </Button>,
-          <Button
-            key="apply"
-            type="primary"
-            icon={<CheckOutlined />}
-            onClick={handleApply}
-            disabled={!hasChanges || validationError !== null}
-          >
-            Apply Changes
-          </Button>,
+          <Tooltip key="apply-tooltip" title="Apply YAML changes to update the dashboard">
+            <Button
+              key="apply"
+              type="primary"
+              icon={<CheckOutlined />}
+              onClick={handleApply}
+              disabled={!hasChanges || validationError !== null}
+            >
+              Apply Changes
+            </Button>
+          </Tooltip>,
         ]}
       >
         <Alert

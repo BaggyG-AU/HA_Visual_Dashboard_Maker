@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge } from 'antd';
+import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge, Tooltip } from 'antd';
 import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
@@ -919,34 +919,37 @@ const App: React.FC = () => {
               HA Visual Dashboard Maker
             </div>
             <Space>
-              <Button
-                size="small"
-                icon={<UndoOutlined />}
-                onClick={() => {
-                  undo();
-                  message.info('Undo');
-                }}
-                disabled={!canUndo()}
-                title="Undo (Ctrl+Z)"
-              />
-              <Button
-                size="small"
-                icon={<RedoOutlined />}
-                onClick={() => {
-                  redo();
-                  message.info('Redo');
-                }}
-                disabled={!canRedo()}
-                title="Redo (Ctrl+Y)"
-              />
-              <Button
-                size="small"
-                icon={<DatabaseOutlined />}
-                onClick={() => setEntityBrowserVisible(true)}
-                title="Entity Browser"
-              >
-                Entities
-              </Button>
+              <Tooltip title="Undo last action (Ctrl+Z)">
+                <Button
+                  size="small"
+                  icon={<UndoOutlined />}
+                  onClick={() => {
+                    undo();
+                    message.info('Undo');
+                  }}
+                  disabled={!canUndo()}
+                />
+              </Tooltip>
+              <Tooltip title="Redo last undone action (Ctrl+Y)">
+                <Button
+                  size="small"
+                  icon={<RedoOutlined />}
+                  onClick={() => {
+                    redo();
+                    message.info('Redo');
+                  }}
+                  disabled={!canRedo()}
+                />
+              </Tooltip>
+              <Tooltip title="Browse and search Home Assistant entities">
+                <Button
+                  size="small"
+                  icon={<DatabaseOutlined />}
+                  onClick={() => setEntityBrowserVisible(true)}
+                >
+                  Entities
+                </Button>
+              </Tooltip>
             </Space>
           </div>
           <Space>
@@ -994,29 +997,35 @@ const App: React.FC = () => {
 
                   <div style={{ marginTop: '24px' }}>
                     <Space size="large">
-                      <Button
-                        type="primary"
-                        size="large"
-                        icon={<FileAddOutlined />}
-                        onClick={handleNewDashboard}
-                      >
-                        New Dashboard
-                      </Button>
-                      <Button
-                        size="large"
-                        icon={<FolderOpenOutlined />}
-                        onClick={handleOpenFile}
-                      >
-                        Open Local File
-                      </Button>
-                      <Button
-                        size="large"
-                        icon={<AppstoreOutlined />}
-                        onClick={handleOpenDashboardBrowser}
-                        disabled={!isConnected}
-                      >
-                        Browse HA Dashboards
-                      </Button>
+                      <Tooltip title="Create a new blank dashboard from scratch">
+                        <Button
+                          type="primary"
+                          size="large"
+                          icon={<FileAddOutlined />}
+                          onClick={handleNewDashboard}
+                        >
+                          New Dashboard
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Open an existing dashboard YAML file from your computer">
+                        <Button
+                          size="large"
+                          icon={<FolderOpenOutlined />}
+                          onClick={handleOpenFile}
+                        >
+                          Open Local File
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title={isConnected ? "Browse and download dashboards from Home Assistant" : "Connect to Home Assistant to browse dashboards"}>
+                        <Button
+                          size="large"
+                          icon={<AppstoreOutlined />}
+                          onClick={handleOpenDashboardBrowser}
+                          disabled={!isConnected}
+                        >
+                          Browse HA Dashboards
+                        </Button>
+                      </Tooltip>
                     </Space>
                   </div>
 
@@ -1040,50 +1049,63 @@ const App: React.FC = () => {
                       </p>
                     </div>
                     <Space wrap>
-                      <Button
-                        icon={<FileAddOutlined />}
-                        onClick={handleNewDashboard}
-                      >
-                        New
-                      </Button>
-                      <Button
-                        icon={<FolderOpenOutlined />}
-                        onClick={handleOpenFile}
-                      >
-                        Open
-                      </Button>
-                      <Button
-                        icon={<DownloadOutlined />}
-                        onClick={handleOpenDashboardBrowser}
-                        disabled={!isConnected}
-                      >
-                        Download
-                      </Button>
-                      <Button
-                        icon={<CodeOutlined />}
-                        onClick={handleOpenYamlEditor}
-                      >
-                        Edit YAML
-                      </Button>
-                      <Button
-                        type="primary"
-                        icon={<SaveOutlined />}
-                        onClick={handleSave}
-                        disabled={!isDirty}
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        icon={<CloudUploadOutlined />}
-                        onClick={handleOpenDeployDialog}
-                        disabled={!isConnected}
-                      >
-                        Deploy
-                      </Button>
-                      <Button
-                        type={livePreviewMode ? 'primary' : 'default'}
-                        icon={<EyeOutlined />}
-                        onClick={handleEnterLivePreview}
+                      <Tooltip title="Create a new blank dashboard">
+                        <Button
+                          icon={<FileAddOutlined />}
+                          onClick={handleNewDashboard}
+                        >
+                          New
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Open an existing dashboard YAML file from your computer">
+                        <Button
+                          icon={<FolderOpenOutlined />}
+                          onClick={handleOpenFile}
+                        >
+                          Open
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Download a dashboard from your Home Assistant instance">
+                        <Button
+                          icon={<DownloadOutlined />}
+                          onClick={handleOpenDashboardBrowser}
+                          disabled={!isConnected}
+                        >
+                          Download
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Edit dashboard YAML directly with syntax highlighting">
+                        <Button
+                          icon={<CodeOutlined />}
+                          onClick={handleOpenYamlEditor}
+                        >
+                          Edit YAML
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Save dashboard to local YAML file">
+                        <Button
+                          type="primary"
+                          icon={<SaveOutlined />}
+                          onClick={handleSave}
+                          disabled={!isDirty}
+                        >
+                          Save
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Deploy dashboard to your Home Assistant instance">
+                        <Button
+                          icon={<CloudUploadOutlined />}
+                          onClick={handleOpenDeployDialog}
+                          disabled={!isConnected}
+                        >
+                          Deploy
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Preview dashboard live in Home Assistant with drag-and-drop editing">
+                        <Button
+                          type={livePreviewMode ? 'primary' : 'default'}
+                          icon={<EyeOutlined />}
+                          onClick={handleEnterLivePreview}
                         disabled={!isConnected || livePreviewMode}
                       >
                         Live Preview

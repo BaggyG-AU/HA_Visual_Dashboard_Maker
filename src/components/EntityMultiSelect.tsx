@@ -291,9 +291,17 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
         tagRender={tagRender}
         maxTagCount="responsive"
         style={{ width: '100%' }}
-        popupClassName="entity-select-dropdown"
-        dropdownStyle={{
-          backgroundColor: '#1f1f1f',
+        classNames={{
+          popup: {
+            root: 'entity-select-dropdown',
+          },
+        }}
+        styles={{
+          popup: {
+            root: {
+              backgroundColor: '#1f1f1f',
+            },
+          },
         }}
       />
       {renderValidation()}

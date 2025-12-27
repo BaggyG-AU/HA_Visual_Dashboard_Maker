@@ -561,6 +561,30 @@ const createWindow = () => {
     saveWindowState();
   });
 
+  // Set Content Security Policy for production builds
+  // In development, Vite needs 'unsafe-eval' for HMR, so we skip CSP
+  if (!MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Content-Security-Policy': [
+            [
+              "default-src 'self'",
+              "script-src 'self'",
+              "style-src 'self' 'unsafe-inline'", // Ant Design uses inline styles
+              "img-src 'self' data: https:", // Allow images from data URIs and HTTPS
+              "font-src 'self' data:", // Allow fonts from data URIs
+              "connect-src 'self' ws: wss: http: https:", // Allow WebSocket and HTTP(S) connections for Home Assistant
+              "worker-src 'self' blob:", // Monaco Editor workers
+              "child-src 'self' blob:", // Monaco Editor workers
+            ].join('; ')
+          ]
+        }
+      });
+    });
+  }
+
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);

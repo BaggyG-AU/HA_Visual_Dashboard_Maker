@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Space, message, Modal } from 'antd';
+import { Button, Space, message, Modal, Tooltip } from 'antd';
 import { EditOutlined, DeploymentUnitOutlined, CloseOutlined } from '@ant-design/icons';
 import GridLayout, { Layout } from 'react-grid-layout';
 import { View } from '../types/dashboard';
@@ -200,13 +200,15 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
         alignItems: 'center',
       }}>
         <Space>
-          <Button
-            type={editMode ? 'primary' : 'default'}
-            icon={<EditOutlined />}
-            onClick={handleToggleMode}
-          >
-            {editMode ? 'Edit Mode' : 'Preview Mode'}
-          </Button>
+          <Tooltip title="Toggle between editing the layout and previewing the dashboard">
+            <Button
+              type={editMode ? 'primary' : 'default'}
+              icon={<EditOutlined />}
+              onClick={handleToggleMode}
+            >
+              {editMode ? 'Edit Mode' : 'Preview Mode'}
+            </Button>
+          </Tooltip>
           {editMode && (
             <div style={{ color: '#9e9e9e', fontSize: '12px', marginLeft: '8px' }}>
               Drag and resize cards to arrange your dashboard
@@ -214,20 +216,24 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
           )}
         </Space>
         <Space>
-          <Button
-            type="primary"
-            icon={<DeploymentUnitOutlined />}
-            onClick={handleDeploy}
-            disabled={!tempDashboardPath}
-          >
-            Deploy to Production
-          </Button>
-          <Button
-            icon={<CloseOutlined />}
-            onClick={onClose}
-          >
-            Close
-          </Button>
+          <Tooltip title="Backup current dashboard and deploy your changes to production">
+            <Button
+              type="primary"
+              icon={<DeploymentUnitOutlined />}
+              onClick={handleDeploy}
+              disabled={!tempDashboardPath}
+            >
+              Deploy to Production
+            </Button>
+          </Tooltip>
+          <Tooltip title="Close live preview and return to dashboard editor">
+            <Button
+              icon={<CloseOutlined />}
+              onClick={onClose}
+            >
+              Close
+            </Button>
+          </Tooltip>
         </Space>
       </div>
 

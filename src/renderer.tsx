@@ -8,6 +8,9 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
 
+// Import Material Design Icons locally (bundled, not from CDN)
+import '@mdi/font/css/materialdesignicons.min.css';
+
 // Get the root element
 const container = document.getElementById('root');
 

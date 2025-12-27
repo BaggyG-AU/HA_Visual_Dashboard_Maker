@@ -155,7 +155,7 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
           border: '1px solid #2a2a2a',
           borderRadius: '4px'
         }}>
-          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+          <Space orientation="vertical" size="small" style={{ width: '100%' }}>
             <Space>
               <CheckCircleOutlined style={{ color: '#52c41a' }} />
               <Text strong style={{ color: '#52c41a', fontSize: '12px' }}>Valid Entity</Text>

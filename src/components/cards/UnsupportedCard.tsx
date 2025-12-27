@@ -54,7 +54,7 @@ export const UnsupportedCard: React.FC<UnsupportedCardProps> = ({
       onClick={onClick}
       hoverable
     >
-      <Space direction="vertical" size="small" style={{ width: '100%' }}>
+      <Space orientation="vertical" size="small" style={{ width: '100%' }}>
         <div
           style={{
             width: '40px',

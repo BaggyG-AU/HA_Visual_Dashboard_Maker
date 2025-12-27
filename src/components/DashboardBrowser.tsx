@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Flex, Button, Alert, Space, Typography, Spin, Tag, Empty } from 'antd';
+import { Modal, Flex, Button, Alert, Space, Typography, Spin, Tag, Empty, Tooltip } from 'antd';
 import { DownloadOutlined, FileTextOutlined, ReloadOutlined, HomeOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 import * as yaml from 'js-yaml';
@@ -214,15 +214,17 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
         </div>
 
         {/* Actions */}
-        <Button
-          type="primary"
-          icon={<DownloadOutlined />}
-          onClick={() => handleDownloadDashboard(dashboard)}
-          loading={isDownloading}
-          disabled={downloading !== null && !isDownloading}
-        >
-          {isDownloading ? 'Downloading...' : 'Download'}
-        </Button>
+        <Tooltip title="Download this dashboard to edit it in the visual editor">
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={() => handleDownloadDashboard(dashboard)}
+            loading={isDownloading}
+            disabled={downloading !== null && !isDownloading}
+          >
+            {isDownloading ? 'Downloading...' : 'Download'}
+          </Button>
+        </Tooltip>
       </div>
     );
   };

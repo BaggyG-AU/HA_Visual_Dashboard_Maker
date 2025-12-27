@@ -155,7 +155,7 @@ export const ThermostatCardRenderer: React.FC<ThermostatCardRendererProps> = ({
         </div>
 
         {/* Target temperature */}
-        <Space direction="vertical" size={0} style={{ textAlign: 'center' }}>
+        <Space orientation="vertical" size={0} style={{ textAlign: 'center' }}>
           <Text type="secondary" style={{ fontSize: '10px' }}>
             Target
           </Text>
