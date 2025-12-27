@@ -762,6 +762,16 @@ const App: React.FC = () => {
               setHaUrl(url);
               setIsConnected(true);
               console.log('Successfully restored HA connection from saved credentials');
+
+              // Fetch and cache entities on startup (with small delay to ensure WS is stable)
+              setTimeout(async () => {
+                try {
+                  await fetchAndCacheEntities();
+                  console.log('Entity cache updated on startup');
+                } catch (err) {
+                  console.error('Failed to fetch entities on startup:', err);
+                }
+              }, 500);
             } else {
               console.error('Failed to reconnect WebSocket:', wsResult.error);
             }
@@ -780,6 +790,16 @@ const App: React.FC = () => {
                 setHaUrl(saved.url);
                 setIsConnected(true);
                 console.log('Restored HA connection from old settings:', saved.url);
+
+                // Fetch and cache entities on startup (with small delay to ensure WS is stable)
+                setTimeout(async () => {
+                  try {
+                    await fetchAndCacheEntities();
+                    console.log('Entity cache updated on startup');
+                  } catch (err) {
+                    console.error('Failed to fetch entities on startup:', err);
+                  }
+                }, 500);
               } else {
                 console.error('Failed to reconnect WebSocket:', wsResult.error);
               }

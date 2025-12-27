@@ -39,7 +39,11 @@
       "Bash(PWDEBUG=1 npx playwright test:*)",
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(node .vite/build/main.js:*)",
+      "Bash(NODE_ENV=test npx electron:*)",
+      "Bash(timeout 3 NODE_ENV=test npx electron:*)",
+      "Bash(cmd /c \"set NODE_ENV=test && timeout 3 npx electron .vite/build/main.js\")"
     ]
   }
 }

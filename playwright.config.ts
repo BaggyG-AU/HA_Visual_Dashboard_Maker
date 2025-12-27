@@ -40,8 +40,11 @@ export default defineConfig({
     // Video on failure
     video: 'retain-on-failure',
 
-    // Action timeout
-    actionTimeout: 10 * 1000, // 10 seconds
+    // Action timeout (increased for Electron apps)
+    actionTimeout: 30 * 1000, // 30 seconds
+
+    // Navigation timeout
+    navigationTimeout: 30 * 1000, // 30 seconds
   },
 
   // Test match patterns

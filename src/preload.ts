@@ -58,6 +58,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   credentialsDelete: (id: string) => ipcRenderer.invoke('credentials:delete', id),
   credentialsIsEncryptionAvailable: () => ipcRenderer.invoke('credentials:isEncryptionAvailable'),
 
+  // Test-only APIs (only available when NODE_ENV=test)
+  testSeedEntityCache: (entities: any[]) => ipcRenderer.invoke('test:seedEntityCache', entities),
+  testClearEntityCache: () => ipcRenderer.invoke('test:clearEntityCache'),
+
   // Menu event listeners
   onMenuOpenFile: (callback: () => void) => {
     ipcRenderer.on('menu:open-file', callback);
@@ -122,6 +126,8 @@ export interface ElectronAPI {
   credentialsMarkAsUsed: (id: string) => Promise<{ success: boolean; error?: string }>;
   credentialsDelete: (id: string) => Promise<{ success: boolean; error?: string }>;
   credentialsIsEncryptionAvailable: () => Promise<{ available: boolean }>;
+  testSeedEntityCache: (entities: any[]) => Promise<{ success: boolean; error?: string }>;
+  testClearEntityCache: () => Promise<{ success: boolean; error?: string }>;
   onMenuOpenFile: (callback: () => void) => (() => void);
   onMenuSaveFile: (callback: () => void) => (() => void);
   onMenuSaveFileAs: (callback: () => void) => (() => void);

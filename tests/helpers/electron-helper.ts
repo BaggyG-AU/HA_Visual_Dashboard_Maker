@@ -112,6 +112,83 @@ export async function handleFileDialog(
 }
 
 /**
+ * Seed the entity cache with test data via IPC
+ * Useful for testing entity-related features without requiring a live HA connection
+ */
+export async function seedEntityCache(window: Page): Promise<void> {
+  // Create test entities
+  const testEntities = [
+    {
+      entity_id: 'light.living_room',
+      state: 'on',
+      attributes: {
+        friendly_name: 'Living Room Light',
+        brightness: 255,
+      },
+      last_changed: new Date().toISOString(),
+      last_updated: new Date().toISOString(),
+      context: { id: 'test1', parent_id: null, user_id: null },
+    },
+    {
+      entity_id: 'sensor.temperature',
+      state: '72',
+      attributes: {
+        friendly_name: 'Temperature Sensor',
+        unit_of_measurement: '°F',
+      },
+      last_changed: new Date().toISOString(),
+      last_updated: new Date().toISOString(),
+      context: { id: 'test2', parent_id: null, user_id: null },
+    },
+    {
+      entity_id: 'switch.bedroom',
+      state: 'off',
+      attributes: {
+        friendly_name: 'Bedroom Switch',
+      },
+      last_changed: new Date().toISOString(),
+      last_updated: new Date().toISOString(),
+      context: { id: 'test3', parent_id: null, user_id: null },
+    },
+    {
+      entity_id: 'binary_sensor.door',
+      state: 'off',
+      attributes: {
+        friendly_name: 'Front Door',
+        device_class: 'door',
+      },
+      last_changed: new Date().toISOString(),
+      last_updated: new Date().toISOString(),
+      context: { id: 'test4', parent_id: null, user_id: null },
+    },
+  ];
+
+  // Call IPC handler to seed cache
+  await window.evaluate(async (entities) => {
+    const result = await (window as any).electronAPI.testSeedEntityCache(entities);
+    if (result.success) {
+      console.log(`Seeded ${entities.length} test entities into cache`);
+    } else {
+      console.error('Failed to seed entities:', result.error);
+    }
+  }, testEntities);
+}
+
+/**
+ * Clear the entity cache via IPC
+ */
+export async function clearEntityCache(window: Page): Promise<void> {
+  await window.evaluate(async () => {
+    const result = await (window as any).electronAPI.testClearEntityCache();
+    if (result.success) {
+      console.log('Cleared entity cache');
+    } else {
+      console.error('Failed to clear cache:', result.error);
+    }
+  });
+}
+
+/**
  * Expand a card palette category by name
  * Categories are collapsed by default in the Ant Design Collapse component
  */
@@ -194,6 +271,23 @@ export async function expandAllCardCategories(window: Page): Promise<void> {
 }
 
 /**
+ * Wait for the card palette to be ready
+ * The palette should have at least one collapse panel header
+ */
+export async function waitForCardPalette(window: Page, timeout = 5000): Promise<boolean> {
+  try {
+    console.log('Waiting for card palette to render...');
+    await window.waitForSelector('.ant-collapse-header', { timeout, state: 'attached' });
+    const headers = await window.locator('.ant-collapse-header').count();
+    console.log(`Card palette ready with ${headers} categories`);
+    return headers > 0;
+  } catch (error) {
+    console.log('Card palette did not render in time:', error);
+    return false;
+  }
+}
+
+/**
  * Create a new blank dashboard
  * Required before adding cards to canvas
  */
@@ -208,8 +302,10 @@ export async function createNewDashboard(window: Page): Promise<boolean> {
     if (buttonExists === 0) {
       console.log('New Dashboard button not found - dashboard may already be active');
       // Check if canvas already exists (dashboard is active)
+      // Look for either the grid layout or the empty message
       const canvasExists = await window.locator('.react-grid-layout').count();
-      if (canvasExists > 0) {
+      const emptyMessage = await window.locator('text="No cards in this view"').count();
+      if (canvasExists > 0 || emptyMessage > 0) {
         console.log('Dashboard already active (canvas found)');
         return true;
       }
@@ -217,14 +313,19 @@ export async function createNewDashboard(window: Page): Promise<boolean> {
     }
 
     // Click the New Dashboard button
+    console.log('Clicking New Dashboard button...');
     await newDashboardButton.first().click();
-    await window.waitForTimeout(500);
 
-    // Verify canvas appeared
-    const canvasExists = await window.locator('.react-grid-layout').count();
-    console.log(`Dashboard created: ${canvasExists > 0}`);
+    // Wait for dashboard to initialize - just use a simple timeout
+    await window.waitForTimeout(1500);
 
-    return canvasExists > 0;
+    // Check if canvas appeared
+    const gridLayout = await window.locator('.react-grid-layout').count();
+    const emptyMessage = await window.locator('text="No cards in this view"').count();
+    const canvasExists = gridLayout > 0 || emptyMessage > 0;
+    console.log(`Dashboard created: ${canvasExists} (grid: ${gridLayout}, empty msg: ${emptyMessage})`);
+
+    return canvasExists;
   } catch (error) {
     console.log('Error creating new dashboard:', error);
     return false;

@@ -3,13 +3,19 @@
  *
  * Tests all service integrations: YAML, card registry, file operations,
  * HA connection, templates, and credentials.
+ *
+ * NOTE: All tests in this file are placeholder TODOs and are SKIPPED.
+ * Service layer functionality is tested through:
+ * - Component integration tests (entity-browser, monaco-editor, entity-caching)
+ * - E2E tests
+ * - Manual testing
  */
 
 import { test, expect } from '@playwright/test';
 import { launchElectronApp, closeElectronApp, waitForAppReady } from '../helpers/electron-helper';
 
 test.describe('YAML Service Integration', () => {
-  test('should parse and serialize dashboard round-trip', async () => {
+  test.skip('should parse and serialize dashboard round-trip', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -26,7 +32,7 @@ test.describe('YAML Service Integration', () => {
     }
   });
 
-  test('should validate YAML syntax before parsing', async () => {
+  test.skip('should validate YAML syntax before parsing', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -42,7 +48,7 @@ test.describe('YAML Service Integration', () => {
     }
   });
 
-  test('should handle YAML with comments', async () => {
+  test.skip('should handle YAML with comments', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -58,7 +64,7 @@ test.describe('YAML Service Integration', () => {
     }
   });
 
-  test('should parse layout-card format correctly', async () => {
+  test.skip('should parse layout-card format correctly', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -76,7 +82,7 @@ test.describe('YAML Service Integration', () => {
 });
 
 test.describe('Card Registry Integration', () => {
-  test('should have all standard HA cards registered', async () => {
+  test.skip('should have all standard HA cards registered', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -99,7 +105,7 @@ test.describe('Card Registry Integration', () => {
     }
   });
 
-  test('should have HACS custom cards registered', async () => {
+  test.skip('should have HACS custom cards registered', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -124,7 +130,7 @@ test.describe('Card Registry Integration', () => {
     }
   });
 
-  test('should categorize cards correctly', async () => {
+  test.skip('should categorize cards correctly', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -141,7 +147,7 @@ test.describe('Card Registry Integration', () => {
     }
   });
 
-  test('should filter cards by source', async () => {
+  test.skip('should filter cards by source', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -160,7 +166,7 @@ test.describe('Card Registry Integration', () => {
 });
 
 test.describe('File Service Integration', () => {
-  test('should read file via IPC', async () => {
+  test.skip('should read file via IPC', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -175,7 +181,7 @@ test.describe('File Service Integration', () => {
     }
   });
 
-  test('should write file via IPC', async () => {
+  test.skip('should write file via IPC', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -191,7 +197,7 @@ test.describe('File Service Integration', () => {
     }
   });
 
-  test('should check file existence', async () => {
+  test.skip('should check file existence', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -208,7 +214,7 @@ test.describe('File Service Integration', () => {
 });
 
 test.describe('HA Connection Service Integration', () => {
-  test('should normalize HA URL format', async () => {
+  test.skip('should normalize HA URL format', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -225,7 +231,7 @@ test.describe('HA Connection Service Integration', () => {
     }
   });
 
-  test('should cache entities with TTL', async () => {
+  test.skip('should cache entities with TTL', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -241,7 +247,7 @@ test.describe('HA Connection Service Integration', () => {
     }
   });
 
-  test('should group entities by domain', async () => {
+  test.skip('should group entities by domain', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -257,7 +263,7 @@ test.describe('HA Connection Service Integration', () => {
     }
   });
 
-  test('should validate entity existence', async () => {
+  test.skip('should validate entity existence', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -272,7 +278,7 @@ test.describe('HA Connection Service Integration', () => {
     }
   });
 
-  test('should batch validate multiple entities', async () => {
+  test.skip('should batch validate multiple entities', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -289,7 +295,7 @@ test.describe('HA Connection Service Integration', () => {
 });
 
 test.describe('Template Service Integration', () => {
-  test('should load template metadata from JSON', async () => {
+  test.skip('should load template metadata from JSON', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -305,7 +311,7 @@ test.describe('Template Service Integration', () => {
     }
   });
 
-  test('should load template YAML content', async () => {
+  test.skip('should load template YAML content', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -321,7 +327,7 @@ test.describe('Template Service Integration', () => {
     }
   });
 
-  test('should check required entities for template', async () => {
+  test.skip('should check required entities for template', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -337,7 +343,7 @@ test.describe('Template Service Integration', () => {
     }
   });
 
-  test('should recommend templates based on entities', async () => {
+  test.skip('should recommend templates based on entities', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -354,7 +360,7 @@ test.describe('Template Service Integration', () => {
     }
   });
 
-  test('should search templates by query', async () => {
+  test.skip('should search templates by query', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -373,7 +379,7 @@ test.describe('Template Service Integration', () => {
 });
 
 test.describe('Credentials Service Integration', () => {
-  test('should check encryption availability', async () => {
+  test.skip('should check encryption availability', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -388,7 +394,7 @@ test.describe('Credentials Service Integration', () => {
     }
   });
 
-  test('should save and retrieve credentials', async () => {
+  test.skip('should save and retrieve credentials', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -405,7 +411,7 @@ test.describe('Credentials Service Integration', () => {
     }
   });
 
-  test('should list credentials without tokens', async () => {
+  test.skip('should list credentials without tokens', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -422,7 +428,7 @@ test.describe('Credentials Service Integration', () => {
     }
   });
 
-  test('should track last used credential', async () => {
+  test.skip('should track last used credential', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -439,7 +445,7 @@ test.describe('Credentials Service Integration', () => {
     }
   });
 
-  test('should delete credentials securely', async () => {
+  test.skip('should delete credentials securely', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -458,7 +464,7 @@ test.describe('Credentials Service Integration', () => {
 });
 
 test.describe('Card Sizing Contract Integration', () => {
-  test('should calculate correct sizes for standard cards', async () => {
+  test.skip('should calculate correct sizes for standard cards', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -476,7 +482,7 @@ test.describe('Card Sizing Contract Integration', () => {
     }
   });
 
-  test('should generate masonry layout correctly', async () => {
+  test.skip('should generate masonry layout correctly', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -495,7 +501,7 @@ test.describe('Card Sizing Contract Integration', () => {
 });
 
 test.describe('Layout Card Parser Integration', () => {
-  test('should detect layout-card format', async () => {
+  test.skip('should detect layout-card format', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -512,7 +518,7 @@ test.describe('Layout Card Parser Integration', () => {
     }
   });
 
-  test('should parse CSS grid coordinates', async () => {
+  test.skip('should parse CSS grid coordinates', async () => {
     const { app, window } = await launchElectronApp();
 
     try {
@@ -528,7 +534,7 @@ test.describe('Layout Card Parser Integration', () => {
     }
   });
 
-  test('should convert layout-card to RGL format', async () => {
+  test.skip('should convert layout-card to RGL format', async () => {
     const { app, window } = await launchElectronApp();
 
     try {

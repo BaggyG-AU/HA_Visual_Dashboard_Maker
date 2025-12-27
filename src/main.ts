@@ -398,6 +398,27 @@ ipcMain.handle('ha:ws:fetchEntities', async () => {
   }
 });
 
+// Test-only IPC handlers (only available in test mode)
+if (process.env.NODE_ENV === 'test') {
+  ipcMain.handle('test:seedEntityCache', async (event, entities: any[]) => {
+    try {
+      settingsService.setCachedEntities(entities);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  ipcMain.handle('test:clearEntityCache', async () => {
+    try {
+      settingsService.setCachedEntities([]);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+}
+
 // Credentials API handlers
 ipcMain.handle('credentials:save', async (event, name: string, url: string, token: string, id?: string) => {
   try {
