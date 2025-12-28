@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip } from 'antd';
 import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
-import Editor from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 import * as yaml from 'js-yaml';
 import { Card } from '../types/dashboard';
 import { cardRegistry } from '../services/cardRegistry';
@@ -36,7 +36,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const [undoStack, setUndoStack] = useState<Card[]>([]);
   const isUpdatingFromForm = useRef(false);
   const isUpdatingFromYaml = useRef(false);
-  const monacoEditorRef = useRef<any>(null);
+  const monacoEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const editorContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Helper function to normalize entities for form display
   const normalizeCardForForm = (card: Card): any => {
@@ -139,6 +140,41 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
     checkStreamComponent();
   }, []);
+
+  // Create Monaco editor when container is ready and YAML tab is active
+  useEffect(() => {
+    if (!editorContainerRef.current || activeTab !== 'yaml') return;
+
+    // Create editor instance
+    const editor = monaco.editor.create(editorContainerRef.current, {
+      value: yamlContent,
+      language: 'yaml',
+      theme: 'vs-dark',
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      fontSize: 13,
+      lineNumbers: 'on',
+      wordWrap: 'on',
+      automaticLayout: true,
+      tabSize: 2,
+      insertSpaces: true,
+    });
+
+    monacoEditorRef.current = editor;
+
+    // Listen for content changes
+    const disposable = editor.onDidChangeModelContent(() => {
+      const value = editor.getValue();
+      handleYamlChange(value);
+    });
+
+    // Cleanup
+    return () => {
+      disposable.dispose();
+      editor.dispose();
+      monacoEditorRef.current = null;
+    };
+  }, [activeTab, yamlContent]); // Re-create when tab changes or yamlContent changes
 
   // Reset form and YAML when card changes
   useEffect(() => {
@@ -252,7 +288,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const cardName = cardMetadata?.name || card.type;
 
   return (
-    <div style={{ padding: '16px', color: 'white', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div data-testid="properties-panel" style={{ padding: '16px', color: 'white', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <Title level={4} style={{ color: 'white', marginTop: 0, marginBottom: 0 }}>
           Properties
@@ -315,7 +351,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Title</span>}
                 name="title"
               >
-                <Input placeholder="Card title" />
+                <Input data-testid="card-title-input" placeholder="Card title" />
               </Form.Item>
 
               {/* Only show EntityMultiSelect if entities is an array */}
@@ -325,7 +361,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   name="entities"
                   help={<span style={{ color: '#666' }}>Select entities from your Home Assistant instance</span>}
                 >
-                  <EntityMultiSelect placeholder="Select entities" />
+                  <EntityMultiSelect data-testid="entities-multi-select" placeholder="Select entities" />
                 </Form.Item>
               )}
 
@@ -349,14 +385,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="entity"
                 rules={[{ required: true, message: 'Entity is required' }]}
               >
-                <EntitySelect placeholder="Select entity" />
+                <EntitySelect data-testid="entity-select" placeholder="Select entity" />
               </Form.Item>
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Button name" />
+                <Input data-testid="card-name-input" placeholder="Button name" />
               </Form.Item>
 
               <Form.Item
@@ -387,14 +423,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="entity"
                 rules={[{ required: true, message: 'Entity is required' }]}
               >
-                <EntitySelect placeholder="Select sensor" filterDomains={['sensor', 'binary_sensor']} />
+                <EntitySelect data-testid="entity-select" placeholder="Select sensor" filterDomains={['sensor', 'binary_sensor']} />
               </Form.Item>
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
 
               <Form.Item
@@ -467,7 +503,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="entity"
                     rules={[{ required: true, message: 'Entity is required' }]}
                   >
-                    <EntitySelect placeholder="Select entity" />
+                    <EntitySelect data-testid="entity-select" placeholder="Select entity" />
                   </Form.Item>
 
                   <Form.Item
@@ -523,7 +559,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Name</span>}
                     name="name"
                   >
-                    <Input placeholder="Display name" />
+                    <Input data-testid="card-name-input" placeholder="Display name" />
                   </Form.Item>
                 </>
               )}
@@ -536,7 +572,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Title</span>}
                 name="title"
               >
-                <Input placeholder="Card title" />
+                <Input data-testid="card-title-input" placeholder="Card title" />
               </Form.Item>
 
               <Form.Item
@@ -620,7 +656,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
 
               <Form.Item
@@ -646,7 +682,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
             </>
           )}
@@ -677,7 +713,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
             </>
           )}
@@ -718,7 +754,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
 
               <Form.Item
@@ -756,7 +792,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
             </>
           )}
@@ -843,7 +879,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Button name" />
+                <Input data-testid="card-name-input" placeholder="Button name" />
               </Form.Item>
 
               <Form.Item
@@ -932,14 +968,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="entity"
                 rules={[{ required: true, message: 'Entity is required' }]}
               >
-                <EntitySelect placeholder="Select entity" />
+                <EntitySelect data-testid="entity-select" placeholder="Select entity" />
               </Form.Item>
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
 
               <Form.Item
@@ -1008,7 +1044,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
 
               <Form.Item
@@ -1087,7 +1123,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
 
               <Form.Item
@@ -1146,7 +1182,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
 
               <Form.Item
@@ -1198,7 +1234,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
 
               <Form.Item
@@ -1264,7 +1300,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
 
               <Form.Item
@@ -1373,7 +1409,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name={['conditions', 0, 'entity']}
                 help={<span style={{ color: '#666' }}>Entity to check condition on</span>}
               >
-                <EntitySelect placeholder="Select entity" />
+                <EntitySelect data-testid="entity-select" placeholder="Select entity" />
               </Form.Item>
 
               <Form.Item
@@ -1466,7 +1502,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
 
               <Form.Item
@@ -1505,7 +1541,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Display name" />
+                <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
 
               <Form.Item
@@ -1793,7 +1829,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="entity"
                 help={<span style={{ color: '#666' }}>Entity to control</span>}
               >
-                <EntitySelect placeholder="Select entity" />
+                <EntitySelect data-testid="entity-select" placeholder="Select entity" />
               </Form.Item>
 
               <Form.Item
@@ -1886,7 +1922,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="entity"
                 help={<span style={{ color: '#666' }}>Entity to control with slider</span>}
               >
-                <EntitySelect placeholder="Select entity" />
+                <EntitySelect data-testid="entity-select" placeholder="Select entity" />
               </Form.Item>
 
               <Form.Item
@@ -2052,7 +2088,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="entity"
                 help={<span style={{ color: '#666' }}>Primary entity</span>}
               >
-                <EntitySelect placeholder="Select entity" />
+                <EntitySelect data-testid="entity-select" placeholder="Select entity" />
               </Form.Item>
 
               <Form.Item
@@ -2250,24 +2286,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     style={{ marginBottom: '12px' }}
                   />
                 )}
-                <Editor
-                  height="calc(100vh - 280px)"
-                  language="yaml"
-                  theme="vs-dark"
-                  value={yamlContent}
-                  onChange={handleYamlChange}
-                  onMount={(editor) => {
-                    monacoEditorRef.current = editor;
-                  }}
-                  options={{
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    fontSize: 13,
-                    lineNumbers: 'on',
-                    wordWrap: 'on',
-                    automaticLayout: true,
-                    tabSize: 2,
-                    insertSpaces: true,
+                <div
+                  ref={editorContainerRef}
+                  style={{
+                    height: 'calc(100vh - 280px)',
+                    border: '1px solid #434343',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
                   }}
                 />
               </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal, Button, Alert, Space, message, Tooltip } from 'antd';
 import { CodeOutlined, CheckOutlined, DatabaseOutlined } from '@ant-design/icons';
-import Editor from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 import { yamlService } from '../services/yamlService';
 
 interface YamlEditorDialogProps {
@@ -32,7 +32,43 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
   const [hasChanges, setHasChanges] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const monacoEditorRef = useRef<any>(null);
+  const monacoEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const editorContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Create Monaco editor when container is ready
+  useEffect(() => {
+    if (!editorContainerRef.current) return;
+
+    // Create editor instance
+    const editor = monaco.editor.create(editorContainerRef.current, {
+      value: yamlContent,
+      language: 'yaml',
+      theme: 'vs-dark',
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      fontSize: 13,
+      lineNumbers: 'on',
+      wordWrap: 'on',
+      automaticLayout: true,
+      tabSize: 2,
+      insertSpaces: true,
+    });
+
+    monacoEditorRef.current = editor;
+
+    // Listen for content changes
+    const disposable = editor.onDidChangeModelContent(() => {
+      const value = editor.getValue();
+      setYamlContent(value);
+    });
+
+    // Cleanup
+    return () => {
+      disposable.dispose();
+      editor.dispose();
+      monacoEditorRef.current = null;
+    };
+  }, [visible]); // Re-create when dialog opens/closes
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -43,6 +79,16 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
       setShowConfirmation(false);
     }
   }, [visible, dashboardYaml]);
+
+  // Update editor value when dashboardYaml prop changes
+  useEffect(() => {
+    if (monacoEditorRef.current && visible) {
+      const currentValue = monacoEditorRef.current.getValue();
+      if (currentValue !== dashboardYaml) {
+        monacoEditorRef.current.setValue(dashboardYaml);
+      }
+    }
+  }, [dashboardYaml, visible]);
 
   // Validate YAML whenever content changes
   useEffect(() => {
@@ -121,6 +167,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
   return (
     <>
       <Modal
+        data-testid="yaml-editor-modal"
         title={
           <Space>
             <CodeOutlined />
@@ -135,6 +182,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
           <Tooltip key="insertEntity-tooltip" title="Open entity browser and insert selected entity ID at cursor position">
             <Button
               key="insertEntity"
+              data-testid="yaml-insert-entity-button"
               icon={<DatabaseOutlined />}
               onClick={handleOpenEntityBrowserClick}
               disabled={!onOpenEntityBrowser}
@@ -142,12 +190,13 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
               Insert Entity
             </Button>
           </Tooltip>,
-          <Button key="close" onClick={handleClose}>
+          <Button key="close" data-testid="yaml-cancel-button" onClick={handleClose}>
             Cancel
           </Button>,
           <Tooltip key="apply-tooltip" title="Apply YAML changes to update the dashboard">
             <Button
               key="apply"
+              data-testid="yaml-apply-button"
               type="primary"
               icon={<CheckOutlined />}
               onClick={handleApply}
@@ -168,6 +217,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
 
         {validationError && (
           <Alert
+            data-testid="yaml-validation-error"
             message="YAML Validation Error"
             description={validationError}
             type="error"
@@ -180,6 +230,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
 
         {hasChanges && !validationError && (
           <Alert
+            data-testid="yaml-validation-success"
             message="Valid YAML"
             description="Your changes are valid and ready to apply."
             type="success"
@@ -188,28 +239,17 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
           />
         )}
 
-        <div style={{ marginBottom: '16px', border: '1px solid #434343', borderRadius: '4px' }}>
-          <Editor
-            height="500px"
-            language="yaml"
-            theme="vs-dark"
-            value={yamlContent}
-            onChange={(value) => setYamlContent(value || '')}
-            onMount={(editor) => {
-              monacoEditorRef.current = editor;
-            }}
-            options={{
-              minimap: { enabled: false },
-              scrollBeyondLastLine: false,
-              fontSize: 13,
-              lineNumbers: 'on',
-              wordWrap: 'on',
-              automaticLayout: true,
-              tabSize: 2,
-              insertSpaces: true,
-            }}
-          />
-        </div>
+        <div
+          data-testid="yaml-editor-container"
+          ref={editorContainerRef}
+          style={{
+            marginBottom: '16px',
+            border: '1px solid #434343',
+            borderRadius: '4px',
+            height: '500px',
+            overflow: 'hidden',
+          }}
+        />
 
         <div style={{ color: '#888', fontSize: '12px' }}>
           <strong>Tip:</strong> Use proper YAML indentation (2 spaces). The editor will validate

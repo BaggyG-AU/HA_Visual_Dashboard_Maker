@@ -181,16 +181,19 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
 
   return (
     <Modal
+      data-testid="entity-browser-modal"
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <span>Entity Browser</span>
           <Badge
             status={isConnected ? 'success' : 'default'}
             text={isConnected ? 'Connected' : 'Offline (Cached)'}
+            data-testid="entity-browser-status-badge"
           />
           <Tooltip title="Refresh entity list from Home Assistant">
             <Button
               size="small"
+              data-testid="entity-browser-refresh-button"
               icon={<ReloadOutlined />}
               onClick={handleRefresh}
               loading={loading}
@@ -205,11 +208,12 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
       onCancel={onClose}
       width={1000}
       footer={[
-        <Button key="cancel" onClick={onClose}>
+        <Button key="cancel" data-testid="entity-browser-cancel-button" onClick={onClose}>
           Cancel
         </Button>,
         <Button
           key="select"
+          data-testid="entity-browser-select-button"
           type="primary"
           icon={<CheckOutlined />}
           onClick={handleSelect}
@@ -221,6 +225,7 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
     >
       <Space orientation="vertical" style={{ width: '100%' }} size="middle">
         <Input
+          data-testid="entity-browser-search-input"
           placeholder="Search entities by ID, name, state, or device class..."
           prefix={<SearchOutlined />}
           value={searchTerm}
