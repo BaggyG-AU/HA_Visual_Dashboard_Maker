@@ -211,6 +211,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
       >
         {cards.map((card, index) => (
           <div key={`card-${index}`} style={{ overflow: 'hidden' }}>
+            <div data-testid="canvas-card" style={{ height: '100%', width: '100%' }}>
             <CardContextMenu
               onCut={() => {
                 onCardSelect(index);
@@ -236,6 +237,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
                 onClick={() => onCardSelect(index)}
               />
             </CardContextMenu>
+            </div>
           </div>
         ))}
       </GridLayout>

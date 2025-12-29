@@ -6,25 +6,52 @@
 
 import { _electron as electron, ElectronApplication, Page } from 'playwright';
 import * as path from 'path';
+import * as os from 'os';
+import * as fs from 'fs';
+import * as crypto from 'crypto';
 
 export interface ElectronTestApp {
   app: ElectronApplication;
   window: Page;
+  userDataDir?: string; // Temp directory for isolated storage
 }
 
 /**
- * Launch the Electron application for testing
+ * Create a temporary isolated user data directory
+ * Ensures localStorage/sessionStorage/IndexedDB don't leak between tests
+ */
+function createTempUserDataDir(): string {
+  const dir = path.join(
+    os.tmpdir(),
+    `pw-electron-test-${crypto.randomBytes(8).toString('hex')}`
+  );
+  fs.mkdirSync(dir, { recursive: true });
+  console.log('[HELPER] Created isolated user data dir:', dir);
+  return dir;
+}
+
+/**
+ * Launch the Electron application for testing with isolated storage
+ * Each launch gets a fresh localStorage/sessionStorage/IndexedDB
  */
 export async function launchElectronApp(): Promise<ElectronTestApp> {
   // Path to the main process file (after Vite build)
   const mainPath = path.join(__dirname, '../../.vite/build/main.js');
 
-  // Launch Electron app
+  // Create isolated user data directory for this test
+  const userDataDir = createTempUserDataDir();
+
+  // Launch Electron app with isolated storage
   const app = await electron.launch({
-    args: [mainPath],
+    args: [
+      mainPath,
+      // CRITICAL: Isolate storage to prevent state leakage between tests
+      `--user-data-dir=${userDataDir}`,
+    ],
     env: {
       ...process.env,
       NODE_ENV: 'test',
+      E2E: '1',
       ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
     },
   });
@@ -35,18 +62,50 @@ export async function launchElectronApp(): Promise<ElectronTestApp> {
   // Wait for app to be ready
   await window.waitForLoadState('domcontentloaded');
 
-  return { app, window };
+  console.log('[HELPER] Electron app launched with isolated storage');
+
+  return { app, window, userDataDir };
 }
 
 /**
- * Close the Electron application
+ * Close the Electron application and cleanup temp storage
  */
-export async function closeElectronApp(app: ElectronApplication): Promise<void> {
+export async function closeElectronApp(app: ElectronApplication, userDataDir?: string): Promise<void> {
   await app.close();
+
+  // Clean up temp user data directory
+  if (userDataDir) {
+    try {
+      fs.rmSync(userDataDir, { recursive: true, force: true });
+      console.log('[HELPER] Cleaned up user data dir:', userDataDir);
+    } catch (error) {
+      console.warn('[HELPER] Failed to cleanup user data dir:', error);
+    }
+  }
+}
+
+/**
+ * Wait for React hydration to complete
+ * OPTIONAL: Call this explicitly in tests that need it
+ * This prevents clicking on elements before event handlers are bound
+ */
+export async function waitForReactHydration(window: Page, timeout = 10000): Promise<void> {
+  try {
+    await window.waitForFunction(
+      () => (window as any).__REACT_HYDRATED__ === true,
+      { timeout }
+    );
+    console.log('[TEST] React hydration confirmed');
+  } catch (error) {
+    // Hydration signal might not be present - use minimal fallback
+    console.log('[TEST] Hydration signal not found, using minimal fallback');
+    await window.waitForTimeout(500);
+  }
 }
 
 /**
  * Wait for the application to be fully loaded
+ * REVERTED to original working version
  */
 export async function waitForAppReady(window: Page, timeout = 10000): Promise<void> {
   try {

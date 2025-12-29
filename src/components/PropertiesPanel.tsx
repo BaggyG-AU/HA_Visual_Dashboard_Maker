@@ -143,38 +143,95 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
   // Create Monaco editor when container is ready and YAML tab is active
   useEffect(() => {
-    if (!editorContainerRef.current || activeTab !== 'yaml') return;
+    // Only proceed if we're on the YAML tab
+    if (activeTab !== 'yaml') {
+      return;
+    }
 
-    // Create editor instance
-    const editor = monaco.editor.create(editorContainerRef.current, {
-      value: yamlContent,
-      language: 'yaml',
-      theme: 'vs-dark',
-      minimap: { enabled: false },
-      scrollBeyondLastLine: false,
-      fontSize: 13,
-      lineNumbers: 'on',
-      wordWrap: 'on',
-      automaticLayout: true,
-      tabSize: 2,
-      insertSpaces: true,
-    });
+    // Wait for the container ref to be attached (React timing issue)
+    if (!editorContainerRef.current) {
+      // Use setTimeout(0) to defer until next tick when ref is attached
+      const timer = setTimeout(() => {
+        if (editorContainerRef.current && activeTab === 'yaml' && !monacoEditorRef.current) {
+          console.log('[PropertiesPanel] Creating Monaco editor (after ref attached)...');
 
-    monacoEditorRef.current = editor;
+          // Create editor instance
+          const editor = monaco.editor.create(editorContainerRef.current, {
+            value: yamlContent,
+            language: 'yaml',
+            theme: 'vs-dark',
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            fontSize: 13,
+            lineNumbers: 'on',
+            wordWrap: 'on',
+            automaticLayout: true,
+            tabSize: 2,
+            insertSpaces: true,
+          });
 
-    // Listen for content changes
-    const disposable = editor.onDidChangeModelContent(() => {
-      const value = editor.getValue();
-      handleYamlChange(value);
-    });
+          console.log('[PropertiesPanel] Monaco editor created successfully');
+          monacoEditorRef.current = editor;
 
-    // Cleanup
+          // Listen for content changes
+          editor.onDidChangeModelContent(() => {
+            const value = editor.getValue();
+            handleYamlChange(value);
+          });
+        }
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+
+    // Container is ready, create editor immediately
+    if (!monacoEditorRef.current) {
+      console.log('[PropertiesPanel] Creating Monaco editor...');
+
+      // Create editor instance
+      const editor = monaco.editor.create(editorContainerRef.current, {
+        value: yamlContent,
+        language: 'yaml',
+        theme: 'vs-dark',
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        fontSize: 13,
+        lineNumbers: 'on',
+        wordWrap: 'on',
+        automaticLayout: true,
+        tabSize: 2,
+        insertSpaces: true,
+      });
+
+      console.log('[PropertiesPanel] Monaco editor created successfully');
+      monacoEditorRef.current = editor;
+
+      // Listen for content changes
+      editor.onDidChangeModelContent(() => {
+        const value = editor.getValue();
+        handleYamlChange(value);
+      });
+    }
+
+    // Cleanup when switching away from YAML tab
     return () => {
-      disposable.dispose();
-      editor.dispose();
-      monacoEditorRef.current = null;
+      if (monacoEditorRef.current) {
+        console.log('[PropertiesPanel] Cleaning up Monaco editor');
+        monacoEditorRef.current.dispose();
+        monacoEditorRef.current = null;
+      }
     };
-  }, [activeTab, yamlContent]); // Re-create when tab changes or yamlContent changes
+  }, [activeTab]); // Only re-create when tab changes
+
+  // Update Monaco editor value when yamlContent changes externally (e.g., card selection)
+  // but DON'T recreate the entire editor
+  useEffect(() => {
+    if (monacoEditorRef.current && activeTab === 'yaml') {
+      const currentValue = monacoEditorRef.current.getValue();
+      if (currentValue !== yamlContent) {
+        monacoEditorRef.current.setValue(yamlContent);
+      }
+    }
+  }, [yamlContent, activeTab]);
 
   // Reset form and YAML when card changes
   useEffect(() => {

@@ -1012,7 +1012,7 @@ const App: React.FC = () => {
       }}
     >
       <HAEntityProvider enabled={isConnected}>
-      <Layout style={{ height: '100vh' }}>
+      <Layout data-testid="app-shell" style={{ height: '100vh' }}>
         <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>

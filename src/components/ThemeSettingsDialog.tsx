@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Modal, Select, Radio, Checkbox, Button, Space, Alert, Tabs, Typography } from 'antd';
 import { SettingOutlined, CodeOutlined, BgColorsOutlined } from '@ant-design/icons';
 import { useThemeStore } from '../store/themeStore';
 import { themeService } from '../services/themeService';
-import Editor from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 
 const { Text } = Typography;
 
@@ -35,6 +35,10 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
   const [localDarkMode, setLocalDarkMode] = useState(darkMode);
   const [localSyncWithHA, setLocalSyncWithHA] = useState(syncWithHA);
   const [activeTab, setActiveTab] = useState('settings');
+  const cssEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const jsonEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const cssContainerRef = useRef<HTMLDivElement | null>(null);
+  const jsonContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Reset local state when dialog opens
   React.useEffect(() => {
@@ -84,6 +88,54 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
   const themeJson = currentTheme
     ? JSON.stringify(currentTheme, null, 2)
     : '';
+
+  // Create CSS Monaco editor when container is ready and CSS tab is active
+  useEffect(() => {
+    if (!cssContainerRef.current || activeTab !== 'css' || !visible) return;
+
+    const editor = monaco.editor.create(cssContainerRef.current, {
+      value: themeYaml,
+      language: 'css',
+      theme: 'vs-dark',
+      readOnly: true,
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      fontSize: 12,
+      lineNumbers: 'on',
+      wordWrap: 'on',
+    });
+
+    cssEditorRef.current = editor;
+
+    return () => {
+      editor.dispose();
+      cssEditorRef.current = null;
+    };
+  }, [activeTab, visible, themeYaml]);
+
+  // Create JSON Monaco editor when container is ready and JSON tab is active
+  useEffect(() => {
+    if (!jsonContainerRef.current || activeTab !== 'json' || !visible) return;
+
+    const editor = monaco.editor.create(jsonContainerRef.current, {
+      value: themeJson,
+      language: 'json',
+      theme: 'vs-dark',
+      readOnly: true,
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      fontSize: 12,
+      lineNumbers: 'on',
+      wordWrap: 'on',
+    });
+
+    jsonEditorRef.current = editor;
+
+    return () => {
+      editor.dispose();
+      jsonEditorRef.current = null;
+    };
+  }, [activeTab, visible, themeJson]);
 
   return (
     <Modal
@@ -185,22 +237,15 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                   showIcon
                   style={{ marginBottom: '16px' }}
                 />
-                <div style={{ border: '1px solid #434343', borderRadius: '4px' }}>
-                  <Editor
-                    height="400px"
-                    language="css"
-                    theme="vs-dark"
-                    value={themeYaml}
-                    options={{
-                      readOnly: true,
-                      minimap: { enabled: false },
-                      scrollBeyondLastLine: false,
-                      fontSize: 12,
-                      lineNumbers: 'on',
-                      wordWrap: 'on',
-                    }}
-                  />
-                </div>
+                <div
+                  ref={cssContainerRef}
+                  style={{
+                    border: '1px solid #434343',
+                    borderRadius: '4px',
+                    height: '400px',
+                    overflow: 'hidden',
+                  }}
+                />
               </div>
             ),
           },
@@ -221,22 +266,15 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                   showIcon
                   style={{ marginBottom: '16px' }}
                 />
-                <div style={{ border: '1px solid #434343', borderRadius: '4px' }}>
-                  <Editor
-                    height="400px"
-                    language="json"
-                    theme="vs-dark"
-                    value={themeJson}
-                    options={{
-                      readOnly: true,
-                      minimap: { enabled: false },
-                      scrollBeyondLastLine: false,
-                      fontSize: 12,
-                      lineNumbers: 'on',
-                      wordWrap: 'on',
-                    }}
-                  />
-                </div>
+                <div
+                  ref={jsonContainerRef}
+                  style={{
+                    border: '1px solid #434343',
+                    borderRadius: '4px',
+                    height: '400px',
+                    overflow: 'hidden',
+                  }}
+                />
               </div>
             ),
           },

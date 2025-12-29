@@ -1,114 +1,90 @@
 /**
- * E2E Test: Application Launch
+ * E2E Test: Application Launch (DSL-Based)
  *
- * Tests the basic application launch and window creation.
+ * Tests basic application launch and window creation using DSL.
  */
 
 import { test, expect } from '@playwright/test';
-import { launchElectronApp, closeElectronApp, waitForAppReady } from '../helpers/electron-helper';
+import { launchWithDSL, close } from '../support';
 
 test.describe('Application Launch', () => {
   test('should launch the application successfully', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
 
     try {
-      // Verify window is created
-      expect(window).toBeTruthy();
+      // Verify window and app are ready
+      expect(ctx.window).toBeTruthy();
+      expect(ctx.app).toBeTruthy();
 
-      // Wait for app to be ready
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
+      await ctx.appDSL.expectTitle('HA Visual Dashboard Maker');
+      await ctx.appDSL.screenshot('app-launch');
 
-      // Verify window title
-      const title = await window.title();
-      expect(title).toContain('HA Visual Dashboard Maker');
-
-      // Verify window is visible
-      const isVisible = await window.isVisible('body');
+      // Verify body is visible
+      const isVisible = await ctx.window.isVisible('body');
       expect(isVisible).toBe(true);
-
-      // Take screenshot
-      await window.screenshot({ path: 'test-results/screenshots/app-launch.png' });
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should have correct window dimensions', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
-      // Get window size - in Electron, viewportSize may be null
-      // Use evaluate to get actual window dimensions instead
-      const dimensions = await window.evaluate(() => {
+      // Get window size (window is maximized in DSL launcher)
+      const dimensions = await ctx.window.evaluate(() => {
         return {
           width: window.innerWidth,
           height: window.innerHeight
         };
       });
 
-      console.log('Window dimensions:', dimensions);
-
       // Verify minimum dimensions
-      expect(dimensions.width).toBeGreaterThanOrEqual(800); // More lenient than 1024
-      expect(dimensions.height).toBeGreaterThanOrEqual(500); // More lenient than 600
+      expect(dimensions.width).toBeGreaterThanOrEqual(800);
+      expect(dimensions.height).toBeGreaterThanOrEqual(500);
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should display main UI components', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
+      await ctx.appDSL.screenshot('main-ui-components');
 
-      // Take screenshot to see what's actually rendered
-      await window.screenshot({ path: 'test-results/screenshots/main-ui-components.png' });
+      // Verify app shell is rendered
+      const appShell = await ctx.window.getByTestId('app-shell').count();
+      expect(appShell).toBe(1);
 
-      // Get the HTML to debug
-      const html = await window.content();
-      console.log('Page has content:', html.length > 0);
-
-      // Check for any React root element
-      const rootDiv = await window.locator('body > div').count();
-      console.log('Root divs found:', rootDiv);
-      expect(rootDiv).toBeGreaterThan(0);
-
-      // Check for any visible UI elements (more flexible)
-      const allDivs = await window.locator('div').count();
-      console.log('Total divs found:', allDivs);
-      expect(allDivs).toBeGreaterThan(5); // App should have some structure
-
+      // Verify React root has content
+      const rootDivs = await ctx.window.locator('body > div').count();
+      expect(rootDivs).toBeGreaterThan(0);
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should load without critical console errors', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
     const consoleErrors: string[] = [];
-    const consoleWarnings: string[] = [];
 
-    // Listen for console messages
-    window.on('console', (msg) => {
+    // Listen for console errors
+    ctx.window.on('console', (msg) => {
       if (msg.type() === 'error') {
         consoleErrors.push(msg.text());
-      } else if (msg.type() === 'warning') {
-        consoleWarnings.push(msg.text());
       }
     });
 
     try {
-      await waitForAppReady(window, 15000);
+      await ctx.appDSL.waitUntilReady();
 
       // Allow time for any delayed errors
-      await window.waitForTimeout(2000);
-
-      // Log all errors for debugging
-      console.log('Console errors:', consoleErrors);
-      console.log('Console warnings:', consoleWarnings);
+      await ctx.window.waitForTimeout(2000);
 
       // Filter out expected/harmless errors
       const significantErrors = consoleErrors.filter(
@@ -116,16 +92,14 @@ test.describe('Application Launch', () => {
           !error.includes('DevTools') &&
           !error.includes('Extension') &&
           !error.includes('favicon') &&
-          !error.includes('404') && // Ignore 404s for now
-          !error.toLowerCase().includes('warning') // Not actual errors
+          !error.includes('404') &&
+          !error.toLowerCase().includes('warning')
       );
 
-      console.log('Significant errors:', significantErrors);
-
-      // For now, just ensure app didn't crash (be lenient)
-      expect(significantErrors.length).toBeLessThan(10); // Changed from 0 to be more forgiving
+      // App should not have critical errors
+      expect(significantErrors.length).toBeLessThan(10);
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 });

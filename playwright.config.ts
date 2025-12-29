@@ -50,6 +50,12 @@ export default defineConfig({
   // Test match patterns
   testMatch: '**/*.spec.ts',
 
+  // Ignore patterns - exclude backup directories and migration artifacts
+  testIgnore: [
+    '**/BACKUP_*/**',
+    '**/*-MIGRATED.spec.ts', // Exclude migrated files (use originals)
+  ],
+
   // Global setup/teardown
   // globalSetup: './tests/setup/global-setup.ts',
   // globalTeardown: './tests/setup/global-teardown.ts',

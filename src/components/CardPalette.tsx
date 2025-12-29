@@ -94,10 +94,11 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
   };
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div data-testid="card-palette" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '16px', paddingBottom: '12px' }}>
         <h3 style={{ color: 'white', marginBottom: '12px', marginTop: 0 }}>Card Palette</h3>
         <Input
+          data-testid="card-search"
           placeholder="Search cards..."
           prefix={<SearchOutlined style={{ color: '#666' }} />}
           value={searchTerm}
@@ -138,6 +139,7 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
                   {cards.map(card => (
                     <Tooltip key={card.type} title={card.description} placement="right">
                       <div
+                        data-testid={`palette-card-${card.type}`}
                         draggable
                         onDragStart={e => handleDragStart(e, card.type)}
                         onDoubleClick={() => handleCardClick(card.type)}

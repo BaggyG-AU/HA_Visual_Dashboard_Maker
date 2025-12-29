@@ -11,6 +11,10 @@ import './index.css';
 // Import Material Design Icons locally (bundled, not from CDN)
 import '@mdi/font/css/materialdesignicons.min.css';
 
+// CRITICAL: Configure Monaco Editor workers BEFORE any Monaco usage
+// This must be imported before App to ensure workers are configured
+import './monaco-setup';
+
 // Get the root element
 const container = document.getElementById('root');
 

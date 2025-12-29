@@ -48,11 +48,11 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
           value={currentThemeName}
           onChange={setTheme}
           options={themeOptions}
-          style={{ width: 150 }}
+          style={{ width: 200 }}
           placeholder="Select theme"
           suffixIcon={<BgColorsOutlined />}
           disabled={Object.keys(availableThemes).length === 0}
-          dropdownRender={menu => (
+          popupRender={menu => (
             <>
               {menu}
               <div style={{ padding: '8px', borderTop: '1px solid #434343' }}>
