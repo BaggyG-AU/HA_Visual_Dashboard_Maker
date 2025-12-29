@@ -42,7 +42,7 @@ test.describe('Entity Caching', () => {
 
       await ctx.entityBrowser.open();
 
-      const statusText = await ctx.window.locator('.ant-badge-status-text').textContent();
+      const statusText = await ctx.entityBrowser.getConnectionStatusText();
 
       if (statusText?.includes('Offline')) {
         expect(statusText).toContain('Cached');
@@ -64,7 +64,7 @@ test.describe('Entity Caching', () => {
 
       await ctx.entityBrowser.open();
 
-      const statusText = await ctx.window.locator('.ant-badge-status-text').textContent();
+      const statusText = await ctx.entityBrowser.getConnectionStatusText();
 
       if (statusText?.includes('Offline')) {
         const emptyState = ctx.window.locator('.ant-empty');
@@ -117,7 +117,7 @@ test.describe('Entity Caching', () => {
 
       await ctx.entityBrowser.open();
 
-      const statusText = await ctx.window.locator('.ant-badge-status-text').textContent();
+      const statusText = await ctx.entityBrowser.getConnectionStatusText();
 
       if (!statusText?.includes('Connected')) {
         console.log('Skipping test: App is offline');
@@ -145,7 +145,7 @@ test.describe('Entity Caching', () => {
 
       await ctx.entityBrowser.open();
 
-      const statusText = await ctx.window.locator('.ant-badge-status-text').textContent();
+      const statusText = await ctx.entityBrowser.getConnectionStatusText();
 
       if (!statusText?.includes('Connected')) {
         console.log('Skipping test: App is offline');
@@ -213,7 +213,7 @@ test.describe('Entity Auto-Refresh on Connection', () => {
 
       await ctx.entityBrowser.open();
 
-      const statusText = await ctx.window.locator('.ant-badge-status-text').textContent();
+      const statusText = await ctx.entityBrowser.getConnectionStatusText();
 
       if (statusText?.includes('Connected')) {
         const hasEntities = await ctx.entityBrowser.getRowCount() > 0;
@@ -232,7 +232,7 @@ test.describe('Entity Auto-Refresh on Connection', () => {
 
       await ctx.entityBrowser.open();
 
-      const statusText = await ctx.window.locator('.ant-badge-status-text').textContent();
+      const statusText = await ctx.entityBrowser.getConnectionStatusText();
 
       if (statusText?.includes('Offline')) {
         await ctx.entityBrowser.expectRefreshButtonDisabled();
@@ -272,7 +272,7 @@ test.describe('Entity Cache Integration with IPC', () => {
 
       await ctx.entityBrowser.open();
 
-      const statusText = await ctx.window.locator('.ant-badge-status-text').textContent();
+      const statusText = await ctx.entityBrowser.getConnectionStatusText();
 
       if (!statusText?.includes('Connected')) {
         console.log('Skipping test: App is offline');
@@ -336,7 +336,7 @@ test.describe('Entity Cache Storage', () => {
 
       await ctx.entityBrowser.open();
 
-      const statusText = await ctx.window.locator('.ant-badge-status-text').textContent();
+      const statusText = await ctx.entityBrowser.getConnectionStatusText();
 
       if (statusText?.includes('Offline')) {
         const rowCount = await ctx.entityBrowser.getRowCount();
@@ -425,7 +425,7 @@ test.describe('Entity Cache Performance', () => {
       const modal = ctx.window.locator('.ant-modal:has-text("Entity Browser")');
       await expect(modal).toBeVisible({ timeout: 3000 });
 
-      const cancelButton = ctx.window.locator('button:has-text("Cancel")');
+      const cancelButton = ctx.window.getByTestId('entity-browser-cancel-button');
       await expect(cancelButton).toBeEnabled();
     } finally {
       await clearEntityCache(ctx.window);

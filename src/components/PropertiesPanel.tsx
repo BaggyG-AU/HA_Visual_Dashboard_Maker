@@ -2326,6 +2326,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               <div>
                 <div style={{ marginBottom: '12px' }}>
                   <Button
+                    data-testid="properties-yaml-insert-entity-button"
                     icon={<DatabaseOutlined />}
                     onClick={handleOpenEntityBrowserClick}
                     disabled={!onOpenEntityBrowser}
@@ -2344,6 +2345,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   />
                 )}
                 <div
+                  data-testid="yaml-editor-container"
                   ref={editorContainerRef}
                   style={{
                     height: 'calc(100vh - 280px)',

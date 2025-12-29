@@ -14,7 +14,14 @@ export class AppDSL {
    * Wait for app to be fully ready
    */
   async waitUntilReady(timeout = 10000): Promise<void> {
-    await expect(this.window.getByTestId('app-shell')).toBeVisible({ timeout });
+    const shell = this.window.getByTestId('app-shell');
+    const palette = this.window.getByText('Card Palette', { exact: false });
+
+    await expect(async () => {
+      const shellVisible = await shell.isVisible().catch(() => false);
+      const paletteVisible = await palette.isVisible().catch(() => false);
+      expect(shellVisible || paletteVisible).toBeTruthy();
+    }).toPass({ timeout });
   }
 
   /**

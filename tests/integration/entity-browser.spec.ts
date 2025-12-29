@@ -269,11 +269,17 @@ test.describe('Entity Browser', () => {
       await ctx.entityBrowser.open();
       await ctx.entityBrowser.search('test_search_term');
 
-      const clearButton = ctx.window.locator('.anticon-close-circle');
+      const modal = ctx.window.locator('.ant-modal:has-text("Entity Browser")');
+      const clearButton = modal
+        .getByTestId('entity-browser-search-input')
+        .locator('..')
+        .locator('.ant-input-clear-icon, .anticon-close-circle')
+        .first();
+
       if (await clearButton.isVisible()) {
         await clearButton.click();
 
-        const searchInput = ctx.window.locator('input[placeholder*="Search entities"]');
+        const searchInput = ctx.window.getByTestId('entity-browser-search-input');
         const inputValue = await searchInput.inputValue();
         expect(inputValue).toBe('');
       }
@@ -341,7 +347,7 @@ test.describe('Entity Browser Integration with YAML Editors', () => {
 
       await ctx.yamlEditor.open();
 
-      const insertButton = ctx.window.locator('.ant-modal-footer button:has-text("Insert Entity")');
+      const insertButton = ctx.window.getByTestId('yaml-insert-entity-button');
       await expect(insertButton).toBeVisible();
     } finally {
       await clearEntityCache(ctx.window);
@@ -359,13 +365,8 @@ test.describe('Entity Browser Integration with YAML Editors', () => {
       await ctx.yamlEditor.open();
       await ctx.yamlEditor.clickInsertEntity();
 
-      const entityBrowserModal = ctx.window.locator('.ant-modal:has-text("Entity Browser")');
-      await expect(entityBrowserModal).toBeVisible();
-
-      const searchInput = ctx.window.locator('input[placeholder*="Search entities"]');
-      await searchInput.clear();
-      await ctx.window.waitForTimeout(200);
-
+      await ctx.entityBrowser.expectVisible();
+      await ctx.entityBrowser.clearSearch();
       await ctx.entityBrowser.expectTableVisible();
     } finally {
       await clearEntityCache(ctx.window);
@@ -373,12 +374,7 @@ test.describe('Entity Browser Integration with YAML Editors', () => {
     }
   });
 
-  test.skip('should insert entity ID into Dashboard YAML editor', async () => {
-    // SKIPPED: This test works manually but struggles in the test environment due to:
-    // 1. Monaco editor line numbers blocking radio button clicks
-    // 2. Ant Design radio state not updating properly with force clicks
-    // 3. Modal state leakage from previous tests affecting tab selection
-    // The functionality is verified to work correctly in manual testing and e2e tests.
+  test('should insert entity ID into Dashboard YAML editor', async () => {
     const ctx = await launchWithDSL();
     try {
       await ctx.appDSL.waitUntilReady();
@@ -426,13 +422,11 @@ test.describe('Entity Browser Integration with YAML Editors', () => {
       await ctx.yamlEditor.open();
       await ctx.yamlEditor.clickInsertEntity();
 
-      const rows = ctx.window.locator('.ant-table-row');
-      const rowCount = await rows.count();
+      const rowCount = await ctx.entityBrowser.getRowCount();
 
       expect(rowCount).toBeGreaterThan(0);
 
-      const firstRow = rows.first();
-      await expect(firstRow).toBeVisible();
+      await ctx.entityBrowser.expectTableVisible();
 
       const entityId = await ctx.entityBrowser.getFirstEntityId();
       expect(entityId).toBeTruthy();

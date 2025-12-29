@@ -43,7 +43,12 @@
       "Bash(node .vite/build/main.js:*)",
       "Bash(NODE_ENV=test npx electron:*)",
       "Bash(timeout 3 NODE_ENV=test npx electron:*)",
-      "Bash(cmd /c \"set NODE_ENV=test && timeout 3 npx electron .vite/build/main.js\")"
+      "Bash(cmd /c \"set NODE_ENV=test && timeout 3 npx electron .vite/build/main.js\")",
+      "Bash(timeout 3 npx electron:*)",
+      "Bash(node:*)",
+      "Bash(git log:*)",
+      "Skill(playwright-electron-testing)",
+      "Skill(playwright-electron-testing:*)"
     ]
   }
 }

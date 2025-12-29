@@ -139,6 +139,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
 
   return (
     <Modal
+      data-testid="theme-settings-modal"
       title={
         <Space>
           <SettingOutlined />
@@ -146,13 +147,14 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
         </Space>
       }
       open={visible}
+      destroyOnClose
       onCancel={handleCancel}
       width={700}
       footer={[
-        <Button key="cancel" onClick={handleCancel}>
+        <Button key="cancel" data-testid="theme-settings-cancel" onClick={handleCancel}>
           Cancel
         </Button>,
-        <Button key="apply" type="primary" onClick={handleApply}>
+        <Button key="apply" data-testid="theme-settings-apply" type="primary" onClick={handleApply}>
           Apply
         </Button>,
       ]}
@@ -174,6 +176,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                 <div>
                   <Text strong>Active Theme</Text>
                   <Select
+                    data-testid="theme-settings-select"
                     value={localThemeName}
                     onChange={setLocalThemeName}
                     options={themeOptions}
@@ -187,6 +190,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                   <Text strong>Mode</Text>
                   <div style={{ marginTop: '8px' }}>
                     <Radio.Group
+                      data-testid="theme-settings-mode"
                       value={localDarkMode ? 'dark' : 'light'}
                       onChange={(e) => setLocalDarkMode(e.target.value === 'dark')}
                     >
@@ -200,6 +204,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                   <Text strong>Options</Text>
                   <div style={{ marginTop: '8px' }}>
                     <Checkbox
+                      data-testid="theme-settings-sync"
                       checked={localSyncWithHA}
                       onChange={(e) => setLocalSyncWithHA(e.target.checked)}
                     >
@@ -239,6 +244,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                 />
                 <div
                   ref={cssContainerRef}
+                  data-testid="theme-settings-css"
                   style={{
                     border: '1px solid #434343',
                     borderRadius: '4px',
@@ -268,6 +274,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                 />
                 <div
                   ref={jsonContainerRef}
+                  data-testid="theme-settings-json"
                   style={{
                     border: '1px solid #434343',
                     borderRadius: '4px',

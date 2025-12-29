@@ -82,12 +82,29 @@ export class CardPaletteDSL {
    * MUST provide exact card type matching data-testid (e.g., 'button', 'entities', 'grid')
    */
   async addCard(cardType: string): Promise<void> {
-    const card = this.palette.getByTestId(`palette-card-${cardType}`);
+    // Make the card visible: search for it to avoid collapsed categories/virtualization issues.
+    const searchInput = this.window.getByTestId('card-search');
+    await expect(searchInput).toBeVisible();
+    await searchInput.fill(cardType);
+    await this.window.waitForTimeout(200); // debounce / filter render
+
+    // Prefer explicit palette test id; fall back to role/name match when ids are missing.
+    let card = this.palette.getByTestId(`palette-card-${cardType}`);
+    if ((await card.count()) === 0) {
+      card = this.palette.getByRole('button', {
+        name: new RegExp(cardType.replace(/_/g, ' '), 'i'),
+      });
+    }
+
     await expect(card).toBeVisible();
+    await card.scrollIntoViewIfNeeded();
     await card.dblclick();
 
     // Wait for card to appear on canvas
     await expect(this.window.getByTestId('canvas-card').first()).toBeVisible({ timeout: 3000 });
+
+    // Clear search to leave palette clean for later steps
+    await searchInput.fill('');
   }
 
   /**

@@ -41,17 +41,20 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
     value: name,
   }));
 
+  const hasThemes = themeOptions.length > 0;
+
   return (
-    <Space size="small">
+    <Space size="small" data-testid="theme-selector">
       <Tooltip title="Select theme for preview">
         <Select
+          data-testid="theme-select"
           value={currentThemeName}
           onChange={setTheme}
           options={themeOptions}
           style={{ width: 200 }}
           placeholder="Select theme"
           suffixIcon={<BgColorsOutlined />}
-          disabled={Object.keys(availableThemes).length === 0}
+          disabled={!hasThemes}
           popupRender={menu => (
             <>
               {menu}
@@ -74,25 +77,28 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
 
       <Tooltip title={darkMode ? "Switch to light mode" : "Switch to dark mode"}>
         <Switch
+          data-testid="theme-dark-toggle"
           checked={darkMode}
           onChange={toggleDarkMode}
           checkedChildren={<MoonOutlined />}
           unCheckedChildren={<SunOutlined />}
+          disabled={!hasThemes}
         />
       </Tooltip>
 
       {syncWithHA && (
         <Tooltip title="Theme is synced with Home Assistant">
-          <Badge status="processing" text="Synced" />
+          <Badge status="processing" text="Synced" data-testid="theme-sync-badge" />
         </Tooltip>
       )}
 
       <Tooltip title="Open theme settings">
         <Button
+          data-testid="theme-settings-button"
           size="small"
           icon={<SettingOutlined />}
           onClick={onOpenSettings}
-          disabled={Object.keys(availableThemes).length === 0}
+          disabled={!hasThemes}
         />
       </Tooltip>
     </Space>

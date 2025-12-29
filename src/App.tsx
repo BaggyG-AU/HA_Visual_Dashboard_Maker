@@ -120,6 +120,31 @@ const App: React.FC = () => {
     loadThemePreferences();
   }, []);
 
+  // Expose lightweight test hooks for Playwright to inject themes/connection state
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'test' || (window as any).E2E) {
+      (window as any).__testThemeApi = {
+        setConnected: (connected: boolean) => setIsConnected(connected),
+        applyThemes: (themesData: any) => {
+          const firstTheme = Object.keys(themesData?.themes ?? {})[0] ?? null;
+          const themeName = themesData?.theme ?? firstTheme;
+
+          // Reuse store setter to keep logic consistent
+          useThemeStore.getState().setAvailableThemes({
+            default_theme: themesData?.default_theme ?? themeName ?? 'default',
+            default_dark_theme: themesData?.default_dark_theme ?? null,
+            themes: themesData?.themes ?? {},
+            darkMode:
+              typeof themesData?.darkMode === 'boolean'
+                ? themesData.darkMode
+            : true,
+            theme: themeName ?? 'default',
+          });
+        },
+      };
+    }
+  }, []);
+
   // Subscribe to live theme updates from HA
   useEffect(() => {
     if (!isConnected) return;
@@ -624,6 +649,35 @@ const App: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (isConnected) {
+      fetchThemes();
+    }
+  }, [isConnected]);
+
+  useEffect(() => {
+    // Expose a tiny test-only hook for Playwright to drive connection/theme state
+    (window as any).__testThemeApi = {
+      setConnected: (connected: boolean) => setIsConnected(connected),
+      applyThemes: (themes: any) => {
+        // Ensure connected state for UI that depends on it
+        setIsConnected(true);
+        setAvailableThemes(themes);
+      },
+    };
+
+    return () => {
+      delete (window as any).__testThemeApi;
+    };
+  }, [setAvailableThemes]);
+
+  useEffect(() => {
+    // Disable Ant motion in automated tests to avoid hidden/animating portals
+    if (process.env.NODE_ENV === 'test' || process.env.E2E === '1') {
+      document.body.classList.add('ant-motion-disabled');
+    }
+  }, []);
+
   const handleOpenEntityBrowser = (insertCallback: (entityId: string) => void) => {
     setEntityInsertCallback(() => insertCallback);
     setEntityBrowserVisible(true);
@@ -1012,7 +1066,11 @@ const App: React.FC = () => {
       }}
     >
       <HAEntityProvider enabled={isConnected}>
-      <Layout data-testid="app-shell" style={{ height: '100vh' }}>
+      <Layout
+        data-testid="app-shell"
+        className="app-container"
+        style={{ height: '100vh' }}
+      >
         <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>

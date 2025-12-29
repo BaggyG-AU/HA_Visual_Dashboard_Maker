@@ -3,7 +3,7 @@
  * Utilities to inject mocks into the Electron app during tests
  */
 
-import type { Page } from '@playwright/test';
+import type { ElectronApplication, Page } from '@playwright/test';
 import { mockThemes } from '../fixtures/mockThemeData';
 
 /**
@@ -12,7 +12,7 @@ import { mockThemes } from '../fixtures/mockThemeData';
  */
 export async function mockHAWebSocket(
   page: Page,
-  app: import('@playwright/test').ElectronApplication,
+  app: ElectronApplication,
   options?: {
     isConnected?: boolean;
     themes?: any;
@@ -67,7 +67,7 @@ export async function mockHAWebSocket(
  */
 export async function simulateHAConnection(
   page: Page,
-  app: import('@playwright/test').ElectronApplication,
+  app: ElectronApplication,
   options?: {
     url?: string;
     token?: string;
@@ -129,7 +129,7 @@ export async function simulateHAConnection(
 /**
  * Simulate disconnecting from Home Assistant
  */
-export async function simulateHADisconnection(page: Page) {
+export async function simulateHADisconnection(page: Page, app: ElectronApplication) {
   await page.evaluate(async () => {
     if ((window as any).electronAPI) {
       await (window as any).electronAPI.haWsClose();
@@ -137,7 +137,7 @@ export async function simulateHADisconnection(page: Page) {
   });
 
   // Update mock to show disconnected state
-  await mockHAWebSocket(page, { isConnected: false });
+  await mockHAWebSocket(page, app, { isConnected: false });
 }
 
 /**

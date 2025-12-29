@@ -56,6 +56,18 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
 
     monacoEditorRef.current = editor;
 
+    // Expose Monaco handles for tests/E2E (and keep available in all builds for determinism)
+    (window as any).monaco = monaco;
+    (window as any).__monacoEditor = editor;
+    (window as any).__monacoModel = editor.getModel();
+
+    // Accessibility: add aria-label to Monaco textarea if present
+    const domNode = editor.getDomNode();
+    const textarea = domNode?.querySelector('textarea');
+    if (textarea) {
+      textarea.setAttribute('aria-label', 'YAML editor');
+    }
+
     // Listen for content changes
     const disposable = editor.onDidChangeModelContent(() => {
       const value = editor.getValue();
@@ -67,6 +79,8 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
       disposable.dispose();
       editor.dispose();
       monacoEditorRef.current = null;
+      delete (window as any).__monacoEditor;
+      delete (window as any).__monacoModel;
     };
   }, [visible]); // Re-create when dialog opens/closes
 
@@ -103,12 +117,66 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
 
   const validateYaml = (yaml: string) => {
     try {
-      yamlService.parseDashboard(yaml);
-      setValidationError(null);
+      // First check syntax
+      const syntax = yamlService.validateYAMLSyntax(yaml);
+      if (!syntax.valid) {
+        setValidationError(syntax.error ?? 'Invalid YAML syntax');
+        if (process.env.NODE_ENV === 'test' || (window as any).E2E) {
+          (window as any).__lastValidationError = syntax.error ?? 'Invalid YAML syntax';
+        }
+        return;
+      }
+
+      // Then check dashboard shape
+      const result = yamlService.parseDashboard(yaml);
+      if (!result.success) {
+        setValidationError(result.error ?? 'Invalid YAML');
+        if (process.env.NODE_ENV === 'test' || (window as any).E2E) {
+          (window as any).__lastValidationError = result.error ?? 'Invalid YAML';
+        }
+      } else {
+        setValidationError(null);
+        if (process.env.NODE_ENV === 'test' || (window as any).E2E) {
+          (window as any).__lastValidationError = null;
+        }
+      }
     } catch (error) {
       setValidationError((error as Error).message);
+      if (process.env.NODE_ENV === 'test' || (window as any).E2E) {
+        (window as any).__lastValidationError = (error as Error).message;
+      }
     }
   };
+
+  // Test hook: allow Playwright to force validation of current editor value
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'test' || (window as any).E2E) {
+      (window as any).__forceYamlValidation = () => {
+        const value = monacoEditorRef.current?.getValue() ?? yamlContent;
+        validateYaml(value);
+      };
+
+      return () => {
+        delete (window as any).__forceYamlValidation;
+      };
+    }
+  }, [yamlContent]);
+
+  // Test hook: expose validation helpers (unconditionally for tests)
+  useEffect(() => {
+    (window as any).__forceYamlValidation = () => {
+      const value = monacoEditorRef.current?.getValue() ?? yamlContent;
+      validateYaml(value);
+    };
+    (window as any).__runYamlValidation = (yaml: string) => {
+      validateYaml(yaml);
+    };
+
+    return () => {
+      delete (window as any).__forceYamlValidation;
+      delete (window as any).__runYamlValidation;
+    };
+  }, [yamlContent]);
 
   const handleApply = () => {
     // Show confirmation dialog
@@ -175,6 +243,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
           </Space>
         }
         open={visible}
+        forceRender
         onCancel={handleClose}
         width={1000}
         style={{ top: 20 }}
@@ -207,53 +276,55 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
           </Tooltip>,
         ]}
       >
-        <Alert
-          message="Edit YAML Directly"
-          description="Make changes to your dashboard YAML below. Changes will be validated in real-time. Click 'Apply Changes' to update the visual canvas."
-          type="info"
-          showIcon
-          style={{ marginBottom: '16px' }}
-        />
-
-        {validationError && (
+        <div data-testid="yaml-editor-content">
           <Alert
-            data-testid="yaml-validation-error"
-            message="YAML Validation Error"
-            description={validationError}
-            type="error"
-            showIcon
-            closable
-            onClose={() => setValidationError(null)}
-            style={{ marginBottom: '16px' }}
-          />
-        )}
-
-        {hasChanges && !validationError && (
-          <Alert
-            data-testid="yaml-validation-success"
-            message="Valid YAML"
-            description="Your changes are valid and ready to apply."
-            type="success"
+            message="Edit YAML Directly"
+            description="Make changes to your dashboard YAML below. Changes will be validated in real-time. Click 'Apply Changes' to update the visual canvas."
+            type="info"
             showIcon
             style={{ marginBottom: '16px' }}
           />
-        )}
 
-        <div
-          data-testid="yaml-editor-container"
-          ref={editorContainerRef}
-          style={{
-            marginBottom: '16px',
-            border: '1px solid #434343',
-            borderRadius: '4px',
-            height: '500px',
-            overflow: 'hidden',
-          }}
-        />
+          {validationError && (
+            <Alert
+              data-testid="yaml-validation-error"
+              message="YAML Validation Error"
+              description={validationError}
+              type="error"
+              showIcon
+              closable
+              onClose={() => setValidationError(null)}
+              style={{ marginBottom: '16px' }}
+            />
+          )}
 
-        <div style={{ color: '#888', fontSize: '12px' }}>
-          <strong>Tip:</strong> Use proper YAML indentation (2 spaces). The editor will validate
-          your changes in real-time.
+          {hasChanges && !validationError && (
+            <Alert
+              data-testid="yaml-validation-success"
+              message="Valid YAML"
+              description="Your changes are valid and ready to apply."
+              type="success"
+              showIcon
+              style={{ marginBottom: '16px' }}
+            />
+          )}
+
+          <div
+            data-testid="yaml-editor-container"
+            ref={editorContainerRef}
+            style={{
+              marginBottom: '16px',
+              border: '1px solid #434343',
+              borderRadius: '4px',
+              height: '500px',
+              overflow: 'hidden',
+            }}
+          />
+
+          <div style={{ color: '#888', fontSize: '12px' }}>
+            <strong>Tip:</strong> Use proper YAML indentation (2 spaces). The editor will validate
+            your changes in real-time.
+          </div>
         </div>
       </Modal>
 

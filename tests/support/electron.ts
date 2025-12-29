@@ -57,7 +57,19 @@ export async function launch(): Promise<ElectronTestContext> {
     },
   });
 
-  const window = await app.firstWindow();
+  const isMainWindow = (page: Page) => {
+    const url = page.url();
+    if (url.startsWith('devtools://')) return false;
+    return url.includes('main_window/index.html') || url.includes('index.html') || url === 'about:blank';
+  };
+
+  // Prefer an already-open main window if available; otherwise wait for one
+  let window = app.windows().find(isMainWindow);
+  if (!window) {
+    window = await app.waitForEvent('window', isMainWindow);
+  }
+
+  // Wait for renderer to load its DOM
   await window.waitForLoadState('domcontentloaded');
 
   // Maximize window for consistent viewport (fixes react-grid-layout sizing issues)

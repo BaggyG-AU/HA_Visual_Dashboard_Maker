@@ -111,7 +111,8 @@ export class EntityBrowserDSL {
    * Open the Entity Browser modal from Insert Entity button (in YAML editors)
    */
   async openFromInsertButton(): Promise<void> {
-    const insertButton = this.window.locator('button:has-text("Insert Entity")');
+    const insertButton = this.window.getByTestId('yaml-insert-entity-button')
+      .or(this.window.locator('button:has-text("Insert Entity")'));
     await expect(insertButton).toBeVisible();
     await insertButton.click();
     await this.window.waitForTimeout(300);
@@ -124,7 +125,9 @@ export class EntityBrowserDSL {
    * Close the Entity Browser modal (Cancel button)
    */
   async close(): Promise<void> {
-    await this.window.click('button:has-text("Cancel")');
+    const cancel = this.window.getByTestId('entity-browser-cancel-button');
+    await expect(cancel).toBeVisible();
+    await cancel.click();
     await this.window.waitForTimeout(300);
 
     const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
@@ -144,8 +147,14 @@ export class EntityBrowserDSL {
    * Clear the search input
    */
   async clearSearch(): Promise<void> {
-    const clearButton = this.window.locator('.anticon-close-circle');
-    if (await clearButton.isVisible()) {
+    const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
+    const clearButton = modal
+      .getByTestId('entity-browser-search-input')
+      .locator('..') // affix wrapper
+      .locator('.ant-input-clear-icon, .anticon-close-circle')
+      .first();
+
+    if (await clearButton.isVisible().catch(() => false)) {
       await clearButton.click();
     }
   }
@@ -245,6 +254,16 @@ export class EntityBrowserDSL {
     await expect(statusBadge).toBeVisible();
     const statusText = await statusBadge.textContent();
     expect(statusText).toMatch(/Connected|Not Connected|Offline \(Cached\)/);
+  }
+
+  /**
+   * Get connection status text from the entity browser badge
+   */
+  async getConnectionStatusText(): Promise<string> {
+    const statusBadge = this.window.getByTestId('entity-browser-status-badge');
+    await expect(statusBadge).toBeVisible();
+    const statusText = await statusBadge.textContent();
+    return statusText?.trim() || '';
   }
 
   /**

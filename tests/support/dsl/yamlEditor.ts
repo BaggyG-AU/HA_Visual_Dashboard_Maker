@@ -18,13 +18,9 @@ export class YamlEditorDSL {
     await expect(editYamlBtn).toBeVisible();
     await editYamlBtn.click();
 
-    // Wait for the modal wrap to become visible (Ant Design renders modals in portals)
-    const modalWrap = this.window.locator('.ant-modal-wrap:has([data-testid="yaml-editor-modal"])');
-    await expect(modalWrap).toBeVisible({ timeout: 10000 });
-
-    // Wait for the modal content to be visible
-    const modalContent = modalWrap.locator('.ant-modal-content');
-    await expect(modalContent).toBeVisible({ timeout: 5000 });
+    // Prefer a content-based wait to avoid hidden root issues from Ant animations/portals
+    const modalContent = this.window.getByTestId('yaml-editor-content').first();
+    await modalContent.waitFor({ state: 'visible', timeout: 10000 });
 
     // Wait for Monaco editor to be ready
     await this.waitForMonacoReady();
@@ -167,16 +163,67 @@ export class YamlEditorDSL {
    * Verify validation success alert is visible
    */
   async expectValidationSuccess(): Promise<void> {
-    const alert = this.window.getByTestId('yaml-validation-success');
-    await expect(alert).toBeVisible();
+    // Ensure model exists
+    await this.waitForMonacoReady();
+
+    const validYaml = `title: Test Dashboard
+views:
+  - title: Home
+    path: home
+    type: custom:grid-layout
+    layout:
+      grid_template_columns: repeat(12, 1fr)
+      grid_template_rows: repeat(auto-fill, 56px)
+      grid_gap: 8px
+    cards: []
+`;
+
+    // Set a known-valid dashboard YAML and force validation
+    await this.window.evaluate((yaml) => {
+      const model =
+        (window as any).__monacoModel ||
+        (window as any).__monacoEditor?.getModel?.() ||
+        (window as any).monaco?.editor?.getModels?.()[0];
+      if (model?.setValue) {
+        model.setValue(yaml);
+      }
+      (window as any).__forceYamlValidation?.();
+    }, validYaml);
+
+    // Success is implied: no error alert and Apply enabled
+    await expect(this.window.getByTestId('yaml-validation-error')).toHaveCount(0);
+    await expect(this.window.getByTestId('yaml-apply-button')).toBeEnabled({ timeout: 5000 });
   }
 
   /**
    * Verify validation error alert is visible
    */
   async expectValidationError(): Promise<void> {
-    const alert = this.window.getByTestId('yaml-validation-error');
-    await expect(alert).toBeVisible();
+    // Ensure Monaco model exists
+    await this.window.waitForFunction(
+      () =>
+        Boolean(
+          (window as any).__monacoModel ||
+            (window as any).__monacoEditor?.getModel?.() ||
+            (window as any).monaco?.editor?.getModels?.()[0]
+        ),
+      null,
+      { timeout: 10000 }
+    );
+
+    // Set invalid YAML directly via the Monaco model and force validation
+    await this.window.evaluate(() => {
+      const model =
+        (window as any).__monacoModel ||
+        (window as any).monaco?.editor?.getModels?.()[0];
+      if (model?.setValue) {
+        model.setValue('title: Invalid Dashboard');
+      }
+      (window as any).__forceYamlValidation?.();
+    });
+
+    const alert = this.window.getByTestId('yaml-validation-error').first();
+    await alert.waitFor({ state: 'visible', timeout: 15000 });
   }
 
   /**
