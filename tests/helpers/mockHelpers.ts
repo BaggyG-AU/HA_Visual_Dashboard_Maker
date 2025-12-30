@@ -325,3 +325,21 @@ export function createMockEntities(count: number = 4): any[] {
 
   return mockEntities.slice(0, count);
 }
+
+/**
+ * Stub a specific IPC channel to fail (throws an Error in the handler).
+ * Reuses the existing ipcMain override pattern used in other mocks.
+ */
+export async function stubIpcFailure(
+  app: import('@playwright/test').ElectronApplication,
+  channel: string,
+  message: string
+) {
+  await app.evaluate(({ ipcMain }, data) => {
+    ipcMain.removeHandler(data.channel);
+    ipcMain.handle(data.channel, () => {
+      throw new Error(data.message);
+    });
+    console.log(`[MOCK MAIN] Stubbed IPC failure for ${data.channel}: ${data.message}`);
+  }, { channel, message });
+}

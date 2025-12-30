@@ -1,169 +1,76 @@
 /**
- * Integration Test: Card Rendering
+ * Integration Test: Card Rendering (DSL + mocks)
  *
- * Tests that different card types render correctly on the canvas.
- *
- * NOTE: These tests are SKIPPED because they require adding cards via double-click
- * on Ant Design Collapse panels, which has known test environment issues with
- * CSS animation timing. Card rendering is verified through:
- * - E2E tests (tests/e2e/*)
- * - Manual testing
- * - Component-level tests
+ * Verifies that common cards render on the canvas using the shared DSL and
+ * mocked HA entities (no real HA connection required).
  */
 
-import { test, expect } from '@playwright/test';
-import { launchElectronApp, closeElectronApp, waitForAppReady } from '../helpers/electron-helper';
+import { test } from '@playwright/test';
+import { launchWithDSL, close } from '../support';
+import { mockHAEntities, createMockEntities } from '../helpers/mockHelpers';
 
 test.describe('Card Rendering', () => {
-  // SKIPPED: Ant Design Collapse animation timing issues prevent reliable card addition in tests
-  test.skip('should render entities card correctly', async () => {
-    const { app, window } = await launchElectronApp();
+  test.beforeEach(async ({}, testInfo) => {
+    // nothing global; per-test setup happens inside each test to keep isolation
+  });
 
+  test('should render entities card with mock entities', async () => {
+    const ctx = await launchWithDSL();
     try {
-      await waitForAppReady(window);
+      // Mock HA entities to keep UI in "connected" state
+      await mockHAEntities(ctx.window, ctx.app, { entities: createMockEntities(4), isConnected: true });
 
-      // Add entities card
-      const entitiesCard = window.locator('text=Entities Card').first();
-      await entitiesCard.click();
-      await window.waitForTimeout(500);
+      await ctx.appDSL.waitUntilReady();
+      await ctx.dashboard.createNew();
 
-      // Verify card appears on canvas
-      const cardOnCanvas = window.locator('.react-grid-item').first();
-      await cardOnCanvas.waitFor({ state: 'visible' });
+      // Match working pattern: expand Sensors category before adding card
+      await ctx.palette.expandCategory('Sensors');
+      await ctx.palette.addCard('entities');
+      await ctx.canvas.expectCardCount(1);
 
-      // Verify card has expected structure
-      const cardContent = await cardOnCanvas.locator('[class*="EntitiesCard"]').count();
-      expect(cardContent).toBeGreaterThan(0);
-
-      // Take screenshot for visual verification
-      await window.screenshot({ path: 'test-results/screenshots/entities-card-render.png' });
+      await ctx.canvas.selectCard(0);
+      await ctx.properties.expectVisible();
+      await ctx.properties.expectCardType(/entities/i);
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
-  test.skip('should render button card correctly', async () => {
-    const { app, window } = await launchElectronApp();
-
+  test('should render glance card with mock entities', async () => {
+    const ctx = await launchWithDSL();
     try {
-      await waitForAppReady(window);
+      await mockHAEntities(ctx.window, ctx.app, { entities: createMockEntities(4), isConnected: true });
 
-      // Add button card
-      const buttonCard = window.locator('text=Button Card').first();
-      await buttonCard.click();
-      await window.waitForTimeout(500);
+      await ctx.appDSL.waitUntilReady();
+      await ctx.dashboard.createNew();
 
-      // Verify card appears
-      const cardOnCanvas = window.locator('.react-grid-item').first();
-      await cardOnCanvas.waitFor({ state: 'visible' });
+      await ctx.palette.expandCategory('Sensors');
+      await ctx.palette.addCard('glance');
+      await ctx.canvas.expectCardCount(1);
 
-      // Verify button element exists
-      const hasButton = await cardOnCanvas.locator('button, .ant-btn').count();
-      expect(hasButton).toBeGreaterThan(0);
+      await ctx.canvas.selectCard(0);
+      await ctx.properties.expectVisible();
+      await ctx.properties.expectCardType(/glance/i);
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
-  test.skip('should render markdown card correctly', async () => {
-    const { app, window } = await launchElectronApp();
-
+  test('should render button card', async () => {
+    const ctx = await launchWithDSL();
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
+      await ctx.dashboard.createNew();
 
-      // Add markdown card
-      const markdownCard = window.locator('text=Markdown Card').first();
-      await markdownCard.click();
-      await window.waitForTimeout(500);
+      await ctx.palette.expandCategory('Controls');
+      await ctx.palette.addCard('button');
+      await ctx.canvas.expectCardCount(1);
 
-      // Verify card appears
-      const cardOnCanvas = window.locator('.react-grid-item').first();
-      await cardOnCanvas.waitFor({ state: 'visible' });
-
-      // Verify card has text content area
-      const hasContent = await cardOnCanvas.textContent();
-      expect(hasContent).toBeTruthy();
+      await ctx.canvas.selectCard(0);
+      await ctx.properties.expectVisible();
+      await ctx.properties.expectCardType(/button/i);
     } finally {
-      await closeElectronApp(app);
-    }
-  });
-
-  test.skip('should render glance card correctly', async () => {
-    const { app, window } = await launchElectronApp();
-
-    try {
-      await waitForAppReady(window);
-
-      // Add glance card
-      const glanceCard = window.locator('text=Glance Card').first();
-      await glanceCard.click();
-      await window.waitForTimeout(500);
-
-      // Verify card appears
-      const cardOnCanvas = window.locator('.react-grid-item').first();
-      await cardOnCanvas.waitFor({ state: 'visible' });
-
-      // Take screenshot
-      await window.screenshot({ path: 'test-results/screenshots/glance-card-render.png' });
-    } finally {
-      await closeElectronApp(app);
-    }
-  });
-
-  test.skip('should render custom cards with placeholders', async () => {
-    const { app, window } = await launchElectronApp();
-
-    try {
-      await waitForAppReady(window);
-
-      // Search for a custom card
-      const searchInput = window.locator('input[placeholder*="Search"]');
-      await searchInput.fill('apex');
-      await window.waitForTimeout(500);
-
-      // Add ApexCharts card (should show placeholder)
-      const apexCard = window.locator('text*=ApexCharts').first();
-      const apexExists = await apexCard.count();
-
-      if (apexExists > 0) {
-        await apexCard.click();
-        await window.waitForTimeout(500);
-
-        // Verify placeholder is shown
-        const cardOnCanvas = window.locator('.react-grid-item').first();
-        const placeholderText = await cardOnCanvas.textContent();
-        expect(placeholderText).toContain('ApexCharts' || 'Custom Card');
-      }
-    } finally {
-      await closeElectronApp(app);
-    }
-  });
-
-  test.skip('should render stack cards with nested content', async () => {
-    const { app, window } = await launchElectronApp();
-
-    try {
-      await waitForAppReady(window);
-
-      // Search for horizontal stack
-      const searchInput = window.locator('input[placeholder*="Search"]');
-      await searchInput.fill('horizontal');
-      await window.waitForTimeout(500);
-
-      // Add horizontal stack card
-      const stackCard = window.locator('text*=Horizontal Stack').first();
-      const stackExists = await stackCard.count();
-
-      if (stackExists > 0) {
-        await stackCard.click();
-        await window.waitForTimeout(500);
-
-        // Verify card appears
-        const cardOnCanvas = window.locator('.react-grid-item').first();
-        await cardOnCanvas.waitFor({ state: 'visible' });
-      }
-    } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 });

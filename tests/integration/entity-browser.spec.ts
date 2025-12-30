@@ -494,7 +494,7 @@ test.describe('Entity Browser Accessibility', () => {
     }
   });
 
-  test.skip('should support Escape key to close modal', async () => {
+  test('should support Escape key to close modal', async () => {
     const ctx = await launchWithDSL();
     try {
       await ctx.appDSL.waitUntilReady();
@@ -504,12 +504,13 @@ test.describe('Entity Browser Accessibility', () => {
       await ctx.entityBrowser.open();
       await ctx.entityBrowser.expectVisible();
 
-      await ctx.window.keyboard.press('Escape');
-      await ctx.window.waitForTimeout(500);
+      const modal = ctx.window.locator('.ant-modal:has-text("Entity Browser")');
 
-      const modalWrap = ctx.window.locator('.ant-modal-wrap');
-      const modalCount = await modalWrap.count();
-      expect(modalCount).toBe(0);
+      // Focus the modal explicitly, then send Escape via the page (AntD listens on document)
+      await modal.click({ position: { x: 10, y: 10 } });
+      await ctx.window.keyboard.press('Escape');
+
+      await expect(modal).not.toBeVisible({ timeout: 2000 });
     } finally {
       await clearEntityCache(ctx.window);
       await close(ctx);

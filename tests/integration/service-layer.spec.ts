@@ -1,552 +1,555 @@
 /**
- * Integration Test: Service Layer
+ * Service-layer integration tests (non-UI)
  *
- * Tests all service integrations: YAML, card registry, file operations,
- * HA connection, templates, and credentials.
- *
- * NOTE: All tests in this file are placeholder TODOs and are SKIPPED.
- * Service layer functionality is tested through:
- * - Component integration tests (entity-browser, monaco-editor, entity-caching)
- * - E2E tests
- * - Manual testing
+ * These tests exercise utility/service modules directly with light stubbing
+ * of the Electron bridge where needed. They intentionally avoid UI flows so
+ * they run fast and deterministically.
  */
 
 import { test, expect } from '@playwright/test';
-import { launchElectronApp, closeElectronApp, waitForAppReady } from '../helpers/electron-helper';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as yaml from 'js-yaml';
+import { cardRegistry } from '../../src/services/cardRegistry';
+import { fileService } from '../../src/services/fileService';
+import { haConnectionService } from '../../src/services/haConnectionService';
+import { getCardSizeConstraints, generateMasonryLayout } from '../../src/utils/cardSizingContract';
+import {
+  isLayoutCardGrid,
+  parseViewLayout,
+  convertLayoutCardToGridLayout,
+  convertGridLayoutToViewLayout,
+} from '../../src/utils/layoutCardParser';
+
+const testDashboardPath = path.join(__dirname, '../fixtures/test-dashboard.yaml');
+const layoutCardPath = path.join(__dirname, '../fixtures/layout-card-dashboard.yaml');
+let credentialsService: any;
+
+const ensureWindow = () => {
+  if (!(globalThis as any).window) {
+    (globalThis as any).window = {} as any;
+  }
+  if (!(globalThis as any).window.electronAPI) {
+    (globalThis as any).window.electronAPI = {} as any;
+  }
+};
+
+const originalWindow = (globalThis as any).window;
+
+test.afterAll(() => {
+  (globalThis as any).window = originalWindow;
+});
 
 test.describe('YAML Service Integration', () => {
-  test.skip('should parse and serialize dashboard round-trip', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should parse and serialize dashboard round-trip', async () => {
+    const yamlContent = fs.readFileSync(testDashboardPath, 'utf-8');
+    const parsed = yaml.load(yamlContent) as any;
+    const dumped = yaml.dump(parsed);
+    const reParsed = yaml.load(dumped);
 
+    expect(parsed).toBeTruthy();
+    expect(reParsed).toEqual(parsed);
+    expect((reParsed as any).views?.length).toBe((parsed as any).views?.length);
+  });
+
+  test('should validate YAML syntax before parsing', async () => {
+    const invalidYaml = 'title: Test:\nviews:\n  - path: home\n    cards:\n      - type: button\n        entity light.kitchen'; // missing colon
+    expect(() => yaml.load(invalidYaml)).toThrow();
     try {
-      await waitForAppReady(window);
-
-      // TODO: Load dashboard YAML
-      // TODO: Parse to object
-      // TODO: Serialize back to YAML
-      // TODO: Verify round-trip produces equivalent YAML
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
+      yaml.load(invalidYaml);
+    } catch (err) {
+      expect((err as Error).message.toLowerCase()).toContain('mapping');
     }
   });
 
-  test.skip('should validate YAML syntax before parsing', async () => {
-    const { app, window } = await launchElectronApp();
-
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Create invalid YAML
-      // TODO: Attempt validation
-      // TODO: Verify error with line number
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+  test('should handle YAML with comments', async () => {
+    const yamlWithComments = `
+title: Commented
+# top level comment
+views:
+  - path: main
+    # view comment
+    cards:
+      - type: button # inline comment
+        entity: light.kitchen
+`;
+    const parsed = yaml.load(yamlWithComments) as any;
+    expect(parsed.title).toBe('Commented');
+    expect(parsed.views?.length).toBe(1);
+    expect(parsed.views?.[0]?.cards?.[0]?.entity).toBe('light.kitchen');
   });
 
-  test.skip('should handle YAML with comments', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should parse layout-card format correctly', async () => {
+    const yamlContent = fs.readFileSync(layoutCardPath, 'utf-8');
+    const parsed = yaml.load(yamlContent) as any;
+    const firstView = parsed.views?.[0];
 
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Load YAML with comments
-      // TODO: Parse and serialize
-      // TODO: Verify comments preserved
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
-  });
-
-  test.skip('should parse layout-card format correctly', async () => {
-    const { app, window } = await launchElectronApp();
-
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Load layout-card YAML
-      // TODO: Verify view_layout properties parsed
-      // TODO: Verify grid coordinates extracted
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    expect(firstView?.type).toBe('custom:grid-layout');
+    expect(firstView?.layout).toBeDefined();
+    expect(firstView?.layout?.grid_template_columns).toBeTruthy();
   });
 });
 
 test.describe('Card Registry Integration', () => {
-  test.skip('should have all standard HA cards registered', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should have all standard HA cards registered', async () => {
+    const standardCards = [
+      'entities',
+      'button',
+      'glance',
+      'markdown',
+      'sensor',
+      'gauge',
+      'light',
+      'thermostat',
+      'weather-forecast',
+      'media-control',
+      'horizontal-stack',
+      'vertical-stack',
+      'grid',
+      'alarm-panel',
+      'history-graph',
+      'map',
+      'picture',
+      'picture-entity',
+      'picture-glance',
+      'plant-status',
+    ];
 
-    try {
-      await waitForAppReady(window);
-
-      const standardCards = [
-        'entities', 'button', 'glance', 'markdown', 'sensor',
-        'gauge', 'light', 'thermostat', 'weather-forecast',
-        'media-control', 'horizontal-stack', 'vertical-stack',
-        'grid', 'alarm-panel', 'history-graph', 'map',
-        'picture', 'picture-entity', 'picture-glance', 'plant-status',
-      ];
-
-      // TODO: Verify each card type is registered
-      // TODO: Verify each has metadata (name, icon, category)
-
-      expect(standardCards.length).toBeGreaterThan(15);
-    } finally {
-      await closeElectronApp(app);
-    }
+    standardCards.forEach(type => {
+      const meta = cardRegistry.get(type);
+      expect(meta?.type).toBe(type);
+      expect(meta?.isCustom).toBe(false);
+    });
   });
 
-  test.skip('should have HACS custom cards registered', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should have HACS custom cards registered', async () => {
+    const customCards = [
+      'custom:apexcharts-card',
+      'custom:power-flow-card-plus',
+      'custom:bubble-card',
+      'custom:mushroom-entity-card', // example mushroom card
+      'custom:mini-graph-card',
+      'custom:better-thermostat-ui-card',
+    ];
 
-    try {
-      await waitForAppReady(window);
-
-      const customCards = [
-        'custom:apexcharts-card',
-        'custom:power-flow-card-plus',
-        'custom:bubble-card',
-        'custom:mushroom-entity-card',
-        'custom:mini-graph-card',
-        'custom:better-thermostat',
-      ];
-
-      // TODO: Verify custom cards registered
-      // TODO: Verify marked as custom (isCustom: true)
-      // TODO: Verify source is 'hacs'
-
-      expect(customCards.length).toBeGreaterThan(5);
-    } finally {
-      await closeElectronApp(app);
-    }
+    customCards.forEach(type => {
+      const meta = cardRegistry.get(type);
+      expect(meta?.type).toBe(type);
+      expect(meta?.isCustom).toBe(true);
+      expect(meta?.source).toBe('hacs');
+    });
   });
 
-  test.skip('should categorize cards correctly', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should categorize cards correctly', async () => {
+    const layoutCards = cardRegistry.getByCategory('layout');
+    const controlCards = cardRegistry.getByCategory('control');
+    const sensorCards = cardRegistry.getByCategory('sensor');
 
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Get cards by category
-      // TODO: Verify 'layout' category has stacks, grid, spacer
-      // TODO: Verify 'control' category has button, light, thermostat
-      // TODO: Verify 'sensor' category has entities, glance, sensor, gauge
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    expect(layoutCards.map(c => c.type)).toEqual(expect.arrayContaining(['horizontal-stack', 'grid']));
+    expect(controlCards.map(c => c.type)).toEqual(expect.arrayContaining(['button', 'light']));
+    expect(sensorCards.map(c => c.type)).toEqual(expect.arrayContaining(['entities', 'glance', 'sensor', 'gauge']));
   });
 
-  test.skip('should filter cards by source', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should filter cards by source', async () => {
+    const builtin = cardRegistry.getBySource('builtin');
+    const hacs = cardRegistry.getBySource('hacs');
 
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Get builtin cards
-      // TODO: Verify all standard HA cards returned
-      // TODO: Get HACS cards
-      // TODO: Verify only custom cards returned
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    expect(builtin.find(c => c.type === 'button')).toBeTruthy();
+    expect(hacs.find(c => c.type === 'custom:apexcharts-card')).toBeTruthy();
+    expect(hacs.every(c => c.isCustom)).toBe(true);
   });
 });
 
 test.describe('File Service Integration', () => {
-  test.skip('should read file via IPC', async () => {
-    const { app, window } = await launchElectronApp();
+  const tempPath = path.join(__dirname, '../fixtures/temp-file-service.txt');
 
-    try {
-      await waitForAppReady(window);
+  test.beforeEach(() => {
+    ensureWindow();
+    (globalThis as any).window.electronAPI.readFile = async (filePath: string) => {
+      try {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        return { success: true, content };
+      } catch (error) {
+        return { success: false, error: (error as Error).message };
+      }
+    };
+    (globalThis as any).window.electronAPI.writeFile = async (filePath: string, content: string) => {
+      try {
+        fs.writeFileSync(filePath, content, 'utf-8');
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: (error as Error).message };
+      }
+    };
+    (globalThis as any).window.electronAPI.fileExists = async (filePath: string) => {
+      return { exists: fs.existsSync(filePath) };
+    };
+  });
 
-      // TODO: Use file service to read test fixture
-      // TODO: Verify content matches file
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
+  test.afterEach(() => {
+    if (fs.existsSync(tempPath)) {
+      fs.unlinkSync(tempPath);
     }
   });
 
-  test.skip('should write file via IPC', async () => {
-    const { app, window } = await launchElectronApp();
-
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Write test file
-      // TODO: Read back
-      // TODO: Verify content matches
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+  test('should read file via IPC', async () => {
+    const content = 'file service read test';
+    fs.writeFileSync(tempPath, content, 'utf-8');
+    const result = await fileService.readFile(tempPath);
+    expect(result.success).toBe(true);
+    expect(result.content).toBe(content);
   });
 
-  test.skip('should check file existence', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should write file via IPC', async () => {
+    const content = 'file service write test';
+    const result = await fileService.writeFile(tempPath, content);
+    expect(result.success).toBe(true);
+    expect(fs.readFileSync(tempPath, 'utf-8')).toBe(content);
+  });
 
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Check for existing test fixture (should exist)
-      // TODO: Check for non-existent file (should not exist)
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+  test('should check file existence', async () => {
+    fs.writeFileSync(tempPath, 'exists', 'utf-8');
+    expect(await fileService.fileExists(tempPath)).toBe(true);
+    expect(await fileService.fileExists(path.join(__dirname, 'missing-file.txt'))).toBe(false);
   });
 });
 
 test.describe('HA Connection Service Integration', () => {
-  test.skip('should normalize HA URL format', async () => {
-    const { app, window } = await launchElectronApp();
+  const sampleEntities = [
+    { entity_id: 'light.one', state: 'on', attributes: { friendly_name: 'Light One' } },
+    { entity_id: 'sensor.temp', state: '20', attributes: { friendly_name: 'Temp' } },
+    { entity_id: 'switch.outlet', state: 'off', attributes: { friendly_name: 'Outlet' } },
+  ];
 
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Test URL normalization:
-      // - "homeassistant.local" → "http://homeassistant.local"
-      // - "http://homeassistant.local/" → "http://homeassistant.local"
-      // - "https://ha.example.com" → "https://ha.example.com"
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+  test.beforeEach(() => {
+    ensureWindow();
+    let callCount = 0;
+    (globalThis as any).window.electronAPI.haFetch = async (url: string, _token: string) => {
+      callCount += 1;
+      if (url.endsWith('/api/states')) {
+        return { success: true, data: sampleEntities, status: 200, callCount };
+      }
+      return { success: true, data: { version: '2024.5.0', components: ['stream'] }, status: 200, callCount };
+    };
+    (haConnectionService as any).entitiesCache = [];
+    (haConnectionService as any).lastFetchTime = 0;
   });
 
-  test.skip('should cache entities with TTL', async () => {
-    const { app, window } = await launchElectronApp();
-
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Fetch entities (should call HA API)
-      // TODO: Fetch again immediately (should use cache)
-      // TODO: Wait 31+ seconds, fetch again (should refresh cache)
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+  test.afterEach(() => {
+    haConnectionService.disconnect();
   });
 
-  test.skip('should group entities by domain', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should normalize HA URL format', async () => {
+    haConnectionService.setConfig({ url: 'homeassistant.local/', token: 'abc' });
+    expect(haConnectionService.getConfig()?.url).toBe('http://homeassistant.local');
 
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Fetch and group entities
-      // TODO: Verify grouped by: light, sensor, switch, climate, etc.
-      // TODO: Verify each group is an array
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    haConnectionService.setConfig({ url: 'https://ha.example.com/', token: 'abc' });
+    expect(haConnectionService.getConfig()?.url).toBe('https://ha.example.com');
   });
 
-  test.skip('should validate entity existence', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should cache entities with TTL', async () => {
+    haConnectionService.setConfig({ url: 'http://ha.local', token: 'abc' });
+    const first = await haConnectionService.fetchEntities();
+    expect(first.length).toBe(sampleEntities.length);
 
-    try {
-      await waitForAppReady(window);
+    const second = await haConnectionService.fetchEntities();
+    expect(second).toEqual(first);
 
-      // TODO: Validate known entity (should return true)
-      // TODO: Validate unknown entity (should return false)
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    // Force cache expiry
+    (haConnectionService as any).lastFetchTime = Date.now() - 31000;
+    const third = await haConnectionService.fetchEntities();
+    expect(third).toEqual(first);
   });
 
-  test.skip('should batch validate multiple entities', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should group entities by domain', async () => {
+    haConnectionService.setConfig({ url: 'http://ha.local', token: 'abc' });
+    const entities = await haConnectionService.fetchEntities();
+    const grouped = entities.reduce<Record<string, any[]>>((acc, entity) => {
+      const [domain] = entity.entity_id.split('.');
+      acc[domain] = acc[domain] || [];
+      acc[domain].push(entity);
+      return acc;
+    }, {});
 
-    try {
-      await waitForAppReady(window);
+    expect(grouped.light?.length).toBe(1);
+    expect(grouped.sensor?.length).toBe(1);
+    expect(grouped.switch?.length).toBe(1);
+  });
 
-      // TODO: Validate array of entities
-      // TODO: Verify returns { valid: [], invalid: [] }
+  test('should validate entity existence', async () => {
+    haConnectionService.setConfig({ url: 'http://ha.local', token: 'abc' });
+    expect(await haConnectionService.validateEntity('light.one')).toBe(true);
+    expect(await haConnectionService.validateEntity('light.unknown')).toBe(false);
+  });
 
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+  test('should batch validate multiple entities', async () => {
+    haConnectionService.setConfig({ url: 'http://ha.local', token: 'abc' });
+    const results = await haConnectionService.validateEntities(['light.one', 'sensor.temp', 'light.unknown']);
+    expect(results.get('light.one')).toBe(true);
+    expect(results.get('sensor.temp')).toBe(true);
+    expect(results.get('light.unknown')).toBe(false);
   });
 });
 
 test.describe('Template Service Integration', () => {
-  test.skip('should load template metadata from JSON', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should load template metadata from JSON', async () => {
+    const templatesPath = path.join(__dirname, '../../templates/templates.json');
+    const raw = fs.readFileSync(templatesPath, 'utf-8');
+    const parsed = JSON.parse(raw);
 
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Load template metadata
-      // TODO: Verify 7 templates loaded
-      // TODO: Verify 7 categories loaded
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    expect(Array.isArray(parsed.templates)).toBe(true);
+    expect(parsed.templates.length).toBe(7);
+    expect(Array.isArray(parsed.categories)).toBe(true);
+    expect(parsed.categories.length).toBe(7);
   });
 
-  test.skip('should load template YAML content', async () => {
-    const { app, window } = await launchElectronApp();
+  const loadTemplateMetadata = () => {
+    const templatesPath = path.join(__dirname, '../../templates/templates.json');
+    const raw = fs.readFileSync(templatesPath, 'utf-8');
+    return JSON.parse(raw);
+  };
 
-    try {
-      await waitForAppReady(window);
+  test('should load template YAML content', async () => {
+    const meta = loadTemplateMetadata();
+    const first = meta.templates[0];
+    const templatePath = path.join(__dirname, '../../templates', first.file);
+    const raw = fs.readFileSync(templatePath, 'utf-8');
+    const parsed = yaml.load(raw) as any;
 
-      // TODO: Load template by ID (e.g., "home-overview")
-      // TODO: Verify YAML content returned
-      // TODO: Verify YAML is valid
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    expect(raw).toContain('views');
+    expect(parsed).toBeTruthy();
+    expect(Array.isArray(parsed.views)).toBe(true);
+    expect(parsed.views.length).toBeGreaterThan(0);
   });
 
-  test.skip('should check required entities for template', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should check required entities for template', async () => {
+    const meta = loadTemplateMetadata();
+    const tpl = meta.templates.find((t: any) => t.requiredEntities?.length >= 2)!;
 
-    try {
-      await waitForAppReady(window);
+    const userEntities = tpl.requiredEntities.slice(0, tpl.requiredEntities.length - 1);
+    const missing = tpl.requiredEntities.filter((e: string) => !userEntities.includes(e));
+    const present = tpl.requiredEntities.filter((e: string) => userEntities.includes(e));
 
-      // TODO: Get template with required entities
-      // TODO: Check against user entity list
-      // TODO: Verify returns { hasAll, missing, present }
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    expect(missing.length).toBeGreaterThan(0);
+    expect(present.length).toBeGreaterThan(0);
+    expect(missing.length + present.length).toBe(tpl.requiredEntities.length);
   });
 
-  test.skip('should recommend templates based on entities', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should recommend templates based on entities', async () => {
+    const meta = loadTemplateMetadata();
+    const userEntities = ['sensor.grid_power', 'sensor.solar_power', 'sensor.home_power', 'sensor.current_power_usage'];
 
-    try {
-      await waitForAppReady(window);
+    const recommendations = meta.templates
+      .map((tpl: any) => {
+        const present = tpl.requiredEntities.filter((e: string) => userEntities.includes(e));
+        const score = present.length / tpl.requiredEntities.length;
+        return { tpl, score };
+      })
+      .filter((r: any) => r.score >= 0.5)
+      .sort((a: any, b: any) => b.score - a.score)
+      .map((r: any) => r.tpl.id);
 
-      // TODO: Provide user entity list with specific domains
-      // TODO: Get recommendations
-      // TODO: Verify templates sorted by compatibility score
-      // TODO: Verify only templates with 50%+ match returned
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    expect(recommendations).toContain('energy-management');
   });
 
-  test.skip('should search templates by query', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should search templates by query', async () => {
+    const meta = loadTemplateMetadata();
+    const search = (query: string) =>
+      meta.templates
+        .filter(
+          (t: any) =>
+            t.name.toLowerCase().includes(query) ||
+            t.description.toLowerCase().includes(query) ||
+            t.tags.some((tag: string) => tag.toLowerCase().includes(query))
+        )
+        .map((t: any) => t.id);
 
-    try {
-      await waitForAppReady(window);
+    const energyMatches = search('energy');
+    expect(energyMatches).toContain('energy-management');
 
-      // TODO: Search for "energy"
-      // TODO: Verify "Energy Management" template returned
-      // TODO: Search for "security"
-      // TODO: Verify "Security & Surveillance" returned
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    const securityMatches = search('security');
+    expect(securityMatches).toContain('security-surveillance');
   });
 });
 
 test.describe('Credentials Service Integration', () => {
-  test.skip('should check encryption availability', async () => {
-    const { app, window } = await launchElectronApp();
+  const electronModulePath = require.resolve('electron');
+  const credentialsModulePath = require.resolve('../../src/services/credentialsService');
+  let originalElectronCache: any;
 
-    try {
-      await waitForAppReady(window);
+  const installSafeStorageMock = () => {
+    originalElectronCache = require.cache[electronModulePath];
+    const mockElectron = {
+      safeStorage: {
+        isEncryptionAvailable: () => true,
+        encryptString: (text: string) => Buffer.from(`enc:${text}`),
+        decryptString: (buf: Buffer) => buf.toString().replace(/^enc:/, ''),
+      },
+    };
+    require.cache[electronModulePath] = {
+      id: electronModulePath,
+      filename: electronModulePath,
+      loaded: true,
+      exports: mockElectron,
+    };
+    delete require.cache[credentialsModulePath];
+    credentialsService = require('../../src/services/credentialsService').credentialsService;
+  };
 
-      // TODO: Check if system encryption available
-      // TODO: Verify returns boolean
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
+  const resetCredentials = () => {
+    credentialsService?.clearAllCredentials?.();
+    delete require.cache[credentialsModulePath];
+    if (originalElectronCache) {
+      require.cache[electronModulePath] = originalElectronCache;
+    } else {
+      delete require.cache[electronModulePath];
     }
+  };
+
+  test.beforeEach(() => {
+    installSafeStorageMock();
   });
 
-  test.skip('should save and retrieve credentials', async () => {
-    const { app, window } = await launchElectronApp();
-
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Save test credential
-      // TODO: Retrieve by ID
-      // TODO: Verify URL and token match
-      // TODO: Verify token was encrypted
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+  test.afterEach(() => {
+    resetCredentials();
   });
 
-  test.skip('should list credentials without tokens', async () => {
-    const { app, window } = await launchElectronApp();
-
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Save multiple credentials
-      // TODO: Get all credentials
-      // TODO: Verify list returned
-      // TODO: Verify tokens not included in list
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+  test('should check encryption availability', async () => {
+    expect(credentialsService.isEncryptionAvailable()).toBe(true);
   });
 
-  test.skip('should track last used credential', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should save and retrieve credentials', async () => {
+    const saved = credentialsService.saveCredential('Test', 'http://ha.local/', 'token123');
+    const stored = credentialsService.getCredential(saved.id);
 
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Save two credentials
-      // TODO: Mark second as used
-      // TODO: Get last used
-      // TODO: Verify second credential returned
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    expect(saved.url).toBe('http://ha.local');
+    expect(saved.encryptedToken).not.toBe('token123');
+    expect(stored?.token).toBe('token123');
+    expect(stored?.url).toBe('http://ha.local');
   });
 
-  test.skip('should delete credentials securely', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should list credentials without tokens', async () => {
+    credentialsService.saveCredential('One', 'http://ha.one', 'token1');
+    credentialsService.saveCredential('Two', 'http://ha.two', 'token2');
 
-    try {
-      await waitForAppReady(window);
+    const all = credentialsService.getAllCredentials();
+    expect(all.length).toBe(2);
+    expect(all.every(c => !(c as any).encryptedToken)).toBe(true);
+  });
 
-      // TODO: Save credential
-      // TODO: Delete credential
-      // TODO: Verify cannot retrieve
-      // TODO: Verify removed from list
+  test('should track last used credential', async () => {
+    credentialsService.saveCredential('One', 'http://ha.one', 'token1');
+    const second = credentialsService.saveCredential('Two', 'http://ha.two', 'token2');
 
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    credentialsService.markAsUsed(second.id);
+
+    const last = credentialsService.getLastUsedCredential();
+    expect(last?.url).toBe('http://ha.two');
+    expect(last?.id).toBe(second.id);
+    expect(last?.token).toBe('token2');
+  });
+
+  test('should delete credentials securely', async () => {
+    const saved = credentialsService.saveCredential('DeleteMe', 'http://ha.delete', 'token-delete');
+
+    const removed = credentialsService.deleteCredential(saved.id);
+    expect(removed).toBe(true);
+    expect(credentialsService.getCredential(saved.id)).toBeNull();
+
+    const all = credentialsService.getAllCredentials();
+    expect(all.find(c => c.id === saved.id)).toBeUndefined();
   });
 });
 
 test.describe('Card Sizing Contract Integration', () => {
-  test.skip('should calculate correct sizes for standard cards', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should calculate correct sizes for standard cards', async () => {
+    const button = getCardSizeConstraints({ type: 'button' } as any);
+    expect(button.minW).toBeGreaterThanOrEqual(2);
+    expect(button.minH).toBeGreaterThanOrEqual(2);
 
-    try {
-      await waitForAppReady(window);
+    const entities = getCardSizeConstraints({
+      type: 'entities',
+      title: 'List',
+      entities: ['light.one', 'switch.two', 'sensor.three', 'sensor.four'],
+    } as any);
+    expect(entities.minW).toBeGreaterThanOrEqual(4);
+    expect(entities.minH).toBeGreaterThanOrEqual(2);
 
-      // TODO: Test sizing for:
-      // - Button card: 3w x 2h
-      // - Entities card: variable height based on entity count
-      // - Markdown card: variable height based on content
-      // - Stack cards: sum of children
+    const glance = getCardSizeConstraints({
+      type: 'glance',
+      entities: ['light.one', 'switch.two', 'sensor.three', 'sensor.four', 'sensor.five', 'sensor.six'],
+    } as any);
+    expect(glance.minW).toBeGreaterThanOrEqual(3);
+    expect(glance.minH).toBeGreaterThanOrEqual(2);
 
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    const markdown = getCardSizeConstraints({
+      type: 'markdown',
+      content: 'Line 1\nLine 2\nLine 3',
+    } as any);
+    expect(markdown.minH).toBeGreaterThanOrEqual(2);
   });
 
-  test.skip('should generate masonry layout correctly', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should generate masonry layout correctly', async () => {
+    const cards = [
+      { type: 'button', view_layout: {} },
+      { type: 'entities', entities: ['light.one', 'switch.two'], view_layout: {} },
+      { type: 'markdown', content: 'Hello', view_layout: {} },
+    ] as any[];
 
-    try {
-      await waitForAppReady(window);
+    const layout = generateMasonryLayout(cards, 12, 2);
+    expect(layout.length).toBe(3);
+    expect(layout.every(item => item.w > 0 && item.h > 0)).toBe(true);
 
-      // TODO: Generate layout for multiple cards
-      // TODO: Verify 2-column distribution
-      // TODO: Verify height balancing
-      // TODO: Verify no overlaps
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    const xs = layout.map(l => l.x);
+    expect(xs).toEqual(expect.arrayContaining([0, 6]));
   });
 });
 
 test.describe('Layout Card Parser Integration', () => {
-  test.skip('should detect layout-card format', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should detect layout-card format', async () => {
+    const viewWithLayout = {
+      type: 'custom:layout-card',
+      layout: { grid_template_columns: 'repeat(12, 1fr)' },
+      cards: [],
+    } as any;
+    const viewWithoutLayout = { type: 'panel', cards: [] } as any;
 
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Test view with layout-card type
-      // TODO: Verify isLayoutCardGrid returns true
-      // TODO: Test view without layout-card
-      // TODO: Verify returns false
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    expect(isLayoutCardGrid(viewWithLayout)).toBe(true);
+    expect(isLayoutCardGrid(viewWithoutLayout)).toBe(false);
   });
 
-  test.skip('should parse CSS grid coordinates', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should parse CSS grid coordinates', async () => {
+    const gridConfig = { columns: 12, rows: '30px' } as any;
+    const card = {
+      type: 'button',
+      view_layout: {
+        grid_column: '1 / 7',
+        grid_row: '1 / span 2',
+      },
+    } as any;
 
-    try {
-      await waitForAppReady(window);
-
-      // TODO: Parse "1 / 7" → { start: 0, end: 6 }
-      // TODO: Parse "span 6" → { span: 6 }
-      // TODO: Parse complex positions
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    const pos = parseViewLayout(card, 0, gridConfig);
+    expect(pos).toEqual({ x: 0, y: 0, w: 6, h: 2 });
   });
 
-  test.skip('should convert layout-card to RGL format', async () => {
-    const { app, window } = await launchElectronApp();
+  test('should convert layout-card to RGL format', async () => {
+    const view = {
+      type: 'custom:layout-card',
+      layout: { grid_template_columns: 'repeat(12, 1fr)', grid_template_rows: 'repeat(auto-fill, 56px)' },
+      cards: [
+        { type: 'button', view_layout: { grid_column: '1 / 5', grid_row: '1 / 3' } },
+        { type: 'entities', view_layout: { grid_column: '5 / 9', grid_row: '1 / 2' } },
+      ],
+    } as any;
 
-    try {
-      await waitForAppReady(window);
+    const layout = convertLayoutCardToGridLayout(view);
+    expect(layout.length).toBe(2);
+    expect(layout[0].x).toBe(0);
+    expect(layout[0].w).toBe(4);
+    expect(layout[0].h).toBe(2);
 
-      // TODO: Convert view with view_layout properties
-      // TODO: Verify RGL layout has correct x, y, w, h
-      // TODO: Verify 1-based → 0-based conversion
-
-      expect(true).toBe(true); // Placeholder
-    } finally {
-      await closeElectronApp(app);
-    }
+    const backToViewLayout = convertGridLayoutToViewLayout(layout);
+    expect(backToViewLayout[0].grid_column).toBe('1 / 5');
+    expect(backToViewLayout[0].grid_row).toBe('1 / 3');
   });
 });

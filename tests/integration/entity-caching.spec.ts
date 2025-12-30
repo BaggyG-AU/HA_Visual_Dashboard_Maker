@@ -10,12 +10,19 @@
 
 import { test, expect } from '@playwright/test';
 import { launchWithDSL, close, seedEntityCache, clearEntityCache } from '../support';
+import { mockHAEntities, createMockEntities } from '../helpers/mockHelpers';
+
+const onlineEntities = createMockEntities(6);
+const connectWithMockEntities = async (ctx: any, entities = onlineEntities) => {
+  await mockHAEntities(ctx.window, ctx.app, { entities, isConnected: true });
+};
 
 test.describe('Entity Caching', () => {
   test('should load cached entities from storage', async () => {
     const ctx = await launchWithDSL();
     try {
       await ctx.appDSL.waitUntilReady();
+      await connectWithMockEntities(ctx);
       await seedEntityCache(ctx.window);
 
       await ctx.entityBrowser.open();
@@ -38,18 +45,18 @@ test.describe('Entity Caching', () => {
     const ctx = await launchWithDSL();
     try {
       await ctx.appDSL.waitUntilReady();
+      await connectWithMockEntities(ctx);
       await seedEntityCache(ctx.window);
 
       await ctx.entityBrowser.open();
 
       const statusText = await ctx.entityBrowser.getConnectionStatusText();
+      // This scenario validates cached display while offline; expect the cached badge.
+      expect(statusText).toContain('Offline');
+      expect(statusText).toContain('Cached');
 
-      if (statusText?.includes('Offline')) {
-        expect(statusText).toContain('Cached');
-
-        const rowCount = await ctx.entityBrowser.getRowCount();
-        expect(rowCount).toBeGreaterThanOrEqual(0);
-      }
+      const rowCount = await ctx.entityBrowser.getRowCount();
+      expect(rowCount).toBeGreaterThan(0);
     } finally {
       await clearEntityCache(ctx.window);
       await close(ctx);
@@ -60,25 +67,27 @@ test.describe('Entity Caching', () => {
     const ctx = await launchWithDSL();
     try {
       await ctx.appDSL.waitUntilReady();
+      await connectWithMockEntities(ctx, []);
       // Don't seed cache for this test
 
       await ctx.entityBrowser.open();
 
       const statusText = await ctx.entityBrowser.getConnectionStatusText();
+      // Expect offline/cached badge when no cache exists.
+      expect(statusText).toContain('Offline');
+      expect(statusText).toContain('Cached');
 
-      if (statusText?.includes('Offline')) {
-        const emptyState = ctx.window.locator('.ant-empty');
-        const tableRows = ctx.window.locator('.ant-table-row');
+      const emptyState = ctx.window.locator('.ant-empty');
+      const tableRows = ctx.window.locator('.ant-table-row');
 
-        const isEmpty = await emptyState.isVisible();
-        const hasRows = await tableRows.count() > 0;
+      const isEmpty = await emptyState.isVisible();
+      const hasRows = await tableRows.count() > 0;
 
-        expect(isEmpty || hasRows).toBeTruthy();
+      expect(isEmpty || hasRows).toBeTruthy();
 
-        if (isEmpty) {
-          const emptyText = await emptyState.textContent();
-          expect(emptyText).toContain('No entities cached');
-        }
+      if (isEmpty) {
+        const emptyText = await emptyState.textContent();
+        expect(emptyText).toContain('No entities cached');
       }
     } finally {
       await clearEntityCache(ctx.window);
