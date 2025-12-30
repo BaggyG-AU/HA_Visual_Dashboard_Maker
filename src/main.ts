@@ -674,8 +674,10 @@ const createWindow = () => {
     );
   }
 
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  // Open DevTools only during development to keep production startup fast.
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL || !app.isPackaged) {
+    mainWindow.webContents.openDevTools();
+  }
 
   // Set up application menu
   const menu = createApplicationMenu(mainWindow);
