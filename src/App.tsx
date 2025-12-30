@@ -26,6 +26,9 @@ import { useThemeStore } from './store/themeStore';
 import { themeService } from './services/themeService';
 
 const { Header, Content, Sider } = Layout;
+const isTestEnv =
+  (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1')) ||
+  (typeof window !== 'undefined' && (window as any).E2E);
 
 const App: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
@@ -122,7 +125,7 @@ const App: React.FC = () => {
 
   // Expose lightweight test hooks for Playwright to inject themes/connection state
   useEffect(() => {
-    if (process.env.NODE_ENV === 'test' || (window as any).E2E) {
+    if (isTestEnv) {
       (window as any).__testThemeApi = {
         setConnected: (connected: boolean) => setIsConnected(connected),
         applyThemes: (themesData: any) => {
@@ -673,7 +676,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Disable Ant motion in automated tests to avoid hidden/animating portals
-    if (process.env.NODE_ENV === 'test' || process.env.E2E === '1') {
+    if (isTestEnv) {
       document.body.classList.add('ant-motion-disabled');
     }
   }, []);

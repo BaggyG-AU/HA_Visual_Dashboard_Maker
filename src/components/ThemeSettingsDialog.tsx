@@ -147,7 +147,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
         </Space>
       }
       open={visible}
-      destroyOnClose
+      destroyOnHidden
       onCancel={handleCancel}
       width={700}
       footer={[

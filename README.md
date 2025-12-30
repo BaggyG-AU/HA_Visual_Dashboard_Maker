@@ -91,6 +91,10 @@ HA_Visual_Dashboard_Maker/
 
 _(Coming soon - project initialization in progress)_
 
+Launch commands:
+- Standard: `npm start`
+- WSL (to avoid sandbox/GPU issues): `npm run start:wsl`
+
 ## Contributing
 
 This project is in early planning stages. Contributions and feedback are welcome once the initial structure is established.

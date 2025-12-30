@@ -4,6 +4,10 @@ import { CodeOutlined, CheckOutlined, DatabaseOutlined } from '@ant-design/icons
 import * as monaco from 'monaco-editor';
 import { yamlService } from '../services/yamlService';
 
+const isTestEnv =
+  (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1')) ||
+  (typeof window !== 'undefined' && (window as any).E2E);
+
 interface YamlEditorDialogProps {
   visible: boolean;
   dashboardYaml: string;
@@ -121,7 +125,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
       const syntax = yamlService.validateYAMLSyntax(yaml);
       if (!syntax.valid) {
         setValidationError(syntax.error ?? 'Invalid YAML syntax');
-        if (process.env.NODE_ENV === 'test' || (window as any).E2E) {
+        if (isTestEnv) {
           (window as any).__lastValidationError = syntax.error ?? 'Invalid YAML syntax';
         }
         return;
@@ -131,18 +135,18 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
       const result = yamlService.parseDashboard(yaml);
       if (!result.success) {
         setValidationError(result.error ?? 'Invalid YAML');
-        if (process.env.NODE_ENV === 'test' || (window as any).E2E) {
+        if (isTestEnv) {
           (window as any).__lastValidationError = result.error ?? 'Invalid YAML';
         }
       } else {
         setValidationError(null);
-        if (process.env.NODE_ENV === 'test' || (window as any).E2E) {
+        if (isTestEnv) {
           (window as any).__lastValidationError = null;
         }
       }
     } catch (error) {
       setValidationError((error as Error).message);
-      if (process.env.NODE_ENV === 'test' || (window as any).E2E) {
+      if (isTestEnv) {
         (window as any).__lastValidationError = (error as Error).message;
       }
     }
@@ -150,7 +154,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
 
   // Test hook: allow Playwright to force validation of current editor value
   useEffect(() => {
-    if (process.env.NODE_ENV === 'test' || (window as any).E2E) {
+    if (isTestEnv) {
       (window as any).__forceYamlValidation = () => {
         const value = monacoEditorRef.current?.getValue() ?? yamlContent;
         validateYaml(value);
@@ -278,7 +282,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
       >
         <div data-testid="yaml-editor-content">
           <Alert
-            message="Edit YAML Directly"
+            title="Edit YAML Directly"
             description="Make changes to your dashboard YAML below. Changes will be validated in real-time. Click 'Apply Changes' to update the visual canvas."
             type="info"
             showIcon
@@ -288,7 +292,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
           {validationError && (
             <Alert
               data-testid="yaml-validation-error"
-              message="YAML Validation Error"
+              title="YAML Validation Error"
               description={validationError}
               type="error"
               showIcon
@@ -301,7 +305,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
           {hasChanges && !validationError && (
             <Alert
               data-testid="yaml-validation-success"
-              message="Valid YAML"
+              title="Valid YAML"
               description="Your changes are valid and ready to apply."
               type="success"
               showIcon
