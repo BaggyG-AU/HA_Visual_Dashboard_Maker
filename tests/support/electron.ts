@@ -44,10 +44,13 @@ export async function launch(): Promise<ElectronTestContext> {
   const mainPath = path.join(__dirname, '../../.vite/build/main.js');
   const userDataDir = createIsolatedUserDataDir();
 
+  const wslFlags = ['--no-sandbox', '--disable-gpu'];
+
   const app = await electron.launch({
     args: [
       mainPath,
       `--user-data-dir=${userDataDir}`,
+      ...wslFlags,
     ],
     env: {
       ...process.env,
