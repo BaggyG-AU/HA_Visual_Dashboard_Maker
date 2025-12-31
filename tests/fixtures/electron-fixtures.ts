@@ -83,6 +83,8 @@ export const test = base.extend<TestFixtures>({
       env: {
         ...process.env,
         NODE_ENV: 'test',
+        E2E: '1',
+        PLAYWRIGHT_TEST: '1',
         ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
       },
     });

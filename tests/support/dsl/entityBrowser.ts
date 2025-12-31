@@ -178,12 +178,8 @@ export class EntityBrowserDSL {
   async doubleClickEntity(index: number): Promise<void> {
     const rows = this.window.locator('.ant-table-row');
     await rows.nth(index).dblclick();
-    await this.window.waitForTimeout(600);
-
-    // Modal should close
     const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
-    const isVisible = await modal.isVisible().catch(() => false);
-    expect(isVisible).toBeFalsy();
+    await expect(modal).not.toBeVisible({ timeout: 2000 });
   }
 
   /**
@@ -328,8 +324,16 @@ export class EntityBrowserDSL {
    * Get entity row count
    */
   async getRowCount(): Promise<number> {
-    const rows = this.window.locator('.ant-table-row');
-    return await rows.count();
+    const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
+    await expect(modal).toBeVisible();
+
+    const tableOrEmpty = modal.locator('.ant-table, .ant-empty').first();
+    await tableOrEmpty.waitFor({ state: 'visible', timeout: 3000 });
+
+    const rows = modal.locator('.ant-table-row');
+    await rows.first().waitFor({ state: 'attached', timeout: 1000 }).catch(() => {});
+
+    return rows.count();
   }
 
   /**

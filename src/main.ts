@@ -478,8 +478,13 @@ ipcMain.handle('ha:ws:unsubscribeFromThemes', async () => {
   }
 });
 
-// Test-only IPC handlers (only available in test mode)
-if (process.env.NODE_ENV === 'test') {
+// Test-only IPC handlers (only available in test/e2e modes)
+const isTestEnv =
+  process.env['NODE_ENV'] === 'test' ||
+  process.env.E2E === '1' ||
+  process.env.PLAYWRIGHT_TEST === '1';
+
+if (isTestEnv) {
   ipcMain.handle('test:seedEntityCache', async (event, entities: any[]) => {
     try {
       settingsService.setCachedEntities(entities);
