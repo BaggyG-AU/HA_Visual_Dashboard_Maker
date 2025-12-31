@@ -178,12 +178,12 @@ export class EntityBrowserDSL {
   async doubleClickEntity(index: number): Promise<void> {
     const rows = this.window.locator('.ant-table-row');
     await rows.nth(index).dblclick();
-    await this.window.waitForTimeout(600);
 
-    // Modal should close
-    const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
-    const isVisible = await modal.isVisible().catch(() => false);
-    expect(isVisible).toBeFalsy();
+    // Modal should close – wait for wrapper to become hidden/detached
+    const modalWrap = this.window.locator('.ant-modal-wrap:has-text("Entity Browser")');
+    await modalWrap.waitFor({ state: 'hidden', timeout: 4000 }).catch(async () => {
+      await expect(modalWrap).toBeHidden({ timeout: 2000 });
+    });
   }
 
   /**
