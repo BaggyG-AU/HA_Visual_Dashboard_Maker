@@ -510,7 +510,7 @@ test.describe('Entity Browser Accessibility', () => {
       await modal.click({ position: { x: 10, y: 10 } });
       await ctx.window.keyboard.press('Escape');
 
-      await expect(modal).not.toBeVisible({ timeout: 2000 });
+      await ctx.entityBrowser.expectClosed();
     } finally {
       await clearEntityCache(ctx.window);
       await close(ctx);

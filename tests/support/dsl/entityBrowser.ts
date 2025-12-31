@@ -237,6 +237,16 @@ export class EntityBrowserDSL {
   }
 
   /**
+   * Wait for the Entity Browser modal to fully close (wrapper hidden)
+   */
+  async expectClosed(): Promise<void> {
+    const modalWrap = this.window.locator('.ant-modal-wrap:has-text("Entity Browser")');
+    await modalWrap.waitFor({ state: 'hidden', timeout: 4000 }).catch(async () => {
+      await expect(modalWrap).toBeHidden({ timeout: 2000 });
+    });
+  }
+
+  /**
    * Expect connection status badge to show specific text
    */
   async expectConnectionStatus(status: 'Connected' | 'Not Connected' | 'Offline (Cached)'): Promise<void> {
@@ -328,7 +338,11 @@ export class EntityBrowserDSL {
    * Get entity row count
    */
   async getRowCount(): Promise<number> {
-    const rows = this.window.locator('.ant-table-row');
+    const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
+    await expect(modal).toBeVisible();
+
+    // Prefer the modal context to avoid counting stale rows elsewhere
+    const rows = modal.locator('.ant-table-row');
     return await rows.count();
   }
 
