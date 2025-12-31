@@ -341,8 +341,14 @@ export class EntityBrowserDSL {
     const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
     await expect(modal).toBeVisible();
 
-    // Prefer the modal context to avoid counting stale rows elsewhere
+    // Wait for table or empty state to render inside the modal
+    const tableOrEmpty = modal.locator('.ant-table, .ant-empty').first();
+    await tableOrEmpty.waitFor({ state: 'visible', timeout: 3000 });
+
     const rows = modal.locator('.ant-table-row');
+    // Allow attached rows if present; ignore if empty
+    await rows.first().waitFor({ state: 'attached', timeout: 1000 }).catch(() => {});
+
     return await rows.count();
   }
 
