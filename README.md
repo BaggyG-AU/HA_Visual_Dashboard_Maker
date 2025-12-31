@@ -4,18 +4,17 @@ A cross-platform desktop application for visually designing Home Assistant dashb
 
 ## Project Status
 
-**Current Phase**: ✅ Ready for Development (Phase 1)
+- **Version**: `0.2.0-beta.2`
+- **Current focus**: Electron app + visual editor in active development with Playwright integration tests green.
+- **Planning docs**: see `/docs/index.md` for architecture, plan, testing, releases, and research.
 
-**Phase 0 Complete** - All planning and requirements gathering is finished!
-
-### 📋 Key Documents:
-- [READINESS_SUMMARY.md](READINESS_SUMMARY.md) - **START HERE** - Confirms we're ready to begin development
-- [REQUIREMENTS_QUESTIONNAIRE.md](REQUIREMENTS_QUESTIONNAIRE.md) - Completed user requirements
-- [ARCHITECTURE.md](ARCHITECTURE.md) - Technical architecture with offline-first design
-- [PROJECT_PLAN.md](PROJECT_PLAN.md) - 18-phase development roadmap
-- [docs/MVP_BACKLOG.md](docs/MVP_BACKLOG.md) - Detailed MVP task breakdown
-
-**Next Step**: Initialize Electron project and begin Phase 1
+### 📋 Key Documents
+- [Docs index](docs/index.md) — entry point to all documentation
+- [Project plan](docs/product/PROJECT_PLAN.md) — phased roadmap with current status
+- [Architecture](docs/architecture/ARCHITECTURE.md) — technical design and decisions
+- [Testing standards](docs/testing/TESTING_STANDARDS.md) — required Playwright conventions
+- [AI rules](ai_rules.md) — immutable rules and constraints for AI agents
+- [Release notes](docs/releases/RELEASE_NOTES_v0.2.0-beta.1.md) — latest release details
 
 ## Vision
 
@@ -69,14 +68,11 @@ Create a professional WYSIWYG editor for Home Assistant dashboards that:
 
 ```
 HA_Visual_Dashboard_Maker/
-├── docs/                      # Documentation
-├── src/
-│   ├── main/                  # Electron main process
-│   ├── renderer/              # React application
-│   └── shared/                # Shared types and utilities
-├── ARCHITECTURE.md            # Technical architecture
-├── REQUIREMENTS_QUESTIONNAIRE.md  # Requirements gathering
-└── README.md                  # This file
+├── docs/                 # Documentation (architecture, testing, releases, product)
+├── src/                  # Electron main + renderer code
+├── tests/                # Playwright specs, helpers, DSL
+├── templates/            # Dashboard templates (YAML)
+└── README.md             # This file
 ```
 
 ## Getting Started
@@ -89,35 +85,25 @@ HA_Visual_Dashboard_Maker/
 
 ### Development Setup
 
-_(Coming soon - project initialization in progress)_
-
 Launch commands:
 - Standard: `npm start`
 - WSL (to avoid sandbox/GPU issues): `npm run start:wsl`
 
+Key tests (cannot be run in the AI sandbox; run locally):
+- Integration: `npx playwright test --project=electron-integration --workers=1 --trace=retain-on-failure`
+- E2E smoke: `npx playwright test --project=electron-e2e --workers=1 --trace=retain-on-failure`
+
 ## Contributing
 
-This project is in early planning stages. Contributions and feedback are welcome once the initial structure is established.
-
-## Documentation
-
-- [Requirements Questionnaire](REQUIREMENTS_QUESTIONNAIRE.md) - Answer these questions to help define the project scope
-- [Technical Architecture](ARCHITECTURE.md) - Detailed technical design and architecture decisions
+Contributions are welcome. Please read `ai_rules.md`, `docs/testing/TESTING_STANDARDS.md`, and `docs/releases/RELEASES.md` before opening a PR.
 
 ## Roadmap
 
-- [x] Requirements gathering
-- [x] Architecture design
-- [ ] Project initialization
-- [ ] Core editor implementation
-- [ ] Standard card support
-- [ ] Custom card support (bubble, button, apexcharts, card-mod)
-- [ ] Home Assistant integration
-- [ ] Beta release
+See `docs/product/PROJECT_PLAN.md` for the phased roadmap and backlog.
 
 ## License
 
-_(To be determined)_
+MIT
 
 ## Acknowledgments
 

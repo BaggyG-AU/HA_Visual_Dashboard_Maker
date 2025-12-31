@@ -1,4 +1,4 @@
-# Tests
+# Playwright Testing
 
 Playwright covers Electron integration and e2e workflows. Tests run with isolated user-data directories and shared DSL helpers under `tests/support`.
 
@@ -44,4 +44,4 @@ Prefer enabling mocks in `beforeEach` inside specs; keep data sets small/determi
 
 ## Standards
 
-See `tests/TESTING_STANDARDS.md` for required conventions (selectors, waits, DSL boundaries, mocking rules).
+See `docs/testing/TESTING_STANDARDS.md` for required conventions (selectors, waits, DSL boundaries, mocking rules). AI agents cannot run these commands in the sandbox; always provide verification steps for humans to execute locally.

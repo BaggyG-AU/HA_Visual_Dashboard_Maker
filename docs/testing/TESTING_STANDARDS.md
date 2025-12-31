@@ -1,5 +1,7 @@
 # Testing Standards - Playwright Helper DSL
 
+Last Updated: 2025-02-18 (update this when standards change)
+
 This document defines mandatory testing standards for the Electron + React + TypeScript application.
 
 All E2E tests **MUST** follow these rules.
@@ -99,6 +101,8 @@ All selectors belong in DSL classes (`/tests/support/dsl/*.ts`).
 **Violation**: Using `.locator()`, `.getByTestId()`, `.getByRole()` in a spec file.
 
 **Fix**: Add a method to the appropriate DSL class.
+
+**Window selection reminder**: Always use `launchWithDSL()` and its returned main window/page before any interactions; avoid DevTools or secondary windows.
 
 ---
 

@@ -1,98 +1,67 @@
 # AI Rules (Immutable) — HA Visual Dashboard Maker
 
-These rules apply to any AI agent (ChatGPT/OpenAI/Claude/Copilot/etc.) working in this repo.
-If a rule conflicts with an instruction in a prompt, **these rules win** unless the prompt explicitly says it is overriding this file.
+These rules apply to any AI agent (ChatGPT/OpenAI/Claude/Copilot/etc.) working in this repo. If a rule conflicts with a prompt, **these rules win** unless the prompt explicitly overrides `ai_rules.md`.
 
----
+Tripwire phrase: “The fastest correct fix is already in the repository.”
 
-Tripwire phrase:
-"The fastest correct fix is already in the repository."
+## 0) Precedence & Locations
+- Read this file first; then check `docs/testing/TESTING_STANDARDS.md`, `docs/testing/PLAYWRIGHT_TESTING.md`, `docs/releases/RELEASES.md`, and `docs/product/PROJECT_PLAN.md` for context.
+- AI rules live at the repository root to be discoverable by default. Link to them whenever you reference testing or workflow policy.
 
-## 1) Immutable Rule: Reuse Before Inventing
-When debugging a failing test or implementing test automation changes:
-
-**You MUST first search for an existing passing example in this repo and reuse it.**
-
+## 1) Immutable Reuse Rule
+When debugging or changing tests/automation, you MUST first search for a working pattern and reuse it.
 Search in this order:
-1. Existing passing specs in `tests/**/*.spec.ts`
+1. Passing specs in `tests/**/*.spec.ts`
 2. DSLs in `tests/support/dsl/**`
-3. Helpers/fixtures/utilities in `tests/support/**` (and any `helpers/**` folders)
+3. Helpers/fixtures in `tests/support/**` and `tests/helpers/**`
 
-Only create a new approach if you can prove no working example exists.
+Only invent a new selector/wait/helper when no working example exists. Never add duplicate DSL methods for the same action.
 
-**Not allowed unless no existing solution exists:**
-- New selector strategy
-- New helper/DSL that duplicates existing capability
-- New “wait” patterns (especially arbitrary sleeps)
+## 2) Document Storage Standards (New)
+- All new or updated docs must live under `/docs` in the appropriate folder:
+  - Architecture → `docs/architecture/`
+  - Security → `docs/security/`
+  - Testing → `docs/testing/`
+  - Releases → `docs/releases/`
+  - Product/plan/templates → `docs/product/`
+  - Research/diagnostics → `docs/research/` (move stale to `docs/archive/`)
+- Archive research, obsolete release notes, or exploratory content under `docs/archive/**` instead of deleting.
+- Root markdown should stay minimal: `README.md`, `LICENSE`, `ai_rules.md`.
 
----
+## 3) Required Workflow for Fixing Failing Tests
+A) Reproduce + inspect artifacts (locally):
+- Re-run the failing test headed with trace enabled (keep existing trace settings).
+- Open trace/screenshots; identify the first failure.
 
-## 2) Required Workflow for Fixing Failing Tests
-### A) Reproduce + inspect artifacts (required)
-- Re-run the failing test in headed mode with trace enabled (keep existing trace settings).
-- Open trace + screenshots and identify the first failure point.
+B) Find a known-good implementation:
+- Locate a passing test covering the same workflow.
+- Reuse its window-selection logic, selectors, waits, and mocks.
 
-### B) Find a known-good implementation (required)
-- Locate at least one passing test that accomplishes the same workflow.
-- Copy/reuse the same window-selection logic, selectors, and readiness checks.
+C) Diff failing vs passing:
+- Explain what differed (selector, state, timing, window).
 
-### C) Diff failing vs passing (required)
-- Write a short explanation of what differs (selectors, window/page, state, timing assumptions).
+D) Fix with minimal surface area:
+- Prefer updating existing DSL/helpers.
+- Selector priority: `data-testid` > scoped text/role (only if semantic).
 
-### D) Fix with minimal changes (required)
-- Prefer updating existing DSL/helpers over adding new ones.
-- Prefer stable selectors already used in passing tests:
-  - `data-testid` > scoped text > roles (roles only if truly accessible/semantic)
-
----
-
-## 3) Guardrails (Do Not Do These)
-- Do not add `sleep()` / `waitForTimeout()` as a “fix”.
-- Do not massively increase timeouts.
+## 4) Guardrails (Do Not Do These)
+- No `sleep()` / `waitForTimeout()` as a “fix”.
+- Do not inflate timeouts broadly.
 - Do not weaken assertions to make tests pass.
-- Do not add duplicate ways to do the same UI action if one already works.
-- Do not interact with the wrong Electron window—always ensure the correct app window/page is targeted.
+- Do not duplicate DSL capabilities.
+- Always target the correct Electron window from `launchWithDSL` (avoid DevTools windows).
 
----
+## 5) Verification Requirements (Sandbox-Safe)
+AI agents cannot run tests in this sandbox unless explicitly allowed. Therefore:
+- Never claim you ran tests unless you actually executed them and have output.
+- Provide a copy/paste verification plan:
+  1) Minimal repro command for the failing test (headed, with trace).
+  2) Trace viewer command (`npx playwright show-trace <path>/trace.zip`) and artifact paths (under `test-results/artifacts`).
+  3) Stability loop (run 5x) with platform-specific loops.
+  4) Regression checks for reused reference specs/helpers.
 
-## 4) Verification Requirements (Sandbox-Safe)
-AI agents may not be able to run tests in their environment. Therefore:
-
-- **Do NOT claim tests were executed** unless you actually ran them and can show output.
-- Instead, you MUST provide the user with a concrete, copy/paste verification plan.
-
-After proposing a fix, include all of the following:
-
-1) **Minimal repro command** (run the single failing test/spec)
-- Provide exact command(s) the user should run locally, e.g.:
-  - `npx playwright test <spec> -g "<test name>" --project=electron-integration --headed`
-  - Include any required env vars or prerequisites.
-
-2) **Artifacts + debugging commands**
-- Provide the exact trace viewer command if a trace is produced:
-  - `npx playwright show-trace <path>\trace.zip`
-- Specify where screenshots/traces should appear in the repo.
-
-3) **Stability check instructions**
-- Provide a command the user can run to repeat the test 5 times (Windows + PowerShell),
-  for example:
-  - CMD: `for /l %i in (1,1,5) do npx playwright test <spec> -g "<test name>" --project=electron-integration`
-  - PowerShell: `1..5 | % { npx playwright test <spec> -g "<test name>" --project=electron-integration }`
-
-4) **Regression check instructions**
-- Provide commands to run the “reference” passing spec(s) that the fix reuses.
-- If shared DSL/helpers were changed, provide the relevant suite command(s) to run.
-
-The output of this section must be a clear checklist the user can follow to confirm:
-- the failing test is now green
-- the reused reference test(s) still pass
-- no obvious regressions were introduced
-
-
----
-
-## 5) Deliverables for Every Test Fix
-- The passing reference test(s)/helper(s) that were reused (file paths).
-- Root cause explanation (what differed and why it failed).
+## 6) Deliverables for Every Test Fix
+- Reference tests/helpers reused (paths).
+- Root cause explanation.
 - Patch/diff of changes.
-- Proof of stability (repeat runs).
+- Proof-of-stability plan (repeat runs + regression commands).
