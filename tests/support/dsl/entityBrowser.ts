@@ -9,9 +9,11 @@ import { Page, expect } from '@playwright/test';
 
 /**
  * Seed the entity cache with test data via IPC
+ * @param window - Playwright Page object
+ * @param customEntities - Optional custom entities array. If not provided, uses default test entities.
  */
-export async function seedEntityCache(window: Page): Promise<void> {
-  const testEntities = [
+export async function seedEntityCache(window: Page, customEntities?: any[]): Promise<void> {
+  const defaultEntities = [
     {
       entity_id: 'light.living_room',
       domain: 'light',
@@ -37,6 +39,8 @@ export async function seedEntityCache(window: Page): Promise<void> {
       attributes: { friendly_name: 'Ceiling Fan' },
     },
   ];
+
+  const testEntities = customEntities || defaultEntities;
 
   await window.evaluate(async (entities) => {
     const result = await (window as any).electronAPI.testSeedEntityCache(entities);
