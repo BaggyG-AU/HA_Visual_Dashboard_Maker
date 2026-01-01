@@ -2,12 +2,13 @@ name: CI
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
   push:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
-  test:
+  ci:
+    name: ci
     runs-on: ubuntu-latest
 
     steps:
@@ -20,17 +21,11 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Install
+      - name: Install dependencies
         run: npm ci
 
-#      - name: Lint
-#        run: npm run lint
+      - name: Lint
+        run: npm run lint
 
-#      - name: Typecheck
-#        run: npm run typecheck
-
-      - name: Test (unit)
+      - name: Unit tests
         run: npm run test:unit
-
-#      - name: Test
-#        run: npm test
