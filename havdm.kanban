@@ -1,0 +1,775 @@
+{
+  "lists": [
+    {
+      "id": "da81c680-770d-41d5-85ff-33df4775bf48",
+      "title": "Backlog",
+      "cards": [
+        {
+          "id": "fac07c8e-af79-4f49-850b-c17ab536cab4",
+          "listId": "da81c680-770d-41d5-85ff-33df4775bf48",
+          "title": "Phase 14: Deploy to Production Feature",
+          "description": "Goal: Offline-first workflow with explicit deploy and backups.\nStatus: Planned.",
+          "labels": [
+            {
+              "id": "1aad91b4-1db3-4ecc-9f7d-9c518015c51e",
+              "title": "Offline & Deploy",
+              "color": "#ff9f1a"
+            }
+          ],
+          "checkboxes": [
+            {
+              "id": "408ae520-02cb-4654-b9bd-504879e26a4b",
+              "title": "Local dashboard cache/workspace system",
+              "checked": false
+            },
+            {
+              "id": "f084471c-6459-404d-932d-5ae66f7893f4",
+              "title": "\"Deploy to Production\" button and workflow",
+              "checked": false
+            },
+            {
+              "id": "f23f5916-5d22-4882-8933-16e0576341d9",
+              "title": "Backup creation before deployment",
+              "checked": false
+            },
+            {
+              "id": "7bad104d-6a60-43d7-b70b-7d3a92d64fd3",
+              "title": "Deployment validation and preview",
+              "checked": false
+            },
+            {
+              "id": "4eccb4b6-a9be-4ac6-b07d-d3b53c01359c",
+              "title": "Connection test and error handling",
+              "checked": false
+            },
+            {
+              "id": "02e65e11-ba0d-4db3-8cbd-4c4a51e1e059",
+              "title": "Deployment confirmation dialogs",
+              "checked": false
+            },
+            {
+              "id": "1042476d-74cd-4122-9cd3-aea401561b6e",
+              "title": "Rollback capability",
+              "checked": false
+            },
+            {
+              "id": "0d0cf8eb-ca9c-4ede-b6fa-9a7784d8aa17",
+              "title": "AC: Can work on dashboards offline",
+              "checked": false
+            },
+            {
+              "id": "23659c9b-248e-4190-8b1d-8f9e89f73c68",
+              "title": "AC: Explicit user action required to deploy",
+              "checked": false
+            },
+            {
+              "id": "45712386-16fa-493f-8897-7f09e82f6847",
+              "title": "AC: Creates backup before deployment",
+              "checked": false
+            },
+            {
+              "id": "c7fe89e5-d693-4609-bb0c-0ae91f90ac19",
+              "title": "AC: Clear deployment status and errors",
+              "checked": false
+            },
+            {
+              "id": "0017f6ee-c00c-4d66-b171-c84499775708",
+              "title": "AC: Can rollback failed deployments",
+              "checked": false
+            }
+          ],
+          "comments": []
+        },
+        {
+          "id": "efaf2c52-0cef-4db1-ba60-ed34a8632676",
+          "listId": "da81c680-770d-41d5-85ff-33df4775bf48",
+          "title": "Phase 15: Entity Validation & Warnings",
+          "description": "Goal: Validate entities and surface visual warnings.\nStatus: Planned.",
+          "labels": [
+            {
+              "id": "51478b6c-3942-4775-9446-7c5a766d53e5",
+              "title": "HA Integration",
+              "color": "#00c2e0"
+            }
+          ],
+          "checkboxes": [
+            {
+              "id": "6f17a742-7263-40bc-96de-f6f779e9ab62",
+              "title": "Entity existence validation against HA instance",
+              "checked": false
+            },
+            {
+              "id": "6274e78c-556a-4319-8e3d-74a169cafcaf",
+              "title": "Visual warning indicators on cards",
+              "checked": false
+            },
+            {
+              "id": "3085c76a-e58f-492d-913c-f3a9f9b41975",
+              "title": "Entity validation panel/report",
+              "checked": false
+            },
+            {
+              "id": "b408684c-219b-41cb-afb2-b41c682932ab",
+              "title": "Missing entity highlighting in properties",
+              "checked": false
+            },
+            {
+              "id": "dd4c60de-acad-4a98-ab34-649ba72a0fce",
+              "title": "Batch entity validation",
+              "checked": false
+            },
+            {
+              "id": "3ed6dd03-701d-4e82-8303-0eeb061e3c33",
+              "title": "Entity suggestions for typos",
+              "checked": false
+            },
+            {
+              "id": "07fa50d7-ed3b-49ae-a51a-2584eb5a1dc3",
+              "title": "AC: Missing entities shown with exclamation icon",
+              "checked": false
+            },
+            {
+              "id": "fe1fe2eb-0bd-4f76-a11c-30a989b83e57",
+              "title": "AC: Validation runs on entity changes",
+              "checked": false
+            },
+            {
+              "id": "5348ec37-4ca2-4939-9390-22d11c78a82c",
+              "title": "AC: Clear indication of which entities are missing",
+              "checked": false
+            },
+            {
+              "id": "4e9a17a9-9559-410c-8887-f8c57b05ef95",
+              "title": "AC: Works with or without HA connection",
+              "checked": false
+            }
+          ],
+          "comments": []
+        },
+        {
+          "id": "41ac1726-3983-4bd6-9f4a-6b7874113ced",
+          "listId": "da81c680-770d-41d5-85ff-33df4775bf48",
+          "title": "Phase 16: Advanced Features",
+          "description": "Goal: UX polish and advanced operations (undo/redo, shortcuts, templates, etc.).\nStatus: Planned.",
+          "labels": [
+            {
+              "id": "0af0e208-8d56-4074-8bf6-5ba792832992",
+              "title": "Polish",
+              "color": "#51e898"
+            }
+          ],
+          "checkboxes": [
+            {
+              "id": "1396d468-c064-47b5-854e-ef10fde6b884",
+              "title": "Undo/redo system",
+              "checked": false
+            },
+            {
+              "id": "b8dba6aa-fd60-4ea6-bbfc-acc0e01f98e5",
+              "title": "Multi-select and bulk operations",
+              "checked": false
+            },
+            {
+              "id": "291c76df-8efd-4b42-915a-cdf6a427be55",
+              "title": "Copy/paste cards",
+              "checked": false
+            },
+            {
+              "id": "e1f7cf38-0c80-450b-a291-015a6b847c45",
+              "title": "Dashboard templates",
+              "checked": false
+            },
+            {
+              "id": "3837279e-b2d9-4850-bdb8-c0ad986aa90e",
+              "title": "Import/export dashboards",
+              "checked": false
+            },
+            {
+              "id": "dc982878-3926-428a-96de-6f4292a74c1d",
+              "title": "Keyboard shortcuts",
+              "checked": false
+            },
+            {
+              "id": "94ae9572-17ac-4213-bbf4-1d2938a35299",
+              "title": "Search/filter entities and cards",
+              "checked": false
+            },
+            {
+              "id": "4fc4b442-fc9a-4e06-9264-a50e63884033",
+              "title": "Recent files",
+              "checked": false
+            },
+            {
+              "id": "eaaafdba-0f65-4e19-9e05-7da16398547a",
+              "title": "Settings/preferences panel",
+              "checked": false
+            },
+            {
+              "id": "d6b3836d-72b1-4603-858e-03de018addbd",
+              "title": "AC: Undo/redo works for all operations",
+              "checked": false
+            },
+            {
+              "id": "4a1257ce-c9bd-41c4-b052-172795effaaf",
+              "title": "AC: Can save/load templates",
+              "checked": false
+            },
+            {
+              "id": "ca287a28-e237-4cf0-86bf-d9b38c79b462",
+              "title": "AC: Keyboard shortcuts documented",
+              "checked": false
+            },
+            {
+              "id": "f8ac8642-ac55-400a-9b92-d1864c6eec05",
+              "title": "AC: Professional UX polish",
+              "checked": false
+            }
+          ],
+          "comments": []
+        },
+        {
+          "id": "1a7e5f9f-56f3-4450-8914-63d8145924eb",
+          "listId": "da81c680-770d-41d5-85ff-33df4775bf48",
+          "title": "Phase 17: Template & Sharing System",
+          "description": "Goal: Template export/import and community sharing.\nStatus: Planned.",
+          "labels": [
+            {
+              "id": "fb352e5d-156c-43ab-b226-e971b662f9c5",
+              "title": "Templates & Sharing",
+              "color": "#f2d600"
+            }
+          ],
+          "checkboxes": [
+            {
+              "id": "178de773-0453-463f-bae7-dde8e9639d8a",
+              "title": "Template export/import system",
+              "checked": false
+            },
+            {
+              "id": "9533ea1a-5c59-4be6-8405-a1ccb8cc2dbd",
+              "title": "Template library UI",
+              "checked": false
+            },
+            {
+              "id": "bb496ec8-879e-445d-8638-5fb665a9a792",
+              "title": "Community template repository integration",
+              "checked": false
+            },
+            {
+              "id": "9a3e444a-bbd9-4c7c-be8c-1103c66f7281",
+              "title": "Template preview",
+              "checked": false
+            },
+            {
+              "id": "c009b4ed-c751-40a2-9a9f-266bea4e821e",
+              "title": "Template metadata (author, description, tags)",
+              "checked": false
+            },
+            {
+              "id": "fb33286b-9cec-49e1-804a-4f748c9f4c26",
+              "title": "Template version management",
+              "checked": false
+            },
+            {
+              "id": "aa36808e-2410-4e35-be91-bfcba6909b9b",
+              "title": "AC: Can save dashboards as templates",
+              "checked": false
+            },
+            {
+              "id": "bb036307-9cdb-4f7e-ac59-81c4074b1482",
+              "title": "AC: Can browse and import templates",
+              "checked": false
+            },
+            {
+              "id": "8cc8feb6-8a70-4c69-82c9-8ee7db530c06",
+              "title": "AC: Templates include metadata",
+              "checked": false
+            },
+            {
+              "id": "a2322fed-cc18-4020-b794-ca94e978417a",
+              "title": "AC: Community repository accessible",
+              "checked": false
+            }
+          ],
+          "comments": []
+        },
+        {
+          "id": "88feac4a-d0c3-4ba9-9295-1ef9f6739839",
+          "listId": "da81c680-770d-41d5-85ff-33df4775bf48",
+          "title": "Phase 18: Beta Release",
+          "description": "Goal: Public beta release with testing, docs, and portable builds.\nStatus: Planned.",
+          "labels": [
+            {
+              "id": "2ef455d4-5bb0-45b8-9d61-696bf95af0f2",
+              "title": "Release",
+              "color": "#61bd4f"
+            }
+          ],
+          "checkboxes": [
+            {
+              "id": "10dabb6e-37c7-4a95-b1e5-c83f64a8ea15",
+              "title": "Comprehensive testing",
+              "checked": false
+            },
+            {
+              "id": "b16855e9-8cd5-4342-914c-28f21b0d18c9",
+              "title": "Bug fixes",
+              "checked": false
+            },
+            {
+              "id": "108b1e26-d8fb-434f-b5ac-09237f63feff",
+              "title": "Documentation (manual, installation, tutorial videos)",
+              "checked": false
+            },
+            {
+              "id": "53c7fc2e-4f1d-436c-9eb7-751aacb162f7",
+              "title": "Build portable executables (Windows, Linux)",
+              "checked": false
+            },
+            {
+              "id": "bb5f4570-50ce-4785-b90d-6eb96e71c0cd",
+              "title": "Update notification system (notify only)",
+              "checked": false
+            },
+            {
+              "id": "07319cd7-23fd-4fd4-ab33-69d7eb72af87",
+              "title": "Beta program setup",
+              "checked": false
+            },
+            {
+              "id": "58baaa40-9b0f-4f0a-8087-1aab8aec6874",
+              "title": "Feedback collection system",
+              "checked": false
+            },
+            {
+              "id": "ef835b07-10a5-49b1-9ecd-e2562a6880df",
+              "title": "AC: Stable on Windows and Linux",
+              "checked": false
+            },
+            {
+              "id": "303f3184-f2d9-405d-a764-a4e27180a024",
+              "title": "AC: All MVP features working",
+              "checked": false
+            },
+            {
+              "id": "5072e574-a396-4acb-993d-d11dae78832e",
+              "title": "AC: Clear documentation",
+              "checked": false
+            },
+            {
+              "id": "6c060d9a-98d6-4e3c-97dc-f6ce584b2c96",
+              "title": "AC: Portable executables available",
+              "checked": false
+            }
+          ],
+          "comments": []
+        },
+        {
+          "id": "55df7537-6d71-4704-b6d2-b7e0a117c8c9",
+          "listId": "da81c680-770d-41d5-85ff-33df4775bf48",
+          "title": "Entity-type dashboard generator \u2013 Portable Kanban ready",
+          "description": "Title\nEntity-type dashboard generator \u2013 Portable Kanban ready\n\nUser Story\nAs a user, I want to automatically create a dashboard based on an entity type so that I can start with a base dashboard and edit from there.\n\nDescription / Context\nNew dashboard flow adds From entity type / category alongside Blank and From template, leveraging HA entity data to offer curated starting dashboards per entity domain, keeping edit mode consistent with existing creation paths and handling offline/empty states gracefully.\n\nAcceptance Criteria\n- Given the user opens New Dashboard, When the menu appears, Then it shows Blank dashboard, From template, and From entity type / category options, each with a tooltip explaining what it does.\n- Given the user selects From entity type / category while connected to HA, When categories are loaded, Then only categories with at least one available entity (derived from existing HA entities/domains) are listed with helper text on what will be generated.\n- Given the user selects a category that has entities, When they confirm, Then a new dashboard is created, auto-populated with relevant cards/entities for that category (see Data & Logic Notes), named after the category, and opened immediately in edit mode like other creation paths.\n- Given HA is offline, When the user tries From entity type / category, Then they see a clear error and the flow is blocked with guidance to connect.\n- Given no entities are available or the selected category has no entities, When the user tries to proceed, Then the UI shows an empty-state message and disables creation (or offers fallback to Blank).\n- Given dashboard generation fails partially (e.g., some entities missing), When creation completes, Then the dashboard still opens (falling back to blank if needed) with a warning that lists what failed.\n\nUI / UX Notes\n- Tooltips on New Dashboard options clarify Blank, From template, and From entity type / category.\n- Entity type selection screen uses existing entity browser styling; include helper text describing what the generated dashboard includes.\n- Loading/empty/error states are inline with existing patterns; retry button for loading categories.\n- Default dashboard title is the category name (e.g., Lights Dashboard); user can rename immediately in edit mode.\n- Post-create toast or inline banner summarizes what was auto-added and links to remove/edit.\n\nData & Logic Notes\n- Reuse existing Entity Browser / HA entity retrieval logic; no new API paths.\n- Categories are derived from actual entity domains/types and filtered to ones with at least one entity.\n- Auto-population rules (cap at 6 entities by default, ordered by name; include HA areas when available):\n  - Lights: grid with Light or Entities cards; include on/off toggles and brightness where available.\n  - Surveillance: camera panel grid with available camera entities; include stream snapshots.\n  - Power Management: energy/consumption overview (entities for power, energy, battery); include trend card if sensors available.\n  - Environment/Aircon: climate/thermostat card per climate entity plus sensors for temperature/humidity; include mode controls.\n- Layout starts with two-column responsive grid; cards grouped by category; users can edit/remove as with other dashboards.\n\nDefinition of Done\n- New dashboard flow shows the three creation options with tooltips.\n- Entity type flow creates dashboards with category-derived cards/entities and opens in edit mode.\n- Error/empty states and fallback to blank dashboard with warning are implemented and logged for debugging.\n- QA notes and documentation updated to reflect the new creation path.\n\nTest Notes\n- Add automated tests for: option visibility, category filtering by available entities, successful dashboard creation per category, partial failure fallback, and offline/empty states.\n- Add manual QA checklist covering tooltip copy, helper text, and layout sanity per category on supported platforms.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        }
+      ]
+    },
+    {
+      "id": "22deb698-ef8d-480a-8c7a-a04dbd8f2bf7",
+      "title": "In Progress",
+      "cards": [
+        {
+          "id": "fbc1cf9b-7197-4493-8198-dc6a4aa48fda",
+          "listId": "22deb698-ef8d-480a-8c7a-a04dbd8f2bf7",
+          "title": "Phase 5: YAML Code Editor",
+          "description": "Goal: Dual visual/code editing with Monaco.\nStatus: Monaco YAML modal implemented; split view and full bidirectional sync pending.",
+          "labels": [
+            {
+              "id": "749d590e-eb3c-4a6c-853e-074c129f496e",
+              "title": "MVP Core",
+              "color": "#0079bf"
+            }
+          ],
+          "checkboxes": [
+            {
+              "id": "ea5edaee-1abf-415f-b521-182047254042",
+              "title": "Integrate Monaco Editor",
+              "checked": true
+            },
+            {
+              "id": "3ef24d7e-8ca1-4ea2-89bc-220a6459c7e4",
+              "title": "Configure YAML syntax highlighting",
+              "checked": true
+            },
+            {
+              "id": "52cff2cf-017c-40df-8893-ef9428e84298",
+              "title": "Implement YAML schema-based autocomplete",
+              "checked": false
+            },
+            {
+              "id": "3716b08d-2989-4196-a7fa-e9fb35fd3416",
+              "title": "Create split view (visual | code)",
+              "checked": false
+            },
+            {
+              "id": "4fd50f37-c22e-4f29-bd42-fb440cdf9926",
+              "title": "Two-way sync between visual and code views",
+              "checked": false
+            },
+            {
+              "id": "c0788234-465b-4c04-aa0c-764ea41d185f",
+              "title": "YAML formatting and validation in editor",
+              "checked": false
+            },
+            {
+              "id": "dcabebe9-10c9-4e90-a11f-3ebd8eb42551",
+              "title": "Line highlighting for selected card",
+              "checked": false
+            },
+            {
+              "id": "b807f4bf-77c9-4b42-9ca2-5aa521408755",
+              "title": "AC: Can edit YAML directly",
+              "checked": false
+            },
+            {
+              "id": "5cf6a588-57c5-4bd2-83c9-29bd65ec5431",
+              "title": "AC: Changes in code reflect in visual view",
+              "checked": false
+            },
+            {
+              "id": "0f43644c-cfc4-4ce4-a7ef-1150bc233712",
+              "title": "AC: Changes in visual reflect in code",
+              "checked": false
+            },
+            {
+              "id": "b4ebe9d2-c465-4226-b3ca-5e6627c8b946",
+              "title": "AC: Autocomplete works for HA config",
+              "checked": false
+            },
+            {
+              "id": "f934453d-899d-4a8a-8bab-e57f5242b355",
+              "title": "AC: YAML validation shows errors inline",
+              "checked": false
+            }
+          ],
+          "comments": []
+        }
+      ]
+    },
+    {
+      "id": "29e94319-1e4e-4928-8aa6-79294f0566bd",
+      "title": "Done",
+      "cards": [
+        {
+          "id": "a6972e05-301a-421f-878e-77f014801830",
+          "listId": "29e94319-1e4e-4928-8aa6-79294f0566bd",
+          "title": "Phase 0: Foundation",
+          "description": "Goal: Establish project requirements, architecture, and initial structure.\nStatus: Complete with requirements, architecture, stack, and repo in place.",
+          "labels": [
+            {
+              "id": "749d590e-eb3c-4a6c-853e-074c129f496e",
+              "title": "MVP Core",
+              "color": "#0079bf"
+            }
+          ],
+          "checkboxes": [
+            {
+              "id": "b9fce599-04e0-4086-a5c0-129d5cb420b8",
+              "title": "Requirements gathering questionnaire",
+              "checked": true
+            },
+            {
+              "id": "7e929d9e-c0e3-4f1c-9289-4bd6fc7491ac",
+              "title": "Architecture design and documentation",
+              "checked": true
+            },
+            {
+              "id": "f443220a-2204-4b1f-9941-815ca0cb9998",
+              "title": "Technology stack selection (Electron + React + TypeScript)",
+              "checked": true
+            },
+            {
+              "id": "46a3a0c3-f5ad-499e-800e-e9edbdaf8e94",
+              "title": "Initial project structure",
+              "checked": true
+            },
+            {
+              "id": "4c3b54ed-2998-4886-852f-b0d968a5fb60",
+              "title": "User requirements collected and analyzed",
+              "checked": true
+            },
+            {
+              "id": "0a433bd8-bcfd-46ff-aff4-6ade51407d88",
+              "title": "MVP scope finalized",
+              "checked": true
+            },
+            {
+              "id": "def0617c-339e-455c-9cc2-1f193a1b3be0",
+              "title": "Git repository created and pushed to GitHub",
+              "checked": true
+            }
+          ],
+          "comments": []
+        },
+        {
+          "id": "886d86b5-f51c-4c13-8c2d-928da7932309",
+          "listId": "29e94319-1e4e-4928-8aa6-79294f0566bd",
+          "title": "Phase 1: Core Application Setup",
+          "description": "Goal: Deliver a runnable Electron shell with baseline UI and tooling.\nStatus: Complete across Electron Forge setup, linting/formatting, shell, and build support.",
+          "labels": [
+            {
+              "id": "749d590e-eb3c-4a6c-853e-074c129f496e",
+              "title": "MVP Core",
+              "color": "#0079bf"
+            }
+          ],
+          "checkboxes": [
+            {
+              "id": "ecbd6c0a-4d6d-466b-a021-378b21999888",
+              "title": "Initialize Electron Forge project with React + TypeScript",
+              "checked": true
+            },
+            {
+              "id": "7fb19c6f-8da7-4af1-8c2d-04a2ae5f3a5b",
+              "title": "Set up development environment (ESLint, Prettier, TypeScript configs)",
+              "checked": true
+            },
+            {
+              "id": "22888c8b-6a2c-49dc-8d53-7ffbde583af2",
+              "title": "Create basic application shell (window, menu, settings)",
+              "checked": true
+            },
+            {
+              "id": "a2a5631b-66d1-4b2e-a144-d9278ef51b70",
+              "title": "Implement file system access via IPC",
+              "checked": true
+            },
+            {
+              "id": "bbbef854-337e-4f64-ae7e-70a51ca93b7c",
+              "title": "Set up basic UI layout (component library, layout shell)",
+              "checked": true
+            },
+            {
+              "id": "f6ef7193-b39d-4bf5-840e-28bb9ce08ed5",
+              "title": "Configure build pipeline for Windows and Linux",
+              "checked": true
+            },
+            {
+              "id": "6b00044a-65fa-4247-8d40-09bfce64f646",
+              "title": "AC: Application launches on Windows and Linux",
+              "checked": true
+            },
+            {
+              "id": "12e35920-6cea-4c12-9e1f-7e28d6471bf8",
+              "title": "AC: Can open file dialogs",
+              "checked": true
+            },
+            {
+              "id": "1b299f0b-6aa1-4ee9-b702-fd12b0bebf6f",
+              "title": "AC: Basic menu works",
+              "checked": true
+            },
+            {
+              "id": "e4d51f19-268d-4f02-9d69-d92ee8c5b2d2",
+              "title": "AC: Dark/light theme support",
+              "checked": true
+            }
+          ],
+          "comments": []
+        },
+        {
+          "id": "4c6a0256-3b15-4d42-b9af-7dcad5d8475a",
+          "listId": "29e94319-1e4e-4928-8aa6-79294f0566bd",
+          "title": "Phase 2: YAML Dashboard Loading",
+          "description": "Goal: Load and parse Home Assistant YAML dashboards.\nStatus: Complete.",
+          "labels": [
+            {
+              "id": "749d590e-eb3c-4a6c-853e-074c129f496e",
+              "title": "MVP Core",
+              "color": "#0079bf"
+            }
+          ],
+          "checkboxes": [
+            {
+              "id": "c1995fce-ced7-4211-8f2d-81b66b0f28f2",
+              "title": "Implement YAML parser (js-yaml integration)",
+              "checked": true
+            },
+            {
+              "id": "b64a8530-f1f7-40a6-88f6-1eae18a8b874",
+              "title": "Create HA dashboard schema definitions (TypeScript types)",
+              "checked": true
+            },
+            {
+              "id": "59106c9f-6922-449a-bfd1-7b3fc68da83d",
+              "title": "Implement dashboard validation",
+              "checked": true
+            },
+            {
+              "id": "a75c7ef9-afac-4cb8-b75b-c47b40d3ac3f",
+              "title": "Create file browser for opening dashboard YAML files",
+              "checked": true
+            },
+            {
+              "id": "665e09c5-7dd6-4c47-9b7d-6be2ce3f36cf",
+              "title": "Parse dashboard into internal state representation",
+              "checked": true
+            },
+            {
+              "id": "c14f99f6-6cea-4d6d-bf29-9927877cdf0c",
+              "title": "Display basic dashboard structure (tree view)",
+              "checked": true
+            },
+            {
+              "id": "c9977920-034d-4eb9-9e8c-775489c09073",
+              "title": "Error handling for invalid YAML",
+              "checked": true
+            }
+          ],
+          "comments": []
+        },
+        {
+          "id": "a9a35b41-df7d-4f6c-9e3f-7dad7b7d6cbb",
+          "listId": "29e94319-1e4e-4928-8aa6-79294f0566bd",
+          "title": "Phase 3: Visual Editor Canvas",
+          "description": "Goal: Visual representation of dashboards with grid layout.\nStatus: Complete.",
+          "labels": [
+            {
+              "id": "749d590e-eb3c-4a6c-853e-074c129f496e",
+              "title": "MVP Core",
+              "color": "#0079bf"
+            }
+          ],
+          "checkboxes": [
+            {
+              "id": "65f46344-0fa2-4f76-8a0f-b6a8b4a3c5e0",
+              "title": "Implement grid layout system matching HA",
+              "checked": true
+            },
+            {
+              "id": "071eaee1-5b8e-44c0-afb6-b5b9565c4060",
+              "title": "Render cards as visual placeholders",
+              "checked": true
+            },
+            {
+              "id": "c4b7ddbf-61fa-4c90-a00c-9c4681e39bfb",
+              "title": "Implement drag-and-drop (react-grid-layout)",
+              "checked": true
+            },
+            {
+              "id": "87aea4f1-31b0-4052-83dd-a2f4b2337e77",
+              "title": "Card selection and highlighting",
+              "checked": true
+            },
+            {
+              "id": "20960c02-2fef-44fa-b46f-57cbc0c6c2f9",
+              "title": "View switching for dashboards with multiple views",
+              "checked": true
+            },
+            {
+              "id": "e2a14f91-0a37-4b0a-8d7f-4e1f2a7d15cf",
+              "title": "Zoom and pan controls",
+              "checked": true
+            },
+            {
+              "id": "750b0f0b-95aa-4cdd-8ed7-0f4866150cb8",
+              "title": "Responsive canvas sizing",
+              "checked": true
+            }
+          ],
+          "comments": []
+        },
+        {
+          "id": "9d2b2473-03ec-4bda-99b1-687ecfab88d1",
+          "listId": "29e94319-1e4e-4928-8aa6-79294f0566bd",
+          "title": "Phase 4: Standard Card Support",
+          "description": "Goal: Support Home Assistant built-in card types.\nStatus: Complete.",
+          "labels": [
+            {
+              "id": "749d590e-eb3c-4a6c-853e-074c129f496e",
+              "title": "MVP Core",
+              "color": "#0079bf"
+            }
+          ],
+          "checkboxes": [
+            {
+              "id": "a899a07a-7e18-4eb0-8125-77b9e7f1ced1",
+              "title": "Implement card type registry",
+              "checked": true
+            },
+            {
+              "id": "f9615e0e-1d9c-47bb-8564-3a42b8dbb8b6",
+              "title": "Create visual renderers for standard cards (22 total)",
+              "checked": true
+            },
+            {
+              "id": "f507ec5a-5af2-4fe6-84b7-abed6b83119c",
+              "title": "Property editor panel (right sidebar)",
+              "checked": true
+            },
+            {
+              "id": "a91a4c66-3e4b-45dc-b0ef-d6d721e65837",
+              "title": "Form-based property editing per card type",
+              "checked": true
+            },
+            {
+              "id": "7c575e5d-cb35-4d88-8e29-afdfdc0d0f26",
+              "title": "Real-time preview updates",
+              "checked": true
+            }
+          ],
+          "comments": []
+        },
+        {
+          "id": "8b6837ba-f3c6-445f-9906-f3aafbad2259",
+          "listId": "29e94319-1e4e-4928-8aa6-79294f0566bd",
+          "title": "Phase 4.5: Properties Panel (Completed Out of Order)",
+          "description": "Goal: Visual property editing for standard card types.\nStatus: Complete (implemented December 2025).",
+          "labels": [
+            {
+              "id": "749d590e-eb3c-4a6c-853e-074c129f496e",
+              "title": "MVP Core",
+              "color": "#0079bf"
+            }
+          ],
+          "checkboxes": [
+            {
+              "id": "cc25c682-3cb2-45ae-84fa-51866c431537",
+              "title": "Create properties panel UI in right sidebar",
+              "checked": true
+            },
+            {
+              "id": "bbfe1625-5182-42cd-a4af-90f732c9bd3d",
+              "title": "Implement form-based property editing",
+              "checked": true
+            },
+            {
+              "id": "4d9d0d5f-1407-4af9-9b7e-bb9fcfc99492",
+              "title": "Add support for 15+ standard card types",
+              "checked": true
+            },
+            {
+              "id": "5fbcb89d-875f-4a40-ae24-5192ee43957e",
+              "title": "Real-time property updates with apply/cancel buttons",
+              "checked": true
+            },
+            {
+              "id": "18f2f7ee-82b3-480b-bd43-c1a9a4725bae",
+              "title": "Change tracking (dirty state management)",
+              "checked": true
+            }
+          ],
+          "comments": []
+        }
+      ]
+    }
+  ],
+  "archive": {
+    "lists": [],
+    "cards": []
+  },
+  "settings": {
+    "labels": []
+  }
+}
