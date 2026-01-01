@@ -1,5 +1,7 @@
 # Project Plan - HA Visual Dashboard Maker
 
+> **Deprecated (reference only)**: This document is frozen. Please use `hvvdm.kanban` in the repo root for the active, trackable plan.
+
 ## Overview
 
 Last updated for `0.2.0-beta.1` (update this header when the plan changes).  
