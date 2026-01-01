@@ -41,26 +41,49 @@ export async function launchElectronApp(): Promise<ElectronTestApp> {
   // Create isolated user data directory for this test
   const userDataDir = createTempUserDataDir();
 
+  const wslFlags = ['--no-sandbox', '--disable-gpu'];
+
   // Launch Electron app with isolated storage
   const app = await electron.launch({
     args: [
       mainPath,
       // CRITICAL: Isolate storage to prevent state leakage between tests
       `--user-data-dir=${userDataDir}`,
+      ...wslFlags,
     ],
     env: {
       ...process.env,
       NODE_ENV: 'test',
       E2E: '1',
+      // Keep in sync with tests/support/electron.ts so test-only IPC handlers are enabled
+      PLAYWRIGHT_TEST: '1',
       ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
     },
   });
 
-  // Wait for the first window to open
-  const window = await app.firstWindow();
+  // Select the main app window (skip devtools/blank windows if they appear first)
+  const isMainWindow = (page: Page) => {
+    const url = page.url();
+    if (url.startsWith('devtools://')) return false;
+    return url.includes('main_window/index.html') || url.includes('index.html') || url === 'about:blank';
+  };
+
+  let window = app.windows().find(isMainWindow);
+  if (!window) {
+    window = await app.waitForEvent('window', isMainWindow);
+  }
 
   // Wait for app to be ready
   await window.waitForLoadState('domcontentloaded');
+
+  // Match main launcher: maximize and show for consistent layout sizing
+  await app.evaluate(({ BrowserWindow }) => {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (win) {
+      win.maximize();
+      win.show();
+    }
+  });
 
   console.log('[HELPER] Electron app launched with isolated storage');
 

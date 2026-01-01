@@ -178,8 +178,12 @@ export class EntityBrowserDSL {
   async doubleClickEntity(index: number): Promise<void> {
     const rows = this.window.locator('.ant-table-row');
     await rows.nth(index).dblclick();
-    const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
-    await expect(modal).not.toBeVisible({ timeout: 2000 });
+
+    // Modal should close – wait for wrapper to become hidden/detached
+    const modalWrap = this.window.locator('.ant-modal-wrap:has-text("Entity Browser")');
+    await modalWrap.waitFor({ state: 'hidden', timeout: 4000 }).catch(async () => {
+      await expect(modalWrap).toBeHidden({ timeout: 2000 });
+    });
   }
 
   /**
@@ -230,6 +234,16 @@ export class EntityBrowserDSL {
   async expectVisible(): Promise<void> {
     const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
     await expect(modal).toBeVisible();
+  }
+
+  /**
+   * Wait for the Entity Browser modal to fully close (wrapper hidden)
+   */
+  async expectClosed(): Promise<void> {
+    const modalWrap = this.window.locator('.ant-modal-wrap:has-text("Entity Browser")');
+    await modalWrap.waitFor({ state: 'hidden', timeout: 4000 }).catch(async () => {
+      await expect(modalWrap).toBeHidden({ timeout: 2000 });
+    });
   }
 
   /**
@@ -327,13 +341,15 @@ export class EntityBrowserDSL {
     const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
     await expect(modal).toBeVisible();
 
+    // Wait for table or empty state to render inside the modal
     const tableOrEmpty = modal.locator('.ant-table, .ant-empty').first();
     await tableOrEmpty.waitFor({ state: 'visible', timeout: 3000 });
 
     const rows = modal.locator('.ant-table-row');
+    // Allow attached rows if present; ignore if empty
     await rows.first().waitFor({ state: 'attached', timeout: 1000 }).catch(() => {});
 
-    return rows.count();
+    return await rows.count();
   }
 
   /**

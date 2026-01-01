@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FEATURE_NAME="${1:-}"
+if [[ -z "$FEATURE_NAME" ]]; then
+  echo "Usage: tools/feature-finish <feature_name>"
+  exit 1
+fi
+
+BRANCH="feature/${FEATURE_NAME// /-}"
+CURRENT="$(git branch --show-current)"
+
+if [[ "$CURRENT" != "$BRANCH" ]]; then
+  echo "ERROR: You are on '$CURRENT' but expected '$BRANCH'."
+  echo "Switch to the feature branch and try again:"
+  echo "  git checkout $BRANCH"
+  exit 1
+fi
+
+echo "==> Checking uncommitted changes..."
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "ERROR: Uncommitted changes exist. Commit them before finishing."
+  git status --porcelain
+  exit 1
+fi
+
+echo "==> Fetching latest..."
+git fetch origin
+
+echo "==> Ensuring branch is up to date with origin..."
+git pull --ff-only origin "$BRANCH" || true
+
+echo "==> Rebase onto latest main (clean history, reduces merge conflicts)..."
+git checkout "$BRANCH"
+git rebase origin/main || {
+  echo "ERROR: Rebase failed due to conflicts."
+  echo "Resolve conflicts, then run:"
+  echo "  git rebase --continue"
+  exit 1
+}
+
+echo "==> Running standard checks..."
+if [[ -x "./tools/checks" ]]; then
+  ./tools/checks
+else
+  echo "ERROR: ./tools/checks not found or not executable."
+  echo "Fix with:"
+  echo "  chmod +x tools/checks"
+  exit 1
+fi
+
+echo "==> Merging into main..."
+git checkout main
+git pull --ff-only origin main
+
+git merge --no-ff "$BRANCH" -m "Merge $BRANCH" || {
+  echo "ERROR: Merge failed."
+  exit 1
+}
+
+echo "==> Pushing main..."
+git push origin main
+
+echo "==> (Optional) Deleting feature branch..."
+git branch -d "$BRANCH" || true
+git push origin --delete "$BRANCH" || true
+
+echo "==> Done. main updated and feature branch cleaned up."

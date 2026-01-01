@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FEATURE_NAME="${1:-}"
+if [[ -z "$FEATURE_NAME" ]]; then
+  echo "Usage: tools/feature-start <feature_name>"
+  exit 1
+fi
+
+BRANCH="feature/${FEATURE_NAME// /-}"
+
+echo "==> Checking git status..."
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "ERROR: You have uncommitted changes. Commit or stash first."
+  git status --porcelain
+  exit 1
+fi
+
+echo "==> Fetching latest..."
+git fetch origin
+
+echo "==> Switching to main and updating..."
+git checkout main
+git pull --ff-only origin main
+
+echo "==> Creating/switching to branch: $BRANCH"
+if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
+  git checkout "$BRANCH"
+  echo "NOTE: Branch already exists locally; checked out existing branch."
+else
+  git checkout -b "$BRANCH"
+fi
+
+echo "==> Pushing branch upstream (if not present)..."
+git push -u origin "$BRANCH" || true
+
+echo "==> Done."
+echo "You are now on: $(git branch --show-current)"

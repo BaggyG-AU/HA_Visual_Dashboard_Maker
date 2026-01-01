@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+#npm run lint
+#npm run typecheck
+npm ci
+npm run test:unit

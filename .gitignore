@@ -98,3 +98,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Electron builder
 release/
+
+# Local planning artifacts
+havdm.kanban
