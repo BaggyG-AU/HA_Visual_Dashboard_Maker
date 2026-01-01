@@ -3,4 +3,4 @@ set -euo pipefail
 #npm run lint
 #npm run typecheck
 npm ci
-npm test
+npm run test:unit
