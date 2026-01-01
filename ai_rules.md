@@ -65,3 +65,29 @@ AI agents cannot run tests in this sandbox unless explicitly allowed. Therefore:
 - Root cause explanation.
 - Patch/diff of changes.
 - Proof-of-stability plan (repeat runs + regression commands).
+
+## 7) Git feature workflow (MANDATORY)
+
+Trigger phrases:
+
+1) If the user says: "I want to start a new feature called <feature_name>"
+   - You MUST run: ./tools/feature-start "<feature_name>"
+   - Before running, check repo state (git status) and explain any blockers plainly.
+
+2) If the user says: "I have completed <feature_name>"
+   - You MUST run: ./tools/feature-finish "<feature_name>"
+   - If checks fail, DO NOT merge. Explain what failed and give the exact commands to fix.
+
+State validation (do this at each major step):
+- Confirm current branch name
+- Confirm working tree is clean
+- Confirm main is up to date with origin
+- Confirm feature branch is up to date/rebased
+- Confirm required checks/tests have passed (either run them or instruct user to run them)
+
+Decision policy:
+- If you need input (e.g., rebase vs merge, deleting branch, skipping tests), ask in plain English.
+- For each option, list impacts (risk, history cleanliness, effort, safety).
+- Default to safest option (do not merge if unsure).
+
+Never do ad-hoc git operations outside these scripts unless the scripts are missing or broken.
