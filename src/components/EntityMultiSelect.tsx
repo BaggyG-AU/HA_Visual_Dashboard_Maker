@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Select, Tag, Typography, Space, Alert, Button } from 'antd';
-import { WarningOutlined, DeleteOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Select, Tag, Typography, Space, Alert } from 'antd';
+import { WarningOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 import { HAEntity } from '../types/homeassistant';
 

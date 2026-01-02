@@ -47,8 +47,9 @@ export class YamlEditorDSL {
       await expect(async () => {
         const box = await monacoEditor.boundingBox();
         expect(box).toBeTruthy();
-        expect(box!.width).toBeGreaterThan(0);
-        expect(box!.height).toBeGreaterThan(0);
+        if (!box) return;
+        expect(box.width).toBeGreaterThan(0);
+        expect(box.height).toBeGreaterThan(0);
       }).toPass({ timeout: 5000 });
 
       // Additional wait for Monaco internal initialization

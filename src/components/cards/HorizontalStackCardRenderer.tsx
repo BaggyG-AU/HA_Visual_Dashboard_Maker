@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card as AntCard, Typography, Space } from 'antd';
+import { Card as AntCard, Typography } from 'antd';
 import { BorderHorizontalOutlined } from '@ant-design/icons';
 import { HorizontalStackCard } from '../../types/dashboard';
 import { BaseCard } from '../BaseCard';

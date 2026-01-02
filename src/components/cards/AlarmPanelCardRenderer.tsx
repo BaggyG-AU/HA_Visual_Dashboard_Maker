@@ -28,7 +28,6 @@ export const AlarmPanelCardRenderer: React.FC<AlarmPanelCardRendererProps> = ({
   const state = entity?.state || 'unknown';
   const attributes = entity?.attributes || {};
   const codeFormat = attributes.code_format;
-  const supportedFeatures = attributes.supported_features || 0;
 
   const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Alarm';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card as AntCard, Typography, Space } from 'antd';
-import { LineChartOutlined, DashboardOutlined } from '@ant-design/icons';
+import { DashboardOutlined } from '@ant-design/icons';
 import { CustomCard } from '../../types/dashboard';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 

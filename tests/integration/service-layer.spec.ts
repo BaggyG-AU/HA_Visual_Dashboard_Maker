@@ -225,6 +225,7 @@ test.describe('HA Connection Service Integration', () => {
     ensureWindow();
     let callCount = 0;
     (globalThis as any).window.electronAPI.haFetch = async (url: string, _token: string) => {
+      void _token;
       callCount += 1;
       if (url.endsWith('/api/states')) {
         return { success: true, data: sampleEntities, status: 200, callCount };

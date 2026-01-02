@@ -28,7 +28,6 @@ export const WeatherForecastCardRenderer: React.FC<WeatherForecastCardRendererPr
   const state = entity?.state || 'unknown';
   const attributes = entity?.attributes || {};
   const temperature = attributes.temperature || '--';
-  const temperatureUnit = attributes.temperature_unit || '°C';
   const humidity = attributes.humidity || '--';
   const pressure = attributes.pressure || '--';
   const windSpeed = attributes.wind_speed || '--';

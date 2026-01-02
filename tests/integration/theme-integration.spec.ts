@@ -76,6 +76,7 @@ test.describe('Theme Integration', () => {
 
       const modal = ctx.window.getByTestId('theme-settings-modal');
       const dialog = ctx.window.getByRole('dialog', { name: /Theme Settings/i });
+      void dialog;
       await ctx.window.waitForFunction(() => {
         const el =
           document.querySelector('[data-testid="theme-settings-modal"] .ant-modal') ||

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Select, Input, Space, Typography } from 'antd';
+import { Select, Space, Typography } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;

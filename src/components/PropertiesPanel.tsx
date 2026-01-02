@@ -28,7 +28,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   onOpenEntityBrowser,
 }) => {
   const [form] = Form.useForm();
-  const [hasChanges, setHasChanges] = useState(false);
   const [streamComponentEnabled, setStreamComponentEnabled] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<string>('form');
   const [yamlContent, setYamlContent] = useState<string>('');
@@ -286,7 +285,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
       // Auto-save
       onSave(parsedCard);
-      setHasChanges(true);
     }
 
     setTimeout(() => {
@@ -298,13 +296,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     const values = form.getFieldsValue();
     const updatedCard = { ...card, ...values };
     onSave(updatedCard as Card);
-    setHasChanges(false);
   };
 
   const handleCancel = () => {
     if (card) {
       form.setFieldsValue(normalizeCardForForm(card));
-      setHasChanges(false);
     }
     onCancel();
   };

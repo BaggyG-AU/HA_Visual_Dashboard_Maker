@@ -27,6 +27,11 @@ import { PictureGlanceCardRenderer } from './cards/PictureGlanceCardRenderer';
 import { MediaPlayerCardRenderer } from './cards/MediaPlayerCardRenderer';
 import { AlarmPanelCardRenderer } from './cards/AlarmPanelCardRenderer';
 import { PlantStatusCardRenderer } from './cards/PlantStatusCardRenderer';
+import { CardModCardRenderer } from './cards/CardModCardRenderer';
+import { AutoEntitiesCardRenderer } from './cards/AutoEntitiesCardRenderer';
+import { VerticalStackInCardRenderer } from './cards/VerticalStackInCardRenderer';
+import { CustomButtonCardRenderer } from './cards/CustomButtonCardRenderer';
+import { SurveillanceCardRenderer } from './cards/SurveillanceCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
 
 interface BaseCardProps {
@@ -160,14 +165,35 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
     case 'custom:mushroom-template-card':
     case 'custom:mushroom-title-card':
     case 'custom:mushroom-chips-card':
+    case 'custom:mushroom-person-card':
+    case 'custom:mushroom-switch-card':
+    case 'custom:mushroom-number-card':
+    case 'custom:mushroom-select-card':
+    case 'custom:mushroom-vacuum-card':
       return <MushroomCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
 
-    // Add more supported card types here as they are implemented
-    // case 'gauge':
-    //   return <GaugeCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
-    //
-    // case 'history-graph':
-    //   return <HistoryGraphCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+    // Custom card-mod styling layer
+    case 'custom:card-mod':
+      return <CardModCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    // Custom auto-entities
+    case 'custom:auto-entities':
+      return <AutoEntitiesCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    // Custom vertical-stack-in-card
+    case 'custom:vertical-stack-in-card':
+      return <VerticalStackInCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    // Custom button-card (distinct from built-in button)
+    case 'custom:button-card':
+      return <CustomButtonCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
+
+    // Surveillance/Camera cards
+    case 'custom:surveillance-card':
+    case 'custom:frigate-card':
+    case 'custom:camera-card':
+    case 'custom:webrtc-camera':
+      return <SurveillanceCardRenderer card={card as any} isSelected={isSelected} onClick={onClick} />;
 
     default:
       // Unsupported card type - show placeholder

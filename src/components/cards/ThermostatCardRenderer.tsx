@@ -33,8 +33,6 @@ export const ThermostatCardRenderer: React.FC<ThermostatCardRendererProps> = ({
   const hvacMode = state;
   const hvacAction = attributes.hvac_action || 'idle';
   const unit = attributes.unit_of_measurement || '°C';
-  const minTemp = attributes.min_temp || 50;
-  const maxTemp = attributes.max_temp || 90;
 
   // Determine display name
   const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Climate';
