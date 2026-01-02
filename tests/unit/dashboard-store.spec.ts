@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useDashboardStore } from 'src/store/dashboardStore';
-import { DashboardConfig } from 'src/types/dashboard';
+import { useDashboardStore } from '../../src/store/dashboardStore';
+import { DashboardConfig } from '../../src/types/dashboard';
 
 const resetStore = () => {
   useDashboardStore.setState({

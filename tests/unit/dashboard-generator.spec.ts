@@ -3,7 +3,7 @@ import {
   DASHBOARD_CATEGORIES,
   dashboardGeneratorService,
   Entity,
-} from 'src/services/dashboardGeneratorService';
+} from '../../src/services/dashboardGeneratorService';
 import {
   sampleEntities,
   withExtraLights,
