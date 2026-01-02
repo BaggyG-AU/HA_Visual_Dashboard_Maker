@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, Button, Alert, Space, Steps, Typography, Radio } from 'antd';
+import { Modal, Form, Input, Button, Alert, Steps, Typography, Radio } from 'antd';
 import { CloudUploadOutlined, CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 
@@ -34,6 +34,8 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
   dashboardYaml,
   dashboardTitle,
 }) => {
+  // TODO: use dashboardYaml in deployment payload when wiring backend deploy
+  void dashboardYaml;
   const [form] = Form.useForm();
   const [deployStatus, setDeployStatus] = useState<DeployStatus>({
     step: 0,
@@ -104,13 +106,6 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
 
         // Now update the dashboard config
         const updateUrl = `${config.url}/api/lovelace/dashboards/${dashboardPath}`;
-        const dashboardConfig = {
-          icon: values.icon || 'mdi:view-dashboard',
-          title: values.title,
-          require_admin: false,
-          show_in_sidebar: true,
-        };
-
         result = await window.electronAPI.haFetch(updateUrl, config.token);
       } else {
         // Update existing dashboard

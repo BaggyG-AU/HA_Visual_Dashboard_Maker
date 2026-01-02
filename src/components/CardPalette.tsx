@@ -1,6 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Collapse, Input, Badge, Tooltip } from 'antd';
-import type { CollapseProps } from 'antd';
 import {
   AppstoreOutlined,
   DashboardOutlined,
@@ -11,8 +10,6 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { cardRegistry, CardCategory, CardTypeMetadata } from '../services/cardRegistry';
-
-const { Panel } = Collapse;
 
 interface CardPaletteProps {
   onCardAdd: (cardType: string) => void;

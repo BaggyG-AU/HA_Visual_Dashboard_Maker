@@ -12,8 +12,8 @@ import {
 class HAConnectionService {
   private config: HAConnectionConfig | null = null;
   private entitiesCache: HAEntity[] = [];
-  private lastFetchTime: number = 0;
-  private cacheDuration: number = 30000; // 30 seconds
+  private lastFetchTime = 0;
+  private cacheDuration = 30000; // 30 seconds
 
   /**
    * Test connection to Home Assistant
@@ -76,7 +76,7 @@ class HAConnectionService {
   /**
    * Fetch all entities from Home Assistant
    */
-  async fetchEntities(forceRefresh: boolean = false): Promise<HAEntity[]> {
+  async fetchEntities(forceRefresh = false): Promise<HAEntity[]> {
     if (!this.config) {
       throw new Error('Not connected to Home Assistant. Please configure connection first.');
     }
@@ -112,7 +112,7 @@ class HAConnectionService {
   /**
    * Get entities grouped by domain
    */
-  async getEntitiesByDomain(forceRefresh: boolean = false): Promise<EntityDomain[]> {
+  async getEntitiesByDomain(forceRefresh = false): Promise<EntityDomain[]> {
     const entities = await this.fetchEntities(forceRefresh);
 
     // Group entities by domain
@@ -135,7 +135,7 @@ class HAConnectionService {
   /**
    * Search entities by query
    */
-  async searchEntities(query: string, forceRefresh: boolean = false): Promise<HAEntity[]> {
+  async searchEntities(query: string, forceRefresh = false): Promise<HAEntity[]> {
     const entities = await this.fetchEntities(forceRefresh);
     const lowerQuery = query.toLowerCase();
 
@@ -158,7 +158,7 @@ class HAConnectionService {
   /**
    * Validate if an entity exists
    */
-  async validateEntity(entityId: string, forceRefresh: boolean = false): Promise<boolean> {
+  async validateEntity(entityId: string, forceRefresh = false): Promise<boolean> {
     const entities = await this.fetchEntities(forceRefresh);
     return entities.some(entity => entity.entity_id === entityId);
   }
@@ -166,7 +166,7 @@ class HAConnectionService {
   /**
    * Validate multiple entities
    */
-  async validateEntities(entityIds: string[], forceRefresh: boolean = false): Promise<Map<string, boolean>> {
+  async validateEntities(entityIds: string[], forceRefresh = false): Promise<Map<string, boolean>> {
     const entities = await this.fetchEntities(forceRefresh);
     const entitySet = new Set(entities.map(e => e.entity_id));
 
@@ -181,7 +181,7 @@ class HAConnectionService {
   /**
    * Get entity by ID
    */
-  async getEntity(entityId: string, forceRefresh: boolean = false): Promise<HAEntity | null> {
+  async getEntity(entityId: string, forceRefresh = false): Promise<HAEntity | null> {
     const entities = await this.fetchEntities(forceRefresh);
     return entities.find(entity => entity.entity_id === entityId) || null;
   }

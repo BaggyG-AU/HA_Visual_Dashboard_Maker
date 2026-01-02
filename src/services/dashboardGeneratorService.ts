@@ -126,7 +126,13 @@ class DashboardGeneratorService {
     // Filter entities that match category's domains
     const filteredEntities = allEntities.filter(entity => {
       const domain = entity.entity_id.split('.')[0];
-      return category.requiredDomains.includes(domain);
+      const domainMatch = category.requiredDomains.includes(domain);
+      if (!domainMatch) return false;
+
+      if (categoryId === 'power') {
+        return this.isPowerSensor(entity);
+      }
+      return true;
     });
 
     // Sort by entity_id and limit to 6
@@ -214,23 +220,7 @@ class DashboardGeneratorService {
    * Generate dashboard for Power Management category
    */
   private generatePowerDashboard(entities: Entity[]): DashboardConfig {
-    const powerSensors = entities.filter(e => {
-      const domain = e.entity_id.split('.')[0];
-      if (domain !== 'sensor') return false;
-
-      const deviceClass = e.attributes.device_class?.toLowerCase();
-      const unit = e.attributes.unit_of_measurement?.toLowerCase();
-
-      return (
-        deviceClass === 'power' ||
-        deviceClass === 'energy' ||
-        deviceClass === 'battery' ||
-        unit === 'w' ||
-        unit === 'kw' ||
-        unit === 'kwh' ||
-        unit === '%'
-      );
-    });
+    const powerSensors = entities.filter(e => this.isPowerSensor(e));
 
     const cards = powerSensors.map((entity, index) => ({
       type: 'sensor',
@@ -626,6 +616,24 @@ class DashboardGeneratorService {
    */
   getCategoryEntityCount(categoryId: string, entities: Entity[]): number {
     return this.getEntitiesForCategory(categoryId, entities).length;
+  }
+
+  private isPowerSensor(entity: Entity): boolean {
+    const domain = entity.entity_id.split('.')[0];
+    if (domain !== 'sensor') return false;
+
+    const deviceClass = entity.attributes.device_class?.toLowerCase();
+    const unit = entity.attributes.unit_of_measurement?.toLowerCase();
+
+    return (
+      deviceClass === 'power' ||
+      deviceClass === 'energy' ||
+      deviceClass === 'battery' ||
+      unit === 'w' ||
+      unit === 'kw' ||
+      unit === 'kwh' ||
+      unit === '%'
+    );
   }
 }
 

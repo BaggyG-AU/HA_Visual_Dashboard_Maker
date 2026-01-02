@@ -274,7 +274,7 @@ export async function mockHAEntities(
  * Create mock entity data for testing
  * Returns an array of realistic Home Assistant entities
  */
-export function createMockEntities(count: number = 4): any[] {
+export function createMockEntities(count = 4): any[] {
   const mockEntities = [
     {
       entity_id: 'light.living_room',

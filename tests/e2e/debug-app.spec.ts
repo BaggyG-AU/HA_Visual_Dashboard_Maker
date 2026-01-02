@@ -5,6 +5,8 @@
  * Run with: npx playwright test tests/debug-app.spec.ts --headed
  */
 
+import fs from 'fs';
+import path from 'path';
 import { test, expect } from '@playwright/test';
 import { launchElectronApp, closeElectronApp, waitForAppReady } from '../helpers/electron-helper';
 
@@ -37,8 +39,6 @@ test.describe('Debug: Application Inspection', () => {
       console.log('HTML length:', html.length);
 
       // Save HTML to file for inspection
-      const fs = require('fs');
-      const path = require('path');
       const htmlPath = path.join(__dirname, '../../test-results/debug-page.html');
       fs.writeFileSync(htmlPath, html);
       console.log('HTML saved:', htmlPath);

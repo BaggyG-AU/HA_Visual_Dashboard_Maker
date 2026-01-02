@@ -4,7 +4,7 @@ import { DownloadOutlined, FileTextOutlined, ReloadOutlined, HomeOutlined } from
 import { haConnectionService } from '../services/haConnectionService';
 import * as yaml from 'js-yaml';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 interface Dashboard {
   id: string;

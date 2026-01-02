@@ -393,6 +393,7 @@ test.describe('Credentials Service Integration', () => {
       exports: mockElectron,
     };
     delete require.cache[credentialsModulePath];
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     credentialsService = require('../../src/services/credentialsService').credentialsService;
   };
 

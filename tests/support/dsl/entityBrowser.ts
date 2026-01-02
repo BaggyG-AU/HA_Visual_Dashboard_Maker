@@ -351,7 +351,10 @@ export class EntityBrowserDSL {
 
     const rows = modal.locator('.ant-table-row');
     // Allow attached rows if present; ignore if empty
-    await rows.first().waitFor({ state: 'attached', timeout: 1000 }).catch(() => {});
+    await rows.first().waitFor({ state: 'attached', timeout: 1000 }).catch(() => {
+      // Allow empty state without failing the wait
+      return undefined;
+    });
 
     return await rows.count();
   }

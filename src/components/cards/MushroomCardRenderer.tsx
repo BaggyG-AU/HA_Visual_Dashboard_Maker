@@ -100,11 +100,12 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
     switch (domain) {
       case 'light':
         return state === 'on' ? '#ffc107' : '#666';
-      case 'climate':
+      case 'climate': {
         const hvacAction = attributes.hvac_action;
         if (hvacAction === 'heating') return '#ff9800';
         if (hvacAction === 'cooling') return '#03a9f4';
         return state === 'off' ? '#666' : '#52c41a';
+      }
       case 'fan':
         return state === 'on' ? '#03a9f4' : '#666';
       case 'cover':
