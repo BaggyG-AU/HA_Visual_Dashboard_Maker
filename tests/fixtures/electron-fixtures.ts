@@ -69,7 +69,7 @@ export const test = base.extend<TestFixtures>({
    * Electron application fixture
    * Launches app with proper storage isolation
    */
-  electronApp: async (_context, use) => {
+  electronApp: async ({}, use) => {
     console.log('[FIXTURE] Launching Electron app...');
 
     // Per Phase 1 inspection: Main process is at .vite/build/main.js
