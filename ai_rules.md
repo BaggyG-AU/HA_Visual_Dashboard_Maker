@@ -52,7 +52,7 @@ D) Fix with minimal surface area:
 - Always target the correct Electron window from `launchWithDSL` (avoid DevTools windows).
 
 ## 5) Verification Requirements (Sandbox-Safe)
-AI agents cannot run tests in this sandbox unless explicitly allowed. Therefore:
+AI agents can only run lint and unit tests in this sandbox but cannot run e2e or integration tests Therefore:
 - Never claim you ran tests unless you actually executed them and have output.
 - Provide a copy/paste verification plan:
   1) Minimal repro command for the failing test (headed, with trace).

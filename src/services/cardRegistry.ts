@@ -724,7 +724,12 @@ class CardRegistry {
    * Register a new card type
    */
   register(metadata: CardTypeMetadata): void {
-    this.cards.set(metadata.type, metadata);
+    const isCustom =
+      metadata.isCustom === true ||
+      metadata.source === 'custom' ||
+      metadata.category === 'custom';
+
+    this.cards.set(metadata.type, { ...metadata, isCustom });
   }
 
   /**

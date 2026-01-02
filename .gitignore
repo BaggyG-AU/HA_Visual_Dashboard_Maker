@@ -101,3 +101,6 @@ release/
 
 # Local planning artifacts
 havdm.kanban
+
+# Tools
+tools/

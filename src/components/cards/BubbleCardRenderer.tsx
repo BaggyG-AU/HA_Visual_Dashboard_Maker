@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card as AntCard, Typography, Space, Tag } from 'antd';
+import { Card as AntCard, Typography } from 'antd';
 import {
   BulbOutlined,
   PlayCircleOutlined,
@@ -7,7 +7,6 @@ import {
   DownOutlined,
   FireOutlined,
   MoreOutlined,
-  CloseOutlined
 } from '@ant-design/icons';
 import { CustomCard } from '../../types/dashboard';
 import { useHAEntities } from '../../contexts/HAEntityContext';
@@ -48,7 +47,6 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
   const showName = card.show_name !== false;
   const showIcon = card.show_icon !== false;
   const showState = card.show_state !== false;
-  const showLastChanged = card.show_last_changed === true;
 
   // Get icon based on entity type
   const getIcon = () => {

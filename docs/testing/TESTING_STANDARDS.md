@@ -94,6 +94,21 @@ When a test fails, it must be immediately clear:
 
 ---
 
+## UNIT TESTING STANDARDS (NEW)
+
+- Scope: Pure logic only (services, data transforms, selectors, reducers/stores). No DOM, Electron, or IPC in unit tests.
+- Deterministic data: Use minimal fixtures under `tests/unit/fixtures` and avoid randomness; keep inputs small and explicit.
+- Assertions: Prefer explicit shape/value assertions over snapshots; verify ordering when relevant (e.g., sorted lists, YAML output order).
+- Isolation: Reset shared stores/state between tests; avoid leaking singletons (reset or recreate as needed).
+- Coverage priorities:
+  - Filtering/sorting/limiting rules
+  - Layout/math helpers
+  - Serialization/round-trip (YAML/JSON)
+  - State machine decisions and model utilities (dirty state, undo/redo, selections)
+- Mocks: Stub only external edges (fs/IPC/network); prefer hand-rolled stubs over global mocks.
+
+---
+
 ## FLOW-AWARE TESTING REQUIREMENTS (MANDATORY)
 
 ### 8. UI Flow Changes MUST Be Reflected in the DSL

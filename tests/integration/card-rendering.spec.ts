@@ -10,8 +10,8 @@ import { launchWithDSL, close } from '../support';
 import { mockHAEntities, createMockEntities } from '../helpers/mockHelpers';
 
 test.describe('Card Rendering', () => {
-  test.beforeEach(async ({}, testInfo) => {
-    // nothing global; per-test setup happens inside each test to keep isolation
+  test.beforeEach(async () => {
+    // TODO: add shared setup when needed
   });
 
   test('should render entities card with mock entities', async () => {

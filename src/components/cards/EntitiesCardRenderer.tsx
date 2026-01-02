@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card as AntCard, Typography, Space, Tag } from 'antd';
-import { AppstoreOutlined, CheckCircleOutlined, CloseCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { Card as AntCard, Typography } from 'antd';
+import { CheckCircleOutlined, CloseCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { EntitiesCard } from '../../types/dashboard';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 

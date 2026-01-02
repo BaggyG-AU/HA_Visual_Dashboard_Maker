@@ -216,7 +216,7 @@ export const convertLayoutCardToGridLayout = (view: View): Layout[] => {
  */
 export const convertGridLayoutToViewLayout = (
   layout: Layout[],
-  totalColumns: number = 12
+  totalColumns = 12
 ): Array<{ grid_column: string; grid_row: string }> => {
   return layout.map(item => {
     // Convert to CSS Grid 1-indexed positions

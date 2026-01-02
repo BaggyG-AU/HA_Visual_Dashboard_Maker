@@ -61,7 +61,7 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
   let maxH = 20;      // Maximum 20 rows
 
   switch (cardType) {
-    case 'entities':
+    case 'entities': {
       // Height based on number of entities + title
       // HA measurements from actual frontend: more compact than expected
       const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
@@ -82,6 +82,7 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       minW = 4;
       maxW = 12;
       break;
+    }
 
     case 'button':
       // Buttons are small and square-ish
@@ -94,7 +95,7 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       maxH = 4;
       break;
 
-    case 'glance':
+    case 'glance': {
       // Glance cards are compact horizontal displays
       const glanceEntities = Array.isArray(card.entities) ? card.entities.length : 0;
       const columns = card.columns || 5;
@@ -107,8 +108,9 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       minH = 2;
       maxH = 10;
       break;
+    }
 
-    case 'markdown':
+    case 'markdown': {
       // Estimate based on content length
       const content = card.content || '';
       const lines = content.split('\n').length;
@@ -120,8 +122,9 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       minH = 2;
       maxH = 20;
       break;
+    }
 
-    case 'custom:apexcharts-card':
+    case 'custom:apexcharts-card': {
       // Use configured height from apex_config
       const apexHeight = card.apex_config?.chart?.height || 280;
       const hasHeader = card.header?.show !== false;
@@ -137,9 +140,10 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       minH = 4;
       maxH = 20;
       break;
+    }
 
     case 'custom:power-flow-card-plus':
-    case 'custom:power-flow-card':
+    case 'custom:power-flow-card': {
       // Power flow cards are compact in HA - around 280px total
       const powerFlowTotalPx = 40 + 24 + 216;  // Header + padding + compact diagram
       height = Math.ceil(powerFlowTotalPx / 56);  // ≈ 5 rows
@@ -149,8 +153,9 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       minH = 4;
       maxH = 10;
       break;
+    }
 
-    case 'vertical-stack':
+    case 'vertical-stack': {
       // Sum heights of child cards
       const childCards = card.cards || [];
       height = childCards.reduce((total: number, child: any) => {
@@ -165,6 +170,7 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       minH = 4;
       maxH = 40;
       break;
+    }
 
     case 'horizontal-stack':
       // Horizontal stacks take full width
@@ -176,7 +182,7 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       maxH = 10;
       break;
 
-    case 'grid':
+    case 'grid': {
       // Grid cards with sub-cards
       const gridCards = card.cards || [];
       const gridColumns = card.columns || 2;
@@ -188,6 +194,7 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       minH = 4;
       maxH = 30;
       break;
+    }
 
     case 'thermostat':
       // Thermostats are medium sized (~250px in HA)

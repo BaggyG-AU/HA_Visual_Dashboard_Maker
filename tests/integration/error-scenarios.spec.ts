@@ -859,7 +859,7 @@ test.describe('Memory and Performance Errors', () => {
     };
 
     // Build a 12-level stack
-    let root: StackCard = { id: 'root', type: 'vertical-stack', cards: [] };
+    const root: StackCard = { id: 'root', type: 'vertical-stack', cards: [] };
     let current = root;
     for (let i = 0; i < 12; i++) {
       const next: StackCard = { id: `stack-${i}`, type: 'vertical-stack', cards: [] };

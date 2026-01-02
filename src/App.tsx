@@ -16,7 +16,6 @@ import { YamlEditorDialog } from './components/YamlEditorDialog';
 import { HADashboardIframe } from './components/HADashboardIframe';
 import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
-import { haWebSocketService } from './services/haWebSocketService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
 import { HAEntityProvider } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
@@ -65,11 +64,9 @@ const App: React.FC = () => {
     selectedCardIndex,
     loadDashboard,
     updateConfig,
-    clearDashboard,
     markClean,
     setSelectedView,
     setSelectedCard,
-    markDirty,
     undo,
     redo,
     canUndo,

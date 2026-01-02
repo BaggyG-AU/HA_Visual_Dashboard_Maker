@@ -4,6 +4,8 @@
  * Utilities for generating test dashboards, cards, and entities.
  */
 
+import * as yaml from 'js-yaml';
+
 export interface GeneratedDashboard {
   title: string;
   views: GeneratedView[];
@@ -274,7 +276,6 @@ export function generateCustomCardDashboard(): GeneratedDashboard {
  * Convert dashboard object to YAML string
  */
 export function dashboardToYAML(dashboard: GeneratedDashboard): string {
-  const yaml = require('js-yaml');
   return yaml.dump(dashboard, {
     lineWidth: 120,
     noRefs: true,
@@ -318,7 +319,7 @@ export function createCard(
  */
 export function createEntitiesCard(
   title: string,
-  entityCount: number = 3
+  entityCount = 3
 ): GeneratedCard {
   return createCard('entities', {
     title,

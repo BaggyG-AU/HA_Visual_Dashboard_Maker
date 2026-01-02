@@ -54,6 +54,7 @@ export default defineConfig({
   testIgnore: [
     '**/BACKUP_*/**',
     '**/*-MIGRATED.spec.ts', // Exclude migrated files (use originals)
+    '**/unit/**', // Unit tests are handled by Vitest
   ],
 
   // Global setup/teardown
@@ -81,6 +82,7 @@ export default defineConfig({
     {
       name: 'electron-unit',
       testMatch: '**/unit/**/*.spec.ts',
+      grep: /__ignore_unit_in_playwright__/, // prevent running unit specs under Playwright
     },
   ],
 
