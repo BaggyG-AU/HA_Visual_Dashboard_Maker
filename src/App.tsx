@@ -331,7 +331,8 @@ const App: React.FC = () => {
           const viewLayout = viewLayouts[index];
           if (viewLayout) {
             // Remove internal layout property and add view_layout
-            const { layout: _, ...cardWithoutLayout } = card as any;
+          const { layout: _layout, ...cardWithoutLayout } = card as any;
+          void _layout;
             return {
               ...cardWithoutLayout,
               view_layout: {
@@ -532,7 +533,8 @@ const App: React.FC = () => {
     }
 
     // Create new card from clipboard (remove old layout, will get new position)
-    const { layout: _, ...cardWithoutLayout } = clipboard.card;
+    const { layout: _layout, ...cardWithoutLayout } = clipboard.card;
+    void _layout;
     const pastedCard = {
       ...cardWithoutLayout,
       layout: {

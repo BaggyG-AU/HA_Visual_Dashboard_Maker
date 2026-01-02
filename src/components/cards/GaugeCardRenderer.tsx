@@ -1,6 +1,5 @@
 import React from 'react';
 import { Card as AntCard, Typography } from 'antd';
-import { DashboardOutlined } from '@ant-design/icons';
 import { GaugeCard } from '../../types/dashboard';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 

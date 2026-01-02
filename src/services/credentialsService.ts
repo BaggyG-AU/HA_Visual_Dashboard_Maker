@@ -131,7 +131,10 @@ class CredentialsService {
    */
   getAllCredentials(): Omit<HACredential, 'encryptedToken'>[] {
     const credentials = this.store.get('credentials', []);
-    return credentials.map(({ encryptedToken, ...rest }) => rest);
+    return credentials.map(({ encryptedToken: _encryptedToken, ...rest }) => {
+      void _encryptedToken;
+      return rest;
+    });
   }
 
   /**
@@ -232,7 +235,8 @@ class CredentialsService {
       return null;
     }
 
-    const { encryptedToken, ...rest } = credential;
+    const { encryptedToken: _encryptedToken, ...rest } = credential;
+    void _encryptedToken;
     return rest;
   }
 }

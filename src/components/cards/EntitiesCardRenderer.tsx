@@ -61,7 +61,7 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
   };
 
   // Format state value for display
-  const formatState = (state: string, domain: string) => {
+  const formatState = (state: string) => {
     // For binary states
     if (['on', 'off'].includes(state.toLowerCase())) {
       return state.charAt(0).toUpperCase() + state.slice(1);
@@ -127,7 +127,7 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
           // Get live state from HA
           const entityState = getEntity(entityId);
           const state = entityState?.state || 'unknown';
-          const stateDisplay = formatState(state, domain);
+          const stateDisplay = formatState(state);
 
           // Get unit of measurement from attributes
           const unit = entityState?.attributes?.unit_of_measurement || '';

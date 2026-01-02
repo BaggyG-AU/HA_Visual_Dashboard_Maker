@@ -3,7 +3,7 @@ import { Card as AntCard, Typography, Alert } from 'antd';
 import { FormatPainterOutlined, WarningOutlined } from '@ant-design/icons';
 import { CustomCard } from '../../types/dashboard';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 interface CardModCardRendererProps {
   card: CustomCard;

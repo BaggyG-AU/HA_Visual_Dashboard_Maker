@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card as AntCard, Typography, Space } from 'antd';
+import { Card as AntCard, Typography } from 'antd';
 import { DashboardOutlined, BulbOutlined } from '@ant-design/icons';
 import { GlanceCard } from '../../types/dashboard';
 

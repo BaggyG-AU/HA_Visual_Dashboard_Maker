@@ -222,7 +222,7 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
           justifyContent: 'center',
           flexWrap: 'wrap',
         }}>
-          {entityData.map((entity, index) => (
+          {entityData.map((entity) => (
             <div
               key={entity.entityId}
               style={{

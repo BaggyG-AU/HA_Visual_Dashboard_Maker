@@ -1,9 +1,9 @@
 import React from 'react';
-import { Card as AntCard, Typography, Space, Button } from 'antd';
-import { QuestionCircleOutlined, GithubOutlined } from '@ant-design/icons';
+import { Card as AntCard, Typography, Space } from 'antd';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import { Card } from '../../types/dashboard';
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 interface UnsupportedCardProps {
   card: Card;
@@ -20,9 +20,6 @@ export const UnsupportedCard: React.FC<UnsupportedCardProps> = ({
   isSelected = false,
   onClick,
 }) => {
-  const isCustomCard = card.type.startsWith('custom:');
-  const cardTypeName = isCustomCard ? card.type.replace('custom:', '') : card.type;
-
   return (
     <AntCard
       size="small"

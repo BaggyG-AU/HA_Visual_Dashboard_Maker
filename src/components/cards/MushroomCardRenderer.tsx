@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card as AntCard, Typography, Space } from 'antd';
+import { Card as AntCard, Typography } from 'antd';
 import {
   BulbOutlined,
   FireOutlined,
@@ -54,7 +54,6 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
   // Determine display properties
   const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Entity';
   const layout = card.layout || 'default'; // 'default' or 'horizontal'
-  const fillContainer = card.fill_container !== false;
   const hideState = card.hide_state === true;
   const hideIcon = card.hide_icon === true;
   const hideName = card.hide_name === true;

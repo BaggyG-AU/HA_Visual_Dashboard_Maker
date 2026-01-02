@@ -134,6 +134,7 @@ test.describe('Entity Caching', () => {
       }
 
       const initialCount = await ctx.entityBrowser.getRowCount();
+      void initialCount;
 
       await ctx.entityBrowser.clickRefresh();
       await ctx.window.waitForTimeout(1500);
@@ -226,6 +227,7 @@ test.describe('Entity Auto-Refresh on Connection', () => {
 
       if (statusText?.includes('Connected')) {
         const hasEntities = await ctx.entityBrowser.getRowCount() > 0;
+        void hasEntities;
       }
     } finally {
       await clearEntityCache(ctx.window);

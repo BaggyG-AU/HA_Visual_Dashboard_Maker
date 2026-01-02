@@ -10,7 +10,6 @@
  *   const { app, dashboard, palette, canvas, properties } = ctx;
  */
 
-import { Page } from '@playwright/test';
 import * as electron from './electron';
 import { AppDSL } from './dsl/app';
 import { DashboardDSL } from './dsl/dashboard';

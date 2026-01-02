@@ -31,6 +31,7 @@ test.describe('File Operations', () => {
       await ctx.appDSL.waitUntilReady();
       await ctx.dashboard.createNew();
       const baseTitle = await ctx.appDSL.getTitle();
+      void baseTitle; // TODO: assert dirty-title delta once indicator exists
 
       // Add a card to mark the dashboard dirty (reuse palette helper used in passing specs)
       await ctx.palette.expandCategory('Controls');

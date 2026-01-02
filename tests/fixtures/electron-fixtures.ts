@@ -65,21 +65,25 @@ async function waitForAppReady(page: Page): Promise<void> {
  * ```
  */
 export const test = base.extend<TestFixtures>({
-  /**
-   * Electron application fixture
-   * Launches app with proper storage isolation
-   */
+ /**
+  * Electron application fixture
+  * Launches app with proper storage isolation
+  */
+  // Playwright requires destructuring; disable empty pattern lint for this fixture arg.
+  // eslint-disable-next-line no-empty-pattern
   electronApp: async ({}, use) => {
     console.log('[FIXTURE] Launching Electron app...');
 
     // Per Phase 1 inspection: Main process is at .vite/build/main.js
     const mainPath = path.join(__dirname, '../../.vite/build/main.js');
     console.log('[FIXTURE] Main path:', mainPath);
+    const userDataDir = mkTempUserDataDir();
+    const wslFlags = ['--no-sandbox', '--disable-gpu'];
 
     // Launch EXACTLY like electron-helper.ts (which works)
     // DO NOT specify executablePath - let Playwright find electron
     const app = await electron.launch({
-      args: [mainPath],
+      args: [mainPath, `--user-data-dir=${userDataDir}`, ...wslFlags],
       env: {
         ...process.env,
         NODE_ENV: 'test',
@@ -89,11 +93,19 @@ export const test = base.extend<TestFixtures>({
 
     console.log('[FIXTURE] Electron app launched');
 
-    await use(app);
-
-    console.log('[FIXTURE] Closing Electron app...');
-    await app.close();
-    console.log('[FIXTURE] Electron app closed');
+    try {
+      await use(app);
+    } finally {
+      console.log('[FIXTURE] Closing Electron app...');
+      await app.close();
+      console.log('[FIXTURE] Electron app closed');
+      try {
+        fs.rmSync(userDataDir, { recursive: true, force: true });
+        console.log('[FIXTURE] Cleaned up user data dir:', userDataDir);
+      } catch (error) {
+        console.warn('[FIXTURE] Failed to cleanup user data dir:', error);
+      }
+    }
   },
 
   /**

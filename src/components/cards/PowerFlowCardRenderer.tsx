@@ -88,8 +88,7 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
     label: string;
     value: number;
     color: string;
-    entity?: PowerFlowEntity;
-  }> = ({ icon, label, value, color, entity }) => (
+  }> = ({ icon, label, value, color }) => (
     <div
       style={{
         display: 'flex',

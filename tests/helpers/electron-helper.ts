@@ -131,6 +131,7 @@ export async function waitForReactHydration(window: Page, timeout = 10000): Prom
  * REVERTED to original working version
  */
 export async function waitForAppReady(window: Page, timeout = 10000): Promise<void> {
+  void timeout;
   try {
     // Wait for React to render (body should have content)
     await window.waitForSelector('body', { timeout: 5000 });

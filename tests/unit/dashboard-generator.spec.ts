@@ -4,10 +4,25 @@ import {
   dashboardGeneratorService,
   Entity,
 } from '../../src/services/dashboardGeneratorService';
+import { Card } from '../../src/types/dashboard';
 import {
   sampleEntities,
   withExtraLights,
 } from './fixtures/entities';
+
+type Layout = { x: number; y: number; w: number; h: number };
+type LayoutCard = Card & { layout: Layout };
+
+const isLayoutCard = (card: Card | undefined): card is LayoutCard => {
+  if (!card) return false;
+  const candidate = (card as Record<string, unknown>).layout;
+  if (!candidate || typeof candidate !== 'object') return false;
+
+  const layout = candidate as Record<string, unknown>;
+  return ['x', 'y', 'w', 'h'].every(
+    key => typeof layout[key] === 'number'
+  );
+};
 
 describe('dashboardGeneratorService', () => {
   it('filters available categories by required domains', () => {
@@ -73,11 +88,13 @@ describe('dashboardGeneratorService', () => {
     expect(config).not.toBeNull();
     expect(config?.views).toHaveLength(1);
     const view = config?.views[0];
-    expect(view.path).toBe('lights');
-    expect(Array.isArray((view as any).cards)).toBe(true);
+    expect(view?.path).toBe('lights');
+    expect(Array.isArray(view?.cards)).toBe(true);
 
-    const cards = (view as any).cards;
-    cards.forEach((card: any) => {
+    const cards = view?.cards ?? [];
+    const positionedCards = cards.filter(isLayoutCard);
+    expect(positionedCards.length).toBe(cards.length);
+    positionedCards.forEach((card) => {
       expect([0, 6]).toContain(card.layout.x);
       expect(card.layout.w).toBe(6);
       expect(card.layout.h).toBe(4);
@@ -85,7 +102,7 @@ describe('dashboardGeneratorService', () => {
 
     // y positions should increment every row (2 cards per row)
     const rows = new Map<number, number>();
-    cards.forEach((card: any) => {
+    positionedCards.forEach((card) => {
       rows.set(card.layout.y, (rows.get(card.layout.y) || 0) + 1);
     });
     rows.forEach(countInRow => expect(countInRow).toBeLessThanOrEqual(2));
