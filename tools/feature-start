@@ -36,3 +36,4 @@ git push -u origin "$BRANCH" || true
 
 echo "==> Done."
 echo "You are now on: $(git branch --show-current)"
+echo "Use prompt: prompts/claude/feature-development.md"

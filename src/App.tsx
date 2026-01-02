@@ -22,6 +22,7 @@ import { HAEntityProvider } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
 import { ThemeSettingsDialog } from './components/ThemeSettingsDialog';
 import { ThemePreviewPanel } from './components/ThemePreviewPanel';
+import { NewDashboardDialog } from './components/NewDashboardDialog';
 import { useThemeStore } from './store/themeStore';
 import { themeService } from './services/themeService';
 
@@ -40,6 +41,7 @@ const App: React.FC = () => {
   const [entityBrowserVisible, setEntityBrowserVisible] = useState<boolean>(false);
   const [entityInsertCallback, setEntityInsertCallback] = useState<((entityId: string) => void) | null>(null);
   const [themeSettingsVisible, setThemeSettingsVisible] = useState<boolean>(false);
+  const [newDashboardDialogVisible, setNewDashboardDialogVisible] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [livePreviewMode, setLivePreviewMode] = useState<boolean>(false);
   const [tempDashboardPath, setTempDashboardPath] = useState<string | null>(null);
@@ -746,10 +748,10 @@ const App: React.FC = () => {
         okText: 'Create New',
         cancelText: 'Cancel',
         okButtonProps: { danger: true },
-        onOk: () => createNewDashboard(),
+        onOk: () => setNewDashboardDialogVisible(true),
       });
     } else {
-      createNewDashboard();
+      setNewDashboardDialogVisible(true);
     }
   };
 
@@ -775,6 +777,25 @@ const App: React.FC = () => {
     const yamlContent = yamlService.serializeDashboard(blankDashboard);
     loadDashboard(yamlContent, null); // null filePath means it's unsaved
     message.success('New blank dashboard created!');
+  };
+
+  const handleCreateFromTemplate = () => {
+    // TODO: Implement template selection dialog
+    message.info('Template selection coming soon! For now, creating a blank dashboard.');
+    createNewDashboard();
+  };
+
+  const handleCreateFromEntityType = (dashboardYaml: string, title: string) => {
+    loadDashboard(dashboardYaml, null); // null filePath means it's unsaved
+
+    // Parse to get card count for success message
+    const result = yamlService.parseDashboard(dashboardYaml);
+    const cardCount = result.success && result.data?.views[0]?.cards?.length || 0;
+
+    message.success({
+      content: `${title} created successfully! ${cardCount} cards added.`,
+      duration: 3,
+    });
   };
 
   const handleOpenYamlEditor = () => {
@@ -1376,6 +1397,14 @@ const App: React.FC = () => {
       <ThemeSettingsDialog
         visible={themeSettingsVisible}
         onClose={() => setThemeSettingsVisible(false)}
+      />
+      <NewDashboardDialog
+        visible={newDashboardDialogVisible}
+        onClose={() => setNewDashboardDialogVisible(false)}
+        onCreateBlank={createNewDashboard}
+        onCreateFromTemplate={handleCreateFromTemplate}
+        onCreateFromEntityType={handleCreateFromEntityType}
+        isConnected={isConnected}
       />
       </HAEntityProvider>
     </ConfigProvider>

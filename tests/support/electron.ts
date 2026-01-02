@@ -24,6 +24,27 @@ export interface ElectronTestContext {
 }
 
 /**
+ * Find the main app window, filtering out DevTools (which can appear first)
+ */
+async function findMainWindow(app: ElectronApplication, timeoutMs = 15000): Promise<Page> {
+  const start = Date.now();
+
+  while (Date.now() - start < timeoutMs) {
+    await Promise.race([
+      app.waitForEvent('window').catch(() => undefined),
+      new Promise((resolve) => setTimeout(resolve, 250)),
+    ]);
+
+    const window = app.windows().find((page) => !page.url().startsWith('devtools://'));
+    if (window) {
+      return window;
+    }
+  }
+
+  throw new Error('Could not find main app window (non-DevTools)');
+}
+
+/**
  * Create isolated temporary user data directory
  * Ensures no state leakage between tests
  */
@@ -61,17 +82,8 @@ export async function launch(): Promise<ElectronTestContext> {
     },
   });
 
-  const isMainWindow = (page: Page) => {
-    const url = page.url();
-    if (url.startsWith('devtools://')) return false;
-    return url.includes('main_window/index.html') || url.includes('index.html') || url === 'about:blank';
-  };
-
   // Prefer an already-open main window if available; otherwise wait for one
-  let window = app.windows().find(isMainWindow);
-  if (!window) {
-    window = await app.waitForEvent('window', isMainWindow);
-  }
+  const window = await findMainWindow(app);
 
   // Wait for renderer to load its DOM
   await window.waitForLoadState('domcontentloaded');

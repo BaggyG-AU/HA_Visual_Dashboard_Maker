@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FEATURE_NAME="${1:-}"
+if [[ -z "$FEATURE_NAME" ]]; then
+  echo "Usage: tools/test-start <feature_name>"
+  exit 1
+fi
+
+FEATURE_BRANCH="feature/${FEATURE_NAME// /-}"
+TEST_BRANCH="test/${FEATURE_NAME// /-}"
+
+echo "==> Checking git status..."
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "ERROR: You have uncommitted changes. Commit or stash first."
+  git status --porcelain
+  exit 1
+fi
+
+echo "==> Fetching latest..."
+git fetch origin
+
+echo "==> Switching to main and updating..."
+git checkout main
+git pull --ff-only origin main
+
+echo "==> Checking out feature branch: $FEATURE_BRANCH"
+# Prefer local branch if it exists; otherwise try to create from origin
+if git show-ref --verify --quiet "refs/heads/$FEATURE_BRANCH"; then
+  git checkout "$FEATURE_BRANCH"
+else
+  if git show-ref --verify --quiet "refs/remotes/origin/$FEATURE_BRANCH"; then
+    git checkout -b "$FEATURE_BRANCH" "origin/$FEATURE_BRANCH"
+  else
+    echo "ERROR: Feature branch '$FEATURE_BRANCH' not found locally or on origin."
+    echo "Run feature-start first:"
+    echo "  tools/feature-start \"$FEATURE_NAME\""
+    exit 1
+  fi
+fi
+
+echo "==> Updating feature branch from origin (fast-forward if possible)..."
+git pull --ff-only origin "$FEATURE_BRANCH" || true
+
+echo "==> Creating/switching to test branch: $TEST_BRANCH (from $FEATURE_BRANCH)"
+if git show-ref --verify --quiet "refs/heads/$TEST_BRANCH"; then
+  git checkout "$TEST_BRANCH"
+  echo "NOTE: Test branch already exists locally; checked out existing branch."
+else
+  git checkout -b "$TEST_BRANCH"
+fi
+
+echo "==> Pushing test branch upstream (if not present)..."
+git push -u origin "$TEST_BRANCH" || true
+
+echo "==> Done."
+echo "You are now on: $(git branch --show-current)"
+echo "Base feature branch: $FEATURE_BRANCH"
+echo "Use prompt: prompts/codex/playwright-fix.md"

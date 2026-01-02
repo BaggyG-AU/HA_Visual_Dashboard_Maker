@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FEATURE_NAME="${1:-}"
+if [[ -z "$FEATURE_NAME" ]]; then
+  echo "Usage: tools/test-finish <feature_name>"
+  exit 1
+fi
+
+FEATURE_BRANCH="feature/${FEATURE_NAME// /-}"
+TEST_BRANCH="test/${FEATURE_NAME// /-}"
+CURRENT="$(git branch --show-current)"
+
+if [[ "$CURRENT" != "$TEST_BRANCH" ]]; then
+  echo "ERROR: You are on '$CURRENT' but expected '$TEST_BRANCH'."
+  echo "Switch to the test branch and try again:"
+  echo "  git checkout $TEST_BRANCH"
+  exit 1
+fi
+
+echo "==> Checking uncommitted changes..."
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "ERROR: Uncommitted changes exist. Commit them before finishing."
+  git status --porcelain
+  exit 1
+fi
+
+echo "==> Fetching latest..."
+git fetch origin
+
+echo "==> Ensuring test branch is up to date with origin..."
+git pull --ff-only origin "$TEST_BRANCH" || true
+
+echo "==> Rebasing test branch onto latest feature branch..."
+# Ensure we rebase onto the remote-tracking feature branch to pick up latest changes
+if git show-ref --verify --quiet "refs/remotes/origin/$FEATURE_BRANCH"; then
+  git rebase "origin/$FEATURE_BRANCH" || {
+    echo "ERROR: Rebase failed due to conflicts."
+    echo "Resolve conflicts, then run:"
+    echo "  git rebase --continue"
+    exit 1
+  }
+else
+  echo "WARNING: origin/$FEATURE_BRANCH not found. Rebasing onto local $FEATURE_BRANCH if present..."
+  if git show-ref --verify --quiet "refs/heads/$FEATURE_BRANCH"; then
+    git rebase "$FEATURE_BRANCH" || {
+      echo "ERROR: Rebase failed due to conflicts."
+      echo "Resolve conflicts, then run:"
+      echo "  git rebase --continue"
+      exit 1
+    }
+  else
+    echo "ERROR: Feature branch '$FEATURE_BRANCH' not found."
+    exit 1
+  fi
+fi
+
+echo "==> Running standard checks..."
+if [[ -x "./tools/checks" ]]; then
+  ./tools/checks
+else
+  echo "ERROR: ./tools/checks not found or not executable."
+  echo "Fix with:"
+  echo "  chmod +x tools/checks"
+  exit 1
+fi
+
+echo "==> Merging test fixes back into feature branch..."
+git checkout "$FEATURE_BRANCH"
+git pull --ff-only origin "$FEATURE_BRANCH" || true
+
+git merge --no-ff "$TEST_BRANCH" -m "Merge $TEST_BRANCH into $FEATURE_BRANCH" || {
+  echo "ERROR: Merge failed."
+  exit 1
+}
+
+echo "==> Pushing feature branch..."
+git push origin "$FEATURE_BRANCH"
+
+echo "==> (Optional) Deleting test branch..."
+git branch -d "$TEST_BRANCH" || true
+git push origin --delete "$TEST_BRANCH" || true
+
+echo "==> Done. Test fixes merged into feature branch and test branch cleaned up."
+echo "Next step (when ready): tools/feature-finish \"$FEATURE_NAME\""

@@ -10,14 +10,18 @@ Use this page to navigate project docs. Follow the storage standards in `ai_rule
 - **Testing**: `docs/testing/`  
   - Playwright commands and DSL overview: `PLAYWRIGHT_TESTING.md`  
   - Mandatory standards: `TESTING_STANDARDS.md`
-- **Releases**: `docs/releases/`  
-  - Release process: `RELEASES.md`  
-  - Latest notes: `RELEASE_NOTES_v0.2.0-beta.1.md`  
+- **Releases**: `docs/releases/`
+  - Release process: `RELEASES.md`
+  - Latest notes: `RELEASE_NOTES_v0.3.0-beta.1.md`
+  - Previous: `RELEASE_NOTES_v0.2.0-beta.2.md`, `RELEASE_NOTES_v0.2.0-beta.1.md`
   - Older notes archived under `docs/archive/releases/`
-- **Product**: `docs/product/`  
-  - Roadmap: `PROJECT_PLAN.md`  
+- **Product**: `docs/product/`
+  - Roadmap: `PROJECT_PLAN.md`
   - Templates overview: `TEMPLATES.md`
-- **Research**: `docs/research/`  
+  - Entity Type Dashboard Generator: `Entity-type dashboard generator.md`
+- **Features**: `docs/features/`
+  - Entity Type Dashboard Generator: `ENTITY_TYPE_DASHBOARD_GENERATOR.md`
+- **Research**: `docs/research/`
   - Home Assistant WebSocket API research
 - **Archive**: `docs/archive/`  
   - Legacy release notes and research/diagnostics
