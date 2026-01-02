@@ -1,6 +1,6 @@
 # Releases
 
-Repo versioning follows the `package.json` version and annotated git tags. Current package version: `0.2.0-beta.2`; next tag should match the version bump (e.g., `v0.2.0-beta.3` or higher).
+Repo versioning follows the `package.json` version and annotated git tags. Current package version: `0.3.0-beta.1`; next tag should match the version bump (e.g., `v0.3.0-beta.2` or higher).
 
 ## Preconditions
 - All tests green:
