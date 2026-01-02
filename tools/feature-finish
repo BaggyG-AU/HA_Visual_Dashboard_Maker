@@ -19,7 +19,7 @@ fi
 
 echo "==> Checking uncommitted changes..."
 if [[ -n "$(git status --porcelain)" ]]; then
-  echo "ERROR: Uncommitted changes exist. Commit them before finishing."
+  echo "ERROR: Uncommitted changes exist. Commit or stash them before finishing."
   git status --porcelain
   exit 1
 fi
@@ -27,15 +27,18 @@ fi
 echo "==> Fetching latest..."
 git fetch origin
 
-echo "==> Ensuring branch is up to date with origin..."
+echo "==> Ensuring feature branch is up to date with origin (fast-forward only)..."
+# If the remote has moved, this will fail; user must reconcile (rebase/merge) explicitly.
 git pull --ff-only origin "$BRANCH" || true
 
-echo "==> Rebase onto latest main (clean history, reduces merge conflicts)..."
-git checkout "$BRANCH"
+echo "==> Rebasing feature branch onto latest main (recommended)..."
+# Keep history clean and reduce merge conflicts in the PR.
 git rebase origin/main || {
   echo "ERROR: Rebase failed due to conflicts."
   echo "Resolve conflicts, then run:"
   echo "  git rebase --continue"
+  echo "Or abort with:"
+  echo "  git rebase --abort"
   exit 1
 }
 
@@ -49,20 +52,35 @@ else
   exit 1
 fi
 
-echo "==> Merging into main..."
-git checkout main
-git pull --ff-only origin main
-
-git merge --no-ff "$BRANCH" -m "Merge $BRANCH" || {
-  echo "ERROR: Merge failed."
+echo "==> Pushing feature branch..."
+git push origin "$BRANCH" || {
+  echo "ERROR: Push failed."
+  echo "If you rebased and the remote branch has older history, you may need:"
+  echo "  git push --force-with-lease"
   exit 1
 }
 
-echo "==> Pushing main..."
-git push origin main
+echo ""
+echo "==> Next step: Merge via Pull Request (main is protected)."
+echo "Open PR: base=main  compare=$BRANCH"
+echo ""
 
-echo "==> (Optional) Deleting feature branch..."
-git branch -d "$BRANCH" || true
-git push origin --delete "$BRANCH" || true
+# Optional: auto-create PR if GitHub CLI is installed and authenticated.
+if command -v gh >/dev/null 2>&1; then
+  echo "==> GitHub CLI (gh) detected. Creating PR (if one doesn't already exist)..."
+  # Create PR; if it already exists, gh will print an error; we don't want to fail the script.
+  gh pr create \
+    --base main \
+    --head "$BRANCH" \
+    --title "$FEATURE_NAME" \
+    --body "## Summary\n\n## Changes\n\n## Testing\n\n- ./tools/checks\n" \
+    2>/dev/null || true
 
-echo "==> Done. main updated and feature branch cleaned up."
+  echo "==> Opening PR in browser..."
+  gh pr view --web 2>/dev/null || true
+else
+  echo "TIP: Install GitHub CLI to auto-create/open PRs: https://cli.github.com/"
+fi
+
+echo ""
+echo "==> Done. Feature branch pushed; merge via PR once CI passes."
