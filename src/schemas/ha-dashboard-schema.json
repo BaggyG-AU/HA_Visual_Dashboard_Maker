@@ -1,0 +1,474 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://home-assistant.io/schemas/dashboard.json",
+  "title": "Home Assistant Dashboard Configuration",
+  "description": "Schema for Home Assistant Lovelace dashboard YAML configuration (HA 2025.12+)",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Dashboard title shown in the sidebar"
+    },
+    "views": {
+      "type": "array",
+      "description": "Array of dashboard views (tabs)",
+      "items": {
+        "$ref": "#/definitions/view"
+      },
+      "minItems": 1
+    },
+    "background": {
+      "type": "string",
+      "description": "Background image or color for the dashboard"
+    },
+    "theme": {
+      "type": "string",
+      "description": "Theme name to apply to this dashboard"
+    }
+  },
+  "required": ["views"],
+  "additionalProperties": true,
+  "definitions": {
+    "view": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "View title (tab label)"
+        },
+        "path": {
+          "type": "string",
+          "description": "URL path for this view",
+          "pattern": "^[a-z0-9_-]+$"
+        },
+        "icon": {
+          "type": "string",
+          "description": "MDI icon for the view tab (e.g., mdi:home)"
+        },
+        "type": {
+          "type": "string",
+          "description": "View layout type",
+          "enum": [
+            "masonry",
+            "sidebar",
+            "panel",
+            "sections",
+            "custom:grid-layout"
+          ],
+          "default": "masonry"
+        },
+        "theme": {
+          "type": "string",
+          "description": "Theme to apply to this specific view"
+        },
+        "visible": {
+          "type": "boolean",
+          "description": "Whether the view is visible",
+          "default": true
+        },
+        "badges": {
+          "type": "array",
+          "description": "Badge entities to show in view header",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "Entity ID"
+              },
+              {
+                "$ref": "#/definitions/badge"
+              }
+            ]
+          }
+        },
+        "cards": {
+          "type": "array",
+          "description": "Cards displayed in this view",
+          "items": {
+            "$ref": "#/definitions/card"
+          }
+        },
+        "layout": {
+          "type": "object",
+          "description": "Layout configuration for custom:grid-layout",
+          "properties": {
+            "grid_template_columns": {
+              "type": "string",
+              "description": "CSS grid template columns",
+              "default": "repeat(12, 1fr)"
+            },
+            "grid_template_rows": {
+              "type": "string",
+              "description": "CSS grid template rows",
+              "default": "repeat(auto-fill, 56px)"
+            },
+            "grid_gap": {
+              "type": "string",
+              "description": "Gap between grid cells",
+              "default": "8px"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "badge": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "type": "string",
+          "description": "Entity ID to display"
+        },
+        "name": {
+          "type": "string",
+          "description": "Override badge name"
+        },
+        "icon": {
+          "type": "string",
+          "description": "Override badge icon"
+        }
+      },
+      "required": ["entity"],
+      "additionalProperties": true
+    },
+    "card": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Card type",
+          "enum": [
+            "alarm-panel",
+            "area",
+            "button",
+            "calendar",
+            "conditional",
+            "entities",
+            "entity",
+            "energy",
+            "gauge",
+            "glance",
+            "grid",
+            "heading",
+            "history-graph",
+            "horizontal-stack",
+            "humidifier",
+            "iframe",
+            "light",
+            "logbook",
+            "map",
+            "markdown",
+            "media-control",
+            "picture",
+            "picture-elements",
+            "picture-entity",
+            "picture-glance",
+            "plant-status",
+            "sensor",
+            "shopping-list",
+            "statistic",
+            "statistics-graph",
+            "thermostat",
+            "tile",
+            "todo-list",
+            "vertical-stack",
+            "weather-forecast",
+            "custom:apexcharts-card",
+            "custom:auto-entities",
+            "custom:button-card",
+            "custom:card-mod",
+            "custom:frigate-card",
+            "custom:camera-card",
+            "custom:webrtc-camera",
+            "custom:surveillance-card",
+            "custom:grid-layout",
+            "custom:layout-card",
+            "custom:mini-graph-card",
+            "custom:mini-media-player",
+            "custom:mushroom-entity-card",
+            "custom:mushroom-template-card",
+            "custom:mushroom-person-card",
+            "custom:mushroom-switch-card",
+            "custom:mushroom-number-card",
+            "custom:mushroom-select-card",
+            "custom:mushroom-vacuum-card",
+            "custom:vertical-stack-in-card"
+          ]
+        },
+        "entity": {
+          "type": "string",
+          "description": "Entity ID for single-entity cards",
+          "pattern": "^[a-z_]+\\.[a-z0-9_]+$"
+        },
+        "entities": {
+          "type": "array",
+          "description": "List of entities for multi-entity cards",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z_]+\\.[a-z0-9_]+$"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "entity": {
+                    "type": "string",
+                    "pattern": "^[a-z_]+\\.[a-z0-9_]+$"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "icon": {
+                    "type": "string"
+                  },
+                  "secondary_info": {
+                    "type": "string",
+                    "enum": ["entity-id", "last-changed", "last-triggered", "last-updated", "none"]
+                  }
+                },
+                "required": ["entity"],
+                "additionalProperties": true
+              }
+            ]
+          }
+        },
+        "name": {
+          "type": "string",
+          "description": "Card name/title"
+        },
+        "title": {
+          "type": "string",
+          "description": "Card title (header)"
+        },
+        "icon": {
+          "type": "string",
+          "description": "MDI icon (e.g., mdi:lightbulb)"
+        },
+        "image": {
+          "type": "string",
+          "description": "Image URL"
+        },
+        "camera_image": {
+          "type": "string",
+          "description": "Camera entity ID for camera image",
+          "pattern": "^camera\\.[a-z0-9_]+$"
+        },
+        "show_name": {
+          "type": "boolean",
+          "description": "Whether to show entity name",
+          "default": true
+        },
+        "show_state": {
+          "type": "boolean",
+          "description": "Whether to show entity state",
+          "default": true
+        },
+        "show_icon": {
+          "type": "boolean",
+          "description": "Whether to show icon",
+          "default": true
+        },
+        "tap_action": {
+          "$ref": "#/definitions/action",
+          "description": "Action on tap/click"
+        },
+        "hold_action": {
+          "$ref": "#/definitions/action",
+          "description": "Action on long press"
+        },
+        "double_tap_action": {
+          "$ref": "#/definitions/action",
+          "description": "Action on double tap"
+        },
+        "cards": {
+          "type": "array",
+          "description": "Nested cards (for stack/grid cards)",
+          "items": {
+            "$ref": "#/definitions/card"
+          }
+        },
+        "layout": {
+          "type": "object",
+          "description": "Grid layout positioning (internal property)",
+          "properties": {
+            "x": {
+              "type": "integer",
+              "description": "X position in grid",
+              "minimum": 0
+            },
+            "y": {
+              "type": "integer",
+              "description": "Y position in grid",
+              "minimum": 0
+            },
+            "w": {
+              "type": "integer",
+              "description": "Width in grid columns",
+              "minimum": 1,
+              "default": 6
+            },
+            "h": {
+              "type": "integer",
+              "description": "Height in grid rows",
+              "minimum": 1,
+              "default": 4
+            }
+          },
+          "additionalProperties": false
+        },
+        "view_layout": {
+          "type": "object",
+          "description": "View layout positioning (HA native grid)",
+          "properties": {
+            "grid_column": {
+              "type": "string",
+              "description": "CSS grid-column value (e.g., '1 / 7')"
+            },
+            "grid_row": {
+              "type": "string",
+              "description": "CSS grid-row value (e.g., '1 / 5')"
+            }
+          },
+          "additionalProperties": false
+        },
+        "content": {
+          "type": "string",
+          "description": "Markdown content (for markdown cards)"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL (for iframe/webpage cards)",
+          "format": "uri"
+        },
+        "theme": {
+          "type": "string",
+          "description": "Theme to apply to this card"
+        },
+        "style": {
+          "type": ["string", "object"],
+          "description": "CSS styles (for card-mod)"
+        },
+        "card_mod": {
+          "type": "object",
+          "description": "Card-mod styling configuration",
+          "additionalProperties": true
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": true
+    },
+    "action": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "none",
+            "more-info",
+            "toggle",
+            "call-service",
+            "navigate",
+            "url",
+            "assist"
+          ],
+          "default": "more-info"
+        },
+        "navigation_path": {
+          "type": "string",
+          "description": "Path for navigate action"
+        },
+        "url_path": {
+          "type": "string",
+          "description": "URL for url action",
+          "format": "uri"
+        },
+        "service": {
+          "type": "string",
+          "description": "Service to call (e.g., light.turn_on)",
+          "pattern": "^[a-z_]+\\.[a-z_]+$"
+        },
+        "service_data": {
+          "type": "object",
+          "description": "Service call data",
+          "additionalProperties": true
+        },
+        "target": {
+          "type": "object",
+          "description": "Service call target",
+          "properties": {
+            "entity_id": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "device_id": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "area_id": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        "confirmation": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "exemptions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "user": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "description": "Confirmation dialog configuration"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

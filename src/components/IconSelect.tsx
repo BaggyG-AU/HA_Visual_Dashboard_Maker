@@ -173,8 +173,11 @@ export const IconSelect: React.FC<IconSelectProps> = ({
         onSearch={setSearchText}
         options={options}
         style={{ width: '100%' }}
-        dropdownStyle={{
-          backgroundColor: '#1f1f1f',
+        popupClassName="icon-select-dropdown"
+        styles={{
+          dropdown: {
+            backgroundColor: '#1f1f1f',
+          },
         }}
         suffixIcon={<SearchOutlined />}
         notFoundContent={

@@ -11,6 +11,7 @@
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 // eslint-disable-next-line import/no-unresolved
 import YamlWorker from 'monaco-yaml/yaml.worker?worker';
+import dashboardSchema from './schemas/ha-dashboard-schema.json';
 
 type WorkerConstructor = new () => Worker;
 const editorWorkerCtor = EditorWorker as unknown as WorkerConstructor;
@@ -31,3 +32,28 @@ monacoGlobal.MonacoEnvironment = {
     return new editorWorkerCtor();
   },
 };
+
+/**
+ * Configure YAML language server with Home Assistant dashboard schema
+ * This enables autocomplete and validation for HA dashboard YAML files
+ */
+export async function configureYamlSchema() {
+  // Dynamically import setDiagnosticsOptions from monaco-yaml
+  const { setDiagnosticsOptions } = await import('monaco-yaml');
+
+  setDiagnosticsOptions({
+    enableSchemaRequest: true,
+    hover: true,
+    completion: true,
+    validate: true,
+    format: true,
+    schemas: [
+      {
+        // Match files that look like dashboard YAML
+        uri: 'https://home-assistant.io/schemas/dashboard.json',
+        fileMatch: ['*'],
+        schema: dashboardSchema,
+      },
+    ],
+  });
+}

@@ -379,58 +379,48 @@ test.describe('Monaco Editor Features', () => {
       await ctx.dashboard.createNew();
       await ctx.yamlEditor.open();
 
-      const editor = ctx.window.locator('.monaco-editor');
-      await expect(editor).toBeVisible({ timeout: 10000 });
-
-      // Ensure Monaco editor instance exists and focus it via API (avoids IME-only textarea clicks)
-      await ctx.window.waitForFunction(
-        () => Boolean((window as any).__monacoEditor),
-        null,
-        { timeout: 10000 }
-      );
-      await ctx.window.evaluate(() => (window as any).__monacoEditor?.focus?.());
-
-      // Confirm focus is inside Monaco (any descendant)
-      await expect
-        .poll(() =>
-          ctx.window.evaluate(() => {
-            const el = document.activeElement as HTMLElement | null;
-            return {
-              tag: el?.tagName.toLowerCase() || '',
-              className: el?.className || '',
-              ariaHidden: el?.getAttribute?.('aria-hidden') || '',
-              readOnly: (el as HTMLTextAreaElement | null)?.readOnly ?? null,
-              inMonaco: !!el?.closest('.monaco-editor')
-            };
-          })
-        )
-        .toMatchObject({ inMonaco: true });
-
-      // Ensure model exists before typing
+      // Ensure model exists before we manipulate it
       await ctx.window.waitForFunction(
         () => Boolean((window as any).monaco?.editor?.getModels?.()[0]),
         null,
         { timeout: 10000 }
       );
 
-      await ctx.window.keyboard.type('test_line');
-      await expect.poll(() => ctx.yamlEditor.getEditorContent()).toContain('test_line');
+      // Capture initial content, append a marker, then verify undo/redo restores it
+      const { initialContent, appendedContent } = await ctx.window.evaluate(() => {
+        const model = (window as any).monaco?.editor?.getModels?.()[0];
+        const current = model?.getValue?.() ?? '';
+        const lastLine = model?.getLineCount?.() ?? 1;
+        const lastCol = model?.getLineMaxColumn?.(lastLine) ?? 1;
+        const insertText = '\n# test_line';
+        // Use Monaco edit operations so undo/redo is tracked
+        model?.pushEditOperations?.(
+          [],
+          [
+            {
+              range: new (window as any).monaco.Range(lastLine, lastCol, lastLine, lastCol),
+              text: insertText,
+              forceMoveMarkers: true,
+            },
+          ],
+          () => null
+        );
+        return { initialContent: current, appendedContent: `${current}${insertText}` };
+      });
 
-      // Use Monaco model operations directly to avoid platform-specific keybindings
+      await expect.poll(() => ctx.yamlEditor.getEditorContent()).toBe(appendedContent);
+
       await ctx.window.evaluate(() => {
         const model = (window as any).monaco?.editor?.getModels?.()[0];
         model?.undo?.();
       });
-      await expect
-        .poll(() => ctx.yamlEditor.getEditorContent())
-        .not.toContain('test_line');
+      await expect.poll(() => ctx.yamlEditor.getEditorContent()).toBe(initialContent);
 
       await ctx.window.evaluate(() => {
         const model = (window as any).monaco?.editor?.getModels?.()[0];
         model?.redo?.();
       });
-      await expect.poll(() => ctx.yamlEditor.getEditorContent()).toContain('test_line');
-
+      await expect.poll(() => ctx.yamlEditor.getEditorContent()).toBe(appendedContent);
     } finally {
       await close(ctx);
     }

@@ -381,31 +381,28 @@ test.describe('Entity Browser Integration with YAML Editors', () => {
       await seedEntityCache(ctx.window);
       await ctx.dashboard.createNew();
       await ctx.yamlEditor.open();
+      await ctx.yamlEditor.focusCursorAtEnd();
 
       const initialContent = await ctx.yamlEditor.getEditorContent();
 
-      const monacoEditor = ctx.window.locator('.monaco-editor').first();
-      await monacoEditor.click({ position: { x: 100, y: 100 } });
-      await ctx.window.waitForTimeout(200);
+      await ctx.entityBrowser.openFromInsertButton();
+      await ctx.entityBrowser.expectTableVisible();
 
-      await ctx.yamlEditor.clickInsertEntity();
+      const selectedEntityId = await ctx.entityBrowser.selectFirstRow();
+      await ctx.entityBrowser.expectSelectButtonEnabled();
+      await ctx.entityBrowser.clickSelectEntity();
+      await ctx.entityBrowser.expectClosed();
 
-      const rows = ctx.window.locator('.ant-table-row');
-      const rowCount = await rows.count();
+      expect(selectedEntityId).toBeTruthy();
 
-      if (rowCount > 0) {
-        const firstRowRadioInput = rows.first().locator('input[type="radio"]');
-        await firstRowRadioInput.check({ force: true });
-        await ctx.window.waitForTimeout(300);
+      await expect
+        .poll(async () => ctx.yamlEditor.getEditorContent(), {
+          timeout: 4000,
+        })
+        .not.toBe(initialContent);
 
-        await ctx.entityBrowser.clickSelectEntity();
-
-        const entityBrowserModal = ctx.window.locator('.ant-modal:has-text("Entity Browser")');
-        await expect(entityBrowserModal).not.toBeVisible();
-
-        const newContent = await ctx.yamlEditor.getEditorContent();
-        expect(newContent).not.toBe(initialContent);
-      }
+      const newContent = await ctx.yamlEditor.getEditorContent();
+      expect(newContent).toContain(selectedEntityId as string);
     } finally {
       await clearEntityCache(ctx.window);
       await close(ctx);
