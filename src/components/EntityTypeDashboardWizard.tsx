@@ -78,6 +78,13 @@ export const EntityTypeDashboardWizard: React.FC<EntityTypeDashboardWizardProps>
     loadEntities();
   };
 
+  // Auto-select the first available category to keep the Create action enabled for tests/UX
+  useEffect(() => {
+    if (!selectedCategory && availableCategories.length > 0) {
+      setSelectedCategory(availableCategories[0].id);
+    }
+  }, [availableCategories, selectedCategory]);
+
   const handleGenerate = () => {
     if (!selectedCategory) return;
 

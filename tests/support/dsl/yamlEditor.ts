@@ -58,6 +58,27 @@ export class YamlEditorDSL {
   }
 
   /**
+   * Focus the Monaco editor and move the cursor to the end of the document
+   */
+  async focusCursorAtEnd(): Promise<void> {
+    await this.waitForMonacoReady();
+
+    await this.window.evaluate(() => {
+      const editor =
+        (window as any).__monacoEditor ||
+        (window as any).monaco?.editor?.getEditors?.()?.[0];
+      const model = editor?.getModel?.();
+
+      if (editor && model) {
+        const lastLine = model.getLineCount();
+        const lastColumn = model.getLineMaxColumn(lastLine);
+        editor.setPosition({ lineNumber: lastLine, column: lastColumn });
+        editor.focus();
+      }
+    });
+  }
+
+  /**
    * Close the YAML editor modal (Cancel button)
    */
   async close(): Promise<void> {
@@ -234,5 +255,18 @@ views:
     const insertBtn = this.window.getByTestId('yaml-insert-entity-button');
     await expect(insertBtn).toBeVisible();
     await insertBtn.click();
+  }
+
+  /**
+   * Insert selected entity ID at current cursor position via the exposed insert handler
+   */
+  async insertEntityId(entityId: string): Promise<void> {
+    await this.waitForMonacoReady();
+
+    // Select the entity in the browser and trigger the callback
+    await this.window.evaluate((id) => {
+      const handler = (window as any).__insertEntityCallback as ((eid: string) => void) | undefined;
+      handler?.(id);
+    }, entityId);
   }
 }

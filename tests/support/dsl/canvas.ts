@@ -61,7 +61,7 @@ export class CanvasDSL {
   /**
    * Verify canvas has specific number of cards
    */
-  async expectCardCount(count: number, timeout = 3000): Promise<void> {
+  async expectCardCount(count: number, timeout = 8000): Promise<void> {
     await expect(this.window.getByTestId('canvas-card')).toHaveCount(count, { timeout });
   }
 

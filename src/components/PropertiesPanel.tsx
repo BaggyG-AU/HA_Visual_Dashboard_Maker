@@ -32,6 +32,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const [activeTab, setActiveTab] = useState<string>('form');
   const [yamlContent, setYamlContent] = useState<string>('');
   const [yamlError, setYamlError] = useState<string | null>(null);
+  const [hasChanges, setHasChanges] = useState<boolean>(false);
   const [undoStack, setUndoStack] = useState<Card[]>([]);
   const isUpdatingFromForm = useRef(false);
   const isUpdatingFromYaml = useRef(false);
@@ -421,7 +422,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               {/* Show warning if entities is complex object */}
               {card.entities && typeof card.entities === 'object' && !Array.isArray(card.entities) && (
                 <Alert
-                  message="Complex Entity Configuration"
+                  title="Complex Entity Configuration"
                   description="This card uses a complex entity structure. Use the YAML editor to modify entities."
                   type="info"
                   showIcon
@@ -584,7 +585,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   {/* Stream component warning */}
                   {streamComponentEnabled === false && (
                     <Alert
-                      message="Stream Component Not Enabled"
+                      title="Stream Component Not Enabled"
                       description={
                         <span style={{ fontSize: '12px' }}>
                           The <code>stream:</code> component is not enabled in your Home Assistant configuration.
@@ -600,7 +601,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
                   {streamComponentEnabled === true && (
                     <Alert
-                      message="Stream Component Enabled"
+                      title="Stream Component Enabled"
                       description="Live camera streaming is supported on your Home Assistant instance."
                       type="success"
                       showIcon
@@ -661,7 +662,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               {/* Stream component warning */}
               {streamComponentEnabled === false && (
                 <Alert
-                  message="Stream Component Not Enabled"
+                  title="Stream Component Not Enabled"
                   description={
                     <span style={{ fontSize: '12px' }}>
                       The <code>stream:</code> component is not enabled in your Home Assistant configuration.
@@ -677,7 +678,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
               {streamComponentEnabled === true && (
                 <Alert
-                  message="Stream Component Enabled"
+                  title="Stream Component Enabled"
                   description="Live camera streaming is supported on your Home Assistant instance."
                   type="success"
                   showIcon
@@ -1405,7 +1406,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Nested Cards Configuration"
+                title="Nested Cards Configuration"
                 description="This stack contains other cards. Add or edit cards using the canvas. The cards are stacked in the order they appear in the YAML."
                 type="info"
                 showIcon
@@ -1446,7 +1447,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Nested Cards Configuration"
+                title="Nested Cards Configuration"
                 description="This grid contains other cards. Add or edit cards using the canvas. The cards will be arranged in a grid layout."
                 type="info"
                 showIcon
@@ -1474,7 +1475,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Complex Conditional Configuration"
+                title="Complex Conditional Configuration"
                 description="For advanced conditions (multiple conditions, state_not, etc.), use the YAML editor. This form supports basic single-condition configuration."
                 type="info"
                 showIcon
@@ -1514,7 +1515,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Advanced Chart Configuration"
+                title="Advanced Chart Configuration"
                 description="ApexCharts cards require series configuration. Use the YAML editor to configure chart series, entities, and advanced options."
                 type="info"
                 showIcon
@@ -1676,7 +1677,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Complex Entity Configuration"
+                title="Complex Entity Configuration"
                 description="Power Flow cards support many entity configurations including individual devices. Use the YAML editor to configure individual appliances, state_of_charge sensors, display options, and advanced settings."
                 type="info"
                 showIcon
@@ -1745,7 +1746,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Camera Configuration"
+                title="Camera Configuration"
                 description="Surveillance cards require a cameras array. Use the YAML editor to configure multiple camera entities and their display options."
                 type="info"
                 showIcon
@@ -1765,7 +1766,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Camera Configuration"
+                title="Camera Configuration"
                 description="Frigate cards require cameras array and advanced configuration. Use the YAML editor to configure camera entities, views, live providers, and other Frigate-specific options."
                 type="info"
                 showIcon
@@ -1959,7 +1960,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Advanced Configuration"
+                title="Advanced Configuration"
                 description="Use the YAML editor for advanced options like shortcuts, artwork, and sound modes."
                 type="info"
                 showIcon
@@ -2053,7 +2054,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Battery Monitoring"
+                title="Battery Monitoring"
                 description="This card automatically detects battery level attributes. Use filter patterns in YAML for advanced entity filtering."
                 type="info"
                 showIcon
@@ -2077,7 +2078,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="CSS Styling"
+                title="CSS Styling"
                 description="Card-mod allows you to apply custom CSS to any card. Use the YAML editor for complex card configurations with nested card_mod."
                 type="info"
                 showIcon
@@ -2097,7 +2098,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Container Card"
+                title="Container Card"
                 description={`This card contains other cards. Use the YAML editor to add and configure nested cards in the "cards" array.`}
                 type="info"
                 showIcon
@@ -2108,14 +2109,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           {card.type === 'custom:auto-entities' && (
             <>
               <Alert
-                message="Auto-Entities Card"
+                title="Auto-Entities Card"
                 description="This card automatically populates entities based on filter criteria. Use the YAML editor to configure include/exclude filters, sorting, and the card type to display."
                 type="info"
                 showIcon
               />
 
               <Alert
-                message="Example Configuration"
+                title="Example Configuration"
                 description={
                   <div style={{ fontFamily: 'monospace', fontSize: '11px', marginTop: '8px' }}>
                     filter:<br />
@@ -2168,7 +2169,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Multiple Entities"
+                title="Multiple Entities"
                 description="Use the YAML editor to add additional entities in the 'entities' array to display multiple entity states on a single row."
                 type="info"
                 showIcon
@@ -2180,14 +2181,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           {card.type === 'custom:fold-entity-row' && (
             <>
               <Alert
-                message="Collapsible Row"
+                title="Collapsible Row"
                 description="This creates a collapsible section in an entities card. Use the YAML editor to configure the 'head' entity and 'items' array."
                 type="info"
                 showIcon
               />
 
               <Alert
-                message="Example Configuration"
+                title="Example Configuration"
                 description={
                   <div style={{ fontFamily: 'monospace', fontSize: '11px', marginTop: '8px' }}>
                     head:<br />
@@ -2216,7 +2217,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Template Card"
+                title="Template Card"
                 description="Decluttering card uses templates defined in your dashboard configuration. Use the YAML editor to pass variables to the template."
                 type="info"
                 showIcon
@@ -2228,14 +2229,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           {card.type === 'custom:mushroom-chips-card' && (
             <>
               <Alert
-                message="Chips Card"
+                title="Chips Card"
                 description="Mushroom Chips card displays compact chip-style controls. Use the YAML editor to configure the 'chips' array with various chip types (entity, back, spacer, weather, etc.)."
                 type="info"
                 showIcon
               />
 
               <Alert
-                message="Example Configuration"
+                title="Example Configuration"
                 description={
                   <div style={{ fontFamily: 'monospace', fontSize: '11px', marginTop: '8px' }}>
                     chips:<br />
@@ -2279,7 +2280,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Alert
-                message="Template Card"
+                title="Template Card"
                 description="Template card supports Jinja2 templates for dynamic content. Use the YAML editor for advanced templating with entity states and attributes."
                 type="info"
                 showIcon
@@ -2290,7 +2291,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
           {card.type === 'spacer' && (
             <Alert
-              message="Spacer Card"
+              title="Spacer Card"
               description="This is an empty spacer card used for layout. It has no configurable properties."
               type="info"
               showIcon
@@ -2333,7 +2334,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 </div>
                 {yamlError && (
                   <Alert
-                    message="YAML Error"
+                    title="YAML Error"
                     description={yamlError}
                     type="error"
                     showIcon

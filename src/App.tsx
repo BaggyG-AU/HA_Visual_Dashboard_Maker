@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge, Tooltip } from 'antd';
-import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge, Tooltip, Segmented } from 'antd';
+import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined, DatabaseOutlined, SplitCellsOutlined, AppstoreAddOutlined } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
@@ -14,6 +14,7 @@ import { DeployDialog } from './components/DeployDialog';
 import { DashboardBrowser } from './components/DashboardBrowser';
 import { YamlEditorDialog } from './components/YamlEditorDialog';
 import { HADashboardIframe } from './components/HADashboardIframe';
+import { SplitViewEditor } from './components/SplitViewEditor';
 import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
@@ -24,6 +25,7 @@ import { ThemePreviewPanel } from './components/ThemePreviewPanel';
 import { NewDashboardDialog } from './components/NewDashboardDialog';
 import { useThemeStore } from './store/themeStore';
 import { themeService } from './services/themeService';
+import { useEditorModeStore, EditorMode } from './store/editorModeStore';
 
 const { Header, Content, Sider } = Layout;
 const isTestEnv =
@@ -79,6 +81,12 @@ const App: React.FC = () => {
     darkMode,
     setAvailableThemes
   } = useThemeStore();
+
+  // Editor mode store
+  const {
+    mode: editorMode,
+    setMode: setEditorMode,
+  } = useEditorModeStore();
 
   // Ref for canvas container to apply theme
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -1270,6 +1278,17 @@ const App: React.FC = () => {
                           Edit YAML
                         </Button>
                       </Tooltip>
+                      <Tooltip title="Toggle between Visual, Code, and Split view modes">
+                        <Segmented
+                          size="middle"
+                          value={editorMode}
+                          onChange={(value) => setEditorMode(value as EditorMode)}
+                          options={[
+                            { label: 'Visual', value: 'visual', icon: <AppstoreAddOutlined /> },
+                            { label: 'Split', value: 'split', icon: <SplitCellsOutlined /> },
+                          ]}
+                        />
+                      </Tooltip>
                       <Tooltip title="Save dashboard to local YAML file">
                         <Button
                           type="primary"
@@ -1311,6 +1330,19 @@ const App: React.FC = () => {
                         onLayoutChange={handleLayoutChange}
                         onDeploy={handleDeployFromLivePreview}
                         onClose={handleExitLivePreview}
+                      />
+                    ) : editorMode === 'split' ? (
+                      <SplitViewEditor
+                        selectedViewIndex={selectedViewIndex}
+                        selectedCardIndex={selectedCardIndex}
+                        onCardSelect={handleCardSelect}
+                        onLayoutChange={handleLayoutChange}
+                        onCardDrop={handleCardDrop}
+                        onCardCut={handleCardCut}
+                        onCardCopy={handleCardCopy}
+                        onCardPaste={handleCardPaste}
+                        onCardDelete={handleCardDelete}
+                        canPaste={clipboard.card !== null}
                       />
                     ) : (
                     <Tabs

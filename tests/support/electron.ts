@@ -98,8 +98,23 @@ export async function launch(): Promise<ElectronTestContext> {
   });
 
   // Wait for React to hydrate
-  await window.waitForSelector('body > div', { timeout: 5000, state: 'attached' });
-  await window.waitForTimeout(1000); // React hydration
+  // First wait for the root div to exist
+  await window.waitForSelector('#root', { timeout: 10000, state: 'attached' });
+
+  // Then wait for React to actually render content inside root
+  // The App component should render its content
+  await window.waitForSelector('#root > *', { timeout: 10000, state: 'attached' });
+
+  // Extra time for monaco-setup async operations and React hydration
+  await window.waitForTimeout(1500);
+
+  // Ensure renderer can detect test mode even when built in production mode
+  await window.evaluate(() => {
+    type TestFlagWindow = Window & { E2E?: string; PLAYWRIGHT_TEST?: string };
+    const testWindow = window as TestFlagWindow;
+    testWindow.E2E = '1';
+    testWindow.PLAYWRIGHT_TEST = '1';
+  });
 
   return { app, window, userDataDir };
 }

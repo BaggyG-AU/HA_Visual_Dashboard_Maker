@@ -20,6 +20,7 @@ export const UnsupportedCard: React.FC<UnsupportedCardProps> = ({
   isSelected = false,
   onClick,
 }) => {
+  const isCustomCard = card.type.startsWith('custom:');
   return (
     <AntCard
       size="small"

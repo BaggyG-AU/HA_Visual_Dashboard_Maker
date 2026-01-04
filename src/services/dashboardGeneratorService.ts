@@ -331,9 +331,9 @@ class DashboardGeneratorService {
     // Add person cards
     personEntities.forEach((entity, index) => {
       cards.push({
-        type: 'entity',
-        entity: entity.entity_id,
-        name: entity.attributes.friendly_name || entity.entity_id,
+        type: 'entities',
+        entities: [entity.entity_id],
+        title: entity.attributes.friendly_name || entity.entity_id,
         layout: {
           x: (index % 2) * 6,
           y: Math.floor(index / 2) * 3,
@@ -348,9 +348,9 @@ class DashboardGeneratorService {
     const yOffset = Math.ceil(personCount / 2) * 3;
     trackerEntities.forEach((entity, index) => {
       cards.push({
-        type: 'entity',
-        entity: entity.entity_id,
-        name: entity.attributes.friendly_name || entity.entity_id,
+        type: 'entities',
+        entities: [entity.entity_id],
+        title: entity.attributes.friendly_name || entity.entity_id,
         layout: {
           x: (index % 2) * 6,
           y: yOffset + Math.floor(index / 2) * 3,

@@ -263,8 +263,11 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
         }}
         options={options}
         style={{ width: '100%' }}
-        dropdownStyle={{
-          backgroundColor: '#1f1f1f',
+        popupClassName="entity-select-dropdown"
+        styles={{
+          dropdown: {
+            backgroundColor: '#1f1f1f',
+          },
         }}
       />
       {renderEntityPreview()}

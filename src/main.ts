@@ -641,6 +641,8 @@ const createWindow = () => {
     saveWindowState();
   });
 
+  const isAutomatedTest = process.env.PLAYWRIGHT_TEST === '1' || process.env.E2E === '1';
+
   // Set Content Security Policy for production builds
   // In development, Vite needs 'unsafe-eval' for HMR, so we skip CSP
   if (!MAIN_WINDOW_VITE_DEV_SERVER_URL) {
@@ -666,7 +668,9 @@ const createWindow = () => {
   }
 
   // and load the index.html of the app.
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+  const shouldUseDevServer = Boolean(MAIN_WINDOW_VITE_DEV_SERVER_URL && !isAutomatedTest);
+
+  if (shouldUseDevServer) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
     mainWindow.loadFile(
@@ -675,7 +679,7 @@ const createWindow = () => {
   }
 
   // Open DevTools only during development to keep production startup fast.
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL || !app.isPackaged) {
+  if (shouldUseDevServer || (!app.isPackaged && !isAutomatedTest)) {
     mainWindow.webContents.openDevTools();
   }
 

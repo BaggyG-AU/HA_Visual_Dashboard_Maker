@@ -201,6 +201,23 @@ export class EntityBrowserDSL {
   }
 
   /**
+   * Select the first entity row and return its entity_id (from data-row-key)
+   */
+  async selectFirstRow(): Promise<string | null> {
+    const rows = this.window.locator('.ant-table-row');
+    await expect(rows.first()).toBeVisible({ timeout: 5000 });
+
+    const firstRow = rows.first();
+    const entityId = (await firstRow.getAttribute('data-row-key')) || null;
+
+    const radio = firstRow.locator('input[type="radio"]');
+    await radio.check({ force: true });
+    await this.window.waitForTimeout(300);
+
+    return entityId;
+  }
+
+  /**
    * Click domain tab by name (e.g., "light", "binary_sensor")
    */
   async selectDomainTab(domain: string): Promise<void> {

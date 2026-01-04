@@ -246,3 +246,272 @@ Pull requests must be rejected if they:
 This standard exists to prevent brittle tests and large-scale failures caused by small UX changes.
 
 If many tests fail at once, the DSL is the first place to look.
+
+---
+
+## HAVDM ADVANCED FEATURES TESTING REQUIREMENTS (JANUARY 2026)
+
+### Overview
+
+All new advanced features (Phases 1-7) must meet enhanced testing standards to ensure quality and prevent regressions.
+
+---
+
+### Testing Matrix for New Features
+
+| Feature Type | Unit Tests | E2E Tests | Visual Regression | Performance | Accessibility |
+|-------------|-----------|-----------|-------------------|-------------|---------------|
+| **Visual Components** (Color Picker, Gradients) | Required (95%+) | Required (DSL) | Required | Optional | Required |
+| **Services/Utilities** (Font Service, Smart Actions) | Required (95%+) | Optional | N/A | Optional | N/A |
+| **Complex Features** (Entity Remapping, Logic Editor) | Required (95%+) | Required (DSL) | Required | Required | Required |
+| **Layout Components** (Carousel, Accordion) | Required (95%+) | Required (DSL) | Required | Required | Required |
+| **Visualizations** (Graphs, Gauges) | Required (95%+) | Required (DSL) | Required | Required | Required |
+
+---
+
+### Feature-Specific DSL Requirements
+
+New DSL modules MUST be created for:
+
+1. **Color Picker** (`tests/support/dsl/colorPicker.ts`):
+   - `openColorPicker()`
+   - `selectColor(hex: string)`
+   - `adjustHue(value: number)`
+   - `selectRecentColor(index: number)`
+   - `closeColorPicker()`
+
+2. **Animation** (`tests/support/dsl/animation.ts`):
+   - `selectAnimation(type: string)`
+   - `configureAnimation(config: AnimationConfig)`
+   - `previewAnimation()`
+   - `verifyAnimationApplied()`
+
+3. **Typography** (`tests/support/dsl/typography.ts`):
+   - `selectFont(fontFamily: string)`
+   - `adjustFontSize(size: string)`
+   - `setFontWeight(weight: number)`
+   - `verifyFontApplied()`
+
+4. **Carousel** (`tests/support/dsl/carousel.ts`):
+   - `addCarouselCard()`
+   - `configureCarousel(config: CarouselConfig)`
+   - `navigateSlide(direction: 'next' | 'prev')`
+   - `verifySlideCount(count: number)`
+
+5. **Entity Remapping** (`tests/support/dsl/entityRemapping.ts`):
+   - `openRemappingDialog()`
+   - `selectEntityMapping(oldEntity: string, newEntity: string)`
+   - `applyRemapping()`
+   - `verifyRemappingApplied()`
+
+6. **Graphs** (`tests/support/dsl/graphs.ts`):
+   - `addGraphCard(type: string)`
+   - `configureGraph(config: GraphConfig)`
+   - `verifyGraphData(expectedData: any[])`
+   - `verifyGraphRendered()`
+
+**Rule**: Every new user-facing feature interaction MUST have corresponding DSL methods. NO raw Playwright API calls in test specs.
+
+---
+
+### Visual Regression Standards
+
+For features with visual components (Phases 1, 2, 4, 5):
+
+1. **Baseline Screenshots Required**:
+   - Component in default state
+   - Component with user interactions (hover, focus, active)
+   - Component with various configurations
+   - Component in error state (if applicable)
+
+2. **Comparison Threshold**: 0.1% pixel difference allowed
+3. **Update Process**: Baselines updated only after manual review and approval
+4. **Tools**: Playwright's built-in screenshot comparison
+
+**Example Test**:
+```typescript
+test('Color Picker visual appearance', async () => {
+  await dsl.cards.selectCard(0);
+  await dsl.colorPicker.openColorPicker();
+
+  // Baseline screenshot
+  await expect(page.locator('[data-testid="color-picker"]')).toHaveScreenshot('color-picker-default.png');
+
+  // With color selected
+  await dsl.colorPicker.selectColor('#FF5733');
+  await expect(page.locator('[data-testid="color-picker"]')).toHaveScreenshot('color-picker-selected.png');
+});
+```
+
+---
+
+### Performance Testing Standards
+
+For performance-critical features (animations, graphs, carousels):
+
+1. **Frame Rate Benchmarks**:
+   - Animations must maintain 60fps (measure with `performance.now()`)
+   - No dropped frames during carousel swiping
+   - Graph rendering < 500ms for typical dataset (100 data points)
+
+2. **Memory Benchmarks**:
+   - No memory leaks over 100 interactions (use Chrome DevTools)
+   - Max memory increase < 50MB for feature usage
+
+3. **Load Time Benchmarks**:
+   - Google Fonts loading < 200ms cached, < 2s uncached
+   - Component initialization < 100ms
+   - Swiper.js carousel load < 300ms
+
+**Example Performance Test**:
+```typescript
+test('Animation maintains 60fps', async () => {
+  await dsl.cards.selectCard(0);
+  await dsl.animation.selectAnimation('fade-in');
+  await dsl.animation.configureAnimation({ duration: 1000 });
+
+  const metrics = await page.evaluate(() => {
+    const frames: number[] = [];
+    let lastTime = performance.now();
+
+    function measureFrame() {
+      const now = performance.now();
+      frames.push(now - lastTime);
+      lastTime = now;
+
+      if (frames.length < 60) {
+        requestAnimationFrame(measureFrame);
+      }
+    }
+
+    requestAnimationFrame(measureFrame);
+
+    return new Promise(resolve => {
+      setTimeout(() => {
+        const avgFrameTime = frames.reduce((a, b) => a + b) / frames.length;
+        resolve({ avgFrameTime, fps: 1000 / avgFrameTime });
+      }, 1100);
+    });
+  });
+
+  expect(metrics.fps).toBeGreaterThan(55); // Allow slight variance
+});
+```
+
+---
+
+### Accessibility Testing Standards (WCAG 2.1 AA)
+
+All new features MUST pass accessibility tests:
+
+1. **Keyboard Navigation**:
+   - Tab through all interactive elements
+   - Activate elements with Enter/Space
+   - Arrow keys for component-specific navigation (e.g., color picker)
+   - Escape key to close modals/popups
+
+2. **Screen Reader Compatibility**:
+   - All interactive elements have ARIA labels
+   - State changes announced (e.g., "Color selected: #FF5733")
+   - Error messages read aloud
+
+3. **Color Contrast**:
+   - Minimum 4.5:1 for normal text
+   - Minimum 3:1 for large text
+   - Automated contrast checks in tests
+
+4. **Motion Sensitivity**:
+   - Animations disabled when `prefers-reduced-motion: reduce`
+   - Alternative visual feedback provided
+
+**Example Accessibility Test**:
+```typescript
+test('Color Picker keyboard navigation', async () => {
+  await dsl.cards.selectCard(0);
+  await dsl.colorPicker.openColorPicker();
+
+  // Tab to color picker
+  await page.keyboard.press('Tab');
+  await expect(page.locator('[data-testid="color-picker-hue"]')).toBeFocused();
+
+  // Arrow keys to adjust hue
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+
+  // Verify ARIA label updated
+  const ariaLabel = await page.locator('[data-testid="color-picker-hue"]').getAttribute('aria-label');
+  expect(ariaLabel).toContain('Hue');
+
+  // Enter to confirm
+  await page.keyboard.press('Enter');
+  await dsl.colorPicker.closeColorPicker();
+});
+
+test('Animations respect prefers-reduced-motion', async () => {
+  // Set prefers-reduced-motion
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+
+  await dsl.cards.selectCard(0);
+  await dsl.animation.selectAnimation('fade-in');
+
+  // Verify animation disabled
+  const animationDuration = await page.evaluate(() => {
+    const card = document.querySelector('[data-card-index="0"]');
+    return getComputedStyle(card!).animationDuration;
+  });
+
+  expect(animationDuration).toBe('0s'); // Animation disabled
+});
+```
+
+---
+
+### Test Coverage Requirements
+
+| Code Type | Coverage Target | Enforcement |
+|-----------|----------------|-------------|
+| **Services/Utilities** | 95%+ | CI blocks merge if below |
+| **Components** | 90%+ | CI blocks merge if below |
+| **Features** | 90%+ | CI blocks merge if below |
+| **Integration/E2E** | All critical paths | Manual review required |
+
+---
+
+### Definition of Done (Testing)
+
+A feature is NOT complete until:
+
+- ✅ All unit tests passing (coverage targets met)
+- ✅ All E2E tests passing (using DSL, no raw API calls)
+- ✅ Visual regression tests passing (or baselines reviewed/approved)
+- ✅ Performance benchmarks met (if applicable)
+- ✅ Accessibility tests passing (WCAG 2.1 AA)
+- ✅ No P0/P1 bugs outstanding
+- ✅ Test documentation complete (README in feature folder)
+
+---
+
+### CI/CD Integration
+
+All tests run automatically on:
+- Every PR commit
+- Before merge to main
+- Nightly builds (full regression suite)
+
+**CI Pipeline**:
+1. Lint (ESLint + Prettier)
+2. Unit tests (Jest + Vitest)
+3. E2E tests (Playwright, headed mode for debugging on failure)
+4. Visual regression tests (Playwright screenshots)
+5. Performance tests (flagged if benchmarks not met)
+6. Accessibility tests (axe-core + manual keyboard tests)
+
+**Failure Policy**:
+- Any test failure blocks merge
+- Performance failures require manual review (may proceed with justification)
+- Visual regression failures require baseline update approval
+
+---
+
+**Last Updated**: January 4, 2026
+**Next Review**: After Phase 1 completion (v0.4.0)
