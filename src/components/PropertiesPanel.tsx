@@ -8,6 +8,7 @@ import { cardRegistry } from '../services/cardRegistry';
 import { EntitySelect } from './EntitySelect';
 import { EntityMultiSelect } from './EntityMultiSelect';
 import { IconSelect } from './IconSelect';
+import { ColorPickerInput } from './ColorPickerInput';
 import { haConnectionService } from '../services/haConnectionService';
 
 const { Title, Text } = Typography;
@@ -969,9 +970,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               <Form.Item
                 label={<span style={{ color: 'white' }}>Color</span>}
                 name="color"
-                help={<span style={{ color: '#666' }}>Button color (auto, rgb(255,0,0), or CSS color)</span>}
+                help={<span style={{ color: '#666' }}>Button color (type 'auto' or pick a custom color)</span>}
               >
-                <Input placeholder="auto" />
+                <ColorPickerInput
+                  placeholder="auto or pick a color"
+                  data-testid="button-card-color-input"
+                />
               </Form.Item>
 
               <Form.Item

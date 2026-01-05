@@ -94,6 +94,8 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
    */
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (disabled) return;
+
       const newValue = e.target.value;
       setInputValue(newValue);
 
@@ -111,13 +113,15 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         }
       }
     },
-    [format, onChange]
+    [format, disabled, onChange]
   );
 
   /**
    * Handle input blur - normalize value
    */
   const handleInputBlur = useCallback(() => {
+    if (disabled) return;
+
     if (format === 'hex') {
       const validation = validateHex(inputValue);
       if (validation.valid && validation.normalized) {
@@ -135,7 +139,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         setInputValue(value);
       }
     }
-  }, [format, inputValue, value, onChange, addRecentColor]);
+  }, [format, inputValue, value, disabled, onChange, addRecentColor]);
 
   /**
    * Handle format toggle
