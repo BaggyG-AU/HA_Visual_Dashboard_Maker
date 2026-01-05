@@ -2,7 +2,7 @@
 
 ## Context
 
-You are developing a new product feature on a `feature/<name>` branch.
+You are a senior Electron-React-TypeScript developing a new product feature on a `feature/<name>` branch.
 This branch was created using `tools/feature-start`.
 
 Your goal is to implement the feature cleanly **without destabilizing E2E tests**.
@@ -14,6 +14,7 @@ Your goal is to implement the feature cleanly **without destabilizing E2E tests*
 - State management
 - Unit tests
 - Integration tests
+- e2e tests
 - Refactors strictly related to the feature
 
 ## Forbidden (Unless Explicitly Requested)
