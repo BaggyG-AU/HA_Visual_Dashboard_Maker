@@ -47,13 +47,51 @@ export class HAWebSocketService {
    * Connect to Home Assistant WebSocket API
    */
   async connect(url: string, token: string): Promise<void> {
-    // Convert HTTP URL to WebSocket URL
-    const wsUrl = url.replace(/^http/, 'ws') + '/api/websocket';
+    let normalizedUrl = url.trim();
+    if (!/^https?:\/\//i.test(normalizedUrl) && !/^wss?:\/\//i.test(normalizedUrl)) {
+      normalizedUrl = `http://${normalizedUrl}`;
+    }
+
+    // Convert HTTP/HTTPS URL to WebSocket URL while preserving the original scheme
+    let base: URL;
+    try {
+      base = new URL(normalizedUrl);
+    } catch (error) {
+      throw new Error(`Invalid Home Assistant URL: ${(error as Error).message}`);
+    }
+    const wsProtocol = base.protocol === 'https:' ? 'wss:' : 'ws:';
+    base.protocol = wsProtocol;
+    base.pathname = `${base.pathname.replace(/\/$/, '')}/api/websocket`;
+    const wsUrl = base.toString();
 
     console.log(`Connecting to Home Assistant WebSocket: ${wsUrl}`);
 
     return new Promise((resolve, reject) => {
-      this.ws = new WebSocket(wsUrl);
+      try {
+        this.ws = new WebSocket(wsUrl);
+      } catch (error) {
+        return reject(new Error(`Failed to create WebSocket: ${(error as Error).message}`));
+      }
+
+      let settled = false;
+      const timeout = setTimeout(() => {
+        fail(new Error('WebSocket handshake timed out'));
+      }, 10000);
+
+      const succeed = () => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timeout);
+          resolve();
+        }
+      };
+      const fail = (err: Error) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timeout);
+          reject(err);
+        }
+      };
 
       this.ws.on('open', () => {
         console.log('WebSocket connection opened');
@@ -72,11 +110,11 @@ export class HAWebSocketService {
           });
         } else if (message.type === 'auth_ok') {
           console.log('Authentication successful!');
-          resolve();
+          succeed();
         } else if (message.type === 'auth_invalid') {
           console.error('Authentication failed:', message);
           this.close();
-          reject(new Error('Authentication failed: ' + (message.message || 'Invalid token')));
+          fail(new Error('Authentication failed: ' + (message.message || 'Invalid token')));
         } else if (message.type === 'event' && message.id === this.entitySubscriptionId) {
           // Handle entity state change events
           const event = message.event;
@@ -123,12 +161,13 @@ export class HAWebSocketService {
 
       this.ws.on('error', (error) => {
         console.error('WebSocket error:', error);
-        reject(error);
+        fail(error instanceof Error ? error : new Error(String(error)));
       });
 
       this.ws.on('close', () => {
         console.log('WebSocket connection closed');
         this.ws = null;
+        fail(new Error('WebSocket connection closed before authentication'));
         // Reject all pending messages
         this.pendingMessages.forEach((pending) => {
           pending.reject(new Error('WebSocket connection closed'));

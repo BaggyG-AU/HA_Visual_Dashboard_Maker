@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge, Tooltip, Segmented } from 'antd';
-import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined, DatabaseOutlined, SplitCellsOutlined, AppstoreAddOutlined } from '@ant-design/icons';
+import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined, DatabaseOutlined, SplitCellsOutlined, AppstoreAddOutlined, SettingOutlined } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
@@ -9,7 +9,6 @@ import { GridCanvas } from './components/GridCanvas';
 import { CardPalette } from './components/CardPalette';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { EntityBrowser } from './components/EntityBrowser';
-import { ConnectionDialog } from './components/ConnectionDialog';
 import { DeployDialog } from './components/DeployDialog';
 import { DashboardBrowser } from './components/DashboardBrowser';
 import { YamlEditorDialog } from './components/YamlEditorDialog';
@@ -20,12 +19,13 @@ import { haConnectionService } from './services/haConnectionService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
 import { HAEntityProvider } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
-import { ThemeSettingsDialog } from './components/ThemeSettingsDialog';
+import { SettingsDialog } from './components/SettingsDialog';
 import { ThemePreviewPanel } from './components/ThemePreviewPanel';
 import { NewDashboardDialog } from './components/NewDashboardDialog';
 import { useThemeStore } from './store/themeStore';
 import { themeService } from './services/themeService';
 import { useEditorModeStore, EditorMode } from './store/editorModeStore';
+import { logger } from './services/logger';
 
 const { Header, Content, Sider } = Layout;
 const isTestEnv =
@@ -35,13 +35,14 @@ const isTestEnv =
 const App: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
   const [ignoreNextLayoutChange, setIgnoreNextLayoutChange] = useState<boolean>(false);
-  const [connectionDialogVisible, setConnectionDialogVisible] = useState<boolean>(false);
   const [deployDialogVisible, setDeployDialogVisible] = useState<boolean>(false);
   const [dashboardBrowserVisible, setDashboardBrowserVisible] = useState<boolean>(false);
   const [yamlEditorVisible, setYamlEditorVisible] = useState<boolean>(false);
   const [entityBrowserVisible, setEntityBrowserVisible] = useState<boolean>(false);
   const [entityInsertCallback, setEntityInsertCallback] = useState<((entityId: string) => void) | null>(null);
-  const [themeSettingsVisible, setThemeSettingsVisible] = useState<boolean>(false);
+  const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
+  const [settingsTab, setSettingsTab] = useState<'appearance' | 'connection' | 'diagnostics'>('appearance');
+  const [verboseUIDebug, setVerboseUIDebug] = useState<boolean>(false);
   const [newDashboardDialogVisible, setNewDashboardDialogVisible] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [livePreviewMode, setLivePreviewMode] = useState<boolean>(false);
@@ -606,7 +607,8 @@ const App: React.FC = () => {
   };
 
   const handleOpenConnectionDialog = () => {
-    setConnectionDialogVisible(true);
+    setSettingsTab('connection');
+    setSettingsVisible(true);
   };
 
   const handleConnect = async (url: string, token: string) => {
@@ -1002,6 +1004,32 @@ const App: React.FC = () => {
     loadHAConnection();
   }, []);
 
+  // Load verbose debug flag
+  useEffect(() => {
+    const loadVerbose = async () => {
+      try {
+        const result = await window.electronAPI.getVerboseUIDebug();
+        setVerboseUIDebug(result.verbose);
+      } catch (error) {
+        console.error('Failed to load verbose UI flag', error);
+      }
+    };
+    loadVerbose();
+  }, []);
+
+  // Load logging level and apply to renderer logger
+  useEffect(() => {
+    const loadLogging = async () => {
+      try {
+        const result = await window.electronAPI.getLoggingLevel();
+        logger.setLevel(result.level as any);
+      } catch (error) {
+        console.error('Failed to load logging level', error);
+      }
+    };
+    loadLogging();
+  }, []);
+
   // Set up menu event listeners
   useEffect(() => {
     const handleMenuOpenFile = () => handleOpenFile();
@@ -1145,7 +1173,6 @@ const App: React.FC = () => {
             {isConnected && (
               <ThemeSelector
                 onRefreshThemes={fetchThemes}
-                onOpenSettings={() => setThemeSettingsVisible(true)}
               />
             )}
             <Badge status={isConnected ? 'success' : 'default'} text={isConnected ? 'Connected' : 'Not Connected'} style={{ color: '#888' }} />
@@ -1158,6 +1185,17 @@ const App: React.FC = () => {
                 Connect to HA
               </Button>
             )}
+            <Tooltip title="Settings">
+              <Button
+                size="small"
+                icon={<SettingOutlined />}
+                aria-label="Settings"
+                onClick={() => {
+                  setSettingsTab('appearance');
+                  setSettingsVisible(true);
+                }}
+              />
+            </Tooltip>
           </Space>
         </Header>
         <Layout>
@@ -1392,15 +1430,18 @@ const App: React.FC = () => {
           </Sider>
         </Layout>
       </Layout>
-      <ConnectionDialog
-        visible={connectionDialogVisible}
-        onClose={() => setConnectionDialogVisible(false)}
+      <SettingsDialog
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
+        activeTab={settingsTab}
+        onTabChange={setSettingsTab}
+        onVerboseChange={setVerboseUIDebug}
         onConnect={handleConnect}
       />
       <DeployDialog
         visible={deployDialogVisible}
         onClose={handleCloseDeployDialog}
-        dashboardYaml={config ? yamlService.serializeDashboard(config) : ''}
+        dashboardYaml={config ? yamlService.serializeForHA(config) : ''}
         dashboardTitle={config?.title}
       />
       <DashboardBrowser
@@ -1425,10 +1466,6 @@ const App: React.FC = () => {
         isConnected={isConnected}
         onRefresh={fetchAndCacheEntities}
       />
-      <ThemeSettingsDialog
-        visible={themeSettingsVisible}
-        onClose={() => setThemeSettingsVisible(false)}
-      />
       <NewDashboardDialog
         visible={newDashboardDialogVisible}
         onClose={() => setNewDashboardDialogVisible(false)}
@@ -1437,6 +1474,28 @@ const App: React.FC = () => {
         onCreateFromEntityType={handleCreateFromEntityType}
         isConnected={isConnected}
       />
+      {verboseUIDebug && (
+        <div
+          data-testid="verbose-ui-overlay"
+          style={{
+            position: 'fixed',
+            bottom: 8,
+            right: 8,
+            zIndex: 2000,
+            background: '#1f1f1f',
+            color: '#fff',
+            padding: '8px 12px',
+            border: '1px solid #434343',
+            borderRadius: 4,
+            fontSize: 12,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+          }}
+        >
+          <div><strong>Verbose UI Debug</strong></div>
+          <div>Status: {isConnected ? 'Connected' : 'Offline'}</div>
+          <div>File: {filePath || 'Untitled'}</div>
+        </div>
+      )}
       </HAEntityProvider>
     </ConfigProvider>
   );

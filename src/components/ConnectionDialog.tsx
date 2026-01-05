@@ -8,12 +8,14 @@ interface ConnectionDialogProps {
   visible: boolean;
   onClose: () => void;
   onConnect: (url: string, token: string) => void;
+  renderInline?: boolean;
 }
 
 export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
   visible,
   onClose,
   onConnect,
+  renderInline = false,
 }) => {
   const [form] = Form.useForm();
   const [testing, setTesting] = useState(false);
@@ -120,7 +122,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
       });
 
       onConnect(values.url, values.token);
-      onClose();
+      onClose?.();
     } catch (error) {
       console.error('Failed to connect:', error);
     }
@@ -132,14 +134,8 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
     onClose();
   };
 
-  return (
-    <Modal
-      title="Home Assistant Connection"
-      open={visible}
-      onCancel={handleCancel}
-      footer={null}
-      width={600}
-    >
+  const formContent = (
+    <>
       <Form
         form={form}
         layout="vertical"
@@ -315,6 +311,22 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           <li>Copy the token and paste it above</li>
         </ol>
       </div>
+    </>
+  );
+
+  if (renderInline) {
+    return formContent;
+  }
+
+  return (
+    <Modal
+      title="Home Assistant Connection"
+      open={visible}
+      onCancel={handleCancel}
+      footer={null}
+      width={600}
+    >
+      {formContent}
     </Modal>
   );
 };

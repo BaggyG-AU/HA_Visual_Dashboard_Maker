@@ -18,6 +18,7 @@ import { CanvasDSL } from './dsl/canvas';
 import { PropertiesPanelDSL } from './dsl/propertiesPanel';
 import { YamlEditorDSL } from './dsl/yamlEditor';
 import { EntityBrowserDSL } from './dsl/entityBrowser';
+import { SettingsDSL } from './dsl/settings';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -41,6 +42,7 @@ export interface TestContext extends electron.ElectronTestContext {
   properties: PropertiesPanelDSL;
   yamlEditor: YamlEditorDSL;
   entityBrowser: EntityBrowserDSL;
+  settings: SettingsDSL;
 }
 
 /**
@@ -59,5 +61,6 @@ export async function launchWithDSL(): Promise<TestContext> {
     properties: new PropertiesPanelDSL(electronCtx.window),
     yamlEditor: new YamlEditorDSL(electronCtx.window),
     entityBrowser: new EntityBrowserDSL(electronCtx.window),
+    settings: new SettingsDSL(electronCtx.window),
   };
 }

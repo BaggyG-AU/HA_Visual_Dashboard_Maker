@@ -64,36 +64,36 @@ test.describe('Theme Integration', () => {
     }
   });
 
-  test('opens theme settings dialog and exposes tabs', async () => {
+  test('opens theme settings via Settings dialog and exposes tabs', async () => {
     const ctx = await launchWithDSL();
     try {
       await ctx.appDSL.waitUntilReady();
-    await connectWithMockThemes(ctx);
+      await connectWithMockThemes(ctx);
 
-    const settingsBtn = ctx.window.getByTestId('theme-settings-button');
-    await expect(settingsBtn).toBeVisible();
+      const settingsBtn = ctx.window.getByRole('button', { name: /Settings/i });
+      await expect(settingsBtn).toBeVisible();
       await settingsBtn.click();
 
-      const modal = ctx.window.getByTestId('theme-settings-modal');
-      const dialog = ctx.window.getByRole('dialog', { name: /Theme Settings/i });
-      void dialog;
-      await ctx.window.waitForFunction(() => {
-        const el =
-          document.querySelector('[data-testid="theme-settings-modal"] .ant-modal') ||
-          document.querySelector('[role="dialog"]');
-        if (!el) return false;
-        const box = (el as HTMLElement).getBoundingClientRect();
-        return box.width > 0 && box.height > 0;
-      }, null, { timeout: 5000 });
+      const dialog = ctx.window.getByRole('dialog', { name: /Settings/i });
+      await expect(dialog).toBeVisible({ timeout: 5000 });
 
-      await ctx.window.getByRole('tab', { name: /CSS Variables/i }).click();
-      await expect(ctx.window.getByTestId('theme-settings-css')).toBeVisible();
+      // Click on Appearance tab (outer tabs)
+      await ctx.window.getByRole('tab', { name: /Appearance/i }).click();
 
-      await ctx.window.getByRole('tab', { name: /Theme JSON/i }).click();
-      await expect(ctx.window.getByTestId('theme-settings-json')).toBeVisible();
+      // Now click on inner tabs (within theme settings)
+      // Use .last() to get the nested tabs, not the outer "Appearance" tab
+      await ctx.window.getByRole('tab', { name: /CSS Variables/i }).last().click();
+      // Wait for Monaco editor container to be attached and visible
+      await expect(ctx.window.getByTestId('theme-settings-css')).toBeAttached({ timeout: 10000 });
+      await expect(ctx.window.getByTestId('theme-settings-css')).toBeVisible({ timeout: 10000 });
 
-      await ctx.window.getByTestId('theme-settings-cancel').click();
-      await expect(modal).toHaveCount(0, { timeout: 5000 });
+      await ctx.window.getByRole('tab', { name: /Theme JSON/i }).last().click();
+      await expect(ctx.window.getByTestId('theme-settings-json')).toBeAttached({ timeout: 10000 });
+      await expect(ctx.window.getByTestId('theme-settings-json')).toBeVisible({ timeout: 10000 });
+
+      // Use .last() to get footer Close button, not modal X button (strict mode)
+      await ctx.window.getByRole('button', { name: /Close/i }).last().click();
+      await expect(dialog).toHaveCount(0, { timeout: 5000 });
     } finally {
       await close(ctx);
     }

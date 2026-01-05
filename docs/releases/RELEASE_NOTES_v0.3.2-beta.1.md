@@ -6,6 +6,15 @@
 
 ---
 
+## ✅ Latest Updates (post-beta.1 refinements)
+
+- Centralized **Settings** now opens correctly, with theme/connection/logging grouped and the Settings entry icon restored to a cog. The verbose UI debug overlay was repositioned to avoid covering the Settings trigger.
+- **Deployment to Home Assistant** now uses the WebSocket Lovelace APIs (create/save dashboard) instead of the invalid REST path, fixing 404s and honoring HTTP/HTTPS as configured. The Deploy dialog validates dashboard YAML before send and documents that URL keys require a hyphen.
+- **Logging/diagnostics**: logger tests fixed; HA request errors now report the exact target URL for easier debugging.
+- **Card properties**: Image URL is only required when appropriate (e.g., picture card); optional elsewhere with guidance.
+
+---
+
 ## 🎯 Major Feature: Advanced YAML Editor with Split View
 
 This release introduces a **comprehensive YAML editing experience** with split-view editing, schema-based autocomplete, two-way synchronization, and enhanced validation. Users can now edit dashboards in both visual and code modes simultaneously, with confidence that their changes stay in sync.
@@ -725,6 +734,11 @@ For feedback on the YAML editor:
 ✅ **Zero Breaking Changes** - Fully backward compatible
 
 **This release empowers advanced users with professional code editing tools while maintaining HAVDM's approachable visual-first design.**
+
+### Settings & Diagnostics
+- Centralized Settings dialog (Appearance, Connection, Diagnostics) replaces the old theme cog. Theme and HA connection controls now live under Settings (paint brush icon).
+- Added configurable logging levels (OFF/ERROR/WARN/INFO/DEBUG/TRACE) persisted across restarts; defaults to DEBUG in dev, INFO in packaged builds.
+- Diagnostics tab includes copy-to-clipboard info (tokens redacted), verbose UI debug overlay toggle, and maintenance actions (clear entity cache, reset UI state).
 
 ---
 

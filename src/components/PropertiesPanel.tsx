@@ -540,7 +540,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
-          {(card.type === 'picture' || card.type === 'picture-entity') && (
+          {card.type === 'picture' && (
             <>
               <Form.Item
                 label={<span style={{ color: 'white' }}>Image URL</span>}
@@ -549,74 +549,82 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               >
                 <Input placeholder="/local/images/dashboard.png" />
               </Form.Item>
+            </>
+          )}
 
-              {card.type === 'picture-entity' && (
-                <>
-                  <Form.Item
-                    label={<span style={{ color: 'white' }}>Entity</span>}
-                    name="entity"
-                    rules={[{ required: true, message: 'Entity is required' }]}
-                  >
-                    <EntitySelect data-testid="entity-select" placeholder="Select entity" />
-                  </Form.Item>
+          {card.type === 'picture-entity' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Image URL</span>}
+                name="image"
+                help={<span style={{ color: '#666' }}>Optional if a camera entity is set</span>}
+              >
+                <Input placeholder="/local/images/dashboard.png" />
+              </Form.Item>
 
-                  <Form.Item
-                    label={<span style={{ color: 'white' }}>Camera Image</span>}
-                    name="camera_image"
-                    help={<span style={{ color: '#666' }}>Optional: Select a camera entity for live streaming</span>}
-                  >
-                    <EntitySelect placeholder="Select camera entity" filterDomains={['camera']} />
-                  </Form.Item>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect data-testid="entity-select" placeholder="Select entity" />
+              </Form.Item>
 
-                  <Form.Item
-                    label={<span style={{ color: 'white' }}>Camera View</span>}
-                    name="camera_view"
-                    help={<span style={{ color: '#666' }}>Choose between snapshot or live stream (requires camera_image)</span>}
-                  >
-                    <Select
-                      placeholder="Select view mode"
-                      options={[
-                        { value: 'auto', label: 'Auto (Snapshot)' },
-                        { value: 'live', label: 'Live (Stream)' },
-                      ]}
-                    />
-                  </Form.Item>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Camera Image</span>}
+                name="camera_image"
+                help={<span style={{ color: '#666' }}>Optional: Select a camera entity for live streaming</span>}
+              >
+                <EntitySelect placeholder="Select camera entity" filterDomains={['camera']} />
+              </Form.Item>
 
-                  {/* Stream component warning */}
-                  {streamComponentEnabled === false && (
-                    <Alert
-                      title="Stream Component Not Enabled"
-                      description={
-                        <span style={{ fontSize: '12px' }}>
-                          The <code>stream:</code> component is not enabled in your Home Assistant configuration.
-                          Live camera streaming requires this component. Add <code>stream:</code> to your
-                          configuration.yaml and restart Home Assistant to enable live streaming.
-                        </span>
-                      }
-                      type="warning"
-                      showIcon
-                      style={{ marginBottom: '16px' }}
-                    />
-                  )}
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Camera View</span>}
+                name="camera_view"
+                help={<span style={{ color: '#666' }}>Choose between snapshot or live stream (requires camera_image)</span>}
+              >
+                <Select
+                  placeholder="Select view mode"
+                  options={[
+                    { value: 'auto', label: 'Auto (Snapshot)' },
+                    { value: 'live', label: 'Live (Stream)' },
+                  ]}
+                />
+              </Form.Item>
 
-                  {streamComponentEnabled === true && (
-                    <Alert
-                      title="Stream Component Enabled"
-                      description="Live camera streaming is supported on your Home Assistant instance."
-                      type="success"
-                      showIcon
-                      style={{ marginBottom: '16px' }}
-                    />
-                  )}
-
-                  <Form.Item
-                    label={<span style={{ color: 'white' }}>Name</span>}
-                    name="name"
-                  >
-                    <Input data-testid="card-name-input" placeholder="Display name" />
-                  </Form.Item>
-                </>
+              {/* Stream component warning */}
+              {streamComponentEnabled === false && (
+                <Alert
+                  title="Stream Component Not Enabled"
+                  description={
+                    <span style={{ fontSize: '12px' }}>
+                      The <code>stream:</code> component is not enabled in your Home Assistant configuration.
+                      Live camera streaming requires this component. Add <code>stream:</code> to your
+                      configuration.yaml and restart Home Assistant to enable live streaming.
+                    </span>
+                  }
+                  type="warning"
+                  showIcon
+                  style={{ marginBottom: '16px' }}
+                />
               )}
+
+              {streamComponentEnabled === true && (
+                <Alert
+                  title="Stream Component Enabled"
+                  description="Live camera streaming is supported on your Home Assistant instance."
+                  type="success"
+                  showIcon
+                  style={{ marginBottom: '16px' }}
+                />
+              )}
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Name</span>}
+                name="name"
+              >
+                <Input data-testid="card-name-input" placeholder="Display name" />
+              </Form.Item>
             </>
           )}
 
