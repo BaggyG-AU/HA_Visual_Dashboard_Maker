@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, Form, Input, Button, Alert, Steps, Typography, Radio } from 'antd';
 import { CloudUploadOutlined, CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
+import { yamlService } from '../services/yamlService';
 
 const { Text } = Typography;
 const { Step } = Steps;
@@ -14,7 +15,7 @@ interface DeployDialogProps {
 }
 
 interface DeployStatus {
-  step: number;  // 0: config, 1: validating, 2: deploying, 3: complete/error
+  step: number;  // 0: config, 1: validate YAML, 2: validate connection, 3: deploy, 4: complete/error
   message: string;
   error?: string;
   success: boolean;
@@ -34,8 +35,6 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
   dashboardYaml,
   dashboardTitle,
 }) => {
-  // TODO: use dashboardYaml in deployment payload when wiring backend deploy
-  void dashboardYaml;
   const [form] = Form.useForm();
   const [deployStatus, setDeployStatus] = useState<DeployStatus>({
     step: 0,
@@ -60,9 +59,48 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
       const values = await form.validateFields();
       setDeploying(true);
 
-      // Step 1: Validate connection
+      // Step 1: Validate dashboard configuration FIRST (before any network calls)
       setDeployStatus({
         step: 1,
+        message: 'Validating dashboard configuration...',
+        success: false,
+      });
+
+      // Parse and validate YAML from editor
+      const parseResult = yamlService.parseDashboard(dashboardYaml);
+      if (!parseResult.success) {
+        throw new Error(`Invalid dashboard YAML: ${parseResult.error || 'Unknown error'}`);
+      }
+
+      const dashboardConfig = parseResult.data;
+
+      // Debug: Log what we're about to deploy
+      console.log('📤 Deploying dashboard config:', JSON.stringify(dashboardConfig, null, 2));
+      console.log('📝 Dashboard title from form:', values.title);
+      console.log('📝 Dashboard title in config:', dashboardConfig?.title);
+
+      // Strict validation: ensure views array exists and is not empty
+      if (!dashboardConfig?.views || dashboardConfig.views.length === 0) {
+        throw new Error('Dashboard must contain at least one view. Your dashboard appears to be empty.');
+      }
+
+      // Validate each view has required properties
+      for (let i = 0; i < dashboardConfig.views.length; i++) {
+        const view = dashboardConfig.views[i];
+        if (!view.title) {
+          throw new Error(`View ${i + 1} is missing a required "title" property.`);
+        }
+        if (!view.cards || !Array.isArray(view.cards)) {
+          throw new Error(`View "${view.title}" must have a "cards" array (can be empty).`);
+        }
+      }
+
+      // Wait a bit for visual feedback
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Step 2: Validate connection
+      setDeployStatus({
+        step: 2,
         message: 'Validating connection to Home Assistant...',
         success: false,
       });
@@ -79,50 +117,50 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
       // Wait a bit for visual feedback
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Step 2: Deploy dashboard
+      // Step 3: Deploy dashboard via Home Assistant WebSocket API
       setDeployStatus({
-        step: 2,
+        step: 3,
         message: deployMode === 'new'
           ? 'Creating new dashboard...'
           : 'Updating existing dashboard...',
         success: false,
       });
 
-      // For now, we'll use the Lovelace API to deploy
-      // The dashboard path is based on the URL key provided by user
       const dashboardPath = values.urlKey;
 
-      // Deploy via HA's Lovelace config API
-      const deployUrl = `${config.url}/api/lovelace/dashboards`;
+      // Ensure WebSocket connected
+      const wsConnect = await window.electronAPI.haWsConnect(config.url, config.token);
+      if (!wsConnect.success) {
+        throw new Error(wsConnect.error || 'Failed to connect to Home Assistant WebSocket');
+      }
 
-      let result;
       if (deployMode === 'new') {
-        // Create new dashboard
-        result = await window.electronAPI.haFetch(deployUrl, config.token);
-
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to create dashboard');
+        const createResult = await window.electronAPI.haWsCreateDashboard(dashboardPath, values.title, values.icon);
+        if (!createResult.success) {
+          throw new Error(createResult.error || 'Failed to create dashboard');
         }
+      }
 
-        // Now update the dashboard config
-        const updateUrl = `${config.url}/api/lovelace/dashboards/${dashboardPath}`;
-        result = await window.electronAPI.haFetch(updateUrl, config.token);
-      } else {
-        // Update existing dashboard
-        const updateUrl = `${config.url}/api/lovelace/dashboards/${dashboardPath}`;
-        result = await window.electronAPI.haFetch(updateUrl, config.token);
+      // Update the dashboard config with the user's chosen title from the form
+      // (The config might have a different title from editing)
+      const deployConfig = {
+        ...dashboardConfig,
+        title: values.title  // Use the title from the deployment form
+      };
 
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to update dashboard');
-        }
+      console.log('📤 Final config being deployed:', JSON.stringify(deployConfig, null, 2));
+
+      const saveResult = await window.electronAPI.haWsSaveDashboardConfig(dashboardPath, deployConfig);
+      if (!saveResult.success) {
+        throw new Error(saveResult.error || 'Failed to save dashboard configuration');
       }
 
       // Wait a bit for visual feedback
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Step 3: Complete
+      // Step 4: Complete
       setDeployStatus({
-        step: 3,
+        step: 4,
         message: deployMode === 'new'
           ? `Dashboard "${values.title}" created successfully!`
           : `Dashboard "${values.title}" updated successfully!`,
@@ -131,7 +169,7 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
 
     } catch (error) {
       setDeployStatus({
-        step: 3,
+        step: 4,
         message: 'Deployment failed',
         error: (error as Error).message,
         success: false,
@@ -196,7 +234,7 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
                 message: 'Only lowercase letters, numbers, hyphens, and underscores allowed',
               },
             ]}
-            help="This will be part of the dashboard URL (e.g., lovelace/your-key)"
+            help="This will be part of the dashboard URL (e.g., lovelace/your-key). Home Assistant requires at least one hyphen."
           >
             <Input placeholder="my-dashboard" />
           </Form.Item>
@@ -227,7 +265,8 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
       return (
         <div>
           <Steps current={deployStatus.step - 1} style={{ marginBottom: '24px' }}>
-            <Step title="Validate" description="Checking connection" />
+            <Step title="Validate YAML" description="Checking dashboard config" />
+            <Step title="Connection" description="Verifying HA connection" />
             <Step title="Deploy" description="Uploading dashboard" />
             <Step title="Complete" description="Finishing up" />
           </Steps>
@@ -241,7 +280,7 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
             <Text style={{ color: '#fff' }}>{deployStatus.message}</Text>
           </div>
 
-          {deployStatus.step === 3 && (
+          {deployStatus.step === 4 && (
             <>
               {deployStatus.success ? (
                 <Alert
@@ -286,7 +325,7 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
   };
 
   const renderFooter = () => {
-    if (deployStatus.step === 3) {
+    if (deployStatus.step === 4) {
       // Complete step - only show close button
       return [
         <Button key="close" onClick={handleClose}>

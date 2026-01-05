@@ -32,10 +32,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setThemeDarkMode: (darkMode: boolean) => ipcRenderer.invoke('settings:setThemeDarkMode', darkMode),
   getThemeSyncWithHA: () => ipcRenderer.invoke('settings:getThemeSyncWithHA'),
   setThemeSyncWithHA: (sync: boolean) => ipcRenderer.invoke('settings:setThemeSyncWithHA', sync),
+  getLoggingLevel: () => ipcRenderer.invoke('settings:getLoggingLevel'),
+  setLoggingLevel: (level: 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace') => ipcRenderer.invoke('settings:setLoggingLevel', level),
+  getVerboseUIDebug: () => ipcRenderer.invoke('settings:getVerboseUIDebug'),
+  setVerboseUIDebug: (verbose: boolean) => ipcRenderer.invoke('settings:setVerboseUIDebug', verbose),
+  resetUIState: () => ipcRenderer.invoke('settings:resetUIState'),
+  getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
 
   // Entity caching APIs
   getCachedEntities: () => ipcRenderer.invoke('entities:getCached'),
   cacheEntities: (entities: any[]) => ipcRenderer.invoke('entities:cache', entities),
+  clearCachedEntities: () => ipcRenderer.invoke('entities:clear'),
 
   // Home Assistant connection APIs
   getHAConnection: () => ipcRenderer.invoke('ha:getConnection'),
@@ -53,6 +60,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   haWsUpdateTempDashboard: (tempPath: string, config: any) => ipcRenderer.invoke('ha:ws:updateTempDashboard', tempPath, config),
   haWsDeployDashboard: (tempPath: string, productionPath: string | null) => ipcRenderer.invoke('ha:ws:deployDashboard', tempPath, productionPath),
   haWsDeleteTempDashboard: (tempPath: string) => ipcRenderer.invoke('ha:ws:deleteTempDashboard', tempPath),
+  haWsCreateDashboard: (urlPath: string, title: string, icon?: string) => ipcRenderer.invoke('ha:ws:createDashboard', urlPath, title, icon),
+  haWsSaveDashboardConfig: (urlPath: string | null, config: any) => ipcRenderer.invoke('ha:ws:saveDashboardConfig', urlPath, config),
+  haWsDeleteDashboard: (urlPath: string) => ipcRenderer.invoke('ha:ws:deleteDashboard', urlPath),
   haWsFetchEntities: () => ipcRenderer.invoke('ha:ws:fetchEntities'),
   haWsGetThemes: () => ipcRenderer.invoke('ha:ws:getThemes'),
   haWsSubscribeToThemes: (callback: (themes: any) => void) => {
@@ -125,8 +135,15 @@ export interface ElectronAPI {
   setThemeDarkMode: (darkMode: boolean) => Promise<{ success: boolean }>;
   getThemeSyncWithHA: () => Promise<{ sync: boolean }>;
   setThemeSyncWithHA: (sync: boolean) => Promise<{ success: boolean }>;
+  getLoggingLevel: () => Promise<{ level: 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace' }>;
+  setLoggingLevel: (level: 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace') => Promise<{ success: boolean }>;
+  getVerboseUIDebug: () => Promise<{ verbose: boolean }>;
+  setVerboseUIDebug: (verbose: boolean) => Promise<{ success: boolean }>;
+  resetUIState: () => Promise<{ success: boolean }>;
+  getAppVersion: () => Promise<{ version: string }>;
   getCachedEntities: () => Promise<{ success: boolean; entities?: any[]; error?: string }>;
   cacheEntities: (entities: any[]) => Promise<{ success: boolean; error?: string }>;
+  clearCachedEntities: () => Promise<{ success: boolean }>;
   getHAConnection: () => Promise<{ url?: string; token?: string }>;
   setHAConnection: (url: string, token: string) => Promise<{ success: boolean }>;
   clearHAConnection: () => Promise<{ success: boolean }>;
@@ -140,6 +157,9 @@ export interface ElectronAPI {
   haWsUpdateTempDashboard: (tempPath: string, config: any) => Promise<{ success: boolean; error?: string }>;
   haWsDeployDashboard: (tempPath: string, productionPath: string | null) => Promise<{ success: boolean; backupPath?: string; error?: string }>;
   haWsDeleteTempDashboard: (tempPath: string) => Promise<{ success: boolean; error?: string }>;
+  haWsCreateDashboard: (urlPath: string, title: string, icon?: string) => Promise<{ success: boolean; error?: string }>;
+  haWsSaveDashboardConfig: (urlPath: string | null, config: any) => Promise<{ success: boolean; error?: string }>;
+  haWsDeleteDashboard: (urlPath: string) => Promise<{ success: boolean; error?: string }>;
   haWsFetchEntities: () => Promise<{ success: boolean; entities?: any[]; error?: string }>;
   haWsGetThemes: () => Promise<{ success: boolean; themes?: any; error?: string }>;
   haWsSubscribeToThemes: (callback: (themes: any) => void) => (() => void);

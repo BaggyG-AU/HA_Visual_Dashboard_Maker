@@ -18,7 +18,11 @@ interface AppSettings {
   selectedTheme?: string;
   themeDarkMode?: boolean;
   themeSyncWithHA?: boolean;
+  loggingLevel?: LoggingLevel;
+  verboseUIDebug?: boolean;
 }
+
+export type LoggingLevel = 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
 const schema = {
   windowState: {
@@ -40,6 +44,15 @@ const schema = {
     type: 'array',
     items: { type: 'string' },
     default: []
+  },
+  loggingLevel: {
+    type: 'string',
+    enum: ['off', 'error', 'warn', 'info', 'debug', 'trace'],
+    default: 'info'
+  },
+  verboseUIDebug: {
+    type: 'boolean',
+    default: false
   }
 };
 
@@ -163,6 +176,37 @@ class SettingsService {
 
   setThemeSyncWithHA(sync: boolean): void {
     this.store.set('themeSyncWithHA', sync);
+  }
+
+  // Logging methods
+  getLoggingLevel(defaultLevel: LoggingLevel = 'info'): LoggingLevel {
+    return this.store.get('loggingLevel', defaultLevel);
+  }
+
+  setLoggingLevel(level: LoggingLevel): void {
+    this.store.set('loggingLevel', level);
+  }
+
+  // Verbose UI debug overlay
+  getVerboseUIDebug(): boolean {
+    return this.store.get('verboseUIDebug', false);
+  }
+
+  setVerboseUIDebug(enabled: boolean): void {
+    this.store.set('verboseUIDebug', enabled);
+  }
+
+  // Reset UI state (non-destructive to dashboards)
+  resetUIState(): void {
+    this.clearRecentFiles();
+    this.store.set('windowState', {
+      width: 1400,
+      height: 900,
+      isMaximized: false
+    });
+    this.store.delete('selectedTheme');
+    this.store.delete('themeDarkMode');
+    this.store.delete('themeSyncWithHA');
   }
 }
 

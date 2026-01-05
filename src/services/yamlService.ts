@@ -97,6 +97,79 @@ class YAMLService {
       return null;
     }
   }
+
+  /**
+   * Sanitize dashboard config for Home Assistant deployment
+   * Removes HAVDM-specific internal properties that HA doesn't recognize
+   */
+  sanitizeForHA(config: DashboardConfig): DashboardConfig {
+    const sanitized: DashboardConfig = {
+      title: config.title,
+      views: config.views.map(view => {
+        // Create clean view object, removing HAVDM-specific properties
+        const cleanView: any = {
+          title: view.title,
+          path: view.path,
+          icon: view.icon,
+          theme: view.theme,
+          background: view.background,
+          badges: view.badges,
+          panel: view.panel,
+          visible: view.visible,
+          cards: view.cards
+            ?.filter(card => {
+              // Remove spacer cards - HA doesn't have a spacer type
+              if (card.type === 'spacer' || (card as any)._isSpacer) {
+                return false;
+              }
+              return true;
+            })
+            .map(card => {
+              // Create a clean copy without HAVDM-internal properties
+              const cleanCard: any = { ...card };
+
+              // Remove HAVDM-specific properties
+              delete cleanCard.layout;  // HAVDM grid positioning {x, y, w, h}
+              delete cleanCard._isSpacer;  // Internal spacer flag
+
+              // Remove any undefined or null values
+              Object.keys(cleanCard).forEach(key => {
+                if (cleanCard[key] === undefined || cleanCard[key] === null) {
+                  delete cleanCard[key];
+                }
+              });
+
+              return cleanCard;
+            }) || []
+        };
+
+        // Remove undefined/null properties from view
+        Object.keys(cleanView).forEach(key => {
+          if (cleanView[key] === undefined || cleanView[key] === null) {
+            delete cleanView[key];
+          }
+        });
+
+        return cleanView;
+      }),
+      background: config.background,
+      theme: config.theme
+    };
+
+    return sanitized;
+  }
+
+  /**
+   * Serialize dashboard config for Home Assistant deployment
+   * Automatically sanitizes HAVDM-internal properties
+   */
+  serializeForHA(config: DashboardConfig): string {
+    const sanitized = this.sanitizeForHA(config);
+    console.log('🧹 Sanitized config for HA:', JSON.stringify(sanitized, null, 2));
+    const yaml = this.serializeDashboard(sanitized);
+    console.log('📄 YAML being sent to DeployDialog:\n', yaml);
+    return yaml;
+  }
 }
 
 export const yamlService = new YAMLService();

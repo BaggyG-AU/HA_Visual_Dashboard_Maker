@@ -3,12 +3,28 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import started from 'electron-squirrel-startup';
 import { createApplicationMenu } from './menu';
-import { settingsService } from './services/settingsService';
+import { settingsService, LoggingLevel } from './services/settingsService';
+import { logger, loggerDefaults } from './services/logger';
+
+// Normalize HA URLs while respecting the user-provided scheme (http or https)
+const normalizeHAUrl = (url: string): string => {
+  let normalized = url.trim();
+  if (!/^https?:\/\//i.test(normalized)) {
+    normalized = `http://${normalized}`;
+  }
+  if (normalized.endsWith('/')) {
+    normalized = normalized.slice(0, -1);
+  }
+  return normalized;
+};
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
 }
+
+// Initialize logger level from settings
+logger.setLevel(settingsService.getLoggingLevel(loggerDefaults.defaultLevel));
 
 // ===== IPC Handlers - Register BEFORE creating window =====
 
@@ -188,6 +204,35 @@ ipcMain.handle('settings:setThemeSyncWithHA', async (event, sync: boolean) => {
   return { success: true };
 });
 
+// Logging level
+ipcMain.handle('settings:getLoggingLevel', async () => {
+  return { level: settingsService.getLoggingLevel(loggerDefaults.defaultLevel) };
+});
+
+ipcMain.handle('settings:setLoggingLevel', async (_event, level: LoggingLevel) => {
+  settingsService.setLoggingLevel(level);
+  logger.setLevel(level);
+  return { success: true };
+});
+
+ipcMain.handle('settings:getVerboseUIDebug', async () => {
+  return { verbose: settingsService.getVerboseUIDebug() };
+});
+
+ipcMain.handle('settings:setVerboseUIDebug', async (_event, verbose: boolean) => {
+  settingsService.setVerboseUIDebug(verbose);
+  return { success: true };
+});
+
+ipcMain.handle('settings:resetUIState', async () => {
+  settingsService.resetUIState();
+  return { success: true };
+});
+
+ipcMain.handle('app:getVersion', async () => {
+  return { version: app.getVersion() };
+});
+
 // Handle getting recent files
 ipcMain.handle('settings:getRecentFiles', async () => {
   return { files: settingsService.getRecentFiles() };
@@ -237,6 +282,12 @@ ipcMain.handle('settings:clearRecentFiles', async () => {
   return { success: true };
 });
 
+// Clear cached entities (maintenance)
+ipcMain.handle('entities:clear', async () => {
+  settingsService.clearCachedEntities();
+  return { success: true };
+});
+
 // Handle getting HA connection
 ipcMain.handle('ha:getConnection', async () => {
   return {
@@ -260,7 +311,14 @@ ipcMain.handle('ha:clearConnection', async () => {
 // Handle HA API fetch (to bypass CORS)
 ipcMain.handle('ha:fetch', async (event, url: string, token: string) => {
   try {
-    const response = await fetch(url, {
+    if (!url) {
+      return { success: false, error: 'Missing Home Assistant URL' };
+    }
+    if (!token) {
+      return { success: false, error: 'Missing Home Assistant token' };
+    }
+    const targetUrl = normalizeHAUrl(url);
+    const response = await fetch(targetUrl, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -275,11 +333,12 @@ ipcMain.handle('ha:fetch', async (event, url: string, token: string) => {
     try {
       data = text ? JSON.parse(text) : null;
     } catch (parseError) {
-      console.error('Failed to parse JSON response:', text);
+      console.error(`Failed to parse JSON response from ${targetUrl}:`, text);
       return {
         success: false,
         status: response.status,
-        error: `Invalid JSON response: ${text.substring(0, 100)}`,
+        error: `Invalid JSON response from ${targetUrl}: ${text.substring(0, 100)}`,
+        url: targetUrl,
       };
     }
 
@@ -287,11 +346,13 @@ ipcMain.handle('ha:fetch', async (event, url: string, token: string) => {
       success: response.ok,
       status: response.status,
       data: data,
+      url: targetUrl,
     };
   } catch (error) {
     return {
       success: false,
       error: (error as Error).message,
+      url: normalizeHAUrl(url),
     };
   }
 });
@@ -305,7 +366,14 @@ import { credentialsService } from './services/credentialsService';
 // Connect to HA WebSocket
 ipcMain.handle('ha:ws:connect', async (event, url: string, token: string) => {
   try {
-    await haWebSocketService.connect(url, token);
+    if (!url) {
+      return { success: false, error: 'Missing Home Assistant URL' };
+    }
+    if (!token) {
+      return { success: false, error: 'Missing Home Assistant token' };
+    }
+    const normalizedUrl = normalizeHAUrl(url);
+    await haWebSocketService.connect(normalizedUrl, token);
     return { success: true };
   } catch (error) {
     return {
@@ -325,6 +393,36 @@ ipcMain.handle('ha:ws:listDashboards', async () => {
       success: false,
       error: (error as Error).message,
     };
+  }
+});
+
+// Create dashboard resource
+ipcMain.handle('ha:ws:createDashboard', async (_event, urlPath: string, title: string, icon?: string) => {
+  try {
+    await haWebSocketService.createDashboardResource(urlPath, title, icon);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Save dashboard config
+ipcMain.handle('ha:ws:saveDashboardConfig', async (_event, urlPath: string | null, config: any) => {
+  try {
+    await haWebSocketService.saveDashboardConfig(urlPath || 'lovelace', config);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Delete dashboard resource/config
+ipcMain.handle('ha:ws:deleteDashboard', async (_event, urlPath: string) => {
+  try {
+    await haWebSocketService.deleteDashboardConfig(urlPath);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
   }
 });
 

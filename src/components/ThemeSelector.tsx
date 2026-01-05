@@ -1,11 +1,10 @@
 import React from 'react';
-import { Select, Button, Tooltip, Space, Switch, Badge } from 'antd';
-import { BgColorsOutlined, SunOutlined, MoonOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
+import { Select, Tooltip, Space, Switch, Badge, Button } from 'antd';
+import { BgColorsOutlined, SunOutlined, MoonOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useThemeStore } from '../store/themeStore';
 
 interface ThemeSelectorProps {
   onRefreshThemes: () => Promise<void>;
-  onOpenSettings: () => void;
 }
 
 /**
@@ -14,7 +13,6 @@ interface ThemeSelectorProps {
  */
 export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   onRefreshThemes,
-  onOpenSettings
 }) => {
   const {
     currentThemeName,
@@ -91,16 +89,6 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
           <Badge status="processing" text="Synced" data-testid="theme-sync-badge" />
         </Tooltip>
       )}
-
-      <Tooltip title="Open theme settings">
-        <Button
-          data-testid="theme-settings-button"
-          size="small"
-          icon={<SettingOutlined />}
-          onClick={onOpenSettings}
-          disabled={!hasThemes}
-        />
-      </Tooltip>
     </Space>
   );
 };
