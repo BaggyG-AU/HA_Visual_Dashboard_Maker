@@ -174,6 +174,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           console.log('[PropertiesPanel] Monaco editor created successfully');
           monacoEditorRef.current = editor;
 
+          // Expose editor to global scope for testing
+          if (typeof window !== 'undefined') {
+            (window as any).__monacoEditor = editor;
+            (window as any).__monacoModel = editor.getModel();
+          }
+
           // Listen for content changes
           editor.onDidChangeModelContent(() => {
             const value = editor.getValue();
@@ -206,6 +212,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       console.log('[PropertiesPanel] Monaco editor created successfully');
       monacoEditorRef.current = editor;
 
+      // Expose editor to global scope for testing
+      if (typeof window !== 'undefined') {
+        (window as any).__monacoEditor = editor;
+        (window as any).__monacoModel = editor.getModel();
+      }
+
       // Listen for content changes
       editor.onDidChangeModelContent(() => {
         const value = editor.getValue();
@@ -219,6 +231,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         console.log('[PropertiesPanel] Cleaning up Monaco editor');
         monacoEditorRef.current.dispose();
         monacoEditorRef.current = null;
+        // Clean up global references
+        if (typeof window !== 'undefined') {
+          delete (window as any).__monacoEditor;
+          delete (window as any).__monacoModel;
+        }
       }
     };
   }, [activeTab]); // Only re-create when tab changes

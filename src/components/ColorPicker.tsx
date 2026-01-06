@@ -24,7 +24,6 @@ import {
   formatHsla,
   rgbaToHsla,
   validateHex,
-  normalizeHex,
 } from '../utils/colorConversions';
 
 const { Text } = Typography;
@@ -36,7 +35,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   value = '#000000',
   onChange,
   format: initialFormat = 'hex',
-  showAlpha = true,
+  showAlpha: _showAlpha = true, // Reserved for future alpha channel support
   showFormatToggle = true,
   showRecentColors = true,
   maxRecentColors = 10,
@@ -91,6 +90,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
 
   /**
    * Handle input field change (manual entry)
+   * Only updates local state - doesn't commit until Enter/blur
    */
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,22 +98,9 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
 
       const newValue = e.target.value;
       setInputValue(newValue);
-
-      // Validate and update if valid
-      if (format === 'hex') {
-        const validation = validateHex(newValue);
-        if (validation.valid && validation.normalized) {
-          onChange?.(validation.normalized);
-        }
-      } else {
-        // For RGB/HSL, try to parse
-        const parsed = parseColor(newValue);
-        if (parsed) {
-          onChange?.(newValue);
-        }
-      }
+      // Don't call onChange here - wait for Enter or blur
     },
-    [format, disabled, onChange]
+    [disabled]
   );
 
   /**
@@ -128,6 +115,9 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         setInputValue(validation.normalized);
         onChange?.(validation.normalized);
         addRecentColor(validation.normalized);
+      } else {
+        // Revert to last valid value if invalid
+        setInputValue(value);
       }
     } else {
       // For RGB/HSL, validate by parsing

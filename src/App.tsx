@@ -1414,7 +1414,7 @@ const App: React.FC = () => {
               )}
             </Content>
           </Layout>
-          <Sider width={300} theme="dark" style={{ overflow: 'auto', height: 'calc(100vh - 64px)' }}>
+          <Sider width={450} theme="dark" style={{ overflow: 'auto', height: 'calc(100vh - 64px)' }}>
             <PropertiesPanel
               card={
                 config && selectedViewIndex !== null && selectedCardIndex !== null

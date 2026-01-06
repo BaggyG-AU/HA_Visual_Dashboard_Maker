@@ -45,7 +45,9 @@ export class PropertiesPanelDSL {
     const tabElement = this.panel.getByRole('tab', { name: new RegExp(tab, 'i') });
     await expect(tabElement).toBeVisible();
     await tabElement.click();
-    await this.window.waitForTimeout(300); // Tab switch animation
+    // Wait until tab reports selected to avoid hidden content reads
+    await expect(tabElement).toHaveAttribute('aria-selected', 'true', { timeout: 3000 });
+    await this.window.waitForTimeout(150); // allow small animation settle
   }
 
   /**
@@ -68,7 +70,7 @@ export class PropertiesPanelDSL {
     await this.expectActiveTab('YAML');
 
     // Wait for editor container scoped to properties panel
-    const editorContainer = this.panel.getByTestId('yaml-editor-container');
+    const editorContainer = this.panel.locator('[data-testid=\"yaml-editor-container\"]:visible').first();
     await expect(editorContainer).toBeVisible({ timeout });
 
     // Wait for Monaco to initialize (either .monaco-editor or textarea)

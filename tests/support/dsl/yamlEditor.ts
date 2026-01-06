@@ -30,8 +30,10 @@ export class YamlEditorDSL {
    * Wait for Monaco editor to be fully loaded and ready
    */
   private async waitForMonacoReady(): Promise<void> {
-    // Wait for Monaco editor container
-    const editorContainer = this.window.getByTestId('yaml-editor-container');
+    // Scope to any visible YAML editor container (modal or properties panel)
+    const editorContainer = this.window
+      .locator('[data-testid=\"yaml-editor-container\"]:visible')
+      .first();
     await expect(editorContainer).toBeVisible({ timeout: 5000 });
 
     // Wait for Monaco to render (either .monaco-editor or fallback textarea)
@@ -51,6 +53,13 @@ export class YamlEditorDSL {
         expect(box.width).toBeGreaterThan(0);
         expect(box.height).toBeGreaterThan(0);
       }).toPass({ timeout: 5000 });
+
+      // Wait for at least one Monaco model to be registered
+      await this.window.waitForFunction(
+        () => (window as any).monaco?.editor?.getModels()?.length > 0,
+        null,
+        { timeout: 5000 }
+      );
 
       // Additional wait for Monaco internal initialization
       await this.window.waitForTimeout(500);
@@ -159,10 +168,84 @@ export class YamlEditorDSL {
    * Get Monaco editor content via evaluate
    */
   async getEditorContent(): Promise<string> {
+    await this.waitForMonacoReady();
+
     return await this.window.evaluate(() => {
-      const model = (window as any).monaco?.editor?.getModels()[0];
-      return model ? model.getValue() : '';
+      const monaco = (window as any).monaco;
+      if (monaco?.editor) {
+        // Prefer the editor whose container is inside the YAML editor area (properties or modal)
+        const editors = monaco.editor.getEditors ? monaco.editor.getEditors() : [];
+
+        const target =
+          editors.find((ed: any) =>
+            ed
+              .getContainerDomNode?.()
+              .closest?.('[data-testid="yaml-editor-container"]')
+          ) || editors[0];
+
+        const model = target?.getModel?.();
+        if (model?.getValue) return model.getValue();
+      }
+
+      // Fallback: visible monaco view-lines text (covers cases where monaco isn't exposed)
+      const text = Array.from(
+        document.querySelectorAll('.monaco-editor .view-lines')
+      )
+        .filter((el) => {
+          const box = el.getBoundingClientRect();
+          return box.width > 0 && box.height > 0;
+        })
+        .map((n) => n.textContent || '')
+        .join('\n');
+      return text;
     });
+  }
+
+  /**
+   * Search all Monaco models and visible YAML containers for a regex match.
+   * Returns true if any model or visible rendered YAML contains the pattern.
+   */
+  async anyYamlContains(pattern: RegExp): Promise<boolean> {
+    return await this.window.evaluate((pat: string, flags: string) => {
+      const re = new RegExp(pat, flags);
+      const monaco = (window as any).monaco;
+
+      // 1) Check all Monaco models (covers multiple editors/models)
+      if (monaco?.editor) {
+        const models = monaco.editor.getModels?.() || [];
+        if (models.some((m: any) => re.test(m.getValue?.() || ''))) return true;
+      }
+
+      // 2) Check rendered view lines inside visible YAML editors
+      const viewText = Array.from(
+        document.querySelectorAll(
+          '[data-testid="yaml-editor-container"]:not([hidden]) .view-lines'
+        )
+      )
+        .map((n) => n.textContent || '')
+        .join('\n');
+      if (re.test(viewText)) return true;
+
+      // 3) Fallback: raw textContent of visible YAML containers
+      const nodes = Array.from(
+        document.querySelectorAll(
+          '[data-testid="yaml-editor-container"]:not([hidden])'
+        )
+      );
+      if (nodes.some((n) => re.test(n.textContent || ''))) return true;
+
+      // 4) Ultimate fallback: any visible monaco editor view-lines anywhere (properties panel, modals, etc.)
+      const globalViewText = Array.from(
+        document.querySelectorAll('.monaco-editor .view-lines')
+      )
+        .filter((el) => {
+          const box = el.getBoundingClientRect();
+          return box.width > 0 && box.height > 0;
+        })
+        .map((n) => n.textContent || '')
+        .join('\n');
+      return re.test(globalViewText);
+    }, pattern.source, pattern.flags);
   }
 
   /**
