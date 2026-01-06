@@ -32,7 +32,7 @@ export class YamlEditorDSL {
   private async waitForMonacoReady(): Promise<void> {
     // Scope to any visible YAML editor container (modal or properties panel)
     const editorContainer = this.window
-      .locator('[data-testid=\"yaml-editor-container\"]:visible')
+      .locator('[data-testid="yaml-editor-container"]:visible')
       .first();
     await expect(editorContainer).toBeVisible({ timeout: 5000 });
 

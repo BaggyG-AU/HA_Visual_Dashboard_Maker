@@ -70,7 +70,7 @@ export class PropertiesPanelDSL {
     await this.expectActiveTab('YAML');
 
     // Wait for editor container scoped to properties panel
-    const editorContainer = this.panel.locator('[data-testid=\"yaml-editor-container\"]:visible').first();
+    const editorContainer = this.panel.locator('[data-testid="yaml-editor-container"]:visible').first();
     await expect(editorContainer).toBeVisible({ timeout });
 
     // Wait for Monaco to initialize (either .monaco-editor or textarea)

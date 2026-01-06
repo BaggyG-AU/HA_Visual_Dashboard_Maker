@@ -37,7 +37,9 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
   // Extract configuration
   const name = card.name || entity?.attributes?.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Button';
   const icon = card.icon || (card as any).icon_template;
-  const color = (card as any).color || (card as any).color_type;
+  const colorProp = (card as any).color;
+  const iconColorProp = (card as any).icon_color;
+  const colorType = (card as any).color_type;
   const showName = (card as any).show_name !== false;
   const showIcon = (card as any).show_icon !== false;
   const showState = (card as any).show_state;
@@ -70,16 +72,19 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
 
   // Determine button color
   const getButtonColor = () => {
-    if (color === 'auto') {
+    if (colorProp === 'auto' || colorType === 'auto') {
       return isOn ? '#ffc107' : '#666';
     }
-    if (typeof color === 'string') {
-      return color;
+    if (typeof colorProp === 'string' && colorProp.trim().length > 0) {
+      return colorProp;
     }
     return isOn ? '#1890ff' : '#666';
   };
 
   const buttonColor = getButtonColor();
+  const iconColor = typeof iconColorProp === 'string' && iconColorProp.trim().length > 0
+    ? iconColorProp
+    : buttonColor;
 
   return (
     <div
@@ -121,10 +126,11 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
             minWidth: '120px',
             transition: 'all 0.3s ease',
           }}
+          data-testid="custom-button-card-visual"
         >
           {/* Icon */}
           {showIcon && (
-            <div style={{ fontSize: size, color: buttonColor }}>
+            <div style={{ fontSize: size, color: iconColor }} data-testid="custom-button-card-icon">
               {iconComponent}
             </div>
           )}

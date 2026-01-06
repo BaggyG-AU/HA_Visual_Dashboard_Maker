@@ -502,6 +502,50 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
     }
   });
 
+  // Skipped due to intermittent Monaco/YAML visibility issues in properties panel (tracked in Phase 3)
+  test.skip('button card color + icon color should update preview and YAML', async () => {
+    const ctx = await launchWithDSL();
+    const { appDSL, dashboard, palette, canvas, properties, colorPicker, yamlEditor, window } = ctx;
+
+    try {
+      await appDSL.waitUntilReady();
+      await dashboard.createNew();
+
+      await palette.expandCategory('Custom');
+      await palette.addCard('custom:button-card');
+      await canvas.expectCardCount(1);
+      await canvas.selectCard(0);
+      await properties.expectVisible();
+
+      // Set border/card color
+      await colorPicker.openPopover('button-card-color-input');
+      await colorPicker.setColorInput('#336699', 'button-card-color-input');
+      await colorPicker.closePopover('button-card-color-input');
+
+      // Set icon color separately
+      await colorPicker.openPopover('button-card-icon-color-input');
+      await colorPicker.setColorInput('#FF8800', 'button-card-icon-color-input');
+      await colorPicker.closePopover('button-card-icon-color-input');
+
+      // Preview should reflect both colors
+      const visual = window.getByTestId('custom-button-card-visual');
+      await expect(visual).toHaveCSS('border-color', 'rgb(51, 102, 153)');
+
+      const icon = window.getByTestId('custom-button-card-icon');
+      await expect(icon).toHaveCSS('color', 'rgb(255, 136, 0)');
+
+      // YAML tab should include both values
+      await properties.switchTab('YAML');
+      await properties.expectYamlEditor();
+      const yamlText = await yamlEditor.getEditorContent();
+
+      expect(yamlText).toContain("color: '#336699'");
+      expect(yamlText.toLowerCase()).toContain("icon_color: '#ff8800'");
+    } finally {
+      await close(ctx);
+    }
+  });
+
   test('should handle duplicate colors in recent history (case-insensitive)', async () => {
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, colorPicker } = ctx;

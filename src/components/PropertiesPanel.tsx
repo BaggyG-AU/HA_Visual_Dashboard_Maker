@@ -13,6 +13,27 @@ import { haConnectionService } from '../services/haConnectionService';
 
 const { Title, Text } = Typography;
 
+const STYLE_COLOR_REGEX = /(^|[\s{;])color\s*:\s*([^;]+)/i;
+
+const extractStyleColor = (styleValue?: string): string => {
+  if (!styleValue) return '';
+  const match = STYLE_COLOR_REGEX.exec(styleValue);
+  return match ? match[2].trim() : '';
+};
+
+const upsertStyleColor = (styleValue: string | undefined, color: string): string => {
+  if (!styleValue || !styleValue.trim()) {
+    return `color: ${color};`;
+  }
+
+  if (STYLE_COLOR_REGEX.test(styleValue)) {
+    return styleValue.replace(STYLE_COLOR_REGEX, `$1color: ${color}`);
+  }
+
+  const normalized = styleValue.trim().endsWith(';') ? styleValue.trim() : `${styleValue.trim()};`;
+  return `${normalized}\ncolor: ${color};`;
+};
+
 interface PropertiesPanelProps {
   card: Card | null;
   cardIndex: number | null;
@@ -996,6 +1017,17 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Form.Item
+                label={<span style={{ color: 'white' }}>Icon Color</span>}
+                name="icon_color"
+                help={<span style={{ color: '#666' }}>Override icon color (leave blank to follow color or auto)</span>}
+              >
+                <ColorPickerInput
+                  placeholder="Pick icon color"
+                  data-testid="button-card-icon-color-input"
+                />
+              </Form.Item>
+
+              <Form.Item
                 label={<span style={{ color: 'white' }}>Size</span>}
                 name="size"
                 help={<span style={{ color: '#666' }}>Button size percentage</span>}
@@ -1072,16 +1104,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Icon Color</span>}
                 name="icon_color"
               >
-                <Select
-                  placeholder="Select color"
-                  options={[
-                    { value: 'primary', label: 'Primary' },
-                    { value: 'accent', label: 'Accent' },
-                    { value: 'info', label: 'Info' },
-                    { value: 'success', label: 'Success' },
-                    { value: 'warning', label: 'Warning' },
-                    { value: 'danger', label: 'Danger' },
-                  ]}
+                <ColorPickerInput
+                  placeholder="Pick icon color"
+                  data-testid="mushroom-entity-icon-color-input"
                 />
               </Form.Item>
 
@@ -1149,6 +1174,26 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     { value: false, label: 'No' },
                   ]}
                 />
+              </Form.Item>
+
+              <Form.Item noStyle shouldUpdate={(prev, curr) => prev.use_light_color !== curr.use_light_color}>
+                {({ getFieldValue }) => {
+                  const useLightColor = getFieldValue('use_light_color');
+                  const disabled = useLightColor === true;
+                  return (
+                    <Form.Item
+                      label={<span style={{ color: 'white' }}>Icon Color</span>}
+                      name="icon_color"
+                      help={<span style={{ color: '#666' }}>Overrides icon color when not using the light color</span>}
+                    >
+                      <ColorPickerInput
+                        placeholder={disabled ? 'Using light color from entity' : 'Pick icon color'}
+                        disabled={disabled}
+                        data-testid="mushroom-light-icon-color-input"
+                      />
+                    </Form.Item>
+                  );
+                }}
               </Form.Item>
 
               <Form.Item
@@ -1397,16 +1442,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Icon Color</span>}
                 name="icon_color"
               >
-                <Select
-                  placeholder="Select color"
-                  options={[
-                    { value: 'primary', label: 'Primary' },
-                    { value: 'accent', label: 'Accent' },
-                    { value: 'info', label: 'Info' },
-                    { value: 'success', label: 'Success' },
-                    { value: 'warning', label: 'Warning' },
-                    { value: 'danger', label: 'Danger' },
-                  ]}
+                <ColorPickerInput
+                  placeholder="Pick icon color"
+                  data-testid="mushroom-switch-icon-color-input"
                 />
               </Form.Item>
 
@@ -2104,6 +2142,26 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   rows={6}
                   style={{ fontFamily: 'monospace' }}
                 />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Style Color</span>}
+                help={<span style={{ color: '#666' }}>Insert or update the CSS color value within the style block</span>}
+              >
+                <Form.Item noStyle shouldUpdate>
+                  {({ getFieldValue, setFieldsValue }) => (
+                    <ColorPickerInput
+                      value={extractStyleColor(getFieldValue('style'))}
+                      onChange={(newColor) => {
+                        const updatedStyle = upsertStyleColor(getFieldValue('style'), newColor);
+                        setFieldsValue({ style: updatedStyle });
+                        handleValuesChange();
+                      }}
+                      placeholder="Pick a CSS color"
+                      data-testid="card-mod-style-color-input"
+                    />
+                  )}
+                </Form.Item>
               </Form.Item>
 
               <Alert
