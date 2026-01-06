@@ -10,6 +10,9 @@ interface HistoryState {
 interface DashboardActions {
   loadDashboard: (yamlContent: string, filePath: string) => void;
   updateConfig: (config: DashboardConfig) => void;
+  beginBatchUpdate: () => void;
+  applyBatchedConfig: (config: DashboardConfig) => void;
+  endBatchUpdate: () => void;
   setSelectedView: (index: number | null) => void;
   setSelectedCard: (viewIndex: number | null, cardIndex: number | null) => void;
   markDirty: () => void;
@@ -32,6 +35,7 @@ const initialState: DashboardState & HistoryState = {
   isDirty: false,
   selectedViewIndex: null,
   selectedCardIndex: null,
+  isBatching: false,
   past: [],
   future: [],
 };
@@ -74,13 +78,44 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         future: [], // Clear future when making a new change
         config,
         isDirty: true,
+        isBatching: false,
       }));
     } else {
       set({
         config,
         isDirty: true,
+        isBatching: false,
       });
     }
+  },
+
+  beginBatchUpdate: () => {
+    const state = get();
+    if (state.isBatching) return;
+    if (!state.config) {
+      set({ isBatching: true });
+      return;
+    }
+
+    set((current) => ({
+      past: [...current.past, current.config as DashboardConfig],
+      future: [],
+      isBatching: true,
+    }));
+  },
+
+  applyBatchedConfig: (config: DashboardConfig) => {
+    // Applies the config without pushing intermediate states into undo history.
+    // Caller should start/end batching explicitly.
+    set({
+      config,
+      isDirty: true,
+    });
+  },
+
+  endBatchUpdate: () => {
+    if (!get().isBatching) return;
+    set({ isBatching: false });
   },
 
   setSelectedView: (index: number | null) => {
@@ -125,6 +160,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       future: state.config ? [state.config, ...state.future] : state.future,
       config: previous,
       isDirty: true,
+      isBatching: false,
     });
   },
 
@@ -140,6 +176,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       future: newFuture,
       config: next,
       isDirty: true,
+      isBatching: false,
     });
   },
 

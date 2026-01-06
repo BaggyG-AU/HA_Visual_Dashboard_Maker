@@ -4,7 +4,7 @@ A cross-platform desktop application for visually designing Home Assistant dashb
 
 ## Project Status
 
-- **Version**: `0.3.0-beta.1`
+- **Version**: `0.4.0-beta.1`
 - **Current focus**: Entity Type Dashboard Generator feature with 9 pre-built dashboard categories. Electron app + visual editor with Playwright tests green.
 - **Planning docs**: see `/docs/index.md` for architecture, plan, testing, releases, and research.
 
@@ -14,7 +14,7 @@ A cross-platform desktop application for visually designing Home Assistant dashb
 - [Architecture](docs/architecture/ARCHITECTURE.md) — technical design and decisions
 - [Testing standards](docs/testing/TESTING_STANDARDS.md) — required Playwright conventions
 - [AI rules](ai_rules.md) — immutable rules and constraints for AI agents
-- [Release notes](docs/releases/RELEASE_NOTES_v0.3.0-beta.1.md) — latest release details
+- [Release notes](docs/releases/RELEASE_NOTES_v0.4.0-beta.1.md) — latest release details
 
 ## Vision
 
@@ -92,6 +92,19 @@ Launch commands:
 Key tests (cannot be run in the AI sandbox; run locally):
 - Integration: `npx playwright test --project=electron-integration --workers=1 --trace=retain-on-failure`
 - E2E smoke: `npx playwright test --project=electron-e2e --workers=1 --trace=retain-on-failure`
+
+## Color Picker (Foundation Layer)
+
+The Properties Panel uses a popover-based color input for card color fields (e.g. `custom:button-card` color and icon color).
+
+- Supported values: `#RRGGBB`, `#RRGGBBAA`, `rgb(r, g, b)`, `rgba(r, g, b, a)`, `hsl(h, s%, l%)`, `hsla(h, s%, l%, a)`
+- Recent colors: stored locally, shown on reopen, and can be cleared
+- Accessibility: keyboard-operable (swatch is focusable) and labeled controls
+
+Docs:
+- User guide: `docs/product/COLOR_PICKER_USER_GUIDE.md`
+- Component API: `docs/features/COLOR_PICKER_COMPONENT_API.md`
+- Keyboard shortcuts: `docs/product/KEYBOARD_SHORTCUTS.md`
 
 ## Contributing
 

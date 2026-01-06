@@ -22,6 +22,13 @@ export class CardPaletteDSL {
   }
 
   /**
+   * Verify palette is visible (alias for waitUntilVisible for API consistency)
+   */
+  async expectVisible(timeout = 10000): Promise<void> {
+    await this.waitUntilVisible(timeout);
+  }
+
+  /**
    * Search for cards by name
    */
   async search(query: string): Promise<void> {

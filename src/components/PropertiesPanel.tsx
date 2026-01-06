@@ -8,14 +8,45 @@ import { cardRegistry } from '../services/cardRegistry';
 import { EntitySelect } from './EntitySelect';
 import { EntityMultiSelect } from './EntityMultiSelect';
 import { IconSelect } from './IconSelect';
+import { ColorPickerInput } from './ColorPickerInput';
 import { haConnectionService } from '../services/haConnectionService';
+import { createDebouncedCommit, DebouncedCommit } from '../utils/debouncedCommit';
 
 const { Title, Text } = Typography;
+
+const STYLE_COLOR_REGEX = /(^|[\s{;])color\s*:\s*([^;]+)/i;
+
+type MonacoTestWindow = Window & {
+  __monacoEditor?: monaco.editor.IStandaloneCodeEditor;
+  __monacoModel?: monaco.editor.ITextModel | null;
+};
+
+type FormCardValues = Record<string, unknown> & { entities?: unknown };
+
+const extractStyleColor = (styleValue?: string): string => {
+  if (!styleValue) return '';
+  const match = STYLE_COLOR_REGEX.exec(styleValue);
+  return match ? match[2].trim() : '';
+};
+
+const upsertStyleColor = (styleValue: string | undefined, color: string): string => {
+  if (!styleValue || !styleValue.trim()) {
+    return `color: ${color};`;
+  }
+
+  if (STYLE_COLOR_REGEX.test(styleValue)) {
+    return styleValue.replace(STYLE_COLOR_REGEX, `$1color: ${color}`);
+  }
+
+  const normalized = styleValue.trim().endsWith(';') ? styleValue.trim() : `${styleValue.trim()};`;
+  return `${normalized}\ncolor: ${color};`;
+};
 
 interface PropertiesPanelProps {
   card: Card | null;
   cardIndex: number | null;
-  onSave: (updatedCard: Card) => void;
+  onChange: (updatedCard: Card) => void;
+  onCommit: (updatedCard: Card) => void;
   onCancel: () => void;
   onOpenEntityBrowser?: (insertCallback: (entityId: string) => void) => void;
 }
@@ -23,38 +54,50 @@ interface PropertiesPanelProps {
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   card,
   cardIndex,
-  onSave,
-  onCancel,
+  onChange,
+  onCommit,
+  onCancel: _onCancel,
   onOpenEntityBrowser,
 }) => {
+  void _onCancel;
   const [form] = Form.useForm();
   const [streamComponentEnabled, setStreamComponentEnabled] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<string>('form');
   const [yamlContent, setYamlContent] = useState<string>('');
   const [yamlError, setYamlError] = useState<string | null>(null);
-  const [hasChanges, setHasChanges] = useState<boolean>(false);
   const [undoStack, setUndoStack] = useState<Card[]>([]);
   const isUpdatingFromForm = useRef(false);
   const isUpdatingFromYaml = useRef(false);
+  const debouncedCommitRef = useRef<DebouncedCommit<Card> | null>(null);
+  const yamlSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const yamlParseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastCommittedCardRef = useRef<Card | null>(null);
   const monacoEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
 
+  const COMMIT_DEBOUNCE_MS = 800;
+  const YAML_SYNC_DEBOUNCE_MS = 250;
+  const YAML_PARSE_DEBOUNCE_MS = 350;
+
   // Helper function to normalize entities for form display
-  const normalizeCardForForm = (card: Card): any => {
-    const normalized = { ...card };
+  const normalizeCardForForm = (card: Card): FormCardValues => {
+    const normalized: FormCardValues = { ...(card as Record<string, unknown>) };
 
     // Handle entities field - can be array, object, or missing
     if (normalized.entities) {
       // Case 1: Array of entities (most common for simple cards)
       if (Array.isArray(normalized.entities)) {
-        normalized.entities = normalized.entities.map((entity: any) => {
+        normalized.entities = normalized.entities
+          .map((entity: unknown) => {
           // If it's an object with an entity property, extract the entity ID
-          if (typeof entity === 'object' && entity?.entity) {
-            return entity.entity;
-          }
+            if (typeof entity === 'object' && entity !== null && 'entity' in entity) {
+              const entityId = (entity as { entity?: unknown }).entity;
+              return typeof entityId === 'string' ? entityId : entity;
+            }
           // If it's already a string, keep it
           return entity;
-        }).filter(e => typeof e === 'string'); // Remove any non-strings
+          })
+          .filter((e): e is string => typeof e === 'string'); // Remove any non-strings
       }
       // Case 2: Object (complex cards like power-flow-card-plus)
       // Don't try to normalize - leave as-is for YAML editor
@@ -117,8 +160,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     form.setFieldsValue(normalizeCardForForm(previousCard));
     setYamlContent(cardToYaml(previousCard));
 
-    // Auto-save
-    onSave(previousCard);
+    // Apply immediately and commit (explicit user action)
+    onChange(previousCard);
+    onCommit(previousCard);
+    lastCommittedCardRef.current = previousCard;
     message.success('Undo successful');
   };
 
@@ -173,6 +218,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           console.log('[PropertiesPanel] Monaco editor created successfully');
           monacoEditorRef.current = editor;
 
+          // Expose editor to global scope for testing
+          if (typeof window !== 'undefined') {
+            const testWindow = window as MonacoTestWindow;
+            testWindow.__monacoEditor = editor;
+            testWindow.__monacoModel = editor.getModel();
+          }
+
           // Listen for content changes
           editor.onDidChangeModelContent(() => {
             const value = editor.getValue();
@@ -205,6 +257,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       console.log('[PropertiesPanel] Monaco editor created successfully');
       monacoEditorRef.current = editor;
 
+      // Expose editor to global scope for testing
+      if (typeof window !== 'undefined') {
+        const testWindow = window as MonacoTestWindow;
+        testWindow.__monacoEditor = editor;
+        testWindow.__monacoModel = editor.getModel();
+      }
+
       // Listen for content changes
       editor.onDidChangeModelContent(() => {
         const value = editor.getValue();
@@ -218,6 +277,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         console.log('[PropertiesPanel] Cleaning up Monaco editor');
         monacoEditorRef.current.dispose();
         monacoEditorRef.current = null;
+        // Clean up global references
+        if (typeof window !== 'undefined') {
+          const testWindow = window as MonacoTestWindow;
+          delete testWindow.__monacoEditor;
+          delete testWindow.__monacoModel;
+        }
       }
     };
   }, [activeTab]); // Only re-create when tab changes
@@ -236,33 +301,68 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   // Reset form and YAML when card changes
   useEffect(() => {
     if (card) {
+      // Clear pending timers when switching cards
+      if (yamlSyncTimerRef.current) clearTimeout(yamlSyncTimerRef.current);
+      if (yamlParseTimerRef.current) clearTimeout(yamlParseTimerRef.current);
+      yamlSyncTimerRef.current = null;
+      yamlParseTimerRef.current = null;
+      debouncedCommitRef.current?.cancel();
+      lastCommittedCardRef.current = card;
+
       form.setFieldsValue(normalizeCardForForm(card));
       setYamlContent(cardToYaml(card));
-      setHasChanges(false);
       setUndoStack([]); // Clear undo stack when switching cards
     }
   }, [card, cardIndex, form]);
+
+  // Clear timers on unmount
+  useEffect(() => {
+    return () => {
+      if (yamlSyncTimerRef.current) clearTimeout(yamlSyncTimerRef.current);
+      if (yamlParseTimerRef.current) clearTimeout(yamlParseTimerRef.current);
+      debouncedCommitRef.current?.cancel();
+    };
+  }, []);
+
+  const scheduleCommit = (updatedCard: Card) => {
+    if (!debouncedCommitRef.current) {
+      debouncedCommitRef.current = createDebouncedCommit<Card>({
+        delayMs: COMMIT_DEBOUNCE_MS,
+        onBeforeCommit: () => {
+          if (lastCommittedCardRef.current) {
+            saveToUndoStack(lastCommittedCardRef.current);
+          }
+        },
+        onCommit: (next) => {
+          lastCommittedCardRef.current = next;
+          onCommit(next);
+        },
+      });
+    }
+
+    debouncedCommitRef.current.schedule(updatedCard);
+  };
 
   // Handle form value changes - sync to YAML and auto-save
   const handleValuesChange = () => {
     if (isUpdatingFromYaml.current) return;
 
-    setHasChanges(true);
     isUpdatingFromForm.current = true;
 
     const values = form.getFieldsValue();
     const updatedCard = { ...card, ...values };
 
-    // Save to undo stack before updating
-    if (card) {
-      saveToUndoStack(card);
-    }
+    // Apply live updates immediately for preview
+    onChange(updatedCard as Card);
 
-    // Update YAML
-    setYamlContent(cardToYaml(updatedCard as Card));
+    // Debounce YAML serialization (expensive) while typing
+    if (yamlSyncTimerRef.current) clearTimeout(yamlSyncTimerRef.current);
+    yamlSyncTimerRef.current = setTimeout(() => {
+      setYamlContent(cardToYaml(updatedCard as Card));
+    }, YAML_SYNC_DEBOUNCE_MS);
 
-    // Auto-save
-    onSave(updatedCard as Card);
+    // Debounce commit (history/toast/etc) so typing doesn't churn
+    scheduleCommit(updatedCard as Card);
 
     setTimeout(() => {
       isUpdatingFromForm.current = false;
@@ -274,36 +374,20 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     if (!value || isUpdatingFromForm.current) return;
 
     setYamlContent(value);
-    isUpdatingFromYaml.current = true;
 
-    const parsedCard = yamlToCard(value);
-    if (parsedCard && card) {
-      // Save to undo stack before updating
-      saveToUndoStack(card);
-
-      // Update form
-      form.setFieldsValue(normalizeCardForForm(parsedCard));
-
-      // Auto-save
-      onSave(parsedCard);
-    }
-
-    setTimeout(() => {
-      isUpdatingFromYaml.current = false;
-    }, 0);
-  };
-
-  const handleSave = () => {
-    const values = form.getFieldsValue();
-    const updatedCard = { ...card, ...values };
-    onSave(updatedCard as Card);
-  };
-
-  const handleCancel = () => {
-    if (card) {
-      form.setFieldsValue(normalizeCardForForm(card));
-    }
-    onCancel();
+    if (yamlParseTimerRef.current) clearTimeout(yamlParseTimerRef.current);
+    yamlParseTimerRef.current = setTimeout(() => {
+      isUpdatingFromYaml.current = true;
+      const parsedCard = yamlToCard(value);
+      if (parsedCard) {
+        form.setFieldsValue(normalizeCardForForm(parsedCard));
+        onChange(parsedCard);
+        scheduleCommit(parsedCard);
+      }
+      setTimeout(() => {
+        isUpdatingFromYaml.current = false;
+      }, 0);
+    }, YAML_PARSE_DEBOUNCE_MS);
   };
 
   const handleInsertEntity = (entityId: string) => {
@@ -969,9 +1053,23 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               <Form.Item
                 label={<span style={{ color: 'white' }}>Color</span>}
                 name="color"
-                help={<span style={{ color: '#666' }}>Button color (auto, rgb(255,0,0), or CSS color)</span>}
+                help={<span style={{ color: '#666' }}>Button color (type 'auto' or pick a custom color)</span>}
               >
-                <Input placeholder="auto" />
+                <ColorPickerInput
+                  placeholder="auto or pick a color"
+                  data-testid="button-card-color-input"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon Color</span>}
+                name="icon_color"
+                help={<span style={{ color: '#666' }}>Override icon color (leave blank to follow color or auto)</span>}
+              >
+                <ColorPickerInput
+                  placeholder="Pick icon color"
+                  data-testid="button-card-icon-color-input"
+                />
               </Form.Item>
 
               <Form.Item
@@ -1051,16 +1149,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Icon Color</span>}
                 name="icon_color"
               >
-                <Select
-                  placeholder="Select color"
-                  options={[
-                    { value: 'primary', label: 'Primary' },
-                    { value: 'accent', label: 'Accent' },
-                    { value: 'info', label: 'Info' },
-                    { value: 'success', label: 'Success' },
-                    { value: 'warning', label: 'Warning' },
-                    { value: 'danger', label: 'Danger' },
-                  ]}
+                <ColorPickerInput
+                  placeholder="Pick icon color"
+                  data-testid="mushroom-entity-icon-color-input"
                 />
               </Form.Item>
 
@@ -1128,6 +1219,26 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     { value: false, label: 'No' },
                   ]}
                 />
+              </Form.Item>
+
+              <Form.Item noStyle shouldUpdate={(prev, curr) => prev.use_light_color !== curr.use_light_color}>
+                {({ getFieldValue }) => {
+                  const useLightColor = getFieldValue('use_light_color');
+                  const disabled = useLightColor === true;
+                  return (
+                    <Form.Item
+                      label={<span style={{ color: 'white' }}>Icon Color</span>}
+                      name="icon_color"
+                      help={<span style={{ color: '#666' }}>Overrides icon color when not using the light color</span>}
+                    >
+                      <ColorPickerInput
+                        placeholder={disabled ? 'Using light color from entity' : 'Pick icon color'}
+                        disabled={disabled}
+                        data-testid="mushroom-light-icon-color-input"
+                      />
+                    </Form.Item>
+                  );
+                }}
               </Form.Item>
 
               <Form.Item
@@ -1376,16 +1487,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label={<span style={{ color: 'white' }}>Icon Color</span>}
                 name="icon_color"
               >
-                <Select
-                  placeholder="Select color"
-                  options={[
-                    { value: 'primary', label: 'Primary' },
-                    { value: 'accent', label: 'Accent' },
-                    { value: 'info', label: 'Info' },
-                    { value: 'success', label: 'Success' },
-                    { value: 'warning', label: 'Warning' },
-                    { value: 'danger', label: 'Danger' },
-                  ]}
+                <ColorPickerInput
+                  placeholder="Pick icon color"
+                  data-testid="mushroom-switch-icon-color-input"
                 />
               </Form.Item>
 
@@ -2083,6 +2187,26 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   rows={6}
                   style={{ fontFamily: 'monospace' }}
                 />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Style Color</span>}
+                help={<span style={{ color: '#666' }}>Insert or update the CSS color value within the style block</span>}
+              >
+                <Form.Item noStyle shouldUpdate>
+                  {({ getFieldValue, setFieldsValue }) => (
+                    <ColorPickerInput
+                      value={extractStyleColor(getFieldValue('style'))}
+                      onChange={(newColor) => {
+                        const updatedStyle = upsertStyleColor(getFieldValue('style'), newColor);
+                        setFieldsValue({ style: updatedStyle });
+                        handleValuesChange();
+                      }}
+                      placeholder="Pick a CSS color"
+                      data-testid="card-mod-style-color-input"
+                    />
+                  )}
+                </Form.Item>
               </Form.Item>
 
               <Alert

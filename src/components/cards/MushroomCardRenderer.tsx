@@ -121,6 +121,44 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
 
   const stateColor = getStateColor();
   const icon = getIcon();
+  const userIconColor = typeof card.icon_color === 'string' && card.icon_color.trim().length > 0
+    ? card.icon_color
+    : undefined;
+  const useLightColor = card.use_light_color === true;
+
+  const getLightEntityColor = () => {
+    if (!entity || state !== 'on') return '#666';
+
+    if (Array.isArray(attributes.rgb_color)) {
+      const [r, g, b] = attributes.rgb_color;
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    if (Array.isArray(attributes.hs_color)) {
+      const [h, s] = attributes.hs_color;
+      return `hsl(${h}, ${s}%, 50%)`;
+    }
+
+    return '#ffc107';
+  };
+
+  const accentColor = (() => {
+    if (userIconColor) return userIconColor;
+    if (cardType === 'light' && useLightColor) {
+      return getLightEntityColor();
+    }
+    return stateColor;
+  })();
+
+  const makeTransparent = (color: string) => {
+    if (!color) return 'rgba(0,0,0,0.2)';
+    if (color.startsWith('#')) return `${color}33`;
+    if (color.startsWith('rgb(')) return color.replace('rgb(', 'rgba(').replace(')', ', 0.2)');
+    if (color.startsWith('hsl(')) return color.replace('hsl(', 'hsla(').replace(')', ', 0.2)');
+    return color;
+  };
+
+  const accentBackground = makeTransparent(accentColor);
 
   // Format state text
   const getStateText = () => {
@@ -172,15 +210,15 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
             width: isHorizontal ? '40px' : '48px',
             height: isHorizontal ? '40px' : '48px',
             borderRadius: '50%',
-            backgroundColor: `${stateColor}33`,
+            backgroundColor: accentBackground,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
-            border: `2px solid ${stateColor}`,
+            border: `2px solid ${accentColor}`,
           }}
         >
-          <div style={{ fontSize: isHorizontal ? '20px' : '24px', color: stateColor }}>
+          <div style={{ fontSize: isHorizontal ? '20px' : '24px', color: accentColor }}>
             {icon}
           </div>
         </div>
@@ -214,7 +252,7 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
         {!hideState && (
           <Text
             style={{
-              color: stateColor,
+              color: accentColor,
               fontSize: '12px',
               fontWeight: 500,
             }}
