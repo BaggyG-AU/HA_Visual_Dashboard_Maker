@@ -40,6 +40,8 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   // Allow keyboard users to dismiss the popover with Escape
+  // Ant Design Popover content renders in a portal; we attach a document-level handler
+  // so Escape works consistently even when focus is inside the popover content.
   useEffect(() => {
     if (!popoverOpen) return;
 

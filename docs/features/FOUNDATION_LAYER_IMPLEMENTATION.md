@@ -174,24 +174,26 @@ This document tracks the implementation of Phase 1 (Foundation Layer) features f
   - [⏭️] Visual regression + keyboard focus E2E in Electron (SKIPPED) — Playwright reports page focus as "inactive" in Electron despite manual verification; revisit when stable window-focus hook is available.
 
 #### Phase 8: Documentation (Day 5)
-- [ ] Update README with color picker usage
-- [ ] Document keyboard shortcuts
-- [ ] Add examples to user guide
-- [ ] Update `docs/testing/TESTING_STANDARDS.md` with color picker test patterns
-- [ ] Create inline code comments
-- [ ] Document component API (props, events)
+- [x] Update README with color picker usage
+- [x] Document keyboard shortcuts
+- [x] Add examples to user guide
+- [x] Update `docs/testing/TESTING_STANDARDS.md` with color picker test patterns
+- [x] Create inline code comments
+- [x] Document component API (props, events)
 
 #### Phase 9: Integration & Testing
 - [x] Run all unit tests: `npm run test:unit`
 - [x] Run lint: `npm run lint` (warnings only)
-- [ ] Manual testing:
-  - [ ] Test all card types with color fields
-  - [ ] Test color picker in different screen sizes
-  - [ ] Test color picker with different themes
-  - [ ] Test edge cases (invalid colors, empty values)
-- [ ] Request user to run E2E tests: `npm run test:e2e`
-- [ ] Fix any failing tests
-- [ ] Verify no regressions in existing functionality
+- [x] Run Playwright tests (latest run): **269 passed, 22 skipped, 0 failed** (see `test-results/results.json`)
+  - Recommended command: `npx playwright test --trace retain-on-failure`
+  - Project-scoped E2E: `npm run test:e2e -- --trace retain-on-failure`
+- [ ] Manual testing (still required to fully validate UX and layout):
+  - [ ] Test all card types with color fields (button card, mushroom cards, light-related fields, custom cards)
+  - [ ] Test color picker in different screen sizes (narrow/wide panel, scroll container behavior)
+  - [ ] Test color picker with different themes (dark/light + HA theme overrides if connected)
+  - [ ] Test edge cases (invalid colors, empty values, special values like `auto` where supported)
+- [x] Fix any failing tests (no failures in latest run; only skips)
+- [ ] Verify no regressions in existing functionality (requires the manual checks above)
 
 ### Dependencies Review
 

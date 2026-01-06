@@ -212,6 +212,58 @@ The DSL layer encapsulates:
 
 ---
 
+## COLOR PICKER TEST PATTERNS
+
+### Use the Color Picker DSL
+
+Use `ColorPickerDSL` for all color picker interactions; do not write selectors in specs.
+
+Common flows:
+- Closed state: assert the main input (`data-testid="<field>"`) is visible and has the right value.
+- Open state: open via swatch (`<field>-swatch`) and assert the picker container (`<field>-picker`) is visible.
+- Selection: type into the picker input (`<field>-picker-input`) and confirm with `Enter`.
+- Recents: assert the recent colors list is present via ARIA role list and the swatch test ids.
+
+### Visual Regression Snapshots
+
+If you add `toHaveScreenshot` expectations:
+- Use stable names without escape-required characters.
+- Disable animations and caret in screenshot options.
+- Capture the smallest meaningful region (input control or popover container) to reduce flake.
+
+### Keyboard Reachability
+
+Avoid brittle tab-order assumptions when portals are involved (Ant Design popovers are rendered in a portal).
+Instead:
+- Focus a known starting element (e.g. swatch)
+- Assert that expected controls are keyboard-reachable within a small bounded number of `Tab` presses via DSL helpers
+
+---
+
+## SKIPPED TESTS REGISTRY
+
+When a test is skipped, it must be recorded here with a concrete reason and a revisit trigger.
+
+- `tests/e2e/color-picker.spec.ts` → `visual regression and accessibility in scrollable PropertiesPanel`  
+  - Status: SKIPPED  
+  - Reason: Playwright intermittently reports focus state as “inactive” in Electron during keyboard assertions, despite manual verification.  
+  - Revisit when: Electron window focus can be made deterministic in Playwright traces without timing hacks.
+
+- `tests/e2e/color-picker.spec.ts` → `should update YAML when color is changed`  
+  - Status: SKIPPED  
+  - Reason: Monaco YAML model is not reliably exposed/detected in Playwright (test cannot read YAML content even though the UI updates correctly).  
+  - Revisit when: Monaco model/editor content can be read deterministically in E2E (see skipped-test comments in the spec and Phase 3 notes).
+
+- `tests/e2e/color-picker.spec.ts` → `button card color + icon color should update preview and YAML`  
+  - Status: SKIPPED  
+  - Reason: Intermittent Monaco/YAML visibility/model issues in the Properties Panel YAML tab make this test flaky.  
+  - Revisit when: PropertiesPanel Monaco visibility/model detection is stable under Playwright without timing hacks.
+
+- `tests/integration/dashboard-generator.spec.ts` → `Dashboard Generator Service (covered by unit tests)`  
+  - Status: SKIPPED (suite)  
+  - Reason: These are pure service tests already covered by Vitest (`tests/unit/dashboard-generator.spec.ts`) and are skipped in Playwright to avoid false confidence without UI work.  
+  - Revisit when: There is a clear integration need that must run under Playwright (otherwise keep coverage in Vitest).
+
 ## ADDING OR MODIFYING DSL METHODS
 
 When adding or modifying DSL methods:
