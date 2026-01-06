@@ -121,10 +121,10 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
 
   const stateColor = getStateColor();
   const icon = getIcon();
-  const userIconColor = typeof (card as any).icon_color === 'string' && (card as any).icon_color.trim().length > 0
-    ? (card as any).icon_color as string
+  const userIconColor = typeof card.icon_color === 'string' && card.icon_color.trim().length > 0
+    ? card.icon_color
     : undefined;
-  const useLightColor = (card as any).use_light_color === true;
+  const useLightColor = card.use_light_color === true;
 
   const getLightEntityColor = () => {
     if (!entity || state !== 'on') return '#666';

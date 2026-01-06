@@ -349,6 +349,11 @@ export interface DashboardState {
   isDirty: boolean; // Has unsaved changes
   selectedViewIndex: number | null;
   selectedCardIndex: number | null;
+  /**
+   * When true, the store is applying a batch of rapid edits (e.g. typing)
+   * without pushing each intermediate step into undo/redo history.
+   */
+  isBatching: boolean;
 }
 
 // YAML parsing result

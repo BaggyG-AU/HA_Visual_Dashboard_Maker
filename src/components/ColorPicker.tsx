@@ -43,6 +43,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   ariaLabel = 'Color picker',
   'data-testid': testId = 'color-picker',
 }) => {
+  void _showAlpha;
   const [format, setFormat] = useState<ColorFormat>(initialFormat);
   const [inputValue, setInputValue] = useState<string>(value);
   const { recentColors, addRecentColor, clearRecentColors } = useRecentColors({
@@ -221,6 +222,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             onClick={handleFormatToggle}
             disabled={disabled}
             data-testid={`${testId}-format-toggle`}
+            aria-label="Toggle color format"
             style={{ width: '60px' }}
           >
             {format.toUpperCase()}
@@ -267,6 +269,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 onClick={clearRecentColors}
                 disabled={disabled}
                 data-testid={`${testId}-clear-recent`}
+                aria-label="Clear recent colors"
                 style={{ color: '#888', padding: '0 4px', height: '20px' }}
               >
                 Clear

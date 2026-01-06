@@ -26,11 +26,30 @@ import { useThemeStore } from './store/themeStore';
 import { themeService } from './services/themeService';
 import { useEditorModeStore, EditorMode } from './store/editorModeStore';
 import { logger } from './services/logger';
+import type { Card } from './types/dashboard';
+import type { LoggingLevel } from './services/settingsService';
 
 const { Header, Content, Sider } = Layout;
+type CardWithInternalLayout = Card & {
+  layout?: { x: number; y: number; w: number; h: number };
+};
+
+type TestThemeData = {
+  themes?: Record<string, unknown>;
+  theme?: string;
+  default_theme?: string;
+  default_dark_theme?: string | null;
+  darkMode?: boolean;
+};
+
+type TestThemeApi = {
+  setConnected: (connected: boolean) => void;
+  applyThemes: (themesData: TestThemeData) => void;
+};
+
 const isTestEnv =
   (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1')) ||
-  (typeof window !== 'undefined' && (window as any).E2E);
+  (typeof window !== 'undefined' && Boolean((window as unknown as { E2E?: boolean }).E2E));
 
 const App: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
@@ -51,7 +70,7 @@ const App: React.FC = () => {
 
   // Clipboard state for cut/copy/paste operations
   const [clipboard, setClipboard] = useState<{
-    card: any | null;
+    card: CardWithInternalLayout | null;
     isCut: boolean;
     sourceViewIndex: number | null;
     sourceCardIndex: number | null;
@@ -67,6 +86,9 @@ const App: React.FC = () => {
     selectedCardIndex,
     loadDashboard,
     updateConfig,
+    beginBatchUpdate,
+    applyBatchedConfig,
+    endBatchUpdate,
     markClean,
     setSelectedView,
     setSelectedCard,
@@ -134,9 +156,10 @@ const App: React.FC = () => {
   // Expose lightweight test hooks for Playwright to inject themes/connection state
   useEffect(() => {
     if (isTestEnv) {
-      (window as any).__testThemeApi = {
+      const testWindow = window as Window & { __testThemeApi?: TestThemeApi };
+      testWindow.__testThemeApi = {
         setConnected: (connected: boolean) => setIsConnected(connected),
-        applyThemes: (themesData: any) => {
+        applyThemes: (themesData: TestThemeData) => {
           const firstTheme = Object.keys(themesData?.themes ?? {})[0] ?? null;
           const themeName = themesData?.theme ?? firstTheme;
 
@@ -144,7 +167,7 @@ const App: React.FC = () => {
           useThemeStore.getState().setAvailableThemes({
             default_theme: themesData?.default_theme ?? themeName ?? 'default',
             default_dark_theme: themesData?.default_dark_theme ?? null,
-            themes: themesData?.themes ?? {},
+            themes: (themesData?.themes ?? {}) as Record<string, unknown>,
             darkMode:
               typeof themesData?.darkMode === 'boolean'
                 ? themesData.darkMode
@@ -340,10 +363,10 @@ const App: React.FC = () => {
           const viewLayout = viewLayouts[index];
           if (viewLayout) {
             // Remove internal layout property and add view_layout
-          const { layout: _layout, ...cardWithoutLayout } = card as any;
+          const { layout: _layout, ...cardWithoutLayout } = card as unknown as Record<string, unknown> & { layout?: unknown };
           void _layout;
             return {
-              ...cardWithoutLayout,
+              ...(cardWithoutLayout as Record<string, unknown>),
               view_layout: {
                 grid_column: viewLayout.grid_column,
                 grid_row: viewLayout.grid_row,
@@ -366,7 +389,7 @@ const App: React.FC = () => {
                 w: layoutItem.w,
                 h: layoutItem.h,
               },
-            } as any;
+            } as CardWithInternalLayout;
           }
           return card;
         });
@@ -401,9 +424,9 @@ const App: React.FC = () => {
     console.log('Drop position:', { gridX, gridY });
 
     // Create new card with default properties
-    const newCard: any = {
+    const newCard: CardWithInternalLayout = {
       type: cardType,
-      ...cardMetadata.defaultProps,
+      ...(cardMetadata.defaultProps as Record<string, unknown>),
       layout: {
         x: gridX,
         y: gridY,
@@ -447,8 +470,9 @@ const App: React.FC = () => {
     handleCardAdd(cardType, x, y);
   };
 
-  const handleCardUpdate = (updatedCard: any) => {
+  const handleCardUpdate = (updatedCard: Card) => {
     if (!config || selectedViewIndex === null || selectedCardIndex === null) return;
+    beginBatchUpdate();
 
     console.log('=== UPDATING CARD ===');
     console.log('Updated card:', updatedCard);
@@ -465,13 +489,33 @@ const App: React.FC = () => {
       };
 
       updatedViews[selectedViewIndex] = currentView;
-      updateConfig({ ...config, views: updatedViews });
+      applyBatchedConfig({ ...config, views: updatedViews });
+    }
+  };
 
-      message.success('Card properties updated');
+  const handleCardCommit = (updatedCard: Card) => {
+    if (!config || selectedViewIndex === null || selectedCardIndex === null) return;
+
+    const updatedViews = [...config.views];
+    const currentView = updatedViews[selectedViewIndex];
+
+    if (currentView.cards && currentView.cards[selectedCardIndex]) {
+      const existingLayout = currentView.cards[selectedCardIndex].layout;
+      currentView.cards[selectedCardIndex] = {
+        ...updatedCard,
+        layout: existingLayout,
+      };
+
+      updatedViews[selectedViewIndex] = currentView;
+      applyBatchedConfig({ ...config, views: updatedViews });
+      endBatchUpdate();
+
+      message.success({ content: 'Card updated', key: 'card-updated', duration: 1.5 });
     }
   };
 
   const handlePropertiesCancel = () => {
+    endBatchUpdate();
     // Deselect card
     if (selectedViewIndex !== null) {
       setSelectedCard(selectedViewIndex, null);
@@ -671,17 +715,18 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Expose a tiny test-only hook for Playwright to drive connection/theme state
-    (window as any).__testThemeApi = {
+    const testWindow = window as Window & { __testThemeApi?: TestThemeApi };
+    testWindow.__testThemeApi = {
       setConnected: (connected: boolean) => setIsConnected(connected),
-      applyThemes: (themes: any) => {
+      applyThemes: (themes: TestThemeData) => {
         // Ensure connected state for UI that depends on it
         setIsConnected(true);
-        setAvailableThemes(themes);
+        setAvailableThemes(themes as unknown as Parameters<typeof setAvailableThemes>[0]);
       },
     };
 
     return () => {
-      delete (window as any).__testThemeApi;
+      delete testWindow.__testThemeApi;
     };
   }, [setAvailableThemes]);
 
@@ -1022,7 +1067,7 @@ const App: React.FC = () => {
     const loadLogging = async () => {
       try {
         const result = await window.electronAPI.getLoggingLevel();
-        logger.setLevel(result.level as any);
+        logger.setLevel(result.level as LoggingLevel);
       } catch (error) {
         console.error('Failed to load logging level', error);
       }
@@ -1422,7 +1467,8 @@ const App: React.FC = () => {
                   : null
               }
               cardIndex={selectedCardIndex}
-              onSave={handleCardUpdate}
+              onChange={handleCardUpdate}
+              onCommit={handleCardCommit}
               onCancel={handlePropertiesCancel}
               onOpenEntityBrowser={handleOpenEntityBrowser}
             />

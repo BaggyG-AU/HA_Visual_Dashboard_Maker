@@ -11,7 +11,7 @@
  * </Form.Item>
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Input, Popover } from 'antd';
 import { BgColorsOutlined } from '@ant-design/icons';
 import type { ColorPickerInputProps } from '../types/color';
@@ -38,6 +38,20 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
   'data-testid': testId = 'color-picker-input',
 }) => {
   const [popoverOpen, setPopoverOpen] = useState(false);
+
+  // Allow keyboard users to dismiss the popover with Escape
+  useEffect(() => {
+    if (!popoverOpen) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setPopoverOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [popoverOpen]);
 
   /**
    * Handle color change from picker

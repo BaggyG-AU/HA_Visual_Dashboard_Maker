@@ -15,6 +15,13 @@ export class PropertiesPanelDSL {
   }
 
   /**
+   * Expose panel locator for advanced assertions
+   */
+  getPanel(): Locator {
+    return this.panel;
+  }
+
+  /**
    * Verify panel is visible
    */
   async expectVisible(timeout = 2000): Promise<void> {
@@ -133,5 +140,15 @@ export class PropertiesPanelDSL {
   async getFormFieldCount(): Promise<number> {
     await this.expectVisible();
     return await this.panel.locator('.ant-form-item').count();
+  }
+
+  /**
+   * Scroll panel content vertically
+   */
+  async scrollTo(y: number): Promise<void> {
+    await this.expectVisible();
+    await this.panel.evaluate((el, targetY) => {
+      el.scrollTop = targetY;
+    }, y);
   }
 }

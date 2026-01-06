@@ -7,6 +7,35 @@
 
 import { Page, expect } from '@playwright/test';
 
+type MonacoModelLike = {
+  getValue?: () => string;
+  setValue?: (value: string) => void;
+  getLineCount?: () => number;
+  getLineMaxColumn?: (lineNumber: number) => number;
+};
+
+type MonacoEditorLike = {
+  getModel?: () => MonacoModelLike | null;
+  getContainerDomNode?: () => HTMLElement;
+  setPosition?: (pos: { lineNumber: number; column: number }) => void;
+  focus?: () => void;
+};
+
+type MonacoGlobalLike = {
+  editor?: {
+    getModels?: () => MonacoModelLike[];
+    getEditors?: () => MonacoEditorLike[];
+  };
+};
+
+type YamlTestWindow = Window & {
+  monaco?: MonacoGlobalLike;
+  __monacoEditor?: MonacoEditorLike;
+  __monacoModel?: MonacoModelLike;
+  __forceYamlValidation?: () => void;
+  __insertEntityCallback?: (entityId: string) => void;
+};
+
 export class YamlEditorDSL {
   constructor(private window: Page) {}
 
@@ -56,7 +85,7 @@ export class YamlEditorDSL {
 
       // Wait for at least one Monaco model to be registered
       await this.window.waitForFunction(
-        () => (window as any).monaco?.editor?.getModels()?.length > 0,
+        () => (((window as unknown as YamlTestWindow).monaco?.editor?.getModels?.()?.length ?? 0) > 0),
         null,
         { timeout: 5000 }
       );
@@ -73,9 +102,8 @@ export class YamlEditorDSL {
     await this.waitForMonacoReady();
 
     await this.window.evaluate(() => {
-      const editor =
-        (window as any).__monacoEditor ||
-        (window as any).monaco?.editor?.getEditors?.()?.[0];
+      const testWindow = window as unknown as YamlTestWindow;
+      const editor = testWindow.__monacoEditor || testWindow.monaco?.editor?.getEditors?.()?.[0];
       const model = editor?.getModel?.();
 
       if (editor && model) {
@@ -171,13 +199,14 @@ export class YamlEditorDSL {
     await this.waitForMonacoReady();
 
     return await this.window.evaluate(() => {
-      const monaco = (window as any).monaco;
+      const testWindow = window as unknown as YamlTestWindow;
+      const monaco = testWindow.monaco;
       if (monaco?.editor) {
         // Prefer the editor whose container is inside the YAML editor area (properties or modal)
         const editors = monaco.editor.getEditors ? monaco.editor.getEditors() : [];
 
         const target =
-          editors.find((ed: any) =>
+          editors.find((ed) =>
             ed
               .getContainerDomNode?.()
               .closest?.('[data-testid="yaml-editor-container"]')
@@ -208,12 +237,13 @@ export class YamlEditorDSL {
   async anyYamlContains(pattern: RegExp): Promise<boolean> {
     return await this.window.evaluate((pat: string, flags: string) => {
       const re = new RegExp(pat, flags);
-      const monaco = (window as any).monaco;
+      const testWindow = window as unknown as YamlTestWindow;
+      const monaco = testWindow.monaco;
 
       // 1) Check all Monaco models (covers multiple editors/models)
       if (monaco?.editor) {
         const models = monaco.editor.getModels?.() || [];
-        if (models.some((m: any) => re.test(m.getValue?.() || ''))) return true;
+        if (models.some((m) => re.test(m.getValue?.() || ''))) return true;
       }
 
       // 2) Check rendered view lines inside visible YAML editors
@@ -285,14 +315,15 @@ views:
 
     // Set a known-valid dashboard YAML and force validation
     await this.window.evaluate((yaml) => {
+      const testWindow = window as unknown as YamlTestWindow;
       const model =
-        (window as any).__monacoModel ||
-        (window as any).__monacoEditor?.getModel?.() ||
-        (window as any).monaco?.editor?.getModels?.()[0];
+        testWindow.__monacoModel ||
+        testWindow.__monacoEditor?.getModel?.() ||
+        testWindow.monaco?.editor?.getModels?.()?.[0];
       if (model?.setValue) {
         model.setValue(yaml);
       }
-      (window as any).__forceYamlValidation?.();
+      testWindow.__forceYamlValidation?.();
     }, validYaml);
 
     // Success is implied: no error alert and Apply enabled
@@ -308,9 +339,9 @@ views:
     await this.window.waitForFunction(
       () =>
         Boolean(
-          (window as any).__monacoModel ||
-            (window as any).__monacoEditor?.getModel?.() ||
-            (window as any).monaco?.editor?.getModels?.()[0]
+          (window as unknown as YamlTestWindow).__monacoModel ||
+            (window as unknown as YamlTestWindow).__monacoEditor?.getModel?.() ||
+            (window as unknown as YamlTestWindow).monaco?.editor?.getModels?.()?.[0]
         ),
       null,
       { timeout: 10000 }
@@ -318,13 +349,14 @@ views:
 
     // Set invalid YAML directly via the Monaco model and force validation
     await this.window.evaluate(() => {
+      const testWindow = window as unknown as YamlTestWindow;
       const model =
-        (window as any).__monacoModel ||
-        (window as any).monaco?.editor?.getModels?.()[0];
+        testWindow.__monacoModel ||
+        testWindow.monaco?.editor?.getModels?.()?.[0];
       if (model?.setValue) {
         model.setValue('title: Invalid Dashboard');
       }
-      (window as any).__forceYamlValidation?.();
+      testWindow.__forceYamlValidation?.();
     });
 
     const alert = this.window.getByTestId('yaml-validation-error').first();
@@ -348,8 +380,8 @@ views:
 
     // Select the entity in the browser and trigger the callback
     await this.window.evaluate((id) => {
-      const handler = (window as any).__insertEntityCallback as ((eid: string) => void) | undefined;
-      handler?.(id);
+      const testWindow = window as unknown as YamlTestWindow;
+      testWindow.__insertEntityCallback?.(id);
     }, entityId);
   }
 }

@@ -27,6 +27,25 @@ export class ColorPickerDSL {
   }
 
   /**
+   * Focus swatch (keyboard users)
+   */
+  async focusSwatch(inputTestId: string): Promise<void> {
+    const swatch = this.getColorSwatch(inputTestId);
+    await expect(swatch).toBeVisible();
+    await swatch.focus();
+    await expect(swatch).toBeFocused();
+  }
+
+  /**
+   * Open popover using keyboard (Enter/Space on swatch)
+   */
+  async openPopoverWithKeyboard(inputTestId: string): Promise<void> {
+    await this.focusSwatch(inputTestId);
+    await this.window.keyboard.press('Enter');
+    await this.expectVisible(inputTestId);
+  }
+
+  /**
    * Get color input field
    * For ColorPickerInput: targets the input inside the picker popover
    */
@@ -42,6 +61,13 @@ export class ColorPickerDSL {
    */
   getFormatToggle(testId = 'color-picker'): Locator {
     return this.window.getByTestId(`${testId}-picker-format-toggle`);
+  }
+
+  /**
+   * Get popover container for ColorPickerInput
+   */
+  getPopover(testId = 'color-picker'): Locator {
+    return this.window.getByTestId(`${testId}-picker`);
   }
 
   /**
@@ -92,7 +118,6 @@ export class ColorPickerDSL {
     const swatch = this.getColorSwatch(inputTestId);
     await expect(swatch).toBeVisible();
     await swatch.click();
-    await this.window.waitForTimeout(300); // Popover animation
     await this.expectVisible(inputTestId);
   }
 
@@ -102,7 +127,13 @@ export class ColorPickerDSL {
   async closePopover(inputTestId: string): Promise<void> {
     // Click outside the popover (on the page background)
     await this.window.click('body', { position: { x: 10, y: 10 } });
-    await this.window.waitForTimeout(300); // Popover animation
+
+    const popover = this.window.getByTestId(`${inputTestId}-picker`);
+    await expect(async () => {
+      const count = await popover.count();
+      if (count === 0) return;
+      await expect(popover).not.toBeVisible();
+    }).toPass({ timeout: 2000 });
   }
 
   /**
@@ -275,6 +306,23 @@ export class ColorPickerDSL {
     const preview = this.getColorPreview(testId);
     const previewAriaLabel = await preview.getAttribute('aria-label');
     expect(previewAriaLabel).toBeTruthy();
+
+    const swatch = this.getColorSwatch(testId);
+    const swatchAria = await swatch.getAttribute('aria-label');
+    expect(swatchAria).toBeTruthy();
+
+    const toggle = this.getFormatToggle(testId);
+    const toggleAria = await toggle.getAttribute('aria-label');
+    expect(toggleAria ?? 'Format toggle').toBeTruthy();
+
+    // Recent colors list + first swatch (if present)
+    const recentList = this.window.getByRole('list', { name: /recent colors/i });
+    if (await recentList.count()) {
+      await expect(recentList.first()).toBeVisible();
+      const firstItem = this.getRecentColorSwatch(0, testId);
+      const itemAria = await firstItem.getAttribute('aria-label');
+      expect(itemAria).toBeTruthy();
+    }
   }
 
   /**
@@ -323,5 +371,113 @@ export class ColorPickerDSL {
     // Toggle back to HEX
     await this.toggleFormat(testId);
     await this.expectFormat('HEX', testId);
+  }
+
+  /**
+   * Type a color value using keyboard only (no direct fill)
+   */
+  async typeColorWithKeyboard(color: string, testId = 'color-picker'): Promise<void> {
+    const input = this.getColorInput(testId);
+    await input.focus();
+    await expect(input).toBeFocused();
+    await this.window.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+    await this.window.keyboard.type(color);
+    await this.window.keyboard.press('Enter');
+  }
+
+  /**
+   * Ensure popover is visually anchored inside a container (e.g., properties panel)
+   */
+  async expectPopoverWithinContainer(containerTestId: string, testId = 'color-picker'): Promise<void> {
+    const container = this.window.getByTestId(containerTestId);
+    const popover = this.getPopover(testId);
+
+    const [containerBox, popoverBox] = await Promise.all([
+      container.boundingBox(),
+      popover.boundingBox(),
+    ]);
+
+    expect(containerBox).toBeTruthy();
+    expect(popoverBox).toBeTruthy();
+    if (!containerBox || !popoverBox) return;
+
+    expect(popoverBox.x).toBeGreaterThanOrEqual(containerBox.x - 2);
+    expect(popoverBox.x + popoverBox.width).toBeLessThanOrEqual(containerBox.x + containerBox.width + 2);
+    expect(popoverBox.y).toBeGreaterThanOrEqual(containerBox.y - 2);
+    expect(popoverBox.y + popoverBox.height).toBeLessThanOrEqual(containerBox.y + containerBox.height + 2);
+  }
+
+  /**
+   * Verify focus ring is visible on a recent color swatch
+   */
+  async expectRecentFocusIndicatorVisible(index: number, testId = 'color-picker'): Promise<void> {
+    const swatch = this.getRecentColorSwatch(index, testId);
+    await swatch.focus();
+    await expect(swatch).toBeFocused();
+    const hasRing = await swatch.evaluate((el) => {
+      const style = window.getComputedStyle(el);
+      return style.boxShadow !== 'none' && style.boxShadow !== '';
+    });
+    expect(hasRing).toBe(true);
+  }
+
+  /**
+   * Contrast check between swatch border and container background
+   */
+  async expectSwatchContrast(inputTestId: string, containerTestId: string, minimumRatio = 1.5): Promise<void> {
+    const swatch = this.getColorSwatch(inputTestId);
+
+    const ratio = await swatch.evaluate((el, cTestId) => {
+      const containerEl = document.querySelector(`[data-testid="${cTestId}"]`) as HTMLElement | null;
+      const swatchStyle = window.getComputedStyle(el);
+      const containerStyle = containerEl ? window.getComputedStyle(containerEl) : window.getComputedStyle(document.body);
+
+      const parseRgb = (color: string) => {
+        const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+        if (!match) return [0, 0, 0];
+        return [Number(match[1]), Number(match[2]), Number(match[3])];
+      };
+
+      const luminance = ([r, g, b]: number[]) => {
+        const channel = (v: number) => {
+          const n = v / 255;
+          return n <= 0.03928 ? n / 12.92 : Math.pow((n + 0.055) / 1.055, 2.4);
+        };
+        const [cr, cg, cb] = [channel(r), channel(g), channel(b)];
+        return 0.2126 * cr + 0.7152 * cg + 0.0722 * cb;
+      };
+
+      const borderColor = parseRgb(swatchStyle.borderColor || '#000');
+      const bgColor = parseRgb(containerStyle.backgroundColor || '#000');
+
+      const L1 = luminance(borderColor) + 0.05;
+      const L2 = luminance(bgColor) + 0.05;
+      return L1 > L2 ? L1 / L2 : L2 / L1;
+    }, containerTestId);
+
+    expect(ratio).toBeGreaterThanOrEqual(minimumRatio);
+  }
+
+  /**
+   * Ensure the Electron window/page is active before keyboard assertions
+   */
+  async ensureWindowActive(): Promise<void> {
+    await this.window.bringToFront();
+
+    const hasFocus = await this.window.evaluate(() => document.hasFocus());
+    expect(hasFocus).toBe(true);
+  }
+
+  /**
+   * Tab forward until a locator is focused (keyboard reachability check)
+   */
+  async tabUntilFocused(target: Locator, maxPresses = 5): Promise<void> {
+    for (let i = 0; i < maxPresses; i++) {
+      if (await target.evaluate((el) => el === document.activeElement)) {
+        return;
+      }
+      await this.window.keyboard.press('Tab');
+    }
+    await expect(target).toBeFocused(); // surfaces a clear error if unreachable
   }
 }

@@ -11,6 +11,7 @@ const resetStore = () => {
     isDirty: false,
     selectedViewIndex: null,
     selectedCardIndex: null,
+    isBatching: false,
     past: [],
     future: [],
   });
@@ -74,6 +75,37 @@ describe('dashboard store model utilities', () => {
     state.redo();
     state = useDashboardStore.getState();
     expect(state.config?.views[0].cards.length).toBe(1);
+  });
+
+  it('batches rapid edits into a single history entry', () => {
+    useDashboardStore.setState({ config: baseConfig, isBatching: false });
+
+    const state = useDashboardStore.getState();
+    state.beginBatchUpdate();
+
+    const v0 = baseConfig.views[0] as DashboardConfig['views'][number];
+    const baseCards = v0.cards ?? [];
+
+    state.applyBatchedConfig({
+      ...baseConfig,
+      views: [{ ...v0, cards: [...baseCards, { type: 'markdown', content: 'A' }] } as DashboardConfig['views'][number]],
+    });
+    state.applyBatchedConfig({
+      ...baseConfig,
+      views: [{ ...v0, cards: [...baseCards, { type: 'markdown', content: 'AB' }] } as DashboardConfig['views'][number]],
+    });
+
+    let after = useDashboardStore.getState();
+    expect(after.past.length).toBe(1); // only the pre-edit snapshot
+    expect(after.isDirty).toBe(true);
+
+    after.endBatchUpdate();
+    after = useDashboardStore.getState();
+    expect(after.isBatching).toBe(false);
+
+    after.undo();
+    after = useDashboardStore.getState();
+    expect(after.future.length).toBe(1);
   });
 
   it('supports selection updates and dirty toggles', () => {

@@ -210,7 +210,8 @@ describe('useRecentColors', () => {
       const { result } = renderHook(() => useRecentColors());
 
       // Mock localStorage.removeItem to throw error
-      (global.localStorage.removeItem as any).mockImplementation(() => {
+      const removeItemMock = global.localStorage.removeItem as unknown as ReturnType<typeof vi.fn>;
+      removeItemMock.mockImplementation(() => {
         throw new Error('Storage error');
       });
 
@@ -303,7 +304,8 @@ describe('useRecentColors', () => {
       const { result } = renderHook(() => useRecentColors());
 
       // Mock localStorage.setItem to throw error
-      (global.localStorage.setItem as any).mockImplementation(() => {
+      const setItemMock = global.localStorage.setItem as unknown as ReturnType<typeof vi.fn>;
+      setItemMock.mockImplementation(() => {
         throw new Error('Storage error');
       });
 
@@ -317,7 +319,8 @@ describe('useRecentColors', () => {
 
     it('should handle localStorage read errors gracefully', () => {
       // Mock localStorage.getItem to throw error
-      (global.localStorage.getItem as any).mockImplementation(() => {
+      const getItemMock = global.localStorage.getItem as unknown as ReturnType<typeof vi.fn>;
+      getItemMock.mockImplementation(() => {
         throw new Error('Storage error');
       });
 

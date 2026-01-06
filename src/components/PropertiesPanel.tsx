@@ -10,10 +10,18 @@ import { EntityMultiSelect } from './EntityMultiSelect';
 import { IconSelect } from './IconSelect';
 import { ColorPickerInput } from './ColorPickerInput';
 import { haConnectionService } from '../services/haConnectionService';
+import { createDebouncedCommit, DebouncedCommit } from '../utils/debouncedCommit';
 
 const { Title, Text } = Typography;
 
 const STYLE_COLOR_REGEX = /(^|[\s{;])color\s*:\s*([^;]+)/i;
+
+type MonacoTestWindow = Window & {
+  __monacoEditor?: monaco.editor.IStandaloneCodeEditor;
+  __monacoModel?: monaco.editor.ITextModel | null;
+};
+
+type FormCardValues = Record<string, unknown> & { entities?: unknown };
 
 const extractStyleColor = (styleValue?: string): string => {
   if (!styleValue) return '';
@@ -37,7 +45,8 @@ const upsertStyleColor = (styleValue: string | undefined, color: string): string
 interface PropertiesPanelProps {
   card: Card | null;
   cardIndex: number | null;
-  onSave: (updatedCard: Card) => void;
+  onChange: (updatedCard: Card) => void;
+  onCommit: (updatedCard: Card) => void;
   onCancel: () => void;
   onOpenEntityBrowser?: (insertCallback: (entityId: string) => void) => void;
 }
@@ -45,38 +54,50 @@ interface PropertiesPanelProps {
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   card,
   cardIndex,
-  onSave,
-  onCancel,
+  onChange,
+  onCommit,
+  onCancel: _onCancel,
   onOpenEntityBrowser,
 }) => {
+  void _onCancel;
   const [form] = Form.useForm();
   const [streamComponentEnabled, setStreamComponentEnabled] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<string>('form');
   const [yamlContent, setYamlContent] = useState<string>('');
   const [yamlError, setYamlError] = useState<string | null>(null);
-  const [hasChanges, setHasChanges] = useState<boolean>(false);
   const [undoStack, setUndoStack] = useState<Card[]>([]);
   const isUpdatingFromForm = useRef(false);
   const isUpdatingFromYaml = useRef(false);
+  const debouncedCommitRef = useRef<DebouncedCommit<Card> | null>(null);
+  const yamlSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const yamlParseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastCommittedCardRef = useRef<Card | null>(null);
   const monacoEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
 
+  const COMMIT_DEBOUNCE_MS = 800;
+  const YAML_SYNC_DEBOUNCE_MS = 250;
+  const YAML_PARSE_DEBOUNCE_MS = 350;
+
   // Helper function to normalize entities for form display
-  const normalizeCardForForm = (card: Card): any => {
-    const normalized = { ...card };
+  const normalizeCardForForm = (card: Card): FormCardValues => {
+    const normalized: FormCardValues = { ...(card as Record<string, unknown>) };
 
     // Handle entities field - can be array, object, or missing
     if (normalized.entities) {
       // Case 1: Array of entities (most common for simple cards)
       if (Array.isArray(normalized.entities)) {
-        normalized.entities = normalized.entities.map((entity: any) => {
+        normalized.entities = normalized.entities
+          .map((entity: unknown) => {
           // If it's an object with an entity property, extract the entity ID
-          if (typeof entity === 'object' && entity?.entity) {
-            return entity.entity;
-          }
+            if (typeof entity === 'object' && entity !== null && 'entity' in entity) {
+              const entityId = (entity as { entity?: unknown }).entity;
+              return typeof entityId === 'string' ? entityId : entity;
+            }
           // If it's already a string, keep it
           return entity;
-        }).filter(e => typeof e === 'string'); // Remove any non-strings
+          })
+          .filter((e): e is string => typeof e === 'string'); // Remove any non-strings
       }
       // Case 2: Object (complex cards like power-flow-card-plus)
       // Don't try to normalize - leave as-is for YAML editor
@@ -139,8 +160,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     form.setFieldsValue(normalizeCardForForm(previousCard));
     setYamlContent(cardToYaml(previousCard));
 
-    // Auto-save
-    onSave(previousCard);
+    // Apply immediately and commit (explicit user action)
+    onChange(previousCard);
+    onCommit(previousCard);
+    lastCommittedCardRef.current = previousCard;
     message.success('Undo successful');
   };
 
@@ -197,8 +220,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
           // Expose editor to global scope for testing
           if (typeof window !== 'undefined') {
-            (window as any).__monacoEditor = editor;
-            (window as any).__monacoModel = editor.getModel();
+            const testWindow = window as MonacoTestWindow;
+            testWindow.__monacoEditor = editor;
+            testWindow.__monacoModel = editor.getModel();
           }
 
           // Listen for content changes
@@ -235,8 +259,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
       // Expose editor to global scope for testing
       if (typeof window !== 'undefined') {
-        (window as any).__monacoEditor = editor;
-        (window as any).__monacoModel = editor.getModel();
+        const testWindow = window as MonacoTestWindow;
+        testWindow.__monacoEditor = editor;
+        testWindow.__monacoModel = editor.getModel();
       }
 
       // Listen for content changes
@@ -254,8 +279,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         monacoEditorRef.current = null;
         // Clean up global references
         if (typeof window !== 'undefined') {
-          delete (window as any).__monacoEditor;
-          delete (window as any).__monacoModel;
+          const testWindow = window as MonacoTestWindow;
+          delete testWindow.__monacoEditor;
+          delete testWindow.__monacoModel;
         }
       }
     };
@@ -275,33 +301,68 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   // Reset form and YAML when card changes
   useEffect(() => {
     if (card) {
+      // Clear pending timers when switching cards
+      if (yamlSyncTimerRef.current) clearTimeout(yamlSyncTimerRef.current);
+      if (yamlParseTimerRef.current) clearTimeout(yamlParseTimerRef.current);
+      yamlSyncTimerRef.current = null;
+      yamlParseTimerRef.current = null;
+      debouncedCommitRef.current?.cancel();
+      lastCommittedCardRef.current = card;
+
       form.setFieldsValue(normalizeCardForForm(card));
       setYamlContent(cardToYaml(card));
-      setHasChanges(false);
       setUndoStack([]); // Clear undo stack when switching cards
     }
   }, [card, cardIndex, form]);
+
+  // Clear timers on unmount
+  useEffect(() => {
+    return () => {
+      if (yamlSyncTimerRef.current) clearTimeout(yamlSyncTimerRef.current);
+      if (yamlParseTimerRef.current) clearTimeout(yamlParseTimerRef.current);
+      debouncedCommitRef.current?.cancel();
+    };
+  }, []);
+
+  const scheduleCommit = (updatedCard: Card) => {
+    if (!debouncedCommitRef.current) {
+      debouncedCommitRef.current = createDebouncedCommit<Card>({
+        delayMs: COMMIT_DEBOUNCE_MS,
+        onBeforeCommit: () => {
+          if (lastCommittedCardRef.current) {
+            saveToUndoStack(lastCommittedCardRef.current);
+          }
+        },
+        onCommit: (next) => {
+          lastCommittedCardRef.current = next;
+          onCommit(next);
+        },
+      });
+    }
+
+    debouncedCommitRef.current.schedule(updatedCard);
+  };
 
   // Handle form value changes - sync to YAML and auto-save
   const handleValuesChange = () => {
     if (isUpdatingFromYaml.current) return;
 
-    setHasChanges(true);
     isUpdatingFromForm.current = true;
 
     const values = form.getFieldsValue();
     const updatedCard = { ...card, ...values };
 
-    // Save to undo stack before updating
-    if (card) {
-      saveToUndoStack(card);
-    }
+    // Apply live updates immediately for preview
+    onChange(updatedCard as Card);
 
-    // Update YAML
-    setYamlContent(cardToYaml(updatedCard as Card));
+    // Debounce YAML serialization (expensive) while typing
+    if (yamlSyncTimerRef.current) clearTimeout(yamlSyncTimerRef.current);
+    yamlSyncTimerRef.current = setTimeout(() => {
+      setYamlContent(cardToYaml(updatedCard as Card));
+    }, YAML_SYNC_DEBOUNCE_MS);
 
-    // Auto-save
-    onSave(updatedCard as Card);
+    // Debounce commit (history/toast/etc) so typing doesn't churn
+    scheduleCommit(updatedCard as Card);
 
     setTimeout(() => {
       isUpdatingFromForm.current = false;
@@ -313,36 +374,20 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     if (!value || isUpdatingFromForm.current) return;
 
     setYamlContent(value);
-    isUpdatingFromYaml.current = true;
 
-    const parsedCard = yamlToCard(value);
-    if (parsedCard && card) {
-      // Save to undo stack before updating
-      saveToUndoStack(card);
-
-      // Update form
-      form.setFieldsValue(normalizeCardForForm(parsedCard));
-
-      // Auto-save
-      onSave(parsedCard);
-    }
-
-    setTimeout(() => {
-      isUpdatingFromYaml.current = false;
-    }, 0);
-  };
-
-  const handleSave = () => {
-    const values = form.getFieldsValue();
-    const updatedCard = { ...card, ...values };
-    onSave(updatedCard as Card);
-  };
-
-  const handleCancel = () => {
-    if (card) {
-      form.setFieldsValue(normalizeCardForForm(card));
-    }
-    onCancel();
+    if (yamlParseTimerRef.current) clearTimeout(yamlParseTimerRef.current);
+    yamlParseTimerRef.current = setTimeout(() => {
+      isUpdatingFromYaml.current = true;
+      const parsedCard = yamlToCard(value);
+      if (parsedCard) {
+        form.setFieldsValue(normalizeCardForForm(parsedCard));
+        onChange(parsedCard);
+        scheduleCommit(parsedCard);
+      }
+      setTimeout(() => {
+        isUpdatingFromYaml.current = false;
+      }, 0);
+    }, YAML_PARSE_DEBOUNCE_MS);
   };
 
   const handleInsertEntity = (entityId: string) => {

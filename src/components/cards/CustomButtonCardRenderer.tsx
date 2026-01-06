@@ -36,15 +36,15 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
 
   // Extract configuration
   const name = card.name || entity?.attributes?.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Button';
-  const icon = card.icon || (card as any).icon_template;
-  const colorProp = (card as any).color;
-  const iconColorProp = (card as any).icon_color;
-  const colorType = (card as any).color_type;
-  const showName = (card as any).show_name !== false;
-  const showIcon = (card as any).show_icon !== false;
-  const showState = (card as any).show_state;
-  const size = (card as any).size || '40px';
-  const template = (card as any).template;
+  const icon = card.icon || card.icon_template;
+  const colorProp = card.color;
+  const iconColorProp = card.icon_color;
+  const colorType = card.color_type;
+  const showName = card.show_name !== false;
+  const showIcon = card.show_icon !== false;
+  const showState = card.show_state;
+  const size = card.size || '40px';
+  const template = card.template;
 
   // Determine state
   const state = entity?.state || 'unknown';

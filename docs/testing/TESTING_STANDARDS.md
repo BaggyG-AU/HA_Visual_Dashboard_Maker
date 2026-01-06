@@ -71,6 +71,11 @@ Bad:
 
 ---
 
+### Naming Hygiene
+- Avoid special characters in test titles that require escaping (for example `+`, `*`, `$`, `?`, `|`). Prefer plain words (e.g., use “and” instead of “+”) so grep filters and Playwright `-g` patterns stay simple and portable.
+
+---
+
 ### 5. One Assertion Per Behavior
 
 Each test should assert one observable user behavior.

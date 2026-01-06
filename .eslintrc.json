@@ -12,5 +12,19 @@
     "plugin:import/electron",
     "plugin:import/typescript"
   ],
-  "parser": "@typescript-eslint/parser"
+  "parser": "@typescript-eslint/parser",
+  "ignorePatterns": [
+    "node_modules/",
+    "out/",
+    "test-results/",
+    ".vite/",
+    "dist/",
+    "coverage/"
+  ],
+  "settings": {
+    "import/ignore": [
+      "node_modules",
+      "allotment"
+    ]
+  }
 }
