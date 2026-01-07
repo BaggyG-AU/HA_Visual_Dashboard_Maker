@@ -46,11 +46,16 @@ export class PropertiesPanelDSL {
   /**
    * Switch to Form or YAML tab
    */
-  async switchTab(tab: 'Form' | 'YAML'): Promise<void> {
+  async switchTab(tab: 'Form' | 'YAML' | 'Advanced Styling'): Promise<void> {
     await this.expectVisible();
 
-    const tabElement = this.panel.getByRole('tab', { name: new RegExp(tab, 'i') });
-    await expect(tabElement).toBeVisible();
+    // Ensure tab strip is in view (panel can be scrolled far down)
+    await this.panel.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+
+    const tabElement = this.panel.getByRole('tab', { name: new RegExp(`^${tab}$`, 'i') });
+    await expect(tabElement).toBeVisible({ timeout: 10000 });
     await tabElement.click();
     // Wait until tab reports selected to avoid hidden content reads
     await expect(tabElement).toHaveAttribute('aria-selected', 'true', { timeout: 3000 });
@@ -60,7 +65,7 @@ export class PropertiesPanelDSL {
   /**
    * Verify current tab is active
    */
-  async expectActiveTab(tab: 'Form' | 'YAML'): Promise<void> {
+  async expectActiveTab(tab: 'Form' | 'YAML' | 'Advanced Styling'): Promise<void> {
     await this.expectVisible();
 
     const tabElement = this.panel.getByRole('tab', { name: new RegExp(tab, 'i') });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip } from 'antd';
+import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip, Switch } from 'antd';
 import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
 import * as monaco from 'monaco-editor';
 import * as yaml from 'js-yaml';
@@ -9,12 +9,15 @@ import { EntitySelect } from './EntitySelect';
 import { EntityMultiSelect } from './EntityMultiSelect';
 import { IconSelect } from './IconSelect';
 import { ColorPickerInput } from './ColorPickerInput';
+import { GradientPickerInput } from './GradientPickerInput';
 import { haConnectionService } from '../services/haConnectionService';
 import { createDebouncedCommit, DebouncedCommit } from '../utils/debouncedCommit';
+import { gradientToCss, isGradientString, parseGradient } from '../utils/gradientConversions';
 
 const { Title, Text } = Typography;
 
 const STYLE_COLOR_REGEX = /(^|[\s{;])color\s*:\s*([^;]+)/i;
+const STYLE_BACKGROUND_REGEX = /(^|[\s{;])background\s*:\s*([^;]+)/i;
 
 type MonacoTestWindow = Window & {
   __monacoEditor?: monaco.editor.IStandaloneCodeEditor;
@@ -42,6 +45,30 @@ const upsertStyleColor = (styleValue: string | undefined, color: string): string
   return `${normalized}\ncolor: ${color};`;
 };
 
+const extractStyleBackground = (styleValue?: string): string => {
+  if (!styleValue) return '';
+  const match = STYLE_BACKGROUND_REGEX.exec(styleValue);
+  return match ? match[2].trim() : '';
+};
+
+const upsertStyleBackground = (styleValue: string | undefined, background: string): string => {
+  if (!styleValue || !styleValue.trim()) {
+    return `background: ${background};`;
+  }
+
+  if (STYLE_BACKGROUND_REGEX.test(styleValue)) {
+    return styleValue.replace(STYLE_BACKGROUND_REGEX, `$1background: ${background}`);
+  }
+
+  const normalized = styleValue.trim().endsWith(';') ? styleValue.trim() : `${styleValue.trim()};`;
+  return `${normalized}\nbackground: ${background};`;
+};
+
+const removeStyleBackground = (styleValue: string | undefined): string => {
+  if (!styleValue) return '';
+  return styleValue.replace(STYLE_BACKGROUND_REGEX, '').trim();
+};
+
 interface PropertiesPanelProps {
   card: Card | null;
   cardIndex: number | null;
@@ -66,6 +93,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const [yamlContent, setYamlContent] = useState<string>('');
   const [yamlError, setYamlError] = useState<string | null>(null);
   const [undoStack, setUndoStack] = useState<Card[]>([]);
+  const [useGradient, setUseGradient] = useState(false);
   const isUpdatingFromForm = useRef(false);
   const isUpdatingFromYaml = useRef(false);
   const debouncedCommitRef = useRef<DebouncedCommit<Card> | null>(null);
@@ -312,6 +340,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       form.setFieldsValue(normalizeCardForForm(card));
       setYamlContent(cardToYaml(card));
       setUndoStack([]); // Clear undo stack when switching cards
+
+      const background = extractStyleBackground((card as { style?: string }).style);
+      setUseGradient(isGradientString(background));
     }
   }, [card, cardIndex, form]);
 
@@ -367,6 +398,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     setTimeout(() => {
       isUpdatingFromForm.current = false;
     }, 0);
+  };
+
+  const handleGradientChange = (css: string) => {
+    const currentStyle = form.getFieldValue('style') as string | undefined;
+    const updatedStyle = upsertStyleBackground(currentStyle, css);
+    form.setFieldsValue({ style: updatedStyle });
+    setUseGradient(true);
+    handleValuesChange();
   };
 
   // Handle YAML changes - sync to form and auto-save
@@ -2444,6 +2483,68 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Text>
             </div>
           )}
+                </Form>
+              </div>
+            ),
+          },
+          {
+            key: 'style',
+            label: 'Advanced Styling',
+            children: (
+              <div style={{ height: 'calc(100vh - 280px)', overflow: 'auto' }}>
+                <Form
+                  form={form}
+                  layout="vertical"
+                  onValuesChange={handleValuesChange}
+                >
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Use Gradient</span>}
+                    colon={false}
+                  >
+                    <Switch
+                      checked={useGradient}
+                      onChange={(checked) => {
+                        setUseGradient(checked);
+                        const currentStyle = form.getFieldValue('style') as string | undefined;
+                        if (!checked) {
+                          const cleaned = removeStyleBackground(currentStyle);
+                          form.setFieldsValue({ style: cleaned });
+                          handleValuesChange();
+                        } else {
+                          const nextCss = gradientToCss(parseGradient(extractStyleBackground(currentStyle)));
+                          const updated = upsertStyleBackground(currentStyle, nextCss);
+                          form.setFieldsValue({ style: updated });
+                          handleValuesChange();
+                        }
+                      }}
+                      data-testid="advanced-style-use-gradient"
+                    />
+                  </Form.Item>
+
+                  {useGradient && (
+                    <Form.Item
+                      label={<span style={{ color: 'white' }}>Background Gradient</span>}
+                      colon={false}
+                    >
+                      <GradientPickerInput
+                        value={extractStyleBackground(form.getFieldValue('style'))}
+                        onChange={handleGradientChange}
+                        data-testid="advanced-style-gradient-input"
+                      />
+                    </Form.Item>
+                  )}
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Style (CSS)</span>}
+                    name="style"
+                    help={<span style={{ color: '#666' }}>CSS applied to the card (background, color, padding, etc.)</span>}
+                  >
+                    <Input.TextArea
+                      placeholder="background: linear-gradient(...);"
+                      rows={6}
+                      style={{ fontFamily: 'monospace' }}
+                    />
+                  </Form.Item>
                 </Form>
               </div>
             ),

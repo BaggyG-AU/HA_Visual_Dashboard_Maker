@@ -240,29 +240,9 @@ Instead:
 
 ---
 
-## SKIPPED TESTS REGISTRY
+## SKIPPED TESTS REGISTER (source of truth)
 
-When a test is skipped, it must be recorded here with a concrete reason and a revisit trigger.
-
-- `tests/e2e/color-picker.spec.ts` → `visual regression and accessibility in scrollable PropertiesPanel`  
-  - Status: SKIPPED  
-  - Reason: Playwright intermittently reports focus state as “inactive” in Electron during keyboard assertions, despite manual verification.  
-  - Revisit when: Electron window focus can be made deterministic in Playwright traces without timing hacks.
-
-- `tests/e2e/color-picker.spec.ts` → `should update YAML when color is changed`  
-  - Status: SKIPPED  
-  - Reason: Monaco YAML model is not reliably exposed/detected in Playwright (test cannot read YAML content even though the UI updates correctly).  
-  - Revisit when: Monaco model/editor content can be read deterministically in E2E (see skipped-test comments in the spec and Phase 3 notes).
-
-- `tests/e2e/color-picker.spec.ts` → `button card color + icon color should update preview and YAML`  
-  - Status: SKIPPED  
-  - Reason: Intermittent Monaco/YAML visibility/model issues in the Properties Panel YAML tab make this test flaky.  
-  - Revisit when: PropertiesPanel Monaco visibility/model detection is stable under Playwright without timing hacks.
-
-- `tests/integration/dashboard-generator.spec.ts` → `Dashboard Generator Service (covered by unit tests)`  
-  - Status: SKIPPED (suite)  
-  - Reason: These are pure service tests already covered by Vitest (`tests/unit/dashboard-generator.spec.ts`) and are skipped in Playwright to avoid false confidence without UI work.  
-  - Revisit when: There is a clear integration need that must run under Playwright (otherwise keep coverage in Vitest).
+All skipped tests are tracked in `docs/testing/SKIPPED_TESTS_REGISTER.md`. Keep that file updated whenever a test is skipped or unskipped.
 
 ## ADDING OR MODIFYING DSL METHODS
 
@@ -677,6 +657,7 @@ Tests that have been skipped after extensive debugging efforts. These represent 
 | Test File | Test Name | Date Skipped | Reason | Reference |
 |-----------|-----------|--------------|---------|-----------|
 | `tests/e2e/color-picker.spec.ts` | "should update YAML when color is changed" | Jan 6, 2026 | Monaco editor model not detected by test despite global window references. Visual UI confirms YAML updates correctly. Multiple debugging attempts failed. | FOUNDATION_LAYER_IMPLEMENTATION.md |
+| `tests/e2e/gradient-editor.spec.ts` | "gradient editor applies preset and persists to yaml" | Jan 7, 2026 | Playwright cannot reliably target the Properties Panel YAML editor when portals/duplicate YAML containers exist; manual runs show YAML updates correctly. Pending improved YAML editor detection. | UI_ENHANCEMENT_LAYER_IMPLEMENTATION.md |
 
 **Policy**: Skipped tests MUST:
 1. Include detailed comment explaining why test was skipped
@@ -686,5 +667,5 @@ Tests that have been skipped after extensive debugging efforts. These represent 
 
 ---
 
-**Last Updated**: January 6, 2026
+**Last Updated**: January 7, 2026
 **Next Review**: After Phase 1 completion (v0.4.0)

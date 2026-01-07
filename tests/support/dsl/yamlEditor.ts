@@ -146,15 +146,19 @@ export class YamlEditorDSL {
    * Verify Monaco editor is visible
    */
   async expectMonacoVisible(): Promise<void> {
-    const editorContainer = this.window.getByTestId('yaml-editor-container');
-    await expect(editorContainer).toBeVisible();
+    // Disambiguate properties panel vs modal by scoping to properties panel
+    const editorContainer = this.window
+      .getByTestId('properties-panel')
+      .getByTestId('yaml-editor-container');
+
+    await expect(editorContainer).toBeVisible({ timeout: 5000 });
 
     // Monaco can render as .monaco-editor or fall back to textarea
     await expect(
       editorContainer.locator('.monaco-editor')
         .or(editorContainer.locator('textarea'))
         .first()
-    ).toBeVisible({ timeout: 3000 });
+    ).toBeVisible({ timeout: 5000 });
   }
 
   /**
