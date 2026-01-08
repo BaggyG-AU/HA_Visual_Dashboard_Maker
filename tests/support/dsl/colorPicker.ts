@@ -461,23 +461,108 @@ export class ColorPickerDSL {
   /**
    * Ensure the Electron window/page is active before keyboard assertions
    */
-  async ensureWindowActive(): Promise<void> {
+  async ensureWindowActive(testInfo?: any): Promise<void> {
     await this.window.bringToFront();
 
-    const hasFocus = await this.window.evaluate(() => document.hasFocus());
-    expect(hasFocus).toBe(true);
+    const active = await this.window.waitForFunction(() => document.hasFocus(), null, { timeout: 3000 }).catch(() => false);
+    if (active) return;
+
+    const diag = await this.collectFocusDiagnostics(undefined, 0);
+    await this.attachAndLogDiagnostics(testInfo, diag, 'color-picker-focus-diagnostics.json');
+    throw new Error('Window not focused (document.hasFocus() false)');
   }
 
   /**
    * Tab forward until a locator is focused (keyboard reachability check)
    */
-  async tabUntilFocused(target: Locator, maxPresses = 5): Promise<void> {
-    for (let i = 0; i < maxPresses; i++) {
+  async tabUntilFocused(target: Locator, maxPresses = 5, testInfo?: any): Promise<void> {
+    await this.ensureWindowActive(testInfo);
+    const history: Array<Record<string, unknown>> = [];
+    let attempts = 0;
+    for (; attempts < maxPresses; attempts++) {
       if (await target.evaluate((el) => el === document.activeElement)) {
         return;
       }
       await this.window.keyboard.press('Tab');
+      history.push(await this.captureActiveElementSummary());
     }
-    await expect(target).toBeFocused(); // surfaces a clear error if unreachable
+    // One last activation attempt before fail
+    await this.ensureWindowActive(testInfo);
+    const diag = await this.collectFocusDiagnostics(target, attempts, history);
+    await this.attachAndLogDiagnostics(testInfo, diag, 'color-picker-focus-diagnostics.json');
+    if (testInfo?.attach) {
+      const screenshot = await this.window.screenshot({ fullPage: true });
+      await testInfo.attach('color-picker-focus.png', { body: screenshot, contentType: 'image/png' });
+    }
+    await expect(target).toBeFocused(); // will throw with standard message
+  }
+
+  /**
+   * Collect focus diagnostics (JSON-safe)
+   */
+  private async collectFocusDiagnostics(target?: Locator, attempts?: number, history?: Array<Record<string, unknown>>): Promise<Record<string, unknown>> {
+    const diag: Record<string, unknown> = { attempts, history };
+    diag.document = await this.captureActiveElementSummary();
+
+    if (target) {
+      const box = await target.boundingBox();
+      const visible = await target.isVisible().catch(() => false);
+      const attrs = await target.evaluate((el) => {
+        const elem = el as HTMLElement;
+        const closestPopover = elem.closest('[data-testid*="picker"]');
+        const tabbables = (root: Element | Document) =>
+          Array.from(
+            root.querySelectorAll<HTMLElement>(
+              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            )
+          )
+            .filter((n) => !n.hasAttribute('disabled') && n.offsetParent !== null)
+            .slice(0, 10)
+            .map((n) => ({
+              tag: n.tagName,
+              id: n.id || null,
+              testId: n.getAttribute('data-testid') || null,
+              aria: n.getAttribute('aria-label') || null,
+            }));
+
+        const scope = closestPopover || document;
+        return {
+          tag: elem.tagName,
+          id: elem.id || null,
+          testId: elem.getAttribute('data-testid') || null,
+          aria: elem.getAttribute('aria-label') || null,
+          scopeTabbables: tabbables(scope),
+          scopeHasTarget: scope.contains(elem),
+        };
+      }).catch(() => ({}));
+      diag.target = { visible, box, ...attrs };
+    }
+    return diag;
+  }
+
+  private async attachAndLogDiagnostics(testInfo: any, diagnostics: Record<string, unknown>, label: string): Promise<void> {
+    const body = JSON.stringify(diagnostics, null, 2);
+    if (testInfo?.attach) {
+      await testInfo.attach(label, {
+        body: Buffer.from(body),
+        contentType: 'application/json',
+      });
+    }
+    // eslint-disable-next-line no-console
+    console.log(`[colorPicker diagnostics] ${body}`);
+  }
+
+  private async captureActiveElementSummary(): Promise<Record<string, unknown>> {
+    return await this.window.evaluate(() => {
+      const ae = document.activeElement as HTMLElement | null;
+      return {
+        hasFocus: document.hasFocus(),
+        visibilityState: document.visibilityState,
+        activeTag: ae?.tagName,
+        activeId: ae?.id || null,
+        activeTestId: ae?.getAttribute?.('data-testid') || null,
+        activeAria: ae?.getAttribute?.('aria-label') || null,
+      };
+    });
   }
 }

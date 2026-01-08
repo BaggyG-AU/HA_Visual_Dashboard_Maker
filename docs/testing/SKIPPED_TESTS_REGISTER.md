@@ -2,10 +2,10 @@
 
 **Purpose**: Single source of truth for tests that are intentionally skipped after investigation. Release notes may also reference skips, but individual entries live here.
 
-**Last Updated**: January 7, 2026
+**Last Updated**: January 8, 2026
 
 ## Summary
-- Total skipped (current suite): **5** Playwright specs/tests + **1** integration suite
+- Total skipped (current suite): **1** Playwright spec/test
 - Primary causes:
   - Monaco/YAML model visibility issues in the Properties Panel (Playwright + Electron)
   - Focus/portal detection issues in Electron (Color Picker visual/a11y)
@@ -15,11 +15,10 @@
 
 | Test File | Test Name | Status | Date Skipped | Reason | Revisit Trigger / Reference |
 |-----------|-----------|--------|--------------|--------|-----------------------------|
-| `tests/e2e/color-picker.spec.ts` | `visual regression and accessibility in scrollable PropertiesPanel` | Skipped | Jan 6, 2026 | Playwright intermittently reports focus state as “inactive” in Electron during keyboard assertions; manual checks pass. | Revisit when Electron window focus is deterministic in PW without timing hacks. |
-| `tests/e2e/color-picker.spec.ts` | `should update YAML when color is changed` | Skipped | Jan 6, 2026 | Monaco YAML model not reliably exposed/detected in Playwright; UI updates manually. | Revisit when Monaco model can be read deterministically in E2E. |
-| `tests/e2e/color-picker.spec.ts` | `button card color + icon color should update preview and YAML` | Skipped | Jan 6, 2026 | Properties Panel Monaco visibility/model flake; manual behavior correct. | Revisit when Properties Panel Monaco detection is stable. |
-| `tests/e2e/gradient-editor.spec.ts` | `gradient editor applies preset and persists to yaml` | Skipped | Jan 7, 2026 | Playwright cannot reliably target Properties Panel YAML editor when duplicate/portal YAML containers exist; manual behavior correct. | Revisit when YAML editor disambiguation is reliable. |
-| `tests/integration/dashboard-generator.spec.ts` | `Dashboard Generator Service (covered by unit tests)` (suite) | Skipped | Jan 6, 2026 | Pure service logic already covered by Vitest; Playwright integration adds no value. | Enable only if UI-level integration coverage becomes necessary. |
+| `tests/e2e/color-picker.spec.ts` | `visual regression and accessibility in scrollable PropertiesPanel` | Skipped | Jan 8, 2026 | Playwright still reports focus state as “inactive” in Electron during keyboard assertions even after deterministic window activation and tab-history diagnostics. Manual checks pass. | Revisit when Electron window focus can be made deterministic in Playwright without timing hacks. |
+| `tests/e2e/color-picker.spec.ts` | `should update YAML when color is changed` | **PASS (unskipped Jan 8, 2026)** | Jan 6, 2026 | RESOLVED: DSL now reads Monaco model via explicit handles/scoped editor selection with diagnostics; assertions are stable. | n/a |
+| `tests/e2e/color-picker.spec.ts` | `button card color + icon color should update preview and YAML` | **PASS (unskipped Jan 8, 2026)** | Jan 6, 2026 | RESOLVED: Same Monaco-model read path + diagnostics as above. | n/a |
+| `tests/e2e/gradient-editor.spec.ts` | `gradient editor applies preset and persists to yaml` | **PASS (unskipped Jan 8, 2026)** | Jan 7, 2026 | RESOLVED: Uses Monaco-model read with diagnostics; portal disambiguation handled in DSL. | n/a |
 
 ## Policy (applies to all entries)
 1) Include a concrete reason and reference; no “temporary” skips without documentation.  

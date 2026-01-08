@@ -244,6 +244,30 @@ Instead:
 
 All skipped tests are tracked in `docs/testing/SKIPPED_TESTS_REGISTER.md`. Keep that file updated whenever a test is skipped or unskipped.
 
+## Monaco / YAML Editor Verification (Properties Panel)
+
+Failures we’ve seen: Monaco models not exposed to Playwright, multiple YAML containers (modal + properties) causing strict-mode locator conflicts, and virtualized `.view-lines` scraping returning incomplete content.
+
+Correct approach (must follow):
+1) Read YAML from the authoritative Monaco model:
+   - Prefer explicit test handles: `window.__monacoModel` / `window.__monacoEditor`.
+   - Otherwise, pick the editor whose `getContainerDomNode()` is inside the visible Properties Panel `[data-testid="yaml-editor-container"]` and has a non-zero bounding box.
+   - Only as last resort, scrape `.view-lines` (log that you fell back).
+2) Readiness: consider Monaco “ready” if any of these are true:
+   - `window.__monacoModel?.getValue`
+   - `window.__monacoEditor?.getModel?.()`
+   - `window.monaco?.editor?.getModels()?.length > 0`
+3) Diagnostics (required on failure, recommended on success):
+   - Collect and attach JSON diagnostics: presence of explicit handles, editor/model counts and URIs, chosen editor path, container visibility/bounding box, scope hint (“properties” vs “modal”).
+   - Print the same diagnostics to stdout so they appear in terminal logs and the HTML report attachment (`yaml-editor-diagnostics.json`).
+4) Scoping:
+   - Use locators scoped to the Properties Panel (`[data-testid="properties-panel"] [data-testid="yaml-editor-container"]`) to avoid strict-mode conflicts with modal YAML editors.
+5) No timing hacks:
+   - Do not add arbitrary `waitForTimeout`. Use `waitForFunction` with the readiness predicate above and modest timeouts (≤10s).
+
+Reference implementation:
+- See `tests/support/dsl/yamlEditor.ts` (Monaco-ready predicate, diagnostics, content selection) and the now-unskipped tests in `tests/e2e/color-picker.spec.ts` and `tests/e2e/gradient-editor.spec.ts`.
+
 ## ADDING OR MODIFYING DSL METHODS
 
 When adding or modifying DSL methods:

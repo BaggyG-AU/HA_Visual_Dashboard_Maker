@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
 import { launchWithDSL, close } from '../support';
 
 test.describe('Gradient Editor - PropertiesPanel Integration', () => {
-  test.skip('gradient editor applies preset and persists to yaml (skipped: PW cannot disambiguate PropertiesPanel YAML editor portal)', async () => {
+  test('gradient editor applies preset and persists to yaml', async ({}, testInfo) => {
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, gradientEditor, yamlEditor } = ctx;
 
@@ -28,11 +28,10 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
 
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible();
-
-      const presetRegex = /background:\s*linear-gradient\(120deg,\s*#ff5858\s*0%?,\s*#f09819\s*100%?\)/i;
-      await expect
-        .poll(async () => yamlEditor.anyYamlContains(presetRegex))
-        .toBe(true);
+      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      // eslint-disable-next-line no-console
+      console.log('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
+      expect(value.toLowerCase()).toContain('linear-gradient(120deg, #ff5858 0%, #f09819 100%)');
     } finally {
       await close();
     }
