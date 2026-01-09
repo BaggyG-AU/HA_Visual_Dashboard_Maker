@@ -94,4 +94,42 @@ export class SettingsDSL {
     await expect(button).toBeVisible();
     await button.click();
   }
+
+  async setSoundsEnabled(enabled: boolean): Promise<void> {
+    await this.selectTab('Diagnostics');
+    const toggle = this.window.getByTestId('ui-sounds-toggle');
+    await expect(toggle).toBeVisible();
+    const isChecked = await toggle.getAttribute('aria-checked');
+    if ((isChecked === 'true') !== enabled) {
+      await toggle.click();
+    }
+  }
+
+  async setSoundsVolume(value: number): Promise<void> {
+    await this.selectTab('Diagnostics');
+    const input = this.window.getByTestId('ui-sounds-volume-input');
+    await expect(input).toBeVisible();
+    await input.fill(String(value));
+    await input.blur();
+  }
+
+  async selectSoundEffect(label: string): Promise<void> {
+    await this.selectTab('Diagnostics');
+    const select = this.window.getByTestId('ui-sounds-effect-select');
+    await expect(select).toBeVisible();
+    await select.click();
+    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
+    await expect(dropdown).toBeVisible({ timeout: 5000 });
+    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${label}$`, 'i') });
+    await expect(option).toBeVisible({ timeout: 5000 });
+    await option.click();
+    await expect(dropdown).not.toBeVisible({ timeout: 5000 });
+  }
+
+  async clickSoundTest(): Promise<void> {
+    await this.selectTab('Diagnostics');
+    const button = this.window.getByTestId('ui-sounds-test-button');
+    await expect(button).toBeVisible();
+    await button.click();
+  }
 }

@@ -38,6 +38,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setVerboseUIDebug: (verbose: boolean) => ipcRenderer.invoke('settings:setVerboseUIDebug', verbose),
   getHapticSettings: () => ipcRenderer.invoke('settings:getHaptics'),
   setHapticSettings: (settings: { enabled: boolean; intensity: number }) => ipcRenderer.invoke('settings:setHaptics', settings),
+  getSoundSettings: () => ipcRenderer.invoke('settings:getSounds'),
+  setSoundSettings: (settings: { enabled: boolean; volume: number }) => ipcRenderer.invoke('settings:setSounds', settings),
   resetUIState: () => ipcRenderer.invoke('settings:resetUIState'),
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
 
@@ -143,6 +145,8 @@ export interface ElectronAPI {
   setVerboseUIDebug: (verbose: boolean) => Promise<{ success: boolean }>;
   getHapticSettings: () => Promise<{ enabled: boolean; intensity: number }>;
   setHapticSettings: (settings: { enabled: boolean; intensity: number }) => Promise<{ success: boolean }>;
+  getSoundSettings: () => Promise<{ enabled: boolean; volume: number }>;
+  setSoundSettings: (settings: { enabled: boolean; volume: number }) => Promise<{ success: boolean }>;
   resetUIState: () => Promise<{ success: boolean }>;
   getAppVersion: () => Promise<{ version: string }>;
   getCachedEntities: () => Promise<{ success: boolean; entities?: any[]; error?: string }>;

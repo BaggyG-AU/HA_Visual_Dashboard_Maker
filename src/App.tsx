@@ -26,6 +26,7 @@ import { useThemeStore } from './store/themeStore';
 import { themeService } from './services/themeService';
 import { useEditorModeStore, EditorMode } from './store/editorModeStore';
 import { logger } from './services/logger';
+import { setSoundSettings } from './services/soundService';
 import { setHapticSettings } from './services/hapticService';
 import type { Card } from './types/dashboard';
 import type { LoggingLevel } from './services/settingsService';
@@ -1087,6 +1088,19 @@ const App: React.FC = () => {
       }
     };
     loadHaptics();
+  }, []);
+
+  // Load sound settings for renderer usage
+  useEffect(() => {
+    const loadSounds = async () => {
+      try {
+        const result = await window.electronAPI.getSoundSettings();
+        setSoundSettings({ enabled: result.enabled, volume: result.volume });
+      } catch (error) {
+        console.error('Failed to load sound settings', error);
+      }
+    };
+    loadSounds();
   }, []);
 
   // Set up menu event listeners

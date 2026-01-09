@@ -237,6 +237,19 @@ ipcMain.handle('settings:setHaptics', async (_event, settings: { enabled: boolea
   return { success: true };
 });
 
+ipcMain.handle('settings:getSounds', async () => {
+  return {
+    enabled: settingsService.getSoundsEnabled(),
+    volume: settingsService.getSoundsVolume(),
+  };
+});
+
+ipcMain.handle('settings:setSounds', async (_event, settings: { enabled: boolean; volume: number }) => {
+  settingsService.setSoundsEnabled(settings.enabled);
+  settingsService.setSoundsVolume(settings.volume);
+  return { success: true };
+});
+
 ipcMain.handle('settings:resetUIState', async () => {
   settingsService.resetUIState();
   return { success: true };

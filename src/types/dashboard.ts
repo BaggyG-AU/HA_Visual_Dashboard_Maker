@@ -3,6 +3,7 @@
  */
 
 import type { HapticCardConfig } from './haptics';
+import type { SoundCardConfig } from './sounds';
 
 // Layout-card view_layout configuration
 export interface ViewLayout {
@@ -22,6 +23,7 @@ export interface BaseCard {
   icon?: string;
   style?: string;
   haptic?: HapticCardConfig;
+  sound?: SoundCardConfig;
   icon_color?: string;
   icon_color_mode?: 'default' | 'custom' | 'state' | 'attribute';
   icon_color_states?: Record<string, string>;

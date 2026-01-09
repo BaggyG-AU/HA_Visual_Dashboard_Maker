@@ -122,6 +122,65 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     </div>
   );
 
+  const SOUND_EFFECT_OPTIONS = [
+    { value: 'click', label: 'Click/Tap' },
+    { value: 'success', label: 'Success' },
+    { value: 'error', label: 'Error' },
+    { value: 'toggle-on', label: 'Toggle On' },
+    { value: 'toggle-off', label: 'Toggle Off' },
+    { value: 'notification', label: 'Notification' },
+  ];
+
+  const renderSoundConfig = (testIdPrefix: string) => (
+    <div>
+      <Divider />
+      <Text strong style={{ color: 'white' }}>UI Sounds</Text>
+      <Form.Item
+        label={<span style={{ color: 'white' }}>Enable Sounds</span>}
+        name={['sound', 'enabled']}
+        valuePropName="checked"
+      >
+        <Switch data-testid={`${testIdPrefix}-sound-toggle`} />
+      </Form.Item>
+      <Form.Item
+        noStyle
+        shouldUpdate={(prev, curr) => prev.sound?.enabled !== curr.sound?.enabled}
+      >
+        {() => {
+          const enabled = Boolean(form.getFieldValue(['sound', 'enabled']));
+          return (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Sound Effect</span>}
+                name={['sound', 'effect']}
+              >
+                <Select
+                  placeholder="Use default effect"
+                  options={SOUND_EFFECT_OPTIONS}
+                  disabled={!enabled}
+                  data-testid={`${testIdPrefix}-sound-effect`}
+                />
+              </Form.Item>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Volume</span>}
+                name={['sound', 'volume']}
+                help={<span style={{ color: '#666' }}>Override global volume (0-100)</span>}
+              >
+                <InputNumber
+                  min={0}
+                  max={100}
+                  style={{ width: '100%' }}
+                  disabled={!enabled}
+                  data-testid={`${testIdPrefix}-sound-volume`}
+                />
+              </Form.Item>
+            </>
+          );
+        }}
+      </Form.Item>
+    </div>
+  );
+
   // Helper function to normalize entities for form display
   const normalizeCardForForm = (card: Card): FormCardValues => {
     const normalized: FormCardValues = { ...(card as Record<string, unknown>) };
@@ -622,6 +681,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               {renderHapticConfig('button-card')}
+              {renderSoundConfig('button-card')}
             </>
           )}
 
@@ -1145,6 +1205,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               {renderHapticConfig('custom-button-card')}
+              {renderSoundConfig('custom-button-card')}
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Icon Color</span>}

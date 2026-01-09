@@ -8,6 +8,7 @@ import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { isGradientString } from '../../utils/gradientConversions';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { triggerHapticForAction } from '../../services/hapticService';
+import { playSoundForAction } from '../../services/soundService';
 
 const { Text } = Typography;
 
@@ -137,6 +138,7 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
 
   const handleClick = () => {
     triggerHapticForAction(tapAction, card.haptic);
+    void playSoundForAction(tapAction, card.sound);
     onClick?.();
   };
 

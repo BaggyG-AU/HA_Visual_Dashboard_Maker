@@ -25,6 +25,7 @@ import { ColorPalettesDSL } from './dsl/colorPalettes';
 import { IconColorDSL } from './dsl/iconColor';
 import { BackgroundCustomizerDSL } from './dsl/backgroundCustomizer';
 import { HapticsDSL } from './dsl/haptics';
+import { SoundsDSL } from './dsl/sounds';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -55,6 +56,7 @@ export interface TestContext extends electron.ElectronTestContext {
   iconColor: IconColorDSL;
   backgroundCustomizer: BackgroundCustomizerDSL;
   haptics: HapticsDSL;
+  sounds: SoundsDSL;
 }
 
 /**
@@ -80,5 +82,6 @@ export async function launchWithDSL(): Promise<TestContext> {
     iconColor: new IconColorDSL(electronCtx.window),
     backgroundCustomizer: new BackgroundCustomizerDSL(electronCtx.window),
     haptics: new HapticsDSL(electronCtx.window),
+    sounds: new SoundsDSL(electronCtx.window),
   };
 }

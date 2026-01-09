@@ -4,6 +4,7 @@ import { ThunderboltOutlined } from '@ant-design/icons';
 import { ButtonCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { triggerHapticForAction } from '../../services/hapticService';
+import { playSoundForAction } from '../../services/soundService';
 
 const { Text } = Typography;
 
@@ -31,6 +32,7 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
 
   const handleClick = () => {
     triggerHapticForAction(tapAction, card.haptic);
+    void playSoundForAction(tapAction, card.sound);
     onClick?.();
   };
 
