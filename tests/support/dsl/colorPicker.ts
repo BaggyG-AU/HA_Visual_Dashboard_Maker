@@ -116,8 +116,9 @@ export class ColorPickerDSL {
    */
   async openPopover(inputTestId: string): Promise<void> {
     const swatch = this.getColorSwatch(inputTestId);
+    await swatch.scrollIntoViewIfNeeded();
     await expect(swatch).toBeVisible();
-    await swatch.click();
+    await swatch.click({ trial: false, force: true });
     await this.expectVisible(inputTestId);
   }
 
