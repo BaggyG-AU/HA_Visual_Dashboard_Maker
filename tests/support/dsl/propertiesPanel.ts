@@ -44,9 +44,9 @@ export class PropertiesPanelDSL {
   }
 
   /**
-   * Switch to Form or YAML tab
+   * Switch to Form, Advanced Options, or YAML tab
    */
-  async switchTab(tab: 'Form' | 'YAML' | 'Advanced Styling'): Promise<void> {
+  async switchTab(tab: 'Form' | 'Advanced Options' | 'YAML'): Promise<void> {
     await this.expectVisible();
 
     // Ensure tab strip is in view (panel can be scrolled far down)
@@ -63,9 +63,29 @@ export class PropertiesPanelDSL {
   }
 
   /**
+   * Get current active tab
+   */
+  async getActiveTab(): Promise<'Form' | 'Advanced Options' | 'YAML' | null> {
+    await this.expectVisible();
+
+    const tabs = ['Form', 'Advanced Options', 'YAML'] as const;
+    for (const tab of tabs) {
+      const tabElement = this.panel.getByRole('tab', { name: new RegExp(`^${tab}$`, 'i') });
+      const count = await tabElement.count();
+      if (count > 0) {
+        const ariaSelected = await tabElement.getAttribute('aria-selected');
+        if (ariaSelected === 'true') {
+          return tab;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
    * Verify current tab is active
    */
-  async expectActiveTab(tab: 'Form' | 'YAML' | 'Advanced Styling'): Promise<void> {
+  async expectActiveTab(tab: 'Form' | 'Advanced Options' | 'YAML'): Promise<void> {
     await this.expectVisible();
 
     const tabElement = this.panel.getByRole('tab', { name: new RegExp(tab, 'i') });

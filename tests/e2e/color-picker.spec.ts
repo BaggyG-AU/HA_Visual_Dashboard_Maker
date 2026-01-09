@@ -90,7 +90,7 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
 
   test('should open color picker popover when clicking swatch', async () => {
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, colorPicker, window } = ctx;
+    const { appDSL, dashboard, palette, canvas, properties, colorPicker } = ctx;
 
     try {
       // Wait for app to be ready and create dashboard
@@ -109,11 +109,7 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       await canvas.selectCard(0);
       await properties.expectVisible();
 
-      // Verify the color input is visible
-      const colorInput = window.getByTestId('button-card-color-input');
-      await expect(colorInput).toBeVisible();
-
-      // Open the color picker popover by clicking the swatch
+      // Open the color picker popover (auto-switches to Advanced Options tab)
       await colorPicker.openPopover('button-card-color-input');
 
       // Verify color picker is now visible
@@ -493,6 +489,7 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
       await properties.expectVisible();
+      await properties.switchTab('Advanced Options');
 
       // Type "auto" directly in the main input (not the popover)
       const mainInput = window.getByTestId('button-card-color-input');
@@ -576,7 +573,7 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
   test('button card color + icon color should update preview and YAML', async ({ page }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, colorPicker, yamlEditor, window } = ctx;
+    const { appDSL, dashboard, palette, canvas, properties, colorPicker, iconColor, yamlEditor, window } = ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -592,6 +589,9 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       await colorPicker.openPopover('button-card-color-input');
       await colorPicker.setColorInput('#336699', 'button-card-color-input');
       await colorPicker.closePopover('button-card-color-input');
+
+      // Select custom icon color mode first
+      await iconColor.selectMode('Custom', testInfo);
 
       // Set icon color separately
       await colorPicker.openPopover('button-card-icon-color-input');

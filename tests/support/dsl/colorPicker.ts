@@ -5,10 +5,15 @@
  * Supports both standalone ColorPicker and ColorPickerInput (with popover).
  */
 
-import { Page, expect, Locator } from '@playwright/test';
+import { Page, expect, Locator, type TestInfo } from '@playwright/test';
+import { PropertiesPanelDSL } from './propertiesPanel';
 
 export class ColorPickerDSL {
-  constructor(private window: Page) {}
+  private propertiesPanel: PropertiesPanelDSL;
+
+  constructor(private window: Page) {
+    this.propertiesPanel = new PropertiesPanelDSL(window);
+  }
 
   /**
    * Get color picker by test ID
@@ -113,13 +118,46 @@ export class ColorPickerDSL {
 
   /**
    * Open ColorPickerInput popover by clicking swatch
+   *
+   * Flow-defensive: Automatically switches to Advanced Options tab for button-card styling fields.
+   * This handles the UI reorganization where button card color/icon inputs moved from Form tab
+   * to Advanced Options tab, making the flow transparent to test authors.
    */
   async openPopover(inputTestId: string): Promise<void> {
+    // Flow-defensive: Detect if this is a button-card styling field that requires Advanced Options tab
+    const requiresAdvancedOptionsTab = this.isButtonCardStylingField(inputTestId);
+
+    if (requiresAdvancedOptionsTab) {
+      // Check if properties panel is visible and if we need to switch tabs
+      const panelVisible = await this.propertiesPanel.isVisible();
+      if (panelVisible) {
+        const currentTab = await this.propertiesPanel.getActiveTab();
+        if (currentTab !== 'Advanced Options') {
+          // Auto-switch to Advanced Options tab
+          await this.propertiesPanel.switchTab('Advanced Options');
+        }
+      }
+    }
+
     const swatch = this.getColorSwatch(inputTestId);
     await swatch.scrollIntoViewIfNeeded();
     await expect(swatch).toBeVisible();
     await swatch.click({ trial: false, force: true });
     await this.expectVisible(inputTestId);
+  }
+
+  /**
+   * Determine if a testid corresponds to a button-card styling field
+   * that requires the Advanced Options tab to be active
+   */
+  private isButtonCardStylingField(testId: string): boolean {
+    // Button card styling fields that live in Advanced Options tab
+    const stylingFields = [
+      'button-card-color-input',
+      'button-card-icon-color-input',
+      // Add other button card styling fields here as needed
+    ];
+    return stylingFields.includes(testId);
   }
 
   /**
@@ -140,13 +178,28 @@ export class ColorPickerDSL {
 
   /**
    * Set color value via manual input
+   * Automatically switches to HEX format if a hex color is provided
    */
   async setColorInput(color: string, testId = 'color-picker'): Promise<void> {
     const input = this.getColorInput(testId);
     await expect(input).toBeVisible();
+
+    // If color starts with #, ensure we're in HEX format
+    if (color.startsWith('#')) {
+      const currentFormat = await this.getCurrentFormat(testId);
+      if (currentFormat !== 'HEX') {
+        // Toggle to HEX format
+        while ((await this.getCurrentFormat(testId)) !== 'HEX') {
+          await this.toggleFormat(testId);
+          await this.window.waitForTimeout(100);
+        }
+      }
+    }
+
     await input.clear();
     await input.fill(color);
-    await input.press('Enter'); // Trigger validation
+    await input.press('Enter'); // Trigger validation and addRecentColor via handleKeyDown -> handleInputBlur
+    await this.window.waitForTimeout(200); // Allow onChange and addRecentColor to process
     const escaped = color.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     await expect(input).toHaveValue(new RegExp(escaped, 'i'));
   }
@@ -176,7 +229,8 @@ export class ColorPickerDSL {
   async toggleFormat(testId = 'color-picker'): Promise<void> {
     const toggle = this.getFormatToggle(testId);
     await expect(toggle).toBeVisible();
-    await toggle.click();
+    // Use force: true to bypass pointer interception from react-grid-layout
+    await toggle.click({ force: true });
   }
 
   /**
@@ -215,38 +269,91 @@ export class ColorPickerDSL {
   }
 
   /**
+   * Switch between Favorites and Recent tabs in the color picker
+   */
+  async switchTab(tab: 'favorites' | 'recent', testId = 'color-picker'): Promise<void> {
+    // Tab buttons are at ${testId}-picker-tab-favorites and ${testId}-picker-tab-recents
+    // because ColorPickerInput passes `${testId}-picker` as the testId to ColorPicker
+    const tabButton = this.window.getByTestId(`${testId}-picker-tab-${tab === 'recent' ? 'recents' : 'favorites'}`);
+    await expect(tabButton).toBeVisible();
+    await tabButton.click({ force: true });
+    // Wait for tab content to render
+    await this.window.waitForTimeout(200);
+  }
+
+  /**
    * Click a recent color swatch by index
    */
   async clickRecentColor(index: number, testId = 'color-picker'): Promise<void> {
+    // Ensure popover is open
+    const picker = this.window.getByTestId(`${testId}-picker`);
+    const isVisible = await picker.isVisible().catch(() => false);
+    if (!isVisible) {
+      await this.openPopover(testId);
+    }
+
+    // Switch to recent tab first
+    await this.switchTab('recent', testId);
+
     const swatch = this.getRecentColorSwatch(index, testId);
     await expect(swatch).toBeVisible();
     await swatch.click();
   }
 
   /**
-   * Verify recent colors section is visible
+   * Verify recent colors section is visible (with at least one color)
    */
   async expectRecentColorsVisible(testId = 'color-picker'): Promise<void> {
-    // For ColorPickerInput, the picker is at ${testId}-picker
+    // Ensure popover is open (may have closed after setting color)
     const picker = this.window.getByTestId(`${testId}-picker`);
+    const isVisible = await picker.isVisible().catch(() => false);
+    if (!isVisible) {
+      // Reopen the popover
+      await this.openPopover(testId);
+    }
+
+    // Switch to recent tab first
+    await this.switchTab('recent', testId);
+
+    // For ColorPickerInput, the picker is at ${testId}-picker
     const recentSection = picker.getByText('Recent Colors');
     await expect(recentSection).toBeVisible();
+
+    // Verify there's at least one recent color swatch
+    const swatches = this.window.getByTestId(new RegExp(`^${testId}-picker-recent-\\d+$`));
+    await expect(swatches.first()).toBeVisible();
   }
 
   /**
-   * Verify recent colors section is hidden
+   * Verify recent colors section is empty (no colors saved yet)
    */
   async expectRecentColorsHidden(testId = 'color-picker'): Promise<void> {
+    // Switch to recent tab first
+    await this.switchTab('recent', testId);
+
     // For ColorPickerInput, the picker is at ${testId}-picker
     const picker = this.window.getByTestId(`${testId}-picker`);
-    const recentSection = picker.getByText('Recent Colors');
-    await expect(recentSection).toHaveCount(0);
+
+    // The "Recent Colors" text is always visible, but there should be no color swatches
+    // Check for "No recent colors yet." message
+    const emptyMessage = picker.getByText('No recent colors yet.');
+    await expect(emptyMessage).toBeVisible();
   }
 
   /**
    * Get count of recent color swatches
    */
   async getRecentColorsCount(testId = 'color-picker'): Promise<number> {
+    // Ensure popover is open
+    const picker = this.window.getByTestId(`${testId}-picker`);
+    const isVisible = await picker.isVisible().catch(() => false);
+    if (!isVisible) {
+      await this.openPopover(testId);
+    }
+
+    // Switch to recent tab first
+    await this.switchTab('recent', testId);
+
     const swatches = this.window.getByTestId(new RegExp(`^${testId}-picker-recent-\\d+$`));
     return await swatches.count();
   }
@@ -255,6 +362,16 @@ export class ColorPickerDSL {
    * Clear all recent colors
    */
   async clearRecentColors(testId = 'color-picker'): Promise<void> {
+    // Ensure popover is open
+    const picker = this.window.getByTestId(`${testId}-picker`);
+    const isVisible = await picker.isVisible().catch(() => false);
+    if (!isVisible) {
+      await this.openPopover(testId);
+    }
+
+    // Switch to recent tab first
+    await this.switchTab('recent', testId);
+
     const clearButton = this.getClearRecentButton(testId);
     await expect(clearButton).toBeVisible();
     await clearButton.click();
@@ -461,7 +578,7 @@ export class ColorPickerDSL {
   /**
    * Ensure the Electron window/page is active before keyboard assertions
    */
-  async ensureWindowActive(testInfo?: any): Promise<void> {
+  async ensureWindowActive(testInfo?: TestInfo): Promise<void> {
     await this.window.bringToFront();
 
     const active = await this.window.waitForFunction(() => document.hasFocus(), null, { timeout: 3000 }).catch(() => false);
@@ -475,7 +592,7 @@ export class ColorPickerDSL {
   /**
    * Tab forward until a locator is focused (keyboard reachability check)
    */
-  async tabUntilFocused(target: Locator, maxPresses = 5, testInfo?: any): Promise<void> {
+  async tabUntilFocused(target: Locator, maxPresses = 5, testInfo?: TestInfo): Promise<void> {
     await this.ensureWindowActive(testInfo);
     const history: Array<Record<string, unknown>> = [];
     let attempts = 0;
@@ -540,7 +657,7 @@ export class ColorPickerDSL {
     return diag;
   }
 
-  private async attachAndLogDiagnostics(testInfo: any, diagnostics: Record<string, unknown>, label: string): Promise<void> {
+  private async attachAndLogDiagnostics(testInfo: TestInfo | undefined, diagnostics: Record<string, unknown>, label: string): Promise<void> {
     const body = JSON.stringify(diagnostics, null, 2);
     if (testInfo?.attach) {
       await testInfo.attach(label, {
