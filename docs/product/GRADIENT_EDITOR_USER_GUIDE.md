@@ -3,7 +3,7 @@
 The Gradient Editor lets you configure linear or radial gradients for card backgrounds directly inside the Properties Panel. It uses the same Color Picker controls for each stop and keeps YAML in sync without manual edits.
 
 ## Where You’ll See It
-- Properties Panel → Advanced Styling tab → **Use Gradient** toggle → **Background Gradient** field.
+- Properties Panel → Advanced Styling tab → **Background** → select **Gradient** → open the Gradient picker.
 - Works for any card that supports `style` with `background`.
 
 ## Supported CSS Formats

@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard, Typography } from 'antd';
 import { DashboardOutlined, BulbOutlined } from '@ant-design/icons';
 import { GlanceCard } from '../../types/dashboard';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 
 const { Text } = Typography;
 
@@ -23,6 +24,7 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
   const title = card.title || 'Glance';
   const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
   const columns = card.columns || 5;
+  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Extract entity IDs for display
   const getEntityId = (entity: any): string => {
@@ -52,7 +54,7 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
         height: '100%',
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         transition: 'all 0.3s ease',
       }}
       styles={{

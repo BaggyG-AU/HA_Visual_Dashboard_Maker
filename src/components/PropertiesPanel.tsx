@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip, Switch } from 'antd';
+import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip } from 'antd';
 import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
 import * as monaco from 'monaco-editor';
 import * as yaml from 'js-yaml';
@@ -9,11 +9,11 @@ import { EntitySelect } from './EntitySelect';
 import { EntityMultiSelect } from './EntityMultiSelect';
 import { IconSelect } from './IconSelect';
 import { ColorPickerInput } from './ColorPickerInput';
-import { GradientPickerInput } from './GradientPickerInput';
+import { BackgroundCustomizer } from './BackgroundCustomizer';
 import { haConnectionService } from '../services/haConnectionService';
 import { createDebouncedCommit, DebouncedCommit } from '../utils/debouncedCommit';
-import { gradientToCss, isGradientString, parseGradient } from '../utils/gradientConversions';
-import { extractStyleBackground, extractStyleColor, removeStyleBackground, upsertStyleBackground, upsertStyleColor } from '../utils/styleBackground';
+import { extractStyleColor, upsertStyleColor } from '../utils/styleBackground';
+import { applyBackgroundConfigToStyle, DEFAULT_BACKGROUND_CONFIG, parseBackgroundConfig, type BackgroundConfig } from '../utils/backgroundStyle';
 
 const { Title, Text } = Typography;
 
@@ -48,14 +48,15 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const [yamlContent, setYamlContent] = useState<string>('');
   const [yamlError, setYamlError] = useState<string | null>(null);
   const [undoStack, setUndoStack] = useState<Card[]>([]);
-  const [useGradient, setUseGradient] = useState(false);
-  const [solidBackground, setSolidBackground] = useState<string>('');
+  const [backgroundConfig, setBackgroundConfig] = useState<BackgroundConfig>(DEFAULT_BACKGROUND_CONFIG);
   const isUpdatingFromForm = useRef(false);
   const isUpdatingFromYaml = useRef(false);
   const debouncedCommitRef = useRef<DebouncedCommit<Card> | null>(null);
   const yamlSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const yamlParseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCommittedCardRef = useRef<Card | null>(null);
+  const lastStyleValueRef = useRef<string>('');
+  const skipStyleSyncRef = useRef(false);
   const monacoEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -311,12 +312,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       setYamlContent(cardToYaml(card));
       setUndoStack([]); // Clear undo stack when switching cards
 
-      const background = extractStyleBackground((card as { style?: string }).style);
-      const hasGradient = isGradientString(background);
-      setUseGradient(hasGradient);
-      if (!hasGradient) {
-        setSolidBackground(background);
-      }
+      const styleValue = (card as { style?: string }).style ?? '';
+      setBackgroundConfig(parseBackgroundConfig(styleValue));
+      lastStyleValueRef.current = styleValue;
     }
   }, [card, cardIndex, form]);
 
@@ -356,13 +354,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
     const values = form.getFieldsValue();
     const updatedCard = { ...card, ...values };
-    const currentBackground = extractStyleBackground(values.style as string | undefined);
-    const gradientEnabled = isGradientString(currentBackground);
-    if (gradientEnabled !== useGradient) {
-      setUseGradient(gradientEnabled);
-    }
-    if (!gradientEnabled) {
-      setSolidBackground(currentBackground);
+    const styleValue = (values.style as string | undefined) ?? '';
+    if (skipStyleSyncRef.current) {
+      skipStyleSyncRef.current = false;
+    } else if (styleValue !== lastStyleValueRef.current) {
+      setBackgroundConfig(parseBackgroundConfig(styleValue));
+      lastStyleValueRef.current = styleValue;
     }
 
     // Apply live updates immediately for preview
@@ -382,20 +379,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     }, 0);
   };
 
-  const handleGradientChange = (css: string) => {
+  const handleBackgroundConfigChange = (next: BackgroundConfig) => {
     const currentStyle = form.getFieldValue('style') as string | undefined;
-    const updatedStyle = upsertStyleBackground(currentStyle, css);
+    const updatedStyle = applyBackgroundConfigToStyle(currentStyle, next);
+    setBackgroundConfig(next);
+    lastStyleValueRef.current = updatedStyle ?? '';
+    skipStyleSyncRef.current = true;
     form.setFieldsValue({ style: updatedStyle });
-    setUseGradient(true);
-    handleValuesChange();
-  };
-
-  const handleSolidBackgroundChange = (color: string) => {
-    const currentStyle = form.getFieldValue('style') as string | undefined;
-    const updatedStyle = color ? upsertStyleBackground(currentStyle, color) : removeStyleBackground(currentStyle);
-    form.setFieldsValue({ style: updatedStyle });
-    setSolidBackground(color);
-    setUseGradient(false);
     handleValuesChange();
   };
 
@@ -413,12 +403,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         form.setFieldsValue(normalizeCardForForm(parsedCard));
         onChange(parsedCard);
         scheduleCommit(parsedCard);
-        const background = extractStyleBackground((parsedCard as { style?: string }).style);
-        const hasGradient = isGradientString(background);
-        setUseGradient(hasGradient);
-        if (!hasGradient) {
-          setSolidBackground(background);
-        }
+        const styleValue = (parsedCard as { style?: string }).style ?? '';
+        setBackgroundConfig(parseBackgroundConfig(styleValue));
+        lastStyleValueRef.current = styleValue;
       }
       setTimeout(() => {
         isUpdatingFromYaml.current = false;
@@ -2552,58 +2539,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   onValuesChange={handleValuesChange}
                 >
                   <Form.Item
-                    label={<span style={{ color: 'white' }}>Use Gradient</span>}
+                    label={<span style={{ color: 'white' }}>Background</span>}
                     colon={false}
                   >
-                    <Switch
-                      checked={useGradient}
-                      onChange={(checked) => {
-                        setUseGradient(checked);
-                        const currentStyle = form.getFieldValue('style') as string | undefined;
-                        if (!checked) {
-                          const nextBackground = solidBackground?.trim();
-                          const cleaned = nextBackground
-                            ? upsertStyleBackground(currentStyle, nextBackground)
-                            : removeStyleBackground(currentStyle);
-                          form.setFieldsValue({ style: cleaned });
-                          handleValuesChange();
-                        } else {
-                          const nextCss = gradientToCss(parseGradient(extractStyleBackground(currentStyle)));
-                          const updated = upsertStyleBackground(currentStyle, nextCss);
-                          form.setFieldsValue({ style: updated });
-                          handleValuesChange();
-                        }
-                      }}
-                      data-testid="advanced-style-use-gradient"
+                    <BackgroundCustomizer
+                      value={backgroundConfig}
+                      onChange={handleBackgroundConfigChange}
                     />
                   </Form.Item>
-
-                  {!useGradient && (
-                    <Form.Item
-                      label={<span style={{ color: 'white' }}>Background Color</span>}
-                      colon={false}
-                    >
-                      <ColorPickerInput
-                        value={solidBackground}
-                        onChange={handleSolidBackgroundChange}
-                        data-testid="advanced-style-solid-background-input"
-                        ariaLabel="Background color"
-                      />
-                    </Form.Item>
-                  )}
-
-                  {useGradient && (
-                    <Form.Item
-                      label={<span style={{ color: 'white' }}>Background Gradient</span>}
-                      colon={false}
-                    >
-                      <GradientPickerInput
-                        value={extractStyleBackground(form.getFieldValue('style'))}
-                        onChange={handleGradientChange}
-                        data-testid="advanced-style-gradient-input"
-                      />
-                    </Form.Item>
-                  )}
 
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Style (CSS)</span>}

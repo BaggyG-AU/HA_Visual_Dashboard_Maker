@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard, Typography } from 'antd';
 import { DashboardOutlined } from '@ant-design/icons';
 import { SensorCard } from '../../types/dashboard';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 
 const { Text } = Typography;
@@ -32,6 +33,7 @@ export const SensorCardRenderer: React.FC<SensorCardRendererProps> = ({
 
   const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Sensor';
   const showGraph = card.graph !== 'none';
+  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Get icon based on device class
   const getIcon = () => {
@@ -83,7 +85,7 @@ export const SensorCardRenderer: React.FC<SensorCardRendererProps> = ({
         height: '100%',
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         transition: 'all 0.3s ease',
       }}
       styles={{

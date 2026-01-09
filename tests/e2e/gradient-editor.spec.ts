@@ -9,7 +9,7 @@ import { debugLog } from '../support/helpers/debug';
 
 const setupGradientEditor = async () => {
   const ctx = await launchWithDSL();
-  const { appDSL, dashboard, palette, canvas, properties } = ctx;
+  const { appDSL, dashboard, palette, canvas, properties, backgroundCustomizer } = ctx;
 
   await appDSL.waitUntilReady();
   await dashboard.createNew();
@@ -20,6 +20,7 @@ const setupGradientEditor = async () => {
   await canvas.selectCard(0);
   await properties.expectVisible();
   await properties.switchTab('Advanced Styling');
+  await backgroundCustomizer.selectType('Gradient');
 
   return ctx;
 };
@@ -76,7 +77,7 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
     const { properties, gradientEditor, yamlEditor } = ctx;
 
     try {
-      await gradientEditor.enableGradient();
+      await backgroundCustomizer.selectType('Gradient', testInfo);
       await gradientEditor.applyPreset('material-sunset', testInfo);
 
       await properties.switchTab('YAML');
@@ -92,7 +93,7 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
       await yamlEditor.setEditorContent(updatedYaml, 'properties', testInfo);
 
       await properties.switchTab('Advanced Styling');
-      await gradientEditor.expectUseGradientEnabled(true);
+      await backgroundCustomizer.selectType('Gradient', testInfo);
       await gradientEditor.expectType('radial');
     } finally {
       await close(ctx);
@@ -101,7 +102,7 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
 
   test('gradient editor works on multiple card types', async () => {
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, gradientEditor } = ctx;
+    const { appDSL, dashboard, palette, canvas, properties, gradientEditor, backgroundCustomizer } = ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -112,6 +113,7 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
       await canvas.selectCard(0);
       await properties.expectVisible();
       await properties.switchTab('Advanced Styling');
+      await backgroundCustomizer.selectType('Gradient');
       await gradientEditor.applyPreset('material-sky');
       await gradientEditor.expectPreview();
     } finally {

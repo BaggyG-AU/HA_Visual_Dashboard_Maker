@@ -4,6 +4,7 @@ import { BorderOutlined, BulbOutlined, PoweroffOutlined, ApiOutlined } from '@an
 import { CustomCard } from '../../types/dashboard';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 import { resolveIconColor } from '../../utils/iconColorResolver';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { isGradientString } from '../../utils/gradientConversions';
 import { renderToStaticMarkup } from 'react-dom/server';
 
@@ -51,6 +52,7 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
   const showState = card.show_state;
   const size = card.size || '40px';
   const template = card.template;
+  const backgroundStyle = getCardBackgroundStyle(card.style, '#1a1a1a');
 
   // Determine state
   const state = entity?.state || 'unknown';
@@ -145,7 +147,7 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
         style={{
           height: '100%',
           border: isSelected ? '2px solid #1890ff' : '1px solid #434343',
-          backgroundColor: '#1a1a1a',
+          ...backgroundStyle,
           boxShadow: isSelected ? '0 0 10px rgba(24, 144, 255, 0.3)' : 'none',
         }}
         bodyStyle={{

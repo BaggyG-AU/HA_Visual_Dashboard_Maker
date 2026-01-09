@@ -18,6 +18,7 @@ export interface BaseCard {
   entities?: any[]; // Can be string[] or (string | EntityConfig)[]
   name?: string;
   icon?: string;
+  style?: string;
   icon_color?: string;
   icon_color_mode?: 'default' | 'custom' | 'state' | 'attribute';
   icon_color_states?: Record<string, string>;

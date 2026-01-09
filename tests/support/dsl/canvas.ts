@@ -87,4 +87,18 @@ export class CanvasDSL {
     const cards = this.window.getByTestId('canvas-card');
     return index === 0 ? cards.first() : cards.nth(index);
   }
+
+  getBackgroundLayer(index = 0) {
+    return this.getCard(index).getByTestId('card-background-layer');
+  }
+
+  async expectBackgroundLayerVisible(index = 0): Promise<void> {
+    const layer = this.getBackgroundLayer(index);
+    await expect(layer).toBeVisible();
+  }
+
+  async expectBackgroundLayerCss(index: number, property: string, value: string | RegExp): Promise<void> {
+    const layer = this.getBackgroundLayer(index);
+    await expect(layer).toHaveCSS(property, value);
+  }
 }

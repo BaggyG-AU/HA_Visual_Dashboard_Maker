@@ -17,35 +17,11 @@ export class GradientEditorDSL {
     this.colorPicker = new ColorPickerDSL(window);
   }
 
-  getUseGradientToggle(): Locator {
-    return this.window.getByTestId('advanced-style-use-gradient');
-  }
-
   getGradientInput(): Locator {
     return this.window.getByTestId(this.baseTestId);
   }
 
-  async enableGradient(): Promise<void> {
-    const toggle = this.getUseGradientToggle();
-    await expect(toggle).toBeVisible();
-    const isChecked = await toggle.isChecked();
-    if (!isChecked) {
-      await toggle.click();
-    }
-  }
-
-  async expectUseGradientEnabled(enabled: boolean): Promise<void> {
-    const toggle = this.getUseGradientToggle();
-    await expect(toggle).toBeVisible();
-    if (enabled) {
-      await expect(toggle).toBeChecked();
-    } else {
-      await expect(toggle).not.toBeChecked();
-    }
-  }
-
   async openGradientPopover(): Promise<void> {
-    await this.enableGradient();
     const editor = this.window.getByTestId(`${this.baseTestId}-editor`);
     const alreadyOpen = await editor.isVisible().catch(() => false);
     if (alreadyOpen) return;
@@ -58,7 +34,6 @@ export class GradientEditorDSL {
   }
 
   async openGradientPopoverWithKeyboard(): Promise<void> {
-    await this.enableGradient();
     const editor = this.window.getByTestId(`${this.baseTestId}-editor`);
     const alreadyOpen = await editor.isVisible().catch(() => false);
     if (alreadyOpen) return;

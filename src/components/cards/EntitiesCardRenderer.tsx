@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard, Typography } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { EntitiesCard } from '../../types/dashboard';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 
 const { Text } = Typography;
@@ -23,6 +24,7 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
 }) => {
   const title = card.title || card.name || 'Entities';
   const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
+  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Get live entity states (if available)
   const { getEntity, isLoading } = useHAEntities();
@@ -95,7 +97,7 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
         height: '100%',
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         transition: 'all 0.3s ease',
         borderRadius: '12px',
       }}

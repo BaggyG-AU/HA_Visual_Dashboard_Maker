@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard, Typography } from 'antd';
 import { FileTextOutlined } from '@ant-design/icons';
 import { MarkdownCard } from '../../types/dashboard';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 
 const { Text, Paragraph } = Typography;
 
@@ -22,6 +23,7 @@ export const MarkdownCardRenderer: React.FC<MarkdownCardRendererProps> = ({
 }) => {
   const title = card.title || 'Markdown';
   const content = card.content || '';
+  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Simple markdown preview - strip markdown syntax for preview
   const previewContent = content
@@ -46,7 +48,7 @@ export const MarkdownCardRenderer: React.FC<MarkdownCardRendererProps> = ({
         height: '100%',
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         transition: 'all 0.3s ease',
       }}
       styles={{

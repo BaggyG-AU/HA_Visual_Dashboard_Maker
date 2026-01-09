@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard, Typography } from 'antd';
 import { ThunderboltOutlined } from '@ant-design/icons';
 import { ButtonCard } from '../../types/dashboard';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 
 const { Text } = Typography;
 
@@ -24,6 +25,7 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
   const showName = card.show_name !== false;
   const showState = card.show_state !== false;
   const showIcon = card.show_icon !== false;
+  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   return (
     <AntCard
@@ -32,7 +34,7 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
         height: '100%',
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         transition: 'all 0.3s ease',
       }}
       styles={{
