@@ -7,6 +7,7 @@
 
 import { test, expect } from '@playwright/test';
 import { launchWithDSL, close } from '../support';
+import { debugLog } from '../support/helpers/debug';
 
 test.describe('Color Picker - PropertiesPanel Integration', () => {
 test.skip('visual regression and accessibility in scrollable PropertiesPanel (skipped: Electron focus inactive in PW)', async ({ page }, testInfo) => {
@@ -563,8 +564,7 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible();
       const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
-      // eslint-disable-next-line no-console
-      console.log('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
+      debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
       await expect(value.toLowerCase()).toContain('#ff0000');
       await expect(value.toLowerCase()).toContain('color');
     } finally {
@@ -609,8 +609,7 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible();
       const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
-      // eslint-disable-next-line no-console
-      console.log('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
+      debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
       expect(value.toLowerCase()).toContain("color: '#336699'");
       expect(value.toLowerCase()).toContain("icon_color: '#ff8800'");
     } finally {

@@ -18,6 +18,10 @@ export interface BaseCard {
   entities?: any[]; // Can be string[] or (string | EntityConfig)[]
   name?: string;
   icon?: string;
+  icon_color?: string;
+  icon_color_mode?: 'default' | 'custom' | 'state' | 'attribute';
+  icon_color_states?: Record<string, string>;
+  icon_color_attribute?: string;
   show_name?: boolean;
   show_icon?: boolean;
   show_state?: boolean;

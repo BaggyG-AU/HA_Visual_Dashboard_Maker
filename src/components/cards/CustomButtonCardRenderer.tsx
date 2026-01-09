@@ -3,6 +3,9 @@ import { Card as AntCard, Typography } from 'antd';
 import { BorderOutlined, BulbOutlined, PoweroffOutlined, ApiOutlined } from '@ant-design/icons';
 import { CustomCard } from '../../types/dashboard';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { resolveIconColor } from '../../utils/iconColorResolver';
+import { isGradientString } from '../../utils/gradientConversions';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 const { Text } = Typography;
 
@@ -39,6 +42,9 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
   const icon = card.icon || card.icon_template;
   const colorProp = card.color;
   const iconColorProp = card.icon_color;
+  const iconColorMode = card.icon_color_mode;
+  const iconColorStates = card.icon_color_states;
+  const iconColorAttribute = card.icon_color_attribute;
   const colorType = card.color_type;
   const showName = card.show_name !== false;
   const showIcon = card.show_icon !== false;
@@ -82,9 +88,48 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
   };
 
   const buttonColor = getButtonColor();
-  const iconColor = typeof iconColorProp === 'string' && iconColorProp.trim().length > 0
-    ? iconColorProp
-    : buttonColor;
+  const iconColor = resolveIconColor({
+    mode: iconColorMode || (iconColorProp ? 'custom' : 'default'),
+    customColor: iconColorProp,
+    stateColors: iconColorStates,
+    attribute: iconColorAttribute,
+    entityState: state,
+    entityAttributes: entity?.attributes,
+    defaultColor: buttonColor,
+  });
+
+  const renderGradientIcon = (color: string) => {
+    try {
+      const markup = renderToStaticMarkup(iconComponent as React.ReactElement);
+      const match = markup.match(/<svg[^>]*>.*<\/svg>/s);
+      if (!match) return null;
+      const svg = match[0];
+      const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+      return (
+        <span
+          aria-hidden="true"
+          style={{
+            width: size,
+            height: size,
+            display: 'inline-block',
+            backgroundImage: color,
+            WebkitMaskImage: `url("${dataUrl}")`,
+            WebkitMaskRepeat: 'no-repeat',
+            WebkitMaskPosition: 'center',
+            WebkitMaskSize: 'contain',
+            maskImage: `url("${dataUrl}")`,
+            maskRepeat: 'no-repeat',
+            maskPosition: 'center',
+            maskSize: 'contain',
+          }}
+        />
+      );
+    } catch {
+      return null;
+    }
+  };
+
+  const gradientIcon = isGradientString(iconColor) ? renderGradientIcon(iconColor) : null;
 
   return (
     <div
@@ -130,8 +175,8 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
         >
           {/* Icon */}
           {showIcon && (
-            <div style={{ fontSize: size, color: iconColor }} data-testid="custom-button-card-icon">
-              {iconComponent}
+            <div style={{ fontSize: size, color: gradientIcon ? 'transparent' : iconColor }} data-testid="custom-button-card-icon">
+              {gradientIcon || iconComponent}
             </div>
           )}
 

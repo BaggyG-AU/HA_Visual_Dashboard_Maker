@@ -5,6 +5,7 @@
 
 import { test, expect } from '@playwright/test';
 import { launchWithDSL, close } from '../support';
+import { debugLog } from '../support/helpers/debug';
 
 const setupGradientEditor = async () => {
   const ctx = await launchWithDSL();
@@ -81,8 +82,7 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
       const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
-      // eslint-disable-next-line no-console
-      console.log('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
+      debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
       expect(value.toLowerCase()).toContain('linear-gradient(120deg, #ff5858 0%, #f09819 100%)');
 
       const updatedYaml = yamlEditor.updateCardStyleBackground(

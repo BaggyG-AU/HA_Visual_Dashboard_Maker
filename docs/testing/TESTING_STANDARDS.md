@@ -295,7 +295,7 @@ Correct approach (must follow):
    - `window.monaco?.editor?.getModels()?.length > 0`
 3) Diagnostics (required on failure, recommended on success):
    - Collect and attach JSON diagnostics: presence of explicit handles, editor/model counts and URIs, chosen editor path, container visibility/bounding box, scope hint (“properties” vs “modal”).
-   - Print the same diagnostics to stdout so they appear in terminal logs and the HTML report attachment (`yaml-editor-diagnostics.json`).
+   - Stdout logging is optional and must be gated (use `PW_DEBUG=1` / `E2E_DEBUG=1`) unless you are logging during an error path (e.g., immediately before throwing).
 4) Scoping:
    - Use locators scoped to the Properties Panel (`[data-testid="properties-panel"] [data-testid="yaml-editor-container"]`) to avoid strict-mode conflicts with modal YAML editors.
 5) No timing hacks:
@@ -303,6 +303,29 @@ Correct approach (must follow):
 
 Reference implementation:
 - See `tests/support/dsl/yamlEditor.ts` (Monaco-ready predicate, diagnostics, content selection) and the now-unskipped tests in `tests/e2e/color-picker.spec.ts` and `tests/e2e/gradient-editor.spec.ts`.
+
+---
+
+## Debug Logging & Diagnostics (E2E/Integration)
+
+Debug logging is allowed, but must be **structured**, **gated**, and **attached** so it doesn’t become noise or brittle test logic.
+
+Rules (mandatory):
+1) **No raw DOM debug logic in specs**
+   - Specs must not `evaluate()` the page to query arbitrary DOM for debugging (e.g., dumping `[data-testid]`).
+   - If you need runtime diagnostics, add a DSL method or helper that collects and attaches diagnostics.
+2) **Prefer attachments over stdout**
+   - Use `testInfo.attach(...)` for all debug data (JSON/text). This keeps evidence with the failure in the HTML report.
+   - Printing to stdout is optional and must not be the only record of diagnostics.
+3) **Gate console output**
+   - Unconditional `console.log` in specs is forbidden.
+   - If stdout output is needed, gate it behind an env var (`PW_DEBUG=1` or `E2E_DEBUG=1`) and keep it minimal (one-line summaries).
+4) **Keep debug output small and safe**
+   - Attach only what’s necessary (IDs present, state summaries, selected mode, etc.).
+   - Do not attach full DOM dumps unless a standard explicitly requires it (e.g., Monaco diagnostics).
+
+Reference helper:
+- `tests/support/helpers/debug.ts` (`attachDebugJson`, `debugLog`, gated stdout via `PW_DEBUG=1` / `E2E_DEBUG=1`)
 
 ## ADDING OR MODIFYING DSL METHODS
 

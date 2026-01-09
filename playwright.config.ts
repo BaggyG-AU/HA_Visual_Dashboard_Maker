@@ -58,8 +58,7 @@ export default defineConfig({
   ],
 
   // Global setup/teardown
-  // globalSetup: './tests/setup/global-setup.ts',
-  // globalTeardown: './tests/setup/global-teardown.ts',
+  globalSetup: './tests/setup/global-setup.ts',
 
   // Projects for different test types
   projects: [

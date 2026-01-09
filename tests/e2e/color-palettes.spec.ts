@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { launchWithDSL, close } from '../support';
+import { debugLog } from '../support/helpers/debug';
 
 test.describe('Color Palettes - Favorites integration', () => {
   test('user can create palette, add current color, apply favorite, and persist to YAML', async ({ page }, testInfo) => {
@@ -20,13 +21,6 @@ test.describe('Color Palettes - Favorites integration', () => {
       // Open color picker for button card color
       await colorPicker.openPopover('button-card-color-input');
       await colorPicker.expectVisible('button-card-color-input');
-      const ids = await ctx.window.evaluate(() =>
-        Array.from(document.querySelectorAll<HTMLElement>('[data-testid]'))
-          .map((el) => el.getAttribute('data-testid') || '')
-          .filter((id) => id.includes('picker'))
-      );
-      // eslint-disable-next-line no-console
-      console.log('[picker test ids]', ids);
       await colorPalettes.openFavoritesTab('button-card-color-input-picker', testInfo);
 
       // Create new palette and add current color
@@ -43,8 +37,7 @@ test.describe('Color Palettes - Favorites integration', () => {
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
       const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
-      // eslint-disable-next-line no-console
-      console.log('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
+      debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
       expect(value.toLowerCase()).toContain('#112233');
     } finally {
       await close(ctx);
