@@ -18,11 +18,22 @@ Tests must fail only when behavior is broken — not when UI flows evolve.
 
 ---
 
+## SCOPE (IMPORTANT)
+
+This repo has multiple automated test layers:
+- **Unit**: `vitest` (pure logic)
+- **Playwright E2E**: `electron-e2e` (end-to-end user workflows; DSL-first)
+- **Playwright Integration**: `electron-integration` (broader app/service workflows; may use fixtures/helpers)
+
+Not every rule in this document applies equally to every layer. When a rule is E2E-only or Integration-only, it is labeled explicitly.
+
+---
+
 ## CORE PRINCIPLES
 
-### 1. Use the DSL for ALL Tests
+### 1. Use the DSL for E2E Tests (MANDATORY)
 
-All Playwright tests MUST use helper methods from the DSL.
+All **E2E** Playwright tests MUST use helper methods from the DSL.
 
 Do NOT:
 - Call Playwright APIs directly in test specs
@@ -33,25 +44,30 @@ Do:
 
 ---
 
-### 2. Import from tests/support
+### 2. Import Rules (E2E vs Integration)
 
-All helpers, DSLs, fixtures, and utilities MUST live under:
+**E2E:** Specs may only import helpers/DSLs from:
 
 tests/support/
 
-Tests may only import from this directory tree.
+**Integration:** Specs MAY import from `tests/fixtures/**` and `tests/helpers/**` when appropriate. Prefer using `tests/support/**` DSLs for UI workflows when available, but do not force large refactors purely to satisfy import rules.
 
 ---
 
-### 3. Zero Direct Playwright API Calls in Specs
+### 3. Direct Playwright API Calls in Specs
 
-Test specs MUST NOT contain:
+**E2E:** Specs MUST NOT contain:
 - Raw selectors
 - Timing logic
 - Conditional UI handling
 - Retry logic
 
 All of this belongs in the DSL layer.
+
+**Integration:** Prefer helpers/fixtures to encapsulate selectors/waits. If direct calls are used, they must be:
+- State-based (no arbitrary sleeps)
+- Scoped and stable (prefer `data-testid`, role, and well-scoped locators)
+- Centralized when reused (move to helpers/fixtures/DSL rather than duplicating)
 
 ---
 
@@ -163,7 +179,10 @@ Mandatory response:
 
 ### 11. Evidence-Based Debugging Only
 
-AI agents cannot run tests and cannot open Playwright trace viewers.
+Debugging must be based on evidence (traces, screenshots, DOM snapshots, console output).
+
+AI agent execution/reporting policy (including “one test run then pause/diagnose/ask”) is defined in `ai_rules.md`.
+AI agents cannot open Playwright trace viewers, but CAN unzip and analyze `trace.zip` files and other artifacts.
 
 Debugging must be based on:
 - Playwright traces
@@ -211,6 +230,14 @@ The DSL layer encapsulates:
 - Retry behavior
 
 ---
+
+## INTEGRATION TEST STRUCTURE (REFERENCE)
+
+Integration specs commonly use:
+- Fixtures: `tests/fixtures/**`
+- Helpers: `tests/helpers/**`
+
+Prefer DSL reuse for UI workflows when it improves consistency, but integration tests may legitimately validate lower-level behavior and error conditions with dedicated fixtures/helpers.
 
 ## COLOR PICKER TEST PATTERNS
 

@@ -1,4 +1,4 @@
-import { GradientDefinition, GradientStop, GradientType } from '../types/gradient';
+import { GradientDefinition, GradientStop } from '../types/gradient';
 
 const clamp = (value: number, min = 0, max = 100) => Math.min(Math.max(value, min), max);
 
@@ -32,7 +32,7 @@ export const gradientToCss = (gradient: GradientDefinition): string => {
 const parseStops = (stopsPart: string): GradientStop[] => {
   const pieces = stopsPart.split(',').map((s) => s.trim()).filter(Boolean);
   return pieces.map((piece, index) => {
-    const match = piece.match(/(#[0-9a-f]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))\s+(\d+(?:\.\d+)?)%/i);
+    const match = piece.match(/(var\([^)]+\)|#[0-9a-f]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))\s+(\d+(?:\.\d+)?)%/i);
     const color = match ? match[1] : piece.split(' ')[0];
     const position = match ? Number(match[2]) : (index === 0 ? 0 : 100);
     return {

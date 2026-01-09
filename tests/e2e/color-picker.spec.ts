@@ -9,7 +9,8 @@ import { test, expect } from '@playwright/test';
 import { launchWithDSL, close } from '../support';
 
 test.describe('Color Picker - PropertiesPanel Integration', () => {
-test.skip('visual regression and accessibility in scrollable PropertiesPanel (skipped: Electron focus inactive in PW)', async ({}, testInfo) => {
+test.skip('visual regression and accessibility in scrollable PropertiesPanel (skipped: Electron focus inactive in PW)', async ({ page }, testInfo) => {
+  void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, colorPicker, window } = ctx;
 
@@ -537,7 +538,8 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
   // is not being properly exposed/detected by the test despite adding global window references.
   // The visual UI shows the YAML is updating correctly, but the test cannot read the content.
   // See FOUNDATION_LAYER_IMPLEMENTATION.md for details and future investigation.
-  test('should update YAML when color is changed', async ({}, testInfo) => {
+  test('should update YAML when color is changed', async ({ page }, testInfo) => {
+    void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, colorPicker, yamlEditor } = ctx;
 
@@ -571,7 +573,8 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
   });
 
   // Skipped due to intermittent Monaco/YAML visibility issues in properties panel (tracked in Phase 3)
-  test('button card color + icon color should update preview and YAML', async ({}, testInfo) => {
+  test('button card color + icon color should update preview and YAML', async ({ page }, testInfo) => {
+    void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, colorPicker, yamlEditor, window } = ctx;
 

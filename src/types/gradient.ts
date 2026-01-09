@@ -20,4 +20,12 @@ export interface GradientPreset {
   css: string;
   category: 'Material' | 'Nature' | 'Tech' | 'Monochrome' | 'Custom';
   description?: string;
+  createdAt?: number;
+}
+
+export interface GradientPresetCollection {
+  kind: 'havdm-gradient-presets';
+  version: 1;
+  presets: GradientPreset[];
+  lastUpdated: number;
 }

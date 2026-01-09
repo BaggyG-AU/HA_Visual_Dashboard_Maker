@@ -35,7 +35,7 @@ export class CardPaletteDSL {
     const searchInput = this.window.getByTestId('card-search');
     await expect(searchInput).toBeVisible();
     await searchInput.fill(query);
-    await this.window.waitForTimeout(500); // Debounce
+    await expect(searchInput).toHaveValue(query);
   }
 
   /**
@@ -43,8 +43,8 @@ export class CardPaletteDSL {
    */
   async clearSearch(): Promise<void> {
     const searchInput = this.window.getByTestId('card-search');
-    await searchInput.clear();
-    await this.window.waitForTimeout(500);
+    await searchInput.fill('');
+    await expect(searchInput).toHaveValue('');
   }
 
   /**
@@ -57,7 +57,7 @@ export class CardPaletteDSL {
     const isExpanded = await header.getAttribute('aria-expanded');
     if (isExpanded !== 'true') {
       await header.click();
-      await this.window.waitForTimeout(300); // Animation
+      await expect(header).toHaveAttribute('aria-expanded', 'true');
     }
   }
 
@@ -71,7 +71,7 @@ export class CardPaletteDSL {
     const isExpanded = await header.getAttribute('aria-expanded');
     if (isExpanded === 'true') {
       await header.click();
-      await this.window.waitForTimeout(300); // Animation
+      await expect(header).toHaveAttribute('aria-expanded', 'false');
     }
   }
 
@@ -93,17 +93,10 @@ export class CardPaletteDSL {
     const searchInput = this.window.getByTestId('card-search');
     await expect(searchInput).toBeVisible();
     await searchInput.fill(cardType);
-    await this.window.waitForTimeout(200); // debounce / filter render
+    await expect(searchInput).toHaveValue(cardType);
 
-    // Prefer explicit palette test id; fall back to role/name match when ids are missing.
-    let card = this.palette.getByTestId(`palette-card-${cardType}`);
-    if ((await card.count()) === 0) {
-      card = this.palette.getByRole('button', {
-        name: new RegExp(cardType.replace(/_/g, ' '), 'i'),
-      });
-    }
-
-    await expect(card).toBeVisible();
+    const card = this.palette.getByTestId(`palette-card-${cardType}`);
+    await expect(card).toBeVisible({ timeout: 5000 });
     await card.scrollIntoViewIfNeeded();
     await card.dblclick();
 
@@ -112,6 +105,7 @@ export class CardPaletteDSL {
 
     // Clear search to leave palette clean for later steps
     await searchInput.fill('');
+    await expect(searchInput).toHaveValue('');
   }
 
   /**

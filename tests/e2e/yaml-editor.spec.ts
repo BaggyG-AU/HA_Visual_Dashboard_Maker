@@ -21,7 +21,8 @@ test.describe('YAML Editor', () => {
     }
   });
 
-  test('should open YAML editor dialog and render editor', async ({}, testInfo) => {
+  test('should open YAML editor dialog and render editor', async ({ page }, testInfo) => {
+    void page;
     const ctx = await launchWithDSL();
     try {
       await ctx.appDSL.waitUntilReady();

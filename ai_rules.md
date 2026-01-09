@@ -29,42 +29,40 @@ Only invent a new selector/wait/helper when no working example exists. Never add
 - Root markdown should stay minimal: `README.md`, `LICENSE`, `ai_rules.md`.
 
 ## 3) Required Workflow for Fixing Failing Tests
-A) Reproduce + inspect artifacts (locally):
-- Re-run the failing test headed with trace enabled (keep existing trace settings).
-- Open trace/screenshots; identify the first failure.
-
-B) Find a known-good implementation:
-- Locate a passing test covering the same workflow.
-- Reuse its window-selection logic, selectors, waits, and mocks.
-
-C) Diff failing vs passing:
-- Explain what differed (selector, state, timing, window).
-
-D) Fix with minimal surface area:
-- Prefer updating existing DSL/helpers.
-- Selector priority: `data-testid` > scoped text/role (only if semantic).
+For test-writing conventions and debugging guidance, follow:
+- `docs/testing/TESTING_STANDARDS.md` (normative standards)
+- `docs/testing/PLAYWRIGHT_TESTING.md` (runbook + troubleshooting)
 
 ## 4) Guardrails (Do Not Do These)
-- No `sleep()` / `waitForTimeout()` as a “fix”.
-- Do not inflate timeouts broadly.
-- Do not weaken assertions to make tests pass.
-- Do not duplicate DSL capabilities.
-- Always target the correct Electron window from `launchWithDSL` (avoid DevTools windows).
+Guardrails for tests (selectors, waits, DSL boundaries, etc.) live in `docs/testing/TESTING_STANDARDS.md`.
 
-## 5) Verification Requirements (Sandbox-Safe)
-AI agents can only run lint and unit tests in this sandbox but cannot run e2e or integration tests Therefore:
+## 5) Test Execution & Reporting Policy
+AI agents MAY run tests when the execution environment permits it, including:
+- Lint: `npm run lint`
+- Unit: `npm run test:unit`
+- E2E: `npm run test:e2e` (or targeted `npx playwright test ... --project=electron-e2e`)
+- Integration: `npm run test:integration` (or `npx playwright test ... --project=electron-integration`)
+
+Rules:
 - Never claim you ran tests unless you actually executed them and have output.
-- Provide a copy/paste verification plan:
-  1) Minimal repro command for the failing test (headed, with trace).
-  2) Trace viewer command (`npx playwright show-trace <path>/trace.zip`) and artifact paths (under `test-results/artifacts`).
-  3) Stability loop (run 5x) with platform-specific loops.
-  4) Regression checks for reused reference specs/helpers.
+- After development, the AI may run tests. After **one** test run, the AI MUST pause and:
+  1) List any errors/failures (by test + file path),
+  2) Provide a diagnosis and proposed resolution,
+  3) Ask the user whether to proceed with fixes and/or another test run.
+- Repeat this pause → diagnose → ask workflow until failures are resolved or the user instructs otherwise.
 
-## 6) Deliverables for Every Test Fix
-- Reference tests/helpers reused (paths).
+Always provide a copy/paste verification plan:
+1) Minimal repro command for the failing test (headed, with trace).
+2) Trace viewer command (`npx playwright show-trace <path>/trace.zip`) and artifact paths (under `test-results/artifacts`).
+3) Stability loop (run 5x) with platform-specific loops.
+4) Regression checks for reused reference specs/helpers.
+
+## 6) Deliverables for Test Fixes (AI)
+When an AI agent fixes tests, its final response MUST include:
+- References to reused tests/helpers (paths).
 - Root cause explanation.
-- Patch/diff of changes.
-- Proof-of-stability plan (repeat runs + regression commands).
+- Patch summary (files changed).
+- Verification commands (and whether they were actually run).
 
 ## 7) Git feature workflow (MANDATORY)
 

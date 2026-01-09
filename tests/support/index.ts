@@ -67,6 +67,6 @@ export async function launchWithDSL(): Promise<TestContext> {
     entityBrowser: new EntityBrowserDSL(electronCtx.window),
     settings: new SettingsDSL(electronCtx.window),
     colorPicker: new ColorPickerDSL(electronCtx.window),
-    gradientEditor: new GradientEditorDSL(electronCtx.window),
+    gradientEditor: new GradientEditorDSL(electronCtx.window, electronCtx.app),
   };
 }

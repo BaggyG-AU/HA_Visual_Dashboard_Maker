@@ -125,10 +125,11 @@ export class ColorPickerDSL {
    * Close ColorPickerInput popover by clicking outside
    */
   async closePopover(inputTestId: string): Promise<void> {
-    // Click outside the popover (on the page background)
-    await this.window.click('body', { position: { x: 10, y: 10 } });
-
     const popover = this.window.getByTestId(`${inputTestId}-picker`);
+    const isVisible = await popover.isVisible().catch(() => false);
+    if (!isVisible) return;
+
+    await this.window.keyboard.press('Escape');
     await expect(async () => {
       const count = await popover.count();
       if (count === 0) return;
@@ -145,7 +146,8 @@ export class ColorPickerDSL {
     await input.clear();
     await input.fill(color);
     await input.press('Enter'); // Trigger validation
-    await this.window.waitForTimeout(200); // Allow onChange to process
+    const escaped = color.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+    await expect(input).toHaveValue(new RegExp(escaped, 'i'));
   }
 
   /**
@@ -174,7 +176,6 @@ export class ColorPickerDSL {
     const toggle = this.getFormatToggle(testId);
     await expect(toggle).toBeVisible();
     await toggle.click();
-    await this.window.waitForTimeout(200); // Allow format conversion
   }
 
   /**
@@ -219,7 +220,6 @@ export class ColorPickerDSL {
     const swatch = this.getRecentColorSwatch(index, testId);
     await expect(swatch).toBeVisible();
     await swatch.click();
-    await this.window.waitForTimeout(200); // Allow onChange to process
   }
 
   /**
@@ -257,7 +257,6 @@ export class ColorPickerDSL {
     const clearButton = this.getClearRecentButton(testId);
     await expect(clearButton).toBeVisible();
     await clearButton.click();
-    await this.window.waitForTimeout(200);
   }
 
   /**

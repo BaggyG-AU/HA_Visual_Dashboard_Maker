@@ -5,7 +5,9 @@
  * Encapsulates all YAML editor modal interactions.
  */
 
-import { Page, expect } from '@playwright/test';
+import { Page, expect, TestInfo } from '@playwright/test';
+import * as yaml from 'js-yaml';
+import { upsertStyleBackground } from '../../../src/utils/styleBackground';
 
 type MonacoModelLike = {
   getValue?: () => string;
@@ -53,46 +55,6 @@ export class YamlEditorDSL {
 
     // Wait for Monaco editor to be ready
     await this.waitForMonacoReady();
-  }
-
-  /**
-   * Wait for Monaco editor to be fully loaded and ready
-   */
-  private async waitForMonacoReady(): Promise<void> {
-    // Scope to any visible YAML editor container (modal or properties panel)
-    const editorContainer = this.window
-      .locator('[data-testid="yaml-editor-container"]:visible')
-      .first();
-    await expect(editorContainer).toBeVisible({ timeout: 5000 });
-
-    // Wait for Monaco to render (either .monaco-editor or fallback textarea)
-    const editor = editorContainer.locator('.monaco-editor, textarea').first();
-    await expect(editor).toBeVisible({ timeout: 5000 });
-
-    // If Monaco rendered, wait for it to have non-zero dimensions
-    const monacoEditor = editorContainer.locator('.monaco-editor');
-    const hasMonaco = await monacoEditor.count() > 0;
-
-    if (hasMonaco) {
-      // Wait for Monaco to have proper bounding box
-      await expect(async () => {
-        const box = await monacoEditor.boundingBox();
-        expect(box).toBeTruthy();
-        if (!box) return;
-        expect(box.width).toBeGreaterThan(0);
-        expect(box.height).toBeGreaterThan(0);
-      }).toPass({ timeout: 5000 });
-
-      // Wait for at least one Monaco model to be registered
-      await this.window.waitForFunction(
-        () => (((window as unknown as YamlTestWindow).monaco?.editor?.getModels?.()?.length ?? 0) > 0),
-        null,
-        { timeout: 5000 }
-      );
-
-      // Additional wait for Monaco internal initialization
-      await this.window.waitForTimeout(500);
-    }
   }
 
   /**
@@ -145,7 +107,7 @@ export class YamlEditorDSL {
   /**
    * Verify Monaco editor is visible
    */
-  async expectMonacoVisible(scope: 'properties' | 'modal' | 'canvas' = 'properties', testInfo?: any): Promise<void> {
+  async expectMonacoVisible(scope: 'properties' | 'modal' | 'canvas' = 'properties', testInfo?: TestInfo): Promise<void> {
     // Disambiguate properties panel vs modal
     const modalContent = this.window.getByTestId('yaml-editor-content');
     const modalContainer = modalContent.getByTestId('yaml-editor-container');
@@ -215,6 +177,28 @@ export class YamlEditorDSL {
 
   // Wait for Monaco readiness using explicit handles OR any Monaco models
   private async waitForMonacoReady(scopeHint: 'properties' | 'modal' | 'canvas' = 'properties'): Promise<void> {
+    // Scope to any visible YAML editor container (modal or properties panel)
+    const editorContainer = this.window
+      .locator('[data-testid="yaml-editor-container"]:visible')
+      .first();
+    await expect(editorContainer).toBeVisible({ timeout: 5000 });
+
+    // Wait for Monaco to render (either .monaco-editor or fallback textarea)
+    const editor = editorContainer.locator('.monaco-editor, textarea').first();
+    await expect(editor).toBeVisible({ timeout: 5000 });
+
+    const monacoEditor = editorContainer.locator('.monaco-editor');
+    const hasMonaco = await monacoEditor.count() > 0;
+    if (hasMonaco) {
+      await expect(async () => {
+        const box = await monacoEditor.boundingBox();
+        expect(box).toBeTruthy();
+        if (!box) return;
+        expect(box.width).toBeGreaterThan(0);
+        expect(box.height).toBeGreaterThan(0);
+      }).toPass({ timeout: 5000 });
+    }
+
     try {
       await this.window.waitForFunction(
         () => {
@@ -242,9 +226,7 @@ export class YamlEditorDSL {
       const testWindow = window as unknown as YamlTestWindow;
       diag.scopeHint = hint;
       const modalContent = document.querySelector('[data-testid="yaml-editor-content"]');
-      const modalContainer = modalContent?.querySelector('[data-testid="yaml-editor-container"]') as HTMLElement | null;
       const propsPanel = document.querySelector('[data-testid="properties-panel"]');
-      const propsContainer = propsPanel?.querySelector('[data-testid="yaml-editor-container"]') as HTMLElement | null;
       diag.containers = {
         modalExists: Boolean(modalContent),
         modalVisible: modalContent ? (modalContent as HTMLElement).offsetParent !== null : false,
@@ -382,7 +364,7 @@ export class YamlEditorDSL {
   /**
    * Attach + log diagnostics for visibility in HTML report and terminal
    */
-  async attachAndLogDiagnostics(testInfo: any, diagnostics: Record<string, unknown>, label = 'yaml-editor-diagnostics.json'): Promise<void> {
+  async attachAndLogDiagnostics(testInfo: TestInfo | undefined, diagnostics: Record<string, unknown>, label = 'yaml-editor-diagnostics.json'): Promise<void> {
     const body = JSON.stringify(diagnostics, null, 2);
     if (testInfo?.attach) {
       await testInfo.attach(label, {
@@ -397,7 +379,7 @@ export class YamlEditorDSL {
   /**
    * Get Monaco editor content with diagnostics
    */
-  async getEditorContentWithDiagnostics(testInfo?: any, scopeHint: 'properties' | 'modal' | 'canvas' = 'properties'): Promise<{ value: string; diagnostics: Record<string, unknown> }> {
+  async getEditorContentWithDiagnostics(testInfo?: TestInfo, scopeHint: 'properties' | 'modal' | 'canvas' = 'properties'): Promise<{ value: string; diagnostics: Record<string, unknown> }> {
     await this.waitForMonacoReady(scopeHint);
     const result = await this.collectMonacoDiagnostics(scopeHint);
     if (testInfo) {
@@ -414,7 +396,44 @@ export class YamlEditorDSL {
    */
   async getEditorContent(): Promise<string> {
     const result = await this.getEditorContentWithDiagnostics();
-    return (result as any).value ?? '';
+    return result.value ?? '';
+  }
+
+  /**
+   * Set Monaco editor content (properties panel or modal)
+   */
+  async setEditorContent(value: string, scopeHint: 'properties' | 'modal' | 'canvas' = 'properties', testInfo?: TestInfo): Promise<void> {
+    await this.waitForMonacoReady(scopeHint);
+    try {
+      await this.window.evaluate((yaml) => {
+        const testWindow = window as unknown as YamlTestWindow;
+        const model =
+          testWindow.__monacoModel ||
+          testWindow.__monacoEditor?.getModel?.() ||
+          testWindow.monaco?.editor?.getModels?.()?.[0];
+        if (model?.setValue) {
+          model.setValue(yaml);
+        }
+      }, value);
+    } catch (error) {
+      const diag = await this.collectMonacoDiagnostics(scopeHint).catch(() => ({}));
+      await this.attachAndLogDiagnostics(testInfo, diag, 'yaml-editor-setvalue-diagnostics.json');
+      throw error;
+    }
+  }
+
+  /**
+   * Update the card-level style background in YAML text.
+   * Preserves valid YAML by parsing + dumping and reusing the shared style helper.
+   */
+  updateCardStyleBackground(yamlText: string, background: string): string {
+    const parsed = yaml.load(yamlText) as Record<string, unknown> | null;
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('Unable to parse YAML for style update.');
+    }
+    const currentStyle = typeof parsed.style === 'string' ? parsed.style : '';
+    parsed.style = upsertStyleBackground(currentStyle, background);
+    return yaml.dump(parsed);
   }
   /**
    * Search all Monaco models and visible YAML containers for a regex match.
