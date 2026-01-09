@@ -1,12 +1,6 @@
 import React from 'react';
 import { Card as AntCard, Typography, Tag } from 'antd';
-import {
-  ThunderboltOutlined,
-  SunOutlined,
-  HomeOutlined,
-  ThunderboltFilled,
-  ApiOutlined,
-} from '@ant-design/icons';
+import { SunOutlined, HomeOutlined, ThunderboltFilled, ApiOutlined } from '@ant-design/icons';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 
 const { Text } = Typography;

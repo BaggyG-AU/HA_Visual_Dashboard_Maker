@@ -76,14 +76,14 @@ test.describe('Card Background Customization - PropertiesPanel', () => {
       await backgroundCustomizer.setNumericInput('background-overlay-opacity-input', 25);
 
       await canvas.expectBackgroundLayerVisible(0);
-      await canvas.expectBackgroundLayerCss(0, 'background-image', /url\(\"https:\/\/example\.com\/background\.jpg\"\)/);
+      await canvas.expectBackgroundLayerCss(0, 'background-image', /url\("https:\/\/example\.com\/background\.jpg"\)/);
       await canvas.expectBackgroundLayerCss(0, 'filter', /blur\(4px\)/);
 
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
       const imageYaml = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
       expect(imageYaml.value.toLowerCase()).toContain('background-image:');
-      expect(imageYaml.value.toLowerCase()).toContain('url(\"https://example.com/background.jpg\")');
+      expect(imageYaml.value.toLowerCase()).toContain('url("https://example.com/background.jpg")');
 
       await properties.switchTab('Advanced Styling');
       await backgroundCustomizer.selectType('Frosted glass', testInfo);
@@ -104,4 +104,3 @@ test.describe('Card Background Customization - PropertiesPanel', () => {
     }
   });
 });
-

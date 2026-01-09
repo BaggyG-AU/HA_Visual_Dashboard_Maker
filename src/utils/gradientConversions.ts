@@ -1,4 +1,5 @@
 import { GradientDefinition, GradientStop } from '../types/gradient';
+import { parseColor, rgbaToHex } from './colorConversions';
 
 const clamp = (value: number, min = 0, max = 100) => Math.min(Math.max(value, min), max);
 
@@ -15,11 +16,31 @@ export const defaultGradient: GradientDefinition = {
   stops: DEFAULT_STOPS,
 };
 
+/**
+ * Normalize color to HEX format for consistent YAML serialization
+ * Converts rgb(), rgba(), hsl(), hsla() to #RRGGBB or #RRGGBBAA
+ */
+const normalizeColorToHex = (color: string): string => {
+  // Already hex format
+  if (color.startsWith('#')) {
+    return color;
+  }
+
+  // Parse and convert to hex
+  const rgba = parseColor(color);
+  if (rgba) {
+    return rgbaToHex(rgba);
+  }
+
+  // Fallback: return original if parsing fails
+  return color;
+};
+
 export const gradientToCss = (gradient: GradientDefinition): string => {
   const { type, angle, shape, position, stops } = gradient;
   const normalizedStops = [...stops]
     .sort((a, b) => a.position - b.position)
-    .map((stop) => `${stop.color} ${clamp(stop.position)}%`)
+    .map((stop) => `${normalizeColorToHex(stop.color)} ${clamp(stop.position)}%`)
     .join(', ');
 
   if (type === 'radial') {

@@ -8,7 +8,8 @@ export class SoundsDSL {
 
   async installAudioMock(): Promise<void> {
     await this.window.evaluate(() => {
-      (window as any).__soundCalls = [];
+      const testWindow = window as Window & { __soundCalls?: Array<{ played?: boolean }> };
+      testWindow.__soundCalls = [];
 
       class MockAudioBuffer {
         length: number;
@@ -24,20 +25,26 @@ export class SoundsDSL {
 
       class MockGainNode {
         gain = { value: 1 };
-        connect() {}
+        connect() {
+          return this;
+        }
       }
 
       class MockBufferSource {
         buffer: MockAudioBuffer | null = null;
         onended: (() => void) | null = null;
-        connect() {}
+        connect() {
+          return this;
+        }
         start() {
-          (window as any).__soundCalls.push({ played: true });
+          testWindow.__soundCalls?.push({ played: true });
           if (this.onended) {
             this.onended();
           }
         }
-        stop() {}
+        stop() {
+          this.onended = null;
+        }
       }
 
       class MockAudioContext {
@@ -58,19 +65,23 @@ export class SoundsDSL {
         }
       }
 
-      (window as any).AudioContext = MockAudioContext;
-      (window as any).webkitAudioContext = MockAudioContext;
+      (testWindow as Window & { AudioContext?: typeof AudioContext }).AudioContext = MockAudioContext;
+      (testWindow as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext = MockAudioContext;
     });
   }
 
   async clearSoundCalls(): Promise<void> {
     await this.window.evaluate(() => {
-      (window as any).__soundCalls = [];
+      const testWindow = window as Window & { __soundCalls?: SoundCall[] };
+      testWindow.__soundCalls = [];
     });
   }
 
   async getSoundCalls(): Promise<SoundCall[]> {
-    return await this.window.evaluate(() => (window as any).__soundCalls ?? []);
+    return await this.window.evaluate(() => {
+      const testWindow = window as Window & { __soundCalls?: SoundCall[] };
+      return testWindow.__soundCalls ?? [];
+    });
   }
 
   async expectSoundCalls(count: number, testInfo?: TestInfo): Promise<void> {

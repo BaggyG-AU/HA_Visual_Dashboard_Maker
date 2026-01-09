@@ -124,8 +124,6 @@ test.describe('Dashboard Operations', () => {
       await ctx.appDSL.waitUntilReady();
       await ctx.dashboard.createNew();
 
-      const initialTitle = await ctx.appDSL.getTitle();
-
       // Add card to create unsaved changes
       await ctx.palette.expandCategory('Controls');
       await ctx.palette.addCard('button');

@@ -12,7 +12,7 @@ import { Page, expect } from '@playwright/test';
  * @param window - Playwright Page object
  * @param customEntities - Optional custom entities array. If not provided, uses default test entities.
  */
-export async function seedEntityCache(window: Page, customEntities?: any[]): Promise<void> {
+export async function seedEntityCache(window: Page, customEntities?: Array<Record<string, unknown>>): Promise<void> {
   const defaultEntities = [
     {
       entity_id: 'light.living_room',
@@ -43,7 +43,10 @@ export async function seedEntityCache(window: Page, customEntities?: any[]): Pro
   const testEntities = customEntities || defaultEntities;
 
   await window.evaluate(async (entities) => {
-    const result = await (window as any).electronAPI.testSeedEntityCache(entities);
+    const testWindow = window as Window & {
+      electronAPI: { testSeedEntityCache: (payload: Array<Record<string, unknown>>) => Promise<{ success: boolean }> };
+    };
+    const result = await testWindow.electronAPI.testSeedEntityCache(entities as Array<Record<string, unknown>>);
     if (result.success) {
       console.log('[EntityBrowserDSL] Seeded', entities.length, 'test entities');
     }
@@ -55,7 +58,10 @@ export async function seedEntityCache(window: Page, customEntities?: any[]): Pro
  */
 export async function clearEntityCache(window: Page): Promise<void> {
   await window.evaluate(async () => {
-    const result = await (window as any).electronAPI.testClearEntityCache();
+    const testWindow = window as Window & {
+      electronAPI: { testClearEntityCache: () => Promise<{ success: boolean }> };
+    };
+    const result = await testWindow.electronAPI.testClearEntityCache();
     if (result.success) {
       console.log('[EntityBrowserDSL] Entity cache cleared');
     }

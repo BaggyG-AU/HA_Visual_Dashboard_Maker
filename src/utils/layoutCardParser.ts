@@ -105,8 +105,7 @@ const parseGridPosition = (position?: string): { start?: number; end?: number; s
  */
 export const parseViewLayout = (
   card: Card,
-  index: number,
-  gridConfig: GridConfig
+  index: number
 ): { x: number; y: number; w: number; h: number } => {
   const viewLayout = card.view_layout;
 
@@ -196,10 +195,10 @@ export const parseLayoutCardConfig = (view: View): GridConfig => {
  */
 export const convertLayoutCardToGridLayout = (view: View): Layout[] => {
   const cards = view.cards || [];
-  const gridConfig = parseLayoutCardConfig(view);
+  parseLayoutCardConfig(view);
 
   return cards.map((card, index) => {
-    const { x, y, w, h } = parseViewLayout(card, index, gridConfig);
+    const { x, y, w, h } = parseViewLayout(card, index);
 
     return {
       i: `card-${index}`,
@@ -215,8 +214,7 @@ export const convertLayoutCardToGridLayout = (view: View): Layout[] => {
  * Convert react-grid-layout back to layout-card view_layout
  */
 export const convertGridLayoutToViewLayout = (
-  layout: Layout[],
-  totalColumns = 12
+  layout: Layout[]
 ): Array<{ grid_column: string; grid_row: string }> => {
   return layout.map(item => {
     // Convert to CSS Grid 1-indexed positions

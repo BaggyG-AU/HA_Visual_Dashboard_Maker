@@ -8,9 +8,10 @@ export class HapticsDSL {
 
   async installVibrationMock(): Promise<void> {
     await this.window.evaluate(() => {
-      (window as any).__hapticCalls = [];
+      const testWindow = window as Window & { __hapticCalls?: VibrationCall[] };
+      testWindow.__hapticCalls = [];
       const handler = (pattern: number | number[]) => {
-        (window as any).__hapticCalls.push(pattern);
+        testWindow.__hapticCalls?.push(pattern);
         return true;
       };
       Object.defineProperty(navigator, 'vibrate', {
@@ -23,12 +24,16 @@ export class HapticsDSL {
 
   async clearVibrationCalls(): Promise<void> {
     await this.window.evaluate(() => {
-      (window as any).__hapticCalls = [];
+      const testWindow = window as Window & { __hapticCalls?: VibrationCall[] };
+      testWindow.__hapticCalls = [];
     });
   }
 
   async getVibrationCalls(): Promise<VibrationCall[]> {
-    return await this.window.evaluate(() => (window as any).__hapticCalls ?? []);
+    return await this.window.evaluate(() => {
+      const testWindow = window as Window & { __hapticCalls?: VibrationCall[] };
+      return testWindow.__hapticCalls ?? [];
+    });
   }
 
   async expectVibrationCalls(count: number, testInfo?: TestInfo): Promise<void> {

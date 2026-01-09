@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Tabs, Space, Select, Button, Typography, Divider, Alert, Switch, message, Popconfirm, Slider, InputNumber } from 'antd';
+import { Modal, Tabs, Space, Select, Button, Typography, Divider, Switch, message, Popconfirm, Slider, InputNumber } from 'antd';
 import { BgColorsOutlined, LinkOutlined, ToolOutlined, BugOutlined, CopyOutlined, DeleteOutlined, ReloadOutlined, SoundOutlined } from '@ant-design/icons';
 import { ThemeSettingsDialog } from './ThemeSettingsDialog';
 import { ConnectionDialog } from './ConnectionDialog';

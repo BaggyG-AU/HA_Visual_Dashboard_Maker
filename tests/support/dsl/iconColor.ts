@@ -98,6 +98,13 @@ export class IconColorDSL {
     await expect(input).toBeVisible();
     await input.fill(name);
   }
+
+  async setCustomColorValue(value: string): Promise<void> {
+    const input = this.window.getByTestId('button-card-icon-color-input');
+    await expect(input).toBeVisible();
+    await input.fill(value);
+    await input.blur();
+  }
 }
 
 export default IconColorDSL;

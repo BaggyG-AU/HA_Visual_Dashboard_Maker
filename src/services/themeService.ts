@@ -49,7 +49,7 @@ export class ThemeService {
     const finalVars = { ...baseVars, ...modeVars };
 
     const cssVars = Object.entries(finalVars)
-      .filter(([_, value]) => typeof value === 'string')
+      .filter(([, value]) => typeof value === 'string')
       .map(([key, value]) => `  --${key}: ${value};`)
       .join('\n');
 

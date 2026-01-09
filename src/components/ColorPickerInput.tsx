@@ -146,7 +146,7 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
       open={popoverOpen}
       onOpenChange={handlePopoverOpenChange}
       placement="bottomLeft"
-      getPopupContainer={(triggerNode) => triggerNode?.parentElement || document.body}
+      getPopupContainer={() => document.body}
       overlayStyle={{ zIndex: 1050 }}
       data-testid={`${testId}-popover`}
     >

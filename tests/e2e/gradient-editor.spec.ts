@@ -74,7 +74,7 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
   test('yaml round-trip updates gradient UI', async ({ page }, testInfo) => {
     void page;
     const ctx = await setupGradientEditor();
-    const { properties, gradientEditor, yamlEditor } = ctx;
+    const { properties, gradientEditor, yamlEditor, backgroundCustomizer } = ctx;
 
     try {
       await backgroundCustomizer.selectType('Gradient', testInfo);

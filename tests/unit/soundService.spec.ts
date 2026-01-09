@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   getSoundEffectProfile,
   getSoundSettings,
@@ -22,17 +22,23 @@ describe('soundService', () => {
 
   class MockGainNode {
     gain = { value: 1 };
-    connect() {}
+    connect() {
+      return this;
+    }
   }
 
   class MockBufferSource {
     buffer: MockAudioBuffer | null = null;
     onended: (() => void) | null = null;
-    connect() {}
+    connect() {
+      return this;
+    }
     start() {
       if (this.onended) this.onended();
     }
-    stop() {}
+    stop() {
+      this.onended = null;
+    }
   }
 
   class MockAudioContext {

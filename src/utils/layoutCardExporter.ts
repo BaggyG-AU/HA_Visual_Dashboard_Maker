@@ -14,7 +14,7 @@ export const applyViewLayoutToCards = (
   view: View,
   gridLayout: Layout[]
 ): View => {
-  const viewLayouts = convertGridLayoutToViewLayout(gridLayout, 12);
+  const viewLayouts = convertGridLayoutToViewLayout(gridLayout);
 
   const updatedCards = (view.cards || []).map((card, index) => {
     const viewLayout = viewLayouts[index];
@@ -22,7 +22,8 @@ export const applyViewLayoutToCards = (
     if (!viewLayout) return card;
 
     // Remove internal layout property if it exists
-    const { layout, ...cardWithoutLayout } = card as any;
+    const cardWithoutLayout = { ...(card as Record<string, unknown>) };
+    delete cardWithoutLayout.layout;
 
     // Add view_layout
     return {

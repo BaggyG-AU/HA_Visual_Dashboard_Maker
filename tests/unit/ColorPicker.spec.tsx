@@ -178,12 +178,15 @@ describe('ColorPicker', () => {
   describe('recent colors', () => {
     it('should not show recent colors section when showRecentColors is false', () => {
       render(<ColorPicker showRecentColors={false} />);
+      fireEvent.click(screen.getByTestId('color-picker-tab-recents'));
       expect(screen.queryByText('Recent Colors')).not.toBeInTheDocument();
     });
 
     it('should not show recent colors section when no colors in history', () => {
       render(<ColorPicker showRecentColors={true} />);
-      expect(screen.queryByText('Recent Colors')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByTestId('color-picker-tab-recents'));
+      expect(screen.getByText('Recent Colors')).toBeInTheDocument();
+      expect(screen.getByText('No recent colors yet.')).toBeInTheDocument();
     });
 
     it('should show clear button when recent colors exist', async () => {
@@ -195,6 +198,7 @@ describe('ColorPicker', () => {
       localStorage.setItem('havdm-recent-colors', JSON.stringify(storedData));
 
       render(<ColorPicker showRecentColors={true} />);
+      fireEvent.click(screen.getByTestId('color-picker-tab-recents'));
 
       await waitFor(() => {
         expect(screen.getByText('Recent Colors')).toBeInTheDocument();
@@ -210,6 +214,7 @@ describe('ColorPicker', () => {
       localStorage.setItem('havdm-recent-colors', JSON.stringify(storedData));
 
       render(<ColorPicker showRecentColors={true} />);
+      fireEvent.click(screen.getByTestId('color-picker-tab-recents'));
 
       await waitFor(() => {
         expect(screen.getByText('Recent Colors')).toBeInTheDocument();
@@ -219,7 +224,8 @@ describe('ColorPicker', () => {
       fireEvent.click(clearButton);
 
       await waitFor(() => {
-        expect(screen.queryByText('Recent Colors')).not.toBeInTheDocument();
+        expect(screen.getByText('Recent Colors')).toBeInTheDocument();
+        expect(screen.getByText('No recent colors yet.')).toBeInTheDocument();
       });
     });
   });
@@ -273,6 +279,7 @@ describe('ColorPicker', () => {
       localStorage.setItem('havdm-recent-colors', JSON.stringify(storedData));
 
       render(<ColorPicker showRecentColors={true} />);
+      fireEvent.click(screen.getByTestId('color-picker-tab-recents'));
 
       await waitFor(() => {
         const list = screen.getByRole('list', { name: /recent colors/i });
