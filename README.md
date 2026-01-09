@@ -4,7 +4,7 @@ A cross-platform desktop application for visually designing Home Assistant dashb
 
 ## Project Status
 
-- **Version**: `0.4.0-beta.1`
+- **Version**: `0.4.1-beta.1`
 - **Current focus**: Entity Type Dashboard Generator feature with 9 pre-built dashboard categories. Electron app + visual editor with Playwright tests green.
 - **Planning docs**: see `/docs/index.md` for architecture, plan, testing, releases, and research.
 
