@@ -169,6 +169,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
 
   const handleImportClick = async () => {
     if (window.electronAPI?.openFileDialog && window.electronAPI?.readFile) {
+      // Electron path: reuse native file dialog + fileService for consistent IPC/error handling.
       try {
         const filePath = await fileService.openFile();
         if (!filePath) return;
@@ -189,6 +190,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
       return;
     }
 
+    // Browser fallback: hidden file input triggers standard file picker.
     fileInputRef.current?.click();
   };
 
@@ -214,6 +216,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
   const handleExportPresets = async () => {
     const payload = exportPresets();
     if (window.electronAPI?.saveFileDialog && window.electronAPI?.writeFile) {
+      // Electron path: save via native dialog for correct user location + permissions.
       try {
         const saved = await fileService.saveFileAs(payload, 'gradient-presets.json');
         if (saved) {

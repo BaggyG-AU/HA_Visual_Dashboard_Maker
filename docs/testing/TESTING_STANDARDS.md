@@ -251,6 +251,15 @@ Common flows:
 - Selection: type into the picker input (`<field>-picker-input`) and confirm with `Enter`.
 - Recents: assert the recent colors list is present via ARIA role list and the swatch test ids.
 
+## GRADIENT EDITOR TESTING PATTERNS
+
+- Use `GradientEditorDSL` (`tests/support/dsl/gradientEditor.ts`) for all interactions; do not add raw selectors in specs.
+- Open via `enableGradient()` and swatch (or `openGradientPopoverWithKeyboard`) to match real flow.
+- Keyboard coverage: `tabToStop`, `tabToAngleInput`, `pressArrowKey`/`pressDelete`/`pressEnter`; expect focus with `expectStopFocused`.
+- YAML round-trip: read/write via `YamlEditorDSL` scoped to Properties Panel; assert `background: linear|radial-gradient(...)` persists after switching tabs.
+- Presets: prefer DSL helpers `savePreset`, `exportPresets`, `importPresets`, `applyPreset`; rely on built-in diagnostics attachments instead of adding waits.
+- Accessibility: stop list should remain `role="listbox"` with `role="option"` rows; angle/position inputs must keep ARIA labels.
+
 ### Visual Regression Snapshots
 
 If you add `toHaveScreenshot` expectations:
