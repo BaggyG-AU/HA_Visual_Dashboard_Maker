@@ -224,6 +224,19 @@ ipcMain.handle('settings:setVerboseUIDebug', async (_event, verbose: boolean) =>
   return { success: true };
 });
 
+ipcMain.handle('settings:getHaptics', async () => {
+  return {
+    enabled: settingsService.getHapticsEnabled(),
+    intensity: settingsService.getHapticsIntensity(),
+  };
+});
+
+ipcMain.handle('settings:setHaptics', async (_event, settings: { enabled: boolean; intensity: number }) => {
+  settingsService.setHapticsEnabled(settings.enabled);
+  settingsService.setHapticsIntensity(settings.intensity);
+  return { success: true };
+});
+
 ipcMain.handle('settings:resetUIState', async () => {
   settingsService.resetUIState();
   return { success: true };

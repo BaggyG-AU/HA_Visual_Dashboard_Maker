@@ -36,6 +36,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setLoggingLevel: (level: 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace') => ipcRenderer.invoke('settings:setLoggingLevel', level),
   getVerboseUIDebug: () => ipcRenderer.invoke('settings:getVerboseUIDebug'),
   setVerboseUIDebug: (verbose: boolean) => ipcRenderer.invoke('settings:setVerboseUIDebug', verbose),
+  getHapticSettings: () => ipcRenderer.invoke('settings:getHaptics'),
+  setHapticSettings: (settings: { enabled: boolean; intensity: number }) => ipcRenderer.invoke('settings:setHaptics', settings),
   resetUIState: () => ipcRenderer.invoke('settings:resetUIState'),
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
 
@@ -139,6 +141,8 @@ export interface ElectronAPI {
   setLoggingLevel: (level: 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace') => Promise<{ success: boolean }>;
   getVerboseUIDebug: () => Promise<{ verbose: boolean }>;
   setVerboseUIDebug: (verbose: boolean) => Promise<{ success: boolean }>;
+  getHapticSettings: () => Promise<{ enabled: boolean; intensity: number }>;
+  setHapticSettings: (settings: { enabled: boolean; intensity: number }) => Promise<{ success: boolean }>;
   resetUIState: () => Promise<{ success: boolean }>;
   getAppVersion: () => Promise<{ version: string }>;
   getCachedEntities: () => Promise<{ success: boolean; entities?: any[]; error?: string }>;

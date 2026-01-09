@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip } from 'antd';
+import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip, Switch, InputNumber } from 'antd';
 import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
 import * as monaco from 'monaco-editor';
 import * as yaml from 'js-yaml';
@@ -63,6 +63,64 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const COMMIT_DEBOUNCE_MS = 800;
   const YAML_SYNC_DEBOUNCE_MS = 250;
   const YAML_PARSE_DEBOUNCE_MS = 350;
+  const HAPTIC_PATTERN_OPTIONS = [
+    { value: 'light', label: 'Light' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'heavy', label: 'Heavy' },
+    { value: 'double', label: 'Double' },
+    { value: 'success', label: 'Success' },
+    { value: 'error', label: 'Error' },
+  ];
+
+  const renderHapticConfig = (testIdPrefix: string) => (
+    <div>
+      <Divider />
+      <Text strong style={{ color: 'white' }}>Haptic Feedback</Text>
+      <Form.Item
+        label={<span style={{ color: 'white' }}>Enable Haptics</span>}
+        name={['haptic', 'enabled']}
+        valuePropName="checked"
+      >
+        <Switch data-testid={`${testIdPrefix}-haptic-toggle`} />
+      </Form.Item>
+      <Form.Item
+        noStyle
+        shouldUpdate={(prev, curr) => prev.haptic?.enabled !== curr.haptic?.enabled}
+      >
+        {() => {
+          const enabled = Boolean(form.getFieldValue(['haptic', 'enabled']));
+          return (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Haptic Pattern</span>}
+                name={['haptic', 'pattern']}
+              >
+                <Select
+                  placeholder="Use default pattern"
+                  options={HAPTIC_PATTERN_OPTIONS}
+                  disabled={!enabled}
+                  data-testid={`${testIdPrefix}-haptic-pattern`}
+                />
+              </Form.Item>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Intensity</span>}
+                name={['haptic', 'intensity']}
+                help={<span style={{ color: '#666' }}>Override global intensity (0-100)</span>}
+              >
+                <InputNumber
+                  min={0}
+                  max={100}
+                  style={{ width: '100%' }}
+                  disabled={!enabled}
+                  data-testid={`${testIdPrefix}-haptic-intensity`}
+                />
+              </Form.Item>
+            </>
+          );
+        }}
+      </Form.Item>
+    </div>
+  );
 
   // Helper function to normalize entities for form display
   const normalizeCardForForm = (card: Card): FormCardValues => {
@@ -562,6 +620,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               >
                 <IconSelect placeholder="mdi:lightbulb" />
               </Form.Item>
+
+              {renderHapticConfig('button-card')}
             </>
           )}
 
@@ -1083,6 +1143,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   data-testid="button-card-color-input"
                 />
               </Form.Item>
+
+              {renderHapticConfig('custom-button-card')}
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Icon Color</span>}

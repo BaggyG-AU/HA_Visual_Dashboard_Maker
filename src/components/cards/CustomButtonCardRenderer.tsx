@@ -7,6 +7,7 @@ import { resolveIconColor } from '../../utils/iconColorResolver';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { isGradientString } from '../../utils/gradientConversions';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { triggerHapticForAction } from '../../services/hapticService';
 
 const { Text } = Typography;
 
@@ -132,6 +133,12 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
   };
 
   const gradientIcon = isGradientString(iconColor) ? renderGradientIcon(iconColor) : null;
+  const tapAction = card.tap_action ?? { action: 'toggle' };
+
+  const handleClick = () => {
+    triggerHapticForAction(tapAction, card.haptic);
+    onClick?.();
+  };
 
   return (
     <div
@@ -140,7 +147,7 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
         cursor: 'pointer',
         transition: 'all 0.3s ease',
       }}
-      onClick={onClick}
+      onClick={handleClick}
     >
       <AntCard
         bordered

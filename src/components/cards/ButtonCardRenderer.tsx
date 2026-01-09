@@ -3,6 +3,7 @@ import { Card as AntCard, Typography } from 'antd';
 import { ThunderboltOutlined } from '@ant-design/icons';
 import { ButtonCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
+import { triggerHapticForAction } from '../../services/hapticService';
 
 const { Text } = Typography;
 
@@ -26,6 +27,12 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
   const showState = card.show_state !== false;
   const showIcon = card.show_icon !== false;
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const tapAction = card.tap_action ?? { action: 'toggle' };
+
+  const handleClick = () => {
+    triggerHapticForAction(tapAction, card.haptic);
+    onClick?.();
+  };
 
   return (
     <AntCard
@@ -48,7 +55,7 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
           gap: '12px',
         },
       }}
-      onClick={onClick}
+      onClick={handleClick}
       hoverable
     >
       {showIcon && (

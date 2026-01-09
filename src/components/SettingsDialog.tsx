@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Tabs, Space, Select, Button, Typography, Divider, Alert, Switch, message, Popconfirm } from 'antd';
+import { Modal, Tabs, Space, Select, Button, Typography, Divider, Alert, Switch, message, Popconfirm, Slider, InputNumber } from 'antd';
 import { BgColorsOutlined, LinkOutlined, ToolOutlined, BugOutlined, CopyOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { ThemeSettingsDialog } from './ThemeSettingsDialog';
 import { ConnectionDialog } from './ConnectionDialog';
 import { logger } from '../services/logger';
+import { hasHapticSupport, previewHapticPattern, setHapticSettings } from '../services/hapticService';
+import type { HapticPattern } from '../types/haptics';
 
 const { Text } = Typography;
 
@@ -23,16 +25,25 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
   const [loadingLevel, setLoadingLevel] = useState(false);
   const [copying, setCopying] = useState(false);
   const [verboseUI, setVerboseUI] = useState(false);
+  const [hapticsEnabled, setHapticsEnabled] = useState(false);
+  const [hapticsIntensity, setHapticsIntensity] = useState(100);
+  const [hapticsPattern, setHapticsPattern] = useState<HapticPattern>('medium');
+
+  const clamp = (value: number, min = 0, max = 100) => Math.min(Math.max(value, min), max);
 
   const loadSettings = async () => {
     try {
-      const [{ level }, { verbose }] = await Promise.all([
+      const [{ level }, { verbose }, { enabled, intensity }] = await Promise.all([
         window.electronAPI.getLoggingLevel(),
         window.electronAPI.getVerboseUIDebug(),
+        window.electronAPI.getHapticSettings(),
       ]);
       setLoggingLevel(level as LoggingLevel);
       setVerboseUI(verbose);
       logger.setLevel(level as LoggingLevel);
+      setHapticsEnabled(enabled);
+      setHapticsIntensity(intensity);
+      setHapticSettings({ enabled, intensity });
     } catch (error) {
       console.error('Failed to load logging settings', error);
     }
@@ -97,6 +108,31 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
     setVerboseUI(checked);
     await window.electronAPI.setVerboseUIDebug(checked);
     onVerboseChange?.(checked);
+  };
+
+  const handleHapticsEnabledChange = async (checked: boolean) => {
+    setHapticsEnabled(checked);
+    await window.electronAPI.setHapticSettings({ enabled: checked, intensity: hapticsIntensity });
+    setHapticSettings({ enabled: checked });
+  };
+
+  const handleHapticsIntensityChange = async (value: number) => {
+    const next = clamp(value);
+    setHapticsIntensity(next);
+    await window.electronAPI.setHapticSettings({ enabled: hapticsEnabled, intensity: next });
+    setHapticSettings({ intensity: next });
+  };
+
+  const handleHapticsTest = () => {
+    if (!hapticsEnabled) {
+      message.info('Enable haptic feedback to test patterns');
+      return;
+    }
+    if (!hasHapticSupport()) {
+      message.warning('Haptic feedback not supported on this device');
+      return;
+    }
+    previewHapticPattern(hapticsPattern);
   };
 
   const handleClearEntityCache = async () => {
@@ -202,6 +238,74 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
                   <Text type="secondary" style={{ display: 'block', marginTop: 4 }}>
                     Shows a minimal overlay for UI debugging. Safe to disable anytime.
                   </Text>
+                </div>
+
+                <Divider />
+
+                <div>
+                  <Space align="center">
+                    <ToolOutlined />
+                    <Text strong>Haptic Feedback</Text>
+                  </Space>
+                  <div style={{ marginTop: 8 }}>
+                    <Switch
+                      checked={hapticsEnabled}
+                      onChange={handleHapticsEnabledChange}
+                      data-testid="haptic-feedback-toggle"
+                    />
+                  </div>
+                  <Text type="secondary" style={{ display: 'block', marginTop: 4 }}>
+                    Disabled by default for accessibility. Enable to allow haptic feedback.
+                  </Text>
+                  <div style={{ marginTop: 16 }}>
+                    <Text strong>Intensity</Text>
+                    <Space direction="vertical" style={{ width: '100%', marginTop: 8 }} size="small">
+                      <Slider
+                        min={0}
+                        max={100}
+                        value={hapticsIntensity}
+                        onChange={(value) => handleHapticsIntensityChange(Number(value))}
+                        disabled={!hapticsEnabled}
+                        data-testid="haptic-feedback-intensity-slider"
+                      />
+                      <InputNumber
+                        min={0}
+                        max={100}
+                        value={hapticsIntensity}
+                        onChange={(value) => handleHapticsIntensityChange(Number(value))}
+                        disabled={!hapticsEnabled}
+                        style={{ width: '100%' }}
+                        data-testid="haptic-feedback-intensity-input"
+                      />
+                    </Space>
+                  </div>
+                  <div style={{ marginTop: 16 }}>
+                    <Text strong>Test Pattern</Text>
+                    <Space style={{ marginTop: 8 }} wrap>
+                      <Select
+                        value={hapticsPattern}
+                        onChange={(value) => setHapticsPattern(value as HapticPattern)}
+                        style={{ width: 200 }}
+                        options={[
+                          { value: 'light', label: 'Light' },
+                          { value: 'medium', label: 'Medium' },
+                          { value: 'heavy', label: 'Heavy' },
+                          { value: 'double', label: 'Double' },
+                          { value: 'success', label: 'Success' },
+                          { value: 'error', label: 'Error' },
+                        ]}
+                        data-testid="haptic-feedback-pattern-select"
+                        disabled={!hapticsEnabled}
+                      />
+                      <Button
+                        onClick={handleHapticsTest}
+                        disabled={!hapticsEnabled}
+                        data-testid="haptic-feedback-test-button"
+                      >
+                        Test haptic
+                      </Button>
+                    </Space>
+                  </div>
                 </div>
 
                 <Divider />

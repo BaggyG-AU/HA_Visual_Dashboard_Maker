@@ -10,6 +10,13 @@ export class SettingsDSL {
     await expect(this.window.getByText('Settings')).toBeVisible({ timeout: 10000 });
   }
 
+  async close(): Promise<void> {
+    const closeButton = this.window.getByRole('button', { name: /^Close$/i }).last();
+    await expect(closeButton).toBeVisible();
+    await closeButton.click();
+    await expect(this.window.getByText('Settings')).toHaveCount(0, { timeout: 10000 });
+  }
+
   async selectTab(tab: 'Appearance' | 'Connection' | 'Diagnostics'): Promise<void> {
     const tabNode = this.window.getByRole('tab', { name: tab });
     await expect(tabNode).toBeVisible();
@@ -48,5 +55,43 @@ export class SettingsDSL {
     await this.selectTab('Diagnostics');
     const select = this.window.getByTestId('logging-level-select');
     await expect(select).toContainText(new RegExp(level, 'i'));
+  }
+
+  async setHapticsEnabled(enabled: boolean): Promise<void> {
+    await this.selectTab('Diagnostics');
+    const toggle = this.window.getByTestId('haptic-feedback-toggle');
+    await expect(toggle).toBeVisible();
+    const isChecked = await toggle.getAttribute('aria-checked');
+    if ((isChecked === 'true') !== enabled) {
+      await toggle.click();
+    }
+  }
+
+  async setHapticsIntensity(value: number): Promise<void> {
+    await this.selectTab('Diagnostics');
+    const input = this.window.getByTestId('haptic-feedback-intensity-input');
+    await expect(input).toBeVisible();
+    await input.fill(String(value));
+    await input.blur();
+  }
+
+  async selectHapticsPattern(label: string): Promise<void> {
+    await this.selectTab('Diagnostics');
+    const select = this.window.getByTestId('haptic-feedback-pattern-select');
+    await expect(select).toBeVisible();
+    await select.click();
+    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
+    await expect(dropdown).toBeVisible({ timeout: 5000 });
+    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${label}$`, 'i') });
+    await expect(option).toBeVisible({ timeout: 5000 });
+    await option.click();
+    await expect(dropdown).not.toBeVisible({ timeout: 5000 });
+  }
+
+  async clickHapticsTest(): Promise<void> {
+    await this.selectTab('Diagnostics');
+    const button = this.window.getByTestId('haptic-feedback-test-button');
+    await expect(button).toBeVisible();
+    await button.click();
   }
 }
