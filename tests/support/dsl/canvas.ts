@@ -5,7 +5,9 @@
  * CRITICAL: react-grid-layout intercepts pointer events - must use mouse coordinates.
  */
 
-import { Page, expect } from '@playwright/test';
+import { Page, expect, type LocatorScreenshotOptions } from '@playwright/test';
+
+type ScreenshotOptions = LocatorScreenshotOptions & { animations?: 'disabled' | 'allow'; caret?: 'hide' | 'initial' };
 
 export class CanvasDSL {
   constructor(private window: Page) {}
@@ -100,5 +102,54 @@ export class CanvasDSL {
   async expectBackgroundLayerCss(index: number, property: string, value: string | RegExp): Promise<void> {
     const layer = this.getBackgroundLayer(index);
     await expect(layer).toHaveCSS(property, value);
+  }
+
+  async expectBackgroundLayerScreenshot(
+    index: number,
+    name: string,
+    options: ScreenshotOptions = { animations: 'disabled', caret: 'hide' },
+  ): Promise<void> {
+    const layer = this.getBackgroundLayer(index);
+    await expect(layer).toBeVisible();
+    await expect(layer).toHaveScreenshot(name, options);
+  }
+
+  async measureBackgroundLayerFps(index = 0, frameCount = 60): Promise<{ fps: number; avgFrameTime: number; samples: number }> {
+    const card = this.getCard(index);
+    await expect(card).toBeVisible();
+
+    return await this.window.evaluate(({ frames, targetIndex }) => {
+      const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-testid="card-background-layer"]'));
+      const layer = layers[targetIndex] || layers[0];
+      if (!layer) {
+        return { fps: 0, avgFrameTime: Infinity, samples: 0 };
+      }
+
+      const samples: number[] = [];
+      let last = performance.now();
+      let count = 0;
+      let toggle = false;
+
+      return new Promise((resolve) => {
+        const step = () => {
+          const now = performance.now();
+          samples.push(now - last);
+          last = now;
+
+          toggle = !toggle;
+          layer.style.opacity = toggle ? '0.98' : '1';
+
+          count += 1;
+          if (count < frames) {
+            requestAnimationFrame(step);
+          } else {
+            const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
+            resolve({ fps: 1000 / avg, avgFrameTime: avg, samples: samples.length });
+          }
+        };
+
+        requestAnimationFrame(step);
+      });
+    }, { frames: frameCount, targetIndex: index });
   }
 }
