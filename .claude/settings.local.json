@@ -52,7 +52,8 @@
       "Bash(git for-each-ref:*)",
       "Bash(git fetch:*)",
       "Bash(find:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(python3:*)"
     ]
   }
 }
