@@ -26,7 +26,7 @@ test.describe('Monaco Editor in Dashboard YAML Editor', () => {
       await ctx.appDSL.waitUntilReady();
       await ctx.dashboard.createNew();
       await ctx.yamlEditor.open();
-      await ctx.yamlEditor.expectMonacoVisible();
+      await ctx.yamlEditor.expectMonacoVisible('modal');
     } finally {
       await close(ctx);
     }
@@ -38,7 +38,7 @@ test.describe('Monaco Editor in Dashboard YAML Editor', () => {
       await ctx.appDSL.waitUntilReady();
       await ctx.dashboard.createNew();
       await ctx.yamlEditor.open();
-      await ctx.yamlEditor.expectMonacoVisible();
+      await ctx.yamlEditor.expectMonacoVisible('modal');
       await ctx.yamlEditor.expectSyntaxHighlighting();
     } finally {
       await close(ctx);

@@ -7,9 +7,11 @@
 
 import { test, expect } from '@playwright/test';
 import { launchWithDSL, close } from '../support';
+import { debugLog } from '../support/helpers/debug';
 
 test.describe('Color Picker - PropertiesPanel Integration', () => {
-test.skip('visual regression and accessibility in scrollable PropertiesPanel (skipped: Electron focus inactive in PW)', async () => {
+test.skip('visual regression and accessibility in scrollable PropertiesPanel (skipped: Electron focus inactive in PW)', async ({ page }, testInfo) => {
+  void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, colorPicker, window } = ctx;
 
@@ -71,9 +73,9 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       // Keyboard reachability: swatch -> main input -> format toggle -> popover input (order can vary; ensure each is reachable)
       await colorPicker.ensureWindowActive();
       await colorPicker.focusSwatch('button-card-color-input');
-      await colorPicker.tabUntilFocused(window.getByTestId('button-card-color-input'), 2);
-      await colorPicker.tabUntilFocused(colorPicker.getFormatToggle('button-card-color-input'), 3);
-      await colorPicker.tabUntilFocused(colorPicker.getColorInput('button-card-color-input'), 3);
+      await colorPicker.tabUntilFocused(window.getByTestId('button-card-color-input'), 2, testInfo);
+      await colorPicker.tabUntilFocused(colorPicker.getFormatToggle('button-card-color-input'), 3, testInfo);
+      await colorPicker.tabUntilFocused(colorPicker.getColorInput('button-card-color-input'), 3, testInfo);
 
       // Contrast of swatch border vs dark panel background
       await colorPicker.expectSwatchContrast('button-card-color-input', 'properties-panel');
@@ -88,7 +90,7 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
 
   test('should open color picker popover when clicking swatch', async () => {
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, colorPicker, window } = ctx;
+    const { appDSL, dashboard, palette, canvas, properties, colorPicker } = ctx;
 
     try {
       // Wait for app to be ready and create dashboard
@@ -107,11 +109,7 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       await canvas.selectCard(0);
       await properties.expectVisible();
 
-      // Verify the color input is visible
-      const colorInput = window.getByTestId('button-card-color-input');
-      await expect(colorInput).toBeVisible();
-
-      // Open the color picker popover by clicking the swatch
+      // Open the color picker popover (auto-switches to Advanced Options tab)
       await colorPicker.openPopover('button-card-color-input');
 
       // Verify color picker is now visible
@@ -491,6 +489,7 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
       await properties.expectVisible();
+      await properties.switchTab('Advanced Options');
 
       // Type "auto" directly in the main input (not the popover)
       const mainInput = window.getByTestId('button-card-color-input');
@@ -537,7 +536,8 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
   // is not being properly exposed/detected by the test despite adding global window references.
   // The visual UI shows the YAML is updating correctly, but the test cannot read the content.
   // See FOUNDATION_LAYER_IMPLEMENTATION.md for details and future investigation.
-  test.skip('should update YAML when color is changed', async () => {
+  test('should update YAML when color is changed', async ({ page }, testInfo) => {
+    void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, colorPicker, yamlEditor } = ctx;
 
@@ -557,32 +557,23 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       await colorPicker.setColorInput('#FF0000', 'button-card-color-input');
       await ctx.window.waitForTimeout(300);
 
-      // Switch to YAML tab
+      // Switch to YAML tab and verify via Monaco model value (authoritative)
       await properties.switchTab('YAML');
-      await properties.expectYamlEditor();
-
-      // Wait for YAML content to be populated (Monaco model may take time to initialize)
-      await expect
-        .poll(async () => yamlEditor.anyYamlContains(/#ff0000/i), {
-          timeout: 10000,
-        })
-        .toBe(true);
-
-      // Get YAML content using yamlEditor DSL
-      const yamlText = await yamlEditor.getEditorContent();
-
-      // YAML should contain the color
-      expect(yamlText).toContain('#FF0000');
-      expect(yamlText).toContain('color:');
+      await yamlEditor.expectMonacoVisible();
+      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
+      await expect(value.toLowerCase()).toContain('#ff0000');
+      await expect(value.toLowerCase()).toContain('color');
     } finally {
       await close(ctx);
     }
   });
 
   // Skipped due to intermittent Monaco/YAML visibility issues in properties panel (tracked in Phase 3)
-  test.skip('button card color + icon color should update preview and YAML', async () => {
+  test('button card color + icon color should update preview and YAML', async ({ page }, testInfo) => {
+    void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, colorPicker, yamlEditor, window } = ctx;
+    const { appDSL, dashboard, palette, canvas, properties, colorPicker, iconColor, yamlEditor, window } = ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -599,6 +590,9 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       await colorPicker.setColorInput('#336699', 'button-card-color-input');
       await colorPicker.closePopover('button-card-color-input');
 
+      // Select custom icon color mode first
+      await iconColor.selectMode('Custom', testInfo);
+
       // Set icon color separately
       await colorPicker.openPopover('button-card-icon-color-input');
       await colorPicker.setColorInput('#FF8800', 'button-card-icon-color-input');
@@ -613,11 +607,11 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
 
       // YAML tab should include both values
       await properties.switchTab('YAML');
-      await properties.expectYamlEditor();
-      const yamlText = await yamlEditor.getEditorContent();
-
-      expect(yamlText).toContain("color: '#336699'");
-      expect(yamlText.toLowerCase()).toContain("icon_color: '#ff8800'");
+      await yamlEditor.expectMonacoVisible();
+      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
+      expect(value.toLowerCase()).toContain("color: '#336699'");
+      expect(value.toLowerCase()).toContain("icon_color: '#ff8800'");
     } finally {
       await close(ctx);
     }

@@ -151,7 +151,7 @@ This document tracks the implementation of Phase 1 (Foundation Layer) features f
   - [⏭️] Verify color in YAML editor (SKIPPED - Monaco model detection issue)
   - [⏭️] Edit color in YAML editor
   - [⏭️] Verify color in PropertiesPanel
-  - **Reason**: Monaco editor model not detected by test despite multiple fix attempts. Visual UI confirms functionality works. See TESTING_STANDARDS.md "Skipped Tests Registry".
+  - **Reason**: Monaco editor model not detected by test despite multiple fix attempts. Visual UI confirms functionality works. See `docs/testing/SKIPPED_TESTS_REGISTER.md`.
 - [x] Test with multiple card types:
   - [x] Button card color fields
   - [x] Mushroom card color fields (N/A - no mushroom cards in current implementation)

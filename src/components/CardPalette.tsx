@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Collapse, Input, Badge, Tooltip } from 'antd';
 import {
   AppstoreOutlined,
@@ -52,6 +52,7 @@ const categoryConfig: Record<CardCategory, { icon: React.ReactNode; label: strin
 export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
+  const previousActiveKeysRef = useRef<string[] | null>(null);
 
   // Get all cards and group by category
   const allCards = cardRegistry.getAll();
@@ -79,6 +80,34 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
     },
     {} as Record<CardCategory, CardTypeMetadata[]>
   );
+  const filteredCategoryKeys = useMemo(
+    () => Object.keys(filteredCardsByCategory),
+    [filteredCardsByCategory]
+  );
+
+  const areKeysEqual = (a: string[], b: string[]) =>
+    a.length === b.length && a.every((value, index) => value === b[index]);
+
+  useEffect(() => {
+    const hasSearch = searchTerm.trim().length > 0;
+    if (hasSearch) {
+      if (previousActiveKeysRef.current === null) {
+        previousActiveKeysRef.current = activeKeys;
+      }
+      if (!areKeysEqual(activeKeys, filteredCategoryKeys)) {
+        setActiveKeys(filteredCategoryKeys);
+      }
+      return;
+    }
+
+    if (previousActiveKeysRef.current) {
+      const previousKeys = previousActiveKeysRef.current;
+      if (!areKeysEqual(activeKeys, previousKeys)) {
+        setActiveKeys(previousKeys);
+      }
+      previousActiveKeysRef.current = null;
+    }
+  }, [activeKeys, filteredCategoryKeys, searchTerm]);
 
   const handleCardClick = (cardType: string) => {
     onCardAdd(cardType);

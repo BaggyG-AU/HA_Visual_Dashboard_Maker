@@ -25,6 +25,8 @@ import {
   rgbaToHsla,
   validateHex,
 } from '../utils/colorConversions';
+import { useColorPalettes } from '../hooks/useColorPalettes';
+import ColorPaletteManager from './ColorPaletteManager';
 
 const { Text } = Typography;
 
@@ -49,6 +51,23 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   const { recentColors, addRecentColor, clearRecentColors } = useRecentColors({
     maxColors: maxRecentColors,
   });
+  const {
+    palettes,
+    activePalette,
+    activePaletteId,
+    setActivePalette,
+    createPalette,
+    duplicatePalette,
+    renamePalette,
+    deletePalette,
+    addColor,
+    removeColor,
+    reorderColors,
+    importPalettes,
+    exportPalettes,
+    exportCssVariables,
+  } = useColorPalettes();
+  const [tabKey, setTabKey] = useState<string>('favorites');
 
   // Parse current color value to RGBA
   const currentRgba = useMemo((): RgbaColor => {
@@ -60,6 +79,12 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   useEffect(() => {
     setInputValue(value);
   }, [value]);
+
+  useEffect(() => {
+    if (!activePalette && palettes.length) {
+      setActivePalette(palettes[0].id);
+    }
+  }, [activePalette, palettes, setActivePalette]);
 
   /**
    * Handle color change from react-colorful picker
@@ -173,8 +198,9 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
 
       setInputValue(color);
       onChange?.(color);
+      addRecentColor(color);
     },
-    [disabled, onChange]
+    [disabled, onChange, addRecentColor]
   );
 
   /**
@@ -191,6 +217,17 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
     },
     [value, handleInputBlur]
   );
+
+  const handleFavoriteSelect = useCallback(
+    (color: string) => {
+      if (disabled) return;
+      setInputValue(color);
+      onChange?.(color);
+      addRecentColor(color);
+    },
+    [disabled, onChange, addRecentColor]
+  );
+
 
   return (
     <div
@@ -255,10 +292,52 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         aria-label="Color preview"
       />
 
-      {/* Recent Colors */}
-      {showRecentColors && recentColors.length > 0 && (
-        <>
-          <Divider style={{ margin: '12px 0', borderColor: '#434343' }} />
+      <Divider style={{ margin: '12px 0', borderColor: '#434343' }} />
+
+      <div role="tablist" style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <Button
+          role="tab"
+          aria-selected={tabKey === 'favorites'}
+          type={tabKey === 'favorites' ? 'primary' : 'default'}
+          onClick={() => setTabKey('favorites')}
+          data-testid={`${testId}-tab-favorites`}
+        >
+          Favorites
+        </Button>
+        <Button
+          role="tab"
+          aria-selected={tabKey === 'recent'}
+          type={tabKey === 'recent' ? 'primary' : 'default'}
+          onClick={() => setTabKey('recent')}
+          data-testid={`${testId}-tab-recents`}
+        >
+          Recent
+        </Button>
+      </div>
+
+      {tabKey === 'favorites' && (
+        <ColorPaletteManager
+          palettes={palettes}
+          activePaletteId={activePaletteId}
+          currentColor={inputValue}
+          onSelectPalette={setActivePalette}
+          onApplyColor={handleFavoriteSelect}
+          onCreate={() => createPalette()}
+          onDuplicate={duplicatePalette}
+          onRename={renamePalette}
+          onDelete={deletePalette}
+          onAddColor={addColor}
+          onRemoveColor={removeColor}
+          onReorderColor={reorderColors}
+          onExportJson={exportPalettes}
+          onExportCss={exportCssVariables}
+          onImportJson={importPalettes}
+          testId={testId}
+        />
+      )}
+
+      {tabKey === 'recent' && (
+        showRecentColors ? (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
               <Text style={{ color: '#888', fontSize: '12px' }}>Recent Colors</Text>
@@ -275,44 +354,49 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 Clear
               </Button>
             </div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(32px, 1fr))',
-                gap: '6px',
-              }}
-              role="list"
-              aria-label="Recent colors"
-            >
-              {recentColors.map((color, index) => (
-                <button
-                  key={`${color}-${index}`}
-                  onClick={() => handleRecentColorClick(color)}
-                  disabled={disabled}
-                  data-testid={`${testId}-recent-${index}`}
-                  role="listitem"
-                  aria-label={`Recent color ${color}`}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '4px',
-                    background: color,
-                    border: color === value ? '2px solid #00d9ff' : '1px solid #434343',
-                    cursor: disabled ? 'not-allowed' : 'pointer',
-                    padding: 0,
-                    outline: 'none',
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(0, 217, 255, 0.5)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                />
-              ))}
-            </div>
+            {recentColors.length === 0 && <Text style={{ color: '#888' }}>No recent colors yet.</Text>}
+            {recentColors.length > 0 && (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(32px, 1fr))',
+                  gap: '6px',
+                }}
+                role="list"
+                aria-label="Recent colors"
+              >
+                {recentColors.map((color, index) => (
+                  <button
+                    key={`${color}-${index}`}
+                    onClick={() => handleRecentColorClick(color)}
+                    disabled={disabled}
+                    data-testid={`${testId}-recent-${index}`}
+                    role="listitem"
+                    aria-label={`Recent color ${color}`}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '4px',
+                      background: color,
+                      border: color === value ? '2px solid #00d9ff' : '1px solid #434343',
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                      padding: 0,
+                      outline: 'none',
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.boxShadow = '0 0 0 2px rgba(0, 217, 255, 0.5)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        </>
+        ) : (
+          <Text style={{ color: '#888' }}>Recent colors disabled.</Text>
+        )
       )}
     </div>
   );

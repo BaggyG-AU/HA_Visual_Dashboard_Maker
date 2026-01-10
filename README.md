@@ -4,7 +4,7 @@ A cross-platform desktop application for visually designing Home Assistant dashb
 
 ## Project Status
 
-- **Version**: `0.4.0-beta.1`
+- **Version**: `0.4.1-beta.1`
 - **Current focus**: Entity Type Dashboard Generator feature with 9 pre-built dashboard categories. Electron app + visual editor with Playwright tests green.
 - **Planning docs**: see `/docs/index.md` for architecture, plan, testing, releases, and research.
 
@@ -93,9 +93,23 @@ Key tests (cannot be run in the AI sandbox; run locally):
 - Integration: `npx playwright test --project=electron-integration --workers=1 --trace=retain-on-failure`
 - E2E smoke: `npx playwright test --project=electron-e2e --workers=1 --trace=retain-on-failure`
 
+## Gradient Editor (UI Enhancement Layer)
+
+- Inline popover editor for background gradients (linear/radial) with live preview and YAML sync.
+- Keyboard-complete: angle/position sliders and stop rows support arrow keys, `Enter` (add stop), `Delete` (remove), and focusable swatch to open via keyboard.
+- YAML persistence: gradients are stored in card `style` as CSS `background: ...;` and round-trip through Properties Panel and YAML tab.
+- Presets: built-in categories + user presets with import/export (JSON).
+- Accessibility: ARIA labels on controls, focus ring on selected stop, and screen-reader-friendly list semantics for stops.
+
+Docs:
+- User guide: `docs/product/GRADIENT_EDITOR_USER_GUIDE.md`
+- Component API: `docs/features/GRADIENT_EDITOR_COMPONENT_API.md`
+- Testing patterns: `docs/testing/TESTING_STANDARDS.md#gradient-editor-testing-patterns`
+- Keyboard shortcuts: `docs/product/KEYBOARD_SHORTCUTS.md`
+
 ## Color Picker (Foundation Layer)
 
-The Properties Panel uses a popover-based color input for card color fields (e.g. `custom:button-card` color and icon color).
+Popover-based color input used across Properties Panel (card color, icon color) and inside the Gradient Editor for stop colors.
 
 - Supported values: `#RRGGBB`, `#RRGGBBAA`, `rgb(r, g, b)`, `rgba(r, g, b, a)`, `hsl(h, s%, l%)`, `hsla(h, s%, l%, a)`
 - Recent colors: stored locally, shown on reopen, and can be cleared

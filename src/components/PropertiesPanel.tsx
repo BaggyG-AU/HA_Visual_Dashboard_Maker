@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip } from 'antd';
+import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip, Switch, InputNumber } from 'antd';
 import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
 import * as monaco from 'monaco-editor';
 import * as yaml from 'js-yaml';
@@ -9,12 +9,13 @@ import { EntitySelect } from './EntitySelect';
 import { EntityMultiSelect } from './EntityMultiSelect';
 import { IconSelect } from './IconSelect';
 import { ColorPickerInput } from './ColorPickerInput';
+import { BackgroundCustomizer } from './BackgroundCustomizer';
 import { haConnectionService } from '../services/haConnectionService';
 import { createDebouncedCommit, DebouncedCommit } from '../utils/debouncedCommit';
+import { extractStyleColor, upsertStyleColor } from '../utils/styleBackground';
+import { applyBackgroundConfigToStyle, DEFAULT_BACKGROUND_CONFIG, parseBackgroundConfig, type BackgroundConfig } from '../utils/backgroundStyle';
 
 const { Title, Text } = Typography;
-
-const STYLE_COLOR_REGEX = /(^|[\s{;])color\s*:\s*([^;]+)/i;
 
 type MonacoTestWindow = Window & {
   __monacoEditor?: monaco.editor.IStandaloneCodeEditor;
@@ -22,25 +23,6 @@ type MonacoTestWindow = Window & {
 };
 
 type FormCardValues = Record<string, unknown> & { entities?: unknown };
-
-const extractStyleColor = (styleValue?: string): string => {
-  if (!styleValue) return '';
-  const match = STYLE_COLOR_REGEX.exec(styleValue);
-  return match ? match[2].trim() : '';
-};
-
-const upsertStyleColor = (styleValue: string | undefined, color: string): string => {
-  if (!styleValue || !styleValue.trim()) {
-    return `color: ${color};`;
-  }
-
-  if (STYLE_COLOR_REGEX.test(styleValue)) {
-    return styleValue.replace(STYLE_COLOR_REGEX, `$1color: ${color}`);
-  }
-
-  const normalized = styleValue.trim().endsWith(';') ? styleValue.trim() : `${styleValue.trim()};`;
-  return `${normalized}\ncolor: ${color};`;
-};
 
 interface PropertiesPanelProps {
   card: Card | null;
@@ -66,18 +48,138 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const [yamlContent, setYamlContent] = useState<string>('');
   const [yamlError, setYamlError] = useState<string | null>(null);
   const [undoStack, setUndoStack] = useState<Card[]>([]);
+  const [backgroundConfig, setBackgroundConfig] = useState<BackgroundConfig>(DEFAULT_BACKGROUND_CONFIG);
   const isUpdatingFromForm = useRef(false);
   const isUpdatingFromYaml = useRef(false);
   const debouncedCommitRef = useRef<DebouncedCommit<Card> | null>(null);
   const yamlSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const yamlParseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCommittedCardRef = useRef<Card | null>(null);
+  const lastStyleValueRef = useRef<string>('');
+  const skipStyleSyncRef = useRef(false);
   const monacoEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
 
   const COMMIT_DEBOUNCE_MS = 800;
   const YAML_SYNC_DEBOUNCE_MS = 250;
   const YAML_PARSE_DEBOUNCE_MS = 350;
+  const HAPTIC_PATTERN_OPTIONS = [
+    { value: 'light', label: 'Light' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'heavy', label: 'Heavy' },
+    { value: 'double', label: 'Double' },
+    { value: 'success', label: 'Success' },
+    { value: 'error', label: 'Error' },
+  ];
+
+  const renderHapticConfig = (testIdPrefix: string) => (
+    <div>
+      <Divider />
+      <Text strong style={{ color: 'white' }}>Haptic Feedback</Text>
+      <Form.Item
+        label={<span style={{ color: 'white' }}>Enable Haptics</span>}
+        name={['haptic', 'enabled']}
+        valuePropName="checked"
+      >
+        <Switch data-testid={`${testIdPrefix}-haptic-toggle`} />
+      </Form.Item>
+      <Form.Item
+        noStyle
+        shouldUpdate={(prev, curr) => prev.haptic?.enabled !== curr.haptic?.enabled}
+      >
+        {() => {
+          const enabled = Boolean(form.getFieldValue(['haptic', 'enabled']));
+          return (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Haptic Pattern</span>}
+                name={['haptic', 'pattern']}
+              >
+                <Select
+                  placeholder="Use default pattern"
+                  options={HAPTIC_PATTERN_OPTIONS}
+                  disabled={!enabled}
+                  data-testid={`${testIdPrefix}-haptic-pattern`}
+                />
+              </Form.Item>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Intensity</span>}
+                name={['haptic', 'intensity']}
+                help={<span style={{ color: '#666' }}>Override global intensity (0-100)</span>}
+              >
+                <InputNumber
+                  min={0}
+                  max={100}
+                  style={{ width: '100%' }}
+                  disabled={!enabled}
+                  data-testid={`${testIdPrefix}-haptic-intensity`}
+                />
+              </Form.Item>
+            </>
+          );
+        }}
+      </Form.Item>
+    </div>
+  );
+
+  const SOUND_EFFECT_OPTIONS = [
+    { value: 'click', label: 'Click/Tap' },
+    { value: 'success', label: 'Success' },
+    { value: 'error', label: 'Error' },
+    { value: 'toggle-on', label: 'Toggle On' },
+    { value: 'toggle-off', label: 'Toggle Off' },
+    { value: 'notification', label: 'Notification' },
+  ];
+
+  const renderSoundConfig = (testIdPrefix: string) => (
+    <div>
+      <Divider />
+      <Text strong style={{ color: 'white' }}>UI Sounds</Text>
+      <Form.Item
+        label={<span style={{ color: 'white' }}>Enable Sounds</span>}
+        name={['sound', 'enabled']}
+        valuePropName="checked"
+      >
+        <Switch data-testid={`${testIdPrefix}-sound-toggle`} />
+      </Form.Item>
+      <Form.Item
+        noStyle
+        shouldUpdate={(prev, curr) => prev.sound?.enabled !== curr.sound?.enabled}
+      >
+        {() => {
+          const enabled = Boolean(form.getFieldValue(['sound', 'enabled']));
+          return (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Sound Effect</span>}
+                name={['sound', 'effect']}
+              >
+                <Select
+                  placeholder="Use default effect"
+                  options={SOUND_EFFECT_OPTIONS}
+                  disabled={!enabled}
+                  data-testid={`${testIdPrefix}-sound-effect`}
+                />
+              </Form.Item>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Volume</span>}
+                name={['sound', 'volume']}
+                help={<span style={{ color: '#666' }}>Override global volume (0-100)</span>}
+              >
+                <InputNumber
+                  min={0}
+                  max={100}
+                  style={{ width: '100%' }}
+                  disabled={!enabled}
+                  data-testid={`${testIdPrefix}-sound-volume`}
+                />
+              </Form.Item>
+            </>
+          );
+        }}
+      </Form.Item>
+    </div>
+  );
 
   // Helper function to normalize entities for form display
   const normalizeCardForForm = (card: Card): FormCardValues => {
@@ -104,6 +206,20 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       else if (typeof normalized.entities === 'object') {
         // Keep the complex object structure intact
         // The form won't show EntityMultiSelect for these
+      }
+    }
+
+    // Normalize icon color mode for form selection when stored on the card
+    const hasStateColors = typeof (normalized as { icon_color_states?: unknown }).icon_color_states === 'object';
+    if (!(normalized as { icon_color_mode?: unknown }).icon_color_mode) {
+      if ((normalized as { icon_color_attribute?: unknown }).icon_color_attribute) {
+        (normalized as { icon_color_mode?: unknown }).icon_color_mode = 'attribute';
+      } else if (hasStateColors) {
+        (normalized as { icon_color_mode?: unknown }).icon_color_mode = 'state';
+      } else if ((normalized as { icon_color?: unknown }).icon_color) {
+        (normalized as { icon_color_mode?: unknown }).icon_color_mode = 'custom';
+      } else {
+        (normalized as { icon_color_mode?: unknown }).icon_color_mode = 'default';
       }
     }
 
@@ -312,6 +428,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       form.setFieldsValue(normalizeCardForForm(card));
       setYamlContent(cardToYaml(card));
       setUndoStack([]); // Clear undo stack when switching cards
+
+      const styleValue = (card as { style?: string }).style ?? '';
+      setBackgroundConfig(parseBackgroundConfig(styleValue));
+      lastStyleValueRef.current = styleValue;
     }
   }, [card, cardIndex, form]);
 
@@ -351,6 +471,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
     const values = form.getFieldsValue();
     const updatedCard = { ...card, ...values };
+    const styleValue = (values.style as string | undefined) ?? '';
+    if (skipStyleSyncRef.current) {
+      skipStyleSyncRef.current = false;
+    } else if (styleValue !== lastStyleValueRef.current) {
+      setBackgroundConfig(parseBackgroundConfig(styleValue));
+      lastStyleValueRef.current = styleValue;
+    }
 
     // Apply live updates immediately for preview
     onChange(updatedCard as Card);
@@ -369,6 +496,16 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     }, 0);
   };
 
+  const handleBackgroundConfigChange = (next: BackgroundConfig) => {
+    const currentStyle = form.getFieldValue('style') as string | undefined;
+    const updatedStyle = applyBackgroundConfigToStyle(currentStyle, next);
+    setBackgroundConfig(next);
+    lastStyleValueRef.current = updatedStyle ?? '';
+    skipStyleSyncRef.current = true;
+    form.setFieldsValue({ style: updatedStyle });
+    handleValuesChange();
+  };
+
   // Handle YAML changes - sync to form and auto-save
   const handleYamlChange = (value: string | undefined) => {
     if (!value || isUpdatingFromForm.current) return;
@@ -383,6 +520,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         form.setFieldsValue(normalizeCardForForm(parsedCard));
         onChange(parsedCard);
         scheduleCommit(parsedCard);
+        const styleValue = (parsedCard as { style?: string }).style ?? '';
+        setBackgroundConfig(parseBackgroundConfig(styleValue));
+        lastStyleValueRef.current = styleValue;
       }
       setTimeout(() => {
         isUpdatingFromYaml.current = false;
@@ -539,6 +679,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               >
                 <IconSelect placeholder="mdi:lightbulb" />
               </Form.Item>
+
+              {renderHapticConfig('button-card')}
+              {renderSoundConfig('button-card')}
             </>
           )}
 
@@ -1033,90 +1176,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="icon"
               >
                 <IconSelect placeholder="mdi:lightbulb" />
-              </Form.Item>
-
-              <Form.Item
-                label={<span style={{ color: 'white' }}>Color Type</span>}
-                name="color_type"
-                help={<span style={{ color: '#666' }}>How to color the button</span>}
-              >
-                <Select
-                  placeholder="Select color type"
-                  options={[
-                    { value: 'icon', label: 'Icon' },
-                    { value: 'card', label: 'Card' },
-                    { value: 'label-card', label: 'Label Card' },
-                  ]}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label={<span style={{ color: 'white' }}>Color</span>}
-                name="color"
-                help={<span style={{ color: '#666' }}>Button color (type 'auto' or pick a custom color)</span>}
-              >
-                <ColorPickerInput
-                  placeholder="auto or pick a color"
-                  data-testid="button-card-color-input"
-                />
-              </Form.Item>
-
-              <Form.Item
-                label={<span style={{ color: 'white' }}>Icon Color</span>}
-                name="icon_color"
-                help={<span style={{ color: '#666' }}>Override icon color (leave blank to follow color or auto)</span>}
-              >
-                <ColorPickerInput
-                  placeholder="Pick icon color"
-                  data-testid="button-card-icon-color-input"
-                />
-              </Form.Item>
-
-              <Form.Item
-                label={<span style={{ color: 'white' }}>Size</span>}
-                name="size"
-                help={<span style={{ color: '#666' }}>Button size percentage</span>}
-              >
-                <Input placeholder="40%" />
-              </Form.Item>
-
-              <Form.Item
-                label={<span style={{ color: 'white' }}>Show Name</span>}
-                name="show_name"
-              >
-                <Select
-                  placeholder="Select option"
-                  options={[
-                    { value: true, label: 'Show' },
-                    { value: false, label: 'Hide' },
-                  ]}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label={<span style={{ color: 'white' }}>Show State</span>}
-                name="show_state"
-              >
-                <Select
-                  placeholder="Select option"
-                  options={[
-                    { value: true, label: 'Show' },
-                    { value: false, label: 'Hide' },
-                  ]}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label={<span style={{ color: 'white' }}>Show Icon</span>}
-                name="show_icon"
-              >
-                <Select
-                  placeholder="Select option"
-                  options={[
-                    { value: true, label: 'Show' },
-                    { value: false, label: 'Hide' },
-                  ]}
-                />
               </Form.Item>
             </>
           )}
@@ -2444,6 +2503,189 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Text>
             </div>
           )}
+                </Form>
+              </div>
+            ),
+          },
+          {
+            key: 'style',
+            label: 'Advanced Options',
+            children: (
+              <div style={{ height: 'calc(100vh - 280px)', overflow: 'auto' }}>
+                <Form
+                  form={form}
+                  layout="vertical"
+                  onValuesChange={handleValuesChange}
+                >
+                  {card.type === 'custom:button-card' && (
+                    <>
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Color Type</span>}
+                        name="color_type"
+                        help={<span style={{ color: '#666' }}>How to color the button</span>}
+                      >
+                        <Select
+                          placeholder="Select color type"
+                          options={[
+                            { value: 'icon', label: 'Icon' },
+                            { value: 'card', label: 'Card' },
+                            { value: 'label-card', label: 'Label Card' },
+                          ]}
+                        />
+                      </Form.Item>
+
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Color</span>}
+                        name="color"
+                        help={<span style={{ color: '#666' }}>Button color (type 'auto' or pick a custom color)</span>}
+                      >
+                        <ColorPickerInput
+                          placeholder="auto or pick a color"
+                          data-testid="button-card-color-input"
+                        />
+                      </Form.Item>
+
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Icon Color</span>}
+                        help={<span style={{ color: '#666' }}>Configure icon color behavior</span>}
+                      >
+                        <Space direction="vertical" style={{ width: '100%' }} size="small">
+                          <div data-testid="button-card-icon-color-mode">
+                            <Form.Item name="icon_color_mode" noStyle>
+                              <Select
+                                placeholder="Select icon color mode"
+                                options={[
+                                  { value: 'default', label: 'Default (follow button)' },
+                                  { value: 'custom', label: 'Custom' },
+                                  { value: 'state', label: 'State-based' },
+                                  { value: 'attribute', label: 'Attribute-based' },
+                                ]}
+                              />
+                            </Form.Item>
+                          </div>
+                          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.icon_color_mode !== curr.icon_color_mode}>
+                            {({ getFieldValue }) => {
+                              const mode = getFieldValue('icon_color_mode') as string | undefined;
+                              if (mode === 'state') {
+                                return (
+                                  <Space direction="vertical" style={{ width: '100%' }}>
+                                    <Form.Item name={['icon_color_states', 'on']} label="On" colon={false}>
+                                      <ColorPickerInput data-testid="button-card-icon-color-state-on" />
+                                    </Form.Item>
+                                    <Form.Item name={['icon_color_states', 'off']} label="Off" colon={false}>
+                                      <ColorPickerInput data-testid="button-card-icon-color-state-off" />
+                                    </Form.Item>
+                                    <Form.Item name={['icon_color_states', 'unavailable']} label="Unavailable" colon={false}>
+                                      <ColorPickerInput data-testid="button-card-icon-color-state-unavailable" />
+                                    </Form.Item>
+                                  </Space>
+                                );
+                              }
+                              if (mode === 'attribute') {
+                                return (
+                                  <Form.Item
+                                    name="icon_color_attribute"
+                                    label={<span style={{ color: 'white' }}>Attribute</span>}
+                                    help={<span style={{ color: '#666' }}>Attribute value must be a valid color string</span>}
+                                    colon={false}
+                                  >
+                                    <Input placeholder="e.g. icon_color" data-testid="button-card-icon-color-attribute" />
+                                  </Form.Item>
+                                );
+                              }
+                              if (mode === 'custom') {
+                                return (
+                                  <Form.Item
+                                    name="icon_color"
+                                    label={<span style={{ color: 'white' }}>Custom Icon Color</span>}
+                                    colon={false}
+                                  >
+                                    <ColorPickerInput
+                                      placeholder="Pick icon color"
+                                      data-testid="button-card-icon-color-input"
+                                    />
+                                  </Form.Item>
+                                );
+                              }
+                              return null;
+                            }}
+                          </Form.Item>
+                        </Space>
+                      </Form.Item>
+
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Size</span>}
+                        name="size"
+                        help={<span style={{ color: '#666' }}>Button size percentage</span>}
+                      >
+                        <Input placeholder="40%" />
+                      </Form.Item>
+
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Show Name</span>}
+                        name="show_name"
+                      >
+                        <Select
+                          placeholder="Select option"
+                          options={[
+                            { value: true, label: 'Show' },
+                            { value: false, label: 'Hide' },
+                          ]}
+                        />
+                      </Form.Item>
+
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Show State</span>}
+                        name="show_state"
+                      >
+                        <Select
+                          placeholder="Select option"
+                          options={[
+                            { value: true, label: 'Show' },
+                            { value: false, label: 'Hide' },
+                          ]}
+                        />
+                      </Form.Item>
+
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Show Icon</span>}
+                        name="show_icon"
+                      >
+                        <Select
+                          placeholder="Select option"
+                          options={[
+                            { value: true, label: 'Show' },
+                            { value: false, label: 'Hide' },
+                          ]}
+                        />
+                      </Form.Item>
+
+                      {renderHapticConfig('custom-button-card')}
+                      {renderSoundConfig('custom-button-card')}
+                    </>
+                  )}
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Background</span>}
+                    colon={false}
+                  >
+                    <BackgroundCustomizer
+                      value={backgroundConfig}
+                      onChange={handleBackgroundConfigChange}
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Style (CSS)</span>}
+                    name="style"
+                    help={<span style={{ color: '#666' }}>CSS applied to the card (background, color, padding, etc.)</span>}
+                  >
+                    <Input.TextArea
+                      placeholder="background: linear-gradient(...);"
+                      rows={6}
+                      style={{ fontFamily: 'monospace' }}
+                    />
+                  </Form.Item>
                 </Form>
               </div>
             ),

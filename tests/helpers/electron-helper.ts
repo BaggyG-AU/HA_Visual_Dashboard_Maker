@@ -42,6 +42,10 @@ export async function launchElectronApp(): Promise<ElectronTestApp> {
   const userDataDir = createTempUserDataDir();
 
   const wslFlags = ['--no-sandbox', '--disable-gpu'];
+  const baseEnv = { ...process.env };
+  // If Electron is forced into Node mode, Playwright's injected Electron flags (e.g. --remote-debugging-port)
+  // are rejected by Node, causing the app to fail to launch.
+  delete baseEnv.ELECTRON_RUN_AS_NODE;
 
   // Launch Electron app with isolated storage
   const app = await electron.launch({
@@ -52,7 +56,7 @@ export async function launchElectronApp(): Promise<ElectronTestApp> {
       ...wslFlags,
     ],
     env: {
-      ...process.env,
+      ...baseEnv,
       NODE_ENV: 'test',
       E2E: '1',
       // Keep in sync with tests/support/electron.ts so test-only IPC handlers are enabled

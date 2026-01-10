@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard } from 'antd';
 import { PictureOutlined } from '@ant-design/icons';
 import { PictureCard } from '../../types/dashboard';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 
 interface PictureCardRendererProps {
   card: PictureCard;
@@ -19,6 +20,7 @@ export const PictureCardRenderer: React.FC<PictureCardRendererProps> = ({
   onClick,
 }) => {
   const hasImage = card.image && card.image.length > 0;
+  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   return (
     <AntCard
@@ -27,7 +29,7 @@ export const PictureCardRenderer: React.FC<PictureCardRendererProps> = ({
         height: '100%',
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         transition: 'all 0.3s ease',
         padding: 0,
       }}

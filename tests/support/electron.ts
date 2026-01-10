@@ -66,6 +66,8 @@ export async function launch(): Promise<ElectronTestContext> {
   const userDataDir = createIsolatedUserDataDir();
 
   const wslFlags = ['--no-sandbox', '--disable-gpu'];
+  const baseEnv = { ...process.env };
+  delete baseEnv.ELECTRON_RUN_AS_NODE;
 
   const app = await electron.launch({
     args: [
@@ -74,7 +76,7 @@ export async function launch(): Promise<ElectronTestContext> {
       ...wslFlags,
     ],
     env: {
-      ...process.env,
+      ...baseEnv,
       NODE_ENV: 'test',
       E2E: '1',
       PLAYWRIGHT_TEST: '1',

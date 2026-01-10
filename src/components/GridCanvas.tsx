@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import GridLayout, { Layout } from 'react-grid-layout';
 import { View, Card } from '../types/dashboard';
+import { getBackgroundLayerStyle } from '../utils/backgroundStyle';
 import { BaseCard } from './BaseCard';
 import { CardContextMenu } from './CardContextMenu';
 import { generateMasonryLayout, getCardSizeConstraints } from '../utils/cardSizingContract';
@@ -211,32 +212,50 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
       >
         {cards.map((card, index) => (
           <div key={`card-${index}`} style={{ overflow: 'hidden' }}>
-            <div data-testid="canvas-card" style={{ height: '100%', width: '100%' }}>
-            <CardContextMenu
-              onCut={() => {
-                onCardSelect(index);
-                onCardCut?.();
-              }}
-              onCopy={() => {
-                onCardSelect(index);
-                onCardCopy?.();
-              }}
-              onPaste={() => {
-                onCardSelect(index);
-                onCardPaste?.();
-              }}
-              onDelete={() => {
-                onCardSelect(index);
-                onCardDelete?.();
-              }}
-              canPaste={canPaste ?? false}
-            >
-              <BaseCard
-                card={card}
-                isSelected={selectedCardIndex === index}
-                onClick={() => onCardSelect(index)}
-              />
-            </CardContextMenu>
+            <div data-testid="canvas-card" style={{ height: '100%', width: '100%', position: 'relative' }}>
+              {(() => {
+                const backgroundStyle = getBackgroundLayerStyle((card as { style?: string }).style);
+                if (!backgroundStyle) return null;
+                return (
+                  <div
+                    data-testid="card-background-layer"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: 8,
+                      pointerEvents: 'none',
+                      ...backgroundStyle,
+                    }}
+                  />
+                );
+              })()}
+              <div style={{ position: 'relative', zIndex: 1, height: '100%' }}>
+                <CardContextMenu
+                  onCut={() => {
+                    onCardSelect(index);
+                    onCardCut?.();
+                  }}
+                  onCopy={() => {
+                    onCardSelect(index);
+                    onCardCopy?.();
+                  }}
+                  onPaste={() => {
+                    onCardSelect(index);
+                    onCardPaste?.();
+                  }}
+                  onDelete={() => {
+                    onCardSelect(index);
+                    onCardDelete?.();
+                  }}
+                  canPaste={canPaste ?? false}
+                >
+                  <BaseCard
+                    card={card}
+                    isSelected={selectedCardIndex === index}
+                    onClick={() => onCardSelect(index)}
+                  />
+                </CardContextMenu>
+              </div>
             </div>
           </div>
         ))}

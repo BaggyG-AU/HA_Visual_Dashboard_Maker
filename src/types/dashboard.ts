@@ -2,6 +2,9 @@
  * TypeScript type definitions for Home Assistant Dashboard (Lovelace) structure
  */
 
+import type { HapticCardConfig } from './haptics';
+import type { SoundCardConfig } from './sounds';
+
 // Layout-card view_layout configuration
 export interface ViewLayout {
   grid_column?: string;    // e.g., "1 / 7" or "span 6"
@@ -18,6 +21,13 @@ export interface BaseCard {
   entities?: any[]; // Can be string[] or (string | EntityConfig)[]
   name?: string;
   icon?: string;
+  style?: string;
+  haptic?: HapticCardConfig;
+  sound?: SoundCardConfig;
+  icon_color?: string;
+  icon_color_mode?: 'default' | 'custom' | 'state' | 'attribute';
+  icon_color_states?: Record<string, string>;
+  icon_color_attribute?: string;
   show_name?: boolean;
   show_icon?: boolean;
   show_state?: boolean;

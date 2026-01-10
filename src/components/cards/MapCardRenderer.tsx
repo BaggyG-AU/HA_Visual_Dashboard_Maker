@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard, Typography } from 'antd';
 import { EnvironmentOutlined, AimOutlined } from '@ant-design/icons';
 import { MapCard } from '../../types/dashboard';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 
 const { Text } = Typography;
@@ -28,6 +29,7 @@ export const MapCardRenderer: React.FC<MapCardRendererProps> = ({
   const title = card.title || 'Map';
   const defaultZoom = card.default_zoom || 15;
   const darkMode = card.dark_mode !== false;
+  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Get entity data for device trackers
   const trackerData = entities.map(entityConfig => {
@@ -76,7 +78,7 @@ export const MapCardRenderer: React.FC<MapCardRendererProps> = ({
         height: '100%',
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         transition: 'all 0.3s ease',
       }}
       styles={{

@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard, Typography, Tag } from 'antd';
 import { QuestionCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { ConditionalCard } from '../../types/dashboard';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { BaseCard } from '../BaseCard';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 
@@ -56,6 +57,7 @@ export const ConditionalCardRenderer: React.FC<ConditionalCardRendererProps> = (
 
   const evaluatedConditions = evaluateConditions();
   const allConditionsMet = evaluatedConditions.every(c => c.met);
+  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // If no child card, show placeholder
   if (!card.card) {
@@ -66,7 +68,7 @@ export const ConditionalCardRenderer: React.FC<ConditionalCardRendererProps> = (
           height: '100%',
           cursor: 'pointer',
           border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-          backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+          ...backgroundStyle,
           transition: 'all 0.3s ease',
         }}
         styles={{
@@ -102,7 +104,7 @@ export const ConditionalCardRenderer: React.FC<ConditionalCardRendererProps> = (
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
         borderRadius: '8px',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : 'transparent',
+        ...getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : 'transparent'),
         transition: 'all 0.3s ease',
       }}
       onClick={onClick}

@@ -29,8 +29,10 @@ Use DSL methods for interaction and waits (palette/card selection, YAML editor, 
 
 ## Mocking patterns
 
-- HA connection/entities: `simulateHAConnection`, `mockHAEntities`, `mockHAWebSocket` (see `tests/support/helpers/mockHelpers.ts`).
-- IPC stubbing: `stubIpcFailure`/`stubIpcResponse` for channels like `fs:readFile`, `fs:writeFile`, HA IPC proxies.
+- HA connection/entities: `simulateHAConnection`, `mockHAEntities`, `mockHAWebSocket` (see `tests/helpers/mockHelpers.ts`).
+- IPC stubbing:
+  - Prefer the existing pattern of stubbing main-process IPC handlers via `electronApp.evaluate(({ ipcMain }, ...) => ipcMain.handle/removeHandler(...))`.
+  - There is a helper for failure cases: `stubIpcFailure` (see `tests/helpers/mockHelpers.ts` and usage in integration specs).
 - Monaco/YAML: `YamlEditorDSL` helpers for opening modal, inserting entities, validation checks.
 
 Prefer enabling mocks in `beforeEach` inside specs; keep data sets small/deterministic.
@@ -41,7 +43,9 @@ Prefer enabling mocks in `beforeEach` inside specs; keep data sets small/determi
 - Check `test-results/artifacts` screenshots + traces for selectors; rely on `data-testid` from DSL.
 - Common helpers: `entityBrowser.open()`, `entityBrowser.expectClosed()`, `yamlEditor.expectValidationError()`, `appDSL.waitUntilReady()`.
 - Storage isolation: each test auto-creates a temp user data dir; no manual cleanup needed beyond `close(ctx)`.
+- If Electron fails to launch with an error like `bad option: --remote-debugging-port=0`, ensure `ELECTRON_RUN_AS_NODE` is not set in the environment (this repo’s Electron launchers remove it defensively).
 
 ## Standards
 
-See `docs/testing/TESTING_STANDARDS.md` for required conventions (selectors, waits, DSL boundaries, mocking rules). AI agents cannot run these commands in the sandbox; always provide verification steps for humans to execute locally.
+See `docs/testing/TESTING_STANDARDS.md` for required conventions (selectors, waits, DSL boundaries, mocking rules).
+If you are using an AI agent, see `ai_rules.md` for the execution/reporting workflow (including the “one test run then pause/diagnose/ask” rule).

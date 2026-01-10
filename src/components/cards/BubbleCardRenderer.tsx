@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card as AntCard, Typography } from 'antd';
+import { Card as AntCard, Typography, Tag } from 'antd';
 import {
   BulbOutlined,
   PlayCircleOutlined,
@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { CustomCard } from '../../types/dashboard';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 
 const { Text } = Typography;
 
@@ -88,6 +89,10 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
 
   const stateColor = getStateColor();
   const icon = getIcon();
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   // Handle separator card type
   if (cardType === 'separator') {
@@ -142,7 +147,7 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
           height: '100%',
           cursor: 'pointer',
           border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-          backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+          ...backgroundStyle,
         }}
         styles={{
         body: {
@@ -180,7 +185,7 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
         borderRadius: '24px', // Bubble style rounded corners
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         padding: '16px 20px',
         display: 'flex',
         alignItems: 'center',

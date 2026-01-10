@@ -20,6 +20,12 @@ import { YamlEditorDSL } from './dsl/yamlEditor';
 import { EntityBrowserDSL } from './dsl/entityBrowser';
 import { SettingsDSL } from './dsl/settings';
 import { ColorPickerDSL } from './dsl/colorPicker';
+import { GradientEditorDSL } from './dsl/gradientEditor';
+import { ColorPalettesDSL } from './dsl/colorPalettes';
+import { IconColorDSL } from './dsl/iconColor';
+import { BackgroundCustomizerDSL } from './dsl/backgroundCustomizer';
+import { HapticsDSL } from './dsl/haptics';
+import { SoundsDSL } from './dsl/sounds';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -45,6 +51,12 @@ export interface TestContext extends electron.ElectronTestContext {
   entityBrowser: EntityBrowserDSL;
   settings: SettingsDSL;
   colorPicker: ColorPickerDSL;
+  gradientEditor: GradientEditorDSL;
+  colorPalettes: ColorPalettesDSL;
+  iconColor: IconColorDSL;
+  backgroundCustomizer: BackgroundCustomizerDSL;
+  haptics: HapticsDSL;
+  sounds: SoundsDSL;
 }
 
 /**
@@ -65,5 +77,11 @@ export async function launchWithDSL(): Promise<TestContext> {
     entityBrowser: new EntityBrowserDSL(electronCtx.window),
     settings: new SettingsDSL(electronCtx.window),
     colorPicker: new ColorPickerDSL(electronCtx.window),
+    gradientEditor: new GradientEditorDSL(electronCtx.window, electronCtx.app),
+    colorPalettes: new ColorPalettesDSL(electronCtx.window),
+    iconColor: new IconColorDSL(electronCtx.window),
+    backgroundCustomizer: new BackgroundCustomizerDSL(electronCtx.window),
+    haptics: new HapticsDSL(electronCtx.window),
+    sounds: new SoundsDSL(electronCtx.window),
   };
 }

@@ -79,13 +79,17 @@ export const test = base.extend<TestFixtures>({
     console.log('[FIXTURE] Main path:', mainPath);
     const userDataDir = mkTempUserDataDir();
     const wslFlags = ['--no-sandbox', '--disable-gpu'];
+    const baseEnv = { ...process.env };
+    // If Electron is forced into Node mode, Playwright's injected Electron flags (e.g. --remote-debugging-port)
+    // are rejected by Node, causing the app to fail to launch.
+    delete baseEnv.ELECTRON_RUN_AS_NODE;
 
     // Launch EXACTLY like electron-helper.ts (which works)
     // DO NOT specify executablePath - let Playwright find electron
     const app = await electron.launch({
       args: [mainPath, `--user-data-dir=${userDataDir}`, ...wslFlags],
       env: {
-        ...process.env,
+        ...baseEnv,
         NODE_ENV: 'test',
         ELECTRON_DISABLE_SECURITY_WARNINGS: 'true',
       },

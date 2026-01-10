@@ -540,14 +540,6 @@ export class HAWebSocketService {
       event_type: 'themes_updated',
     });
 
-    // Handle theme update events
-    const handler = (msg: any) => {
-      if (msg.id === id && msg.event) {
-        // Refresh themes when updated
-        this.getThemes().then(callback).catch(console.error);
-      }
-    };
-
     // Store handler for cleanup
     const eventHandlerId = id;
 

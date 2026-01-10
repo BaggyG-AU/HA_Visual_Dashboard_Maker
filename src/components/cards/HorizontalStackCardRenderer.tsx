@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard, Typography } from 'antd';
 import { BorderHorizontalOutlined } from '@ant-design/icons';
 import { HorizontalStackCard } from '../../types/dashboard';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { BaseCard } from '../BaseCard';
 
 const { Text } = Typography;
@@ -24,6 +25,7 @@ export const HorizontalStackCardRenderer: React.FC<HorizontalStackCardRendererPr
 }) => {
   const childCards = card.cards || [];
   const hasTitle = !!card.title;
+  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // If no child cards, show placeholder
   if (childCards.length === 0) {
@@ -34,7 +36,7 @@ export const HorizontalStackCardRenderer: React.FC<HorizontalStackCardRendererPr
           height: '100%',
           cursor: 'pointer',
           border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-          backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+          ...backgroundStyle,
           transition: 'all 0.3s ease',
         }}
         styles={{
@@ -70,7 +72,7 @@ export const HorizontalStackCardRenderer: React.FC<HorizontalStackCardRendererPr
         height: '100%',
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         transition: 'all 0.3s ease',
       }}
       headStyle={{

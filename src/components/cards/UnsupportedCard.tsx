@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard, Typography, Space } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import { Card } from '../../types/dashboard';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 
 const { Text } = Typography;
 
@@ -21,6 +22,10 @@ export const UnsupportedCard: React.FC<UnsupportedCardProps> = ({
   onClick,
 }) => {
   const isCustomCard = card.type.startsWith('custom:');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
   return (
     <AntCard
       size="small"
@@ -34,7 +39,7 @@ export const UnsupportedCard: React.FC<UnsupportedCardProps> = ({
         height: '100%',
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         transition: 'all 0.3s ease',
       }}
       styles={{

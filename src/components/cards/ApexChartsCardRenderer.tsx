@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Card as AntCard } from 'antd';
 import ReactApexChart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 
 interface ApexChartsSeries {
   entity: string;
@@ -76,6 +77,7 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
   const title = card.header?.title || 'Chart';
   const showHeader = card.header?.show !== false;
   const chartHeight = card.apex_config?.chart?.height || 280;
+  const backgroundStyle = getCardBackgroundStyle((card as { style?: string }).style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Generate mock data for demonstration
   const { series, options } = useMemo(() => {
@@ -186,7 +188,7 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
         height: '100%',
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         transition: 'all 0.3s ease',
         borderRadius: '12px',
       }}

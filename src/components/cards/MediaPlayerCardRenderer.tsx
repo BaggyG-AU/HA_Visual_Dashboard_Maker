@@ -9,6 +9,7 @@ import {
   PoweroffOutlined,
 } from '@ant-design/icons';
 import { MediaPlayerCard } from '../../types/dashboard';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 
 const { Text } = Typography;
@@ -44,6 +45,7 @@ export const MediaPlayerCardRenderer: React.FC<MediaPlayerCardRendererProps> = (
   const entityPicture = attributes.entity_picture;
 
   const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Media Player';
+  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Determine if player is playing
   const isPlaying = state === 'playing';
@@ -78,7 +80,7 @@ export const MediaPlayerCardRenderer: React.FC<MediaPlayerCardRendererProps> = (
         height: '100%',
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         transition: 'all 0.3s ease',
       }}
       styles={{

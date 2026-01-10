@@ -18,11 +18,22 @@ Tests must fail only when behavior is broken — not when UI flows evolve.
 
 ---
 
+## SCOPE (IMPORTANT)
+
+This repo has multiple automated test layers:
+- **Unit**: `vitest` (pure logic)
+- **Playwright E2E**: `electron-e2e` (end-to-end user workflows; DSL-first)
+- **Playwright Integration**: `electron-integration` (broader app/service workflows; may use fixtures/helpers)
+
+Not every rule in this document applies equally to every layer. When a rule is E2E-only or Integration-only, it is labeled explicitly.
+
+---
+
 ## CORE PRINCIPLES
 
-### 1. Use the DSL for ALL Tests
+### 1. Use the DSL for E2E Tests (MANDATORY)
 
-All Playwright tests MUST use helper methods from the DSL.
+All **E2E** Playwright tests MUST use helper methods from the DSL.
 
 Do NOT:
 - Call Playwright APIs directly in test specs
@@ -33,25 +44,30 @@ Do:
 
 ---
 
-### 2. Import from tests/support
+### 2. Import Rules (E2E vs Integration)
 
-All helpers, DSLs, fixtures, and utilities MUST live under:
+**E2E:** Specs may only import helpers/DSLs from:
 
 tests/support/
 
-Tests may only import from this directory tree.
+**Integration:** Specs MAY import from `tests/fixtures/**` and `tests/helpers/**` when appropriate. Prefer using `tests/support/**` DSLs for UI workflows when available, but do not force large refactors purely to satisfy import rules.
 
 ---
 
-### 3. Zero Direct Playwright API Calls in Specs
+### 3. Direct Playwright API Calls in Specs
 
-Test specs MUST NOT contain:
+**E2E:** Specs MUST NOT contain:
 - Raw selectors
 - Timing logic
 - Conditional UI handling
 - Retry logic
 
 All of this belongs in the DSL layer.
+
+**Integration:** Prefer helpers/fixtures to encapsulate selectors/waits. If direct calls are used, they must be:
+- State-based (no arbitrary sleeps)
+- Scoped and stable (prefer `data-testid`, role, and well-scoped locators)
+- Centralized when reused (move to helpers/fixtures/DSL rather than duplicating)
 
 ---
 
@@ -163,7 +179,10 @@ Mandatory response:
 
 ### 11. Evidence-Based Debugging Only
 
-AI agents cannot run tests and cannot open Playwright trace viewers.
+Debugging must be based on evidence (traces, screenshots, DOM snapshots, console output).
+
+AI agent execution/reporting policy (including “one test run then pause/diagnose/ask”) is defined in `ai_rules.md`.
+AI agents cannot open Playwright trace viewers, but CAN unzip and analyze `trace.zip` files and other artifacts.
 
 Debugging must be based on:
 - Playwright traces
@@ -212,6 +231,14 @@ The DSL layer encapsulates:
 
 ---
 
+## INTEGRATION TEST STRUCTURE (REFERENCE)
+
+Integration specs commonly use:
+- Fixtures: `tests/fixtures/**`
+- Helpers: `tests/helpers/**`
+
+Prefer DSL reuse for UI workflows when it improves consistency, but integration tests may legitimately validate lower-level behavior and error conditions with dedicated fixtures/helpers.
+
 ## COLOR PICKER TEST PATTERNS
 
 ### Use the Color Picker DSL
@@ -223,6 +250,15 @@ Common flows:
 - Open state: open via swatch (`<field>-swatch`) and assert the picker container (`<field>-picker`) is visible.
 - Selection: type into the picker input (`<field>-picker-input`) and confirm with `Enter`.
 - Recents: assert the recent colors list is present via ARIA role list and the swatch test ids.
+
+## GRADIENT EDITOR TESTING PATTERNS
+
+- Use `GradientEditorDSL` (`tests/support/dsl/gradientEditor.ts`) for all interactions; do not add raw selectors in specs.
+- Open via `enableGradient()` and swatch (or `openGradientPopoverWithKeyboard`) to match real flow.
+- Keyboard coverage: `tabToStop`, `tabToAngleInput`, `pressArrowKey`/`pressDelete`/`pressEnter`; expect focus with `expectStopFocused`.
+- YAML round-trip: read/write via `YamlEditorDSL` scoped to Properties Panel; assert `background: linear|radial-gradient(...)` persists after switching tabs.
+- Presets: prefer DSL helpers `savePreset`, `exportPresets`, `importPresets`, `applyPreset`; rely on built-in diagnostics attachments instead of adding waits.
+- Accessibility: stop list should remain `role="listbox"` with `role="option"` rows; angle/position inputs must keep ARIA labels.
 
 ### Visual Regression Snapshots
 
@@ -240,29 +276,56 @@ Instead:
 
 ---
 
-## SKIPPED TESTS REGISTRY
+## SKIPPED TESTS REGISTER (source of truth)
 
-When a test is skipped, it must be recorded here with a concrete reason and a revisit trigger.
+All skipped tests are tracked in `docs/testing/SKIPPED_TESTS_REGISTER.md`. Keep that file updated whenever a test is skipped or unskipped.
 
-- `tests/e2e/color-picker.spec.ts` → `visual regression and accessibility in scrollable PropertiesPanel`  
-  - Status: SKIPPED  
-  - Reason: Playwright intermittently reports focus state as “inactive” in Electron during keyboard assertions, despite manual verification.  
-  - Revisit when: Electron window focus can be made deterministic in Playwright traces without timing hacks.
+## Monaco / YAML Editor Verification (Properties Panel)
 
-- `tests/e2e/color-picker.spec.ts` → `should update YAML when color is changed`  
-  - Status: SKIPPED  
-  - Reason: Monaco YAML model is not reliably exposed/detected in Playwright (test cannot read YAML content even though the UI updates correctly).  
-  - Revisit when: Monaco model/editor content can be read deterministically in E2E (see skipped-test comments in the spec and Phase 3 notes).
+Failures we’ve seen: Monaco models not exposed to Playwright, multiple YAML containers (modal + properties) causing strict-mode locator conflicts, and virtualized `.view-lines` scraping returning incomplete content.
 
-- `tests/e2e/color-picker.spec.ts` → `button card color + icon color should update preview and YAML`  
-  - Status: SKIPPED  
-  - Reason: Intermittent Monaco/YAML visibility/model issues in the Properties Panel YAML tab make this test flaky.  
-  - Revisit when: PropertiesPanel Monaco visibility/model detection is stable under Playwright without timing hacks.
+Correct approach (must follow):
+1) Read YAML from the authoritative Monaco model:
+   - Prefer explicit test handles: `window.__monacoModel` / `window.__monacoEditor`.
+   - Otherwise, pick the editor whose `getContainerDomNode()` is inside the visible Properties Panel `[data-testid="yaml-editor-container"]` and has a non-zero bounding box.
+   - Only as last resort, scrape `.view-lines` (log that you fell back).
+2) Readiness: consider Monaco “ready” if any of these are true:
+   - `window.__monacoModel?.getValue`
+   - `window.__monacoEditor?.getModel?.()`
+   - `window.monaco?.editor?.getModels()?.length > 0`
+3) Diagnostics (required on failure, recommended on success):
+   - Collect and attach JSON diagnostics: presence of explicit handles, editor/model counts and URIs, chosen editor path, container visibility/bounding box, scope hint (“properties” vs “modal”).
+   - Stdout logging is optional and must be gated (use `PW_DEBUG=1` / `E2E_DEBUG=1`) unless you are logging during an error path (e.g., immediately before throwing).
+4) Scoping:
+   - Use locators scoped to the Properties Panel (`[data-testid="properties-panel"] [data-testid="yaml-editor-container"]`) to avoid strict-mode conflicts with modal YAML editors.
+5) No timing hacks:
+   - Do not add arbitrary `waitForTimeout`. Use `waitForFunction` with the readiness predicate above and modest timeouts (≤10s).
 
-- `tests/integration/dashboard-generator.spec.ts` → `Dashboard Generator Service (covered by unit tests)`  
-  - Status: SKIPPED (suite)  
-  - Reason: These are pure service tests already covered by Vitest (`tests/unit/dashboard-generator.spec.ts`) and are skipped in Playwright to avoid false confidence without UI work.  
-  - Revisit when: There is a clear integration need that must run under Playwright (otherwise keep coverage in Vitest).
+Reference implementation:
+- See `tests/support/dsl/yamlEditor.ts` (Monaco-ready predicate, diagnostics, content selection) and the now-unskipped tests in `tests/e2e/color-picker.spec.ts` and `tests/e2e/gradient-editor.spec.ts`.
+
+---
+
+## Debug Logging & Diagnostics (E2E/Integration)
+
+Debug logging is allowed, but must be **structured**, **gated**, and **attached** so it doesn’t become noise or brittle test logic.
+
+Rules (mandatory):
+1) **No raw DOM debug logic in specs**
+   - Specs must not `evaluate()` the page to query arbitrary DOM for debugging (e.g., dumping `[data-testid]`).
+   - If you need runtime diagnostics, add a DSL method or helper that collects and attaches diagnostics.
+2) **Prefer attachments over stdout**
+   - Use `testInfo.attach(...)` for all debug data (JSON/text). This keeps evidence with the failure in the HTML report.
+   - Printing to stdout is optional and must not be the only record of diagnostics.
+3) **Gate console output**
+   - Unconditional `console.log` in specs is forbidden.
+   - If stdout output is needed, gate it behind an env var (`PW_DEBUG=1` or `E2E_DEBUG=1`) and keep it minimal (one-line summaries).
+4) **Keep debug output small and safe**
+   - Attach only what’s necessary (IDs present, state summaries, selected mode, etc.).
+   - Do not attach full DOM dumps unless a standard explicitly requires it (e.g., Monaco diagnostics).
+
+Reference helper:
+- `tests/support/helpers/debug.ts` (`attachDebugJson`, `debugLog`, gated stdout via `PW_DEBUG=1` / `E2E_DEBUG=1`)
 
 ## ADDING OR MODIFYING DSL METHODS
 
@@ -677,6 +740,7 @@ Tests that have been skipped after extensive debugging efforts. These represent 
 | Test File | Test Name | Date Skipped | Reason | Reference |
 |-----------|-----------|--------------|---------|-----------|
 | `tests/e2e/color-picker.spec.ts` | "should update YAML when color is changed" | Jan 6, 2026 | Monaco editor model not detected by test despite global window references. Visual UI confirms YAML updates correctly. Multiple debugging attempts failed. | FOUNDATION_LAYER_IMPLEMENTATION.md |
+| `tests/e2e/gradient-editor.spec.ts` | "gradient editor applies preset and persists to yaml" | Jan 7, 2026 | Playwright cannot reliably target the Properties Panel YAML editor when portals/duplicate YAML containers exist; manual runs show YAML updates correctly. Pending improved YAML editor detection. | UI_ENHANCEMENT_LAYER_IMPLEMENTATION.md |
 
 **Policy**: Skipped tests MUST:
 1. Include detailed comment explaining why test was skipped
@@ -686,5 +750,5 @@ Tests that have been skipped after extensive debugging efforts. These represent 
 
 ---
 
-**Last Updated**: January 6, 2026
+**Last Updated**: January 7, 2026
 **Next Review**: After Phase 1 completion (v0.4.0)

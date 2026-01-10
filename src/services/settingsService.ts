@@ -20,6 +20,10 @@ interface AppSettings {
   themeSyncWithHA?: boolean;
   loggingLevel?: LoggingLevel;
   verboseUIDebug?: boolean;
+  hapticsEnabled?: boolean;
+  hapticsIntensity?: number;
+  soundsEnabled?: boolean;
+  soundsVolume?: number;
 }
 
 export type LoggingLevel = 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
@@ -53,6 +57,22 @@ const schema = {
   verboseUIDebug: {
     type: 'boolean',
     default: false
+  },
+  hapticsEnabled: {
+    type: 'boolean',
+    default: false
+  },
+  hapticsIntensity: {
+    type: 'number',
+    default: 100
+  },
+  soundsEnabled: {
+    type: 'boolean',
+    default: false
+  },
+  soundsVolume: {
+    type: 'number',
+    default: 100
   }
 };
 
@@ -196,6 +216,40 @@ class SettingsService {
     this.store.set('verboseUIDebug', enabled);
   }
 
+  // Haptic feedback settings
+  getHapticsEnabled(): boolean {
+    return this.store.get('hapticsEnabled', false);
+  }
+
+  setHapticsEnabled(enabled: boolean): void {
+    this.store.set('hapticsEnabled', enabled);
+  }
+
+  getHapticsIntensity(): number {
+    return this.store.get('hapticsIntensity', 100);
+  }
+
+  setHapticsIntensity(intensity: number): void {
+    this.store.set('hapticsIntensity', intensity);
+  }
+
+  // UI sounds settings
+  getSoundsEnabled(): boolean {
+    return this.store.get('soundsEnabled', false);
+  }
+
+  setSoundsEnabled(enabled: boolean): void {
+    this.store.set('soundsEnabled', enabled);
+  }
+
+  getSoundsVolume(): number {
+    return this.store.get('soundsVolume', 100);
+  }
+
+  setSoundsVolume(volume: number): void {
+    this.store.set('soundsVolume', volume);
+  }
+
   // Reset UI state (non-destructive to dashboards)
   resetUIState(): void {
     this.clearRecentFiles();
@@ -207,6 +261,10 @@ class SettingsService {
     this.store.delete('selectedTheme');
     this.store.delete('themeDarkMode');
     this.store.delete('themeSyncWithHA');
+    this.store.delete('hapticsEnabled');
+    this.store.delete('hapticsIntensity');
+    this.store.delete('soundsEnabled');
+    this.store.delete('soundsVolume');
   }
 }
 

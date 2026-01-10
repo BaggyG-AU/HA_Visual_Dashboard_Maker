@@ -164,7 +164,17 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
         data-testid={testId}
         aria-label={ariaLabel}
         onClick={() => !readOnly && handlePopoverOpenChange(true)}
-        onFocus={() => !readOnly && handlePopoverOpenChange(true)}
+        onKeyDown={(e) => {
+          if (readOnly || disabled) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handlePopoverOpenChange(true);
+          }
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            handlePopoverOpenChange(false);
+          }
+        }}
       />
     </Popover>
   );

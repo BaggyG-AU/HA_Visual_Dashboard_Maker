@@ -51,7 +51,10 @@
       "Skill(playwright-electron-testing:*)",
       "Bash(git for-each-ref:*)",
       "Bash(git fetch:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(tee:*)",
+      "Bash(python3:*)",
+      "Bash(sort:*)"
     ]
   }
 }

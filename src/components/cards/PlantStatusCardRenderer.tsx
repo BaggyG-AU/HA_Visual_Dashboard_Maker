@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard, Typography, Progress } from 'antd';
 import { ExperimentOutlined } from '@ant-design/icons';
 import { PlantStatusCard } from '../../types/dashboard';
+import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 
 const { Text } = Typography;
@@ -56,6 +57,7 @@ export const PlantStatusCardRenderer: React.FC<PlantStatusCardRendererProps> = (
   };
 
   const health = getPlantHealth();
+  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Check if value is in acceptable range
   const isInRange = (value: number, min: number, max: number) => {
@@ -76,7 +78,7 @@ export const PlantStatusCardRenderer: React.FC<PlantStatusCardRendererProps> = (
         height: '100%',
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
-        backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+        ...backgroundStyle,
         transition: 'all 0.3s ease',
       }}
       styles={{

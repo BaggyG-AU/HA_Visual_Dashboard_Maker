@@ -21,13 +21,14 @@ test.describe('YAML Editor', () => {
     }
   });
 
-  test('should open YAML editor dialog and render editor', async () => {
+  test('should open YAML editor dialog and render editor', async ({ page }, testInfo) => {
+    void page;
     const ctx = await launchWithDSL();
     try {
       await ctx.appDSL.waitUntilReady();
       await ctx.dashboard.createNew();
       await ctx.yamlEditor.open();
-      await ctx.yamlEditor.expectMonacoVisible();
+      await ctx.yamlEditor.expectMonacoVisible('modal', testInfo);
     } finally {
       await close(ctx);
     }
