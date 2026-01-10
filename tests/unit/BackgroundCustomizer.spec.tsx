@@ -12,7 +12,9 @@ describe('BackgroundCustomizer style generation', () => {
     const config = { ...DEFAULT_BACKGROUND_CONFIG, type: 'gradient' as const, gradient: 'linear-gradient(90deg, #ff0000 0%, #0000ff 100%)', backgroundOpacity: 50 };
     const style = applyBackgroundConfigToStyle('', config);
     expect(style.toLowerCase()).toContain('linear-gradient');
-    expect(style).toContain('rgba(255, 0, 0, 0.50)');
+    // Gradient colors are now normalized to hex format with alpha (e.g., #ff000080 for 50% opacity red)
+    expect(style.toLowerCase()).toContain('#ff000080');
+    expect(style.toLowerCase()).toContain('#0000ff80');
   });
 
   it('applies image background with url and controls', () => {
