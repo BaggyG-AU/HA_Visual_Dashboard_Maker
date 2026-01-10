@@ -19,7 +19,7 @@ test.describe('Card Background Customization - Visual and Performance', () => {
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
       await properties.expectVisible();
-      await properties.switchTab('Advanced Styling');
+      await properties.switchTab('Advanced Options');
 
       await backgroundCustomizer.selectType('Solid color');
       await colorPicker.openPopover('advanced-style-solid-background-input');
@@ -71,7 +71,7 @@ test.describe('Card Background Customization - Visual and Performance', () => {
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
       await properties.expectVisible();
-      await properties.switchTab('Advanced Styling');
+      await properties.switchTab('Advanced Options');
 
       await backgroundCustomizer.selectType('Gradient');
       await gradientEditor.applyPreset('material-sunset');

@@ -71,7 +71,7 @@ export const GradientPickerInput: React.FC<GradientPickerInputProps> = ({
       onOpenChange={handlePopoverChange}
       trigger="click"
       placement="bottomLeft"
-      overlayStyle={{ zIndex: 2000 }}
+      overlayStyle={{ zIndex: 1050 }}
       content={
         <GradientEditor
           value={localValue}

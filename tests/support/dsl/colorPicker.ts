@@ -155,6 +155,9 @@ export class ColorPickerDSL {
     const stylingFields = [
       'button-card-color-input',
       'button-card-icon-color-input',
+      'button-card-icon-color-state-on',
+      'button-card-icon-color-state-off',
+      'button-card-icon-color-state-unavailable',
       // Add other button card styling fields here as needed
     ];
     return stylingFields.includes(testId);

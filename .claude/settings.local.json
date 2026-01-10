@@ -53,7 +53,8 @@
       "Bash(git fetch:*)",
       "Bash(find:*)",
       "Bash(tee:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(sort:*)"
     ]
   }
 }

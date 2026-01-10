@@ -1,8 +1,13 @@
 import { Page, expect, type TestInfo } from '@playwright/test';
 import { attachDebugJson } from '../helpers/debug';
+import { PropertiesPanelDSL } from './propertiesPanel';
 
 export class IconColorDSL {
-  constructor(private window: Page) {}
+  private propertiesPanel: PropertiesPanelDSL;
+
+  constructor(private window: Page) {
+    this.propertiesPanel = new PropertiesPanelDSL(window);
+  }
 
   async attachDiagnostics(testInfo: TestInfo): Promise<void> {
     const diagnostics = await this.window.evaluate(() => {
@@ -44,6 +49,16 @@ export class IconColorDSL {
     mode: 'Default' | 'Custom' | 'State-based' | 'Attribute-based',
     testInfo?: TestInfo
   ): Promise<void> {
+    // Flow-defensive: Icon color mode is in Advanced Options tab (moved in tab refactor)
+    // Auto-switch to Advanced Options if needed
+    const panelVisible = await this.propertiesPanel.isVisible();
+    if (panelVisible) {
+      const currentTab = await this.propertiesPanel.getActiveTab();
+      if (currentTab !== 'Advanced Options') {
+        await this.propertiesPanel.switchTab('Advanced Options');
+      }
+    }
+
     const labelByMode: Record<typeof mode, string> = {
       Default: 'Default (follow button)',
       Custom: 'Custom',

@@ -19,7 +19,7 @@ const setupGradientEditor = async () => {
   await canvas.expectCardCount(1);
   await canvas.selectCard(0);
   await properties.expectVisible();
-  await properties.switchTab('Advanced Styling');
+  await properties.switchTab('Advanced Options');
   await backgroundCustomizer.selectType('Gradient');
 
   return ctx;
@@ -92,7 +92,7 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
       );
       await yamlEditor.setEditorContent(updatedYaml, 'properties', testInfo);
 
-      await properties.switchTab('Advanced Styling');
+      await properties.switchTab('Advanced Options');
       await backgroundCustomizer.selectType('Gradient', testInfo);
       await gradientEditor.expectType('radial');
     } finally {
@@ -112,7 +112,7 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
       await properties.expectVisible();
-      await properties.switchTab('Advanced Styling');
+      await properties.switchTab('Advanced Options');
       await backgroundCustomizer.selectType('Gradient');
       await gradientEditor.applyPreset('material-sky');
       await gradientEditor.expectPreview();
