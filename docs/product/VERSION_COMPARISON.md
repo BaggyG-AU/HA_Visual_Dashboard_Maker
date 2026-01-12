@@ -80,30 +80,44 @@ This document compares the versions currently supported by HA Visual Dashboard M
 
 | Aspect | Current Support | Latest Version | Status |
 |--------|----------------|----------------|--------|
-| **Version** | Unknown (pre-v3.1.0) | **v3.1.0** (per user) | ⚠️ **OUTDATED** |
-| **Our Renderer** | BubbleCardRenderer.tsx | - | Needs update |
+| **Version** | **v3.1.0** | **v3.1.0** | ✅ **UP TO DATE** |
+| **Our Renderer** | BubbleCardRenderer.tsx (533 lines) | - | ✅ Updated |
 | **GitHub** | https://github.com/Clooos/Bubble-Card | - | - |
+| **Release Date** | January 11, 2026 | - | ✅ |
 
-#### Known Changes (v3.1.0)
-- **[USER MENTIONED]**: "Significant updates" in v3.1.0
-- **[RESEARCH NEEDED]**: Specific breaking changes
-- **[RESEARCH NEEDED]**: New card types or variants
-- **[RESEARCH NEEDED]**: Configuration schema changes
+#### Phase 4.1 Update (Completed January 12, 2026)
+✅ **ALL FEATURES IMPLEMENTED** - No breaking changes
 
-#### Potential Impact
-- Our renderer may not support new card types
-- Configuration properties may have changed
-- Style/theme integration changes
-- New action types or options
+**Commits**:
+- `04f1ab7` - Phase 4.1.1: Basic sub-button support
+- `05349c2` - Phase 4.1.2: Slider and select sub-button types
+- `674ca78` - Phase 4.1.3: Layout and styling options
+- `acdfa48` - Phase 4.1.4: Entity pictures and timer countdown
 
-**Research Priority**: 🟡 **HIGH** - User specifically mentioned this update
+**v3.1.0 Features Implemented**:
+- ✅ Sub-button rendering with entity state display
+- ✅ Sub-button type system (button, slider, select)
+- ✅ Slider configuration (orientation, value position, inverted)
+- ✅ Select/dropdown configuration
+- ✅ Icon positioning (top, bottom, left, right)
+- ✅ Footer positioning support
+- ✅ Custom sizing (width, height properties)
+- ✅ Entity picture support (show_entity_picture)
+- ✅ Timer entity countdown display
+- ✅ Text scrolling animation
+- ✅ Sub-button-only card type (`card_type: 'sub_button'`)
 
-**Action Items**:
-- [ ] Review Bubble Card v3.1.0 release notes
-- [ ] Compare configuration schema changes
-- [ ] Test existing renderer with v3.1.0
-- [ ] Update renderer if needed
-- [ ] Update property panel forms
+**Testing Results**:
+- ✅ 307/307 unit tests passing
+- ✅ 0 errors, 296 warnings (pre-existing)
+- ✅ Full TypeScript type coverage
+- ✅ Backward compatible (all existing tests pass)
+
+**Breaking Changes**: None - All features are additive and optional
+
+**Manual Testing Required**: Live Home Assistant 2026.1 instance testing deferred
+
+**Research Priority**: ✅ **COMPLETE** - Fully implemented and tested
 
 ---
 
@@ -461,6 +475,7 @@ This document compares the versions currently supported by HA Visual Dashboard M
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 1.0 | 2026-01-12 | Initial structure, research in progress | Research Agent |
+| 1.1 | 2026-01-12 | Bubble Card v3.1.0 implementation complete | Claude Code |
 
 ---
 

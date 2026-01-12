@@ -88,12 +88,21 @@ This document lists all versions of components, integrations, and dependencies c
 
 #### 2. Bubble Card
 - **Card Type**: `custom:bubble-card`
-- **Renderer**: BubbleCardRenderer.tsx (277 lines)
-- **Version Supported**: Unknown (pre-v3.1.0)
+- **Renderer**: BubbleCardRenderer.tsx (533 lines)
+- **Version Supported**: **v3.1.0** (updated January 12, 2026)
 - **Priority**: High (Phase 8)
-- **Variants**: Button, Pop-up, Media player, Cover, Climate, Separator
+- **Variants**: Button, Pop-up, Media player, Cover, Climate, Separator, **Sub-button** (new in v3.1.0)
 - **GitHub**: https://github.com/Clooos/Bubble-Card
 - **HACS**: ✅ Available
+- **v3.1.0 Features Implemented**:
+  - ✅ Sub-button rendering with entity state display
+  - ✅ Sub-button types: button, slider, select
+  - ✅ Icon positioning (top, bottom, left, right)
+  - ✅ Custom sizing (width, height)
+  - ✅ Entity picture support
+  - ✅ Timer countdown display
+  - ✅ Text scrolling animation
+  - ✅ Sub-button-only card type (`card_type: 'sub_button'`)
 
 #### 3. Better Thermostat UI Card
 - **Card Type**: `custom:better-thermostat-ui-card`
@@ -370,6 +379,7 @@ The application supports entity selection and smart defaults for:
 | Document Version | Date | Changes |
 |-----------------|------|---------|
 | 1.0 | 2026-01-12 | Initial baseline from v0.4.3-beta.1 |
+| 1.1 | 2026-01-12 | Updated Bubble Card to v3.1.0 with all features implemented |
 
 ---
 
