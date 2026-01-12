@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card as AntCard, Typography, Tag, Slider, Select } from 'antd';
 import {
   BulbOutlined,
@@ -14,6 +14,19 @@ import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 
 const { Text } = Typography;
 
+// Inject scrolling text keyframes animation once
+if (typeof document !== 'undefined' && !document.getElementById('bubble-card-scrolling-text-keyframes')) {
+  const style = document.createElement('style');
+  style.id = 'bubble-card-scrolling-text-keyframes';
+  style.textContent = `
+    @keyframes scroll-text {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-100%); }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 interface BubbleCardRendererProps {
   card: CustomCard;
   isSelected?: boolean;
@@ -28,6 +41,8 @@ interface SubButton {
   show_name?: boolean;
   show_icon?: boolean;
   show_state?: boolean;
+  show_entity_picture?: boolean;  // v3.1.0: Use entity picture instead of icon
+  scrolling_text?: boolean;       // v3.1.0: Enable text scrolling for long labels
   tap_action?: any;
   type?: 'button' | 'slider' | 'select';
   icon_position?: 'top' | 'bottom' | 'left' | 'right';
@@ -139,10 +154,40 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
     const showSubIcon = subButton.show_icon !== false;
     const showSubName = subButton.show_name !== false;
     const showSubState = subButton.show_state !== false;
+    const showEntityPicture = subButton.show_entity_picture || false;
+    const scrollingText = subButton.scrolling_text || false;
     const subType = subButton.type || 'button';
     const iconPosition = subButton.icon_position || 'left';
     const customWidth = subButton.width;
     const customHeight = subButton.height;
+
+    // Get entity picture URL
+    const entityPictureUrl = subEntity?.attributes?.entity_picture;
+
+    // Check if entity is a timer and get countdown
+    const isTimer = subButton.entity?.startsWith('timer.');
+    const getTimerDisplay = (): string => {
+      if (!isTimer || !subEntity) return subState;
+
+      // Timer attributes: duration, remaining, finishes_at
+      const remaining = subEntity.attributes?.remaining;
+      if (remaining) {
+        // Format as MM:SS or HH:MM:SS
+        const parts = remaining.split(':');
+        if (parts.length >= 2) {
+          const hours = parseInt(parts[0]);
+          const minutes = parts[1];
+          const seconds = parts[2];
+          if (hours > 0) {
+            return `${hours}:${minutes}:${seconds}`;
+          }
+          return `${minutes}:${seconds}`;
+        }
+      }
+      return subState;
+    };
+
+    const displayState = isTimer ? getTimerDisplay() : subState;
 
     // Get numeric value for slider (brightness, temperature, etc.)
     const getNumericValue = (): number => {
@@ -186,14 +231,46 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
 
     const selectOptions = getSelectOptions();
 
-    // Helper to render icon
+    // Helper to render icon or entity picture
     const renderIcon = () => {
-      if (!showSubIcon) return null;
-      return (
-        <div style={{ fontSize: '18px', color: '#999' }}>
-          <MoreOutlined />
-        </div>
-      );
+      if (!showSubIcon && !showEntityPicture) return null;
+
+      // Render entity picture if available and requested
+      if (showEntityPicture && entityPictureUrl) {
+        return (
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              flexShrink: 0,
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <img
+              src={entityPictureUrl}
+              alt={subName}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+          </div>
+        );
+      }
+
+      // Render icon
+      if (showSubIcon) {
+        return (
+          <div style={{ fontSize: '18px', color: '#999', flexShrink: 0 }}>
+            <MoreOutlined />
+          </div>
+        );
+      }
+
+      return null;
     };
 
     // Helper to determine layout direction based on icon position
@@ -348,8 +425,12 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
                 color: '#e6e6e6',
                 fontSize: '12px',
                 overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                textOverflow: scrollingText ? 'clip' : 'ellipsis',
                 whiteSpace: 'nowrap',
+                ...(scrollingText && subName.length > 20 ? {
+                  animation: 'scroll-text 10s linear infinite',
+                  display: 'inline-block',
+                } : {}),
               }}
             >
               {subName}
@@ -358,12 +439,13 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
           {showSubState && subEntity && (
             <Text
               style={{
-                color: '#999',
+                color: isTimer ? '#00d9ff' : '#999',
                 fontSize: '10px',
-                textTransform: 'capitalize',
+                textTransform: isTimer ? 'none' : 'capitalize',
+                fontWeight: isTimer ? 500 : 'normal',
               }}
             >
-              {subState}
+              {displayState}
             </Text>
           )}
         </div>
