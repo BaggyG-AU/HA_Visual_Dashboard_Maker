@@ -32,6 +32,8 @@ interface SubButton {
   type?: 'button' | 'slider' | 'select';
   icon_position?: 'top' | 'bottom' | 'left' | 'right';
   position?: 'default' | 'footer';
+  width?: string;  // CSS width value (e.g., '100px', '50%')
+  height?: string; // CSS height value
   slider_config?: {
     always_visible?: boolean;
     show_on_tap?: boolean;
@@ -138,6 +140,9 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
     const showSubName = subButton.show_name !== false;
     const showSubState = subButton.show_state !== false;
     const subType = subButton.type || 'button';
+    const iconPosition = subButton.icon_position || 'left';
+    const customWidth = subButton.width;
+    const customHeight = subButton.height;
 
     // Get numeric value for slider (brightness, temperature, etc.)
     const getNumericValue = (): number => {
@@ -181,58 +186,85 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
 
     const selectOptions = getSelectOptions();
 
+    // Helper to render icon
+    const renderIcon = () => {
+      if (!showSubIcon) return null;
+      return (
+        <div style={{ fontSize: '18px', color: '#999' }}>
+          <MoreOutlined />
+        </div>
+      );
+    };
+
+    // Helper to determine layout direction based on icon position
+    const getLayoutDirection = (): 'row' | 'column' | 'row-reverse' | 'column-reverse' => {
+      switch (iconPosition) {
+        case 'top': return 'column';
+        case 'bottom': return 'column-reverse';
+        case 'right': return 'row-reverse';
+        case 'left':
+        default: return 'row';
+      }
+    };
+
+    // Common container style with custom sizing
+    const baseContainerStyle = {
+      display: 'flex',
+      gap: '8px',
+      padding: '8px 12px',
+      borderRadius: '16px',
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      minHeight: customHeight || '40px',
+      width: customWidth || 'auto',
+    };
+
     // Render slider type
     if (subType === 'slider') {
       return (
         <div
           key={`sub-${index}`}
           style={{
-            display: 'flex',
-            flexDirection: orientation === 'horizontal' ? 'column' : 'row',
-            gap: '8px',
-            padding: '8px 12px',
-            borderRadius: '16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            minHeight: '40px',
+            ...baseContainerStyle,
+            flexDirection: getLayoutDirection(),
+            alignItems: iconPosition === 'top' || iconPosition === 'bottom' ? 'center' : 'flex-start',
           }}
         >
-          {/* Header with icon and name */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {showSubIcon && (
-              <div style={{ fontSize: '18px', color: '#999' }}>
-                <MoreOutlined />
-              </div>
-            )}
-            {showSubName && (
-              <Text
-                style={{
-                  color: '#e6e6e6',
-                  fontSize: '12px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {subName}
-              </Text>
-            )}
-            {valuePosition === 'right' && showSubState && (
-              <Text
-                style={{
-                  color: '#00d9ff',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  marginLeft: 'auto',
-                }}
-              >
-                {numericValue}%
-              </Text>
-            )}
-          </div>
+          {/* Icon */}
+          {renderIcon()}
 
-          {/* Slider control */}
-          <div style={{ paddingRight: orientation === 'horizontal' ? '8px' : '0' }}>
+          {/* Content wrapper */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+            {/* Header with name and value */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {showSubName && (
+                <Text
+                  style={{
+                    color: '#e6e6e6',
+                    fontSize: '12px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {subName}
+                </Text>
+              )}
+              {valuePosition === 'right' && showSubState && (
+                <Text
+                  style={{
+                    color: '#00d9ff',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    marginLeft: 'auto',
+                  }}
+                >
+                  {numericValue}%
+                </Text>
+              )}
+            </div>
+
+            {/* Slider control */}
             <Slider
               value={inverted ? 100 - numericValue : numericValue}
               min={0}
@@ -258,21 +290,15 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
         <div
           key={`sub-${index}`}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '8px 12px',
-            borderRadius: '16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            minHeight: '40px',
+            ...baseContainerStyle,
+            flexDirection: getLayoutDirection(),
+            alignItems: iconPosition === 'top' || iconPosition === 'bottom' ? 'center' : 'flex-start',
           }}
         >
-          {showSubIcon && (
-            <div style={{ fontSize: '18px', color: '#999' }}>
-              <MoreOutlined />
-            </div>
-          )}
+          {/* Icon */}
+          {renderIcon()}
+
+          {/* Content wrapper */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
             {showSubName && (
               <Text
@@ -304,23 +330,17 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
       <div
         key={`sub-${index}`}
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '8px 12px',
-          borderRadius: '16px',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          ...baseContainerStyle,
+          flexDirection: getLayoutDirection(),
+          alignItems: iconPosition === 'top' || iconPosition === 'bottom' ? 'center' : 'flex-start',
           cursor: 'pointer',
           transition: 'all 0.2s ease',
-          minHeight: '40px',
         }}
       >
-        {showSubIcon && (
-          <div style={{ fontSize: '18px', color: '#999' }}>
-            <MoreOutlined />
-          </div>
-        )}
+        {/* Icon */}
+        {renderIcon()}
+
+        {/* Content wrapper */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
           {showSubName && (
             <Text
