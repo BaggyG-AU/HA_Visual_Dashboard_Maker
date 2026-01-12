@@ -20,13 +20,34 @@ interface BubbleCardRendererProps {
   onClick?: () => void;
 }
 
+// Sub-button configuration (Bubble Card v3.1.0+)
+interface SubButton {
+  entity?: string;
+  name?: string;
+  icon?: string;
+  show_name?: boolean;
+  show_icon?: boolean;
+  show_state?: boolean;
+  tap_action?: any;
+  type?: 'button' | 'slider' | 'select';
+  icon_position?: 'top' | 'bottom' | 'left' | 'right';
+  position?: 'default' | 'footer';
+}
+
 /**
  * Visual renderer for Bubble Card (custom HACS card)
  * Repository: https://github.com/Clooos/Bubble-Card
+ * Version Support: v3.1.0+
  *
  * Supports bubble card types:
  * - bubble-card (main card type with card_type property)
- * - Subtypes: button, cover, empty-column, horizontal-buttons-stack, media-player, pop-up, separator, slider
+ * - Subtypes: button, cover, empty-column, horizontal-buttons-stack, media-player, pop-up, separator, slider, sub_button
+ *
+ * v3.1.0 Features:
+ * - Sub-buttons with type system (button, slider, select)
+ * - Enhanced layout control (icon positioning, footer placement)
+ * - Entity picture support
+ * - Timer countdown display
  *
  * Known for its modern, minimalist bubble-style design
  */
@@ -94,6 +115,70 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
     isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
   );
 
+  // Sub-buttons support (v3.1.0+)
+  const subButtons: SubButton[] = Array.isArray(card.sub_button) ? card.sub_button : [];
+
+  // Render a single sub-button (basic button type only for now)
+  const renderSubButton = (subButton: SubButton, index: number) => {
+    const subEntity = subButton.entity ? getEntity(subButton.entity) : null;
+    const subState = subEntity?.state || 'unknown';
+    const subName = subButton.name || subEntity?.attributes?.friendly_name || subButton.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Sub-button';
+    const showSubIcon = subButton.show_icon !== false;
+    const showSubName = subButton.show_name !== false;
+    const showSubState = subButton.show_state !== false;
+
+    // Sub-button styling
+    return (
+      <div
+        key={`sub-${index}`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 12px',
+          borderRadius: '16px',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          minHeight: '40px',
+        }}
+      >
+        {showSubIcon && (
+          <div style={{ fontSize: '18px', color: '#999' }}>
+            <MoreOutlined />
+          </div>
+        )}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+          {showSubName && (
+            <Text
+              style={{
+                color: '#e6e6e6',
+                fontSize: '12px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {subName}
+            </Text>
+          )}
+          {showSubState && subEntity && (
+            <Text
+              style={{
+                color: '#999',
+                fontSize: '10px',
+                textTransform: 'capitalize',
+              }}
+            >
+              {subState}
+            </Text>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Handle separator card type
   if (cardType === 'separator') {
     return (
@@ -138,6 +223,52 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
     );
   }
 
+  // Handle sub_button card type (v3.1.0+ - sub-buttons only, no main content)
+  if (cardType === 'sub_button') {
+    return (
+      <div
+        style={{
+          height: '100%',
+          cursor: 'pointer',
+          border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
+          borderRadius: '24px',
+          ...backgroundStyle,
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          overflow: 'auto',
+        }}
+        onClick={onClick}
+      >
+        {subButtons.length > 0 ? (
+          subButtons.map((subBtn, idx) => renderSubButton(subBtn, idx))
+        ) : (
+          <Text style={{ color: '#666', fontSize: '12px', textAlign: 'center' }}>
+            No sub-buttons configured
+          </Text>
+        )}
+        {isSelected && (
+          <div style={{
+            position: 'absolute',
+            top: '4px',
+            right: '8px',
+            padding: '2px 8px',
+            backgroundColor: 'rgba(102, 187, 255, 0.2)',
+            border: '1px solid #66bbff',
+            borderRadius: '12px',
+            fontSize: '9px',
+            color: '#66bbff',
+            fontWeight: 'bold',
+            pointerEvents: 'none',
+          }}>
+            SUB-BUTTONS
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // Handle pop-up card type
   if (cardType === 'pop-up') {
     return (
@@ -177,7 +308,7 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
     );
   }
 
-  // Default bubble button/slider style
+  // Default bubble button/slider style (with sub-buttons support)
   return (
     <div
       style={{
@@ -188,69 +319,97 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
         ...backgroundStyle,
         padding: '16px 20px',
         display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
+        flexDirection: 'column',
+        gap: '12px',
         transition: 'all 0.3s ease',
+        overflow: 'auto',
       }}
       onClick={onClick}
     >
-      {/* Icon bubble */}
-      {showIcon && (
-        <div
-          style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            backgroundColor: `${stateColor}33`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: `2px solid ${stateColor}`,
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ fontSize: '24px', color: stateColor }}>
-            {icon}
-          </div>
-        </div>
-      )}
-
-      {/* Content */}
+      {/* Main card content */}
       <div style={{
-        flex: 1,
         display: 'flex',
-        flexDirection: 'column',
-        gap: '4px',
-        minWidth: 0,
+        alignItems: 'center',
+        gap: '16px',
       }}>
-        {showName && (
-          <Text
-            strong
+        {/* Icon bubble */}
+        {showIcon && (
+          <div
             style={{
-              color: '#e6e6e6',
-              fontSize: '14px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              backgroundColor: `${stateColor}33`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: `2px solid ${stateColor}`,
+              flexShrink: 0,
             }}
           >
-            {displayName}
-          </Text>
+            <div style={{ fontSize: '24px', color: stateColor }}>
+              {icon}
+            </div>
+          </div>
         )}
 
-        {showState && (
-          <Text
-            style={{
-              color: stateColor,
-              fontSize: '12px',
-              fontWeight: 500,
-              textTransform: 'capitalize',
-            }}
-          >
-            {state}
+        {/* Content */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          minWidth: 0,
+        }}>
+          {showName && (
+            <Text
+              strong
+              style={{
+                color: '#e6e6e6',
+                fontSize: '14px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {displayName}
+            </Text>
+          )}
+
+          {showState && (
+            <Text
+              style={{
+                color: stateColor,
+                fontSize: '12px',
+                fontWeight: 500,
+                textTransform: 'capitalize',
+              }}
+            >
+              {state}
+            </Text>
+          )}
+        </div>
+
+        {/* Entity ID (when no entity data) */}
+        {!entity && card.entity && (
+          <Text type="secondary" style={{ fontSize: '10px', marginLeft: 'auto' }}>
+            {card.entity}
           </Text>
         )}
       </div>
+
+      {/* Sub-buttons (v3.1.0+) */}
+      {subButtons.length > 0 && (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+          paddingTop: '8px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        }}>
+          {subButtons.map((subBtn, idx) => renderSubButton(subBtn, idx))}
+        </div>
+      )}
 
       {/* Bubble badge */}
       {isSelected && (
@@ -269,13 +428,6 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
         }}>
           BUBBLE
         </div>
-      )}
-
-      {/* Entity ID (when no entity data) */}
-      {!entity && card.entity && (
-        <Text type="secondary" style={{ fontSize: '10px', marginLeft: 'auto' }}>
-          {card.entity}
-        </Text>
       )}
     </div>
   );
