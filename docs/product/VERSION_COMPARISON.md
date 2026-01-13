@@ -125,22 +125,150 @@ This document compares the versions currently supported by HA Visual Dashboard M
 
 | Aspect | Current Support | Latest Version | Status |
 |--------|----------------|----------------|--------|
-| **Version** | Unknown | **[RESEARCH NEEDED]** | ⏳ |
-| **Variants Supported** | 13 (all) | **[RESEARCH NEEDED]** | ⏳ |
-| **Our Renderer** | MushroomCardRenderer.tsx | - | - |
+| **Version** | **v5.0.9** | **v5.0.9** | ✅ **UP TO DATE** |
+| **Variants Supported** | 14 (all) | 14 | ✅ |
+| **Our Renderer** | MushroomCardRenderer.tsx (318 lines) | - | ✅ Updated |
 | **GitHub** | https://github.com/piitaya/lovelace-mushroom | - | - |
+| **Release Date** | January 1, 2026 | - | ✅ |
 
-#### Changes to Research
-- New Mushroom card variants added?
-- Configuration schema updates
-- Theme integration changes
-- Icon or style changes
+#### Phase 4.2.2 Update (Completed January 12, 2026)
+✅ **ADDITIVE FEATURES IMPLEMENTED** - No breaking changes
 
-**Research Priority**: 🟢 **MEDIUM** - Already well-supported
+**Commit**: `cb09d6f` - Phase 4.2 custom card renderer updates
+
+**v4.3.0+ Features Implemented**:
+- ✅ mushroom-empty-card type (v4.4.0) - Spacing/layout card
+- ✅ align_text property (v4.3.0) - left | center | right | justify
+
+**Breaking Changes NOT Affecting Preview**:
+- v5.0.5: Template card redesign (runtime behavior only)
+- v5.0.9: Color temperature Kelvin format (not displayed in preview)
+- v4.3.0: Light brightness minimum (control logic, not visual)
+
+**Conclusion**: Renderer fully compatible with v5.0.9. Runtime-only changes don't affect visual preview.
+
+**Research Priority**: ✅ **COMPLETE** - All relevant features implemented
 
 ---
 
-### 3. Button Card (custom:button-card)
+### 3. Mini Graph Card
+
+| Aspect | Current Support | Latest Version | Status |
+|--------|----------------|----------------|--------|
+| **Version** | **v0.13.0** | **v0.13.0** | ✅ **UP TO DATE** |
+| **Our Renderer** | MiniGraphCardRenderer.tsx (211 lines) | - | ✅ Updated |
+| **GitHub** | https://github.com/kalkih/mini-graph-card | - | - |
+| **Release Date** | May 29, 2025 | - | ✅ |
+
+#### Phase 4.2.3 Update (Completed January 12, 2026)
+✅ **ADDITIVE FEATURE IMPLEMENTED** - Fully backward compatible
+
+**Commit**: `cb09d6f` - Phase 4.2 custom card renderer updates
+
+**v0.12.0+ Features Implemented**:
+- ✅ icon_image property - Image URL to override icon
+
+**Features NOT Implemented** (not needed for preview):
+- Loader component (data loading state)
+- show_legend_state option (legend not rendered in preview)
+- Nested attribute access (data parsing, not visual)
+
+**Conclusion**: Renderer fully compatible with v0.13.0. All changes are backward compatible.
+
+**Research Priority**: ✅ **COMPLETE** - Optional feature implemented
+
+---
+
+### 4. Power Flow Card
+
+| Aspect | Current Support | Latest Version | Status |
+|--------|----------------|----------------|--------|
+| **Version** | **v2.6.2** | **v2.6.2** | ✅ **UP TO DATE** |
+| **Our Renderer** | PowerFlowCardRenderer.tsx (420 lines) | - | ✅ Updated |
+| **GitHub** | https://github.com/ulic75/power-flow-card | - | - |
+| **Release Date** | March 17, 2023 | - | ⚠️ 3 years old |
+
+#### Phase 4.2.1 Update (Completed January 12, 2026)
+✅ **ADDITIVE FEATURES IMPLEMENTED** - No breaking changes
+
+**Commit**: `cb09d6f` - Phase 4.2 custom card renderer updates
+
+**v2.6.0+ Features Implemented**:
+- ✅ Gas entity support with FireOutlined icon
+- ✅ Water entity support with CloudOutlined icon
+- ✅ Utilities section displaying gas/water flows
+- ✅ dashboard_link property (v2.4.0)
+
+**Testing Note**: Card hasn't been updated in 3 years. Should verify compatibility with HA 2026.1.
+
+**Conclusion**: Renderer updated with gas/water support. Fully backward compatible.
+
+**Research Priority**: ✅ **COMPLETE** - All features implemented
+
+---
+
+### 5. ApexCharts Card
+
+| Aspect | Current Support | Latest Version | Status |
+|--------|----------------|----------------|--------|
+| **Version** | **v2.2.3** | **v2.2.3** | ✅ **UP TO DATE** |
+| **Our Renderer** | ApexChartsCardRenderer.tsx (246 lines) | - | ✅ Compatible |
+| **GitHub** | https://github.com/RomRider/apexcharts-card | - | - |
+| **Release Date** | August 21, 2025 | - | ✅ |
+
+#### Phase 4.2 Analysis (Completed January 12, 2026)
+✅ **NO UPDATES NEEDED** - Chart rendering too complex for preview
+
+**Decision**: DEFERRED - Renderer uses placeholder, not actual ApexCharts library
+
+**v2.2.0+ Features NOT Implemented**:
+- section_mode (complex layout feature)
+- Array stroke_dash patterns (chart-specific)
+- Multi-y-axis rendering (requires full library)
+- Statistics-based data sources (requires historical data)
+
+**Rationale**:
+- Our renderer shows a mockup/placeholder, not real charts
+- Actual charts render correctly in Home Assistant
+- Implementing full ApexCharts features would require:
+  - Full ApexCharts library integration
+  - Time-series data simulation
+  - Complex chart configuration parsing
+- Not worth the complexity for preview-only context
+
+**Conclusion**: Renderer is compatible. Real charts work in HA.
+
+**Research Priority**: ✅ **COMPLETE** - Deferred as out of scope
+
+---
+
+### 6. Better Thermostat UI Card
+
+| Aspect | Current Support | Latest Version | Status |
+|--------|----------------|----------------|--------|
+| **Version** | **v2.2.1** | **v2.2.1** | ✅ **UP TO DATE** |
+| **Our Renderer** | BetterThermostatCardRenderer.tsx (220 lines) | - | ✅ Compatible |
+| **GitHub** | https://github.com/KartoffelToby/better-thermostat-ui-card | - | - |
+| **Release Date** | November 3, 2024 | - | ✅ |
+
+#### Phase 4.2 Analysis (Completed January 12, 2026)
+✅ **NO UPDATES NEEDED** - Bug fixes only, fully compatible
+
+**v2.2.0-v2.2.1 Changes**:
+- Translations and localization updates
+- Button debounce (runtime logic, not visual)
+- HVAC action icon fixes (already rendered correctly)
+- Grid scaling fixes (already handled)
+
+**v3.0.0 Beta**: ⚠️ Breaking changes in beta - DO NOT IMPLEMENT until stable
+
+**Conclusion**: Renderer is 100% compatible with v2.2.1. No updates needed.
+
+**Research Priority**: ✅ **COMPLETE** - No changes required
+
+---
+
+### 7. Button Card (custom:button-card)
 
 | Aspect | Current Support | Latest Version | Status |
 |--------|----------------|----------------|--------|
@@ -476,6 +604,7 @@ This document compares the versions currently supported by HA Visual Dashboard M
 |---------|------|---------|--------|
 | 1.0 | 2026-01-12 | Initial structure, research in progress | Research Agent |
 | 1.1 | 2026-01-12 | Bubble Card v3.1.0 implementation complete | Claude Code |
+| 1.2 | 2026-01-12 | Phase 4.2 complete: All 5 custom cards updated/verified | Claude Code |
 
 ---
 

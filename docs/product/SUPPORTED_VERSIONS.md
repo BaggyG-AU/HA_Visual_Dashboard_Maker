@@ -81,10 +81,11 @@ This document lists all versions of components, integrations, and dependencies c
 #### 1. ApexCharts Card
 - **Card Type**: `custom:apexcharts-card`
 - **Renderer**: ApexChartsCardRenderer.tsx (246 lines)
-- **Version Supported**: Unknown (current as of implementation)
+- **Version Supported**: **v2.2.3** (compatible, no updates needed)
 - **Priority**: Very High (Phase 7 - Priority #1)
 - **GitHub**: https://github.com/RomRider/apexcharts-card
 - **HACS**: ✅ Available
+- **Status**: ✅ Chart rendering too complex for preview - uses placeholder. Real charts render in HA.
 
 #### 2. Bubble Card
 - **Card Type**: `custom:bubble-card`
@@ -107,38 +108,49 @@ This document lists all versions of components, integrations, and dependencies c
 #### 3. Better Thermostat UI Card
 - **Card Type**: `custom:better-thermostat-ui-card`
 - **Renderer**: BetterThermostatCardRenderer.tsx (220 lines)
-- **Version Supported**: Unknown
+- **Version Supported**: **v2.2.1** (compatible, no updates needed)
 - **Priority**: Medium
-- **GitHub**: Unknown (to be verified)
+- **GitHub**: https://github.com/KartoffelToby/better-thermostat-ui-card
 - **HACS**: ✅ Available
+- **Status**: ✅ v2.2.1 is bug fixes only - renderer fully compatible
 
 #### 4. Mini Graph Card
 - **Card Type**: `custom:mini-graph-card`
-- **Renderer**: MiniGraphCardRenderer.tsx (199 lines)
-- **Version Supported**: Unknown
+- **Renderer**: MiniGraphCardRenderer.tsx (211 lines)
+- **Version Supported**: **v0.13.0** (updated January 12, 2026)
 - **Priority**: Medium (Phase 12)
 - **GitHub**: https://github.com/kalkih/mini-graph-card
 - **HACS**: ✅ Available
+- **v0.12.0+ Features Implemented**:
+  - ✅ icon_image support (image URL instead of icon)
 
-#### 5. Mushroom Cards (13 variants)
+#### 5. Mushroom Cards (14 variants)
 - **Card Types**: `custom:mushroom-*`
-- **Renderer**: MushroomCardRenderer.tsx (257 lines, handles all variants)
-- **Version Supported**: Unknown
+- **Renderer**: MushroomCardRenderer.tsx (318 lines, handles all variants)
+- **Version Supported**: **v5.0.9** (updated January 12, 2026)
 - **Priority**: Medium (Phase 12)
 - **Variants**:
   - Entity, Light, Person, Template, Cover
   - Climate, Fan, Humidifier, Lock
   - Media Player, Number, Select, Update, Vacuum
+  - **Empty** (v4.4.0+ - spacing/layout)
 - **GitHub**: https://github.com/piitaya/lovelace-mushroom
 - **HACS**: ✅ Available
+- **v4.3.0+ Features Implemented**:
+  - ✅ mushroom-empty-card type (v4.4.0) for spacing
+  - ✅ align_text property (v4.3.0) for text alignment
 
 #### 6. Power Flow Card
 - **Card Type**: `custom:power-flow-card`
-- **Renderer**: PowerFlowCardRenderer.tsx (333 lines)
-- **Version Supported**: Unknown
+- **Renderer**: PowerFlowCardRenderer.tsx (420 lines)
+- **Version Supported**: **v2.6.2** (updated January 12, 2026)
 - **Priority**: High (Phase 11 - Priority #5)
 - **GitHub**: https://github.com/ulic75/power-flow-card
 - **HACS**: ✅ Available
+- **v2.6.0+ Features Implemented**:
+  - ✅ Gas entity support with flow display
+  - ✅ Water entity support with flow display
+  - ✅ dashboard_link property support (v2.4.0)
 
 ### Missing Renderers (38 card types)
 
@@ -380,6 +392,7 @@ The application supports entity selection and smart defaults for:
 |-----------------|------|---------|
 | 1.0 | 2026-01-12 | Initial baseline from v0.4.3-beta.1 |
 | 1.1 | 2026-01-12 | Updated Bubble Card to v3.1.0 with all features implemented |
+| 1.2 | 2026-01-12 | Phase 4.2 complete: Updated Mushroom v5.0.9, Mini Graph v0.13.0, Power Flow v2.6.2, Better Thermostat v2.2.1, ApexCharts v2.2.3 |
 
 ---
 
