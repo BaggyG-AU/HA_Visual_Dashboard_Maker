@@ -406,10 +406,10 @@ class CardRegistry {
         name: 'Bubble Card',
         category: 'custom',
         icon: 'BorderOutlined',
-        description: 'Bubble style card (HACS)',
+        description: 'Bubble style card with sub-buttons (HACS v3.1.0+)',
         isCustom: true,
         source: 'hacs',
-        defaultProps: { card_type: 'button' },
+        defaultProps: { card_type: 'button', sub_button: [] },
         requiredProps: ['card_type'],
       },
       {
