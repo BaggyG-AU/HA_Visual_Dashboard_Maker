@@ -16,8 +16,11 @@ interface MiniGraphCardRendererProps {
 /**
  * Visual renderer for Mini Graph Card (custom HACS card)
  * Repository: https://github.com/kalkih/mini-graph-card
+ * Version Support: v0.13.0+
  *
  * A compact graph card that shows entity history with many customization options
+ * v0.12.0+: icon_image support (image URL override for icon)
+ * v0.13.0+: show_legend_state option, loader component
  */
 export const MiniGraphCardRenderer: React.FC<MiniGraphCardRendererProps> = ({
   card,
@@ -43,6 +46,7 @@ export const MiniGraphCardRenderer: React.FC<MiniGraphCardRendererProps> = ({
   const showState = card.show?.state !== false;
   const showGraph = card.show?.graph !== 'false';
   const showIcon = card.show?.icon !== false;
+  const iconImage = card.icon_image; // v0.12.0: Image URL to override icon
   const hours = card.hours_to_show || 24;
   const points = card.points_per_hour || 0.5;
   const lineColor = card.color || '#03a9f4';
@@ -101,7 +105,20 @@ export const MiniGraphCardRenderer: React.FC<MiniGraphCardRendererProps> = ({
       }}>
         <Space size={8}>
           {showIcon && (
-            <DashboardOutlined style={{ fontSize: '16px', color: lineColor }} />
+            iconImage ? (
+              <img
+                src={iconImage}
+                alt="icon"
+                style={{
+                  width: '16px',
+                  height: '16px',
+                  objectFit: 'contain',
+                  borderRadius: '2px',
+                }}
+              />
+            ) : (
+              <DashboardOutlined style={{ fontSize: '16px', color: lineColor }} />
+            )
           )}
           {showName && (
             <Text strong style={{ color: '#e6e6e6', fontSize: '13px' }}>

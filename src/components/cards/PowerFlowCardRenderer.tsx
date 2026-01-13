@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card as AntCard, Typography, Tag } from 'antd';
-import { SunOutlined, HomeOutlined, ThunderboltFilled, ApiOutlined } from '@ant-design/icons';
+import { SunOutlined, HomeOutlined, ThunderboltFilled, ApiOutlined, FireOutlined, CloudOutlined } from '@ant-design/icons';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 
 const { Text } = Typography;
@@ -24,6 +24,8 @@ interface PowerFlowCardConfig {
     grid?: PowerFlowEntity;
     solar?: PowerFlowEntity;
     home?: PowerFlowEntity;
+    gas?: PowerFlowEntity;     // v2.6.0: Gas entity support
+    water?: PowerFlowEntity;   // v2.6.0: Water entity support
     individual?: PowerFlowEntity[];
   };
   clickable_entities?: boolean;
@@ -37,6 +39,7 @@ interface PowerFlowCardConfig {
   min_expected_power?: number;
   watt_threshold?: number;
   transparency_zero_lines?: number;
+  dashboard_link?: string;   // v2.4.0: Link to detailed dashboard
   [key: string]: any;
 }
 
@@ -48,7 +51,12 @@ interface PowerFlowCardRendererProps {
 
 /**
  * Visual renderer for Power Flow Card
+ * Repository: https://github.com/ulic75/power-flow-card
+ * Version Support: v2.6.2+
+ *
  * Displays energy flow diagram between solar, battery, grid, and home
+ * v2.6.0+: Gas and water entity support
+ * v2.4.0+: Dashboard link, bidirectional grid-to-battery flows
  */
 export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
   card,
@@ -65,6 +73,8 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
     battery: -450, // W (negative = charging)
     grid: 125, // W (positive = importing)
     home: 925, // W
+    gas: 15.5, // m³/h
+    water: 8.2, // L/min
   };
 
   const formatPower = (watts: number): string => {
@@ -278,6 +288,95 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
                   {device.name || device.entity?.split('.')[1]?.replace(/_/g, ' ') || `Device ${idx + 1}`}
                 </Tag>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Gas and Water Entities (v2.6.0+) */}
+        {(entities.gas || entities.water) && (
+          <div style={{ marginTop: '12px', width: '100%' }}>
+            <Text type="secondary" style={{ fontSize: '10px', display: 'block', marginBottom: '8px', textAlign: 'center' }}>
+              Utilities
+            </Text>
+            <div
+              style={{
+                display: 'flex',
+                gap: '16px',
+                justifyContent: 'center',
+                padding: '8px',
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '6px',
+              }}
+            >
+              {/* Gas */}
+              {entities.gas && (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      backgroundColor: '#ff7a45',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '14px',
+                      color: '#fff',
+                      boxShadow: '0 0 6px #ff7a45',
+                    }}
+                  >
+                    <FireOutlined />
+                  </div>
+                  <Text style={{ fontSize: '9px', fontWeight: 500, color: '#e6e6e6' }}>
+                    {entities.gas.name || 'Gas'}
+                  </Text>
+                  <Text style={{ fontSize: '10px', fontWeight: 600, color: '#ff7a45' }}>
+                    {mockValues.gas.toFixed(1)} m³/h
+                  </Text>
+                </div>
+              )}
+
+              {/* Water */}
+              {entities.water && (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      backgroundColor: '#1890ff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '14px',
+                      color: '#fff',
+                      boxShadow: '0 0 6px #1890ff',
+                    }}
+                  >
+                    <CloudOutlined />
+                  </div>
+                  <Text style={{ fontSize: '9px', fontWeight: 500, color: '#e6e6e6' }}>
+                    {entities.water.name || 'Water'}
+                  </Text>
+                  <Text style={{ fontSize: '10px', fontWeight: 600, color: '#1890ff' }}>
+                    {mockValues.water.toFixed(1)} L/min
+                  </Text>
+                </div>
+              )}
             </div>
           </div>
         )}

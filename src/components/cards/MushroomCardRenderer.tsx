@@ -27,6 +27,7 @@ interface MushroomCardRendererProps {
 /**
  * Visual renderer for Mushroom Cards (custom HACS cards)
  * Repository: https://github.com/piitaya/lovelace-mushroom
+ * Version Support: v5.0.9+
  *
  * Supports multiple Mushroom card types:
  * - mushroom-entity-card: Generic entity display
@@ -38,6 +39,7 @@ interface MushroomCardRendererProps {
  * - mushroom-lock-card: Lock control
  * - mushroom-alarm-control-panel-card: Alarm panel
  * - mushroom-template-card: Custom template
+ * - mushroom-empty-card: Spacing/layout (v4.4.0+)
  */
 export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
   card,
@@ -52,12 +54,39 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
   const attributes = entity?.attributes || {};
   const cardType = card.type.replace('custom:mushroom-', '').replace('-card', '');
 
+  // Handle empty card (v4.4.0+) - spacing/layout purposes
+  if (cardType === 'empty') {
+    return (
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          border: isSelected ? '2px dashed #a864fd' : '1px dashed transparent',
+          borderRadius: '12px',
+          backgroundColor: isSelected ? 'rgba(168, 100, 253, 0.05)' : 'transparent',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+        }}
+        onClick={onClick}
+      >
+        {isSelected && (
+          <Text type="secondary" style={{ fontSize: '10px', color: '#a864fd' }}>
+            Empty Spacer
+          </Text>
+        )}
+      </div>
+    );
+  }
+
   // Determine display properties
   const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Entity';
   const layout = card.layout || 'default'; // 'default' or 'horizontal'
   const hideState = card.hide_state === true;
   const hideIcon = card.hide_icon === true;
   const hideName = card.hide_name === true;
+  const alignText = card.align_text || 'left'; // v4.3.0: left | center | right | justify
 
   // Get icon based on card type and entity domain
   const getIcon = () => {
@@ -233,6 +262,7 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
         flexDirection: 'column',
         gap: '4px',
         minWidth: 0,
+        textAlign: alignText as any, // v4.3.0: Text alignment support
       }}>
         {/* Name */}
         {!hideName && (
