@@ -159,7 +159,7 @@ class CardRegistry {
         description: 'Single entity control button',
         isCustom: false,
         source: 'builtin',
-        defaultProps: { tap_action: { action: 'toggle' } },
+        defaultProps: { smart_defaults: true },
         requiredProps: ['entity'],
       },
       {
@@ -332,7 +332,7 @@ class CardRegistry {
         description: 'Advanced button card (HACS)',
         isCustom: true,
         source: 'hacs',
-        defaultProps: {},
+        defaultProps: { smart_defaults: true },
         requiredProps: ['entity'],
       },
       {

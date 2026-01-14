@@ -203,9 +203,6 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       // Add a color (blur triggers saving to recent colors)
       await colorPicker.setColorInput('#FF0000', 'button-card-color-input');
 
-      // Wait a moment for the color to be saved
-      await ctx.window.waitForTimeout(300);
-
       // Recent colors section should now be visible
       await colorPicker.expectRecentColorsVisible('button-card-color-input');
 
@@ -237,10 +234,8 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
 
       // Add two different colors to build history
       await colorPicker.setColorInput('#FF0000', 'button-card-color-input');
-      await ctx.window.waitForTimeout(300);
 
       await colorPicker.setColorInput('#00FF00', 'button-card-color-input');
-      await ctx.window.waitForTimeout(300);
 
       // Recent colors should now be visible
       await colorPicker.expectRecentColorsVisible('button-card-color-input');
@@ -275,14 +270,12 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
 
       // Add a color to history
       await colorPicker.setColorInput('#FF0000', 'button-card-color-input');
-      await ctx.window.waitForTimeout(300);
 
       // Verify recent colors are visible
       await colorPicker.expectRecentColorsVisible('button-card-color-input');
 
       // Clear recent colors
       await colorPicker.clearRecentColors('button-card-color-input');
-      await ctx.window.waitForTimeout(300);
 
       // Recent colors section should now be hidden
       await colorPicker.expectRecentColorsHidden('button-card-color-input');
@@ -419,14 +412,12 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
 
       // Add a color
       await colorPicker.setColorInput('#FFAA00', 'button-card-color-input');
-      await ctx.window.waitForTimeout(300);
 
       // Verify it's in recent colors
       await colorPicker.expectRecentColorsVisible('button-card-color-input');
 
       // Close and reopen the popover
       await colorPicker.closePopover('button-card-color-input');
-      await ctx.window.waitForTimeout(300);
       await colorPicker.openPopover('button-card-color-input');
 
       // Recent colors should still be visible (persisted)
@@ -466,7 +457,6 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       await input.clear();
       await input.fill('invalid-color');
       await input.blur();
-      await ctx.window.waitForTimeout(200);
 
       // Should revert to last valid color
       await colorPicker.expectColorValue('#FF0000', 'button-card-color-input');
@@ -497,11 +487,9 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       await mainInput.clear();
       await mainInput.fill('auto');
       await mainInput.press('Enter');
-      await ctx.window.waitForTimeout(200);
 
       // Verify "auto" was accepted
-      const value = await mainInput.inputValue();
-      expect(value.toLowerCase()).toBe('auto');
+      await expect(mainInput).toHaveValue(/^auto$/i);
     } finally {
       await close(ctx);
     }
@@ -555,7 +543,6 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       // Open color picker and set a color
       await colorPicker.openPopover('button-card-color-input');
       await colorPicker.setColorInput('#FF0000', 'button-card-color-input');
-      await ctx.window.waitForTimeout(300);
 
       // Switch to YAML tab and verify via Monaco model value (authoritative)
       await properties.switchTab('YAML');
@@ -637,14 +624,11 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
 
       // Add the same color in different cases
       await colorPicker.setColorInput('#ff0000', 'button-card-color-input');
-      await ctx.window.waitForTimeout(300);
 
       await colorPicker.setColorInput('#FF0000', 'button-card-color-input');
-      await ctx.window.waitForTimeout(300);
 
       // Should only have 1 recent color (duplicate removed)
-      const count = await colorPicker.getRecentColorsCount('button-card-color-input');
-      expect(count).toBe(1);
+      await colorPicker.waitForRecentColorsCount(1, 'button-card-color-input');
     } finally {
       await close(ctx);
     }
@@ -672,8 +656,9 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       for (let i = 0; i < 15; i++) {
         const color = `#${i.toString(16).padStart(2, '0')}0000`;
         await colorPicker.setColorInput(color, 'button-card-color-input');
-        await ctx.window.waitForTimeout(100);
       }
+
+      await colorPicker.waitForRecentColorsCount(10, 'button-card-color-input');
 
       // Should have maximum 10 recent colors
       const count = await colorPicker.getRecentColorsCount('button-card-color-input');

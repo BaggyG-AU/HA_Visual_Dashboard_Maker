@@ -7,9 +7,6 @@ test.describe('Settings', () => {
     try {
       await ctx.appDSL.waitUntilReady();
       await ctx.settings.open();
-
-      // Verify dialog is visible
-      await expect(ctx.window.getByText('Settings')).toBeVisible();
     } finally {
       await close(ctx);
     }
@@ -62,9 +59,7 @@ test.describe('Settings', () => {
       await ctx.settings.expectLoggingLevel('Debug');
 
       // Close settings dialog
-      const closeButton = ctx.window.getByRole('button', { name: /Close/i }).last();
-      await closeButton.click();
-      await expect(ctx.window.getByText('Settings')).not.toBeVisible({ timeout: 2000 });
+      await ctx.settings.close();
 
       // Reopen settings and verify Debug persisted
       await ctx.settings.open();
@@ -194,15 +189,8 @@ test.describe('Settings', () => {
       await ctx.appDSL.waitUntilReady();
       await ctx.settings.open();
 
-      // Verify dialog is open
-      await expect(ctx.window.getByText('Settings')).toBeVisible();
-
       // Close the dialog
-      const closeButton = ctx.window.getByRole('button', { name: /Close/i }).last();
-      await closeButton.click();
-
-      // Verify dialog is closed (give it a moment to animate out)
-      await expect(ctx.window.getByText('Settings')).not.toBeVisible({ timeout: 2000 });
+      await ctx.settings.close();
     } finally {
       await close(ctx);
     }

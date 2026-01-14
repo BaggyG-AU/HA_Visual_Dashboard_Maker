@@ -31,12 +31,29 @@ export class CanvasDSL {
    * Deselect current card by clicking empty canvas area
    */
   async deselectCard(): Promise<void> {
-    // Click the canvas container (not a card)
     const canvas = this.window.locator('.react-grid-layout');
-    await canvas.click({ position: { x: 10, y: 10 } });
+    await expect(canvas).toBeVisible();
 
-    // Wait for properties panel to disappear
-    await expect(this.window.getByTestId('properties-panel')).toHaveCount(0, { timeout: 2000 });
+    const box = await canvas.boundingBox();
+    if (!box) {
+      throw new Error('Canvas bounding box unavailable');
+    }
+
+    // Avoid clicking the top-left area where the first card is typically placed.
+    const positions = [
+      { x: Math.max(5, Math.floor(box.width - 5)), y: 5 },
+      { x: Math.max(5, Math.floor(box.width - 5)), y: Math.max(5, Math.floor(box.height - 5)) },
+      { x: 5, y: Math.max(5, Math.floor(box.height - 5)) },
+    ];
+
+    for (const pos of positions) {
+      await canvas.click({ position: pos });
+      const hidden = await this.window.getByTestId('properties-panel').count().then((c) => c === 0).catch(() => false);
+      if (hidden) return;
+    }
+
+    // Wait for properties panel to disappear (final attempt)
+    await expect(this.window.getByTestId('properties-panel')).toHaveCount(0, { timeout: 3000 });
   }
 
   /**

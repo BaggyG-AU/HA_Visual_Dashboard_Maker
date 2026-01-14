@@ -14,6 +14,7 @@ import { haConnectionService } from '../services/haConnectionService';
 import { createDebouncedCommit, DebouncedCommit } from '../utils/debouncedCommit';
 import { extractStyleColor, upsertStyleColor } from '../utils/styleBackground';
 import { applyBackgroundConfigToStyle, DEFAULT_BACKGROUND_CONFIG, parseBackgroundConfig, type BackgroundConfig } from '../utils/backgroundStyle';
+import { formatActionLabel, resolveTapAction } from '../services/smartActions';
 
 const { Title, Text } = Typography;
 
@@ -180,6 +181,69 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       </Form.Item>
     </div>
   );
+
+  const renderSmartDefaultsConfig = (testIdPrefix: string) => {
+    if (!card) return null;
+
+    return (
+      <div>
+        <Divider />
+        <Text strong style={{ color: 'white' }}>Smart Default Actions</Text>
+        <Form.Item
+          label={
+            <Tooltip title="When enabled, tap_action is computed automatically based on the entity domain unless you define tap_action explicitly.">
+              <span style={{ color: 'white' }}>Use Smart Defaults</span>
+            </Tooltip>
+          }
+          name="smart_defaults"
+          valuePropName="checked"
+        >
+          <Switch data-testid={`${testIdPrefix}-smart-defaults-toggle`} />
+        </Form.Item>
+
+        <Form.Item noStyle shouldUpdate>
+          {() => {
+            const currentEntity = form.getFieldValue('entity') as string | undefined;
+            const smartDefaults = form.getFieldValue('smart_defaults') as boolean | undefined;
+            const tapAction = form.getFieldValue('tap_action');
+
+            const { action, source } = resolveTapAction({
+              ...card,
+              entity: currentEntity,
+              smart_defaults: smartDefaults,
+              tap_action: tapAction,
+            });
+
+            const sourceLabel =
+              source === 'user'
+                ? 'User-defined'
+                : source === 'smart'
+                  ? 'Smart default'
+                  : source === 'legacy'
+                    ? 'Legacy default'
+                    : 'None';
+
+            return (
+              <div
+                style={{
+                  padding: '8px 10px',
+                  background: '#141414',
+                  border: '1px solid #2a2a2a',
+                  borderRadius: 6,
+                }}
+                data-testid={`${testIdPrefix}-smart-defaults-preview`}
+              >
+                <Text style={{ color: '#bbb', fontSize: 12 }}>
+                  Tap action used: <Text style={{ color: '#fff' }}>{formatActionLabel(action)}</Text>{' '}
+                  <Text style={{ color: '#666' }}>({sourceLabel})</Text>
+                </Text>
+              </div>
+            );
+          }}
+        </Form.Item>
+      </div>
+    );
+  };
 
   // Helper function to normalize entities for form display
   const normalizeCardForForm = (card: Card): FormCardValues => {
@@ -680,6 +744,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 <IconSelect placeholder="mdi:lightbulb" />
               </Form.Item>
 
+              {renderSmartDefaultsConfig('button-card')}
               {renderHapticConfig('button-card')}
               {renderSoundConfig('button-card')}
             </>
@@ -1177,6 +1242,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               >
                 <IconSelect placeholder="mdi:lightbulb" />
               </Form.Item>
+
+              {renderSmartDefaultsConfig('custom-button-card')}
             </>
           )}
 

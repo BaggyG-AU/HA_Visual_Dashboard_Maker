@@ -328,7 +328,7 @@ const App: React.FC = () => {
     });
   };
 
-  const handleCardSelect = (cardIndex: number) => {
+  const handleCardSelect = (cardIndex: number | null) => {
     if (selectedViewIndex !== null) {
       setSelectedCard(selectedViewIndex, cardIndex);
     }

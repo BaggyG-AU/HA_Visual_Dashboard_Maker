@@ -3,8 +3,8 @@
 **Branch**: `feature/entity-intelligence-layer`
 **Version Target**: v0.6.0-beta.1
 **Dependencies**: None (independent phase)
-**Status**: ⏳ Ready to Begin
-**Planned Start**: TBD
+**Status**: 🚧 In Progress (Feature 3.1 complete)
+**Planned Start**: 2026-01-14
 
 ---
 
@@ -29,7 +29,7 @@
 
 | Feature | Priority | Effort | Status |
 |---------|----------|--------|--------|
-| 3.1: Smart Default Actions | High | 4-5 days | ⏳ Ready to Begin |
+| 3.1: Smart Default Actions | High | 4-5 days | ✅ Complete |
 | 3.2: Entity Context Variables | High | 5-6 days | ⏳ Ready to Begin |
 | 3.3: Entity Remapping (Fuzzy Matching) | Medium | 6-7 days | ⏳ Ready to Begin |
 | 3.4: Entity Attribute Display | Medium | 3-4 days | ⏳ Ready to Begin |
@@ -46,82 +46,83 @@
 **Priority**: High
 **Dependencies**: None
 **Estimated Effort**: 4-5 days
-**Status**: ⏳ Ready to Begin
+**Status**: ✅ Complete (2026-01-14)
 
 ### Implementation Checklist
 
 #### Phase 1: Core Domain Action Mapping (Days 1-2)
 
-- [ ] Create `src/services/smartActions.ts` service
-- [ ] Define domain-to-action mapping configuration
-  - [ ] `switch`: default to `toggle`
-  - [ ] `light`: default to `toggle`
-  - [ ] `climate`: default to `more-info`
-  - [ ] `sensor`: default to `more-info`
-  - [ ] `binary_sensor`: default to `more-info`
-  - [ ] `cover`: default to `toggle` (open/close)
-  - [ ] `lock`: default to `call-service` (lock.unlock)
-  - [ ] `script`: default to `call-service` (script.turn_on)
-  - [ ] `automation`: default to `toggle`
-  - [ ] `camera`: default to `more-info`
-  - [ ] `media_player`: default to `toggle`
-  - [ ] `fan`: default to `toggle`
-  - [ ] `vacuum`: default to `call-service` (vacuum.start)
-- [ ] Implement `getSmartDefaultAction(entity_id: string): Action` function
-- [ ] Add precedence logic: user-defined actions override smart defaults
-- [ ] Unit tests for domain detection and action mapping
+- [x] Create `src/services/smartActions.ts` service
+- [x] Define domain-to-action mapping configuration
+  - [x] `switch`: default to `toggle`
+  - [x] `light`: default to `toggle`
+  - [x] `climate`: default to `more-info`
+  - [x] `sensor`: default to `more-info`
+  - [x] `binary_sensor`: default to `more-info`
+  - [x] `cover`: default to `toggle` (open/close)
+  - [x] `lock`: default to `call-service` (lock.unlock via `service_data.entity_id`)
+  - [x] `script`: default to `call-service` (script.turn_on via `service_data.entity_id`)
+  - [x] `automation`: default to `toggle`
+  - [x] `camera`: default to `more-info`
+  - [x] `media_player`: default to `toggle`
+  - [x] `fan`: default to `toggle`
+  - [x] `vacuum`: default to `call-service` (vacuum.start via `service_data.entity_id`)
+- [x] Implement `getSmartDefaultAction(entity_id: string): Action` function
+- [x] Add precedence logic: user-defined actions override smart defaults
+- [x] Unit tests for domain detection and action mapping
 
 #### Phase 2: PropertiesPanel Integration (Day 2)
 
-- [ ] Add "Use Smart Defaults" checkbox to action configuration sections
-- [ ] Default checkbox to `checked` for new cards
-- [ ] Show computed smart default action (read-only preview)
-- [ ] Allow user to override by unchecking or defining custom action
-- [ ] UI shows distinction between smart default and user-defined action
+- [x] Add "Use Smart Defaults" checkbox to action configuration sections
+- [x] Default checkbox to `checked` for new cards (button + custom:button-card)
+- [x] Show computed smart default action (read-only preview)
+- [x] Allow user to override by unchecking or defining custom action
+- [x] UI shows distinction between smart default and user-defined action
 
 #### Phase 3: YAML Storage & Serialization (Day 3)
 
-- [ ] Define `smart_defaults: boolean` property in card config schema
-- [ ] Serialize smart defaults setting to YAML
-- [ ] Deserialize and apply smart defaults on dashboard load
-- [ ] Migration: existing cards default to `smart_defaults: false` (preserve behavior)
-- [ ] New cards default to `smart_defaults: true`
+- [x] Define `smart_defaults: boolean` property in card config schema
+- [x] Serialize smart defaults setting to YAML
+- [x] Deserialize and apply smart defaults on dashboard load
+- [x] Migration/back-compat: preserve existing behavior when `smart_defaults` is absent (legacy behavior)
+- [x] New cards default to `smart_defaults: true` (button + custom:button-card)
 
 #### Phase 4: Runtime Action Resolution (Day 3)
 
-- [ ] Implement action resolution service
-- [ ] Check if user has defined explicit `tap_action`
+- [x] Implement action resolution service
+- [x] Check if user has defined explicit `tap_action`
   - If yes: use user action (smart defaults don't apply)
   - If no and `smart_defaults: true`: use computed smart default
   - If no and `smart_defaults: false`: no action
-- [ ] Apply smart defaults to `tap_action` only (not hold/double-tap)
-- [ ] Ensure card preview reflects smart default behavior
+  - If no and `smart_defaults` is missing: preserve legacy behavior (toggle for button/custom:button-card only)
+- [x] Apply smart defaults to `tap_action` only (not hold/double-tap)
+- [x] Ensure card preview reflects resolved behavior (user/smart/legacy/none)
 
 #### Phase 5: Testing & Documentation (Days 4-5)
 
-- [ ] Unit tests for all domain mappings
-- [ ] Unit tests for precedence logic
-- [ ] E2E tests using SmartActionsDSL
-  - [ ] Card with `smart_defaults: true` uses correct action for each domain
-  - [ ] User-defined action overrides smart default
-  - [ ] Checkbox toggle updates YAML
-  - [ ] Smart defaults persist across dashboard load
-- [ ] Update documentation with smart defaults reference table
-- [ ] Add tooltips explaining smart defaults in UI
+- [x] Unit tests for all domain mappings
+- [x] Unit tests for precedence logic
+- [x] E2E tests using SmartActionsDSL
+  - [x] Card with `smart_defaults: true` uses correct action for each domain
+  - [x] User-defined action overrides smart default
+  - [x] Checkbox toggle updates YAML
+  - [x] Smart defaults persist across dashboard load
+- [x] Update documentation with smart defaults reference table
+- [x] Add tooltips explaining smart defaults in UI
 
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
 - [x] Smart default actions work for all common domains (switch, light, sensor, climate, etc.)
-- [ ] User-defined actions always take precedence over smart defaults
-- [ ] `smart_defaults` setting persists in YAML correctly
-- [ ] PropertiesPanel UI clearly indicates when smart defaults are active
-- [ ] Existing dashboards preserve current behavior (no breaking changes)
-- [ ] All unit and E2E tests pass
+- [x] User-defined actions always take precedence over smart defaults
+- [x] `smart_defaults` setting persists in YAML correctly
+- [x] PropertiesPanel UI clearly indicates when smart defaults are active
+- [x] Existing dashboards preserve current behavior (no breaking changes)
+- [x] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
-- [ ] PropertiesPanel shows preview of what action will be used
-- [ ] Tooltips explain what smart default action will be applied
+- [x] PropertiesPanel shows preview of what action will be used
+- [x] Tooltips explain what smart default action will be applied
 - [ ] Settings page allows customizing default actions per domain (global override)
 
 **Won't Have (Out of Scope)**:
@@ -145,6 +146,24 @@ This feature MUST comply with:
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first E2E tests using SmartActionsDSL
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Service in `src/services/smartActions.ts`
 - ✅ [PLAYWRIGHT_TESTING.md](../testing/PLAYWRIGHT_TESTING.md) - State-based waits, no arbitrary delays
+
+### Delivered Implementation Notes (2026-01-14)
+
+- Scope: Smart default action *resolution + UI + YAML round-trip* for `button` and `custom:button-card` only (as per Feature 3.1 acceptance and current app support).
+- Back-compat:
+  - If `smart_defaults` is **missing** and `tap_action` is not explicitly set, legacy behavior is preserved for `button` + `custom:button-card` (toggle).
+  - New cards default to `smart_defaults: true` for `button` + `custom:button-card`.
+- Runtime: Smart defaults are only applied to `tap_action` (hold/double-tap remain out-of-scope).
+
+### Verification (2026-01-14)
+
+Commands executed in this repo:
+- `npm run lint` (0 errors; warnings only)
+- `npm run test:unit` (all unit tests passing)
+- `npx playwright test --project=electron-integration --shard 2/2 --reporter=list --workers=1 --trace=retain-on-failure` (passing)
+- `npx playwright test --project=electron-e2e --reporter=list --workers=1 --trace=retain-on-failure` (passing; 2 skipped due to known Electron focus limitation)
+
+Note: Additional full-suite verification was also run by the maintainer and reported passing.
 
 ---
 

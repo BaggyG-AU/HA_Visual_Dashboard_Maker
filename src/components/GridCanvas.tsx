@@ -13,7 +13,7 @@ import './GridCanvas.css';
 interface GridCanvasProps {
   view: View;
   selectedCardIndex: number | null;
-  onCardSelect: (cardIndex: number) => void;
+  onCardSelect: (cardIndex: number | null) => void;
   onLayoutChange: (layout: Layout[]) => void;
   onCardDrop?: (cardType: string, x: number, y: number) => void;
   onCardCut?: () => void;
@@ -185,6 +185,14 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   return (
     <div
       style={{ height: '100%', overflow: 'auto', padding: '16px' }}
+      onMouseDown={(event) => {
+        const target = event.target as HTMLElement | null;
+        if (!target) return;
+        if (target.closest('[data-testid="canvas-card"]')) return;
+        if (selectedCardIndex !== null) {
+          onCardSelect(null);
+        }
+      }}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >

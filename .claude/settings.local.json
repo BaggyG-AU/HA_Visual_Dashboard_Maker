@@ -54,7 +54,8 @@
       "Bash(find:*)",
       "Bash(tee:*)",
       "Bash(python3:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "Bash(gh auth status:*)"
     ]
   }
 }

@@ -282,6 +282,11 @@
           "$ref": "#/definitions/action",
           "description": "Action on double tap"
         },
+        "smart_defaults": {
+          "type": "boolean",
+          "description": "HAVDM: Enable smart default tap_action resolution",
+          "default": false
+        },
         "cards": {
           "type": "array",
           "description": "Nested cards (for stack/grid cards)",

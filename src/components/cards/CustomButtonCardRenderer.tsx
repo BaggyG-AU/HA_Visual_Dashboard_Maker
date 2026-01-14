@@ -9,6 +9,7 @@ import { isGradientString } from '../../utils/gradientConversions';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { triggerHapticForAction } from '../../services/hapticService';
 import { playSoundForAction } from '../../services/soundService';
+import { resolveTapAction } from '../../services/smartActions';
 
 const { Text } = Typography;
 
@@ -134,7 +135,7 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
   };
 
   const gradientIcon = isGradientString(iconColor) ? renderGradientIcon(iconColor) : null;
-  const tapAction = card.tap_action ?? { action: 'toggle' };
+  const { action: tapAction } = resolveTapAction(card);
 
   const handleClick = () => {
     triggerHapticForAction(tapAction, card.haptic);

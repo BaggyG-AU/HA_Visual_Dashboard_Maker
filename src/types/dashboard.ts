@@ -22,6 +22,7 @@ export interface BaseCard {
   name?: string;
   icon?: string;
   style?: string;
+  smart_defaults?: boolean;
   haptic?: HapticCardConfig;
   sound?: SoundCardConfig;
   icon_color?: string;
