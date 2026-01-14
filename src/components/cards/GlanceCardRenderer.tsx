@@ -3,6 +3,7 @@ import { Card as AntCard, Typography } from 'antd';
 import { DashboardOutlined, BulbOutlined } from '@ant-design/icons';
 import { GlanceCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
+import { useEntityContextResolver } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -21,7 +22,12 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
   isSelected = false,
   onClick,
 }) => {
-  const title = card.title || 'Glance';
+  const resolveContext = useEntityContextResolver();
+  const defaultEntityId = Array.isArray(card.entities)
+    ? (typeof card.entities[0] === 'string' ? card.entities[0] : card.entities[0]?.entity)
+    : null;
+  const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId ?? null) : '';
+  const title = (card.title ? resolvedTitle : '') || 'Glance';
   const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
   const columns = card.columns || 5;
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
@@ -34,7 +40,10 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
   };
 
   const getEntityName = (entity: any): string => {
-    if (typeof entity === 'object' && entity?.name) return entity.name;
+    if (typeof entity === 'object' && entity?.name) {
+      const entityId = getEntityId(entity);
+      return resolveContext(entity.name, entityId);
+    }
     const id = getEntityId(entity);
     return id.split('.')[1]?.replace(/_/g, ' ') || id;
   };

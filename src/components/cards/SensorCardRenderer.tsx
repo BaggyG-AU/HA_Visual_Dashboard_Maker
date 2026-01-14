@@ -4,6 +4,7 @@ import { DashboardOutlined } from '@ant-design/icons';
 import { SensorCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -31,7 +32,12 @@ export const SensorCardRenderer: React.FC<SensorCardRendererProps> = ({
   const unit = attributes.unit_of_measurement || '';
   const deviceClass = attributes.device_class || '';
 
-  const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Sensor';
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
+  const displayName =
+    (card.name ? resolvedName : '') ||
+    attributes.friendly_name ||
+    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+    'Sensor';
   const showGraph = card.graph !== 'none';
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 

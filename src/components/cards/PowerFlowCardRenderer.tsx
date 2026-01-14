@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard, Typography, Tag } from 'antd';
 import { SunOutlined, HomeOutlined, ThunderboltFilled, ApiOutlined, FireOutlined, CloudOutlined } from '@ant-design/icons';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
+import { useEntityContextResolver } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -66,6 +67,7 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
   const entities = card.entities || {};
   const individual = entities.individual || [];
   const individualCount = individual.length;
+  const resolveContext = useEntityContextResolver();
 
   // Generate mock power values for demonstration
   const mockValues = {
@@ -91,6 +93,10 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
     card.style,
     isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
   );
+  const solarLabel = entities.solar?.name ? resolveContext(entities.solar.name, entities.solar.entity) : 'Solar';
+  const gridLabel = entities.grid?.name ? resolveContext(entities.grid.name, entities.grid.entity) : 'Grid';
+  const homeLabel = entities.home?.name ? resolveContext(entities.home.name, entities.home.entity) : 'Home';
+  const batteryLabel = entities.battery?.name ? resolveContext(entities.battery.name, entities.battery.entity) : 'Battery';
 
   const PowerNode: React.FC<{
     icon: React.ReactNode;
@@ -207,7 +213,7 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
             <PowerNode
               icon={<SunOutlined />}
-              label="Solar"
+              label={solarLabel}
               value={mockValues.solar}
               color="#faad14"
               entity={entities.solar}
@@ -231,7 +237,7 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <PowerNode
                 icon={<ApiOutlined />}
-                label="Grid"
+                label={gridLabel}
                 value={mockValues.grid}
                 color={mockValues.grid > 0 ? '#f5222d' : '#52c41a'}
                 entity={entities.grid}
@@ -244,7 +250,7 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
           {entities.home && (
             <PowerNode
               icon={<HomeOutlined />}
-              label="Home"
+              label={homeLabel}
               value={mockValues.home}
               color="#00d9ff"
               entity={entities.home}
@@ -257,7 +263,7 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
               <FlowLine active={Math.abs(mockValues.battery) > 0} />
               <PowerNode
                 icon={<ThunderboltFilled />}
-                label="Battery"
+                label={batteryLabel}
                 value={mockValues.battery}
                 color={mockValues.battery < 0 ? '#52c41a' : '#722ed1'}
                 entity={entities.battery}

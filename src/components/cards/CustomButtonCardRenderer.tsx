@@ -10,6 +10,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { triggerHapticForAction } from '../../services/hapticService';
 import { playSoundForAction } from '../../services/soundService';
 import { resolveTapAction } from '../../services/smartActions';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -42,7 +43,12 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
   const entity = card.entity ? getEntity(card.entity) : null;
 
   // Extract configuration
-  const name = card.name || entity?.attributes?.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Button';
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
+  const name =
+    (card.name ? resolvedName : '') ||
+    entity?.attributes?.friendly_name ||
+    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+    'Button';
   const icon = card.icon || card.icon_template;
   const colorProp = card.color;
   const iconColorProp = card.icon_color;
@@ -194,7 +200,7 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
 
           {/* Name */}
           {showName && (
-            <Text strong style={{ color: '#fff', fontSize: '13px', textAlign: 'center' }}>
+            <Text strong style={{ color: '#fff', fontSize: '13px', textAlign: 'center' }} data-testid="custom-button-card-name">
               {name}
             </Text>
           )}

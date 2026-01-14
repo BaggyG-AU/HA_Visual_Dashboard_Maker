@@ -136,6 +136,33 @@ export class PropertiesPanelDSL {
   }
 
   /**
+   * Set the primary entity for the current card (AntD Select)
+   */
+  async setEntity(entityId: string): Promise<void> {
+    await this.expectVisible();
+    // Ensure field is in view (panel can be scrolled)
+    await this.panel.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+    const select = this.window.getByTestId('entity-select');
+    await expect(select).toBeVisible({ timeout: 10000 });
+
+    // Open dropdown to enable input
+    await select.click();
+
+    const input = select.locator('input');
+    await expect(input).toBeVisible({ timeout: 5000 });
+    await expect(input).toBeEnabled({ timeout: 5000 });
+    await input.fill(entityId);
+
+    // Confirm selection
+    await this.window.keyboard.press('Enter');
+
+    // Verify value applied
+    await expect(select).toContainText(entityId, { timeout: 3000 });
+  }
+
+  /**
    * Verify panel shows specific card type
    */
   async expectCardType(cardType: string | RegExp): Promise<void> {

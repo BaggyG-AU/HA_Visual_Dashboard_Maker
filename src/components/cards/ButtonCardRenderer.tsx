@@ -6,6 +6,7 @@ import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { triggerHapticForAction } from '../../services/hapticService';
 import { playSoundForAction } from '../../services/soundService';
 import { resolveTapAction } from '../../services/smartActions';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -24,7 +25,11 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
   isSelected = false,
   onClick,
 }) => {
-  const displayName = card.name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Button';
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
+  const displayName =
+    (card.name ? resolvedName : '') ||
+    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+    'Button';
   const showName = card.show_name !== false;
   const showState = card.show_state !== false;
   const showIcon = card.show_icon !== false;
@@ -87,6 +92,7 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
             textAlign: 'center',
             textTransform: 'capitalize',
           }}
+          data-testid="button-card-display-name"
         >
           {displayName}
         </Text>

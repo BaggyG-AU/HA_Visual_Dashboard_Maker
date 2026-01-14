@@ -3,6 +3,7 @@ import { Card as AntCard, Typography, Space } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import { Card } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -22,6 +23,7 @@ export const UnsupportedCard: React.FC<UnsupportedCardProps> = ({
   onClick,
 }) => {
   const isCustomCard = card.type.startsWith('custom:');
+  const resolvedName = useEntityContextValue(card.name ?? '', (card as any).entity ?? null);
   const backgroundStyle = getCardBackgroundStyle(
     card.style,
     isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
@@ -80,7 +82,7 @@ export const UnsupportedCard: React.FC<UnsupportedCardProps> = ({
           </Text>
           {card.name && (
             <Text type="secondary" style={{ fontSize: '10px', display: 'block', marginTop: '2px' }}>
-              {card.name}
+              {resolvedName}
             </Text>
           )}
         </div>

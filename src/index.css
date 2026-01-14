@@ -17,3 +17,10 @@ body {
   height: 100vh;
   width: 100vw;
 }
+
+.entity-context-token {
+  color: #7ee787 !important;
+  font-weight: 600;
+  background-color: rgba(126, 231, 135, 0.08);
+  border-radius: 2px;
+}

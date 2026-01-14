@@ -2,6 +2,7 @@ import React from 'react';
 import { Card as AntCard, Typography } from 'antd';
 import { BorderVerticleOutlined } from '@ant-design/icons';
 import { CustomCard } from '../../types/dashboard';
+import { useEntityContextResolver } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -31,7 +32,11 @@ export const VerticalStackInCardRenderer: React.FC<VerticalStackInCardRendererPr
 }) => {
   // Extract configuration
   const cards = (card as any).cards || [];
-  const title = (card as any).title;
+  const resolveContext = useEntityContextResolver();
+  const defaultEntityId = cards.find((child: any) => typeof child?.entity === 'string')?.entity ?? null;
+  const titleTemplate = (card as any).title as string | undefined;
+  const resolvedTitle = titleTemplate ? resolveContext(titleTemplate, defaultEntityId) : '';
+  const title = titleTemplate ? resolvedTitle : undefined;
   const horizontal = (card as any).horizontal;
 
   const cardCount = cards.length;

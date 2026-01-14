@@ -4,6 +4,7 @@ import { BulbOutlined } from '@ant-design/icons';
 import { LightCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -32,7 +33,12 @@ export const LightCardRenderer: React.FC<LightCardRendererProps> = ({
   const brightnessPercent = Math.round((brightness / 255) * 100);
   const isOn = state === 'on';
 
-  const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Light';
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
+  const displayName =
+    (card.name ? resolvedName : '') ||
+    attributes.friendly_name ||
+    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+    'Light';
 
   // Color based on RGB if available, otherwise yellow for on
   const getLightColor = () => {

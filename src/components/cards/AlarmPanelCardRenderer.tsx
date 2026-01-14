@@ -4,6 +4,7 @@ import { SafetyOutlined, LockOutlined, UnlockOutlined, WarningOutlined } from '@
 import { AlarmPanelCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -30,7 +31,12 @@ export const AlarmPanelCardRenderer: React.FC<AlarmPanelCardRendererProps> = ({
   const attributes = entity?.attributes || {};
   const codeFormat = attributes.code_format;
 
-  const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Alarm';
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
+  const displayName =
+    (card.name ? resolvedName : '') ||
+    attributes.friendly_name ||
+    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+    'Alarm';
 
   // Get alarm states to display (default to common states)
   const alarmStates = card.states || ['armed_home', 'armed_away', 'armed_night', 'disarmed'];

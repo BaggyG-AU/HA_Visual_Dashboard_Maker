@@ -4,6 +4,7 @@ import { PictureOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import { PictureGlanceCard, EntityConfig } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextResolver } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -23,10 +24,13 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
   onClick,
 }) => {
   const { getEntity } = useHAEntities();
+  const resolveContext = useEntityContextResolver();
 
   // Extract card properties
   const entities = card.entities || [];
-  const title = card.title;
+  const defaultEntityId = entities.length > 0 ? (typeof entities[0] === 'string' ? entities[0] : entities[0].entity) : null;
+  const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId ?? null) : '';
+  const title = card.title ? resolvedTitle : undefined;
   const showState = card.show_state !== false;
   const hasImage = card.image && card.image.length > 0;
   const hasCameraImage = card.camera_image && card.camera_image.length > 0;
@@ -39,8 +43,11 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
     const entity = getEntity(entityId);
     const attributes = entity?.attributes || {};
 
-    const name = typeof entityConfig === 'object' && (entityConfig as EntityConfig).name
+    const nameTemplate = typeof entityConfig === 'object' && (entityConfig as EntityConfig).name
       ? (entityConfig as EntityConfig).name
+      : '';
+    const name = nameTemplate
+      ? resolveContext(nameTemplate, entityId)
       : attributes.friendly_name || entityId.split('.')[1]?.replace(/_/g, ' ') || entityId;
 
     const icon = typeof entityConfig === 'object' && (entityConfig as EntityConfig).icon

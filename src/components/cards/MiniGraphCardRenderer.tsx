@@ -4,6 +4,7 @@ import { DashboardOutlined } from '@ant-design/icons';
 import { CustomCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -33,13 +34,18 @@ export const MiniGraphCardRenderer: React.FC<MiniGraphCardRendererProps> = ({
   const entities = card.entities || (card.entity ? [card.entity] : []);
   const primaryEntity = entities[0];
   const entity = typeof primaryEntity === 'string' ? getEntity(primaryEntity) : getEntity(primaryEntity?.entity);
+  const primaryEntityId = typeof primaryEntity === 'string' ? primaryEntity : primaryEntity?.entity;
 
   // Extract properties
   const state = entity?.state || '--';
   const attributes = entity?.attributes || {};
   const unit = attributes.unit_of_measurement || '';
-  const displayName = card.name || attributes.friendly_name ||
-    (typeof primaryEntity === 'string' ? primaryEntity.split('.')[1]?.replace(/_/g, ' ') : '') || 'Sensor';
+  const resolvedName = useEntityContextValue(card.name ?? '', primaryEntityId ?? null);
+  const displayName =
+    (card.name ? resolvedName : '') ||
+    attributes.friendly_name ||
+    (typeof primaryEntity === 'string' ? primaryEntity.split('.')[1]?.replace(/_/g, ' ') : '') ||
+    'Sensor';
 
   // Card configuration
   const showName = card.show?.name !== false;

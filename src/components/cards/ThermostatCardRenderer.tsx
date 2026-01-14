@@ -4,6 +4,7 @@ import { FireOutlined, PlusOutlined, MinusOutlined } from '@ant-design/icons';
 import { ThermostatCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -36,7 +37,12 @@ export const ThermostatCardRenderer: React.FC<ThermostatCardRendererProps> = ({
   const unit = attributes.unit_of_measurement || '°C';
 
   // Determine display name
-  const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Climate';
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
+  const displayName =
+    (card.name ? resolvedName : '') ||
+    attributes.friendly_name ||
+    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+    'Climate';
 
   // Color based on HVAC action/mode
   const getStatusColor = () => {

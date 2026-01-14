@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip, Switch, InputNumber } from 'antd';
 import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
 import * as monaco from 'monaco-editor';
@@ -15,6 +15,8 @@ import { createDebouncedCommit, DebouncedCommit } from '../utils/debouncedCommit
 import { extractStyleColor, upsertStyleColor } from '../utils/styleBackground';
 import { applyBackgroundConfigToStyle, DEFAULT_BACKGROUND_CONFIG, parseBackgroundConfig, type BackgroundConfig } from '../utils/backgroundStyle';
 import { formatActionLabel, resolveTapAction } from '../services/smartActions';
+import { useHAEntities } from '../contexts/HAEntityContext';
+import { getMissingEntityReferences, hasEntityContextVariables, resolveEntityContext } from '../services/entityContext';
 
 const { Title, Text } = Typography;
 
@@ -60,6 +62,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const skipStyleSyncRef = useRef(false);
   const monacoEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
+  const { entities } = useHAEntities();
 
   const COMMIT_DEBOUNCE_MS = 800;
   const YAML_SYNC_DEBOUNCE_MS = 250;
@@ -181,6 +184,71 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       </Form.Item>
     </div>
   );
+
+  const resolveContextValue = useCallback(
+    (template: string, defaultEntityId: string | null) => resolveEntityContext(template, defaultEntityId, entities),
+    [entities],
+  );
+
+  const renderContextPreviewSection = (values: FormCardValues) => {
+    if (!card) return null;
+
+    const entityField = typeof values.entity === 'string' ? values.entity : undefined;
+    const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
+    const firstEntity = entitiesField
+      ? (typeof entitiesField[0] === 'string' ? entitiesField[0] : (entitiesField[0] as any)?.entity)
+      : undefined;
+    const availableEntityIds = Object.keys(entities || {});
+    const fallbackEntityId = availableEntityIds.length > 0 ? availableEntityIds[0] : null;
+    const defaultEntityId = entityField ?? card.entity ?? firstEntity ?? fallbackEntityId;
+
+    const candidates = [
+      { key: 'name', label: 'Name', template: typeof values.name === 'string' ? values.name : undefined },
+      { key: 'title', label: 'Title', template: typeof values.title === 'string' ? values.title : undefined },
+      { key: 'content', label: 'Content', template: typeof values.content === 'string' ? values.content : undefined },
+    ];
+
+    const entries = candidates
+      .filter((entry) => entry.template && hasEntityContextVariables(entry.template))
+      .map((entry) => {
+        const template = entry.template as string;
+        return {
+          ...entry,
+          resolved: resolveContextValue(template, defaultEntityId),
+          missing: getMissingEntityReferences(template, defaultEntityId, entities),
+        };
+      });
+
+    if (entries.length === 0) return null;
+
+    return (
+      <div style={{ marginTop: '16px' }} data-testid="entity-context-preview-section">
+        <Divider />
+        <Text strong style={{ color: 'white' }}>Entity Context Preview</Text>
+        <Text type="secondary" style={{ display: 'block', fontSize: '12px', marginTop: '4px' }}>
+          Use variables like <Text code>[[entity.state]]</Text> or <Text code>[[entity.attributes.battery]]</Text>.
+        </Text>
+        <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {entries.map((entry) => (
+            <div key={entry.key} data-testid={`entity-context-preview-${entry.key}`}>
+              <Text strong style={{ color: '#e6e6e6', fontSize: '12px' }}>{entry.label}</Text>
+              <div style={{ marginTop: '4px', padding: '8px', backgroundColor: '#111', borderRadius: '6px' }}>
+                <Text style={{ color: '#b7eb8f', fontSize: '12px' }}>{entry.resolved || ' '}</Text>
+              </div>
+              {entry.missing.length > 0 && (
+                <Alert
+                  type="warning"
+                  showIcon
+                  style={{ marginTop: '6px' }}
+                  message={`Missing entities: ${entry.missing.join(', ')}`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const renderSmartDefaultsConfig = (testIdPrefix: string) => {
     if (!card) return null;
@@ -744,26 +812,31 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 <IconSelect placeholder="mdi:lightbulb" />
               </Form.Item>
 
-              {renderSmartDefaultsConfig('button-card')}
-              {renderHapticConfig('button-card')}
-              {renderSoundConfig('button-card')}
-            </>
-          )}
+          {renderSmartDefaultsConfig('button-card')}
+          {renderHapticConfig('button-card')}
+          {renderSoundConfig('button-card')}
+        </>
+      )}
 
-          {card.type === 'markdown' && (
-            <Form.Item
-              label={<span style={{ color: 'white' }}>Content</span>}
-              name="content"
-            >
-              <Input.TextArea
-                placeholder="# Markdown content&#10;&#10;Your text here..."
-                rows={8}
-              />
-            </Form.Item>
-          )}
+      {card.type === 'markdown' && (
+        <Form.Item
+          label={<span style={{ color: 'white' }}>Content</span>}
+          name="content"
+        >
+          <Input.TextArea
+            placeholder="# Markdown content&#10;&#10;Your text here..."
+            rows={8}
+          />
+        </Form.Item>
+      )}
 
-          {(card.type === 'sensor' || card.type === 'gauge') && (
-            <>
+      {/* Entity context preview for any card with templated text fields */}
+      <Form.Item noStyle shouldUpdate>
+        {() => renderContextPreviewSection(form.getFieldsValue(true) as FormCardValues)}
+      </Form.Item>
+
+      {(card.type === 'sensor' || card.type === 'gauge') && (
+        <>
               <Form.Item
                 label={<span style={{ color: 'white' }}>Entity</span>}
                 name="entity"

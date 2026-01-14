@@ -3,6 +3,7 @@ import { Card as AntCard } from 'antd';
 import ReactApexChart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
+import { useEntityContextResolver } from '../../hooks/useEntityContext';
 
 interface ApexChartsSeries {
   entity: string;
@@ -74,7 +75,10 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
   isSelected = false,
   onClick,
 }) => {
-  const title = card.header?.title || 'Chart';
+  const resolveContext = useEntityContextResolver();
+  const defaultEntityId = card.series?.[0]?.entity;
+  const resolvedTitle = card.header?.title ? resolveContext(card.header.title, defaultEntityId ?? null) : '';
+  const title = (card.header?.title ? resolvedTitle : '') || 'Chart';
   const showHeader = card.header?.show !== false;
   const chartHeight = card.apex_config?.chart?.height || 280;
   const backgroundStyle = getCardBackgroundStyle((card as { style?: string }).style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
@@ -82,7 +86,7 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
   // Generate mock data for demonstration
   const { series, options } = useMemo(() => {
     const seriesData = (card.series || []).map((s, idx) => ({
-      name: s.name || s.entity.split('.')[1]?.replace(/_/g, ' ') || `Series ${idx + 1}`,
+      name: s.name ? resolveContext(s.name, s.entity) : s.entity.split('.')[1]?.replace(/_/g, ' ') || `Series ${idx + 1}`,
       data: generateMockData(30), // Generate 30 data points
     }));
 
@@ -167,7 +171,7 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
     };
 
     return { series: seriesData, options: apexOptions };
-  }, [card, chartHeight]);
+  }, [card, chartHeight, resolveContext]);
 
   return (
     <AntCard

@@ -4,6 +4,7 @@ import { FireOutlined, CloudOutlined, PoweroffOutlined, ThunderboltOutlined } fr
 import { CustomCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -45,7 +46,12 @@ export const BetterThermostatCardRenderer: React.FC<BetterThermostatCardRenderer
   const ecoMode = attributes.preset_mode === 'eco';
 
   // Determine display name
-  const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Climate';
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
+  const displayName =
+    (card.name ? resolvedName : '') ||
+    attributes.friendly_name ||
+    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+    'Climate';
 
   // Color based on HVAC mode
   const getModeColor = (mode: string) => {

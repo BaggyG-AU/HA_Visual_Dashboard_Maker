@@ -4,6 +4,7 @@ import { CheckCircleOutlined, CloseCircleOutlined, QuestionCircleOutlined } from
 import { EntitiesCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextResolver } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -22,7 +23,13 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
   isSelected = false,
   onClick,
 }) => {
-  const title = card.title || card.name || 'Entities';
+  const resolveContext = useEntityContextResolver();
+  const defaultEntityId = Array.isArray(card.entities)
+    ? (typeof card.entities[0] === 'string' ? card.entities[0] : card.entities[0]?.entity)
+    : null;
+  const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId ?? null) : '';
+  const resolvedName = card.name ? resolveContext(card.name, defaultEntityId ?? null) : '';
+  const title = (card.title ? resolvedTitle : '') || (card.name ? resolvedName : '') || 'Entities';
   const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
@@ -88,7 +95,7 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
             fontWeight: 500,
             color: '#e1e1e1',
             padding: '0',
-          }}>
+          }} data-testid="entities-card-title">
             {title}
           </div>
         ) : undefined
@@ -121,9 +128,10 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
         {Array.isArray(card.entities) && card.entities.slice(0, 10).map((entity, idx) => {
           const entityId = getEntityId(entity);
           const domain = entityId.split('.')[0];
+          const rawName = typeof entity === 'object' && entity?.name ? entity.name : '';
           const entityName =
-            typeof entity === 'object' && entity?.name
-              ? entity.name
+            rawName
+              ? resolveContext(rawName, entityId)
               : entityId.split('.')[1]?.replace(/_/g, ' ');
 
           // Get live state from HA

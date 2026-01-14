@@ -51,8 +51,10 @@ export class CardPaletteDSL {
    * Expand a category by name (if collapsed)
    */
   async expandCategory(categoryName: string): Promise<void> {
+    await this.waitUntilVisible(15000);
+
     const header = this.palette.getByRole('button', { name: new RegExp(categoryName, 'i') });
-    await expect(header).toBeVisible();
+    await expect(header).toBeVisible({ timeout: 10000 });
 
     const isExpanded = await header.getAttribute('aria-expanded');
     if (isExpanded !== 'true') {

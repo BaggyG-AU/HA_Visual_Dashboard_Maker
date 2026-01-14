@@ -4,6 +4,7 @@ import { EnvironmentOutlined, AimOutlined } from '@ant-design/icons';
 import { MapCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextResolver } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -23,10 +24,13 @@ export const MapCardRenderer: React.FC<MapCardRendererProps> = ({
   onClick,
 }) => {
   const { getEntity } = useHAEntities();
+  const resolveContext = useEntityContextResolver();
 
   // Extract map properties
   const entities = card.entities || [];
-  const title = card.title || 'Map';
+  const defaultEntityId = entities.length > 0 ? (typeof entities[0] === 'string' ? entities[0] : entities[0].entity) : null;
+  const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId ?? null) : '';
+  const title = (card.title ? resolvedTitle : '') || 'Map';
   const defaultZoom = card.default_zoom || 15;
   const darkMode = card.dark_mode !== false;
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
@@ -37,8 +41,9 @@ export const MapCardRenderer: React.FC<MapCardRendererProps> = ({
     const entity = getEntity(entityId);
     const attributes = entity?.attributes || {};
 
-    const name = typeof entityConfig === 'object' && entityConfig.name
-      ? entityConfig.name
+    const nameTemplate = typeof entityConfig === 'object' && entityConfig.name ? entityConfig.name : '';
+    const name = nameTemplate
+      ? resolveContext(nameTemplate, entityId)
       : attributes.friendly_name || entityId.split('.')[1]?.replace(/_/g, ' ') || entityId;
 
     return {

@@ -4,6 +4,7 @@ import { PictureOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import { PictureEntityCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -28,7 +29,12 @@ export const PictureEntityCardRenderer: React.FC<PictureEntityCardRendererProps>
   // Extract entity properties
   const state = entity?.state || 'unknown';
   const attributes = entity?.attributes || {};
-  const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Entity';
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
+  const displayName =
+    (card.name ? resolvedName : '') ||
+    attributes.friendly_name ||
+    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+    'Entity';
 
   const showName = card.show_name !== false;
   const showState = card.show_state !== false;
