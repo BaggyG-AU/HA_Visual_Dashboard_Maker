@@ -90,6 +90,31 @@ export async function launch(): Promise<ElectronTestContext> {
   // Wait for renderer to load its DOM
   await window.waitForLoadState('domcontentloaded');
 
+  // Diagnostics: log window count and URL for debugging blank window cases
+  try {
+    const info = await app.evaluate(({ BrowserWindow }) => {
+      const wins = BrowserWindow.getAllWindows();
+      const primary = wins[0];
+      return {
+        count: wins.length,
+        primary: primary
+          ? {
+              url: primary.webContents.getURL(),
+              isVisible: primary.isVisible(),
+              isDestroyed: primary.isDestroyed(),
+              isMinimized: primary.isMinimized(),
+              loading: primary.webContents.isLoading()
+            }
+          : null
+      };
+    });
+    // eslint-disable-next-line no-console
+    console.log('[electron launch] window info', JSON.stringify(info));
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.log('[electron launch] diagnostics failed', String(err));
+  }
+
   // Maximize window for consistent viewport (fixes react-grid-layout sizing issues)
   await app.evaluate(({ BrowserWindow }) => {
     const win = BrowserWindow.getAllWindows()[0];
@@ -105,7 +130,7 @@ export async function launch(): Promise<ElectronTestContext> {
 
   // Then wait for React to actually render content inside root
   // The App component should render its content
-  await window.waitForSelector('#root > *', { timeout: 10000, state: 'attached' });
+  await window.waitForSelector('#root > *', { timeout: 20000, state: 'attached' });
 
   // Extra time for monaco-setup async operations and React hydration
   await window.waitForTimeout(1500);

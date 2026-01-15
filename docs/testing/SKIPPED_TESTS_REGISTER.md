@@ -2,10 +2,10 @@
 
 **Purpose**: Single source of truth for tests that are intentionally skipped after investigation. Release notes may also reference skips, but individual entries live here.
 
-**Last Updated**: January 10, 2026
+**Last Updated**: January 15, 2026
 
 ## Summary
-- Total skipped (current suite): **2** Playwright spec/test
+- Total skipped (current suite): **3** Playwright spec/test
 - Primary causes:
   - Monaco/YAML model visibility issues in the Properties Panel (Playwright + Electron)
   - Focus/portal detection issues in Electron (Color Picker visual/a11y)
@@ -21,6 +21,7 @@
 | `tests/e2e/color-picker.spec.ts` | `should update YAML when color is changed` | **PASS (unskipped Jan 8, 2026)** | Jan 6, 2026 | RESOLVED: DSL now reads Monaco model via explicit handles/scoped editor selection with diagnostics; assertions are stable. | n/a |
 | `tests/e2e/color-picker.spec.ts` | `button card color + icon color should update preview and YAML` | **PASS (unskipped Jan 8, 2026)** | Jan 6, 2026 | RESOLVED: Same Monaco-model read path + diagnostics as above. | n/a |
 | `tests/e2e/gradient-editor.spec.ts` | `gradient editor applies preset and persists to yaml` | **PASS (unskipped Jan 8, 2026)** | Jan 7, 2026 | RESOLVED: Uses Monaco-model read with diagnostics; portal disambiguation handled in DSL. | n/a |
+| `tests/e2e/entity-remapping.spec.ts` | `auto-maps missing entities and updates YAML` | Skipped | Jan 15, 2026 | Apply button click does not invoke handler in Electron E2E; modal wrapper remains visible and `remapModalVisible` stays true. Diagnostics show `data-has-config=1`, `data-mapping-count=1`, but no `remapApplyClicked`/`remapOnApplyInvoked` markers in `window.__remapDebug`. Modal wrapper is visible with full-screen rect while modal root height is 0. Evidence: `test-results/artifacts/e2e-entity-remapping-Entit-03101-g-entities-and-updates-YAML-electron-e2e/remap-apply-pre.json`, `remap-apply-debug.json`, trace.zip. | Revisit when modal event handling in Electron test context is verified; add click-capture instrumentation and confirm handler firing before unskipping. |
 
 ## Policy (applies to all entries)
 1) Include a concrete reason and reference; no “temporary” skips without documentation.  

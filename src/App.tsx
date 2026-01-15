@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge, Tooltip, Segmented } from 'antd';
-import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined, DatabaseOutlined, SplitCellsOutlined, AppstoreAddOutlined, SettingOutlined } from '@ant-design/icons';
+import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined, DatabaseOutlined, SplitCellsOutlined, AppstoreAddOutlined, SettingOutlined, SwapOutlined } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
@@ -17,7 +17,7 @@ import { SplitViewEditor } from './components/SplitViewEditor';
 import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
-import { HAEntityProvider } from './contexts/HAEntityContext';
+import { HAEntityProvider, useHAEntities } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
 import { SettingsDialog } from './components/SettingsDialog';
 import { ThemePreviewPanel } from './components/ThemePreviewPanel';
@@ -28,8 +28,11 @@ import { useEditorModeStore, EditorMode } from './store/editorModeStore';
 import { logger } from './services/logger';
 import { setSoundSettings } from './services/soundService';
 import { setHapticSettings } from './services/hapticService';
-import type { Card } from './types/dashboard';
+import { entityRemappingService, type EntityMapping } from './services/entityRemapping';
+import type { Card, DashboardConfig } from './types/dashboard';
 import type { LoggingLevel } from './services/settingsService';
+import type { EntityState } from './services/haWebSocketService';
+import EntityRemappingModal from './components/EntityRemappingModal';
 
 const { Header, Content, Sider } = Layout;
 type CardWithInternalLayout = Card & {
@@ -49,9 +52,37 @@ type TestThemeApi = {
   applyThemes: (themesData: TestThemeData) => void;
 };
 
-const isTestEnv =
-  (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1')) ||
-  (typeof window !== 'undefined' && Boolean((window as unknown as { E2E?: boolean }).E2E));
+interface RemapWatcherProps {
+  config: DashboardConfig | null;
+  onAvailableEntities: (entities: EntityState[]) => void;
+  onMissingDetected: (missing: string[]) => void;
+}
+
+const RemapWatcher: React.FC<RemapWatcherProps> = ({ config, onAvailableEntities, onMissingDetected }) => {
+  const { entities } = useHAEntities();
+
+  useEffect(() => {
+    const availableList = Object.values(entities);
+    onAvailableEntities(availableList);
+    if (!config || availableList.length === 0) return;
+    const referenced = entityRemappingService.extractEntityIds(config);
+    const missing = entityRemappingService.detectMissing(referenced, availableList);
+    onMissingDetected(missing);
+  }, [entities, config, onAvailableEntities, onMissingDetected]);
+
+  return null;
+};
+
+const isTestEnv = (): boolean => {
+  if (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1')) {
+    return true;
+  }
+  if (typeof window !== 'undefined') {
+    const testWindow = window as Window & { E2E?: string | boolean; PLAYWRIGHT_TEST?: string | boolean };
+    return Boolean(testWindow.E2E || testWindow.PLAYWRIGHT_TEST);
+  }
+  return false;
+};
 
 const App: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
@@ -69,6 +100,22 @@ const App: React.FC = () => {
   const [livePreviewMode, setLivePreviewMode] = useState<boolean>(false);
   const [tempDashboardPath, setTempDashboardPath] = useState<string | null>(null);
   const [haUrl, setHaUrl] = useState<string>('');
+  const [remapModalVisible, setRemapModalVisible] = useState<boolean>(false);
+  const [missingEntities, setMissingEntities] = useState<string[]>([]);
+  const [availableEntities, setAvailableEntities] = useState<EntityState[]>([]);
+  const [autoRemapPending, setAutoRemapPending] = useState<boolean>(false);
+  const buildRemapDebugState = () => ({
+    remapModalVisible,
+    missingEntities,
+    availableEntitiesCount: availableEntities.length,
+    autoRemapPending,
+    isConnected,
+  });
+  const logRemapDebug = (label: string, extra: Record<string, unknown> = {}) => {
+    if (!isTestEnv()) return;
+    // eslint-disable-next-line no-console
+    console.log('[remap-debug]', label, { ...buildRemapDebugState(), ...extra });
+  };
 
   // Clipboard state for cut/copy/paste operations
   const [clipboard, setClipboard] = useState<{
@@ -112,6 +159,19 @@ const App: React.FC = () => {
     mode: editorMode,
     setMode: setEditorMode,
   } = useEditorModeStore();
+
+  // Expose remap debug state in test environments
+  useEffect(() => {
+    if (!isTestEnv() || typeof window === 'undefined') return;
+    const testWindow = window as Window & { __remapDebug?: unknown };
+    const existing = (testWindow.__remapDebug && typeof testWindow.__remapDebug === 'object')
+      ? (testWindow.__remapDebug as Record<string, unknown>)
+      : {};
+    testWindow.__remapDebug = { ...existing, ...buildRemapDebugState() };
+    return () => {
+      delete testWindow.__remapDebug;
+    };
+  }, [remapModalVisible, missingEntities, availableEntities, autoRemapPending, isConnected]);
 
   // Ref for canvas container to apply theme
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -157,7 +217,7 @@ const App: React.FC = () => {
 
   // Expose lightweight test hooks for Playwright to inject themes/connection state
   useEffect(() => {
-    if (isTestEnv) {
+    if (isTestEnv()) {
       const testWindow = window as Window & { __testThemeApi?: TestThemeApi };
       testWindow.__testThemeApi = {
         setConnected: (connected: boolean) => setIsConnected(connected),
@@ -216,6 +276,8 @@ const App: React.FC = () => {
           message.success(`Dashboard loaded: ${result.filePath}`);
           // Add to recent files
           await window.electronAPI.addRecentFile(result.filePath);
+          setAutoRemapPending(true);
+          setTimeout(triggerMissingEntityScan, 0);
         }
       }
     } catch (error) {
@@ -244,6 +306,8 @@ const App: React.FC = () => {
           message.success(`Dashboard loaded: ${filePath}`);
           // Add to recent files (moves it to top)
           await window.electronAPI.addRecentFile(filePath);
+          setAutoRemapPending(true);
+          setTimeout(triggerMissingEntityScan, 0);
         }
       } else {
         message.error(`Failed to read file: ${result.error}`);
@@ -306,6 +370,29 @@ const App: React.FC = () => {
     setIsDarkTheme(newTheme);
     await window.electronAPI.setTheme(newTheme ? 'dark' : 'light');
     message.info(`Switched to ${newTheme ? 'dark' : 'light'} theme`);
+  };
+
+  const triggerMissingEntityScan = () => {
+    if (!config) return;
+    const referenced = entityRemappingService.extractEntityIds(config);
+    const missing = entityRemappingService.detectMissing(referenced, availableEntities);
+    setMissingEntities(missing);
+    logRemapDebug('triggerMissingEntityScan', { referencedCount: referenced.length, missingCount: missing.length });
+    setRemapModalVisible(true);
+    setAutoRemapPending(false);
+  };
+
+  const handleManualRemapOpen = () => {
+    if (!config) {
+      message.warning('Load a dashboard first');
+      return;
+    }
+    const referenced = entityRemappingService.extractEntityIds(config);
+    const missing = entityRemappingService.detectMissing(referenced, availableEntities);
+    logRemapDebug('handleManualRemapOpen', { referencedCount: referenced.length, missingCount: missing.length });
+    setMissingEntities(missing);
+    setRemapModalVisible(true);
+    setAutoRemapPending(false);
   };
 
   const handleShowAbout = () => {
@@ -734,7 +821,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Disable Ant motion in automated tests to avoid hidden/animating portals
-    if (isTestEnv) {
+    if (isTestEnv()) {
       document.body.classList.add('ant-motion-disabled');
     }
   }, []);
@@ -1198,6 +1285,17 @@ const App: React.FC = () => {
       }}
     >
       <HAEntityProvider enabled={isConnected}>
+      <RemapWatcher
+        config={config}
+        onAvailableEntities={(entities) => setAvailableEntities(entities)}
+        onMissingDetected={(missing) => {
+          setMissingEntities(missing);
+          if (missing.length > 0 && autoRemapPending) {
+            setRemapModalVisible(true);
+            setAutoRemapPending(false);
+          }
+        }}
+      />
       <Layout
         data-testid="app-shell"
         className="app-container"
@@ -1419,6 +1517,15 @@ const App: React.FC = () => {
                           Deploy
                         </Button>
                       </Tooltip>
+                      <Tooltip title="Remap missing entities">
+                        <Button
+                          icon={<SwapOutlined />}
+                          onClick={handleManualRemapOpen}
+                          data-testid="remap-open-manual"
+                        >
+                          Remap
+                        </Button>
+                      </Tooltip>
                       <Tooltip title="Preview dashboard live in Home Assistant with drag-and-drop editing">
                         <Button
                           type={livePreviewMode ? 'primary' : 'default'}
@@ -1548,6 +1655,27 @@ const App: React.FC = () => {
         onCreateFromEntityType={handleCreateFromEntityType}
         isConnected={isConnected}
       />
+      <EntityRemappingModal
+        visible={remapModalVisible}
+        missingEntities={missingEntities}
+        availableEntities={availableEntities}
+        dashboardConfig={config}
+        onClose={() => {
+          setRemapModalVisible(false);
+        }}
+        onApply={(updatedConfig, mappings) => {
+          if (isTestEnv() && typeof window !== 'undefined') {
+            const testWindow = window as Window & { __remapDebug?: Record<string, unknown> };
+            const existing = (testWindow.__remapDebug && typeof testWindow.__remapDebug === 'object')
+              ? (testWindow.__remapDebug as Record<string, unknown>)
+              : {};
+            testWindow.__remapDebug = { ...existing, remapOnApplyInvoked: true };
+          }
+          setRemapModalVisible(false);
+          updateConfig(updatedConfig);
+          message.success(`Mapped ${mappings.length} entit${mappings.length === 1 ? 'y' : 'ies'}`);
+        }}
+      />
       {verboseUIDebug && (
         <div
           data-testid="verbose-ui-overlay"
@@ -1569,6 +1697,16 @@ const App: React.FC = () => {
           <div>Status: {isConnected ? 'Connected' : 'Offline'}</div>
           <div>File: {filePath || 'Untitled'}</div>
         </div>
+      )}
+      {isTestEnv() && (
+        <div
+          data-testid="remap-debug-state"
+          data-visible={remapModalVisible ? '1' : '0'}
+          data-missing-count={missingEntities.length}
+          data-available-count={availableEntities.length}
+          data-auto-remap-pending={autoRemapPending ? '1' : '0'}
+          style={{ display: 'none' }}
+        />
       )}
       </HAEntityProvider>
     </ConfigProvider>

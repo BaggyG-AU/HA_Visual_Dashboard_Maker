@@ -55,7 +55,8 @@
       "Bash(tee:*)",
       "Bash(python3:*)",
       "Bash(sort:*)",
-      "Bash(gh auth status:*)"
+      "Bash(gh auth status:*)",
+      "Bash(zip:*)"
     ]
   }
 }

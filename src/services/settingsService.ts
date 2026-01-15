@@ -24,6 +24,7 @@ interface AppSettings {
   hapticsIntensity?: number;
   soundsEnabled?: boolean;
   soundsVolume?: number;
+  entityMappings?: { from: string; to: string }[];
 }
 
 export type LoggingLevel = 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
@@ -248,6 +249,19 @@ class SettingsService {
 
   setSoundsVolume(volume: number): void {
     this.store.set('soundsVolume', volume);
+  }
+
+  // Entity remapping persistence
+  getEntityMappings(): { from: string; to: string }[] {
+    return this.store.get('entityMappings', []);
+  }
+
+  setEntityMappings(mappings: { from: string; to: string }[]): void {
+    this.store.set('entityMappings', mappings);
+  }
+
+  clearEntityMappings(): void {
+    this.store.set('entityMappings', []);
   }
 
   // Reset UI state (non-destructive to dashboards)
