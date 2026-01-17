@@ -79,7 +79,7 @@ HA_Visual_Dashboard_Maker/
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 20+ and npm 10+
 - Home Assistant instance (for testing)
 - Basic knowledge of Home Assistant dashboards
 
