@@ -49,9 +49,65 @@ test.describe('Entity Remapping (Feature 3.3)', () => {
       await entityRemapping.openManual();
       await entityRemapping.expectModalVisible(testInfo);
       await entityRemapping.autoMapAll();
-      await entityRemapping.apply(testInfo);
+      await entityRemapping.apply();
 
+      // Capture debug state immediately after Apply click
+      await ctx.window.waitForTimeout(500);
+      const debugAfterApply = await ctx.window.evaluate(() => {
+        const testWindow = window as Window & { __remapDebug?: unknown };
+        return {
+          remapDebug: testWindow.__remapDebug ?? null,
+          modalCount: document.querySelectorAll('[data-testid="entity-remapping-modal"]').length,
+          debugState: (document.querySelector('[data-testid="remap-debug-state"]') as HTMLElement | null)?.dataset ?? null,
+        };
+      });
+      await testInfo.attach('debug-after-apply.json', {
+        body: JSON.stringify(debugAfterApply, null, 2),
+        contentType: 'application/json',
+      });
+
+      const modal = ctx.window.getByTestId('entity-remapping-modal');
+      await expect.poll(async () => (await modal.count()) === 0, { timeout: 5000 }).toBe(true);
+      if (await modal.count()) {
+        const diag = await ctx.window.evaluate(() => {
+          const testWindow = window as Window & { __remapDebug?: unknown };
+          const state = document.querySelector('[data-testid="remap-debug-state"]') as HTMLElement | null;
+          const root = document.querySelector('[data-testid="entity-remapping-modal"]') as HTMLElement | null;
+          const wrap = document.querySelector('.ant-modal-wrap') as HTMLElement | null;
+          return {
+            remapDebug: testWindow.__remapDebug ?? null,
+            stateDataset: state ? { ...state.dataset } : null,
+            modalAttrs: root
+              ? {
+                  ariaHidden: root.getAttribute('aria-hidden'),
+                  dataHasConfig: root.getAttribute('data-has-config'),
+                  dataMappingCount: root.getAttribute('data-mapping-count'),
+                }
+              : null,
+            rootStyle: root
+              ? { display: root.style.display, visibility: root.style.visibility, classes: root.className }
+              : null,
+            wrapStyle: wrap
+              ? { display: wrap.style.display, visibility: wrap.style.visibility, classes: wrap.className }
+              : null,
+          };
+        });
+        await testInfo.attach('remap-modal-not-closed.json', {
+          body: JSON.stringify(diag, null, 2),
+          contentType: 'application/json',
+        });
+      }
       await properties.switchTab('YAML');
+      const yamlProbe = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      await testInfo.attach('remap-yaml-after-apply.json', {
+        body: JSON.stringify({ value: yamlProbe.value }, null, 2),
+        contentType: 'application/json',
+      });
+      await expect
+        .poll(async () => {
+          return await yamlEditor.anyYamlContains(/light\.missing_lamp_local/);
+        }, { timeout: 8000 })
+        .toBe(true);
       await yamlEditor.expectMonacoVisible('properties', testInfo);
       const { value: after } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
       const updated = yaml.load(after) as Record<string, any>;

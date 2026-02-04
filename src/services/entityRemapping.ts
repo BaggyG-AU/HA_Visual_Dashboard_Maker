@@ -170,7 +170,7 @@ export class EntityRemappingService {
       }
     });
 
-    this.setEntityMappings(merged);
+    this.writeStorage(merged);
   }
 
   getEntityMappings(): EntityMapping[] {

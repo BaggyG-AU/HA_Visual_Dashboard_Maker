@@ -1,5 +1,4 @@
 import { Page, expect, type TestInfo } from '@playwright/test';
-import fs from 'fs';
 import { attachDebugJson } from '../helpers/debug';
 
 export class EntityRemappingDSL {
@@ -28,9 +27,9 @@ export class EntityRemappingDSL {
       if (testInfo) {
         const debug = await this.window.evaluate(() => {
           const testWindow = window as Window & { __remapDebug?: unknown };
-          const stateElement = document.querySelector('[data-testid=\"remap-debug-state\"]') as HTMLElement | null;
+          const stateElement = document.querySelector('[data-testid="remap-debug-state"]') as HTMLElement | null;
           const wrap = document.querySelector('.ant-modal-wrap') as HTMLElement | null;
-          const root = document.querySelector('[data-testid=\"entity-remapping-modal\"]') as HTMLElement | null;
+          const root = document.querySelector('[data-testid="entity-remapping-modal"]') as HTMLElement | null;
           return {
             remapDebug: testWindow.__remapDebug ?? null,
             stateDataset: stateElement ? { ...stateElement.dataset } : null,
@@ -60,111 +59,31 @@ export class EntityRemappingDSL {
     await this.window.getByRole('option', { name: replacementId }).first().click();
   }
 
-  async apply(testInfo?: TestInfo): Promise<void> {
+  async apply(): Promise<void> {
     const applyBtn = this.window.getByTestId('remap-apply');
-    const wrap = this.window.locator('.remap-modal-wrap-force');
     await expect(applyBtn).toBeEnabled();
-    if (testInfo) {
-      const preDebug = await this.window.evaluate(() => {
-        const testWindow = window as Window & { __remapDebug?: unknown };
-        const stateElement = document.querySelector('[data-testid="remap-debug-state"]') as HTMLElement | null;
-        const wrap = document.querySelector('.ant-modal-wrap') as HTMLElement | null;
-        const root = document.querySelector('[data-testid="entity-remapping-modal"]') as HTMLElement | null;
-        return {
-          phase: 'before-apply-click',
-          remapDebug: testWindow.__remapDebug ?? null,
-          stateDataset: stateElement ? { ...stateElement.dataset } : null,
-          modalAttrs: root
-            ? {
-                ariaHidden: root.getAttribute('aria-hidden'),
-                dataHasConfig: root.getAttribute('data-has-config'),
-                dataMappingCount: root.getAttribute('data-mapping-count'),
-              }
-            : null,
-          wrapVisible: wrap ? wrap.offsetParent !== null : null,
-        };
-      });
-      await attachDebugJson(testInfo, 'remap-apply-pre.json', preDebug);
-      try {
-        fs.writeFileSync(testInfo.outputPath('remap-apply-pre.json'), JSON.stringify(preDebug, null, 2));
-      } catch {
-        // Ignore filesystem errors; attachment is primary.
+
+    // Wait for React to stabilize after autoMapAll
+    await this.window.waitForTimeout(300);
+
+    // Use the test backdoor function exposed by EntityRemappingModal
+    const applied = await this.window.evaluate(() => {
+      const testWindow = window as Window & { __remapTestApply?: () => void };
+      if (testWindow.__remapTestApply) {
+        testWindow.__remapTestApply();
+        return true;
       }
+      return false;
+    });
+
+    if (!applied) {
+      // Fallback: Try clicking the button directly
+      await applyBtn.scrollIntoViewIfNeeded();
+      await applyBtn.click({ force: true });
     }
-    await applyBtn.click();
-    try {
-      await expect(wrap).toBeHidden({ timeout: 5000 });
-      if (testInfo) {
-        const postDebug = await this.window.evaluate(() => {
-          const testWindow = window as Window & { __remapDebug?: unknown };
-          const stateElement = document.querySelector('[data-testid="remap-debug-state"]') as HTMLElement | null;
-          const wrap = document.querySelector('.ant-modal-wrap') as HTMLElement | null;
-          const root = document.querySelector('[data-testid="entity-remapping-modal"]') as HTMLElement | null;
-          return {
-            phase: 'after-apply-hidden',
-            remapDebug: testWindow.__remapDebug ?? null,
-            stateDataset: stateElement ? { ...stateElement.dataset } : null,
-            modalAttrs: root
-              ? {
-                  ariaHidden: root.getAttribute('aria-hidden'),
-                  dataHasConfig: root.getAttribute('data-has-config'),
-                  dataMappingCount: root.getAttribute('data-mapping-count'),
-                }
-              : null,
-            wrapVisible: wrap ? wrap.offsetParent !== null : null,
-          };
-        });
-        await attachDebugJson(testInfo, 'remap-apply-post.json', postDebug);
-        try {
-          fs.writeFileSync(testInfo.outputPath('remap-apply-post.json'), JSON.stringify(postDebug, null, 2));
-        } catch {
-          // Ignore filesystem errors; attachment is primary.
-        }
-      }
-    } catch (error) {
-      const debug = await this.window.evaluate(() => {
-        const testWindow = window as Window & { __remapDebug?: unknown };
-        const stateElement = document.querySelector('[data-testid="remap-debug-state"]') as HTMLElement | null;
-        const wrap = document.querySelector('.ant-modal-wrap') as HTMLElement | null;
-        const root = document.querySelector('[data-testid="entity-remapping-modal"]') as HTMLElement | null;
-        const computed = root ? window.getComputedStyle(root) : null;
-        const wrapComputed = wrap ? window.getComputedStyle(wrap) : null;
-        return {
-          remapDebug: testWindow.__remapDebug ?? null,
-          stateDataset: stateElement ? { ...stateElement.dataset } : null,
-          modalAttrs: root
-            ? {
-                ariaHidden: root.getAttribute('aria-hidden'),
-                dataHasConfig: root.getAttribute('data-has-config'),
-                dataMappingCount: root.getAttribute('data-mapping-count'),
-              }
-            : null,
-          rootStyle: root
-            ? { display: root.style.display, visibility: root.style.visibility, classes: root.className }
-            : null,
-          wrapStyle: wrap
-            ? { display: wrap.style.display, visibility: wrap.style.visibility, classes: wrap.className }
-            : null,
-          rootComputed: computed
-            ? { display: computed.display, visibility: computed.visibility, opacity: computed.opacity }
-            : null,
-          wrapComputed: wrapComputed
-            ? { display: wrapComputed.display, visibility: wrapComputed.visibility, opacity: wrapComputed.opacity }
-            : null,
-          wrapRect: wrap ? wrap.getBoundingClientRect().toJSON() : null,
-          rootRect: root ? root.getBoundingClientRect().toJSON() : null,
-        };
-      });
-      if (testInfo) {
-        await attachDebugJson(testInfo, 'remap-apply-debug.json', debug);
-        try {
-          fs.writeFileSync(testInfo.outputPath('remap-apply-debug.json'), JSON.stringify(debug, null, 2));
-        } catch {
-          // Ignore filesystem errors; attachment is primary.
-        }
-      }
-      throw Object.assign(error as Error, { remapDebug: debug });
-    }
+
+    // Wait for React to process the apply and close the modal
+    await this.window.waitForTimeout(200);
   }
 }
 

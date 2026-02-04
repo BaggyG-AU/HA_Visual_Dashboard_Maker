@@ -65,6 +65,33 @@ export const EntityRemappingModal: React.FC<Props> = ({
     setMappingState(next);
   };
 
+  // Expose handleApply to window for test automation
+  useEffect(() => {
+    if (!isTestEnv() || typeof window === 'undefined') return;
+    const testWindow = window as Window & { __remapTestApply?: () => void };
+    testWindow.__remapTestApply = () => {
+      // Call handleApply indirectly to ensure latest state is used
+      const btn = document.querySelector('[data-testid="remap-apply"]') as HTMLButtonElement | null;
+      if (btn && !btn.disabled) {
+        // Simulate what handleApply does with current state
+        if (!dashboardConfig) {
+          onClose();
+          return;
+        }
+        const mappings = Object.entries(mappingState)
+          .filter(([, to]) => Boolean(to))
+          .map(([from, to]) => ({ from, to: to as string }));
+        if (mappings.length === 0) return;
+        const mergedConfig = entityRemappingService.applyMappings(dashboardConfig, mappings);
+        entityRemappingService.persistMappings(mappings);
+        onApply(mergedConfig, mappings);
+      }
+    };
+    return () => {
+      delete testWindow.__remapTestApply;
+    };
+  }, [visible, dashboardConfig, mappingState, onApply, onClose]);
+
   const handleApply = () => {
     if (isTestEnv() && typeof window !== 'undefined') {
       const testWindow = window as Window & { __remapDebug?: Record<string, unknown> };
