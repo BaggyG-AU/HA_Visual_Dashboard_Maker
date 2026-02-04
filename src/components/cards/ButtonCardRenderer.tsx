@@ -7,6 +7,8 @@ import { triggerHapticForAction } from '../../services/hapticService';
 import { playSoundForAction } from '../../services/soundService';
 import { resolveTapAction } from '../../services/smartActions';
 import { useEntityContextValue } from '../../hooks/useEntityContext';
+import { useHAEntities } from '../../contexts/HAEntityContext';
+import { AttributeDisplay } from '../AttributeDisplay';
 
 const { Text } = Typography;
 
@@ -25,6 +27,9 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
   isSelected = false,
   onClick,
 }) => {
+  const { getEntity } = useHAEntities();
+  const entity = card.entity ? getEntity(card.entity) : null;
+  const attributes = entity?.attributes || {};
   const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
   const displayName =
     (card.name ? resolvedName : '') ||
@@ -96,6 +101,15 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
         >
           {displayName}
         </Text>
+      )}
+
+      {card.attribute_display && card.attribute_display.length > 0 && (
+        <AttributeDisplay
+          attributes={attributes}
+          items={card.attribute_display}
+          layout={card.attribute_display_layout}
+          testIdPrefix="attribute-display-button"
+        />
       )}
 
       {showState && card.entity && (

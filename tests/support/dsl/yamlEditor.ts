@@ -440,8 +440,8 @@ export class YamlEditorDSL {
    * Returns true if any model or visible rendered YAML contains the pattern.
    */
   async anyYamlContains(pattern: RegExp): Promise<boolean> {
-    return await this.window.evaluate((pat: string, flags: string) => {
-      const re = new RegExp(pat, flags);
+    return await this.window.evaluate((input: { pat: string; flags: string }) => {
+      const re = new RegExp(input.pat, input.flags);
       const testWindow = window as unknown as YamlTestWindow;
       const monaco = testWindow.monaco;
 
@@ -480,7 +480,7 @@ export class YamlEditorDSL {
         .map((n) => n.textContent || '')
         .join('\n');
       return re.test(globalViewText);
-    }, pattern.source, pattern.flags);
+    }, { pat: pattern.source, flags: pattern.flags });
   }
 
   /**

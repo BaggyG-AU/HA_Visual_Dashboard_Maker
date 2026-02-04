@@ -56,7 +56,12 @@
       "Bash(python3:*)",
       "Bash(sort:*)",
       "Bash(gh auth status:*)",
-      "Bash(zip:*)"
+      "Bash(zip:*)",
+      "Bash(while read hash msg)",
+      "Bash(do echo \"$hash: $msg\")",
+      "Bash(done)",
+      "Bash(curl:*)",
+      "Bash(unzip:*)"
     ]
   }
 }

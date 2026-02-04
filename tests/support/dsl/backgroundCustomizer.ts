@@ -14,11 +14,25 @@ export class BackgroundCustomizerDSL {
     return this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
   }
 
+  private async dismissBlockingPopovers(): Promise<void> {
+    const popover = this.window.locator('.ant-popover:not(.ant-popover-hidden)');
+    if (await popover.count()) {
+      await this.window.keyboard.press('Escape');
+      await this.window.mouse.click(5, 5);
+    }
+  }
+
   async selectType(type: BackgroundTypeLabel, testInfo?: TestInfo): Promise<void> {
     const select = this.getTypeSelect();
     await expect(select).toBeVisible();
     await select.scrollIntoViewIfNeeded();
-    await select.click();
+    await this.dismissBlockingPopovers();
+    try {
+      await select.click();
+    } catch {
+      await this.dismissBlockingPopovers();
+      await select.click({ force: true });
+    }
 
     const dropdown = this.getVisibleDropdown();
     try {

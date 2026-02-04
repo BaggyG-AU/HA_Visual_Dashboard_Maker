@@ -5,6 +5,7 @@ import { EntitiesCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 import { useEntityContextResolver } from '../../hooks/useEntityContext';
+import { AttributeDisplay } from '../AttributeDisplay';
 
 const { Text } = Typography;
 
@@ -37,9 +38,12 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
   const { getEntity, isLoading } = useHAEntities();
 
   // Extract entity IDs for display
-  const getEntityId = (entity: any): string => {
+  const getEntityId = (entity: unknown): string => {
     if (typeof entity === 'string') return entity;
-    if (typeof entity === 'object' && entity?.entity) return entity.entity;
+    if (typeof entity === 'object' && entity !== null && 'entity' in entity) {
+      const entityId = (entity as { entity?: unknown }).entity;
+      if (typeof entityId === 'string') return entityId;
+    }
     return 'unknown';
   };
 
@@ -128,7 +132,10 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
         {Array.isArray(card.entities) && card.entities.slice(0, 10).map((entity, idx) => {
           const entityId = getEntityId(entity);
           const domain = entityId.split('.')[0];
-          const rawName = typeof entity === 'object' && entity?.name ? entity.name : '';
+          const rawNameValue = typeof entity === 'object' && entity !== null && 'name' in entity
+            ? (entity as { name?: unknown }).name
+            : '';
+          const rawName = typeof rawNameValue === 'string' ? rawNameValue : '';
           const entityName =
             rawName
               ? resolveContext(rawName, entityId)
@@ -156,19 +163,29 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
                 borderBottom: idx < (Array.isArray(card.entities) ? Math.min(card.entities.length, 10) - 1 : 0) ? '1px solid rgba(255,255,255,0.05)' : 'none',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, overflow: 'hidden' }}>
-                {getStateIcon(state, domain)}
-                <Text
-                  style={{
-                    color: '#e1e1e1',
-                    fontSize: '14px',
-                    textTransform: 'capitalize',
-                    fontWeight: 400,
-                  }}
-                  ellipsis={{ tooltip: entityName }}
-                >
-                  {entityName}
-                </Text>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {getStateIcon(state, domain)}
+                  <Text
+                    style={{
+                      color: '#e1e1e1',
+                      fontSize: '14px',
+                      textTransform: 'capitalize',
+                      fontWeight: 400,
+                    }}
+                    ellipsis={{ tooltip: entityName }}
+                  >
+                    {entityName}
+                  </Text>
+                </div>
+                {card.attribute_display && card.attribute_display.length > 0 && entityState && (
+                  <AttributeDisplay
+                    attributes={entityState.attributes || {}}
+                    items={card.attribute_display}
+                    layout={card.attribute_display_layout}
+                    testIdPrefix={`attribute-display-${entityId.replace('.', '-')}`}
+                  />
+                )}
               </div>
               <Text style={{
                 color: state === 'unavailable' || state === 'unknown' ? '#ff5252' : '#9e9e9e',

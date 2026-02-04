@@ -33,16 +33,22 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Extract entity IDs for display
-  const getEntityId = (entity: any): string => {
+  const getEntityId = (entity: unknown): string => {
     if (typeof entity === 'string') return entity;
-    if (typeof entity === 'object' && entity?.entity) return entity.entity;
+    if (typeof entity === 'object' && entity !== null && 'entity' in entity) {
+      const entityId = (entity as { entity?: unknown }).entity;
+      if (typeof entityId === 'string') return entityId;
+    }
     return 'unknown';
   };
 
-  const getEntityName = (entity: any): string => {
-    if (typeof entity === 'object' && entity?.name) {
+  const getEntityName = (entity: unknown): string => {
+    if (typeof entity === 'object' && entity !== null && 'name' in entity) {
       const entityId = getEntityId(entity);
-      return resolveContext(entity.name, entityId);
+      const rawName = (entity as { name?: unknown }).name;
+      if (typeof rawName === 'string') {
+        return resolveContext(rawName, entityId);
+      }
     }
     const id = getEntityId(entity);
     return id.split('.')[1]?.replace(/_/g, ' ') || id;

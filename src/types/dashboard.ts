@@ -4,6 +4,7 @@
 
 import type { HapticCardConfig } from './haptics';
 import type { SoundCardConfig } from './sounds';
+import type { AttributeDisplayItem, AttributeDisplayLayout } from './attributeDisplay';
 
 // Layout-card view_layout configuration
 export interface ViewLayout {
@@ -23,6 +24,8 @@ export interface BaseCard {
   icon?: string;
   style?: string;
   smart_defaults?: boolean;
+  attribute_display?: AttributeDisplayItem[];
+  attribute_display_layout?: AttributeDisplayLayout;
   haptic?: HapticCardConfig;
   sound?: SoundCardConfig;
   icon_color?: string;

@@ -17,6 +17,8 @@ import { applyBackgroundConfigToStyle, DEFAULT_BACKGROUND_CONFIG, parseBackgroun
 import { formatActionLabel, resolveTapAction } from '../services/smartActions';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { getMissingEntityReferences, hasEntityContextVariables, resolveEntityContext } from '../services/entityContext';
+import { AttributeDisplayControls } from './AttributeDisplayControls';
+import type { AttributeDisplayLayout } from '../types/attributeDisplay';
 
 const { Title, Text } = Typography;
 
@@ -190,14 +192,59 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     [entities],
   );
 
+  const renderAttributeDisplaySection = (values: FormCardValues) => {
+    if (!card) return null;
+
+    const entityField = typeof values.entity === 'string' ? values.entity : undefined;
+    const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
+    const firstEntityValue = entitiesField
+      ? (typeof entitiesField[0] === 'string'
+        ? entitiesField[0]
+        : (typeof entitiesField[0] === 'object' && entitiesField[0] !== null && 'entity' in entitiesField[0]
+          ? (entitiesField[0] as { entity?: unknown }).entity
+          : undefined))
+      : undefined;
+    const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
+    const availableEntityIds = Object.keys(entities || {});
+    const fallbackEntityId = availableEntityIds.length > 0 ? availableEntityIds[0] : null;
+    const entityId = entityField ?? card.entity ?? firstEntity ?? fallbackEntityId;
+
+    const hasEntityConfig = Boolean(entityField || firstEntity || card.entity);
+    if (!hasEntityConfig) {
+      return null;
+    }
+
+    const layout = (values.attribute_display_layout as AttributeDisplayLayout) ?? 'stacked';
+
+    return (
+      <>
+        <Form.Item name="attribute_display_layout" hidden>
+          <Input />
+        </Form.Item>
+        <Form.Item name="attribute_display">
+          <AttributeDisplayControls
+            entityId={entityId}
+            layout={layout}
+            onLayoutChange={(next) => form.setFieldsValue({ attribute_display_layout: next })}
+          />
+        </Form.Item>
+      </>
+    );
+  };
+
   const renderContextPreviewSection = (values: FormCardValues) => {
     if (!card) return null;
 
     const entityField = typeof values.entity === 'string' ? values.entity : undefined;
     const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
-    const firstEntity = entitiesField
-      ? (typeof entitiesField[0] === 'string' ? entitiesField[0] : (entitiesField[0] as any)?.entity)
+    const firstEntityValue = entitiesField
+      ? (typeof entitiesField[0] === 'string'
+        ? entitiesField[0]
+        : (typeof entitiesField[0] === 'object' && entitiesField[0] !== null && 'entity' in entitiesField[0]
+          ? (entitiesField[0] as { entity?: unknown }).entity
+          : undefined))
       : undefined;
+    const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
     const availableEntityIds = Object.keys(entities || {});
     const fallbackEntityId = availableEntityIds.length > 0 ? availableEntityIds[0] : null;
     const defaultEntityId = entityField ?? card.entity ?? firstEntity ?? fallbackEntityId;
@@ -833,6 +880,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       {/* Entity context preview for any card with templated text fields */}
       <Form.Item noStyle shouldUpdate>
         {() => renderContextPreviewSection(form.getFieldsValue(true) as FormCardValues)}
+      </Form.Item>
+
+      <Form.Item noStyle shouldUpdate>
+        {() => renderAttributeDisplaySection(form.getFieldsValue(true) as FormCardValues)}
       </Form.Item>
 
       {(card.type === 'sensor' || card.type === 'gauge') && (

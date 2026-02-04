@@ -234,6 +234,57 @@
             ]
           }
         },
+        "attribute_display": {
+          "type": "array",
+          "description": "Attribute display configuration for entity attributes",
+          "items": {
+            "type": "object",
+            "properties": {
+              "attribute": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "format": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["number", "boolean", "string", "timestamp", "json"]
+                  },
+                  "precision": {
+                    "type": "number"
+                  },
+                  "unit": {
+                    "type": "string"
+                  },
+                  "trueLabel": {
+                    "type": "string"
+                  },
+                  "falseLabel": {
+                    "type": "string"
+                  },
+                  "maxLength": {
+                    "type": "number"
+                  },
+                  "timestampMode": {
+                    "type": "string",
+                    "enum": ["relative", "absolute"]
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "required": ["attribute"],
+            "additionalProperties": true
+          }
+        },
+        "attribute_display_layout": {
+          "type": "string",
+          "enum": ["inline", "stacked", "table"],
+          "description": "Layout option for attribute display"
+        },
         "name": {
           "type": "string",
           "description": "Card name/title"

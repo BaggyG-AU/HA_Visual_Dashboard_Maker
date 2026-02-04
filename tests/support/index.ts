@@ -29,6 +29,7 @@ import { SoundsDSL } from './dsl/sounds';
 import { SmartActionsDSL } from './dsl/smartActions';
 import { EntityContextDSL } from './dsl/entityContext';
 import { EntityRemappingDSL } from './dsl/entityRemapping';
+import { AttributeDisplayDSL } from './dsl/attributeDisplay';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -63,6 +64,7 @@ export interface TestContext extends electron.ElectronTestContext {
   smartActions: SmartActionsDSL;
   entityContext: EntityContextDSL;
   entityRemapping: EntityRemappingDSL;
+  attributeDisplay: AttributeDisplayDSL;
 }
 
 /**
@@ -92,5 +94,6 @@ export async function launchWithDSL(): Promise<TestContext> {
     smartActions: new SmartActionsDSL(electronCtx.window),
     entityContext: new EntityContextDSL(electronCtx.window),
     entityRemapping: new EntityRemappingDSL(electronCtx.window),
+    attributeDisplay: new AttributeDisplayDSL(electronCtx.window),
   };
 }

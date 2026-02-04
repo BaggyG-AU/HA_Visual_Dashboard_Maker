@@ -150,10 +150,15 @@ export class PropertiesPanelDSL {
     // Open dropdown to enable input
     await select.click();
 
-    const input = select.locator('input');
-    await expect(input).toBeVisible({ timeout: 5000 });
-    await expect(input).toBeEnabled({ timeout: 5000 });
-    await input.fill(entityId);
+    const input = select.locator('input[role="combobox"]:not([readonly])').first();
+    const editableCount = await input.count();
+    if (editableCount > 0) {
+      await expect(input).toBeVisible({ timeout: 5000 });
+      await expect(input).toBeEnabled({ timeout: 5000 });
+      await input.fill(entityId);
+    } else {
+      await this.window.keyboard.type(entityId);
+    }
 
     // Confirm selection
     await this.window.keyboard.press('Enter');

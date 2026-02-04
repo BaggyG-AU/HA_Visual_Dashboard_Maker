@@ -5,6 +5,7 @@ import { LightCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 import { useEntityContextValue } from '../../hooks/useEntityContext';
+import { AttributeDisplay } from '../AttributeDisplay';
 
 const { Text } = Typography;
 
@@ -194,6 +195,15 @@ export const LightCardRenderer: React.FC<LightCardRendererProps> = ({
           </div>
         )}
       </div>
+
+      {card.attribute_display && card.attribute_display.length > 0 && (
+        <AttributeDisplay
+          attributes={attributes}
+          items={card.attribute_display}
+          layout={card.attribute_display_layout}
+          testIdPrefix="attribute-display-light"
+        />
+      )}
 
       {/* Entity ID (when no entity data) */}
       {!entity && card.entity && (

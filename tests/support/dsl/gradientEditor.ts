@@ -133,16 +133,45 @@ export class GradientEditorDSL {
 
   async toggleType(type: 'linear' | 'radial'): Promise<void> {
     await this.openGradientPopover();
-    const toggle = this.window.getByTestId(`${this.editorTestId}-type-toggle`);
-    await expect(toggle).toBeVisible();
-    await toggle.getByRole('radio', { name: new RegExp(type, 'i') }).click();
+    const clicked = await this.window.evaluate(({ editorTestId, nextType }) => {
+      const inputs = Array.from(document.querySelectorAll<HTMLInputElement>(`[data-testid="${editorTestId}-type-${nextType}"]`));
+      const isVisible = (el: HTMLElement | null) => {
+        if (!el) return false;
+        const box = el.getBoundingClientRect();
+        return box.width > 0 && box.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+      };
+      for (const input of inputs) {
+        const wrapper = input.closest('label') as HTMLElement | null;
+        if (!wrapper || !isVisible(wrapper)) continue;
+        wrapper.click();
+        return true;
+      }
+      return false;
+    }, { editorTestId: this.editorTestId, nextType: type });
+
+    if (!clicked) {
+      throw new Error(`Unable to click visible gradient type option: ${type}`);
+    }
   }
 
   async expectType(type: 'linear' | 'radial'): Promise<void> {
     await this.openGradientPopover();
-    const toggle = this.window.getByTestId(`${this.editorTestId}-type-toggle`);
-    const radio = toggle.getByRole('radio', { name: new RegExp(type, 'i') });
-    await expect(radio).toBeChecked();
+    await expect.poll(async () => {
+      return await this.window.evaluate(({ editorTestId, expectedType }) => {
+        const inputs = Array.from(document.querySelectorAll<HTMLInputElement>(`[data-testid="${editorTestId}-type-${expectedType}"]`));
+        const isVisible = (el: HTMLElement | null) => {
+          if (!el) return false;
+          const box = el.getBoundingClientRect();
+          return box.width > 0 && box.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+        };
+        for (const input of inputs) {
+          const wrapper = input.closest('label') as HTMLElement | null;
+          if (!wrapper || !isVisible(wrapper)) continue;
+          return wrapper.classList.contains('ant-radio-button-wrapper-checked');
+        }
+        return false;
+      }, { editorTestId: this.editorTestId, expectedType: type });
+    }, { timeout: 5000 }).toBe(true);
   }
 
   async focusAngleInput(): Promise<void> {

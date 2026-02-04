@@ -270,8 +270,8 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
           buttonStyle="solid"
           data-testid={`${testId}-type-toggle`}
         >
-          <Radio.Button value="linear">Linear</Radio.Button>
-          <Radio.Button value="radial">Radial</Radio.Button>
+          <Radio.Button value="linear" data-testid={`${testId}-type-linear`}>Linear</Radio.Button>
+          <Radio.Button value="radial" data-testid={`${testId}-type-radial`}>Radial</Radio.Button>
         </Radio.Group>
         {gradient.type === 'linear' && (
           <Space align="center">

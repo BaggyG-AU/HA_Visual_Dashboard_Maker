@@ -134,6 +134,8 @@ export class CanvasDSL {
   async measureBackgroundLayerFps(index = 0, frameCount = 60): Promise<{ fps: number; avgFrameTime: number; samples: number }> {
     const card = this.getCard(index);
     await expect(card).toBeVisible();
+    await this.window.bringToFront();
+    await this.window.waitForFunction(() => document.hasFocus(), null, { timeout: 3000 }).catch(() => false);
 
     return await this.window.evaluate(({ frames, targetIndex }) => {
       const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-testid="card-background-layer"]'));
