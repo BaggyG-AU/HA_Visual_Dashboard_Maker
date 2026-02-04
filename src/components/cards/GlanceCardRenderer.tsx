@@ -4,6 +4,8 @@ import { DashboardOutlined, BulbOutlined } from '@ant-design/icons';
 import { GlanceCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useEntityContextResolver } from '../../hooks/useEntityContext';
+import { useHAEntities } from '../../contexts/HAEntityContext';
+import { evaluateEntityVisibility } from '../../services/conditionalVisibility';
 
 const { Text } = Typography;
 
@@ -23,12 +25,16 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
   onClick,
 }) => {
   const resolveContext = useEntityContextResolver();
+  const { entities } = useHAEntities();
+  const visibleEntities = Array.isArray(card.entities)
+    ? card.entities.filter((entity) => evaluateEntityVisibility(entity, entities))
+    : [];
   const defaultEntityId = Array.isArray(card.entities)
     ? (typeof card.entities[0] === 'string' ? card.entities[0] : card.entities[0]?.entity)
     : null;
   const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId ?? null) : '';
   const title = (card.title ? resolvedTitle : '') || 'Glance';
-  const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
+  const entityCount = visibleEntities.length;
   const columns = card.columns || 5;
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
@@ -85,12 +91,11 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(${Math.min(columns, entityCount)}, 1fr)`,
+          gridTemplateColumns: `repeat(${Math.max(1, Math.min(columns, entityCount || 1))}, 1fr)`,
           gap: '12px',
         }}
       >
-        {Array.isArray(card.entities) &&
-          card.entities.map((entity, idx) => {
+        {visibleEntities.map((entity, idx) => {
             const entityName = getEntityName(entity);
 
             return (
@@ -105,6 +110,7 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
                   backgroundColor: 'rgba(255, 255, 255, 0.03)',
                   borderRadius: '4px',
                 }}
+                data-testid={`glance-card-item-${getEntityId(entity).replace(/[^a-zA-Z0-9_-]/g, '-')}`}
               >
                 <BulbOutlined style={{ fontSize: '20px', color: '#00d9ff' }} />
                 {card.show_name !== false && (

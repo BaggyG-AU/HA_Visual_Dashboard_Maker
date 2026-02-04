@@ -226,6 +226,9 @@
                   "secondary_info": {
                     "type": "string",
                     "enum": ["entity-id", "last-changed", "last-triggered", "last-updated", "none"]
+                  },
+                  "visibility_conditions": {
+                    "$ref": "#/definitions/visibilityConditions"
                   }
                 },
                 "required": ["entity"],
@@ -233,6 +236,10 @@
               }
             ]
           }
+        },
+        "visibility_conditions": {
+          "$ref": "#/definitions/visibilityConditions",
+          "description": "Conditional visibility rules for cards/entities"
         },
         "attribute_display": {
           "type": "array",
@@ -525,6 +532,75 @@
         }
       },
       "additionalProperties": true
+    },
+    "visibilityCondition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "type": "string",
+              "enum": [
+                "state_equals",
+                "state_not_equals",
+                "state_in",
+                "state_not_in",
+                "attribute_equals",
+                "attribute_greater_than",
+                "attribute_less_than",
+                "entity_exists"
+              ]
+            },
+            "entity": {
+              "type": "string",
+              "pattern": "^[a-z_]+\\.[a-z0-9_]+$"
+            },
+            "attribute": {
+              "type": "string"
+            },
+            "value": {
+              "oneOf": [
+                { "type": "string" },
+                { "type": "number" },
+                { "type": "boolean" }
+              ]
+            },
+            "values": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "number" },
+                  { "type": "boolean" }
+                ]
+              }
+            }
+          },
+          "required": ["condition", "entity"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "type": "string",
+              "enum": ["and", "or"]
+            },
+            "conditions": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/visibilityCondition" }
+            }
+          },
+          "required": ["condition", "conditions"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "visibilityConditions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/visibilityCondition"
+      }
     }
   }
 }

@@ -6,6 +6,7 @@ import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 import { useEntityContextResolver } from '../../hooks/useEntityContext';
 import { AttributeDisplay } from '../AttributeDisplay';
+import { evaluateEntityVisibility } from '../../services/conditionalVisibility';
 
 const { Text } = Typography;
 
@@ -31,11 +32,14 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
   const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId ?? null) : '';
   const resolvedName = card.name ? resolveContext(card.name, defaultEntityId ?? null) : '';
   const title = (card.title ? resolvedTitle : '') || (card.name ? resolvedName : '') || 'Entities';
-  const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Get live entity states (if available)
-  const { getEntity, isLoading } = useHAEntities();
+  const { entities, getEntity, isLoading } = useHAEntities();
+  const visibleEntities = Array.isArray(card.entities)
+    ? card.entities.filter((entity) => evaluateEntityVisibility(entity, entities))
+    : [];
+  const entityCount = visibleEntities.length;
 
   // Extract entity IDs for display
   const getEntityId = (entity: unknown): string => {
@@ -129,7 +133,7 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
       hoverable
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
-        {Array.isArray(card.entities) && card.entities.slice(0, 10).map((entity, idx) => {
+        {visibleEntities.slice(0, 10).map((entity, idx) => {
           const entityId = getEntityId(entity);
           const domain = entityId.split('.')[0];
           const rawNameValue = typeof entity === 'object' && entity !== null && 'name' in entity
@@ -160,8 +164,9 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
                 minHeight: '40px',
                 padding: '0 8px',
                 gap: '12px',
-                borderBottom: idx < (Array.isArray(card.entities) ? Math.min(card.entities.length, 10) - 1 : 0) ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                borderBottom: idx < Math.min(visibleEntities.length, 10) - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
               }}
+              data-testid={`entities-card-row-${entityId.replace(/[^a-zA-Z0-9_-]/g, '-')}`}
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

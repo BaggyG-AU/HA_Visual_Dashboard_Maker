@@ -18,6 +18,7 @@ import { formatActionLabel, resolveTapAction } from '../services/smartActions';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { getMissingEntityReferences, hasEntityContextVariables, resolveEntityContext } from '../services/entityContext';
 import { AttributeDisplayControls } from './AttributeDisplayControls';
+import { ConditionalVisibilityControls } from './ConditionalVisibilityControls';
 import type { AttributeDisplayLayout } from '../types/attributeDisplay';
 
 const { Title, Text } = Typography;
@@ -294,6 +295,26 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           ))}
         </div>
       </div>
+    );
+  };
+
+  const renderConditionalVisibilitySection = (values: FormCardValues) => {
+    if (!card) return null;
+
+    const supportsVisibility =
+      typeof values.entity === 'string'
+      || Array.isArray(values.entities)
+      || typeof card.entity === 'string'
+      || Array.isArray(card.entities);
+
+    if (!supportsVisibility) {
+      return null;
+    }
+
+    return (
+      <Form.Item name="visibility_conditions">
+        <ConditionalVisibilityControls />
+      </Form.Item>
     );
   };
 
@@ -884,6 +905,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
       <Form.Item noStyle shouldUpdate>
         {() => renderAttributeDisplaySection(form.getFieldsValue(true) as FormCardValues)}
+      </Form.Item>
+
+      <Form.Item noStyle shouldUpdate>
+        {() => renderConditionalVisibilitySection(form.getFieldsValue(true) as FormCardValues)}
       </Form.Item>
 
       {(card.type === 'sensor' || card.type === 'gauge') && (

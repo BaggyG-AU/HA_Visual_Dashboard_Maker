@@ -24,6 +24,7 @@ export interface BaseCard {
   icon?: string;
   style?: string;
   smart_defaults?: boolean;
+  visibility_conditions?: VisibilityCondition[];
   attribute_display?: AttributeDisplayItem[];
   attribute_display_layout?: AttributeDisplayLayout;
   haptic?: HapticCardConfig;
@@ -77,7 +78,33 @@ export interface EntityConfig {
   secondary_info?: string;
   format?: string;
   type?: string;
+  visibility_conditions?: VisibilityCondition[];
 }
+
+export type VisibilityConditionType =
+  | 'state_equals'
+  | 'state_not_equals'
+  | 'state_in'
+  | 'state_not_in'
+  | 'attribute_equals'
+  | 'attribute_greater_than'
+  | 'attribute_less_than'
+  | 'entity_exists';
+
+export interface VisibilityConditionRule {
+  condition: VisibilityConditionType;
+  entity: string;
+  attribute?: string;
+  value?: string | number | boolean;
+  values?: Array<string | number | boolean>;
+}
+
+export interface VisibilityConditionGroup {
+  condition: 'and' | 'or';
+  conditions: VisibilityCondition[];
+}
+
+export type VisibilityCondition = VisibilityConditionRule | VisibilityConditionGroup;
 
 export interface ButtonCard extends BaseCard {
   type: 'button';

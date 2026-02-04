@@ -5,6 +5,7 @@ import { PictureGlanceCard, EntityConfig } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 import { useEntityContextResolver } from '../../hooks/useEntityContext';
+import { evaluateEntityVisibility } from '../../services/conditionalVisibility';
 
 const { Text } = Typography;
 
@@ -23,12 +24,13 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
   isSelected = false,
   onClick,
 }) => {
-  const { getEntity } = useHAEntities();
+  const { entities: entityStates, getEntity } = useHAEntities();
   const resolveContext = useEntityContextResolver();
 
   // Extract card properties
   const entities = card.entities || [];
-  const defaultEntityId = entities.length > 0 ? (typeof entities[0] === 'string' ? entities[0] : entities[0].entity) : null;
+  const visibleEntities = entities.filter((entityConfig) => evaluateEntityVisibility(entityConfig, entityStates));
+  const defaultEntityId = visibleEntities.length > 0 ? (typeof visibleEntities[0] === 'string' ? visibleEntities[0] : visibleEntities[0].entity) : null;
   const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId ?? null) : '';
   const title = card.title ? resolvedTitle : undefined;
   const showState = card.show_state !== false;
@@ -38,7 +40,7 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Get entity data
-  const entityData = entities.map(entityConfig => {
+  const entityData = visibleEntities.map(entityConfig => {
     const entityId = typeof entityConfig === 'string' ? entityConfig : entityConfig.entity;
     const entity = getEntity(entityId);
     const attributes = entity?.attributes || {};
@@ -218,7 +220,7 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
       )}
 
       {/* Entity icons overlay (bottom) */}
-      {entities.length > 0 && (
+      {visibleEntities.length > 0 && (
         <div style={{
           position: 'absolute',
           bottom: 0,
