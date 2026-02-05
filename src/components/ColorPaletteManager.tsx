@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Button, Divider, Input, Select, Space, Tooltip, Typography, message } from 'antd';
 import { PlusOutlined, DeleteOutlined, CopyOutlined, UploadOutlined, DownloadOutlined, ScissorOutlined } from '@ant-design/icons';
 import type { ColorPalette } from '../types/colorPalette';
+import { logger } from '../services/logger';
 
 const { Text } = Typography;
 
@@ -94,7 +95,7 @@ export const ColorPaletteManager: React.FC<ColorPaletteManagerProps> = ({
       await navigator.clipboard.writeText(css);
       message.success('CSS variables copied to clipboard.');
     } catch (error) {
-      console.error(error);
+      logger.error('Failed to copy CSS variables', error);
       message.error('Failed to copy CSS variables.');
     }
   };

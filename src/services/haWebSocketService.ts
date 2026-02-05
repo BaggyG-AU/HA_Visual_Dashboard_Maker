@@ -1,4 +1,5 @@
 import WebSocket from 'ws';
+import { logger } from './logger';
 
 interface WebSocketMessage {
   id?: number;
@@ -64,7 +65,7 @@ export class HAWebSocketService {
     base.pathname = `${base.pathname.replace(/\/$/, '')}/api/websocket`;
     const wsUrl = base.toString();
 
-    console.log(`Connecting to Home Assistant WebSocket: ${wsUrl}`);
+    logger.info(`Connecting to Home Assistant WebSocket: ${wsUrl}`);
 
     return new Promise((resolve, reject) => {
       try {
@@ -94,25 +95,25 @@ export class HAWebSocketService {
       };
 
       this.ws.on('open', () => {
-        console.log('WebSocket connection opened');
+        logger.info('WebSocket connection opened');
       });
 
       this.ws.on('message', async (data: WebSocket.Data) => {
         const message = JSON.parse(data.toString()) as WebSocketMessage;
-        console.log('Received message:', message);
+        logger.debug('Received WebSocket message', message);
 
         // Handle authentication flow
         if (message.type === 'auth_required') {
-          console.log('Authentication required, sending token...');
+          logger.debug('Authentication required, sending token');
           this.send({
             type: 'auth',
             access_token: token,
           });
         } else if (message.type === 'auth_ok') {
-          console.log('Authentication successful!');
+          logger.info('Authentication successful');
           succeed();
         } else if (message.type === 'auth_invalid') {
-          console.error('Authentication failed:', message);
+          logger.error('Authentication failed', message);
           this.close();
           fail(new Error('Authentication failed: ' + (message.message || 'Invalid token')));
         } else if (message.type === 'event' && message.id === this.entitySubscriptionId) {
@@ -160,12 +161,12 @@ export class HAWebSocketService {
       });
 
       this.ws.on('error', (error) => {
-        console.error('WebSocket error:', error);
+        logger.error('WebSocket error', error);
         fail(error instanceof Error ? error : new Error(String(error)));
       });
 
       this.ws.on('close', () => {
-        console.log('WebSocket connection closed');
+        logger.info('WebSocket connection closed');
         this.ws = null;
         fail(new Error('WebSocket connection closed before authentication'));
         // Reject all pending messages
@@ -210,7 +211,7 @@ export class HAWebSocketService {
       throw new Error('WebSocket is not connected');
     }
 
-    console.log('Sending message:', message);
+    logger.trace('Sending WebSocket message', message);
     this.ws.send(JSON.stringify(message));
   }
 
@@ -222,7 +223,7 @@ export class HAWebSocketService {
       type: 'lovelace/dashboards/list',
     });
 
-    console.log('Dashboard list result:', result);
+    logger.debug('Dashboard list result', result);
     return result;
   }
 
@@ -237,7 +238,7 @@ export class HAWebSocketService {
       force: false,
     });
 
-    console.log(`Dashboard config result for ${urlPath}:`, result);
+    logger.debug(`Dashboard config result for ${urlPath}`, result);
     return result;
   }
 
@@ -275,7 +276,7 @@ export class HAWebSocketService {
       show_in_sidebar: false, // Don't show temp dashboards in sidebar
     });
 
-    console.log(`Created dashboard resource: ${urlPath}`);
+    logger.info(`Created dashboard resource: ${urlPath}`);
   }
 
   /**
@@ -290,7 +291,7 @@ export class HAWebSocketService {
       config: config,
     });
 
-    console.log(`Saved dashboard config for ${urlPath}`);
+    logger.info(`Saved dashboard config for ${urlPath}`);
   }
 
   /**
@@ -303,7 +304,7 @@ export class HAWebSocketService {
       dashboard_id: urlPath,
     });
 
-    console.log(`Deleted dashboard: ${urlPath}`);
+    logger.info(`Deleted dashboard: ${urlPath}`);
   }
 
   /**
@@ -327,7 +328,7 @@ export class HAWebSocketService {
 
     await this.saveDashboardConfig(tempUrlPath, tempConfig);
 
-    console.log(`Created temporary dashboard: ${tempUrlPath}`);
+    logger.info(`Created temporary dashboard: ${tempUrlPath}`);
     return tempUrlPath;
   }
 
@@ -357,22 +358,22 @@ export class HAWebSocketService {
       await this.createDashboardResource(backupPath, backupTitle, 'mdi:backup-restore');
       // Then save the production config to the backup
       await this.saveDashboardConfig(backupPath, productionConfig);
-      console.log(`Backed up production dashboard to: ${backupPath}`);
+      logger.info(`Backed up production dashboard to: ${backupPath}`);
 
       // 3. Get temp dashboard config
       const tempConfig = await this.getDashboardConfig(tempUrlPath);
 
       // 4. Save temp config to production (no need to create resource, it already exists)
       await this.saveDashboardConfig(productionUrlPath || 'lovelace', tempConfig);
-      console.log(`Deployed temp dashboard to production: ${productionUrlPath || 'default'}`);
+      logger.info(`Deployed temp dashboard to production: ${productionUrlPath || 'default'}`);
 
       // 5. Delete temp dashboard
       await this.deleteDashboardConfig(tempUrlPath);
-      console.log(`Deleted temporary dashboard: ${tempUrlPath}`);
+      logger.info(`Deleted temporary dashboard: ${tempUrlPath}`);
 
       return { success: true, backupPath };
     } catch (error: any) {
-      console.error('Failed to deploy dashboard:', error);
+      logger.error('Failed to deploy dashboard', error);
       return { success: false, error: error.message };
     }
   }
@@ -383,7 +384,7 @@ export class HAWebSocketService {
    */
   async deleteTempDashboard(tempUrlPath: string): Promise<void> {
     await this.deleteDashboardConfig(tempUrlPath);
-    console.log(`Deleted temporary dashboard: ${tempUrlPath}`);
+    logger.info(`Deleted temporary dashboard: ${tempUrlPath}`);
   }
 
   /**
@@ -393,7 +394,7 @@ export class HAWebSocketService {
    */
   async updateTempDashboard(tempUrlPath: string, config: any): Promise<void> {
     await this.saveDashboardConfig(tempUrlPath, config);
-    console.log(`Updated temporary dashboard: ${tempUrlPath}`);
+    logger.debug(`Updated temporary dashboard: ${tempUrlPath}`);
   }
 
   /**
@@ -448,7 +449,7 @@ export class HAWebSocketService {
           }
         });
       } catch (error) {
-        console.error('Failed to get initial entity states:', error);
+        logger.error('Failed to get initial entity states', error);
         this.entityStateCallbacks.delete(callback);
         throw error;
       }
@@ -498,7 +499,7 @@ export class HAWebSocketService {
       type: 'get_states',
     });
 
-    console.log(`Fetched ${states.length} entities from Home Assistant`);
+    logger.info(`Fetched ${states.length} entities from Home Assistant`);
     return states;
   }
 
@@ -514,7 +515,7 @@ export class HAWebSocketService {
       type: 'frontend/get_themes',
     });
 
-    console.log('Fetched themes from HA:', Object.keys(result.themes || {}));
+    logger.info('Fetched themes from HA', Object.keys(result.themes || {}));
     return result;
   }
 

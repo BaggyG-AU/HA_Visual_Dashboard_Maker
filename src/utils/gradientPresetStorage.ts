@@ -1,4 +1,5 @@
 import type { GradientPreset, GradientPresetCollection } from '../types/gradient';
+import { logger } from '../services/logger';
 
 export const GRADIENT_PRESET_STORAGE_KEY = 'havdm-gradient-presets';
 export const GRADIENT_PRESET_STORAGE_VERSION = 1 as const;
@@ -114,7 +115,7 @@ export const loadPresetCollection = (storageKey = GRADIENT_PRESET_STORAGE_KEY): 
     }
     return { presets: parsed.presets };
   } catch (error) {
-    console.error('Failed to load gradient presets from localStorage:', error);
+    logger.error('Failed to load gradient presets from localStorage', error);
     return { presets: [], error: 'Failed to load presets.' };
   }
 };
@@ -123,7 +124,7 @@ export const savePresetCollection = (presets: GradientPreset[], storageKey = GRA
   try {
     localStorage.setItem(storageKey, serializePresetCollection(presets));
   } catch (error) {
-    console.error('Failed to save gradient presets to localStorage:', error);
+    logger.error('Failed to save gradient presets to localStorage', error);
   }
 };
 
@@ -143,4 +144,3 @@ export const mergePresets = (existing: GradientPreset[], incoming: GradientPrese
 
   return { presets: merged, added: incoming.length, errors };
 };
-

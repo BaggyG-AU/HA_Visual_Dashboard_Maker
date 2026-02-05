@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Flex, Button, Alert, Space, Typography, Spin, Tag, Empty, Tooltip } from 'antd';
 import { DownloadOutlined, FileTextOutlined, ReloadOutlined, HomeOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
+import { logger } from '../services/logger';
 import * as yaml from 'js-yaml';
 
 const { Text } = Typography;
@@ -61,7 +62,7 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
         throw new Error('No connection configuration found');
       }
 
-      console.log('Connecting to Home Assistant WebSocket...');
+      logger.debug('Connecting to Home Assistant WebSocket');
 
       // Connect to WebSocket
       const connectResult = await window.electronAPI.haWsConnect(config.url, config.token);
@@ -69,7 +70,7 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
         throw new Error(connectResult.error || 'Failed to connect to WebSocket');
       }
 
-      console.log('WebSocket connected! Listing dashboards...');
+      logger.debug('WebSocket connected, listing dashboards');
 
       // List dashboards via WebSocket
       const listResult = await window.electronAPI.haWsListDashboards();
@@ -105,10 +106,10 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
       }
 
       setDashboards(allDashboards);
-      console.log(`✓ Found ${allDashboards.length} dashboards via WebSocket`);
+      logger.info(`Found ${allDashboards.length} dashboards via WebSocket`);
     } catch (err) {
       setError((err as Error).message);
-      console.error('Failed to load dashboards:', err);
+      logger.error('Failed to load dashboards', err);
     } finally {
       setLoading(false);
     }
@@ -119,7 +120,7 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
     setError(null);
 
     try {
-      console.log(`Downloading dashboard: ${dashboard.title} (id: ${dashboard.id}, url_path: ${dashboard.url_path})`);
+      logger.info(`Downloading dashboard: ${dashboard.title}`, { id: dashboard.id, url_path: dashboard.url_path });
 
       // For default dashboard, use null as urlPath
       // For custom dashboards, use the url_path field (NOT the id field)
@@ -131,7 +132,7 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
         throw new Error(configResult.error || 'Failed to get dashboard config');
       }
 
-      console.log(`✓ Downloaded dashboard config for ${dashboard.title}`);
+      logger.debug(`Downloaded dashboard config for ${dashboard.title}`);
 
       // Convert to YAML
       const yamlString = yaml.dump(configResult.config, {
@@ -144,10 +145,10 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
       onDashboardDownload(yamlString, dashboard.title, dashboard.id);
       onClose();
 
-      console.log(`✓ Loaded dashboard into editor: ${dashboard.title}`);
+      logger.info(`Loaded dashboard into editor: ${dashboard.title}`);
     } catch (err) {
       setError(`Failed to download dashboard: ${(err as Error).message}`);
-      console.error('Failed to download dashboard:', err);
+      logger.error('Failed to download dashboard', err);
     } finally {
       setDownloading(null);
     }

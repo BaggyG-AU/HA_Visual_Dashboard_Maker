@@ -156,6 +156,11 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
   };
 
   const gradientIcon = isGradientString(iconColor) ? renderGradientIcon(iconColor) : null;
+  const iconGlyph = (
+    <span data-testid="custom-button-card-icon-glyph" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      {gradientIcon || iconComponent}
+    </span>
+  );
   const { action: tapAction } = resolveTapAction(card);
 
   const handleClick = () => {
@@ -303,8 +308,15 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
         >
           {/* Icon */}
           {showIcon && (
-            <div style={{ fontSize: size, color: gradientIcon ? 'transparent' : iconColor }} data-testid="custom-button-card-icon">
-              {gradientIcon || iconComponent}
+            <div
+              style={{
+                fontSize: size,
+                color: gradientIcon ? 'transparent' : iconColor,
+                lineHeight: 1,
+              }}
+              data-testid="custom-button-card-icon"
+            >
+              {iconGlyph}
             </div>
           )}
 

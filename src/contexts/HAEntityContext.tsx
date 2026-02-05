@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { EntityState, EntityStates, haWebSocketService } from '../services/haWebSocketService';
+import { logger } from '../services/logger';
 
 interface HAEntityContextValue {
   entities: EntityStates;
@@ -113,11 +114,11 @@ export function HAEntityProvider({ children, enabled = true }: HAEntityProviderP
             setIsLoading(false);
           });
         } else {
-          console.warn('WebSocket not connected, entity states unavailable');
+          logger.warn('WebSocket not connected, entity states unavailable');
           setIsLoading(false);
         }
       } catch (err) {
-        console.error('Failed to subscribe to entity states:', err);
+        logger.error('Failed to subscribe to entity states', err);
         setError(err as Error);
         setIsLoading(false);
       }

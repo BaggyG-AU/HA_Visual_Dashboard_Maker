@@ -15,6 +15,7 @@ import { createDebouncedCommit, DebouncedCommit } from '../utils/debouncedCommit
 import { extractStyleColor, upsertStyleColor } from '../utils/styleBackground';
 import { applyBackgroundConfigToStyle, DEFAULT_BACKGROUND_CONFIG, parseBackgroundConfig, type BackgroundConfig } from '../utils/backgroundStyle';
 import { formatActionLabel, resolveTapAction } from '../services/smartActions';
+import { logger } from '../services/logger';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { getMissingEntityReferences, hasEntityContextVariables, resolveEntityContext } from '../services/entityContext';
 import { AttributeDisplayControls } from './AttributeDisplayControls';
@@ -527,7 +528,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         sortKeys: false,
       });
     } catch (error) {
-      console.error('Error converting card to YAML:', error);
+      logger.error('Error converting card to YAML', error);
       return '';
     }
   };
@@ -605,7 +606,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     const MAX_ATTEMPTS = 120; // ~2s at 60fps
 
     const createEditor = (container: HTMLDivElement) => {
-      console.log('[PropertiesPanel] Creating Monaco editor...');
       const editor = monaco.editor.create(container, {
         value: yamlContent,
         language: 'yaml',
@@ -621,7 +621,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       });
 
       monacoEditorRef.current = editor;
-      console.log('[PropertiesPanel] Monaco editor created successfully');
 
       if (typeof window !== 'undefined') {
         const testWindow = window as MonacoTestWindow;
@@ -643,8 +642,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         attempts += 1;
         if (attempts <= MAX_ATTEMPTS) {
           rafId = window.requestAnimationFrame(ensureEditorReady);
-        } else {
-          console.warn('[PropertiesPanel] Monaco editor container did not mount in time');
         }
         return;
       }
@@ -656,7 +653,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           return;
         }
 
-        console.warn('[PropertiesPanel] Detected stale Monaco editor, recreating');
         existingEditor.dispose();
         monacoEditorRef.current = null;
       }
@@ -672,7 +668,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         window.cancelAnimationFrame(rafId);
       }
       if (monacoEditorRef.current) {
-        console.log('[PropertiesPanel] Cleaning up Monaco editor');
         monacoEditorRef.current.dispose();
         monacoEditorRef.current = null;
         // Clean up global references

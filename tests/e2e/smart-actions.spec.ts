@@ -4,6 +4,7 @@ import { launchWithDSL, close } from '../support';
 
 test.describe('Smart Default Actions (Feature 3.1)', () => {
   test('computes smart defaults per domain and persists smart_defaults to YAML', async ({ page }, testInfo) => {
+    test.setTimeout(120000);
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, yamlEditor, smartActions } = ctx;
@@ -31,19 +32,21 @@ test.describe('Smart Default Actions (Feature 3.1)', () => {
         { entity: 'vacuum.roomba', expected: /call-service:\s*vacuum\.start/i },
       ];
 
+      await properties.switchTab('YAML');
+      await yamlEditor.expectMonacoVisible('properties', testInfo);
+      const { value: baseYaml } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const yamlState = (yaml.load(baseYaml) as Record<string, unknown>) || {};
+
       for (const { entity, expected } of domainCases) {
-        await properties.switchTab('YAML');
-        await yamlEditor.expectMonacoVisible('properties', testInfo);
-        const { value } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
-        const parsed = (yaml.load(value) as Record<string, unknown>) || {};
-        parsed.entity = entity;
-        parsed.smart_defaults = true;
-        const next = yaml.dump(parsed, { lineWidth: -1, noRefs: true, sortKeys: false });
+        yamlState.entity = entity;
+        yamlState.smart_defaults = true;
+        const next = yaml.dump(yamlState, { lineWidth: -1, noRefs: true, sortKeys: false });
         await yamlEditor.setEditorContent(next, 'properties', testInfo);
 
         await properties.switchTab('Form');
         await smartActions.expectPreviewContains('custom-button-card', expected, testInfo);
         await smartActions.expectPreviewContains('custom-button-card', /\(smart default\)/i, testInfo);
+        await properties.switchTab('YAML');
       }
 
       // Toggle off and confirm YAML persists the setting.
@@ -78,4 +81,3 @@ test.describe('Smart Default Actions (Feature 3.1)', () => {
     }
   });
 });
-

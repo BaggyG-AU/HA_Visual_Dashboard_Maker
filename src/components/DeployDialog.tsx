@@ -3,6 +3,7 @@ import { Modal, Form, Input, Button, Alert, Steps, Typography, Radio } from 'ant
 import { CloudUploadOutlined, CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 import { yamlService } from '../services/yamlService';
+import { logger } from '../services/logger';
 
 const { Text } = Typography;
 const { Step } = Steps;
@@ -74,10 +75,10 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
 
       const dashboardConfig = parseResult.data;
 
-      // Debug: Log what we're about to deploy
-      console.log('📤 Deploying dashboard config:', JSON.stringify(dashboardConfig, null, 2));
-      console.log('📝 Dashboard title from form:', values.title);
-      console.log('📝 Dashboard title in config:', dashboardConfig?.title);
+      logger.debug('Preparing deploy dashboard config', {
+        titleFromForm: values.title,
+        titleInConfig: dashboardConfig?.title,
+      });
 
       // Strict validation: ensure views array exists and is not empty
       if (!dashboardConfig?.views || dashboardConfig.views.length === 0) {
@@ -148,7 +149,7 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
         title: values.title  // Use the title from the deployment form
       };
 
-      console.log('📤 Final config being deployed:', JSON.stringify(deployConfig, null, 2));
+      logger.debug('Final deploy config prepared', { title: deployConfig.title, viewCount: deployConfig.views?.length ?? 0 });
 
       const saveResult = await window.electronAPI.haWsSaveDashboardConfig(dashboardPath, deployConfig);
       if (!saveResult.success) {

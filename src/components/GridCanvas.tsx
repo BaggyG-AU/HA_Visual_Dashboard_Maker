@@ -6,6 +6,7 @@ import { BaseCard } from './BaseCard';
 import { CardContextMenu } from './CardContextMenu';
 import { generateMasonryLayout, getCardSizeConstraints } from '../utils/cardSizingContract';
 import { isLayoutCardGrid, convertLayoutCardToGridLayout } from '../utils/layoutCardParser';
+import { logger } from '../services/logger';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import './GridCanvas.css';
@@ -32,8 +33,6 @@ const generateLayout = (view: View, cards: Card[]): Layout[] => {
   // Mode 1: Check if using layout-card grid system
   if (isLayoutCardGrid(view)) {
     const gridLayout = convertLayoutCardToGridLayout(view);
-    console.log('generateLayout: Using layout-card grid system');
-    console.log('Grid layout:', gridLayout);
     return gridLayout;
   }
 
@@ -72,13 +71,11 @@ const generateLayout = (view: View, cards: Card[]): Layout[] => {
         maxH: constraints.maxH,
       };
     });
-    console.log('generateLayout: Using existing internal layout with constraints');
     return layouts;
   }
 
   // Mode 3: Generate smart masonry layout based on card content with constraints
   const masonryLayout = generateMasonryLayout(cards);
-  console.log('generateLayout: Generated smart masonry layout with constraints');
   return masonryLayout;
 };
 
@@ -96,11 +93,8 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
 }) => {
   const cards = view.cards || [];
 
-  console.log('GridCanvas render - cards:', cards);
-
   // Generate layout for all cards
   const layout = useMemo(() => {
-    console.log('useMemo running - generating layout for', cards.length, 'cards');
     return generateLayout(view, cards);
   }, [view, cards]);
 
@@ -121,14 +115,10 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
       const cardType = data.cardType;
       if (!cardType) return;
 
-      console.log('=== DROP EVENT ===');
-      console.log('Card type:', cardType);
-      console.log('Adding card at default position (will go to bottom)');
-
       // Just add at 0,0 - react-grid-layout will auto-position to bottom with compactType="vertical"
       onCardDrop(cardType, 0, 0);
     } catch (error) {
-      console.error('Failed to parse drop data:', error);
+      logger.warn('Failed to parse drop data', error);
     }
   };
 
@@ -232,9 +222,19 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
                       inset: 0,
                       borderRadius: 8,
                       pointerEvents: 'none',
-                      ...backgroundStyle,
                     }}
-                  />
+                  >
+                    <div
+                      data-testid="card-background-layer-visual"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                        ...backgroundStyle,
+                      }}
+                    />
+                  </div>
                 );
               })()}
               <div style={{ position: 'relative', zIndex: 1, height: '100%' }}>

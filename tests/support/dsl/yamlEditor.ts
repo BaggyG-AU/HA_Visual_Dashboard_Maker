@@ -107,7 +107,8 @@ export class YamlEditorDSL {
   /**
    * Verify Monaco editor is visible
    */
-  async expectMonacoVisible(scope: 'properties' | 'modal' | 'canvas' = 'properties', testInfo?: TestInfo): Promise<void> {
+  async expectMonacoVisible(scope: 'properties' | 'modal' | 'canvas' = 'properties', _testInfo?: TestInfo): Promise<void> {
+    void _testInfo;
     // Disambiguate properties panel vs modal
     const modalContent = this.window.getByTestId('yaml-editor-content');
     const modalContainer = modalContent.getByTestId('yaml-editor-container');
@@ -123,14 +124,7 @@ export class YamlEditorDSL {
     }
 
     const visible = await containerLocator.isVisible({ timeout: 8000 }).catch(() => false);
-    if (!visible) {
-      const diag = await this.collectMonacoDiagnostics(scope).catch(() => ({}));
-      await this.attachAndLogDiagnostics(testInfo, {
-        ...diag,
-        containerVisibility: await this.containerVisibilitySnapshot().catch(() => ({})),
-      }, 'yaml-editor-container-diagnostics.json');
-      throw new Error(`YAML editor container not visible for scope=${scope}`);
-    }
+    if (!visible) throw new Error(`YAML editor container not visible for scope=${scope}`);
 
     // Monaco can render as .monaco-editor or fall back to textarea
     await expect(
@@ -323,72 +317,13 @@ export class YamlEditorDSL {
     }, scopeHint);
   }
 
-  private async containerVisibilitySnapshot(): Promise<Record<string, unknown>> {
-    return await this.window.evaluate(() => {
-      const modalContent = document.querySelector('[data-testid="yaml-editor-content"]') as HTMLElement | null;
-      const propsPanel = document.querySelector('[data-testid="properties-panel"]') as HTMLElement | null;
-      const propsContainer = propsPanel?.querySelector('[data-testid="yaml-editor-container"]') as HTMLElement | null;
-      const modalContainer = modalContent?.querySelector('[data-testid="yaml-editor-container"]') as HTMLElement | null;
-      const bbox = (el: HTMLElement | null) => {
-        if (!el) return null;
-        const r = el.getBoundingClientRect();
-        return { x: r.x, y: r.y, width: r.width, height: r.height };
-      };
-      return {
-        modalContent: {
-          exists: Boolean(modalContent),
-          visible: modalContent ? modalContent.offsetParent !== null : false,
-          bbox: bbox(modalContent),
-          containerCount: modalContent ? modalContent.querySelectorAll('[data-testid="yaml-editor-container"]').length : 0,
-        },
-        propsPanel: {
-          exists: Boolean(propsPanel),
-          visible: propsPanel ? propsPanel.offsetParent !== null : false,
-          bbox: bbox(propsPanel),
-          containerCount: propsPanel ? propsPanel.querySelectorAll('[data-testid="yaml-editor-container"]').length : 0,
-        },
-        modalContainer: {
-          exists: Boolean(modalContainer),
-          visible: modalContainer ? modalContainer.offsetParent !== null : false,
-          bbox: bbox(modalContainer),
-        },
-        propsContainer: {
-          exists: Boolean(propsContainer),
-          visible: propsContainer ? propsContainer.offsetParent !== null : false,
-          bbox: bbox(propsContainer),
-        },
-      };
-    });
-  }
-
-  /**
-   * Attach + log diagnostics for visibility in HTML report and terminal
-   */
-  async attachAndLogDiagnostics(testInfo: TestInfo | undefined, diagnostics: Record<string, unknown>, label = 'yaml-editor-diagnostics.json'): Promise<void> {
-    const body = JSON.stringify(diagnostics, null, 2);
-    if (testInfo?.attach) {
-      await testInfo.attach(label, {
-        body: Buffer.from(body),
-        contentType: 'application/json',
-      });
-    }
-    // eslint-disable-next-line no-console
-    console.log('[yamlEditor diagnostics]', body);
-  }
-
   /**
    * Get Monaco editor content with diagnostics
    */
   async getEditorContentWithDiagnostics(testInfo?: TestInfo, scopeHint: 'properties' | 'modal' | 'canvas' = 'properties'): Promise<{ value: string; diagnostics: Record<string, unknown> }> {
+    void testInfo;
     await this.waitForMonacoReady(scopeHint);
-    const result = await this.collectMonacoDiagnostics(scopeHint);
-    if (testInfo) {
-      await this.attachAndLogDiagnostics(testInfo, result);
-    } else {
-      // eslint-disable-next-line no-console
-      console.log('[yamlEditor diagnostics]', JSON.stringify(result, null, 2));
-    }
-    return result as { value: string; diagnostics: Record<string, unknown> };
+    return (await this.collectMonacoDiagnostics(scopeHint)) as { value: string; diagnostics: Record<string, unknown> };
   }
 
   /**
@@ -403,6 +338,7 @@ export class YamlEditorDSL {
    * Set Monaco editor content (properties panel or modal)
    */
   async setEditorContent(value: string, scopeHint: 'properties' | 'modal' | 'canvas' = 'properties', testInfo?: TestInfo): Promise<void> {
+    void testInfo;
     await this.waitForMonacoReady(scopeHint);
     try {
       await this.window.evaluate((yaml) => {
@@ -417,8 +353,8 @@ export class YamlEditorDSL {
       }, value);
     } catch (error) {
       const diag = await this.collectMonacoDiagnostics(scopeHint).catch(() => ({}));
-      await this.attachAndLogDiagnostics(testInfo, diag, 'yaml-editor-setvalue-diagnostics.json');
-      throw error;
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to set YAML editor content (${scopeHint}): ${message}. Diagnostics: ${JSON.stringify(diag)}`);
     }
   }
 

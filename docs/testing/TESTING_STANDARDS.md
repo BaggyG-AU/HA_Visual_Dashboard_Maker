@@ -826,5 +826,60 @@ Tests that have been skipped after extensive debugging efforts. These represent 
 
 ---
 
-**Last Updated**: January 15, 2026
+## FLAKINESS PREVENTION STANDARDS (NEW)
+
+These are mandatory for Playwright E2E and shared DSL code.
+
+### 13. Single E2E Harness Contract
+
+E2E specs must use one launcher/readiness path:
+- `launchWithDSL()` and `close(ctx)` from `tests/support/electron.ts`
+
+Do not mix launcher contracts in E2E specs. If an exception is required, document it inline with rationale and removal condition.
+
+### 14. No Sleep-Based Synchronization
+
+For E2E and DSL layers:
+- `waitForTimeout(...)` is forbidden as synchronization logic.
+- Use state-based waits only (visibility, enabled, selected, attached, value/state convergence).
+- Use `expect.poll(...)` for async persistence and eventual consistency checks.
+
+### 15. DSL Readiness Contract Requirement
+
+Every DSL method that changes UI state must validate readiness before returning:
+- expected control/tab/panel is active
+- dependent content is mounted and interactive
+- failure includes actionable state snapshot details
+
+### 16. Visual Assertion Stability Rules
+
+Before `toHaveScreenshot`:
+1. Ensure deterministic viewport and scale.
+2. Disable animations/caret where applicable.
+3. Assert target UI state has converged.
+
+Snapshot baselines may be updated only after confirming behavior correctness from traces/screenshots.
+
+### 17. Performance Assertion Stability Rules
+
+Performance checks must avoid single-sample thresholds when host noise is significant.
+- Prefer sampled windows and aggregate criteria.
+- Keep thresholds tied to documented environment assumptions.
+
+### 18. Flake Fix Verification Gate
+
+Any flake fix must pass:
+1. One targeted run with traces on failure
+2. 5x targeted stability loop
+3. One full-suite regression pass
+
+Do not claim stabilization without these checks.
+
+### 19. Regression Guardrail
+
+Introduce/maintain a static check that fails CI when raw sleeps are added to `tests/e2e/**`, except approved debug-only files explicitly documented.
+
+---
+
+**Last Updated**: February 5, 2026
 **Next Review**: After Phase 1 completion (v0.4.0)

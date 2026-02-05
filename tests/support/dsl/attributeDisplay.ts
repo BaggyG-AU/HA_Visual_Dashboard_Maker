@@ -178,9 +178,14 @@ export class AttributeDisplayDSL {
     layout: 'inline' | 'stacked' | 'table',
     snapshotName: string,
     testIdPrefix = 'attribute-display-button',
+    screenshotOptions: { maxDiffPixels?: number; maxDiffPixelRatio?: number; threshold?: number } = {},
   ): Promise<void> {
     const locator = this.window.getByTestId(`${testIdPrefix}-${layout}`);
     await expect(locator).toBeVisible();
-    await expect(locator).toHaveScreenshot(snapshotName, { animations: 'disabled', caret: 'hide' });
+    await expect(locator).toHaveScreenshot(snapshotName, {
+      animations: 'disabled',
+      caret: 'hide',
+      ...screenshotOptions,
+    });
   }
 }

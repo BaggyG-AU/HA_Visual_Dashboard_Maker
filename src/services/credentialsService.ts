@@ -13,6 +13,7 @@
 
 import Store from 'electron-store';
 import { safeStorage } from 'electron';
+import { logger } from './logger';
 
 export interface HACredential {
   id: string;              // Unique identifier (timestamp-based)
@@ -54,7 +55,7 @@ class CredentialsService {
    */
   private encryptToken(token: string): string {
     if (!this.isEncryptionAvailable()) {
-      console.warn('Encryption not available, storing token in plain text');
+      logger.warn('Encryption not available, storing token in plain text');
       return token;
     }
 
@@ -67,7 +68,7 @@ class CredentialsService {
    */
   private decryptToken(encryptedToken: string): string {
     if (!this.isEncryptionAvailable()) {
-      console.warn('Encryption not available, token was stored in plain text');
+      logger.warn('Encryption not available, token was stored in plain text');
       return encryptedToken;
     }
 
@@ -75,7 +76,7 @@ class CredentialsService {
       const buffer = Buffer.from(encryptedToken, 'base64');
       return safeStorage.decryptString(buffer);
     } catch (error) {
-      console.error('Failed to decrypt token:', error);
+      logger.error('Failed to decrypt token', error);
       throw new Error('Failed to decrypt access token');
     }
   }
@@ -155,7 +156,7 @@ class CredentialsService {
         token: this.decryptToken(credential.encryptedToken),
       };
     } catch (error) {
-      console.error('Failed to get credential:', error);
+      logger.error('Failed to get credential', error);
       return null;
     }
   }

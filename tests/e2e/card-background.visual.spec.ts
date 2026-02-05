@@ -27,6 +27,7 @@ test.describe('Card Background Customization - Visual and Performance', () => {
       await colorPicker.setColorInput('#FF0000', 'advanced-style-solid-background-input');
       await colorPicker.closePopover('advanced-style-solid-background-input');
       await backgroundCustomizer.setNumericInput('background-opacity-input', 80);
+      await canvas.expectBackgroundLayerCss(0, 'background-color', 'rgba(255, 0, 0, 0.8)');
       await canvas.expectBackgroundLayerScreenshot(0, 'card-background-solid.png');
 
       await backgroundCustomizer.selectType('Gradient');

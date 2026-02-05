@@ -29,5 +29,3 @@ root.render(
     <App />
   </React.StrictMode>
 );
-
-console.log('👋 HA Visual Dashboard Maker is running');

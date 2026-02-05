@@ -61,7 +61,8 @@
       "Bash(do echo \"$hash: $msg\")",
       "Bash(done)",
       "Bash(curl:*)",
-      "Bash(unzip:*)"
+      "Bash(unzip:*)",
+      "Bash(gh pr list:*)"
     ]
   }
 }

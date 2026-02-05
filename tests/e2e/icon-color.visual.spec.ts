@@ -22,7 +22,7 @@ test.describe('Icon Color visual regression', () => {
       await colorPicker.setColorInput('#FF8800', 'button-card-icon-color-input');
       await colorPicker.closePopover('button-card-icon-color-input');
 
-      const icon = window.getByTestId('custom-button-card-icon');
+      const icon = window.getByTestId('custom-button-card-icon-glyph');
       await expect(icon).toBeVisible();
       await expect(icon).toHaveScreenshot('icon-color-solid.png', { animations: 'disabled', caret: 'hide' });
 

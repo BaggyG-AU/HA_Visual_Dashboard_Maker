@@ -111,13 +111,17 @@ export class CanvasDSL {
     return this.getCard(index).getByTestId('card-background-layer');
   }
 
+  getBackgroundLayerVisual(index = 0) {
+    return this.getCard(index).getByTestId('card-background-layer-visual');
+  }
+
   async expectBackgroundLayerVisible(index = 0): Promise<void> {
     const layer = this.getBackgroundLayer(index);
     await expect(layer).toBeVisible();
   }
 
   async expectBackgroundLayerCss(index: number, property: string, value: string | RegExp): Promise<void> {
-    const layer = this.getBackgroundLayer(index);
+    const layer = this.getBackgroundLayerVisual(index);
     await expect(layer).toHaveCSS(property, value);
   }
 
@@ -126,7 +130,7 @@ export class CanvasDSL {
     name: string,
     options: ScreenshotOptions = { animations: 'disabled', caret: 'hide' },
   ): Promise<void> {
-    const layer = this.getBackgroundLayer(index);
+    const layer = this.getBackgroundLayerVisual(index);
     await expect(layer).toBeVisible();
     await expect(layer).toHaveScreenshot(name, options);
   }

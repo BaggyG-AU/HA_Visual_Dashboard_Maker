@@ -5,6 +5,7 @@ import * as monaco from 'monaco-editor';
 import { configureYamlSchema } from '../monaco-setup';
 import { yamlService } from '../services/yamlService';
 import { ENTITY_CONTEXT_REGEX } from '../services/entityContext';
+import { logger } from '../services/logger';
 
 type TestWindow = Window & {
   E2E?: string;
@@ -194,7 +195,7 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
         .catch((error) => {
           // Schema configuration failed, but YAML editor will still work
           // Just won't have autocomplete/schema validation
-          console.warn('YAML schema autocomplete unavailable:', error.message);
+          logger.warn('YAML schema autocomplete unavailable', error.message);
           schemaConfiguredRef.current = true; // Mark as configured to avoid retry
         });
     }
@@ -400,7 +401,7 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
         editor.focus();
       }
     } catch (error) {
-      console.error('Failed to jump to card:', error);
+      logger.error('Failed to jump to card', error);
     }
   }, [jumpToCard]);
 

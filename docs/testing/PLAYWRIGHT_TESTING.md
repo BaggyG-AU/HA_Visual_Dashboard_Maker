@@ -45,6 +45,45 @@ Prefer enabling mocks in `beforeEach` inside specs; keep data sets small/determi
 - Storage isolation: each test auto-creates a temp user data dir; no manual cleanup needed beyond `close(ctx)`.
 - If Electron fails to launch with an error like `bad option: --remote-debugging-port=0`, ensure `ELECTRON_RUN_AS_NODE` is not set in the environment (this repo’s Electron launchers remove it defensively).
 
+## Flakiness Stabilization Runbook
+
+Use this workflow for timeout-heavy or cross-spec flaky failures.
+
+1. Confirm harness consistency:
+   - E2E specs should use `launchWithDSL()` and `close(ctx)`.
+2. Remove sleep-driven waits:
+   - Replace `waitForTimeout` with state-based DSL waits and `expect.poll`.
+3. Fix at abstraction boundary:
+   - If many failures point to one helper/DSL method, fix that method first.
+4. Preserve diagnostics:
+   - Keep `--trace=retain-on-failure`.
+   - Attach state metadata (`testInfo.attach`) for hard-to-reproduce readiness issues.
+5. Stabilize before broad reruns:
+   - Run targeted 1x, then targeted 5x loop, then full suite.
+
+### Recommended Commands
+
+```bash
+# Targeted with trace
+npx playwright test <spec-or-grep> --project=electron-e2e --workers=1 --trace=retain-on-failure
+
+# Stability loop (Linux/macOS)
+for i in 1 2 3 4 5; do npx playwright test <spec-or-grep> --project=electron-e2e --workers=1 --trace=retain-on-failure || break; done
+
+# Stability loop (PowerShell)
+1..5 | ForEach-Object { npx playwright test <spec-or-grep> --project=electron-e2e --workers=1 --trace=retain-on-failure; if ($LASTEXITCODE -ne 0) { break } }
+
+# Full E2E regression
+npx playwright test --project=electron-e2e --workers=1 --trace=retain-on-failure
+```
+
+### Artifact Review
+
+```bash
+# Open an individual failure trace
+npx playwright show-trace test-results/artifacts/<failure-dir>/trace.zip
+```
+
 ## Standards
 
 See `docs/testing/TESTING_STANDARDS.md` for required conventions (selectors, waits, DSL boundaries, mocking rules).

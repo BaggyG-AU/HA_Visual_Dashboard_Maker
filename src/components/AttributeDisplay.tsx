@@ -48,14 +48,34 @@ const renderTable = (
   entries: Array<{ key: string; label: string; value: string }>,
   testIdPrefix: string,
 ) => (
-  <table style={{ width: '100%', borderCollapse: 'collapse' }} data-testid={`${testIdPrefix}-table`}>
+  <table
+    style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}
+    data-testid={`${testIdPrefix}-table`}
+  >
     <tbody>
       {entries.map((entry) => (
-        <tr key={entry.key} data-testid={`${testIdPrefix}-item-${entry.key}`}>
-          <td style={{ paddingRight: '8px', color: '#9e9e9e', fontSize: '12px', whiteSpace: 'nowrap' }}>
+        <tr key={entry.key} style={{ height: '32px' }} data-testid={`${testIdPrefix}-item-${entry.key}`}>
+          <td
+            style={{
+              paddingRight: '8px',
+              color: '#9e9e9e',
+              fontSize: '12px',
+              lineHeight: '16px',
+              whiteSpace: 'nowrap',
+              verticalAlign: 'middle',
+            }}
+          >
             {entry.label}
           </td>
-          <td style={{ color: '#cfcfcf', fontSize: '12px', textAlign: 'right' }}>
+          <td
+            style={{
+              color: '#cfcfcf',
+              fontSize: '12px',
+              lineHeight: '16px',
+              textAlign: 'right',
+              verticalAlign: 'middle',
+            }}
+          >
             {entry.value}
           </td>
         </tr>

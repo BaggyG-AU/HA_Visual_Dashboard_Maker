@@ -1,5 +1,6 @@
 import * as yaml from 'js-yaml';
 import { DashboardConfig, YAMLParseResult } from '../types/dashboard';
+import { logger } from './logger';
 
 class YAMLService {
   /**
@@ -165,10 +166,8 @@ class YAMLService {
    */
   serializeForHA(config: DashboardConfig): string {
     const sanitized = this.sanitizeForHA(config);
-    console.log('🧹 Sanitized config for HA:', JSON.stringify(sanitized, null, 2));
-    const yaml = this.serializeDashboard(sanitized);
-    console.log('📄 YAML being sent to DeployDialog:\n', yaml);
-    return yaml;
+    logger.debug('Sanitized config for HA', sanitized);
+    return this.serializeDashboard(sanitized);
   }
 }
 

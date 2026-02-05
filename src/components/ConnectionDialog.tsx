@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, Button, Alert, Space, Select, Checkbox, Divider, Popconfirm, Tooltip } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, SaveOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
+import { logger } from '../services/logger';
 import { HAConnectionStatus } from '../types/homeassistant';
 
 interface ConnectionDialogProps {
@@ -47,7 +48,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
         }
       }
     } catch (error) {
-      console.error('Failed to load saved credentials:', error);
+      logger.error('Failed to load saved credentials', error);
     }
   };
 
@@ -60,7 +61,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
       const result = await haConnectionService.testConnection(values.url, values.token);
       setTestResult(result);
     } catch (error) {
-      console.error('Validation failed:', error);
+      logger.error('Validation failed', error);
     } finally {
       setTesting(false);
     }
@@ -77,7 +78,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
         setTestResult(null); // Clear test result when switching credentials
       }
     } catch (error) {
-      console.error('Failed to load credential:', error);
+      logger.error('Failed to load credential', error);
     }
   };
 
@@ -94,7 +95,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
         }
       }
     } catch (error) {
-      console.error('Failed to delete credential:', error);
+      logger.error('Failed to delete credential', error);
     }
   };
 
@@ -124,7 +125,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
       onConnect(values.url, values.token);
       onClose?.();
     } catch (error) {
-      console.error('Failed to connect:', error);
+      logger.error('Failed to connect', error);
     }
   };
 

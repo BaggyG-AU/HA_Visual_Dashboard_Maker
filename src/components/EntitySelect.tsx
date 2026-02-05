@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Select, Tag, Typography, Space, Alert } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
+import { logger } from '../services/logger';
 import { HAEntity } from '../types/homeassistant';
 
 const { Text } = Typography;
@@ -52,7 +53,7 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
         setEntities(fetchedEntities);
       } catch (err) {
         setError((err as Error).message);
-        console.error('Failed to load entities:', err);
+        logger.error('Failed to load entities', err);
       } finally {
         setLoading(false);
       }
