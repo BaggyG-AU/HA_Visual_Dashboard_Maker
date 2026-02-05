@@ -5,6 +5,7 @@
 import type { HapticCardConfig } from './haptics';
 import type { SoundCardConfig } from './sounds';
 import type { AttributeDisplayItem, AttributeDisplayLayout } from './attributeDisplay';
+import type { StateIconsMap } from './stateIcons';
 
 // Layout-card view_layout configuration
 export interface ViewLayout {
@@ -33,6 +34,7 @@ export interface BaseCard {
   icon_color_mode?: 'default' | 'custom' | 'state' | 'attribute';
   icon_color_states?: Record<string, string>;
   icon_color_attribute?: string;
+  state_icons?: StateIconsMap;
   show_name?: boolean;
   show_icon?: boolean;
   show_state?: boolean;

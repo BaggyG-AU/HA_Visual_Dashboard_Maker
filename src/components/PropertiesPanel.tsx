@@ -19,6 +19,7 @@ import { useHAEntities } from '../contexts/HAEntityContext';
 import { getMissingEntityReferences, hasEntityContextVariables, resolveEntityContext } from '../services/entityContext';
 import { AttributeDisplayControls } from './AttributeDisplayControls';
 import { ConditionalVisibilityControls } from './ConditionalVisibilityControls';
+import { StateIconMappingControls } from './StateIconMappingControls';
 import type { AttributeDisplayLayout } from '../types/attributeDisplay';
 
 const { Title, Text } = Typography;
@@ -314,6 +315,38 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     return (
       <Form.Item name="visibility_conditions">
         <ConditionalVisibilityControls />
+      </Form.Item>
+    );
+  };
+
+  const renderStateIconMappingSection = (values: FormCardValues) => {
+    if (!card) return null;
+
+    const supportsStateIcons =
+      typeof values.entity === 'string'
+      || Array.isArray(values.entities)
+      || typeof card.entity === 'string'
+      || Array.isArray(card.entities);
+
+    if (!supportsStateIcons) {
+      return null;
+    }
+
+    const entityField = typeof values.entity === 'string' ? values.entity : undefined;
+    const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
+    const firstEntityValue = entitiesField
+      ? (typeof entitiesField[0] === 'string'
+        ? entitiesField[0]
+        : (typeof entitiesField[0] === 'object' && entitiesField[0] !== null && 'entity' in entitiesField[0]
+          ? (entitiesField[0] as { entity?: unknown }).entity
+          : undefined))
+      : undefined;
+    const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
+    const entityId = entityField ?? card.entity ?? firstEntity ?? null;
+
+    return (
+      <Form.Item name="state_icons">
+        <StateIconMappingControls entityId={entityId} />
       </Form.Item>
     );
   };
@@ -909,6 +942,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
       <Form.Item noStyle shouldUpdate>
         {() => renderConditionalVisibilitySection(form.getFieldsValue(true) as FormCardValues)}
+      </Form.Item>
+
+      <Form.Item noStyle shouldUpdate>
+        {() => renderStateIconMappingSection(form.getFieldsValue(true) as FormCardValues)}
       </Form.Item>
 
       {(card.type === 'sensor' || card.type === 'gauge') && (

@@ -304,6 +304,39 @@
           "type": "string",
           "description": "MDI icon (e.g., mdi:lightbulb)"
         },
+        "state_icons": {
+          "type": "object",
+          "description": "State-based icon mapping with optional default fallback",
+          "patternProperties": {
+            ".*": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "description": "MDI icon shorthand (e.g., mdi:fire)"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "icon": {
+                      "type": "string"
+                    },
+                    "color": {
+                      "type": "string"
+                    },
+                    "size": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "icon"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
         "image": {
           "type": "string",
           "description": "Image URL"

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Card as AntCard, Typography } from 'antd';
-import { ThunderboltOutlined } from '@ant-design/icons';
 import { ButtonCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { triggerHapticForAction } from '../../services/hapticService';
@@ -9,6 +8,8 @@ import { resolveTapAction } from '../../services/smartActions';
 import { useEntityContextValue } from '../../hooks/useEntityContext';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 import { AttributeDisplay } from '../AttributeDisplay';
+import { getStateIcon } from '../../services/stateIcons';
+import { MdiIcon } from '../MdiIcon';
 
 const { Text } = Typography;
 
@@ -30,6 +31,7 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
   const { getEntity } = useHAEntities();
   const entity = card.entity ? getEntity(card.entity) : null;
   const attributes = entity?.attributes || {};
+  const state = entity?.state || 'unknown';
   const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
   const displayName =
     (card.name ? resolvedName : '') ||
@@ -40,6 +42,13 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
   const showIcon = card.show_icon !== false;
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
   const { action: tapAction } = resolveTapAction(card);
+  const resolvedIcon = getStateIcon({
+    entityId: card.entity,
+    state,
+    stateIcons: card.state_icons,
+    entityAttributes: attributes,
+    fallbackIcon: card.icon || 'mdi:gesture-tap',
+  });
 
   const handleClick = () => {
     triggerHapticForAction(tapAction, card.haptic);
@@ -84,7 +93,13 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
             border: '2px solid rgba(0, 217, 255, 0.3)',
           }}
         >
-          <ThunderboltOutlined style={{ fontSize: '32px', color: '#00d9ff' }} />
+          <MdiIcon
+            icon={resolvedIcon.icon}
+            color={resolvedIcon.color || '#00d9ff'}
+            size={32}
+            testId="button-card-state-icon"
+            style={{ transition: 'all 0.2s ease' }}
+          />
         </div>
       )}
 
@@ -115,7 +130,7 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
       {showState && card.entity && (
         <div>
           <Text type="secondary" style={{ fontSize: '11px' }}>
-            {card.entity}
+            {state}
           </Text>
         </div>
       )}

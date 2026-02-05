@@ -142,7 +142,7 @@
    - Conditions: state equals, state in list, attribute value
    - AND/OR logic for multiple conditions
 
-6. **Entity State Icons** - 3-4 days
+6. **Entity State Icons** - 3-4 days (✅ complete 2026-02-05)
    - Dynamic icons based on entity state
    - State-to-icon mapping
    - Icon animations on state change

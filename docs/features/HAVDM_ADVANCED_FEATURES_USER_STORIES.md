@@ -143,7 +143,7 @@ Features:
 3. Entity Remapping (fuzzy matching)
 4. Entity Attribute Display (secondary_info alternatives)
 5. Conditional Entity Visibility
-6. Entity State Icons
+6. Entity State Icons (✅ complete 2026-02-05)
 7. Multi-entity Support
 
 ---
@@ -1142,4 +1142,3 @@ style:
 ## Phase 2: UI Enhancement Layer
 
 *[Due to length constraints, I'll create Phase 2-7 in a continued response. Let me mark this todo as complete and continue.]*
-
