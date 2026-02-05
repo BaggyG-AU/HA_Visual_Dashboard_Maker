@@ -104,6 +104,9 @@ Using fixed delays or increasing timeouts to make tests pass is forbidden.
 
 All waits must be state-based and implemented in the DSL.
 
+Guardrail check:
+- Run `npm run test:e2e:guardrails` to block raw sleeps and non-unified launch helpers in E2E specs.
+
 ---
 
 ### 7. Failures Must Be Actionable

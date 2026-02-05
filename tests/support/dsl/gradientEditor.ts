@@ -300,6 +300,7 @@ export class GradientEditorDSL {
     // Wait for preset list + export button to reflect the new preset.
     const userPresetCards = this.window.locator(`[data-testid^="${this.editorTestId}-user-preset-"]`);
     await expect(userPresetCards.first()).toBeVisible({ timeout: 5000 });
+    await expect(this.window.locator(`[data-testid^="${this.editorTestId}-user-preset-"]`, { hasText: name }).first()).toBeVisible({ timeout: 5000 });
     await expect(this.window.getByTestId(`${this.editorTestId}-preset-export`)).toBeEnabled({ timeout: 5000 });
   }
 
@@ -343,6 +344,7 @@ export class GradientEditorDSL {
 
   async importPresets(filePath: string, testInfo?: TestInfo): Promise<void> {
     await this.openGradientPopover();
+    const beforeImportCount = await this.getUserPresetCards().count().catch(() => 0);
     await this.attachPresetDiagnostics(testInfo, {
       action: 'importPresets',
       filePath,
@@ -368,6 +370,9 @@ export class GradientEditorDSL {
       const inputExists = (await fileInput.count()) > 0;
       if (inputExists) {
         await fileInput.setInputFiles(filePath);
+        await expect
+          .poll(async () => await this.getUserPresetCards().count(), { timeout: 5000 })
+          .toBeGreaterThanOrEqual(beforeImportCount);
         return;
       }
       const [chooser] = await Promise.all([
@@ -375,6 +380,9 @@ export class GradientEditorDSL {
         this.window.getByTestId(`${this.editorTestId}-preset-import`).click(),
       ]);
       await chooser.setFiles(filePath);
+      await expect
+        .poll(async () => await this.getUserPresetCards().count(), { timeout: 5000 })
+        .toBeGreaterThanOrEqual(beforeImportCount);
     } catch (error) {
       const fileInput = this.window.getByTestId(`${this.editorTestId}-preset-file-input`);
       const inputExists = this.app ? null : (await fileInput.count()) > 0;

@@ -59,7 +59,14 @@ export class PropertiesPanelDSL {
     await tabElement.click();
     // Wait until tab reports selected to avoid hidden content reads
     await expect(tabElement).toHaveAttribute('aria-selected', 'true', { timeout: 3000 });
-    await this.window.waitForTimeout(150); // allow small animation settle
+    await expect
+      .poll(async () => await this.getActiveTab(), { timeout: 3000 })
+      .toBe(tab);
+    await expect(this.panel.locator('.ant-tabs-tabpane-active').first()).toBeVisible({ timeout: 3000 });
+
+    if (tab === 'YAML') {
+      await this.expectYamlEditor();
+    }
   }
 
   /**
@@ -132,7 +139,7 @@ export class PropertiesPanelDSL {
     await expect(nameInput).toBeVisible();
     await nameInput.clear();
     await nameInput.fill(name);
-    await this.window.waitForTimeout(300); // Debounce
+    await expect(nameInput).toHaveValue(name);
   }
 
   /**

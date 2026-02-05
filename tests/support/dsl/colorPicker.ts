@@ -227,8 +227,11 @@ export class ColorPickerDSL {
       await this.openPopover(testId);
     }
 
-    await this.switchTab('recent', testId);
+    await expect
+      .poll(async () => (await this.getRecentColorsFromStorage()).length, { timeout: 10000 })
+      .toBe(expectedCount);
 
+    await this.switchTab('recent', testId);
     const swatches = this.window.getByTestId(new RegExp(`^${testId}-picker-recent-\\d+$`));
     await expect
       .poll(async () => swatches.count(), { timeout: 5000 })

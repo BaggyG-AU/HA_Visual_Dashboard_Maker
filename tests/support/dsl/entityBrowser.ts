@@ -93,7 +93,7 @@ export class EntityBrowserDSL {
       if (!hasVisibleModal) return;
 
       await this.window.keyboard.press('Escape');
-      await this.window.waitForTimeout(400);
+      await expect(this.window.locator('.ant-modal-wrap:visible')).toHaveCount(0, { timeout: 2000 });
     }
   }
 
@@ -125,7 +125,6 @@ export class EntityBrowserDSL {
       .or(this.window.locator('button:has-text("Insert Entity")'));
     await expect(insertButton).toBeVisible();
     await insertButton.click();
-    await this.window.waitForTimeout(300);
 
     const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
     await expect(modal).toBeVisible();
@@ -138,7 +137,6 @@ export class EntityBrowserDSL {
     const cancel = this.window.getByTestId('entity-browser-cancel-button');
     await expect(cancel).toBeVisible();
     await cancel.click();
-    await this.window.waitForTimeout(300);
 
     const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
     await expect(modal).not.toBeVisible();
@@ -150,7 +148,7 @@ export class EntityBrowserDSL {
   async search(term: string): Promise<void> {
     const searchInput = this.window.locator('input[placeholder*="Search entities"]');
     await searchInput.fill(term);
-    await this.window.waitForTimeout(300);
+    await expect(searchInput).toHaveValue(term);
   }
 
   /**
@@ -176,7 +174,6 @@ export class EntityBrowserDSL {
     const rows = this.window.locator('.ant-table-row');
     const radio = rows.nth(index).locator('.ant-radio');
     await radio.click();
-    await this.window.waitForTimeout(200);
 
     const selectedRadio = this.window.locator('.ant-radio-checked');
     await expect(selectedRadio).toBeVisible();
@@ -203,7 +200,7 @@ export class EntityBrowserDSL {
     const selectButton = this.window.locator('button:has-text("Select Entity")');
     await expect(selectButton).toBeEnabled();
     await selectButton.click();
-    await this.window.waitForTimeout(500);
+    await this.expectClosed();
   }
 
   /**
@@ -218,7 +215,7 @@ export class EntityBrowserDSL {
 
     const radio = firstRow.locator('input[type="radio"]');
     await radio.check({ force: true });
-    await this.window.waitForTimeout(300);
+    await expect(firstRow.locator('.ant-radio-checked')).toBeVisible();
 
     return entityId;
   }
@@ -230,7 +227,7 @@ export class EntityBrowserDSL {
     const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
     const tab = modal.locator(`.ant-tabs-tab:has-text("${domain}")`);
     await tab.click();
-    await this.window.waitForTimeout(300);
+    await expect(tab).toHaveClass(/ant-tabs-tab-active/);
   }
 
   /**
@@ -241,7 +238,7 @@ export class EntityBrowserDSL {
     const allTab = modal.locator('.ant-tabs-tab:has-text("All")');
     if (await allTab.isVisible().catch(() => false)) {
       await allTab.click();
-      await this.window.waitForTimeout(200);
+      await expect(allTab).toHaveClass(/ant-tabs-tab-active/);
     }
   }
 
@@ -252,7 +249,7 @@ export class EntityBrowserDSL {
     const refreshButton = this.window.locator('button:has-text("Refresh")');
     await expect(refreshButton).toBeEnabled();
     await refreshButton.click();
-    await this.window.waitForTimeout(100);
+    await expect(refreshButton).toBeEnabled({ timeout: 5000 });
   }
 
   /**

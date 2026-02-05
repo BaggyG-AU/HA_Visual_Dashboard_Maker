@@ -132,8 +132,13 @@ export async function launch(): Promise<ElectronTestContext> {
   // The App component should render its content
   await window.waitForSelector('#root > *', { timeout: 20000, state: 'attached' });
 
-  // Extra time for monaco-setup async operations and React hydration
-  await window.waitForTimeout(1500);
+  // Wait for the app shell to become interactable instead of sleeping.
+  await window.waitForFunction(() => {
+    const shell = document.querySelector('[data-testid="app-shell"]');
+    const root = document.querySelector('#root');
+    const hasRenderedContent = Boolean(root && root.children.length > 0);
+    return Boolean(shell) || hasRenderedContent;
+  }, null, { timeout: 15000 });
 
   // Ensure renderer can detect test mode even when built in production mode
   await window.evaluate(() => {

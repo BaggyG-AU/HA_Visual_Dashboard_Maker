@@ -209,7 +209,6 @@ test.describe('Entity Type Dashboard Generation', () => {
       await ctx.window.getByTestId('new-dashboard-entity-type-option').click();
 
       // Wait for loading to finish and error to appear
-      await ctx.window.waitForTimeout(500); // Allow modal transition
       await expect(ctx.window.getByTestId('entity-type-wizard-error')).toBeVisible({ timeout: 10000 });
 
       // Verify error message is shown

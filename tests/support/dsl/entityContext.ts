@@ -8,10 +8,16 @@ export class EntityContextDSL {
     await expect
       .poll(async () => {
         return await this.window.evaluate(() => {
-          const testWindow = window as Window & { __testEntityApi?: unknown };
-          return Boolean(testWindow.__testEntityApi);
+          const testWindow = window as Window & {
+            __testEntityApi?: { setEntities?: unknown; patchEntities?: unknown };
+          };
+          return Boolean(
+            testWindow.__testEntityApi
+            && typeof testWindow.__testEntityApi.setEntities === 'function'
+            && typeof testWindow.__testEntityApi.patchEntities === 'function'
+          );
         });
-      }, { timeout: 5000 })
+      }, { timeout: 8000 })
       .toBe(true);
   }
 

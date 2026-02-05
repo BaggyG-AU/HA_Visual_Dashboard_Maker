@@ -132,10 +132,29 @@ export class CanvasDSL {
   ): Promise<void> {
     const layer = this.getBackgroundLayerVisual(index);
     await expect(layer).toBeVisible();
+    await this.window.evaluate(() => {
+      document.body.classList.add('e2e-disable-animations');
+      if (!document.getElementById('e2e-disable-animations-style')) {
+        const style = document.createElement('style');
+        style.id = 'e2e-disable-animations-style';
+        style.textContent = `
+          .e2e-disable-animations *,
+          .e2e-disable-animations *::before,
+          .e2e-disable-animations *::after {
+            animation: none !important;
+            transition: none !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    });
+    await this.window.evaluate(async () => {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    });
     await expect(layer).toHaveScreenshot(name, options);
   }
 
-  async measureBackgroundLayerFps(index = 0, frameCount = 60): Promise<{ fps: number; avgFrameTime: number; samples: number }> {
+  async measureBackgroundLayerFps(index = 0, frameCount = 60): Promise<{ fps: number; avgFrameTime: number; samples: number; minFps: number }> {
     const card = this.getCard(index);
     await expect(card).toBeVisible();
     await this.window.bringToFront();
@@ -145,18 +164,21 @@ export class CanvasDSL {
       const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-testid="card-background-layer"]'));
       const layer = layers[targetIndex] || layers[0];
       if (!layer) {
-        return { fps: 0, avgFrameTime: Infinity, samples: 0 };
+        return { fps: 0, avgFrameTime: Infinity, samples: 0, minFps: 0 };
       }
 
       const samples: number[] = [];
       let last = performance.now();
       let count = 0;
+      const warmupFrames = Math.min(5, Math.max(0, frames - 1));
       let toggle = false;
 
       return new Promise((resolve) => {
         const step = () => {
           const now = performance.now();
-          samples.push(now - last);
+          if (count >= warmupFrames) {
+            samples.push(now - last);
+          }
           last = now;
 
           toggle = !toggle;
@@ -166,8 +188,14 @@ export class CanvasDSL {
           if (count < frames) {
             requestAnimationFrame(step);
           } else {
-            const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
-            resolve({ fps: 1000 / avg, avgFrameTime: avg, samples: samples.length });
+            const avg = samples.reduce((a, b) => a + b, 0) / Math.max(samples.length, 1);
+            const maxFrameTime = samples.length ? Math.max(...samples) : Infinity;
+            resolve({
+              fps: 1000 / avg,
+              avgFrameTime: avg,
+              samples: samples.length,
+              minFps: Number.isFinite(maxFrameTime) ? 1000 / maxFrameTime : 0,
+            });
           }
         };
 

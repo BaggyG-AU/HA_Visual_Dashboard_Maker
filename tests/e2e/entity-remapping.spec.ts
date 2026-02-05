@@ -52,7 +52,6 @@ test.describe('Entity Remapping (Feature 3.3)', () => {
       await entityRemapping.apply();
 
       // Capture debug state immediately after Apply click
-      await ctx.window.waitForTimeout(500);
       const debugAfterApply = await ctx.window.evaluate(() => {
         const testWindow = window as Window & { __remapDebug?: unknown };
         return {

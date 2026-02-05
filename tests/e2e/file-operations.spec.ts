@@ -37,8 +37,7 @@ test.describe('File Operations', () => {
       await ctx.palette.expandCategory('Controls');
       await ctx.palette.addCard('button');
 
-      // Give the app a moment to reflect dirty state (matches dashboard-operations pattern)
-      await ctx.window.waitForTimeout(500);
+      await ctx.canvas.expectCardCount(1);
 
       const dirtyTitle = await ctx.appDSL.getTitle();
 
@@ -59,13 +58,12 @@ test.describe('File Operations', () => {
       await ctx.palette.expandCategory('Controls');
       await ctx.palette.addCard('button');
 
-      // Capture dirty title before pressing save
-      await ctx.window.waitForTimeout(300);
+      await ctx.canvas.expectCardCount(1);
       const dirtyTitle = await ctx.appDSL.getTitle();
 
       // Save shortcut is currently mocked/no-op; ensure it doesn't crash and title remains stable
       await ctx.window.keyboard.press('Control+S');
-      await ctx.window.waitForTimeout(300);
+      await ctx.appDSL.expectTitle(/HA Visual Dashboard Maker/);
 
       const afterSaveTitle = await ctx.appDSL.getTitle();
       expect(afterSaveTitle.length).toBeGreaterThan(0);

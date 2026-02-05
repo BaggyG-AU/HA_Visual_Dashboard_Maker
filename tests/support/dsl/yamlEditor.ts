@@ -54,7 +54,7 @@ export class YamlEditorDSL {
     await modalContent.waitFor({ state: 'visible', timeout: 10000 });
 
     // Wait for Monaco editor to be ready
-    await this.waitForMonacoReady();
+    await this.waitForMonacoReady('modal');
   }
 
   /**
@@ -171,10 +171,15 @@ export class YamlEditorDSL {
 
   // Wait for Monaco readiness using explicit handles OR any Monaco models
   private async waitForMonacoReady(scopeHint: 'properties' | 'modal' | 'canvas' = 'properties'): Promise<void> {
-    // Scope to any visible YAML editor container (modal or properties panel)
-    const editorContainer = this.window
+    // Scope to the requested YAML editor surface first to avoid cross-editor collisions.
+    let editorContainer = this.window
       .locator('[data-testid="yaml-editor-container"]:visible')
       .first();
+    if (scopeHint === 'modal') {
+      editorContainer = this.window.getByTestId('yaml-editor-content').getByTestId('yaml-editor-container');
+    } else if (scopeHint === 'properties') {
+      editorContainer = this.window.getByTestId('properties-panel').getByTestId('yaml-editor-container');
+    }
     await expect(editorContainer).toBeVisible({ timeout: 5000 });
 
     // Wait for Monaco to render (either .monaco-editor or fallback textarea)

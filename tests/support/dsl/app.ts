@@ -56,7 +56,15 @@ export class AppDSL {
 
       // Press Escape to close visible modals
       await this.window.keyboard.press('Escape');
-      await this.window.waitForTimeout(400);
+      await expect
+        .poll(async () => {
+          const visibleCount = await this.window
+            .locator('.ant-modal-wrap:visible')
+            .count()
+            .catch(() => 0);
+          return visibleCount;
+        }, { timeout: 2000 })
+        .toBe(0);
     }
   }
 

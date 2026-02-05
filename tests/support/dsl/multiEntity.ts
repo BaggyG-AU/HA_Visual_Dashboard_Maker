@@ -80,7 +80,7 @@ export class MultiEntityDSL {
 
     // Close any stale overlay/dropdown before interacting with the mode selector.
     await this.window.keyboard.press('Escape');
-    await this.window.waitForTimeout(100);
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 2000 });
 
     try {
       await select.click();

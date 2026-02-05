@@ -63,9 +63,6 @@ export class EntityRemappingDSL {
     const applyBtn = this.window.getByTestId('remap-apply');
     await expect(applyBtn).toBeEnabled();
 
-    // Wait for React to stabilize after autoMapAll
-    await this.window.waitForTimeout(300);
-
     // Use the test backdoor function exposed by EntityRemappingModal
     const applied = await this.window.evaluate(() => {
       const testWindow = window as Window & { __remapTestApply?: () => void };
@@ -82,8 +79,9 @@ export class EntityRemappingDSL {
       await applyBtn.click({ force: true });
     }
 
-    // Wait for React to process the apply and close the modal
-    await this.window.waitForTimeout(200);
+    await expect
+      .poll(async () => await this.window.getByTestId('entity-remapping-modal').count(), { timeout: 5000 })
+      .toBe(0);
   }
 }
 

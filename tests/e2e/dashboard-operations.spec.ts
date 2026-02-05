@@ -128,8 +128,7 @@ test.describe('Dashboard Operations', () => {
       await ctx.palette.expandCategory('Controls');
       await ctx.palette.addCard('button');
 
-      // Give app time to mark dirty
-      await ctx.window.waitForTimeout(500);
+      await ctx.canvas.expectCardCount(1);
 
       const updatedTitle = await ctx.appDSL.getTitle();
       expect(updatedTitle.length).toBeGreaterThan(0);

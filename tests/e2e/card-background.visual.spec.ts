@@ -5,7 +5,7 @@ const DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=';
 
 test.describe('Card Background Customization - Visual and Performance', () => {
-  test('captures visual snapshots for background types', async ({ page }) => {
+  test('captures visual snapshots for background types', async ({ page }, testInfo) => {
     test.slow();
     void page;
     const ctx = await launchWithDSL();
@@ -22,7 +22,7 @@ test.describe('Card Background Customization - Visual and Performance', () => {
       await properties.expectVisible();
       await properties.switchTab('Advanced Options');
 
-      await backgroundCustomizer.selectType('Solid color');
+      await backgroundCustomizer.selectType('Solid color', testInfo);
       await colorPicker.openPopover('advanced-style-solid-background-input');
       await colorPicker.setColorInput('#FF0000', 'advanced-style-solid-background-input');
       await colorPicker.closePopover('advanced-style-solid-background-input');
@@ -30,15 +30,15 @@ test.describe('Card Background Customization - Visual and Performance', () => {
       await canvas.expectBackgroundLayerCss(0, 'background-color', 'rgba(255, 0, 0, 0.8)');
       await canvas.expectBackgroundLayerScreenshot(0, 'card-background-solid.png');
 
-      await backgroundCustomizer.selectType('Gradient');
+      await backgroundCustomizer.selectType('Gradient', testInfo);
       await gradientEditor.applyPreset('material-sunset');
       await canvas.expectBackgroundLayerScreenshot(0, 'card-background-gradient.png');
 
-      await backgroundCustomizer.selectType('Image');
+      await backgroundCustomizer.selectType('Image', testInfo);
       await backgroundCustomizer.setImageUrl(DATA_URL);
-      await backgroundCustomizer.setImagePosition('Center');
-      await backgroundCustomizer.setImageSize('Cover');
-      await backgroundCustomizer.setImageRepeat('No repeat');
+      await backgroundCustomizer.setImagePosition('Center', testInfo);
+      await backgroundCustomizer.setImageSize('Cover', testInfo);
+      await backgroundCustomizer.setImageRepeat('No repeat', testInfo);
       await backgroundCustomizer.setNumericInput('background-image-opacity-input', 85);
       await backgroundCustomizer.setNumericInput('background-image-blur-input', 2);
       await colorPicker.openPopover('background-overlay-color-input');
@@ -47,7 +47,7 @@ test.describe('Card Background Customization - Visual and Performance', () => {
       await backgroundCustomizer.setNumericInput('background-overlay-opacity-input', 15);
       await canvas.expectBackgroundLayerScreenshot(0, 'card-background-image.png');
 
-      await backgroundCustomizer.selectType('Frosted glass');
+      await backgroundCustomizer.selectType('Frosted glass', testInfo);
       await backgroundCustomizer.setNumericInput('background-blur-input', 12);
       await colorPicker.openPopover('background-tint-color-input');
       await colorPicker.setColorInput('#334455', 'background-tint-color-input');
