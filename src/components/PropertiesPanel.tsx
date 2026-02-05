@@ -21,6 +21,8 @@ import { AttributeDisplayControls } from './AttributeDisplayControls';
 import { ConditionalVisibilityControls } from './ConditionalVisibilityControls';
 import { StateIconMappingControls } from './StateIconMappingControls';
 import type { AttributeDisplayLayout } from '../types/attributeDisplay';
+import { MultiEntityControls } from './MultiEntityControls';
+import type { AggregateFunction, BatchActionType, MultiEntityMode } from '../types/multiEntity';
 
 const { Title, Text } = Typography;
 
@@ -351,6 +353,62 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     );
   };
 
+  const renderMultiEntitySection = (values: FormCardValues) => {
+    if (!card) return null;
+    const supportsMultiEntity = card.type === 'button' || card.type === 'custom:button-card';
+    if (!supportsMultiEntity) return null;
+
+    const entitiesField = Array.isArray(values.entities)
+      ? values.entities.filter((entry): entry is string => typeof entry === 'string')
+      : [];
+    const mode = (values.multi_entity_mode as MultiEntityMode | undefined) ?? card.multi_entity_mode ?? 'individual';
+    const aggregateFunction = (values.aggregate_function as AggregateFunction | undefined)
+      ?? card.aggregate_function
+      ?? 'count_on';
+    const batchActions = (Array.isArray(values.batch_actions) ? values.batch_actions : card.batch_actions)
+      ?.map((entry) => {
+        if (typeof entry === 'string') return entry;
+        if (entry && typeof entry === 'object' && 'type' in entry) {
+          const type = (entry as { type?: unknown }).type;
+          return typeof type === 'string' ? type : undefined;
+        }
+        return undefined;
+      })
+      .filter((entry): entry is BatchActionType => typeof entry === 'string');
+
+    return (
+      <>
+        <Form.Item name="multi_entity_mode" hidden>
+          <Input />
+        </Form.Item>
+        <Form.Item name="aggregate_function" hidden>
+          <Input />
+        </Form.Item>
+        <Form.Item name="batch_actions" hidden>
+          <Select mode="multiple" options={[]} />
+        </Form.Item>
+        <Form.Item name="entities">
+          <MultiEntityControls
+            value={entitiesField}
+            mode={mode}
+            aggregateFunction={aggregateFunction}
+            batchActions={batchActions}
+            onChange={(nextEntities) => {
+              const nextValues: Record<string, unknown> = { entities: nextEntities };
+              if (nextEntities.length > 0 && !form.getFieldValue('entity')) {
+                nextValues.entity = nextEntities[0];
+              }
+              form.setFieldsValue(nextValues);
+            }}
+            onModeChange={(nextMode) => form.setFieldsValue({ multi_entity_mode: nextMode })}
+            onAggregateFunctionChange={(nextFunction) => form.setFieldsValue({ aggregate_function: nextFunction })}
+            onBatchActionsChange={(nextActions) => form.setFieldsValue({ batch_actions: nextActions })}
+          />
+        </Form.Item>
+      </>
+    );
+  };
+
   const renderSmartDefaultsConfig = (testIdPrefix: string) => {
     if (!card) return null;
 
@@ -535,61 +593,20 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     checkStreamComponent();
   }, []);
 
-  // Create Monaco editor when container is ready and YAML tab is active
+  // Create Monaco editor when container is ready and YAML tab is active.
+  // Uses a bounded RAF retry loop because tab content mount can lag behind tab selection.
   useEffect(() => {
-    // Only proceed if we're on the YAML tab
     if (activeTab !== 'yaml') {
       return;
     }
 
-    // Wait for the container ref to be attached (React timing issue)
-    if (!editorContainerRef.current) {
-      // Use setTimeout(0) to defer until next tick when ref is attached
-      const timer = setTimeout(() => {
-        if (editorContainerRef.current && activeTab === 'yaml' && !monacoEditorRef.current) {
-          console.log('[PropertiesPanel] Creating Monaco editor (after ref attached)...');
+    let rafId: number | null = null;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 120; // ~2s at 60fps
 
-          // Create editor instance
-          const editor = monaco.editor.create(editorContainerRef.current, {
-            value: yamlContent,
-            language: 'yaml',
-            theme: 'vs-dark',
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            fontSize: 13,
-            lineNumbers: 'on',
-            wordWrap: 'on',
-            automaticLayout: true,
-            tabSize: 2,
-            insertSpaces: true,
-          });
-
-          console.log('[PropertiesPanel] Monaco editor created successfully');
-          monacoEditorRef.current = editor;
-
-          // Expose editor to global scope for testing
-          if (typeof window !== 'undefined') {
-            const testWindow = window as MonacoTestWindow;
-            testWindow.__monacoEditor = editor;
-            testWindow.__monacoModel = editor.getModel();
-          }
-
-          // Listen for content changes
-          editor.onDidChangeModelContent(() => {
-            const value = editor.getValue();
-            handleYamlChange(value);
-          });
-        }
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-
-    // Container is ready, create editor immediately
-    if (!monacoEditorRef.current) {
+    const createEditor = (container: HTMLDivElement) => {
       console.log('[PropertiesPanel] Creating Monaco editor...');
-
-      // Create editor instance
-      const editor = monaco.editor.create(editorContainerRef.current, {
+      const editor = monaco.editor.create(container, {
         value: yamlContent,
         language: 'yaml',
         theme: 'vs-dark',
@@ -603,25 +620,57 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         insertSpaces: true,
       });
 
-      console.log('[PropertiesPanel] Monaco editor created successfully');
       monacoEditorRef.current = editor;
+      console.log('[PropertiesPanel] Monaco editor created successfully');
 
-      // Expose editor to global scope for testing
       if (typeof window !== 'undefined') {
         const testWindow = window as MonacoTestWindow;
         testWindow.__monacoEditor = editor;
         testWindow.__monacoModel = editor.getModel();
       }
 
-      // Listen for content changes
       editor.onDidChangeModelContent(() => {
         const value = editor.getValue();
         handleYamlChange(value);
       });
-    }
+    };
+
+    const ensureEditorReady = () => {
+      const container = editorContainerRef.current;
+      const existingEditor = monacoEditorRef.current;
+
+      if (!container) {
+        attempts += 1;
+        if (attempts <= MAX_ATTEMPTS) {
+          rafId = window.requestAnimationFrame(ensureEditorReady);
+        } else {
+          console.warn('[PropertiesPanel] Monaco editor container did not mount in time');
+        }
+        return;
+      }
+
+      if (existingEditor) {
+        const domNode = existingEditor.getContainerDomNode?.();
+        if (domNode?.isConnected) {
+          existingEditor.layout();
+          return;
+        }
+
+        console.warn('[PropertiesPanel] Detected stale Monaco editor, recreating');
+        existingEditor.dispose();
+        monacoEditorRef.current = null;
+      }
+
+      createEditor(container);
+    };
+
+    ensureEditorReady();
 
     // Cleanup when switching away from YAML tab
     return () => {
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
       if (monacoEditorRef.current) {
         console.log('[PropertiesPanel] Cleaning up Monaco editor');
         monacoEditorRef.current.dispose();
@@ -634,7 +683,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         }
       }
     };
-  }, [activeTab]); // Only re-create when tab changes
+  }, [activeTab]); // Re-check lifecycle when entering YAML
 
   // Update Monaco editor value when yamlContent changes externally (e.g., card selection)
   // but DON'T recreate the entire editor
@@ -946,6 +995,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
       <Form.Item noStyle shouldUpdate>
         {() => renderStateIconMappingSection(form.getFieldsValue(true) as FormCardValues)}
+      </Form.Item>
+
+      <Form.Item noStyle shouldUpdate>
+        {() => renderMultiEntitySection(form.getFieldsValue(true) as FormCardValues)}
       </Form.Item>
 
       {(card.type === 'sensor' || card.type === 'gauge') && (

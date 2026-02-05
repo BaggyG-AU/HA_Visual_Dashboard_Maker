@@ -11,6 +11,7 @@ interface EntityMultiSelectProps {
   onChange?: (value: string[]) => void;
   placeholder?: string;
   filterDomains?: string[];  // e.g., ['light', 'switch']
+  dataTestId?: string;
 }
 
 /**
@@ -27,6 +28,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
   onChange,
   placeholder = 'Select entities',
   filterDomains,
+  dataTestId,
 }) => {
   const [entities, setEntities] = useState<HAEntity[]>([]);
   const [loading, setLoading] = useState(false);
@@ -212,7 +214,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
   // Show warning if not connected to HA
   if (!isConnected) {
     return (
-      <div>
+      <div data-testid={dataTestId}>
         <Select
           mode="multiple"
           value={safeValue}
@@ -236,7 +238,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
   // Show error if failed to load entities
   if (error) {
     return (
-      <div>
+      <div data-testid={dataTestId}>
         <Select
           mode="multiple"
           value={safeValue}
@@ -275,7 +277,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
   };
 
   return (
-    <div>
+    <div data-testid={dataTestId}>
       <Select
         mode="multiple"
         value={safeValue}

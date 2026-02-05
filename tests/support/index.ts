@@ -32,6 +32,7 @@ import { EntityRemappingDSL } from './dsl/entityRemapping';
 import { AttributeDisplayDSL } from './dsl/attributeDisplay';
 import { ConditionalVisibilityDSL } from './dsl/conditionalVisibility';
 import { StateIconsDSL } from './dsl/stateIcons';
+import { MultiEntityDSL } from './dsl/multiEntity';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -69,6 +70,7 @@ export interface TestContext extends electron.ElectronTestContext {
   attributeDisplay: AttributeDisplayDSL;
   conditionalVisibility: ConditionalVisibilityDSL;
   stateIcons: StateIconsDSL;
+  multiEntity: MultiEntityDSL;
 }
 
 /**
@@ -101,5 +103,6 @@ export async function launchWithDSL(): Promise<TestContext> {
     attributeDisplay: new AttributeDisplayDSL(electronCtx.window),
     conditionalVisibility: new ConditionalVisibilityDSL(electronCtx.window),
     stateIcons: new StateIconsDSL(electronCtx.window),
+    multiEntity: new MultiEntityDSL(electronCtx.window),
   };
 }

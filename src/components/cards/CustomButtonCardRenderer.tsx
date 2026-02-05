@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card as AntCard, Typography } from 'antd';
+import { Card as AntCard, Popconfirm, Space, Typography } from 'antd';
 import { BorderOutlined, BulbOutlined, PoweroffOutlined, ApiOutlined } from '@ant-design/icons';
 import { CustomCard } from '../../types/dashboard';
 import { useHAEntities } from '../../contexts/HAEntityContext';
@@ -11,6 +11,14 @@ import { triggerHapticForAction } from '../../services/hapticService';
 import { playSoundForAction } from '../../services/soundService';
 import { resolveTapAction } from '../../services/smartActions';
 import { useEntityContextValue } from '../../hooks/useEntityContext';
+import {
+  evaluateAggregateFunction,
+  executeBatchAction,
+  isDestructiveBatchAction,
+  resolveMultiEntityIds,
+  summarizeAggregateState,
+} from '../../services/multiEntity';
+import type { BatchActionType, MultiEntityMode } from '../../types/multiEntity';
 
 const { Text } = Typography;
 
@@ -39,8 +47,15 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
   isSelected = false,
   onClick,
 }) => {
-  const { getEntity } = useHAEntities();
+  const { getEntity, entities } = useHAEntities();
   const entity = card.entity ? getEntity(card.entity) : null;
+  const entityIds = resolveMultiEntityIds(card);
+  const multiEntityEnabled = entityIds.length > 1;
+  const multiEntityMode = (card.multi_entity_mode ?? 'individual') as MultiEntityMode;
+  const aggregateFunction = card.aggregate_function ?? 'count_on';
+  const batchActions = (card.batch_actions ?? ['turn_on', 'turn_off', 'toggle'])
+    .map((entry) => (typeof entry === 'string' ? entry : entry?.type))
+    .filter((entry): entry is BatchActionType => typeof entry === 'string');
 
   // Extract configuration
   const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
@@ -149,6 +164,16 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
     onClick?.();
   };
 
+  const runBatchAction = (action: BatchActionType) => {
+    const result = executeBatchAction(action, entityIds, entities);
+    console.info('[multi-entity] Batch action planned (custom button)', {
+      action,
+      operationCount: result.operations.length,
+      operations: result.operations,
+      failures: result.failures,
+    });
+  };
+
   return (
     <div
       style={{
@@ -171,10 +196,95 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
+          alignItems: 'stretch',
           justifyContent: 'center',
         }}
       >
+        {multiEntityEnabled && (
+          <div style={{ marginBottom: '8px' }} data-testid="custom-button-multi-entity-mode">
+            <Text type="secondary" style={{ fontSize: '11px' }}>Mode: {multiEntityMode}</Text>
+          </div>
+        )}
+
+        {multiEntityEnabled && multiEntityMode === 'aggregate' && (
+          <div
+            style={{ marginBottom: '10px', padding: '8px', background: '#141414', border: '1px solid #2f2f2f', borderRadius: '6px' }}
+            data-testid="custom-button-multi-entity-aggregate"
+          >
+            <Text style={{ color: '#e6e6e6', fontSize: '12px', display: 'block' }}>
+              {summarizeAggregateState(entityIds, entities)}
+            </Text>
+            <Text type="secondary" style={{ fontSize: '11px' }}>
+              Function ({aggregateFunction}): {String(evaluateAggregateFunction(aggregateFunction, entityIds, entities))}
+            </Text>
+          </div>
+        )}
+
+        {multiEntityEnabled && multiEntityMode === 'individual' && (
+          <div style={{ marginBottom: '10px' }} data-testid="custom-button-multi-entity-individual">
+            {entityIds.map((entityId) => {
+              const targetState = getEntity(entityId)?.state ?? 'unavailable';
+              const safeEntityId = entityId.replace(/[^a-zA-Z0-9_-]/g, '-');
+              return (
+                <div
+                  key={entityId}
+                  style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #2c2c2c', padding: '4px 0' }}
+                  data-testid={`custom-button-multi-entity-item-${safeEntityId}`}
+                >
+                  <Text style={{ color: '#d9d9d9', fontSize: '12px' }}>{entityId}</Text>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>{targetState}</Text>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {multiEntityEnabled && multiEntityMode === 'batch' && (
+          <Space wrap style={{ marginBottom: '10px' }} data-testid="custom-button-multi-entity-batch">
+            {batchActions.map((action) => {
+              const destructive = isDestructiveBatchAction(action);
+              const actionPill = (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (!destructive) runBatchAction(action);
+                  }}
+                  onKeyDown={(event) => {
+                    if (!destructive && (event.key === 'Enter' || event.key === ' ')) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      runBatchAction(action);
+                    }
+                  }}
+                  style={{ border: '1px solid #3a3a3a', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', color: '#d9d9d9' }}
+                  data-testid={`custom-button-multi-entity-action-${action}`}
+                >
+                  {action.replace('_', ' ')}
+                </span>
+              );
+
+              if (!destructive) return <React.Fragment key={action}>{actionPill}</React.Fragment>;
+
+              return (
+                <Popconfirm
+                  key={action}
+                  title={`Run ${action.replace('_', ' ')} for ${entityIds.length} entities?`}
+                  okText="Run"
+                  cancelText="Cancel"
+                  onConfirm={(event) => {
+                    event?.stopPropagation();
+                    runBatchAction(action);
+                  }}
+                >
+                  {actionPill}
+                </Popconfirm>
+              );
+            })}
+          </Space>
+        )}
+
         {/* Button Visual */}
         <div
           style={{

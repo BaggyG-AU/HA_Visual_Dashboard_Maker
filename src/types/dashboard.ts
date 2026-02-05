@@ -6,6 +6,7 @@ import type { HapticCardConfig } from './haptics';
 import type { SoundCardConfig } from './sounds';
 import type { AttributeDisplayItem, AttributeDisplayLayout } from './attributeDisplay';
 import type { StateIconsMap } from './stateIcons';
+import type { AggregateFunction, BatchActionConfig, MultiEntityMode } from './multiEntity';
 
 // Layout-card view_layout configuration
 export interface ViewLayout {
@@ -35,6 +36,9 @@ export interface BaseCard {
   icon_color_states?: Record<string, string>;
   icon_color_attribute?: string;
   state_icons?: StateIconsMap;
+  multi_entity_mode?: MultiEntityMode;
+  aggregate_function?: AggregateFunction;
+  batch_actions?: Array<BatchActionConfig | string>;
   show_name?: boolean;
   show_icon?: boolean;
   show_state?: boolean;

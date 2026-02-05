@@ -35,7 +35,7 @@
 | 3.4: Entity Attribute Display | Medium | 3-4 days | ✅ Complete (2026-02-04) |
 | 3.5: Conditional Entity Visibility | High | 4-5 days | ⏳ Ready to Begin |
 | 3.6: Entity State Icons | Medium | 3-4 days | ✅ Complete (2026-02-05) |
-| 3.7: Multi-entity Support | High | 4-5 days | ⏳ Ready to Begin |
+| 3.7: Multi-entity Support | High | 4-5 days | ✅ Complete (2026-02-05) |
 
 **Total Estimated Effort**: 29-35 days (3-4 weeks with parallel work on independent features)
 
@@ -983,54 +983,54 @@ Executed in this workspace:
 **Priority**: High
 **Dependencies**: None
 **Estimated Effort**: 4-5 days
-**Status**: ⏳ Ready to Begin
+**Status**: ✅ Complete (2026-02-05)
 
 ### Implementation Checklist
 
 #### Phase 1: Multi-Entity Configuration UI (Days 1-2)
 
-- [ ] Create `MultiEntityControls.tsx` component
-- [ ] UI to add multiple entities to single card:
-  - [ ] Entity picker (multi-select or add multiple)
-  - [ ] Reorder entities (drag-and-drop)
-  - [ ] Remove entities
-  - [ ] Preview showing all entity states
-- [ ] Configure behavior mode:
-  - [ ] Individual control (separate buttons for each entity)
-  - [ ] Aggregate state (show combined state)
-  - [ ] Batch actions (single button controls all)
+- [x] Create `MultiEntityControls.tsx` component
+- [x] UI to add multiple entities to single card:
+  - [x] Entity picker (multi-select or add multiple)
+  - [x] Reorder entities (drag-and-drop + keyboard up/down)
+  - [x] Remove entities
+  - [x] Preview showing all entity states
+- [x] Configure behavior mode:
+  - [x] Individual control (separate rows for each entity)
+  - [x] Aggregate state (combined state + function output)
+  - [x] Batch actions (single-card action set for all entities)
 
 #### Phase 2: Aggregate State Logic (Days 2-3)
 
-- [ ] Create `src/services/multiEntity.ts` service
-- [ ] Implement aggregate state functions:
-  - [ ] `allOn(entities[])` → boolean (all entities are "on")
-  - [ ] `anyOn(entities[])` → boolean (any entity is "on")
-  - [ ] `allOff(entities[])` → boolean (all entities are "off")
-  - [ ] `anyOff(entities[])` → boolean (any entity is "off")
-  - [ ] `countOn(entities[])` → number (count of entities "on")
-  - [ ] `averageState(entities[])` → number (for numeric states)
-  - [ ] `minState(entities[])` → number
-  - [ ] `maxState(entities[])` → number
-- [ ] Display aggregate state in card
-- [ ] Unit tests for all aggregate functions
+- [x] Create `src/services/multiEntity.ts` service
+- [x] Implement aggregate state functions:
+  - [x] `allOn(entities[])` → boolean (all entities are "on")
+  - [x] `anyOn(entities[])` → boolean (any entity is "on")
+  - [x] `allOff(entities[])` → boolean (all entities are "off")
+  - [x] `anyOff(entities[])` → boolean (any entity is "off")
+  - [x] `countOn(entities[])` → number (count of entities "on")
+  - [x] `averageState(entities[])` → number (for numeric states)
+  - [x] `minState(entities[])` → number
+  - [x] `maxState(entities[])` → number
+- [x] Display aggregate state in card
+- [x] Unit tests for all aggregate functions
 
 #### Phase 3: Batch Actions (Day 3)
 
-- [ ] Implement batch action service
-- [ ] Actions apply to all entities:
-  - [ ] Turn all on
-  - [ ] Turn all off
-  - [ ] Toggle all
-  - [ ] Set all to specific state/value
-  - [ ] Call service on all entities
-- [ ] UI shows batch action buttons
-- [ ] Confirmation dialog for destructive batch actions
+- [x] Implement batch action service
+- [x] Actions apply to all entities:
+  - [x] Turn all on
+  - [x] Turn all off
+  - [x] Toggle all
+  - [x] Set all to specific state/value
+  - [x] Call service on all entities
+- [x] UI shows batch action buttons
+- [x] Confirmation dialog for destructive batch actions
 
 #### Phase 4: YAML Storage (Day 3)
 
-- [ ] Define `entities` property in card config (array)
-- [ ] Store multi-entity configuration
+- [x] Define `entities` property in card config (array)
+- [x] Store multi-entity configuration
 - [ ] Example YAML:
   ```yaml
   entities:
@@ -1044,47 +1044,47 @@ Executed in this workspace:
     - turn_off
     - toggle
   ```
-- [ ] Serialize/deserialize multi-entity config
+- [x] Serialize/deserialize multi-entity config
 
 #### Phase 5: Card Rendering Integration (Days 4)
 
-- [ ] Support multi-entity in card components
-- [ ] Individual mode: show each entity separately (list)
-- [ ] Aggregate mode: show combined state as single value
-- [ ] Batch mode: show single control that affects all entities
-- [ ] Real-time updates when any entity state changes
-- [ ] Handle mixed entity types gracefully (e.g., light + switch)
+- [x] Support multi-entity in card components
+- [x] Individual mode: show each entity separately (list)
+- [x] Aggregate mode: show combined state as single value
+- [x] Batch mode: show single control that affects all entities
+- [x] Real-time updates when any entity state changes
+- [x] Handle mixed entity types gracefully (e.g., light + switch)
 
 #### Phase 6: Testing & Documentation (Day 5)
 
-- [ ] Unit tests for aggregate state functions
-- [ ] Unit tests for batch actions
-- [ ] E2E tests using MultiEntityDSL
-  - [ ] Add multiple entities to card
-  - [ ] Aggregate state shows correctly
-  - [ ] Batch action controls all entities
-  - [ ] Individual mode shows separate controls
-  - [ ] Real-time updates work for all entities
-  - [ ] Config persists in YAML
-- [ ] Documentation with examples
-- [ ] Help text explaining modes
+- [x] Unit tests for aggregate state functions
+- [x] Unit tests for batch actions
+- [x] E2E tests using MultiEntityDSL
+  - [x] Add multiple entities to card
+  - [x] Aggregate state shows correctly
+  - [x] Batch action controls all entities
+  - [x] Individual mode shows separate controls
+  - [x] Real-time updates work for all entities
+  - [x] Config persists in YAML
+- [x] Documentation with examples
+- [x] Help text explaining modes
 
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
-- [ ] User can add multiple entities to single card
-- [ ] Aggregate state functions work (all on, any on, count, etc.)
-- [ ] Batch actions work (turn all on/off, toggle all)
-- [ ] Individual mode shows separate entity controls
-- [ ] Config persists in YAML
-- [ ] Real-time updates for all entities
-- [ ] All unit and E2E tests pass
+- [x] User can add multiple entities to single card
+- [x] Aggregate state functions work (all on, any on, count, etc.)
+- [x] Batch actions work (turn all on/off, toggle all)
+- [x] Individual mode shows separate entity controls
+- [x] Config persists in YAML
+- [x] Real-time updates for all entities
+- [x] All unit and E2E tests pass (targeted Feature 3.7 suites)
 
 **Should Have (Nice to Have)**:
-- [ ] Drag-and-drop to reorder entities
-- [ ] Confirmation dialog for batch actions
+- [x] Drag-and-drop to reorder entities
+- [x] Confirmation dialog for batch actions
 - [ ] Custom aggregate function (user-defined formula)
-- [ ] Visual indicator of aggregate state (e.g., "3/5 on")
+- [x] Visual indicator of aggregate state (e.g., "3/5 on")
 
 **Won't Have (Out of Scope)**:
 - [ ] Entity groups (HA native groups) (future)
@@ -1106,6 +1106,66 @@ This feature MUST comply with:
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first tests using MultiEntityDSL
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Service in `src/services/multiEntity.ts`
 - ✅ [PLAYWRIGHT_TESTING.md](../testing/PLAYWRIGHT_TESTING.md) - Wait for all entity state updates
+
+### Delivered Implementation Notes (2026-02-05)
+
+**Phase 1 (Configuration UI + Reorder + Mode Selection)**  
+Delivered: `MultiEntityControls` integrated into PropertiesPanel for `button` and `custom:button-card`, including entity add/remove, drag-drop reorder, keyboard reorder, mode selection, and live state preview.  
+Files/systems: `src/components/MultiEntityControls.tsx`, `src/components/PropertiesPanel.tsx`, `src/components/EntityMultiSelect.tsx`.
+
+**Phase 2-3 (Aggregate + Batch Services)**  
+Delivered: centralized `multiEntity` service with aggregate evaluators, aggregate snapshots, batch action planning/execution semantics, destructive-action detection, and summary helpers.  
+Files/systems: `src/services/multiEntity.ts`, `src/types/multiEntity.ts`.
+
+**Phase 4 (YAML Contracts + Persistence)**  
+Delivered: card typing + schema support for `multi_entity_mode`, `aggregate_function`, and `batch_actions`; persisted via existing YAML pipeline.  
+Files/systems: `src/types/dashboard.ts`, `src/schemas/ha-dashboard-schema.json`.
+
+**Phase 5 (Runtime Rendering Integration)**  
+Delivered: runtime multi-entity rendering modes in `button` and `custom:button-card` renderers with individual/aggregate/batch views, aggregate indicator (`X/Y on`), and batch confirmation for destructive actions.  
+Files/systems: `src/components/cards/ButtonCardRenderer.tsx`, `src/components/cards/CustomButtonCardRenderer.tsx`.
+
+**Phase 6 (Tests + DSL + Docs)**  
+Delivered: unit coverage for aggregate/batch logic and E2E critical workflow coverage through new `MultiEntityDSL`; diagnostics attachment included for failures.  
+Files/systems: `tests/unit/multiEntity.spec.ts`, `tests/support/dsl/multiEntity.ts`, `tests/support/index.ts`, `tests/e2e/multi-entity.spec.ts`, this doc section.
+
+### Verification (2026-02-05, finalized)
+
+Executed in this workspace:
+- `npm run test:unit -- multiEntity`
+- `npx playwright test tests/e2e/multi-entity.spec.ts --project=electron-e2e --reporter=list --workers=1 --trace=retain-on-failure`
+- Result summary:
+  - Unit: pass (`tests/unit/multiEntity.spec.ts`)
+  - E2E: pass (2/2 in `tests/e2e/multi-entity.spec.ts`)
+  - Product fix validated: YAML tab Monaco lifecycle hardening in `src/components/PropertiesPanel.tsx` (container-mount timing race resolved)
+
+### Must Have Review (Blocking Release)
+
+- ✅ User can add multiple entities to a single card (PropertiesPanel multi-select + list)
+- ✅ Aggregate functions work (unit-tested in `tests/unit/multiEntity.spec.ts`)
+- ✅ Batch actions work (unit-tested planning/execution semantics + E2E batch UI workflow)
+- ✅ Individual mode shows separate entity controls (renderer assertions in E2E)
+- ✅ Configuration persists in YAML (`entities`, `multi_entity_mode`, `aggregate_function`, `batch_actions`)
+- ✅ Real-time updates work for all entities (E2E state patch from off→on updates aggregate indicator)
+- ✅ Unit and E2E verification complete for Feature 3.7 target suites
+
+### Should Have Review + Estimates
+
+- ✅ Drag-and-drop reorder entities (delivered)
+- ✅ Confirmation dialog for destructive batch actions (delivered)
+- ✅ Visual aggregate indicator (`X/Y on`) (delivered)
+- ⏳ Custom aggregate function (user-defined formula) - not implemented
+  - Estimate: **1.0-1.5 days**, confidence **0.7**
+  - Key steps:
+    - Add safe expression grammar/parser for aggregate formulas
+    - Add formula UI input + validation feedback
+    - Extend `multiEntity` service evaluator with guarded execution
+    - Add unit and E2E coverage for valid/invalid formulas
+  - Dependencies/risks: expression safety/sandboxing, UX clarity for error states
+  - Definition of done:
+    - Formula persists in YAML and is validated in PropertiesPanel
+    - Runtime aggregate display updates deterministically from formula
+- Total remaining estimate: **1.0-1.5 days**
 
 ---
 

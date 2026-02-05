@@ -378,6 +378,49 @@
           "description": "HAVDM: Enable smart default tap_action resolution",
           "default": false
         },
+        "multi_entity_mode": {
+          "type": "string",
+          "enum": ["individual", "aggregate", "batch"],
+          "description": "HAVDM: Multi-entity rendering mode"
+        },
+        "aggregate_function": {
+          "type": "string",
+          "enum": ["all_on", "any_on", "all_off", "any_off", "count_on", "average_state", "min_state", "max_state"],
+          "description": "HAVDM: Aggregate function used in aggregate mode"
+        },
+        "batch_actions": {
+          "type": "array",
+          "description": "HAVDM: Batch actions available in batch mode",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": ["turn_on", "turn_off", "toggle", "set_state", "call_service"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["turn_on", "turn_off", "toggle", "set_state", "call_service"]
+                  },
+                  "value": {
+                    "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }]
+                  },
+                  "service": {
+                    "type": "string"
+                  },
+                  "service_data": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "required": ["type"],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
         "cards": {
           "type": "array",
           "description": "Nested cards (for stack/grid cards)",

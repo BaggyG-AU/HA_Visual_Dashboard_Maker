@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card as AntCard, Typography } from 'antd';
+import { Card as AntCard, Popconfirm, Space, Typography } from 'antd';
 import { ButtonCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { triggerHapticForAction } from '../../services/hapticService';
@@ -10,6 +10,14 @@ import { useHAEntities } from '../../contexts/HAEntityContext';
 import { AttributeDisplay } from '../AttributeDisplay';
 import { getStateIcon } from '../../services/stateIcons';
 import { MdiIcon } from '../MdiIcon';
+import {
+  executeBatchAction,
+  isDestructiveBatchAction,
+  resolveMultiEntityIds,
+  summarizeAggregateState,
+  evaluateAggregateFunction,
+} from '../../services/multiEntity';
+import type { BatchActionType, MultiEntityMode } from '../../types/multiEntity';
 
 const { Text } = Typography;
 
@@ -28,7 +36,7 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
   isSelected = false,
   onClick,
 }) => {
-  const { getEntity } = useHAEntities();
+  const { getEntity, entities } = useHAEntities();
   const entity = card.entity ? getEntity(card.entity) : null;
   const attributes = entity?.attributes || {};
   const state = entity?.state || 'unknown';
@@ -49,12 +57,31 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
     entityAttributes: attributes,
     fallbackIcon: card.icon || 'mdi:gesture-tap',
   });
+  const entityIds = resolveMultiEntityIds(card);
+  const multiEntityMode = (card.multi_entity_mode ?? 'individual') as MultiEntityMode;
+  const multiEntityEnabled = entityIds.length > 1;
+  const aggregateFunction = card.aggregate_function ?? 'count_on';
+  const batchActions = (card.batch_actions ?? ['turn_on', 'turn_off', 'toggle'])
+    .map((entry) => (typeof entry === 'string' ? entry : entry?.type))
+    .filter((entry): entry is BatchActionType => typeof entry === 'string');
 
   const handleClick = () => {
     triggerHapticForAction(tapAction, card.haptic);
     void playSoundForAction(tapAction, card.sound);
     onClick?.();
   };
+
+  const runBatchAction = (action: BatchActionType) => {
+    const result = executeBatchAction(action, entityIds, entities);
+    console.info('[multi-entity] Batch action planned', {
+      action,
+      operationCount: result.operations.length,
+      operations: result.operations,
+      failures: result.failures,
+    });
+  };
+
+  const aggregateValue = evaluateAggregateFunction(aggregateFunction, entityIds, entities);
 
   return (
     <AntCard
@@ -80,6 +107,134 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
       onClick={handleClick}
       hoverable
     >
+      {multiEntityEnabled && (
+        <div data-testid="multi-entity-mode-badge">
+          <Text type="secondary" style={{ fontSize: 11 }}>
+            Mode: {multiEntityMode}
+          </Text>
+        </div>
+      )}
+
+      {multiEntityEnabled && multiEntityMode === 'individual' && (
+        <div style={{ width: '100%' }} data-testid="multi-entity-individual-list">
+          {entityIds.map((entityId) => {
+            const targetEntity = getEntity(entityId);
+            const targetState = targetEntity?.state ?? 'unavailable';
+            const targetAttributes = targetEntity?.attributes ?? {};
+            const targetIcon = getStateIcon({
+              entityId,
+              state: targetState,
+              stateIcons: card.state_icons,
+              entityAttributes: targetAttributes,
+              fallbackIcon: card.icon || 'mdi:gesture-tap',
+            });
+            const safeEntityId = entityId.replace(/[^a-zA-Z0-9_-]/g, '-');
+
+            return (
+              <div
+                key={entityId}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  paddingBottom: 6,
+                  marginBottom: 6,
+                }}
+                data-testid={`multi-entity-individual-item-${safeEntityId}`}
+              >
+                <Space size={8}>
+                  <MdiIcon icon={targetIcon.icon} color={targetIcon.color || '#9e9e9e'} size={16} />
+                  <Text style={{ color: '#e6e6e6', fontSize: 12 }}>{entityId}</Text>
+                </Space>
+                <Text type="secondary" style={{ fontSize: 12 }} data-testid={`multi-entity-individual-state-${safeEntityId}`}>
+                  {targetState}
+                </Text>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {multiEntityEnabled && multiEntityMode === 'aggregate' && (
+        <div
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '1px solid #2e2e2e',
+            borderRadius: 8,
+            background: '#101010',
+          }}
+          data-testid="multi-entity-aggregate-panel"
+        >
+          <Text style={{ color: '#d9d9d9', display: 'block' }} data-testid="multi-entity-aggregate-indicator">
+            {summarizeAggregateState(entityIds, entities)}
+          </Text>
+          <Text type="secondary" style={{ fontSize: 12 }} data-testid="multi-entity-aggregate-value">
+            {`Function (${aggregateFunction}): ${aggregateValue === null ? 'N/A' : String(aggregateValue)}`}
+          </Text>
+        </div>
+      )}
+
+      {multiEntityEnabled && multiEntityMode === 'batch' && (
+        <div style={{ width: '100%' }} data-testid="multi-entity-batch-panel">
+          <Space wrap>
+            {batchActions.map((action) => {
+              const destructive = isDestructiveBatchAction(action);
+              const button = (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (!destructive) {
+                      runBatchAction(action);
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (!destructive && (event.key === 'Enter' || event.key === ' ')) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      runBatchAction(action);
+                    }
+                  }}
+                  style={{
+                    border: '1px solid #3a3a3a',
+                    borderRadius: 6,
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    color: '#d9d9d9',
+                    fontSize: 12,
+                  }}
+                  data-testid={`multi-entity-batch-action-${action}`}
+                >
+                  {action.replace('_', ' ')}
+                </span>
+              );
+
+              if (!destructive) {
+                return <React.Fragment key={action}>{button}</React.Fragment>;
+              }
+
+              return (
+                <Popconfirm
+                  key={action}
+                  title={`Run ${action.replace('_', ' ')} for ${entityIds.length} entities?`}
+                  okText="Run"
+                  cancelText="Cancel"
+                  onConfirm={(event) => {
+                    event?.stopPropagation();
+                    runBatchAction(action);
+                  }}
+                >
+                  {button}
+                </Popconfirm>
+              );
+            })}
+          </Space>
+        </div>
+      )}
+
       {showIcon && (
         <div
           style={{

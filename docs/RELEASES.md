@@ -1,6 +1,10 @@
 # Releases
 
-Repo versioning follows the `package.json` version and annotated git tags. Current package version: `0.3.2-beta.1`; next tag should match the version bump (e.g., `v0.3.2-beta.2` or higher).
+Repo versioning follows the `package.json` version and annotated git tags. Current package version: `0.4.3-beta.1`; next tag should match the version bump (e.g., `v0.4.3-beta.2` or higher).
+
+## Current Progress Snapshot
+- Entity Intelligence Feature 3.7 (Multi-entity Support): complete in working tree (2026-02-05).
+- Detailed implementation, Must Have/Should Have status, and verification commands are recorded in `docs/features/ENTITY_INTELLIGENCE_LAYER_IMPLIMENTATION.md`.
 
 ## Preconditions
 - All tests green:
