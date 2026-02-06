@@ -62,7 +62,9 @@
       "Bash(done)",
       "Bash(curl:*)",
       "Bash(unzip:*)",
-      "Bash(gh pr list:*)"
+      "Bash(gh pr list:*)",
+      "Bash(sudo apt-get install:*)",
+      "Bash(brew install:*)"
     ]
   }
 }
