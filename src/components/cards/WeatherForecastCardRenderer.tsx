@@ -4,6 +4,7 @@ import { CloudOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { WeatherForecastCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -35,7 +36,12 @@ export const WeatherForecastCardRenderer: React.FC<WeatherForecastCardRendererPr
   const windSpeedUnit = attributes.wind_speed_unit || 'km/h';
   const forecast = attributes.forecast || [];
 
-  const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Weather';
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
+  const displayName =
+    (card.name ? resolvedName : '') ||
+    attributes.friendly_name ||
+    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+    'Weather';
   const showForecast = card.show_forecast !== false;
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 

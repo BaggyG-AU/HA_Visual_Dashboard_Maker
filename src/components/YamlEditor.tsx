@@ -4,6 +4,8 @@ import { FormatPainterOutlined, AlignLeftOutlined, CheckCircleOutlined, Exclamat
 import * as monaco from 'monaco-editor';
 import { configureYamlSchema } from '../monaco-setup';
 import { yamlService } from '../services/yamlService';
+import { ENTITY_CONTEXT_REGEX } from '../services/entityContext';
+import { logger } from '../services/logger';
 
 type TestWindow = Window & {
   E2E?: string;
@@ -73,6 +75,84 @@ const detectTestEnv = (): boolean => {
   );
 };
 
+let entityContextCompletionRegistered = false;
+
+const registerEntityContextCompletions = () => {
+  if (entityContextCompletionRegistered) return;
+
+  monaco.languages.registerCompletionItemProvider('yaml', {
+    triggerCharacters: ['[', '{'],
+    provideCompletionItems: () => {
+      const suggestions: monaco.languages.CompletionItem[] = [
+        {
+          label: '[[entity.state]]',
+          kind: monaco.languages.CompletionItemKind.Variable,
+          insertText: '[[entity.state]]',
+          documentation: 'Entity state value',
+        },
+        {
+          label: '[[entity.friendly_name]]',
+          kind: monaco.languages.CompletionItemKind.Variable,
+          insertText: '[[entity.friendly_name]]',
+          documentation: 'Entity friendly name',
+        },
+        {
+          label: '[[entity.entity_id]]',
+          kind: monaco.languages.CompletionItemKind.Variable,
+          insertText: '[[entity.entity_id]]',
+          documentation: 'Entity ID',
+        },
+        {
+          label: '[[entity.domain]]',
+          kind: monaco.languages.CompletionItemKind.Variable,
+          insertText: '[[entity.domain]]',
+          documentation: 'Entity domain (light, switch, etc.)',
+        },
+        {
+          label: '[[entity.attributes.battery]]',
+          kind: monaco.languages.CompletionItemKind.Variable,
+          insertText: '[[entity.attributes.battery]]',
+          documentation: 'Entity attribute access',
+        },
+        {
+          label: '[[light.living_room.state]]',
+          kind: monaco.languages.CompletionItemKind.Variable,
+          insertText: '[[light.living_room.state]]',
+          documentation: 'Explicit entity reference',
+        },
+        {
+          label: '[[entity.state|upper]]',
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: '[[entity.state|upper]]',
+          documentation: 'Uppercase formatting',
+        },
+        {
+          label: '[[entity.state|lower]]',
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: '[[entity.state|lower]]',
+          documentation: 'Lowercase formatting',
+        },
+        {
+          label: '[[entity.attributes.temperature|round(1)]]',
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: '[[entity.attributes.temperature|round(1)]]',
+          documentation: 'Round to 1 decimal',
+        },
+        {
+          label: '[[entity.state|default(\'Unknown\')]]',
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: '[[entity.state|default(\'Unknown\')]]',
+          documentation: 'Fallback value when empty',
+        },
+      ];
+
+      return { suggestions };
+    },
+  });
+
+  entityContextCompletionRegistered = true;
+};
+
 /**
  * Reusable YAML Editor Component
  *
@@ -103,6 +183,7 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const schemaConfiguredRef = useRef(false);
+  const contextDecorationsRef = useRef<string[]>([]);
 
   // Configure YAML schema once
   useEffect(() => {
@@ -114,7 +195,7 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
         .catch((error) => {
           // Schema configuration failed, but YAML editor will still work
           // Just won't have autocomplete/schema validation
-          console.warn('YAML schema autocomplete unavailable:', error.message);
+          logger.warn('YAML schema autocomplete unavailable', error.message);
           schemaConfiguredRef.current = true; // Mark as configured to avoid retry
         });
     }
@@ -143,6 +224,30 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
 
     monacoEditorRef.current = editor;
     onEditorReady?.(editor);
+    registerEntityContextCompletions();
+
+    const applyContextDecorations = () => {
+      const model = editor.getModel();
+      if (!model) return;
+
+      const text = model.getValue();
+      const regex = new RegExp(ENTITY_CONTEXT_REGEX.source, 'g');
+      const decorations: monaco.editor.IModelDeltaDecoration[] = [];
+      let match: RegExpExecArray | null;
+
+      while ((match = regex.exec(text)) !== null) {
+        const start = model.getPositionAt(match.index);
+        const end = model.getPositionAt(match.index + match[0].length);
+        decorations.push({
+          range: new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column),
+          options: { inlineClassName: 'entity-context-token' },
+        });
+      }
+
+      contextDecorationsRef.current = editor.deltaDecorations(contextDecorationsRef.current, decorations);
+    };
+
+    applyContextDecorations();
 
     // Expose for tests
     if (isTestEnv) {
@@ -163,6 +268,8 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
     // Listen for content changes with debouncing
     const disposable = editor.onDidChangeModelContent(() => {
       const newValue = editor.getValue();
+
+      applyContextDecorations();
 
       // Clear existing debounce timer
       if (debounceTimerRef.current) {
@@ -187,6 +294,7 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
       disposable.dispose();
       editor.dispose();
       monacoEditorRef.current = null;
+      contextDecorationsRef.current = [];
 
       if (isTestEnv) {
         const testWindow = getTestWindow();
@@ -293,7 +401,7 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
         editor.focus();
       }
     } catch (error) {
-      console.error('Failed to jump to card:', error);
+      logger.error('Failed to jump to card', error);
     }
   }, [jumpToCard]);
 

@@ -54,7 +54,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
       setSoundsVolume(soundSettings.volume);
       applySoundSettings({ enabled: soundSettings.enabled, volume: soundSettings.volume });
     } catch (error) {
-      console.error('Failed to load logging settings', error);
+      logger.error('Failed to load logging settings', error);
     }
   };
 
@@ -84,7 +84,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
       logger.setLevel(value);
       message.success(`Logging level set to ${value.toUpperCase()}`);
     } catch (error) {
-      console.error('Failed to set logging level', error);
+      logger.error('Failed to set logging level', error);
       message.error('Failed to update logging level');
     } finally {
       setLoadingLevel(false);
@@ -106,7 +106,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
       await navigator.clipboard.writeText(diag);
       message.success('Diagnostics copied (tokens redacted)');
     } catch (error) {
-      console.error('Failed to copy diagnostics', error);
+      logger.error('Failed to copy diagnostics', error);
       message.error('Failed to copy diagnostics');
     } finally {
       setCopying(false);

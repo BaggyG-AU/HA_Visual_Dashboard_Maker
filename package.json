@@ -14,6 +14,7 @@
     "lint": "eslint --ext .ts,.tsx .",
     "test": "playwright test",
     "test:e2e": "playwright test --project=electron-e2e",
+    "test:e2e:guardrails": "bash ./tools/check-e2e-guardrails.sh",
     "test:integration": "playwright test --project=electron-integration",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",

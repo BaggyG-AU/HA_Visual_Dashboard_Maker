@@ -359,7 +359,8 @@ ipcMain.handle('ha:fetch', async (event, url: string, token: string) => {
     try {
       data = text ? JSON.parse(text) : null;
     } catch (parseError) {
-      console.error(`Failed to parse JSON response from ${targetUrl}:`, text);
+      void parseError;
+      logger.error(`Failed to parse JSON response from ${targetUrl}`, text);
       return {
         success: false,
         status: response.status,

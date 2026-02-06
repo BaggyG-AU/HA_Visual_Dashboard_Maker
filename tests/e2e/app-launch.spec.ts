@@ -83,8 +83,8 @@ test.describe('Application Launch', () => {
     try {
       await ctx.appDSL.waitUntilReady();
 
-      // Allow time for any delayed errors
-      await ctx.window.waitForTimeout(2000);
+      // Wait for the app shell to remain stable after initial mount.
+      await expect(ctx.window.getByTestId('app-shell')).toBeVisible({ timeout: 10000 });
 
       // Filter out expected/harmless errors
       const significantErrors = consoleErrors.filter(

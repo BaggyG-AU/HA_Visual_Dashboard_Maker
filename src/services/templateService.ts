@@ -4,6 +4,7 @@
  * Manages dashboard templates for quick-start and common use cases.
  * Provides template discovery, loading, and metadata management.
  */
+import { logger } from './logger';
 
 export interface DashboardTemplate {
   id: string;
@@ -49,7 +50,7 @@ class TemplateService {
       this.metadata = JSON.parse(content) as TemplateMetadata;
       return this.metadata;
     } catch (error) {
-      console.error('Failed to load template metadata:', error);
+      logger.error('Failed to load template metadata', error);
       // Return empty metadata if file doesn't exist
       return {
         templates: [],

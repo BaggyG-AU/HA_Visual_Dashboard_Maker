@@ -104,6 +104,9 @@ Using fixed delays or increasing timeouts to make tests pass is forbidden.
 
 All waits must be state-based and implemented in the DSL.
 
+Guardrail check:
+- Run `npm run test:e2e:guardrails` to block raw sleeps and non-unified launch helpers in E2E specs.
+
 ---
 
 ### 7. Failures Must Be Actionable
@@ -191,6 +194,82 @@ Debugging must be based on:
 - Console output
 
 Agents must not guess or claim tests were run.
+
+---
+
+### 12. AI Test/Resolve Cycle Limit (MANDATORY)
+
+When an AI agent is running tests and resolving errors, it MUST adhere to a **maximum of three (3) test/resolve cycles** before pausing for user input.
+
+**Definition of a Cycle**: One cycle consists of:
+1. Running tests (full suite or targeted)
+2. Analyzing failures
+3. Implementing a fix
+4. Re-running tests to verify
+
+**After Three Cycles Without Resolution**, the AI agent MUST:
+
+1. **STOP** further autonomous fix attempts
+2. **Provide a Full Summary** including:
+   - The original test failure(s) and error message(s)
+   - Root cause analysis (what the AI believes is causing the failure)
+   - Each fix attempt made (what was changed and why)
+   - Current state (what's still failing and how)
+3. **Document What Was Tried**:
+   - Specific code changes made in each cycle
+   - Test results after each change
+   - Any patterns or insights discovered
+4. **Provide Recommendations**:
+   - Suggested next steps (prioritized)
+   - Alternative approaches not yet tried
+   - Whether the issue may require architectural changes
+   - Whether the test itself may need revision
+   - Any external dependencies or environmental factors
+
+**Rationale**: This prevents AI agents from:
+- Spinning endlessly on difficult issues
+- Making progressively worse changes trying to "fix" symptoms
+- Wasting context and compute on diminishing returns
+- Missing opportunities for human insight on complex problems
+
+**User Decision Point**: After receiving the summary, the user can:
+- Provide guidance and allow the AI to continue
+- Take over debugging manually
+- Skip/defer the failing test with documentation
+- Escalate to a different debugging approach
+
+**Example Summary Format**:
+```
+## Test Resolution Summary (3 cycles exhausted)
+
+### Original Failure
+- Test: `should update YAML when color is changed`
+- Error: `Monaco model not detected after 5000ms timeout`
+
+### Root Cause Analysis
+The Monaco editor instance is not exposing its model to the global window
+object despite the code appearing correct...
+
+### Fix Attempts
+1. **Cycle 1**: Added explicit window.__monacoModel assignment
+   - Result: Still failing, model undefined
+2. **Cycle 2**: Moved assignment to useEffect with editor dependency
+   - Result: Model briefly available, then undefined
+3. **Cycle 3**: Added retry logic in test with polling
+   - Result: Polling finds model intermittently, test flaky
+
+### Current State
+Test passes ~30% of runs. Monaco initialization timing appears
+non-deterministic in test environment.
+
+### Recommendations
+1. **(Recommended)** Investigate Monaco lifecycle in Electron test context
+2. Add Monaco-specific test fixture with guaranteed initialization
+3. Consider mocking Monaco for this specific test
+4. Skip test with documentation if blocking release
+```
+
+**Enforcement**: AI agents that continue past three cycles without pausing violate this standard and the behavior should be reported.
 
 ---
 
@@ -750,5 +829,60 @@ Tests that have been skipped after extensive debugging efforts. These represent 
 
 ---
 
-**Last Updated**: January 7, 2026
+## FLAKINESS PREVENTION STANDARDS (NEW)
+
+These are mandatory for Playwright E2E and shared DSL code.
+
+### 13. Single E2E Harness Contract
+
+E2E specs must use one launcher/readiness path:
+- `launchWithDSL()` and `close(ctx)` from `tests/support/electron.ts`
+
+Do not mix launcher contracts in E2E specs. If an exception is required, document it inline with rationale and removal condition.
+
+### 14. No Sleep-Based Synchronization
+
+For E2E and DSL layers:
+- `waitForTimeout(...)` is forbidden as synchronization logic.
+- Use state-based waits only (visibility, enabled, selected, attached, value/state convergence).
+- Use `expect.poll(...)` for async persistence and eventual consistency checks.
+
+### 15. DSL Readiness Contract Requirement
+
+Every DSL method that changes UI state must validate readiness before returning:
+- expected control/tab/panel is active
+- dependent content is mounted and interactive
+- failure includes actionable state snapshot details
+
+### 16. Visual Assertion Stability Rules
+
+Before `toHaveScreenshot`:
+1. Ensure deterministic viewport and scale.
+2. Disable animations/caret where applicable.
+3. Assert target UI state has converged.
+
+Snapshot baselines may be updated only after confirming behavior correctness from traces/screenshots.
+
+### 17. Performance Assertion Stability Rules
+
+Performance checks must avoid single-sample thresholds when host noise is significant.
+- Prefer sampled windows and aggregate criteria.
+- Keep thresholds tied to documented environment assumptions.
+
+### 18. Flake Fix Verification Gate
+
+Any flake fix must pass:
+1. One targeted run with traces on failure
+2. 5x targeted stability loop
+3. One full-suite regression pass
+
+Do not claim stabilization without these checks.
+
+### 19. Regression Guardrail
+
+Introduce/maintain a static check that fails CI when raw sleeps are added to `tests/e2e/**`, except approved debug-only files explicitly documented.
+
+---
+
+**Last Updated**: February 5, 2026
 **Next Review**: After Phase 1 completion (v0.4.0)

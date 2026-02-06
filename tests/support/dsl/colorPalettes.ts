@@ -52,8 +52,11 @@ export class ColorPalettesDSL {
   }
 
   async addCurrentColor(testId: string): Promise<void> {
+    await this.openFavoritesTab(testId);
     const btn = this.window.getByTestId(`${testId}-add-color`);
-    await expect(btn).toBeVisible();
+    await expect
+      .poll(async () => await btn.isVisible().catch(() => false), { timeout: 5000 })
+      .toBe(true);
     try {
       await btn.click({ timeout: 2000 });
     } catch {

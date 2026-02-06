@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip, Switch, InputNumber } from 'antd';
 import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
 import * as monaco from 'monaco-editor';
@@ -14,6 +14,16 @@ import { haConnectionService } from '../services/haConnectionService';
 import { createDebouncedCommit, DebouncedCommit } from '../utils/debouncedCommit';
 import { extractStyleColor, upsertStyleColor } from '../utils/styleBackground';
 import { applyBackgroundConfigToStyle, DEFAULT_BACKGROUND_CONFIG, parseBackgroundConfig, type BackgroundConfig } from '../utils/backgroundStyle';
+import { formatActionLabel, resolveTapAction } from '../services/smartActions';
+import { logger } from '../services/logger';
+import { useHAEntities } from '../contexts/HAEntityContext';
+import { getMissingEntityReferences, hasEntityContextVariables, resolveEntityContext } from '../services/entityContext';
+import { AttributeDisplayControls } from './AttributeDisplayControls';
+import { ConditionalVisibilityControls } from './ConditionalVisibilityControls';
+import { StateIconMappingControls } from './StateIconMappingControls';
+import type { AttributeDisplayLayout } from '../types/attributeDisplay';
+import { MultiEntityControls } from './MultiEntityControls';
+import type { AggregateFunction, BatchActionType, MultiEntityMode } from '../types/multiEntity';
 
 const { Title, Text } = Typography;
 
@@ -59,6 +69,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const skipStyleSyncRef = useRef(false);
   const monacoEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
+  const { entities } = useHAEntities();
 
   const COMMIT_DEBOUNCE_MS = 800;
   const YAML_SYNC_DEBOUNCE_MS = 250;
@@ -181,6 +192,287 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     </div>
   );
 
+  const resolveContextValue = useCallback(
+    (template: string, defaultEntityId: string | null) => resolveEntityContext(template, defaultEntityId, entities),
+    [entities],
+  );
+
+  const renderAttributeDisplaySection = (values: FormCardValues) => {
+    if (!card) return null;
+
+    const entityField = typeof values.entity === 'string' ? values.entity : undefined;
+    const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
+    const firstEntityValue = entitiesField
+      ? (typeof entitiesField[0] === 'string'
+        ? entitiesField[0]
+        : (typeof entitiesField[0] === 'object' && entitiesField[0] !== null && 'entity' in entitiesField[0]
+          ? (entitiesField[0] as { entity?: unknown }).entity
+          : undefined))
+      : undefined;
+    const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
+    const availableEntityIds = Object.keys(entities || {});
+    const fallbackEntityId = availableEntityIds.length > 0 ? availableEntityIds[0] : null;
+    const entityId = entityField ?? card.entity ?? firstEntity ?? fallbackEntityId;
+
+    const hasEntityConfig = Boolean(entityField || firstEntity || card.entity);
+    if (!hasEntityConfig) {
+      return null;
+    }
+
+    const layout = (values.attribute_display_layout as AttributeDisplayLayout) ?? 'stacked';
+
+    return (
+      <>
+        <Form.Item name="attribute_display_layout" hidden>
+          <Input />
+        </Form.Item>
+        <Form.Item name="attribute_display">
+          <AttributeDisplayControls
+            entityId={entityId}
+            layout={layout}
+            onLayoutChange={(next) => form.setFieldsValue({ attribute_display_layout: next })}
+          />
+        </Form.Item>
+      </>
+    );
+  };
+
+  const renderContextPreviewSection = (values: FormCardValues) => {
+    if (!card) return null;
+
+    const entityField = typeof values.entity === 'string' ? values.entity : undefined;
+    const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
+    const firstEntityValue = entitiesField
+      ? (typeof entitiesField[0] === 'string'
+        ? entitiesField[0]
+        : (typeof entitiesField[0] === 'object' && entitiesField[0] !== null && 'entity' in entitiesField[0]
+          ? (entitiesField[0] as { entity?: unknown }).entity
+          : undefined))
+      : undefined;
+    const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
+    const availableEntityIds = Object.keys(entities || {});
+    const fallbackEntityId = availableEntityIds.length > 0 ? availableEntityIds[0] : null;
+    const defaultEntityId = entityField ?? card.entity ?? firstEntity ?? fallbackEntityId;
+
+    const candidates = [
+      { key: 'name', label: 'Name', template: typeof values.name === 'string' ? values.name : undefined },
+      { key: 'title', label: 'Title', template: typeof values.title === 'string' ? values.title : undefined },
+      { key: 'content', label: 'Content', template: typeof values.content === 'string' ? values.content : undefined },
+    ];
+
+    const entries = candidates
+      .filter((entry) => entry.template && hasEntityContextVariables(entry.template))
+      .map((entry) => {
+        const template = entry.template as string;
+        return {
+          ...entry,
+          resolved: resolveContextValue(template, defaultEntityId),
+          missing: getMissingEntityReferences(template, defaultEntityId, entities),
+        };
+      });
+
+    if (entries.length === 0) return null;
+
+    return (
+      <div style={{ marginTop: '16px' }} data-testid="entity-context-preview-section">
+        <Divider />
+        <Text strong style={{ color: 'white' }}>Entity Context Preview</Text>
+        <Text type="secondary" style={{ display: 'block', fontSize: '12px', marginTop: '4px' }}>
+          Use variables like <Text code>[[entity.state]]</Text> or <Text code>[[entity.attributes.battery]]</Text>.
+        </Text>
+        <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {entries.map((entry) => (
+            <div key={entry.key} data-testid={`entity-context-preview-${entry.key}`}>
+              <Text strong style={{ color: '#e6e6e6', fontSize: '12px' }}>{entry.label}</Text>
+              <div style={{ marginTop: '4px', padding: '8px', backgroundColor: '#111', borderRadius: '6px' }}>
+                <Text style={{ color: '#b7eb8f', fontSize: '12px' }}>{entry.resolved || ' '}</Text>
+              </div>
+              {entry.missing.length > 0 && (
+                <Alert
+                  type="warning"
+                  showIcon
+                  style={{ marginTop: '6px' }}
+                  message={`Missing entities: ${entry.missing.join(', ')}`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderConditionalVisibilitySection = (values: FormCardValues) => {
+    if (!card) return null;
+
+    const supportsVisibility =
+      typeof values.entity === 'string'
+      || Array.isArray(values.entities)
+      || typeof card.entity === 'string'
+      || Array.isArray(card.entities);
+
+    if (!supportsVisibility) {
+      return null;
+    }
+
+    return (
+      <Form.Item name="visibility_conditions">
+        <ConditionalVisibilityControls />
+      </Form.Item>
+    );
+  };
+
+  const renderStateIconMappingSection = (values: FormCardValues) => {
+    if (!card) return null;
+
+    const supportsStateIcons =
+      typeof values.entity === 'string'
+      || Array.isArray(values.entities)
+      || typeof card.entity === 'string'
+      || Array.isArray(card.entities);
+
+    if (!supportsStateIcons) {
+      return null;
+    }
+
+    const entityField = typeof values.entity === 'string' ? values.entity : undefined;
+    const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
+    const firstEntityValue = entitiesField
+      ? (typeof entitiesField[0] === 'string'
+        ? entitiesField[0]
+        : (typeof entitiesField[0] === 'object' && entitiesField[0] !== null && 'entity' in entitiesField[0]
+          ? (entitiesField[0] as { entity?: unknown }).entity
+          : undefined))
+      : undefined;
+    const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
+    const entityId = entityField ?? card.entity ?? firstEntity ?? null;
+
+    return (
+      <Form.Item name="state_icons">
+        <StateIconMappingControls entityId={entityId} />
+      </Form.Item>
+    );
+  };
+
+  const renderMultiEntitySection = (values: FormCardValues) => {
+    if (!card) return null;
+    const supportsMultiEntity = card.type === 'button' || card.type === 'custom:button-card';
+    if (!supportsMultiEntity) return null;
+
+    const entitiesField = Array.isArray(values.entities)
+      ? values.entities.filter((entry): entry is string => typeof entry === 'string')
+      : [];
+    const mode = (values.multi_entity_mode as MultiEntityMode | undefined) ?? card.multi_entity_mode ?? 'individual';
+    const aggregateFunction = (values.aggregate_function as AggregateFunction | undefined)
+      ?? card.aggregate_function
+      ?? 'count_on';
+    const batchActions = (Array.isArray(values.batch_actions) ? values.batch_actions : card.batch_actions)
+      ?.map((entry) => {
+        if (typeof entry === 'string') return entry;
+        if (entry && typeof entry === 'object' && 'type' in entry) {
+          const type = (entry as { type?: unknown }).type;
+          return typeof type === 'string' ? type : undefined;
+        }
+        return undefined;
+      })
+      .filter((entry): entry is BatchActionType => typeof entry === 'string');
+
+    return (
+      <>
+        <Form.Item name="multi_entity_mode" hidden>
+          <Input />
+        </Form.Item>
+        <Form.Item name="aggregate_function" hidden>
+          <Input />
+        </Form.Item>
+        <Form.Item name="batch_actions" hidden>
+          <Select mode="multiple" options={[]} />
+        </Form.Item>
+        <Form.Item name="entities">
+          <MultiEntityControls
+            value={entitiesField}
+            mode={mode}
+            aggregateFunction={aggregateFunction}
+            batchActions={batchActions}
+            onChange={(nextEntities) => {
+              const nextValues: Record<string, unknown> = { entities: nextEntities };
+              if (nextEntities.length > 0 && !form.getFieldValue('entity')) {
+                nextValues.entity = nextEntities[0];
+              }
+              form.setFieldsValue(nextValues);
+            }}
+            onModeChange={(nextMode) => form.setFieldsValue({ multi_entity_mode: nextMode })}
+            onAggregateFunctionChange={(nextFunction) => form.setFieldsValue({ aggregate_function: nextFunction })}
+            onBatchActionsChange={(nextActions) => form.setFieldsValue({ batch_actions: nextActions })}
+          />
+        </Form.Item>
+      </>
+    );
+  };
+
+  const renderSmartDefaultsConfig = (testIdPrefix: string) => {
+    if (!card) return null;
+
+    return (
+      <div>
+        <Divider />
+        <Text strong style={{ color: 'white' }}>Smart Default Actions</Text>
+        <Form.Item
+          label={
+            <Tooltip title="When enabled, tap_action is computed automatically based on the entity domain unless you define tap_action explicitly.">
+              <span style={{ color: 'white' }}>Use Smart Defaults</span>
+            </Tooltip>
+          }
+          name="smart_defaults"
+          valuePropName="checked"
+        >
+          <Switch data-testid={`${testIdPrefix}-smart-defaults-toggle`} />
+        </Form.Item>
+
+        <Form.Item noStyle shouldUpdate>
+          {() => {
+            const currentEntity = form.getFieldValue('entity') as string | undefined;
+            const smartDefaults = form.getFieldValue('smart_defaults') as boolean | undefined;
+            const tapAction = form.getFieldValue('tap_action');
+
+            const { action, source } = resolveTapAction({
+              ...card,
+              entity: currentEntity,
+              smart_defaults: smartDefaults,
+              tap_action: tapAction,
+            });
+
+            const sourceLabel =
+              source === 'user'
+                ? 'User-defined'
+                : source === 'smart'
+                  ? 'Smart default'
+                  : source === 'legacy'
+                    ? 'Legacy default'
+                    : 'None';
+
+            return (
+              <div
+                style={{
+                  padding: '8px 10px',
+                  background: '#141414',
+                  border: '1px solid #2a2a2a',
+                  borderRadius: 6,
+                }}
+                data-testid={`${testIdPrefix}-smart-defaults-preview`}
+              >
+                <Text style={{ color: '#bbb', fontSize: 12 }}>
+                  Tap action used: <Text style={{ color: '#fff' }}>{formatActionLabel(action)}</Text>{' '}
+                  <Text style={{ color: '#666' }}>({sourceLabel})</Text>
+                </Text>
+              </div>
+            );
+          }}
+        </Form.Item>
+      </div>
+    );
+  };
+
   // Helper function to normalize entities for form display
   const normalizeCardForForm = (card: Card): FormCardValues => {
     const normalized: FormCardValues = { ...(card as Record<string, unknown>) };
@@ -236,7 +528,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         sortKeys: false,
       });
     } catch (error) {
-      console.error('Error converting card to YAML:', error);
+      logger.error('Error converting card to YAML', error);
       return '';
     }
   };
@@ -302,61 +594,19 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     checkStreamComponent();
   }, []);
 
-  // Create Monaco editor when container is ready and YAML tab is active
+  // Create Monaco editor when container is ready and YAML tab is active.
+  // Uses a bounded RAF retry loop because tab content mount can lag behind tab selection.
   useEffect(() => {
-    // Only proceed if we're on the YAML tab
     if (activeTab !== 'yaml') {
       return;
     }
 
-    // Wait for the container ref to be attached (React timing issue)
-    if (!editorContainerRef.current) {
-      // Use setTimeout(0) to defer until next tick when ref is attached
-      const timer = setTimeout(() => {
-        if (editorContainerRef.current && activeTab === 'yaml' && !monacoEditorRef.current) {
-          console.log('[PropertiesPanel] Creating Monaco editor (after ref attached)...');
+    let rafId: number | null = null;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 120; // ~2s at 60fps
 
-          // Create editor instance
-          const editor = monaco.editor.create(editorContainerRef.current, {
-            value: yamlContent,
-            language: 'yaml',
-            theme: 'vs-dark',
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            fontSize: 13,
-            lineNumbers: 'on',
-            wordWrap: 'on',
-            automaticLayout: true,
-            tabSize: 2,
-            insertSpaces: true,
-          });
-
-          console.log('[PropertiesPanel] Monaco editor created successfully');
-          monacoEditorRef.current = editor;
-
-          // Expose editor to global scope for testing
-          if (typeof window !== 'undefined') {
-            const testWindow = window as MonacoTestWindow;
-            testWindow.__monacoEditor = editor;
-            testWindow.__monacoModel = editor.getModel();
-          }
-
-          // Listen for content changes
-          editor.onDidChangeModelContent(() => {
-            const value = editor.getValue();
-            handleYamlChange(value);
-          });
-        }
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-
-    // Container is ready, create editor immediately
-    if (!monacoEditorRef.current) {
-      console.log('[PropertiesPanel] Creating Monaco editor...');
-
-      // Create editor instance
-      const editor = monaco.editor.create(editorContainerRef.current, {
+    const createEditor = (container: HTMLDivElement) => {
+      const editor = monaco.editor.create(container, {
         value: yamlContent,
         language: 'yaml',
         theme: 'vs-dark',
@@ -370,27 +620,54 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         insertSpaces: true,
       });
 
-      console.log('[PropertiesPanel] Monaco editor created successfully');
       monacoEditorRef.current = editor;
 
-      // Expose editor to global scope for testing
       if (typeof window !== 'undefined') {
         const testWindow = window as MonacoTestWindow;
         testWindow.__monacoEditor = editor;
         testWindow.__monacoModel = editor.getModel();
       }
 
-      // Listen for content changes
       editor.onDidChangeModelContent(() => {
         const value = editor.getValue();
         handleYamlChange(value);
       });
-    }
+    };
+
+    const ensureEditorReady = () => {
+      const container = editorContainerRef.current;
+      const existingEditor = monacoEditorRef.current;
+
+      if (!container) {
+        attempts += 1;
+        if (attempts <= MAX_ATTEMPTS) {
+          rafId = window.requestAnimationFrame(ensureEditorReady);
+        }
+        return;
+      }
+
+      if (existingEditor) {
+        const domNode = existingEditor.getContainerDomNode?.();
+        if (domNode?.isConnected) {
+          existingEditor.layout();
+          return;
+        }
+
+        existingEditor.dispose();
+        monacoEditorRef.current = null;
+      }
+
+      createEditor(container);
+    };
+
+    ensureEditorReady();
 
     // Cleanup when switching away from YAML tab
     return () => {
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
       if (monacoEditorRef.current) {
-        console.log('[PropertiesPanel] Cleaning up Monaco editor');
         monacoEditorRef.current.dispose();
         monacoEditorRef.current = null;
         // Clean up global references
@@ -401,7 +678,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         }
       }
     };
-  }, [activeTab]); // Only re-create when tab changes
+  }, [activeTab]); // Re-check lifecycle when entering YAML
 
   // Update Monaco editor value when yamlContent changes externally (e.g., card selection)
   // but DON'T recreate the entire editor
@@ -680,25 +957,47 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 <IconSelect placeholder="mdi:lightbulb" />
               </Form.Item>
 
-              {renderHapticConfig('button-card')}
-              {renderSoundConfig('button-card')}
-            </>
-          )}
+          {renderSmartDefaultsConfig('button-card')}
+          {renderHapticConfig('button-card')}
+          {renderSoundConfig('button-card')}
+        </>
+      )}
 
-          {card.type === 'markdown' && (
-            <Form.Item
-              label={<span style={{ color: 'white' }}>Content</span>}
-              name="content"
-            >
-              <Input.TextArea
-                placeholder="# Markdown content&#10;&#10;Your text here..."
-                rows={8}
-              />
-            </Form.Item>
-          )}
+      {card.type === 'markdown' && (
+        <Form.Item
+          label={<span style={{ color: 'white' }}>Content</span>}
+          name="content"
+        >
+          <Input.TextArea
+            placeholder="# Markdown content&#10;&#10;Your text here..."
+            rows={8}
+          />
+        </Form.Item>
+      )}
 
-          {(card.type === 'sensor' || card.type === 'gauge') && (
-            <>
+      {/* Entity context preview for any card with templated text fields */}
+      <Form.Item noStyle shouldUpdate>
+        {() => renderContextPreviewSection(form.getFieldsValue(true) as FormCardValues)}
+      </Form.Item>
+
+      <Form.Item noStyle shouldUpdate>
+        {() => renderAttributeDisplaySection(form.getFieldsValue(true) as FormCardValues)}
+      </Form.Item>
+
+      <Form.Item noStyle shouldUpdate>
+        {() => renderConditionalVisibilitySection(form.getFieldsValue(true) as FormCardValues)}
+      </Form.Item>
+
+      <Form.Item noStyle shouldUpdate>
+        {() => renderStateIconMappingSection(form.getFieldsValue(true) as FormCardValues)}
+      </Form.Item>
+
+      <Form.Item noStyle shouldUpdate>
+        {() => renderMultiEntitySection(form.getFieldsValue(true) as FormCardValues)}
+      </Form.Item>
+
+      {(card.type === 'sensor' || card.type === 'gauge') && (
+        <>
               <Form.Item
                 label={<span style={{ color: 'white' }}>Entity</span>}
                 name="entity"
@@ -1177,6 +1476,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               >
                 <IconSelect placeholder="mdi:lightbulb" />
               </Form.Item>
+
+              {renderSmartDefaultsConfig('custom-button-card')}
             </>
           )}
 

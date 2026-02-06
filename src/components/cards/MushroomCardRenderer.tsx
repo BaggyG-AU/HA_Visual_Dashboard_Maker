@@ -15,6 +15,7 @@ import {
 import { CustomCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -81,7 +82,12 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
   }
 
   // Determine display properties
-  const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Entity';
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
+  const displayName =
+    (card.name ? resolvedName : '') ||
+    attributes.friendly_name ||
+    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+    'Entity';
   const layout = card.layout || 'default'; // 'default' or 'horizontal'
   const hideState = card.hide_state === true;
   const hideIcon = card.hide_icon === true;

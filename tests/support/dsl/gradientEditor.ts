@@ -133,16 +133,45 @@ export class GradientEditorDSL {
 
   async toggleType(type: 'linear' | 'radial'): Promise<void> {
     await this.openGradientPopover();
-    const toggle = this.window.getByTestId(`${this.editorTestId}-type-toggle`);
-    await expect(toggle).toBeVisible();
-    await toggle.getByRole('radio', { name: new RegExp(type, 'i') }).click();
+    const clicked = await this.window.evaluate(({ editorTestId, nextType }) => {
+      const inputs = Array.from(document.querySelectorAll<HTMLInputElement>(`[data-testid="${editorTestId}-type-${nextType}"]`));
+      const isVisible = (el: HTMLElement | null) => {
+        if (!el) return false;
+        const box = el.getBoundingClientRect();
+        return box.width > 0 && box.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+      };
+      for (const input of inputs) {
+        const wrapper = input.closest('label') as HTMLElement | null;
+        if (!wrapper || !isVisible(wrapper)) continue;
+        wrapper.click();
+        return true;
+      }
+      return false;
+    }, { editorTestId: this.editorTestId, nextType: type });
+
+    if (!clicked) {
+      throw new Error(`Unable to click visible gradient type option: ${type}`);
+    }
   }
 
   async expectType(type: 'linear' | 'radial'): Promise<void> {
     await this.openGradientPopover();
-    const toggle = this.window.getByTestId(`${this.editorTestId}-type-toggle`);
-    const radio = toggle.getByRole('radio', { name: new RegExp(type, 'i') });
-    await expect(radio).toBeChecked();
+    await expect.poll(async () => {
+      return await this.window.evaluate(({ editorTestId, expectedType }) => {
+        const inputs = Array.from(document.querySelectorAll<HTMLInputElement>(`[data-testid="${editorTestId}-type-${expectedType}"]`));
+        const isVisible = (el: HTMLElement | null) => {
+          if (!el) return false;
+          const box = el.getBoundingClientRect();
+          return box.width > 0 && box.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+        };
+        for (const input of inputs) {
+          const wrapper = input.closest('label') as HTMLElement | null;
+          if (!wrapper || !isVisible(wrapper)) continue;
+          return wrapper.classList.contains('ant-radio-button-wrapper-checked');
+        }
+        return false;
+      }, { editorTestId: this.editorTestId, expectedType: type });
+    }, { timeout: 5000 }).toBe(true);
   }
 
   async focusAngleInput(): Promise<void> {
@@ -271,6 +300,7 @@ export class GradientEditorDSL {
     // Wait for preset list + export button to reflect the new preset.
     const userPresetCards = this.window.locator(`[data-testid^="${this.editorTestId}-user-preset-"]`);
     await expect(userPresetCards.first()).toBeVisible({ timeout: 5000 });
+    await expect(this.window.locator(`[data-testid^="${this.editorTestId}-user-preset-"]`, { hasText: name }).first()).toBeVisible({ timeout: 5000 });
     await expect(this.window.getByTestId(`${this.editorTestId}-preset-export`)).toBeEnabled({ timeout: 5000 });
   }
 
@@ -314,6 +344,7 @@ export class GradientEditorDSL {
 
   async importPresets(filePath: string, testInfo?: TestInfo): Promise<void> {
     await this.openGradientPopover();
+    const beforeImportCount = await this.getUserPresetCards().count().catch(() => 0);
     await this.attachPresetDiagnostics(testInfo, {
       action: 'importPresets',
       filePath,
@@ -339,6 +370,9 @@ export class GradientEditorDSL {
       const inputExists = (await fileInput.count()) > 0;
       if (inputExists) {
         await fileInput.setInputFiles(filePath);
+        await expect
+          .poll(async () => await this.getUserPresetCards().count(), { timeout: 5000 })
+          .toBeGreaterThanOrEqual(beforeImportCount);
         return;
       }
       const [chooser] = await Promise.all([
@@ -346,6 +380,9 @@ export class GradientEditorDSL {
         this.window.getByTestId(`${this.editorTestId}-preset-import`).click(),
       ]);
       await chooser.setFiles(filePath);
+      await expect
+        .poll(async () => await this.getUserPresetCards().count(), { timeout: 5000 })
+        .toBeGreaterThanOrEqual(beforeImportCount);
     } catch (error) {
       const fileInput = this.window.getByTestId(`${this.editorTestId}-preset-file-input`);
       const inputExists = this.app ? null : (await fileInput.count()) > 0;

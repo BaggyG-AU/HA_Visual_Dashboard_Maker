@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '../services/logger';
 import type { RecentColorsStorage } from '../types/color';
 
 const STORAGE_KEY = 'havdm-recent-colors';
@@ -55,7 +56,7 @@ export function useRecentColors(
         }
       }
     } catch (error) {
-      console.error('Failed to load recent colors from localStorage:', error);
+      logger.error('Failed to load recent colors from localStorage', error);
       // Continue with empty array on error
     }
   }, [storageKey, maxColors]);
@@ -69,7 +70,7 @@ export function useRecentColors(
       };
       localStorage.setItem(storageKey, JSON.stringify(data));
     } catch (error) {
-      console.error('Failed to save recent colors to localStorage:', error);
+      logger.error('Failed to save recent colors to localStorage', error);
       // Continue without persisting on error
     }
   }, [recentColors, storageKey]);
@@ -106,7 +107,7 @@ export function useRecentColors(
     try {
       localStorage.removeItem(storageKey);
     } catch (error) {
-      console.error('Failed to clear recent colors from localStorage:', error);
+      logger.error('Failed to clear recent colors from localStorage', error);
     }
   }, [storageKey]);
 

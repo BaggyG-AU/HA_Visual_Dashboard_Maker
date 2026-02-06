@@ -72,6 +72,7 @@ export const GradientPickerInput: React.FC<GradientPickerInputProps> = ({
       trigger="click"
       placement="bottomLeft"
       overlayStyle={{ zIndex: 1050 }}
+      destroyTooltipOnHide
       content={
         <GradientEditor
           value={localValue}

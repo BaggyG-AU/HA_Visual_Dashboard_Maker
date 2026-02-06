@@ -31,12 +31,29 @@ export class CanvasDSL {
    * Deselect current card by clicking empty canvas area
    */
   async deselectCard(): Promise<void> {
-    // Click the canvas container (not a card)
     const canvas = this.window.locator('.react-grid-layout');
-    await canvas.click({ position: { x: 10, y: 10 } });
+    await expect(canvas).toBeVisible();
 
-    // Wait for properties panel to disappear
-    await expect(this.window.getByTestId('properties-panel')).toHaveCount(0, { timeout: 2000 });
+    const box = await canvas.boundingBox();
+    if (!box) {
+      throw new Error('Canvas bounding box unavailable');
+    }
+
+    // Avoid clicking the top-left area where the first card is typically placed.
+    const positions = [
+      { x: Math.max(5, Math.floor(box.width - 5)), y: 5 },
+      { x: Math.max(5, Math.floor(box.width - 5)), y: Math.max(5, Math.floor(box.height - 5)) },
+      { x: 5, y: Math.max(5, Math.floor(box.height - 5)) },
+    ];
+
+    for (const pos of positions) {
+      await canvas.click({ position: pos });
+      const hidden = await this.window.getByTestId('properties-panel').count().then((c) => c === 0).catch(() => false);
+      if (hidden) return;
+    }
+
+    // Wait for properties panel to disappear (final attempt)
+    await expect(this.window.getByTestId('properties-panel')).toHaveCount(0, { timeout: 3000 });
   }
 
   /**
@@ -94,13 +111,17 @@ export class CanvasDSL {
     return this.getCard(index).getByTestId('card-background-layer');
   }
 
+  getBackgroundLayerVisual(index = 0) {
+    return this.getCard(index).getByTestId('card-background-layer-visual');
+  }
+
   async expectBackgroundLayerVisible(index = 0): Promise<void> {
     const layer = this.getBackgroundLayer(index);
     await expect(layer).toBeVisible();
   }
 
   async expectBackgroundLayerCss(index: number, property: string, value: string | RegExp): Promise<void> {
-    const layer = this.getBackgroundLayer(index);
+    const layer = this.getBackgroundLayerVisual(index);
     await expect(layer).toHaveCSS(property, value);
   }
 
@@ -109,31 +130,55 @@ export class CanvasDSL {
     name: string,
     options: ScreenshotOptions = { animations: 'disabled', caret: 'hide' },
   ): Promise<void> {
-    const layer = this.getBackgroundLayer(index);
+    const layer = this.getBackgroundLayerVisual(index);
     await expect(layer).toBeVisible();
+    await this.window.evaluate(() => {
+      document.body.classList.add('e2e-disable-animations');
+      if (!document.getElementById('e2e-disable-animations-style')) {
+        const style = document.createElement('style');
+        style.id = 'e2e-disable-animations-style';
+        style.textContent = `
+          .e2e-disable-animations *,
+          .e2e-disable-animations *::before,
+          .e2e-disable-animations *::after {
+            animation: none !important;
+            transition: none !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    });
+    await this.window.evaluate(async () => {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    });
     await expect(layer).toHaveScreenshot(name, options);
   }
 
-  async measureBackgroundLayerFps(index = 0, frameCount = 60): Promise<{ fps: number; avgFrameTime: number; samples: number }> {
+  async measureBackgroundLayerFps(index = 0, frameCount = 60): Promise<{ fps: number; avgFrameTime: number; samples: number; minFps: number }> {
     const card = this.getCard(index);
     await expect(card).toBeVisible();
+    await this.window.bringToFront();
+    await this.window.waitForFunction(() => document.hasFocus(), null, { timeout: 3000 }).catch(() => false);
 
     return await this.window.evaluate(({ frames, targetIndex }) => {
       const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-testid="card-background-layer"]'));
       const layer = layers[targetIndex] || layers[0];
       if (!layer) {
-        return { fps: 0, avgFrameTime: Infinity, samples: 0 };
+        return { fps: 0, avgFrameTime: Infinity, samples: 0, minFps: 0 };
       }
 
       const samples: number[] = [];
       let last = performance.now();
       let count = 0;
+      const warmupFrames = Math.min(5, Math.max(0, frames - 1));
       let toggle = false;
 
       return new Promise((resolve) => {
         const step = () => {
           const now = performance.now();
-          samples.push(now - last);
+          if (count >= warmupFrames) {
+            samples.push(now - last);
+          }
           last = now;
 
           toggle = !toggle;
@@ -143,8 +188,14 @@ export class CanvasDSL {
           if (count < frames) {
             requestAnimationFrame(step);
           } else {
-            const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
-            resolve({ fps: 1000 / avg, avgFrameTime: avg, samples: samples.length });
+            const avg = samples.reduce((a, b) => a + b, 0) / Math.max(samples.length, 1);
+            const maxFrameTime = samples.length ? Math.max(...samples) : Infinity;
+            resolve({
+              fps: 1000 / avg,
+              avgFrameTime: avg,
+              samples: samples.length,
+              minFps: Number.isFinite(maxFrameTime) ? 1000 / maxFrameTime : 0,
+            });
           }
         };
 

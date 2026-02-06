@@ -70,15 +70,8 @@ test.describe('Theme Integration', () => {
       await ctx.appDSL.waitUntilReady();
       await connectWithMockThemes(ctx);
 
-      const settingsBtn = ctx.window.getByRole('button', { name: /Settings/i });
-      await expect(settingsBtn).toBeVisible();
-      await settingsBtn.click();
-
-      const dialog = ctx.window.getByRole('dialog', { name: /Settings/i });
-      await expect(dialog).toBeVisible({ timeout: 5000 });
-
-      // Click on Appearance tab (outer tabs)
-      await ctx.window.getByRole('tab', { name: /Appearance/i }).click();
+      await ctx.settings.open();
+      await ctx.settings.selectTab('Appearance');
 
       // Now click on inner tabs (within theme settings)
       // Use .last() to get the nested tabs, not the outer "Appearance" tab
@@ -91,9 +84,7 @@ test.describe('Theme Integration', () => {
       await expect(ctx.window.getByTestId('theme-settings-json')).toBeAttached({ timeout: 10000 });
       await expect(ctx.window.getByTestId('theme-settings-json')).toBeVisible({ timeout: 10000 });
 
-      // Use .last() to get footer Close button, not modal X button (strict mode)
-      await ctx.window.getByRole('button', { name: /Close/i }).last().click();
-      await expect(dialog).toHaveCount(0, { timeout: 5000 });
+      await ctx.settings.close();
     } finally {
       await close(ctx);
     }

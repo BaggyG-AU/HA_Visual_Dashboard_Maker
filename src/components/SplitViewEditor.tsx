@@ -18,7 +18,7 @@ interface SplitViewEditorProps {
   selectedCardIndex: number | null;
 
   /** Card selection callback */
-  onCardSelect: (cardIndex: number) => void;
+  onCardSelect: (cardIndex: number | null) => void;
 
   /** Layout change callback (from visual canvas) */
   onLayoutChange: (layout: unknown[]) => void;

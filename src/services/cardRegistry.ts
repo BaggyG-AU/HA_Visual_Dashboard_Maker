@@ -7,6 +7,7 @@
  * - Dynamic discovery from HA API (Phase 13)
  * - HACS custom cards (Phase 13+)
  */
+import { logger } from './logger';
 
 export type CardCategory =
   | 'layout'
@@ -159,7 +160,7 @@ class CardRegistry {
         description: 'Single entity control button',
         isCustom: false,
         source: 'builtin',
-        defaultProps: { tap_action: { action: 'toggle' } },
+        defaultProps: { smart_defaults: true },
         requiredProps: ['entity'],
       },
       {
@@ -332,7 +333,7 @@ class CardRegistry {
         description: 'Advanced button card (HACS)',
         isCustom: true,
         source: 'hacs',
-        defaultProps: {},
+        defaultProps: { smart_defaults: true },
         requiredProps: ['entity'],
       },
       {
@@ -772,9 +773,10 @@ class CardRegistry {
    * This will be implemented when HA connection is added
    */
   async loadFromHomeAssistant(haUrl: string, token: string): Promise<void> {
+    void token;
     // TODO: Phase 13 - Fetch available cards from HA API
     // This will discover HACS cards and custom cards
-    console.log('Loading cards from Home Assistant...', { haUrl, token });
+    logger.debug('Loading cards from Home Assistant', { haUrl });
     throw new Error('Home Assistant connection not yet implemented (Phase 13)');
   }
 

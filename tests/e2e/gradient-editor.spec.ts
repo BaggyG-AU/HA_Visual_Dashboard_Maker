@@ -93,7 +93,17 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
       await yamlEditor.setEditorContent(updatedYaml, 'properties', testInfo);
 
       await properties.switchTab('Advanced Options');
-      await backgroundCustomizer.selectType('Gradient', testInfo);
+      const gradientInput = ctx.window.getByTestId('advanced-style-gradient-input');
+      await expect(gradientInput).toBeVisible({ timeout: 5000 });
+      const gradientValue = await gradientInput.inputValue();
+      // eslint-disable-next-line no-console
+      console.log('[gradient] input value after yaml:', gradientValue);
+      await expect.poll(async () => {
+        return ((await gradientInput.inputValue()) || '').includes('radial-gradient');
+      }, { timeout: 8000 }).toBe(true);
+      const cssOutput = await gradientEditor.getCssOutput();
+      // eslint-disable-next-line no-console
+      console.log('[gradient] css output:', cssOutput);
       await gradientEditor.expectType('radial');
     } finally {
       await close(ctx);

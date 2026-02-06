@@ -61,10 +61,37 @@ const BLEND_MODE_OPTIONS: Array<{ value: BackgroundBlendMode; label: string }> =
 
 const clamp = (value: number, min = 0, max = 100) => Math.min(Math.max(value, min), max);
 
+const parseImageSizeCustom = (raw: string): { width: string; height: string } => {
+  const parts = (raw || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return { width: parts[0], height: parts[1] };
+  }
+  if (parts.length === 1) {
+    return { width: parts[0], height: parts[0] };
+  }
+  return { width: '100%', height: '100%' };
+};
+
+const composeImageSizeCustom = (width: string, height: string): string => {
+  const normalizedWidth = width.trim() || '100%';
+  const normalizedHeight = height.trim() || '100%';
+  return `${normalizedWidth} ${normalizedHeight}`;
+};
+
 export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ value, onChange }) => {
+  const [openSelect, setOpenSelect] = React.useState<string | null>(null);
+
   const update = (patch: Partial<BackgroundConfig>) => {
     onChange({ ...value, ...patch });
   };
+
+  const closeSelect = () => setOpenSelect(null);
+  const bindSelectOpen = (key: string) => ({
+    open: openSelect === key,
+    onOpenChange: (open: boolean) => setOpenSelect(open ? key : null),
+  });
+  const popupContainer = (triggerNode: HTMLElement) => triggerNode.parentElement ?? triggerNode;
+  const customSize = parseImageSizeCustom(value.imageSizeCustom);
 
   const renderOpacityControl = (label: string, testId: string, inputTestId: string, opacityValue: number, onUpdate: (val: number) => void) => (
     <Form.Item label={<span style={{ color: 'white' }}>{label}</span>} colon={false}>
@@ -94,7 +121,14 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ valu
         <Select
           options={TYPE_OPTIONS}
           value={value.type}
-          onChange={(next) => update({ type: next as BackgroundType })}
+          onChange={(next) => {
+            update({ type: next as BackgroundType });
+            closeSelect();
+          }}
+          {...bindSelectOpen('background-type')}
+          popupClassName="bg-type-dropdown"
+          transitionName=""
+          getPopupContainer={popupContainer}
           data-testid="advanced-style-background-type"
         />
       </Form.Item>
@@ -158,7 +192,14 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ valu
             <Select
               options={POSITION_OPTIONS}
               value={value.imagePosition}
-              onChange={(next) => update({ imagePosition: next as BackgroundImagePosition })}
+              onChange={(next) => {
+                update({ imagePosition: next as BackgroundImagePosition });
+                closeSelect();
+              }}
+              {...bindSelectOpen('background-image-position')}
+              popupClassName="bg-image-position-dropdown"
+              transitionName=""
+              getPopupContainer={popupContainer}
               data-testid="background-image-position-select"
             />
           </Form.Item>
@@ -167,19 +208,38 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ valu
             <Select
               options={SIZE_OPTIONS}
               value={value.imageSize}
-              onChange={(next) => update({ imageSize: next as BackgroundImageSize })}
+              onChange={(next) => {
+                update({ imageSize: next as BackgroundImageSize });
+                closeSelect();
+              }}
+              {...bindSelectOpen('background-image-size')}
+              popupClassName="bg-image-size-dropdown"
+              transitionName=""
+              getPopupContainer={popupContainer}
               data-testid="background-image-size-select"
             />
           </Form.Item>
 
           {value.imageSize === 'custom' && (
             <Form.Item label={<span style={{ color: 'white' }}>Custom Size</span>} colon={false}>
-              <Input
-                placeholder="100% 100%"
-                value={value.imageSizeCustom}
-                onChange={(event) => update({ imageSizeCustom: event.target.value })}
-                data-testid="background-image-size-custom-input"
-              />
+              <Space style={{ width: '100%' }} size="small">
+                <Input
+                  placeholder="Width (e.g. 100%, 320px, auto)"
+                  value={customSize.width}
+                  onChange={(event) =>
+                    update({ imageSizeCustom: composeImageSizeCustom(event.target.value, customSize.height) })
+                  }
+                  data-testid="background-image-size-custom-width-input"
+                />
+                <Input
+                  placeholder="Height (e.g. 100%, 200px, auto)"
+                  value={customSize.height}
+                  onChange={(event) =>
+                    update({ imageSizeCustom: composeImageSizeCustom(customSize.width, event.target.value) })
+                  }
+                  data-testid="background-image-size-custom-height-input"
+                />
+              </Space>
             </Form.Item>
           )}
 
@@ -187,7 +247,14 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ valu
             <Select
               options={REPEAT_OPTIONS}
               value={value.imageRepeat}
-              onChange={(next) => update({ imageRepeat: next as BackgroundImageRepeat })}
+              onChange={(next) => {
+                update({ imageRepeat: next as BackgroundImageRepeat });
+                closeSelect();
+              }}
+              {...bindSelectOpen('background-image-repeat')}
+              popupClassName="bg-image-repeat-dropdown"
+              transitionName=""
+              getPopupContainer={popupContainer}
               data-testid="background-image-repeat-select"
             />
           </Form.Item>
@@ -227,7 +294,14 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ valu
             <Select
               options={BLEND_MODE_OPTIONS}
               value={value.blendMode}
-              onChange={(next) => update({ blendMode: next as BackgroundBlendMode })}
+              onChange={(next) => {
+                update({ blendMode: next as BackgroundBlendMode });
+                closeSelect();
+              }}
+              {...bindSelectOpen('background-blend-mode')}
+              popupClassName="bg-blend-dropdown"
+              transitionName=""
+              getPopupContainer={popupContainer}
               data-testid="background-blend-mode-select"
             />
           </Form.Item>

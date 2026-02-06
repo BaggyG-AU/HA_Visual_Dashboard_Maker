@@ -5,6 +5,7 @@ import GridLayout, { Layout } from 'react-grid-layout';
 import { View } from '../types/dashboard';
 import { generateMasonryLayout, getCardSizeConstraints } from '../utils/cardSizingContract';
 import { isLayoutCardGrid, convertLayoutCardToGridLayout } from '../utils/layoutCardParser';
+import { logger } from '../services/logger';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -45,7 +46,6 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
     if (usingLayoutCard) {
       // Use convertLayoutCardToGridLayout to parse view_layout
       const gridLayout = convertLayoutCardToGridLayout(view);
-      console.log('HADashboardIframe: Using layout-card grid system', gridLayout);
       setLayout(gridLayout);
       return;
     }
@@ -85,12 +85,10 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
           maxH: constraints.maxH,
         };
       });
-      console.log('HADashboardIframe: Using existing layout from cards', existingLayout);
       setLayout(existingLayout);
     } else {
       // Mode 3: No existing layout, generate fresh masonry layout
       const generatedLayout = generateMasonryLayout(cards);
-      console.log('HADashboardIframe: Generated fresh masonry layout', generatedLayout);
       setLayout(generatedLayout);
     }
   }, [view]);
@@ -110,7 +108,7 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
         // Check WebSocket connection via IPC
         const wsStatus = await window.electronAPI.haWsIsConnected();
         if (!wsStatus.connected) {
-          console.warn('WebSocket not connected, skipping temp dashboard update');
+          logger.warn('WebSocket not connected, skipping temp dashboard update');
           return;
         }
 
@@ -155,7 +153,7 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
           iframeRef.current.src = currentSrc;
         }
       } catch (error) {
-        console.error('Failed to update temp dashboard:', error);
+        logger.error('Failed to update temp dashboard', error);
         message.error('Failed to update dashboard preview');
       }
     }

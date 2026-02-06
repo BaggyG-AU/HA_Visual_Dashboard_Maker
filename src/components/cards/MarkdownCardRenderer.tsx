@@ -3,6 +3,7 @@ import { Card as AntCard, Typography } from 'antd';
 import { FileTextOutlined } from '@ant-design/icons';
 import { MarkdownCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text, Paragraph } = Typography;
 
@@ -21,8 +22,10 @@ export const MarkdownCardRenderer: React.FC<MarkdownCardRendererProps> = ({
   isSelected = false,
   onClick,
 }) => {
-  const title = card.title || 'Markdown';
-  const content = card.content || '';
+  const resolvedTitle = useEntityContextValue(card.title ?? '', card.entity ?? null);
+  const resolvedContent = useEntityContextValue(card.content ?? '', card.entity ?? null);
+  const title = (card.title ? resolvedTitle : '') || 'Markdown';
+  const content = card.content ? resolvedContent : '';
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Simple markdown preview - strip markdown syntax for preview
@@ -70,6 +73,7 @@ export const MarkdownCardRenderer: React.FC<MarkdownCardRendererProps> = ({
           whiteSpace: 'pre-wrap',
         }}
         ellipsis={{ rows: 8, expandable: false }}
+        data-testid="markdown-card-content"
       >
         {previewContent}
       </Paragraph>

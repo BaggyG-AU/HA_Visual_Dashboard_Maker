@@ -11,6 +11,7 @@ import {
 import { CustomCard } from '../../types/dashboard';
 import { useHAEntities } from '../../contexts/HAEntityContext';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -93,7 +94,12 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
   const attributes = entity?.attributes || {};
 
   // Determine display properties
-  const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Entity';
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
+  const displayName =
+    (card.name ? resolvedName : '') ||
+    attributes.friendly_name ||
+    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+    'Entity';
   const showName = card.show_name !== false;
   const showIcon = card.show_icon !== false;
   const showState = card.show_state !== false;
@@ -484,7 +490,7 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
               letterSpacing: '1px',
             }}
           >
-            {card.name}
+            {resolvedName}
           </Text>
         )}
         <div style={{

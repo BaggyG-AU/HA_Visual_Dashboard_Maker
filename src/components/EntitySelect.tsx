@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Select, Tag, Typography, Space, Alert } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
+import { logger } from '../services/logger';
 import { HAEntity } from '../types/homeassistant';
 
 const { Text } = Typography;
@@ -12,6 +13,7 @@ interface EntitySelectProps {
   placeholder?: string;
   allowClear?: boolean;
   filterDomains?: string[];  // e.g., ['light', 'switch']
+  'data-testid'?: string;
 }
 
 /**
@@ -29,6 +31,7 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
   placeholder = 'Select entity',
   allowClear = true,
   filterDomains,
+  'data-testid': dataTestId,
 }) => {
   const [entities, setEntities] = useState<HAEntity[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,7 +53,7 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
         setEntities(fetchedEntities);
       } catch (err) {
         setError((err as Error).message);
-        console.error('Failed to load entities:', err);
+        logger.error('Failed to load entities', err);
       } finally {
         setLoading(false);
       }
@@ -208,12 +211,12 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
       <div>
         <Select
           value={value}
-          onChange={handleChange}
-          placeholder={placeholder}
-          allowClear={allowClear}
-          disabled
-          style={{ width: '100%' }}
-        />
+        onChange={handleChange}
+        placeholder={placeholder}
+        allowClear={allowClear}
+        style={{ width: '100%' }}
+        data-testid={dataTestId}
+      />
         <Alert
           message="Not Connected"
           description="Connect to Home Assistant to enable entity autocomplete and validation."
@@ -232,11 +235,12 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
       <div>
         <Select
           value={value}
-          onChange={handleChange}
-          placeholder={placeholder}
-          allowClear={allowClear}
-          style={{ width: '100%' }}
-        />
+        onChange={handleChange}
+        placeholder={placeholder}
+        allowClear={allowClear}
+        style={{ width: '100%' }}
+        data-testid={dataTestId}
+      />
         <Alert
           message="Failed to Load Entities"
           description={error}
@@ -269,6 +273,7 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
             backgroundColor: '#1f1f1f',
           },
         }}
+        data-testid={dataTestId}
       />
       {renderEntityPreview()}
     </div>

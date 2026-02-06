@@ -56,7 +56,15 @@ export class AppDSL {
 
       // Press Escape to close visible modals
       await this.window.keyboard.press('Escape');
-      await this.window.waitForTimeout(400);
+      await expect
+        .poll(async () => {
+          const visibleCount = await this.window
+            .locator('.ant-modal-wrap:visible')
+            .count()
+            .catch(() => 0);
+          return visibleCount;
+        }, { timeout: 2000 })
+        .toBe(0);
     }
   }
 
@@ -85,5 +93,15 @@ export class AppDSL {
   async screenshot(name: string, fullPage = false): Promise<void> {
     const screenshotPath = `test-results/screenshots/${name}.png`;
     await this.window.screenshot({ path: screenshotPath, fullPage });
+  }
+
+  /**
+   * Toggle Home Assistant connection state (test-only hook)
+   */
+  async setConnected(connected: boolean): Promise<void> {
+    await this.window.evaluate((isConnected) => {
+      const testWindow = window as Window & { __testThemeApi?: { setConnected: (value: boolean) => void } };
+      testWindow.__testThemeApi?.setConnected(isConnected);
+    }, connected);
   }
 }

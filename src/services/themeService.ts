@@ -1,4 +1,5 @@
 import { Theme } from '../types/homeassistant';
+import { logger } from './logger';
 
 /**
  * Theme Service
@@ -13,7 +14,7 @@ export class ThemeService {
     theme: Theme,
     darkMode: boolean
   ): void {
-    console.log('Applying theme to element:', { darkMode });
+    logger.debug('Applying theme to element', { darkMode });
 
     // Merge base theme with mode-specific overrides
     const baseVars = { ...theme };
@@ -32,7 +33,7 @@ export class ThemeService {
       }
     });
 
-    console.log(`Applied ${Object.keys(finalVars).length} CSS variables`);
+    logger.debug(`Applied ${Object.keys(finalVars).length} CSS variables`);
   }
 
   /**

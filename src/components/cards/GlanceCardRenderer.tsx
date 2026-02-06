@@ -1,8 +1,13 @@
 import React from 'react';
 import { Card as AntCard, Typography } from 'antd';
-import { DashboardOutlined, BulbOutlined } from '@ant-design/icons';
+import { DashboardOutlined } from '@ant-design/icons';
 import { GlanceCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
+import { useEntityContextResolver } from '../../hooks/useEntityContext';
+import { useHAEntities } from '../../contexts/HAEntityContext';
+import { evaluateEntityVisibility } from '../../services/conditionalVisibility';
+import { getStateIcon } from '../../services/stateIcons';
+import { MdiIcon } from '../MdiIcon';
 
 const { Text } = Typography;
 
@@ -21,20 +26,38 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
   isSelected = false,
   onClick,
 }) => {
-  const title = card.title || 'Glance';
-  const entityCount = Array.isArray(card.entities) ? card.entities.length : 0;
+  const resolveContext = useEntityContextResolver();
+  const { entities, getEntity } = useHAEntities();
+  const visibleEntities = Array.isArray(card.entities)
+    ? card.entities.filter((entity) => evaluateEntityVisibility(entity, entities))
+    : [];
+  const defaultEntityId = Array.isArray(card.entities)
+    ? (typeof card.entities[0] === 'string' ? card.entities[0] : card.entities[0]?.entity)
+    : null;
+  const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId ?? null) : '';
+  const title = (card.title ? resolvedTitle : '') || 'Glance';
+  const entityCount = visibleEntities.length;
   const columns = card.columns || 5;
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // Extract entity IDs for display
-  const getEntityId = (entity: any): string => {
+  const getEntityId = (entity: unknown): string => {
     if (typeof entity === 'string') return entity;
-    if (typeof entity === 'object' && entity?.entity) return entity.entity;
+    if (typeof entity === 'object' && entity !== null && 'entity' in entity) {
+      const entityId = (entity as { entity?: unknown }).entity;
+      if (typeof entityId === 'string') return entityId;
+    }
     return 'unknown';
   };
 
-  const getEntityName = (entity: any): string => {
-    if (typeof entity === 'object' && entity?.name) return entity.name;
+  const getEntityName = (entity: unknown): string => {
+    if (typeof entity === 'object' && entity !== null && 'name' in entity) {
+      const entityId = getEntityId(entity);
+      const rawName = (entity as { name?: unknown }).name;
+      if (typeof rawName === 'string') {
+        return resolveContext(rawName, entityId);
+      }
+    }
     const id = getEntityId(entity);
     return id.split('.')[1]?.replace(/_/g, ' ') || id;
   };
@@ -70,12 +93,20 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(${Math.min(columns, entityCount)}, 1fr)`,
+          gridTemplateColumns: `repeat(${Math.max(1, Math.min(columns, entityCount || 1))}, 1fr)`,
           gap: '12px',
         }}
       >
-        {Array.isArray(card.entities) &&
-          card.entities.map((entity, idx) => {
+        {visibleEntities.map((entity, idx) => {
+            const entityId = getEntityId(entity);
+            const liveEntity = getEntity(entityId);
+            const state = liveEntity?.state || 'unknown';
+            const resolved = getStateIcon({
+              entityId,
+              state,
+              stateIcons: card.state_icons,
+              entityAttributes: liveEntity?.attributes,
+            });
             const entityName = getEntityName(entity);
 
             return (
@@ -90,8 +121,15 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
                   backgroundColor: 'rgba(255, 255, 255, 0.03)',
                   borderRadius: '4px',
                 }}
+                data-testid={`glance-card-item-${entityId.replace(/[^a-zA-Z0-9_-]/g, '-')}`}
               >
-                <BulbOutlined style={{ fontSize: '20px', color: '#00d9ff' }} />
+                <MdiIcon
+                  icon={resolved.icon}
+                  color={resolved.color || '#00d9ff'}
+                  size={20}
+                  style={{ transition: 'all 0.2s ease' }}
+                  testId={`glance-card-icon-${entityId.replace(/[^a-zA-Z0-9_-]/g, '-')}`}
+                />
                 {card.show_name !== false && (
                   <Text
                     style={{
@@ -108,7 +146,7 @@ export const GlanceCardRenderer: React.FC<GlanceCardRendererProps> = ({
                 )}
                 {card.show_state !== false && (
                   <Text type="secondary" style={{ fontSize: '10px' }}>
-                    --
+                    {state}
                   </Text>
                 )}
               </div>

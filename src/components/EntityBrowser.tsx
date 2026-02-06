@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Modal, Input, Table, Button, Space, Badge, message, Tabs, Empty, Tooltip } from 'antd';
 import { SearchOutlined, ReloadOutlined, CheckOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { logger } from '../services/logger';
 
 interface Entity {
   entity_id: string;
@@ -52,7 +53,7 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
         setEntities(result.entities);
       }
     } catch (error) {
-      console.error('Failed to load cached entities:', error);
+      logger.error('Failed to load cached entities', error);
     }
   };
 

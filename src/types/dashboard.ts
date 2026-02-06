@@ -4,6 +4,9 @@
 
 import type { HapticCardConfig } from './haptics';
 import type { SoundCardConfig } from './sounds';
+import type { AttributeDisplayItem, AttributeDisplayLayout } from './attributeDisplay';
+import type { StateIconsMap } from './stateIcons';
+import type { AggregateFunction, BatchActionConfig, MultiEntityMode } from './multiEntity';
 
 // Layout-card view_layout configuration
 export interface ViewLayout {
@@ -22,12 +25,20 @@ export interface BaseCard {
   name?: string;
   icon?: string;
   style?: string;
+  smart_defaults?: boolean;
+  visibility_conditions?: VisibilityCondition[];
+  attribute_display?: AttributeDisplayItem[];
+  attribute_display_layout?: AttributeDisplayLayout;
   haptic?: HapticCardConfig;
   sound?: SoundCardConfig;
   icon_color?: string;
   icon_color_mode?: 'default' | 'custom' | 'state' | 'attribute';
   icon_color_states?: Record<string, string>;
   icon_color_attribute?: string;
+  state_icons?: StateIconsMap;
+  multi_entity_mode?: MultiEntityMode;
+  aggregate_function?: AggregateFunction;
+  batch_actions?: Array<BatchActionConfig | string>;
   show_name?: boolean;
   show_icon?: boolean;
   show_state?: boolean;
@@ -73,7 +84,33 @@ export interface EntityConfig {
   secondary_info?: string;
   format?: string;
   type?: string;
+  visibility_conditions?: VisibilityCondition[];
 }
+
+export type VisibilityConditionType =
+  | 'state_equals'
+  | 'state_not_equals'
+  | 'state_in'
+  | 'state_not_in'
+  | 'attribute_equals'
+  | 'attribute_greater_than'
+  | 'attribute_less_than'
+  | 'entity_exists';
+
+export interface VisibilityConditionRule {
+  condition: VisibilityConditionType;
+  entity: string;
+  attribute?: string;
+  value?: string | number | boolean;
+  values?: Array<string | number | boolean>;
+}
+
+export interface VisibilityConditionGroup {
+  condition: 'and' | 'or';
+  conditions: VisibilityCondition[];
+}
+
+export type VisibilityCondition = VisibilityConditionRule | VisibilityConditionGroup;
 
 export interface ButtonCard extends BaseCard {
   type: 'button';

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { parseColor, rgbaToHex } from '../utils/colorConversions';
+import { logger } from '../services/logger';
 import type { ColorPalette, ColorPaletteStorage, PaletteImportResult } from '../types/colorPalette';
 
 const STORAGE_KEY = 'havdm-color-palettes';
@@ -100,7 +101,7 @@ export function useColorPalettes(storageKey = STORAGE_KEY): UseColorPalettesRetu
       setPalettes(migrated.palettes);
       setActivePaletteId(migrated.activePaletteId || migrated.palettes[0]?.id);
     } catch (error) {
-      console.error('Failed to load color palettes', error);
+      logger.error('Failed to load color palettes', error);
       const migrated = migrateStorage(null);
       setPalettes(migrated.palettes);
       setActivePaletteId(migrated.activePaletteId);
@@ -117,7 +118,7 @@ export function useColorPalettes(storageKey = STORAGE_KEY): UseColorPalettesRetu
       };
       localStorage.setItem(storageKey, JSON.stringify(payload));
     } catch (error) {
-      console.error('Failed to save color palettes', error);
+      logger.error('Failed to save color palettes', error);
     }
   }, [palettes, activePaletteId, storageKey]);
 

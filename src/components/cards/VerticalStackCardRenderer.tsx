@@ -4,6 +4,7 @@ import { BorderVerticleOutlined } from '@ant-design/icons';
 import { VerticalStackCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { BaseCard } from '../BaseCard';
+import { useEntityContextResolver } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -25,6 +26,10 @@ export const VerticalStackCardRenderer: React.FC<VerticalStackCardRendererProps>
 }) => {
   const childCards = card.cards || [];
   const hasTitle = !!card.title;
+  const resolveContext = useEntityContextResolver();
+  const defaultEntityId =
+    childCards.find((child) => typeof (child as any)?.entity === 'string')?.entity ?? null;
+  const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId) : '';
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
 
   // If no child cards, show placeholder
@@ -67,7 +72,7 @@ export const VerticalStackCardRenderer: React.FC<VerticalStackCardRendererProps>
   return (
     <AntCard
       size="small"
-      title={hasTitle ? card.title : undefined}
+      title={hasTitle ? resolvedTitle : undefined}
       style={{
         height: '100%',
         cursor: 'pointer',

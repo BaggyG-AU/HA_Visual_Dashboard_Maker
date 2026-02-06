@@ -5,14 +5,16 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { launchElectronApp, closeElectronApp, waitForAppReady } from '../helpers/electron-helper';
+import { launchWithDSL, close } from '../support';
 
 test.describe('Home Assistant Connection', () => {
   test('should show connection setup UI when not connected', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // Look for connection-related UI elements (use separate locators)
       const connectButton = await window.locator('text=Connect to Home Assistant').or(window.locator('text=Connect')).count();
@@ -25,15 +27,17 @@ test.describe('Home Assistant Connection', () => {
       const totalConnectionUI = connectButton + connectionText + settingsButton;
       expect(totalConnectionUI).toBeGreaterThan(0);
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should validate URL format in connection form', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Open connection settings
       // TODO: Enter invalid URL (missing protocol)
@@ -43,15 +47,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should require token for connection', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Open connection settings
       // TODO: Enter URL without token
@@ -60,15 +66,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should test connection before saving', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Open connection form
       // TODO: Enter test credentials
@@ -77,15 +85,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should save connection credentials', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Enter connection details
       // TODO: Save credentials
@@ -93,15 +103,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should encrypt and store access token', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Save credentials with token
       // TODO: Verify token is not stored in plain text
@@ -109,15 +121,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should list multiple saved credentials', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Save multiple credentials
       // TODO: Open credential selector
@@ -126,15 +140,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should delete saved credentials', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Save a credential
       // TODO: Delete the credential
@@ -142,15 +158,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should fetch entities after successful connection', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Connect to HA (mock or test instance)
       // TODO: Wait for entities to load
@@ -158,15 +176,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should group entities by domain', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Connect and fetch entities
       // TODO: Open entity selector
@@ -174,15 +194,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should filter entities by domain in selector', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Add a light card
       // TODO: Open entity selector for light card
@@ -190,15 +212,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should search entities in selector', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Open entity selector with many entities
       // TODO: Type search query (e.g., "living room")
@@ -206,15 +230,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should detect stream component for camera support', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Connect to HA
       // TODO: Add picture-entity card
@@ -223,15 +249,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should handle connection failure gracefully', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Enter invalid HA URL
       // TODO: Attempt connection
@@ -240,15 +268,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should handle invalid token gracefully', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Enter valid URL but invalid token
       // TODO: Attempt connection
@@ -256,15 +286,17 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 
   test('should reconnect on network recovery', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    void window;
 
     try {
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // TODO: Establish connection
       // TODO: Simulate network disconnect
@@ -273,7 +305,7 @@ test.describe('Home Assistant Connection', () => {
 
       expect(true).toBe(true); // Placeholder
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 });

@@ -9,6 +9,7 @@ interface IconSelectProps {
   onChange?: (value: string) => void;
   placeholder?: string;
   allowClear?: boolean;
+  'data-testid'?: string;
 }
 
 /**
@@ -20,6 +21,7 @@ export const IconSelect: React.FC<IconSelectProps> = ({
   onChange,
   placeholder = 'mdi:home',
   allowClear = true,
+  'data-testid': testId,
 }) => {
   const [searchText, setSearchText] = useState('');
 
@@ -187,6 +189,7 @@ export const IconSelect: React.FC<IconSelectProps> = ({
             </Text>
           </div>
         }
+        data-testid={testId}
       />
       {renderIconPreview()}
 

@@ -59,7 +59,14 @@ export class PropertiesPanelDSL {
     await tabElement.click();
     // Wait until tab reports selected to avoid hidden content reads
     await expect(tabElement).toHaveAttribute('aria-selected', 'true', { timeout: 3000 });
-    await this.window.waitForTimeout(150); // allow small animation settle
+    await expect
+      .poll(async () => await this.getActiveTab(), { timeout: 3000 })
+      .toBe(tab);
+    await expect(this.panel.locator('.ant-tabs-tabpane-active').first()).toBeVisible({ timeout: 3000 });
+
+    if (tab === 'YAML') {
+      await this.expectYamlEditor();
+    }
   }
 
   /**
@@ -132,7 +139,39 @@ export class PropertiesPanelDSL {
     await expect(nameInput).toBeVisible();
     await nameInput.clear();
     await nameInput.fill(name);
-    await this.window.waitForTimeout(300); // Debounce
+    await expect(nameInput).toHaveValue(name);
+  }
+
+  /**
+   * Set the primary entity for the current card (AntD Select)
+   */
+  async setEntity(entityId: string): Promise<void> {
+    await this.expectVisible();
+    // Ensure field is in view (panel can be scrolled)
+    await this.panel.evaluate((el) => {
+      el.scrollTop = 0;
+    });
+    const select = this.window.getByTestId('entity-select');
+    await expect(select).toBeVisible({ timeout: 10000 });
+
+    // Open dropdown to enable input
+    await select.click();
+
+    const input = select.locator('input[role="combobox"]:not([readonly])').first();
+    const editableCount = await input.count();
+    if (editableCount > 0) {
+      await expect(input).toBeVisible({ timeout: 5000 });
+      await expect(input).toBeEnabled({ timeout: 5000 });
+      await input.fill(entityId);
+    } else {
+      await this.window.keyboard.type(entityId);
+    }
+
+    // Confirm selection
+    await this.window.keyboard.press('Enter');
+
+    // Verify value applied
+    await expect(select).toContainText(entityId, { timeout: 3000 });
   }
 
   /**

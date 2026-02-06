@@ -1,9 +1,12 @@
 import React from 'react';
 import { Card as AntCard, Typography, Slider } from 'antd';
-import { BulbOutlined } from '@ant-design/icons';
 import { LightCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextValue } from '../../hooks/useEntityContext';
+import { AttributeDisplay } from '../AttributeDisplay';
+import { getStateIcon } from '../../services/stateIcons';
+import { MdiIcon } from '../MdiIcon';
 
 const { Text } = Typography;
 
@@ -32,7 +35,12 @@ export const LightCardRenderer: React.FC<LightCardRendererProps> = ({
   const brightnessPercent = Math.round((brightness / 255) * 100);
   const isOn = state === 'on';
 
-  const displayName = card.name || attributes.friendly_name || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Light';
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
+  const displayName =
+    (card.name ? resolvedName : '') ||
+    attributes.friendly_name ||
+    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+    'Light';
 
   // Color based on RGB if available, otherwise yellow for on
   const getLightColor = () => {
@@ -56,6 +64,13 @@ export const LightCardRenderer: React.FC<LightCardRendererProps> = ({
 
   const lightColor = getLightColor();
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const resolvedIcon = getStateIcon({
+    entityId: card.entity,
+    state,
+    stateIcons: card.state_icons,
+    entityAttributes: attributes,
+    fallbackIcon: card.icon || 'mdi:lightbulb-outline',
+  });
 
   return (
     <AntCard
@@ -104,12 +119,12 @@ export const LightCardRenderer: React.FC<LightCardRendererProps> = ({
             transition: 'all 0.3s ease',
           }}
         >
-          <BulbOutlined
-            style={{
-              fontSize: '24px',
-              color: isOn ? lightColor : '#666',
-              transition: 'all 0.3s ease',
-            }}
+          <MdiIcon
+            icon={resolvedIcon.icon}
+            color={resolvedIcon.color || (isOn ? lightColor : '#666')}
+            size={24}
+            testId="light-card-state-icon"
+            style={{ transition: 'all 0.3s ease' }}
           />
         </div>
       </div>
@@ -188,6 +203,15 @@ export const LightCardRenderer: React.FC<LightCardRendererProps> = ({
           </div>
         )}
       </div>
+
+      {card.attribute_display && card.attribute_display.length > 0 && (
+        <AttributeDisplay
+          attributes={attributes}
+          items={card.attribute_display}
+          layout={card.attribute_display_layout}
+          testIdPrefix="attribute-display-light"
+        />
+      )}
 
       {/* Entity ID (when no entity data) */}
       {!entity && card.entity && (

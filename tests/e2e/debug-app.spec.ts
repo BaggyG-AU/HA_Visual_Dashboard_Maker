@@ -8,16 +8,17 @@
 import fs from 'fs';
 import path from 'path';
 import { test, expect } from '@playwright/test';
-import { launchElectronApp, closeElectronApp, waitForAppReady } from '../helpers/electron-helper';
+import { launchWithDSL, close } from '../support';
 
 test.describe('Debug: Application Inspection', () => {
   test('inspect application DOM and take screenshots', async () => {
-    const { app, window } = await launchElectronApp();
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
 
     try {
       console.log('=== Starting App Inspection ===');
 
-      await waitForAppReady(window);
+      await ctx.appDSL.waitUntilReady();
 
       // 1. Get window title
       const title = await window.title();
@@ -85,9 +86,8 @@ test.describe('Debug: Application Inspection', () => {
       });
       console.log('Unique class names (first 50):',classNames.slice(0, 50));
 
-      // 10. Wait a bit for user to see in headed mode
-      console.log('Waiting 3 seconds for inspection (if running in headed mode)...');
-      await window.waitForTimeout(3000);
+      // 10. Ensure the app remains interactive at the end of inspection
+      await expect(window.locator('body')).toBeVisible();
 
       console.log('=== Inspection Complete ===');
 
@@ -96,7 +96,7 @@ test.describe('Debug: Application Inspection', () => {
       expect(html.length).toBeGreaterThan(100);
 
     } finally {
-      await closeElectronApp(app);
+      await close(ctx);
     }
   });
 });

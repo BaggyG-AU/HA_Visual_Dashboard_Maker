@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Select, Tag, Typography, Space, Alert } from 'antd';
 import { WarningOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
+import { logger } from '../services/logger';
 import { HAEntity } from '../types/homeassistant';
 
 const { Text } = Typography;
@@ -11,6 +12,7 @@ interface EntityMultiSelectProps {
   onChange?: (value: string[]) => void;
   placeholder?: string;
   filterDomains?: string[];  // e.g., ['light', 'switch']
+  dataTestId?: string;
 }
 
 /**
@@ -27,6 +29,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
   onChange,
   placeholder = 'Select entities',
   filterDomains,
+  dataTestId,
 }) => {
   const [entities, setEntities] = useState<HAEntity[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,7 +54,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
         setEntities(fetchedEntities);
       } catch (err) {
         setError((err as Error).message);
-        console.error('Failed to load entities:', err);
+        logger.error('Failed to load entities', err);
       } finally {
         setLoading(false);
       }
@@ -212,7 +215,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
   // Show warning if not connected to HA
   if (!isConnected) {
     return (
-      <div>
+      <div data-testid={dataTestId}>
         <Select
           mode="multiple"
           value={safeValue}
@@ -236,7 +239,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
   // Show error if failed to load entities
   if (error) {
     return (
-      <div>
+      <div data-testid={dataTestId}>
         <Select
           mode="multiple"
           value={safeValue}
@@ -275,7 +278,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
   };
 
   return (
-    <div>
+    <div data-testid={dataTestId}>
       <Select
         mode="multiple"
         value={safeValue}

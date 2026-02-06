@@ -26,6 +26,13 @@ import { IconColorDSL } from './dsl/iconColor';
 import { BackgroundCustomizerDSL } from './dsl/backgroundCustomizer';
 import { HapticsDSL } from './dsl/haptics';
 import { SoundsDSL } from './dsl/sounds';
+import { SmartActionsDSL } from './dsl/smartActions';
+import { EntityContextDSL } from './dsl/entityContext';
+import { EntityRemappingDSL } from './dsl/entityRemapping';
+import { AttributeDisplayDSL } from './dsl/attributeDisplay';
+import { ConditionalVisibilityDSL } from './dsl/conditionalVisibility';
+import { StateIconsDSL } from './dsl/stateIcons';
+import { MultiEntityDSL } from './dsl/multiEntity';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -57,6 +64,13 @@ export interface TestContext extends electron.ElectronTestContext {
   backgroundCustomizer: BackgroundCustomizerDSL;
   haptics: HapticsDSL;
   sounds: SoundsDSL;
+  smartActions: SmartActionsDSL;
+  entityContext: EntityContextDSL;
+  entityRemapping: EntityRemappingDSL;
+  attributeDisplay: AttributeDisplayDSL;
+  conditionalVisibility: ConditionalVisibilityDSL;
+  stateIcons: StateIconsDSL;
+  multiEntity: MultiEntityDSL;
 }
 
 /**
@@ -83,5 +97,12 @@ export async function launchWithDSL(): Promise<TestContext> {
     backgroundCustomizer: new BackgroundCustomizerDSL(electronCtx.window),
     haptics: new HapticsDSL(electronCtx.window),
     sounds: new SoundsDSL(electronCtx.window),
+    smartActions: new SmartActionsDSL(electronCtx.window),
+    entityContext: new EntityContextDSL(electronCtx.window),
+    entityRemapping: new EntityRemappingDSL(electronCtx.window),
+    attributeDisplay: new AttributeDisplayDSL(electronCtx.window),
+    conditionalVisibility: new ConditionalVisibilityDSL(electronCtx.window),
+    stateIcons: new StateIconsDSL(electronCtx.window),
+    multiEntity: new MultiEntityDSL(electronCtx.window),
   };
 }

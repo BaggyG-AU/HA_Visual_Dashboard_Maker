@@ -4,6 +4,7 @@ import { LineChartOutlined } from '@ant-design/icons';
 import { HistoryGraphCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
+import { useEntityContextResolver } from '../../hooks/useEntityContext';
 
 const { Text } = Typography;
 
@@ -23,20 +24,24 @@ export const HistoryGraphCardRenderer: React.FC<HistoryGraphCardRendererProps> =
   onClick,
 }) => {
   const { getEntity } = useHAEntities();
+  const resolveContext = useEntityContextResolver();
 
   // Extract card properties
   const entities = card.entities || [];
   const hoursToShow = card.hours_to_show || 24;
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
-  const title = card.title || 'History';
+  const defaultEntityId = entities.length > 0 ? (typeof entities[0] === 'string' ? entities[0] : entities[0].entity) : null;
+  const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId ?? null) : '';
+  const title = (card.title ? resolvedTitle : '') || 'History';
 
   // Get entity data
   const entityData = entities.map(entityConfig => {
     const entityId = typeof entityConfig === 'string' ? entityConfig : entityConfig.entity;
     const entity = getEntity(entityId);
     const attributes = entity?.attributes || {};
-    const name = typeof entityConfig === 'object' && entityConfig.name
-      ? entityConfig.name
+    const nameTemplate = typeof entityConfig === 'object' && entityConfig.name ? entityConfig.name : '';
+    const name = nameTemplate
+      ? resolveContext(nameTemplate, entityId)
       : attributes.friendly_name || entityId.split('.')[1]?.replace(/_/g, ' ') || entityId;
 
     return {

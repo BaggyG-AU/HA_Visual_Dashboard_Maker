@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from '../types/dashboard';
 import { EntitiesCardRenderer } from './cards/EntitiesCardRenderer';
 import { ButtonCardRenderer } from './cards/ButtonCardRenderer';
@@ -33,6 +33,8 @@ import { VerticalStackInCardRenderer } from './cards/VerticalStackInCardRenderer
 import { CustomButtonCardRenderer } from './cards/CustomButtonCardRenderer';
 import { SurveillanceCardRenderer } from './cards/SurveillanceCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
+import { useHAEntities } from '../contexts/HAEntityContext';
+import { evaluateVisibilityConditions } from '../services/conditionalVisibility';
 
 interface BaseCardProps {
   card: Card;
@@ -40,120 +42,154 @@ interface BaseCardProps {
   onClick?: () => void;
 }
 
+const VISIBILITY_TRANSITION_MS = 250;
+
 /**
  * BaseCard component - routes to the appropriate card renderer
  * Supported cards get their specific renderer, unsupported cards get a placeholder
  */
 export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, onClick }) => {
+  const { entities } = useHAEntities();
+  const isVisible = evaluateVisibilityConditions(card.visibility_conditions, entities);
+  const [shouldRender, setShouldRender] = useState(isVisible);
+
+  useEffect(() => {
+    if (isVisible) {
+      setShouldRender(true);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setShouldRender(false);
+    }, VISIBILITY_TRANSITION_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [isVisible]);
+
+  if (!shouldRender) {
+    return null;
+  }
+
+  const transitionStyle: React.CSSProperties = {
+    opacity: isVisible ? 1 : 0,
+    transform: isVisible ? 'translateY(0)' : 'translateY(4px)',
+    pointerEvents: isVisible ? 'auto' : 'none',
+    transition: `opacity ${VISIBILITY_TRANSITION_MS}ms ease, transform ${VISIBILITY_TRANSITION_MS}ms ease`,
+    height: '100%',
+  };
+
   // Check if this is a spacer card
   const isSpacer = card.type === 'spacer' || '_isSpacer' in card;
 
   if (isSpacer) {
-    // Render spacer as a semi-transparent placeholder
     return (
-      <div
-        style={{
-          height: '100%',
-          border: isSelected ? '2px dashed #00d9ff' : '1px dashed #434343',
-          backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.05)' : 'transparent',
-          cursor: 'pointer',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#666',
-          fontSize: '12px',
-          transition: 'all 0.3s ease',
-        }}
-        onClick={onClick}
-      >
-        {isSelected ? 'Spacer (Empty)' : ''}
+      <div data-testid="conditional-visibility-wrapper" data-visible={isVisible ? 'true' : 'false'} style={transitionStyle}>
+        <div
+          style={{
+            height: '100%',
+            border: isSelected ? '2px dashed #00d9ff' : '1px dashed #434343',
+            backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.05)' : 'transparent',
+            cursor: 'pointer',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#666',
+            fontSize: '12px',
+            transition: 'all 0.3s ease',
+          }}
+          onClick={onClick}
+        >
+          {isSelected ? 'Spacer (Empty)' : ''}
+        </div>
       </div>
     );
   }
 
-  // Route to appropriate renderer based on card type
+  let renderedCard: React.ReactNode;
+
   switch (card.type) {
     case 'entities':
-      return <EntitiesCardRenderer card={card as React.ComponentProps<typeof EntitiesCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <EntitiesCardRenderer card={card as React.ComponentProps<typeof EntitiesCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'button':
-      return <ButtonCardRenderer card={card as React.ComponentProps<typeof ButtonCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <ButtonCardRenderer card={card as React.ComponentProps<typeof ButtonCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'glance':
-      return <GlanceCardRenderer card={card as React.ComponentProps<typeof GlanceCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <GlanceCardRenderer card={card as React.ComponentProps<typeof GlanceCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'markdown':
-      return <MarkdownCardRenderer card={card as React.ComponentProps<typeof MarkdownCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <MarkdownCardRenderer card={card as React.ComponentProps<typeof MarkdownCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'gauge':
-      return <GaugeCardRenderer card={card as React.ComponentProps<typeof GaugeCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <GaugeCardRenderer card={card as React.ComponentProps<typeof GaugeCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'light':
-      return <LightCardRenderer card={card as React.ComponentProps<typeof LightCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <LightCardRenderer card={card as React.ComponentProps<typeof LightCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'sensor':
-      return <SensorCardRenderer card={card as React.ComponentProps<typeof SensorCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <SensorCardRenderer card={card as React.ComponentProps<typeof SensorCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'thermostat':
-      return <ThermostatCardRenderer card={card as React.ComponentProps<typeof ThermostatCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <ThermostatCardRenderer card={card as React.ComponentProps<typeof ThermostatCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'conditional':
-      return <ConditionalCardRenderer card={card as React.ComponentProps<typeof ConditionalCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <ConditionalCardRenderer card={card as React.ComponentProps<typeof ConditionalCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'history-graph':
-      return <HistoryGraphCardRenderer card={card as React.ComponentProps<typeof HistoryGraphCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <HistoryGraphCardRenderer card={card as React.ComponentProps<typeof HistoryGraphCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'weather-forecast':
-      return <WeatherForecastCardRenderer card={card as React.ComponentProps<typeof WeatherForecastCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <WeatherForecastCardRenderer card={card as React.ComponentProps<typeof WeatherForecastCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'map':
-      return <MapCardRenderer card={card as React.ComponentProps<typeof MapCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <MapCardRenderer card={card as React.ComponentProps<typeof MapCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'picture':
-      return <PictureCardRenderer card={card as React.ComponentProps<typeof PictureCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <PictureCardRenderer card={card as React.ComponentProps<typeof PictureCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'picture-entity':
-      return <PictureEntityCardRenderer card={card as React.ComponentProps<typeof PictureEntityCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <PictureEntityCardRenderer card={card as React.ComponentProps<typeof PictureEntityCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'picture-glance':
-      return <PictureGlanceCardRenderer card={card as React.ComponentProps<typeof PictureGlanceCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <PictureGlanceCardRenderer card={card as React.ComponentProps<typeof PictureGlanceCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'media-control':
-      return <MediaPlayerCardRenderer card={card as React.ComponentProps<typeof MediaPlayerCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <MediaPlayerCardRenderer card={card as React.ComponentProps<typeof MediaPlayerCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'alarm-panel':
-      return <AlarmPanelCardRenderer card={card as React.ComponentProps<typeof AlarmPanelCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <AlarmPanelCardRenderer card={card as React.ComponentProps<typeof AlarmPanelCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'plant-status':
-      return <PlantStatusCardRenderer card={card as React.ComponentProps<typeof PlantStatusCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <PlantStatusCardRenderer card={card as React.ComponentProps<typeof PlantStatusCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'horizontal-stack':
-      return <HorizontalStackCardRenderer card={card as React.ComponentProps<typeof HorizontalStackCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <HorizontalStackCardRenderer card={card as React.ComponentProps<typeof HorizontalStackCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'vertical-stack':
-      return <VerticalStackCardRenderer card={card as React.ComponentProps<typeof VerticalStackCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <VerticalStackCardRenderer card={card as React.ComponentProps<typeof VerticalStackCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'grid':
-      return <GridCardRenderer card={card as React.ComponentProps<typeof GridCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <GridCardRenderer card={card as React.ComponentProps<typeof GridCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'custom:apexcharts-card':
-      return <ApexChartsCardRenderer card={card as React.ComponentProps<typeof ApexChartsCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <ApexChartsCardRenderer card={card as React.ComponentProps<typeof ApexChartsCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'custom:power-flow-card-plus':
     case 'custom:power-flow-card':
-      return <PowerFlowCardRenderer card={card as React.ComponentProps<typeof PowerFlowCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <PowerFlowCardRenderer card={card as React.ComponentProps<typeof PowerFlowCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'custom:better-thermostat-ui-card':
-      return <BetterThermostatCardRenderer card={card as React.ComponentProps<typeof BetterThermostatCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <BetterThermostatCardRenderer card={card as React.ComponentProps<typeof BetterThermostatCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'custom:mini-graph-card':
-      return <MiniGraphCardRenderer card={card as React.ComponentProps<typeof MiniGraphCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
+      renderedCard = <MiniGraphCardRenderer card={card as React.ComponentProps<typeof MiniGraphCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'custom:bubble-card':
-      return <BubbleCardRenderer card={card as React.ComponentProps<typeof BubbleCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      renderedCard = <BubbleCardRenderer card={card as React.ComponentProps<typeof BubbleCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
 
-    // Mushroom cards - handle all mushroom card types
+    // Mushroom cards
     case 'custom:mushroom-entity-card':
     case 'custom:mushroom-light-card':
     case 'custom:mushroom-fan-card':
@@ -170,33 +206,38 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
     case 'custom:mushroom-number-card':
     case 'custom:mushroom-select-card':
     case 'custom:mushroom-vacuum-card':
-      return <MushroomCardRenderer card={card as React.ComponentProps<typeof MushroomCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      renderedCard = <MushroomCardRenderer card={card as React.ComponentProps<typeof MushroomCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
 
-    // Custom card-mod styling layer
     case 'custom:card-mod':
-      return <CardModCardRenderer card={card as React.ComponentProps<typeof CardModCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
-    // Custom auto-entities
+      renderedCard = <CardModCardRenderer card={card as React.ComponentProps<typeof CardModCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'custom:auto-entities':
-      return <AutoEntitiesCardRenderer card={card as React.ComponentProps<typeof AutoEntitiesCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
-    // Custom vertical-stack-in-card
+      renderedCard = <AutoEntitiesCardRenderer card={card as React.ComponentProps<typeof AutoEntitiesCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'custom:vertical-stack-in-card':
-      return <VerticalStackInCardRenderer card={card as React.ComponentProps<typeof VerticalStackInCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
-
-    // Custom button-card (distinct from built-in button)
+      renderedCard = <VerticalStackInCardRenderer card={card as React.ComponentProps<typeof VerticalStackInCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
     case 'custom:button-card':
-      return <CustomButtonCardRenderer card={card as React.ComponentProps<typeof CustomButtonCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      renderedCard = <CustomButtonCardRenderer card={card as React.ComponentProps<typeof CustomButtonCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
 
     // Surveillance/Camera cards
     case 'custom:surveillance-card':
     case 'custom:frigate-card':
     case 'custom:camera-card':
     case 'custom:webrtc-camera':
-      return <SurveillanceCardRenderer card={card as React.ComponentProps<typeof SurveillanceCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      renderedCard = <SurveillanceCardRenderer card={card as React.ComponentProps<typeof SurveillanceCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
 
     default:
-      // Unsupported card type - show placeholder
-      return <UnsupportedCard card={card} isSelected={isSelected} onClick={onClick} />;
+      renderedCard = <UnsupportedCard card={card} isSelected={isSelected} onClick={onClick} />;
+      break;
   }
+
+  return (
+    <div data-testid="conditional-visibility-wrapper" data-visible={isVisible ? 'true' : 'false'} style={transitionStyle}>
+      {renderedCard}
+    </div>
+  );
 };

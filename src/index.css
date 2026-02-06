@@ -17,3 +17,27 @@ body {
   height: 100vh;
   width: 100vw;
 }
+
+.entity-context-token {
+  color: #7ee787 !important;
+  font-weight: 600;
+  background-color: rgba(126, 231, 135, 0.08);
+  border-radius: 2px;
+}
+
+/* BackgroundCustomizer Select popups:
+   hide leave-transition remnants to prevent visible merged menus. */
+.bg-type-dropdown.ant-slide-up-leave,
+.bg-type-dropdown.ant-slide-up-leave-active,
+.bg-image-position-dropdown.ant-slide-up-leave,
+.bg-image-position-dropdown.ant-slide-up-leave-active,
+.bg-image-size-dropdown.ant-slide-up-leave,
+.bg-image-size-dropdown.ant-slide-up-leave-active,
+.bg-image-repeat-dropdown.ant-slide-up-leave,
+.bg-image-repeat-dropdown.ant-slide-up-leave-active,
+.bg-blend-dropdown.ant-slide-up-leave,
+.bg-blend-dropdown.ant-slide-up-leave-active {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}

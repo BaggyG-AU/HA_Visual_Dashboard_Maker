@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge, Tooltip, Segmented } from 'antd';
-import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined, DatabaseOutlined, SplitCellsOutlined, AppstoreAddOutlined, SettingOutlined } from '@ant-design/icons';
+import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined, DatabaseOutlined, SplitCellsOutlined, AppstoreAddOutlined, SettingOutlined, SwapOutlined } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
@@ -17,7 +17,7 @@ import { SplitViewEditor } from './components/SplitViewEditor';
 import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
-import { HAEntityProvider } from './contexts/HAEntityContext';
+import { HAEntityProvider, useHAEntities } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
 import { SettingsDialog } from './components/SettingsDialog';
 import { ThemePreviewPanel } from './components/ThemePreviewPanel';
@@ -28,8 +28,11 @@ import { useEditorModeStore, EditorMode } from './store/editorModeStore';
 import { logger } from './services/logger';
 import { setSoundSettings } from './services/soundService';
 import { setHapticSettings } from './services/hapticService';
-import type { Card } from './types/dashboard';
+import { entityRemappingService, type EntityMapping } from './services/entityRemapping';
+import type { Card, DashboardConfig } from './types/dashboard';
 import type { LoggingLevel } from './services/settingsService';
+import type { EntityState } from './services/haWebSocketService';
+import EntityRemappingModal from './components/EntityRemappingModal';
 
 const { Header, Content, Sider } = Layout;
 type CardWithInternalLayout = Card & {
@@ -49,9 +52,37 @@ type TestThemeApi = {
   applyThemes: (themesData: TestThemeData) => void;
 };
 
-const isTestEnv =
-  (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1')) ||
-  (typeof window !== 'undefined' && Boolean((window as unknown as { E2E?: boolean }).E2E));
+interface RemapWatcherProps {
+  config: DashboardConfig | null;
+  onAvailableEntities: (entities: EntityState[]) => void;
+  onMissingDetected: (missing: string[]) => void;
+}
+
+const RemapWatcher: React.FC<RemapWatcherProps> = ({ config, onAvailableEntities, onMissingDetected }) => {
+  const { entities } = useHAEntities();
+
+  useEffect(() => {
+    const availableList = Object.values(entities);
+    onAvailableEntities(availableList);
+    if (!config || availableList.length === 0) return;
+    const referenced = entityRemappingService.extractEntityIds(config);
+    const missing = entityRemappingService.detectMissing(referenced, availableList);
+    onMissingDetected(missing);
+  }, [entities, config, onAvailableEntities, onMissingDetected]);
+
+  return null;
+};
+
+const isTestEnv = (): boolean => {
+  if (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1')) {
+    return true;
+  }
+  if (typeof window !== 'undefined') {
+    const testWindow = window as Window & { E2E?: string | boolean; PLAYWRIGHT_TEST?: string | boolean };
+    return Boolean(testWindow.E2E || testWindow.PLAYWRIGHT_TEST);
+  }
+  return false;
+};
 
 const App: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
@@ -69,6 +100,21 @@ const App: React.FC = () => {
   const [livePreviewMode, setLivePreviewMode] = useState<boolean>(false);
   const [tempDashboardPath, setTempDashboardPath] = useState<string | null>(null);
   const [haUrl, setHaUrl] = useState<string>('');
+  const [remapModalVisible, setRemapModalVisible] = useState<boolean>(false);
+  const [missingEntities, setMissingEntities] = useState<string[]>([]);
+  const [availableEntities, setAvailableEntities] = useState<EntityState[]>([]);
+  const [autoRemapPending, setAutoRemapPending] = useState<boolean>(false);
+  const buildRemapDebugState = () => ({
+    remapModalVisible,
+    missingEntities,
+    availableEntitiesCount: availableEntities.length,
+    autoRemapPending,
+    isConnected,
+  });
+  const logRemapDebug = (label: string, extra: Record<string, unknown> = {}) => {
+    if (!isTestEnv()) return;
+    logger.debug('[remap-debug]', label, { ...buildRemapDebugState(), ...extra });
+  };
 
   // Clipboard state for cut/copy/paste operations
   const [clipboard, setClipboard] = useState<{
@@ -113,6 +159,19 @@ const App: React.FC = () => {
     setMode: setEditorMode,
   } = useEditorModeStore();
 
+  // Expose remap debug state in test environments
+  useEffect(() => {
+    if (!isTestEnv() || typeof window === 'undefined') return;
+    const testWindow = window as Window & { __remapDebug?: unknown };
+    const existing = (testWindow.__remapDebug && typeof testWindow.__remapDebug === 'object')
+      ? (testWindow.__remapDebug as Record<string, unknown>)
+      : {};
+    testWindow.__remapDebug = { ...existing, ...buildRemapDebugState() };
+    return () => {
+      delete testWindow.__remapDebug;
+    };
+  }, [remapModalVisible, missingEntities, availableEntities, autoRemapPending, isConnected]);
+
   // Ref for canvas container to apply theme
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
@@ -124,7 +183,6 @@ const App: React.FC = () => {
         currentTheme,
         darkMode
       );
-      console.log('Applied theme to canvas container');
     }
 
     return () => {
@@ -146,9 +204,9 @@ const App: React.FC = () => {
           syncWithHA: syncResult.sync,
         });
 
-        console.log('Loaded theme preferences:', darkModeResult, syncResult);
+        logger.debug('Loaded theme preferences', darkModeResult, syncResult);
       } catch (error) {
-        console.error('Failed to load theme preferences:', error);
+        logger.error('Failed to load theme preferences', error);
       }
     };
 
@@ -157,7 +215,7 @@ const App: React.FC = () => {
 
   // Expose lightweight test hooks for Playwright to inject themes/connection state
   useEffect(() => {
-    if (isTestEnv) {
+    if (isTestEnv()) {
       const testWindow = window as Window & { __testThemeApi?: TestThemeApi };
       testWindow.__testThemeApi = {
         setConnected: (connected: boolean) => setIsConnected(connected),
@@ -190,7 +248,7 @@ const App: React.FC = () => {
     const subscribe = () => {
       unsubscribe = window.electronAPI.haWsSubscribeToThemes((themes) => {
         setAvailableThemes(themes);
-        console.log('Themes updated from Home Assistant');
+        logger.debug('Themes updated from Home Assistant');
       });
     };
 
@@ -216,6 +274,8 @@ const App: React.FC = () => {
           message.success(`Dashboard loaded: ${result.filePath}`);
           // Add to recent files
           await window.electronAPI.addRecentFile(result.filePath);
+          setAutoRemapPending(true);
+          setTimeout(triggerMissingEntityScan, 0);
         }
       }
     } catch (error) {
@@ -244,6 +304,8 @@ const App: React.FC = () => {
           message.success(`Dashboard loaded: ${filePath}`);
           // Add to recent files (moves it to top)
           await window.electronAPI.addRecentFile(filePath);
+          setAutoRemapPending(true);
+          setTimeout(triggerMissingEntityScan, 0);
         }
       } else {
         message.error(`Failed to read file: ${result.error}`);
@@ -282,7 +344,7 @@ const App: React.FC = () => {
         // Create backup before saving
         const backupResult = await window.electronAPI.createBackup(filePath);
         if (backupResult.success && backupResult.backupPath) {
-          console.log('Created backup:', backupResult.backupPath);
+          logger.info('Created backup', backupResult.backupPath);
         }
 
         const yamlContent = yamlService.serializeDashboard(config);
@@ -308,6 +370,29 @@ const App: React.FC = () => {
     message.info(`Switched to ${newTheme ? 'dark' : 'light'} theme`);
   };
 
+  const triggerMissingEntityScan = () => {
+    if (!config) return;
+    const referenced = entityRemappingService.extractEntityIds(config);
+    const missing = entityRemappingService.detectMissing(referenced, availableEntities);
+    setMissingEntities(missing);
+    logRemapDebug('triggerMissingEntityScan', { referencedCount: referenced.length, missingCount: missing.length });
+    setRemapModalVisible(true);
+    setAutoRemapPending(false);
+  };
+
+  const handleManualRemapOpen = () => {
+    if (!config) {
+      message.warning('Load a dashboard first');
+      return;
+    }
+    const referenced = entityRemappingService.extractEntityIds(config);
+    const missing = entityRemappingService.detectMissing(referenced, availableEntities);
+    logRemapDebug('handleManualRemapOpen', { referencedCount: referenced.length, missingCount: missing.length });
+    setMissingEntities(missing);
+    setRemapModalVisible(true);
+    setAutoRemapPending(false);
+  };
+
   const handleShowAbout = () => {
     Modal.info({
       title: 'About HA Visual Dashboard Maker',
@@ -328,7 +413,7 @@ const App: React.FC = () => {
     });
   };
 
-  const handleCardSelect = (cardIndex: number) => {
+  const handleCardSelect = (cardIndex: number | null) => {
     if (selectedViewIndex !== null) {
       setSelectedCard(selectedViewIndex, cardIndex);
     }
@@ -337,14 +422,8 @@ const App: React.FC = () => {
   const handleLayoutChange = (layout: GridLayoutType[]) => {
     if (!config || selectedViewIndex === null) return;
 
-    console.log('=== LAYOUT CHANGE ===');
-    console.log('Live Preview Mode:', livePreviewMode);
-    console.log('New layout from grid:', layout);
-    console.log('ignoreNextLayoutChange:', ignoreNextLayoutChange);
-
     // Skip this layout change if we just added a card
     if (ignoreNextLayoutChange) {
-      console.log('IGNORING layout change (just added a card)');
       setIgnoreNextLayoutChange(false);
       return;
     }
@@ -377,7 +456,6 @@ const App: React.FC = () => {
           }
           return card;
         });
-        console.log('Updated cards with view_layout:', currentView.cards);
       } else {
         // Use internal layout property
         currentView.cards = currentView.cards.map((card, index) => {
@@ -395,7 +473,6 @@ const App: React.FC = () => {
           }
           return card;
         });
-        console.log('Updated cards with internal layout:', currentView.cards);
       }
     }
 
@@ -421,10 +498,6 @@ const App: React.FC = () => {
       return;
     }
 
-    console.log('=== ADDING CARD ===');
-    console.log('Card type:', cardType);
-    console.log('Drop position:', { gridX, gridY });
-
     // Create new card with default properties
     const newCard: CardWithInternalLayout = {
       type: cardType,
@@ -436,8 +509,6 @@ const App: React.FC = () => {
         h: 4,
       },
     };
-
-    console.log('New card object:', newCard);
 
     // Add title for certain card types
     if (['entities', 'glance'].includes(cardType)) {
@@ -454,8 +525,6 @@ const App: React.FC = () => {
 
     currentView.cards.push(newCard);
     updatedViews[selectedViewIndex] = currentView;
-
-    console.log('Updated cards array:', currentView.cards);
 
     // Set flag to ignore the next layout change event
     setIgnoreNextLayoutChange(true);
@@ -475,9 +544,6 @@ const App: React.FC = () => {
   const handleCardUpdate = (updatedCard: Card) => {
     if (!config || selectedViewIndex === null || selectedCardIndex === null) return;
     beginBatchUpdate();
-
-    console.log('=== UPDATING CARD ===');
-    console.log('Updated card:', updatedCard);
 
     const updatedViews = [...config.views];
     const currentView = updatedViews[selectedViewIndex];
@@ -682,13 +748,13 @@ const App: React.FC = () => {
 
   const fetchAndCacheEntities = async () => {
     try {
-      console.log('Fetching entities from Home Assistant...');
+      logger.debug('Fetching entities from Home Assistant');
       const result = await window.electronAPI.haWsFetchEntities();
       if (result.success) {
-        console.log(`Cached ${result.entities?.length || 0} entities`);
+        logger.info(`Cached ${result.entities?.length || 0} entities`);
       }
     } catch (error) {
-      console.error('Failed to fetch entities:', error);
+      logger.error('Failed to fetch entities', error);
       // Don't show error to user - this is a background operation
     }
   };
@@ -697,14 +763,14 @@ const App: React.FC = () => {
     if (!isConnected) return;
 
     try {
-      console.log('Fetching themes from Home Assistant...');
+      logger.debug('Fetching themes from Home Assistant');
       const result = await window.electronAPI.haWsGetThemes();
       if (result.success && result.themes) {
         setAvailableThemes(result.themes);
-        console.log(`Loaded ${Object.keys(result.themes.themes || {}).length} themes from HA`);
+        logger.info(`Loaded ${Object.keys(result.themes.themes || {}).length} themes from HA`);
       }
     } catch (error) {
-      console.error('Failed to fetch themes:', error);
+      logger.error('Failed to fetch themes', error);
       // Don't show error to user - this is a background operation
     }
   };
@@ -734,7 +800,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // Disable Ant motion in automated tests to avoid hidden/animating portals
-    if (isTestEnv) {
+    if (isTestEnv()) {
       document.body.classList.add('ant-motion-disabled');
     }
   }, []);
@@ -893,10 +959,6 @@ const App: React.FC = () => {
     try {
       message.loading({ content: 'Creating temporary dashboard...', key: 'livepreview' });
 
-      // Debug: Log current config to see if layout is preserved
-      console.log('=== ENTERING LIVE PREVIEW ===');
-      console.log('Current config before creating temp dashboard:', JSON.stringify(config, null, 2));
-
       // Create temporary dashboard in HA via IPC
       const result = await window.electronAPI.haWsCreateTempDashboard(config);
       if (!result.success || !result.tempPath) {
@@ -921,7 +983,7 @@ const App: React.FC = () => {
           message.info('Temporary dashboard deleted');
         }
       } catch (error) {
-        console.error('Failed to delete temp dashboard:', error);
+        logger.error('Failed to delete temp dashboard', error);
       }
     }
 
@@ -969,7 +1031,7 @@ const App: React.FC = () => {
         const { theme } = await window.electronAPI.getTheme();
         setIsDarkTheme(theme === 'dark');
       } catch (error) {
-        console.error('Failed to load theme preference:', error);
+        logger.error('Failed to load theme preference', error);
         // Default to dark theme if settings service is not available
         setIsDarkTheme(true);
       }
@@ -981,7 +1043,7 @@ const App: React.FC = () => {
         const lastUsedResult = await window.electronAPI.credentialsGetLastUsed();
         if (lastUsedResult.success && lastUsedResult.credential) {
           const { url, token, name } = lastUsedResult.credential;
-          console.log(`Auto-reconnecting to: ${name} (${url})`);
+          logger.info(`Auto-reconnecting to: ${name} (${url})`);
 
           haConnectionService.setConfig({ url, token });
 
@@ -991,24 +1053,24 @@ const App: React.FC = () => {
             if (wsResult.success) {
               setHaUrl(url);
               setIsConnected(true);
-              console.log('Successfully restored HA connection from saved credentials');
+              logger.info('Successfully restored HA connection from saved credentials');
 
               // Fetch and cache entities on startup (with small delay to ensure WS is stable)
               setTimeout(async () => {
                 try {
                   await fetchAndCacheEntities();
-                  console.log('Entity cache updated on startup');
+                  logger.debug('Entity cache updated on startup');
                   await fetchThemes();
-                  console.log('Themes loaded on startup');
+                  logger.debug('Themes loaded on startup');
                 } catch (err) {
-                  console.error('Failed to fetch entities on startup:', err);
+                  logger.error('Failed to fetch entities on startup', err);
                 }
               }, 500);
             } else {
-              console.error('Failed to reconnect WebSocket:', wsResult.error);
+              logger.error('Failed to reconnect WebSocket', wsResult.error);
             }
           } catch (wsError) {
-            console.error('Failed to reconnect WebSocket:', wsError);
+            logger.error('Failed to reconnect WebSocket', wsError);
           }
         } else {
           // Fallback to old settings method for backward compatibility
@@ -1021,29 +1083,29 @@ const App: React.FC = () => {
               if (wsResult.success) {
                 setHaUrl(saved.url);
                 setIsConnected(true);
-                console.log('Restored HA connection from old settings:', saved.url);
+                logger.info('Restored HA connection from old settings', saved.url);
 
                 // Fetch and cache entities on startup (with small delay to ensure WS is stable)
                 setTimeout(async () => {
                   try {
                     await fetchAndCacheEntities();
-                    console.log('Entity cache updated on startup');
+                    logger.debug('Entity cache updated on startup');
                     await fetchThemes();
-                    console.log('Themes loaded on startup');
+                    logger.debug('Themes loaded on startup');
                   } catch (err) {
-                    console.error('Failed to fetch entities on startup:', err);
+                    logger.error('Failed to fetch entities on startup', err);
                   }
                 }, 500);
               } else {
-                console.error('Failed to reconnect WebSocket:', wsResult.error);
+                logger.error('Failed to reconnect WebSocket', wsResult.error);
               }
             } catch (wsError) {
-              console.error('Failed to reconnect WebSocket:', wsError);
+              logger.error('Failed to reconnect WebSocket', wsError);
             }
           }
         }
       } catch (error) {
-        console.error('Failed to load HA connection:', error);
+        logger.error('Failed to load HA connection', error);
       }
     };
 
@@ -1058,7 +1120,7 @@ const App: React.FC = () => {
         const result = await window.electronAPI.getVerboseUIDebug();
         setVerboseUIDebug(result.verbose);
       } catch (error) {
-        console.error('Failed to load verbose UI flag', error);
+        logger.error('Failed to load verbose UI flag', error);
       }
     };
     loadVerbose();
@@ -1071,7 +1133,7 @@ const App: React.FC = () => {
         const result = await window.electronAPI.getLoggingLevel();
         logger.setLevel(result.level as LoggingLevel);
       } catch (error) {
-        console.error('Failed to load logging level', error);
+        logger.error('Failed to load logging level', error);
       }
     };
     loadLogging();
@@ -1084,7 +1146,7 @@ const App: React.FC = () => {
         const result = await window.electronAPI.getHapticSettings();
         setHapticSettings({ enabled: result.enabled, intensity: result.intensity });
       } catch (error) {
-        console.error('Failed to load haptic settings', error);
+        logger.error('Failed to load haptic settings', error);
       }
     };
     loadHaptics();
@@ -1097,7 +1159,7 @@ const App: React.FC = () => {
         const result = await window.electronAPI.getSoundSettings();
         setSoundSettings({ enabled: result.enabled, volume: result.volume });
       } catch (error) {
-        console.error('Failed to load sound settings', error);
+        logger.error('Failed to load sound settings', error);
       }
     };
     loadSounds();
@@ -1198,6 +1260,17 @@ const App: React.FC = () => {
       }}
     >
       <HAEntityProvider enabled={isConnected}>
+      <RemapWatcher
+        config={config}
+        onAvailableEntities={(entities) => setAvailableEntities(entities)}
+        onMissingDetected={(missing) => {
+          setMissingEntities(missing);
+          if (missing.length > 0 && autoRemapPending) {
+            setRemapModalVisible(true);
+            setAutoRemapPending(false);
+          }
+        }}
+      />
       <Layout
         data-testid="app-shell"
         className="app-container"
@@ -1419,6 +1492,15 @@ const App: React.FC = () => {
                           Deploy
                         </Button>
                       </Tooltip>
+                      <Tooltip title="Remap missing entities">
+                        <Button
+                          icon={<SwapOutlined />}
+                          onClick={handleManualRemapOpen}
+                          data-testid="remap-open-manual"
+                        >
+                          Remap
+                        </Button>
+                      </Tooltip>
                       <Tooltip title="Preview dashboard live in Home Assistant with drag-and-drop editing">
                         <Button
                           type={livePreviewMode ? 'primary' : 'default'}
@@ -1548,6 +1630,27 @@ const App: React.FC = () => {
         onCreateFromEntityType={handleCreateFromEntityType}
         isConnected={isConnected}
       />
+      <EntityRemappingModal
+        visible={remapModalVisible}
+        missingEntities={missingEntities}
+        availableEntities={availableEntities}
+        dashboardConfig={config}
+        onClose={() => {
+          setRemapModalVisible(false);
+        }}
+        onApply={(updatedConfig, mappings) => {
+          if (isTestEnv() && typeof window !== 'undefined') {
+            const testWindow = window as Window & { __remapDebug?: Record<string, unknown> };
+            const existing = (testWindow.__remapDebug && typeof testWindow.__remapDebug === 'object')
+              ? (testWindow.__remapDebug as Record<string, unknown>)
+              : {};
+            testWindow.__remapDebug = { ...existing, remapOnApplyInvoked: true };
+          }
+          setRemapModalVisible(false);
+          updateConfig(updatedConfig);
+          message.success(`Mapped ${mappings.length} entit${mappings.length === 1 ? 'y' : 'ies'}`);
+        }}
+      />
       {verboseUIDebug && (
         <div
           data-testid="verbose-ui-overlay"
@@ -1569,6 +1672,16 @@ const App: React.FC = () => {
           <div>Status: {isConnected ? 'Connected' : 'Offline'}</div>
           <div>File: {filePath || 'Untitled'}</div>
         </div>
+      )}
+      {isTestEnv() && (
+        <div
+          data-testid="remap-debug-state"
+          data-visible={remapModalVisible ? '1' : '0'}
+          data-missing-count={missingEntities.length}
+          data-available-count={availableEntities.length}
+          data-auto-remap-pending={autoRemapPending ? '1' : '0'}
+          style={{ display: 'none' }}
+        />
       )}
       </HAEntityProvider>
     </ConfigProvider>

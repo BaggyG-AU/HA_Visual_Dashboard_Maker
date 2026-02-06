@@ -45,6 +45,74 @@ Prefer enabling mocks in `beforeEach` inside specs; keep data sets small/determi
 - Storage isolation: each test auto-creates a temp user data dir; no manual cleanup needed beyond `close(ctx)`.
 - If Electron fails to launch with an error like `bad option: --remote-debugging-port=0`, ensure `ELECTRON_RUN_AS_NODE` is not set in the environment (this repo’s Electron launchers remove it defensively).
 
+## Flakiness Stabilization Runbook
+
+Use this workflow for timeout-heavy or cross-spec flaky failures.
+
+1. Confirm harness consistency:
+   - E2E specs should use `launchWithDSL()` and `close(ctx)`.
+2. Remove sleep-driven waits:
+   - Replace `waitForTimeout` with state-based DSL waits and `expect.poll`.
+3. Fix at abstraction boundary:
+   - If many failures point to one helper/DSL method, fix that method first.
+4. Preserve diagnostics:
+   - Keep `--trace=retain-on-failure`.
+   - Attach state metadata (`testInfo.attach`) for hard-to-reproduce readiness issues.
+5. Stabilize before broad reruns:
+   - Run targeted 1x, then targeted 5x loop, then full suite.
+6. Run guardrails before signoff:
+   - `npm run test:e2e:guardrails`
+
+### Recommended Commands
+
+```bash
+# Targeted with trace
+npx playwright test <spec-or-grep> --project=electron-e2e --workers=1 --trace=retain-on-failure
+
+# Stability loop (Linux/macOS)
+for i in 1 2 3 4 5; do npx playwright test <spec-or-grep> --project=electron-e2e --workers=1 --trace=retain-on-failure || break; done
+
+# Stability loop (PowerShell)
+1..5 | ForEach-Object { npx playwright test <spec-or-grep> --project=electron-e2e --workers=1 --trace=retain-on-failure; if ($LASTEXITCODE -ne 0) { break } }
+
+# Full E2E regression
+npx playwright test --project=electron-e2e --workers=1 --trace=retain-on-failure
+```
+
+### Artifact Review
+
+```bash
+# Open an individual failure trace
+npx playwright show-trace test-results/artifacts/<failure-dir>/trace.zip
+```
+
+## CI Loop Test (Flakiness Focus)
+
+Use this when you need a CI-style repeat full pass to surface intermittent failures.
+The goal is to identify tests that pass in one run and fail in another, then focus
+diagnosis on the tests and helpers that are inconsistent. When diagnosing flakes,
+review relevant specs, DSL/helpers, and product code as needed, and research online
+before proposing fixes.
+
+### Command
+
+```bash
+for i in 1 2 3; do
+  echo "===== FULL SUITE LOOP $i ====="
+  npx playwright test --project=electron-e2e --workers=1 --trace=retain-on-failure || break
+done
+```
+
+### How to Use Results
+
+1. Compare pass/fail across loops and list any tests that are inconsistent.
+2. For each inconsistent test, inspect traces/screenshots and then:
+   - reuse existing patterns in `tests/support/dsl/**` before creating new helpers
+   - validate selectors/waits against `docs/testing/TESTING_STANDARDS.md`
+   - consider product behavior if the UI is inconsistent
+   - research online for framework-specific issues (Playwright/Electron/AntD)
+3. Propose fixes that address root causes (not just timing).
+
 ## Standards
 
 See `docs/testing/TESTING_STANDARDS.md` for required conventions (selectors, waits, DSL boundaries, mocking rules).

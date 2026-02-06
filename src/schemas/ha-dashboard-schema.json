@@ -226,6 +226,9 @@
                   "secondary_info": {
                     "type": "string",
                     "enum": ["entity-id", "last-changed", "last-triggered", "last-updated", "none"]
+                  },
+                  "visibility_conditions": {
+                    "$ref": "#/definitions/visibilityConditions"
                   }
                 },
                 "required": ["entity"],
@@ -233,6 +236,61 @@
               }
             ]
           }
+        },
+        "visibility_conditions": {
+          "$ref": "#/definitions/visibilityConditions",
+          "description": "Conditional visibility rules for cards/entities"
+        },
+        "attribute_display": {
+          "type": "array",
+          "description": "Attribute display configuration for entity attributes",
+          "items": {
+            "type": "object",
+            "properties": {
+              "attribute": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "format": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["number", "boolean", "string", "timestamp", "json"]
+                  },
+                  "precision": {
+                    "type": "number"
+                  },
+                  "unit": {
+                    "type": "string"
+                  },
+                  "trueLabel": {
+                    "type": "string"
+                  },
+                  "falseLabel": {
+                    "type": "string"
+                  },
+                  "maxLength": {
+                    "type": "number"
+                  },
+                  "timestampMode": {
+                    "type": "string",
+                    "enum": ["relative", "absolute"]
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "required": ["attribute"],
+            "additionalProperties": true
+          }
+        },
+        "attribute_display_layout": {
+          "type": "string",
+          "enum": ["inline", "stacked", "table"],
+          "description": "Layout option for attribute display"
         },
         "name": {
           "type": "string",
@@ -245,6 +303,39 @@
         "icon": {
           "type": "string",
           "description": "MDI icon (e.g., mdi:lightbulb)"
+        },
+        "state_icons": {
+          "type": "object",
+          "description": "State-based icon mapping with optional default fallback",
+          "patternProperties": {
+            ".*": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "description": "MDI icon shorthand (e.g., mdi:fire)"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "icon": {
+                      "type": "string"
+                    },
+                    "color": {
+                      "type": "string"
+                    },
+                    "size": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "icon"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
         },
         "image": {
           "type": "string",
@@ -281,6 +372,54 @@
         "double_tap_action": {
           "$ref": "#/definitions/action",
           "description": "Action on double tap"
+        },
+        "smart_defaults": {
+          "type": "boolean",
+          "description": "HAVDM: Enable smart default tap_action resolution",
+          "default": false
+        },
+        "multi_entity_mode": {
+          "type": "string",
+          "enum": ["individual", "aggregate", "batch"],
+          "description": "HAVDM: Multi-entity rendering mode"
+        },
+        "aggregate_function": {
+          "type": "string",
+          "enum": ["all_on", "any_on", "all_off", "any_off", "count_on", "average_state", "min_state", "max_state"],
+          "description": "HAVDM: Aggregate function used in aggregate mode"
+        },
+        "batch_actions": {
+          "type": "array",
+          "description": "HAVDM: Batch actions available in batch mode",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": ["turn_on", "turn_off", "toggle", "set_state", "call_service"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["turn_on", "turn_off", "toggle", "set_state", "call_service"]
+                  },
+                  "value": {
+                    "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }]
+                  },
+                  "service": {
+                    "type": "string"
+                  },
+                  "service_data": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "required": ["type"],
+                "additionalProperties": false
+              }
+            ]
+          }
         },
         "cards": {
           "type": "array",
@@ -469,6 +608,75 @@
         }
       },
       "additionalProperties": true
+    },
+    "visibilityCondition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "type": "string",
+              "enum": [
+                "state_equals",
+                "state_not_equals",
+                "state_in",
+                "state_not_in",
+                "attribute_equals",
+                "attribute_greater_than",
+                "attribute_less_than",
+                "entity_exists"
+              ]
+            },
+            "entity": {
+              "type": "string",
+              "pattern": "^[a-z_]+\\.[a-z0-9_]+$"
+            },
+            "attribute": {
+              "type": "string"
+            },
+            "value": {
+              "oneOf": [
+                { "type": "string" },
+                { "type": "number" },
+                { "type": "boolean" }
+              ]
+            },
+            "values": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "number" },
+                  { "type": "boolean" }
+                ]
+              }
+            }
+          },
+          "required": ["condition", "entity"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "type": "string",
+              "enum": ["and", "or"]
+            },
+            "conditions": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/visibilityCondition" }
+            }
+          },
+          "required": ["condition", "conditions"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "visibilityConditions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/visibilityCondition"
+      }
     }
   }
 }

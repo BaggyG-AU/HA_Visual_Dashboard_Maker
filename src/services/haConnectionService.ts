@@ -5,6 +5,7 @@ import {
   HAConnectionStatus,
   EntityDomain,
 } from '../types/homeassistant';
+import { logger } from './logger';
 
 /**
  * Service for connecting to and interacting with Home Assistant
@@ -84,7 +85,7 @@ class HAConnectionService {
     // Return cached entities if available and not expired
     const now = Date.now();
     if (!forceRefresh && this.entitiesCache.length > 0 && (now - this.lastFetchTime) < this.cacheDuration) {
-      console.log('Returning cached entities');
+      logger.debug('Returning cached entities');
       return this.entitiesCache;
     }
 
@@ -102,7 +103,7 @@ class HAConnectionService {
       this.entitiesCache = entities;
       this.lastFetchTime = now;
 
-      console.log(`Fetched ${entities.length} entities from Home Assistant`);
+      logger.info(`Fetched ${entities.length} entities from Home Assistant`);
       return entities;
     } catch (error) {
       throw new Error(`Failed to fetch entities: ${(error as Error).message}`);
@@ -234,7 +235,7 @@ class HAConnectionService {
       const config = await this.fetchConfig();
       return config.components.includes(componentName);
     } catch (error) {
-      console.error(`Failed to check component ${componentName}:`, error);
+      logger.error(`Failed to check component ${componentName}`, error);
       return false;
     }
   }

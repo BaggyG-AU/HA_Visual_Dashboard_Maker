@@ -132,17 +132,17 @@
    - User-triggered bulk remapping
    - Mapping persistence for reuse
 
-4. **Entity Attribute Display** - 3-4 days
+4. **Entity Attribute Display** - 3-4 days (✅ complete 2026-02-04)
    - Alternative to `secondary_info`
    - Select specific attributes to display
    - Format attribute values (units, precision)
 
-5. **Conditional Entity Visibility** - 4-5 days
+5. **Conditional Entity Visibility** - 4-5 days (✅ complete 2026-02-04)
    - Show/hide entities based on state
    - Conditions: state equals, state in list, attribute value
    - AND/OR logic for multiple conditions
 
-6. **Entity State Icons** - 3-4 days
+6. **Entity State Icons** - 3-4 days (✅ complete 2026-02-05)
    - Dynamic icons based on entity state
    - State-to-icon mapping
    - Icon animations on state change
