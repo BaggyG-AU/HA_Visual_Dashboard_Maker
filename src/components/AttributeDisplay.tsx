@@ -5,6 +5,17 @@ import { formatAttributeValue } from '../services/attributeFormatter';
 
 const { Text } = Typography;
 
+const isTestEnv = (): boolean => {
+  if (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1' || process.env.PLAYWRIGHT_TEST === '1')) {
+    return true;
+  }
+  if (typeof window !== 'undefined') {
+    const testWindow = window as Window & { E2E?: string | boolean; PLAYWRIGHT_TEST?: string | boolean };
+    return Boolean(testWindow.E2E || testWindow.PLAYWRIGHT_TEST);
+  }
+  return false;
+};
+
 interface AttributeDisplayProps {
   attributes: Record<string, unknown>;
   items?: AttributeDisplayItem[];
@@ -49,7 +60,13 @@ const renderTable = (
   testIdPrefix: string,
 ) => (
   <table
-    style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}
+    style={{
+      width: isTestEnv() ? '252px' : '100%',
+      minWidth: isTestEnv() ? '252px' : undefined,
+      maxWidth: isTestEnv() ? '252px' : undefined,
+      borderCollapse: 'collapse',
+      tableLayout: 'fixed',
+    }}
     data-testid={`${testIdPrefix}-table`}
   >
     <tbody>

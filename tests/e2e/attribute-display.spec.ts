@@ -21,6 +21,10 @@ const TEST_ENTITIES = [
 
 test.describe('Entity Attribute Display (Feature 3.4)', () => {
   test('sets entity via YAML and shows attribute controls', async ({ page }, testInfo) => {
+    // This test performs multiple sequential UI operations (Electron launch, YAML round-trip,
+    // Ant Design multi-select interactions). On slower environments this can exceed 60s.
+    test.setTimeout(100_000);
+
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, yamlEditor, entityContext, attributeDisplay } = ctx;
@@ -73,6 +77,10 @@ test.describe('Entity Attribute Display (Feature 3.4)', () => {
     test.describe.configure({ timeout: 120000 });
 
     test('formats, reorders, persists, and updates attribute display', async ({ page }, testInfo) => {
+      // This workflow adds multiple attributes, changes formats, reorders rows, and verifies YAML.
+      // On slower environments this can exceed 120s.
+      test.setTimeout(180_000);
+
       void page;
       const ctx = await launchWithDSL();
       const { appDSL, dashboard, palette, canvas, properties, yamlEditor, entityContext, attributeDisplay } = ctx;

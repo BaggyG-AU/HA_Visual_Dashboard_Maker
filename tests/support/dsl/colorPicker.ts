@@ -153,10 +153,30 @@ export class ColorPickerDSL {
     }
 
     const swatch = this.getColorSwatch(inputTestId);
-    await swatch.scrollIntoViewIfNeeded();
     await expect(swatch).toBeVisible();
-    await swatch.click({ trial: false, force: true });
-    await this.expectVisible(inputTestId);
+    try {
+      await swatch.click({ trial: false, force: true });
+    } catch (error) {
+      // Re-query and retry in case the element was re-rendered.
+      const retrySwatch = this.getColorSwatch(inputTestId);
+      await expect(retrySwatch).toBeVisible();
+      await retrySwatch.click({ trial: false, force: true });
+    }
+
+    try {
+      await this.expectVisible(inputTestId);
+    } catch {
+      // If a portal dropdown is still open, close it and retry via input + keyboard.
+      await this.window.keyboard.press('Escape');
+      const input = this.window.getByTestId(inputTestId);
+      if (await input.isVisible().catch(() => false)) {
+        await input.click({ force: true });
+      } else {
+        await this.focusSwatch(inputTestId);
+        await this.window.keyboard.press('Enter');
+      }
+      await this.expectVisible(inputTestId, 5000);
+    }
   }
 
   /**

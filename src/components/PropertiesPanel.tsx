@@ -515,6 +515,25 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       }
     }
 
+    if (card.type === 'custom:swiper-card') {
+      const hasSlides = Array.isArray((normalized as { slides?: unknown }).slides);
+      const cards = (normalized as { cards?: unknown }).cards;
+      if (!hasSlides && Array.isArray(cards)) {
+        (normalized as { slides?: unknown }).slides = cards.map((child: unknown) => ({
+          cards: child ? [child] : [],
+          alignment: 'center',
+          allow_navigation: true,
+        }));
+      } else if (hasSlides) {
+        const slides = (normalized as { slides?: unknown }).slides as Array<Record<string, unknown>>;
+        (normalized as { slides?: unknown }).slides = slides.map((slide) => ({
+          alignment: slide.alignment ?? 'center',
+          allow_navigation: slide.allow_navigation ?? true,
+          ...slide,
+        }));
+      }
+    }
+
     return normalized;
   };
 
@@ -691,7 +710,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     }
   }, [yamlContent, activeTab]);
 
-  // Reset form and YAML when card changes
+  // Reset form and YAML when card SELECTION changes (different card index selected).
+  // IMPORTANT: Only depend on cardIndex, NOT card. With immutable state updates,
+  // the card reference changes on every edit (handleCardUpdate creates new objects
+  // via .map()). Including `card` in deps would cause this effect to fire during
+  // normal editing, creating a feedback loop:
+  //   YAML change → onChange → new card ref → useEffect → setYamlContent → Monaco
+  //   update → onDidChangeModelContent → handleYamlChange → onChange → ...
+  // This loop overwhelms React's render pipeline and crashes the app (white screen).
   useEffect(() => {
     if (card) {
       // Clear pending timers when switching cards
@@ -710,7 +736,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       setBackgroundConfig(parseBackgroundConfig(styleValue));
       lastStyleValueRef.current = styleValue;
     }
-  }, [card, cardIndex, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardIndex, form]);
 
   // Clear timers on unmount
   useEffect(() => {
@@ -747,7 +774,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     isUpdatingFromForm.current = true;
 
     const values = form.getFieldsValue();
-    const updatedCard = { ...card, ...values };
+    const updatedCard = { ...card, ...values } as Card;
+    if (updatedCard.type === 'custom:swiper-card') {
+      const typed = updatedCard as { slides?: unknown; cards?: unknown };
+      if (Array.isArray(typed.slides) && typed.slides.length > 0) {
+        delete typed.cards;
+      }
+    }
     const styleValue = (values.style as string | undefined) ?? '';
     if (skipStyleSyncRef.current) {
       skipStyleSyncRef.current = false;
@@ -826,6 +859,33 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     }
   };
 
+  const handleTabChange = (nextKey: string) => {
+    if (activeTab === nextKey) {
+      return;
+    }
+
+    if (activeTab === 'yaml' && nextKey !== 'yaml') {
+      const latestYaml = monacoEditorRef.current?.getValue() ?? yamlContent;
+      setYamlContent(latestYaml);
+      isUpdatingFromYaml.current = true;
+      const parsedCard = yamlToCard(latestYaml);
+      if (parsedCard) {
+        form.setFieldsValue(normalizeCardForForm(parsedCard));
+        onChange(parsedCard);
+        onCommit(parsedCard);
+        lastCommittedCardRef.current = parsedCard;
+        const styleValue = (parsedCard as { style?: string }).style ?? '';
+        setBackgroundConfig(parseBackgroundConfig(styleValue));
+        lastStyleValueRef.current = styleValue;
+      }
+      setTimeout(() => {
+        isUpdatingFromYaml.current = false;
+      }, 0);
+    }
+
+    setActiveTab(nextKey);
+  };
+
   if (!card) {
     return (
       <div style={{ padding: '16px', color: 'white', height: '100%' }}>
@@ -887,7 +947,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
       <Tabs
         activeKey={activeTab}
-        onChange={setActiveTab}
+        onChange={handleTabChange}
         items={[
           {
             key: 'form',
@@ -1928,6 +1988,305 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
+          {card.type === 'custom:swiper-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input placeholder="Carousel title (optional)" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Carousel Controls</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Pagination Type</span>}
+                name={['pagination', 'type']}
+              >
+                <Select
+                  placeholder="Select pagination type"
+                  options={[
+                    { value: 'bullets', label: 'Bullets' },
+                    { value: 'fraction', label: 'Fraction' },
+                    { value: 'progressbar', label: 'Progress Bar' },
+                    { value: 'custom', label: 'Custom' },
+                  ]}
+                  data-testid="swiper-pagination-type"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Pagination Clickable</span>}
+                name={['pagination', 'clickable']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="swiper-pagination-clickable" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Navigation Arrows</span>}
+                name="navigation"
+                valuePropName="checked"
+              >
+                <Switch data-testid="swiper-navigation-toggle" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Autoplay</span>}
+                name={['autoplay', 'enabled']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="swiper-autoplay-toggle" />
+              </Form.Item>
+
+              <Form.Item
+                noStyle
+                shouldUpdate={(prev, curr) => prev.autoplay?.enabled !== curr.autoplay?.enabled}
+              >
+                {() => {
+                  const autoplayEnabled = Boolean(form.getFieldValue(['autoplay', 'enabled']));
+                  return (
+                    <>
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Autoplay Delay (ms)</span>}
+                        name={['autoplay', 'delay']}
+                      >
+                        <InputNumber min={0} style={{ width: '100%' }} disabled={!autoplayEnabled} data-testid="swiper-autoplay-delay" />
+                      </Form.Item>
+
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Pause on Interaction</span>}
+                        name={['autoplay', 'pause_on_interaction']}
+                        valuePropName="checked"
+                      >
+                        <Switch disabled={!autoplayEnabled} data-testid="swiper-autoplay-pause" />
+                      </Form.Item>
+
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Stop on Last Slide</span>}
+                        name={['autoplay', 'stop_on_last_slide']}
+                        valuePropName="checked"
+                      >
+                        <Switch disabled={!autoplayEnabled} data-testid="swiper-autoplay-stop-last" />
+                      </Form.Item>
+                    </>
+                  );
+                }}
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Transition Effect</span>}
+                name="effect"
+              >
+                <Select
+                  placeholder="Select effect"
+                  options={[
+                    { value: 'slide', label: 'Slide' },
+                    { value: 'fade', label: 'Fade' },
+                    { value: 'cube', label: 'Cube' },
+                    { value: 'coverflow', label: 'Coverflow' },
+                    { value: 'flip', label: 'Flip' },
+                  ]}
+                  data-testid="swiper-effect"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Slides Per View</span>}
+                name="slides_per_view"
+              >
+                <Select
+                  placeholder="Select slides per view"
+                  options={[
+                    { value: 1, label: '1' },
+                    { value: 2, label: '2' },
+                    { value: 3, label: '3' },
+                    { value: 4, label: '4' },
+                    { value: 'auto', label: 'Auto' },
+                  ]}
+                  data-testid="swiper-slides-per-view"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Space Between (px)</span>}
+                name="space_between"
+              >
+                <InputNumber min={0} style={{ width: '100%' }} data-testid="swiper-space-between" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Loop Slides</span>}
+                name="loop"
+                valuePropName="checked"
+              >
+                <Switch data-testid="swiper-loop-toggle" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Direction</span>}
+                name="direction"
+              >
+                <Select
+                  placeholder="Select direction"
+                  options={[
+                    { value: 'horizontal', label: 'Horizontal' },
+                    { value: 'vertical', label: 'Vertical' },
+                  ]}
+                  data-testid="swiper-direction"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Centered Slides</span>}
+                name="centered_slides"
+                valuePropName="checked"
+              >
+                <Switch data-testid="swiper-centered-toggle" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Free Mode</span>}
+                name="free_mode"
+                valuePropName="checked"
+              >
+                <Switch data-testid="swiper-free-mode-toggle" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Slides</Text>
+
+              <Form.List name="slides">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                          Slide {index + 1}
+                        </Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Alignment</span>}
+                          name={[field.name, 'alignment']}
+                        >
+                          <Select
+                            placeholder="Select alignment"
+                            options={[
+                              { value: 'top', label: 'Top' },
+                              { value: 'center', label: 'Center' },
+                              { value: 'bottom', label: 'Bottom' },
+                            ]}
+                            data-testid={`swiper-slide-${index}-alignment`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Allow Navigation</span>}
+                          name={[field.name, 'allow_navigation']}
+                          valuePropName="checked"
+                        >
+                          <Switch data-testid={`swiper-slide-${index}-allow-navigation`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Autoplay Delay Override (ms)</span>}
+                          name={[field.name, 'autoplay_delay']}
+                        >
+                          <InputNumber min={0} style={{ width: '100%' }} data-testid={`swiper-slide-${index}-autoplay-delay`} />
+                        </Form.Item>
+
+                        <Form.Item shouldUpdate>
+                          {() => {
+                            const slideBackground = form.getFieldValue(['slides', field.name, 'background']);
+                            const hasCustomBackground = Boolean(slideBackground);
+                            return (
+                              <>
+                                <Form.Item label={<span style={{ color: 'white' }}>Custom Background</span>} colon={false}>
+                                  <Switch
+                                    checked={hasCustomBackground}
+                                    onChange={(checked) => {
+                                      const slides = form.getFieldValue('slides') || [];
+                                      const updatedSlides = [...slides];
+                                      const currentSlide = updatedSlides[field.name] || {};
+                                      if (checked) {
+                                        updatedSlides[field.name] = {
+                                          ...currentSlide,
+                                          background: currentSlide.background || { ...DEFAULT_BACKGROUND_CONFIG },
+                                        };
+                                      } else {
+                                        const { background, ...rest } = currentSlide;
+                                        updatedSlides[field.name] = rest;
+                                      }
+                                      form.setFieldsValue({ slides: updatedSlides });
+                                      handleValuesChange();
+                                    }}
+                                    data-testid={`swiper-slide-${index}-background-toggle`}
+                                  />
+                                </Form.Item>
+
+                                {hasCustomBackground && (
+                                  <Form.Item
+                                    name={[field.name, 'background']}
+                                    valuePropName="value"
+                                    trigger="onChange"
+                                  >
+                                    <BackgroundCustomizer />
+                                  </Form.Item>
+                                )}
+                              </>
+                            );
+                          }}
+                        </Form.Item>
+
+                        <Button
+                          danger
+                          onClick={() => {
+                            remove(field.name);
+                            handleValuesChange();
+                          }}
+                          data-testid={`swiper-slide-${index}-remove`}
+                        >
+                          Remove Slide
+                        </Button>
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        add({
+                          alignment: 'center',
+                          allow_navigation: true,
+                        });
+                        handleValuesChange();
+                      }}
+                      data-testid="swiper-slide-add"
+                    >
+                      Add Slide
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+
+              <Alert
+                title="Nested Cards Configuration"
+                description="Each slide can contain one or more cards. Use the YAML editor to add cards under slides[].cards for full control."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            </>
+          )}
+
           {card.type === 'conditional' && (
             <>
               <Form.Item
@@ -2791,7 +3150,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swiper-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.

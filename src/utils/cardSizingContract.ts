@@ -196,6 +196,17 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       break;
     }
 
+    case 'custom:swiper-card': {
+      const slideCount = Array.isArray(card.slides) ? card.slides.length : Array.isArray(card.cards) ? card.cards.length : 0;
+      height = Math.max(4, Math.min(12, 4 + Math.floor(slideCount / 3)));
+      width = 12;
+      minW = 6;
+      maxW = 12;
+      minH = 4;
+      maxH = 16;
+      break;
+    }
+
     case 'thermostat':
       // Thermostats are medium sized (~250px in HA)
       // 250 / 56 ≈ 4.5 rows

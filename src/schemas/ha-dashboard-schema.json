@@ -186,6 +186,7 @@
             "custom:layout-card",
             "custom:mini-graph-card",
             "custom:mini-media-player",
+            "custom:swiper-card",
             "custom:mushroom-entity-card",
             "custom:mushroom-template-card",
             "custom:mushroom-person-card",
@@ -427,6 +428,115 @@
           "items": {
             "$ref": "#/definitions/card"
           }
+        },
+        "slides": {
+          "type": "array",
+          "description": "Slides for Swiper carousel cards",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cards": {
+                "type": "array",
+                "description": "Cards inside this slide",
+                "items": {
+                  "$ref": "#/definitions/card"
+                }
+              },
+              "alignment": {
+                "type": "string",
+                "enum": ["top", "center", "bottom"],
+                "description": "Vertical alignment of slide content"
+              },
+              "background": {
+                "type": "object",
+                "description": "Background configuration for this slide",
+                "additionalProperties": true
+              },
+              "autoplay_delay": {
+                "type": "number",
+                "description": "Per-slide autoplay delay override (ms)"
+              },
+              "allow_navigation": {
+                "type": "boolean",
+                "description": "Allow navigation to this slide"
+              },
+              "skip_navigation": {
+                "type": "boolean",
+                "description": "Skip this slide when navigating"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "pagination": {
+          "oneOf": [
+            { "type": "boolean" },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["bullets", "fraction", "progressbar", "custom"]
+                },
+                "clickable": { "type": "boolean" }
+              },
+              "additionalProperties": true
+            }
+          ],
+          "description": "Swiper pagination configuration"
+        },
+        "navigation": {
+          "type": "boolean",
+          "description": "Enable Swiper navigation arrows"
+        },
+        "autoplay": {
+          "oneOf": [
+            { "type": "boolean" },
+            {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "delay": { "type": "number" },
+                "pause_on_interaction": { "type": "boolean" },
+                "stop_on_last_slide": { "type": "boolean" }
+              },
+              "additionalProperties": true
+            }
+          ],
+          "description": "Swiper autoplay configuration"
+        },
+        "effect": {
+          "type": "string",
+          "enum": ["slide", "fade", "cube", "coverflow", "flip"],
+          "description": "Swiper transition effect"
+        },
+        "slides_per_view": {
+          "oneOf": [
+            { "type": "number" },
+            { "type": "string", "enum": ["auto"] }
+          ],
+          "description": "Slides per view"
+        },
+        "space_between": {
+          "type": "number",
+          "description": "Space between slides (px)"
+        },
+        "loop": {
+          "type": "boolean",
+          "description": "Enable loop mode"
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["horizontal", "vertical"],
+          "description": "Slide direction"
+        },
+        "centered_slides": {
+          "type": "boolean",
+          "description": "Center active slide"
+        },
+        "free_mode": {
+          "type": "boolean",
+          "description": "Enable free mode (no snapping)"
         },
         "layout": {
           "type": "object",

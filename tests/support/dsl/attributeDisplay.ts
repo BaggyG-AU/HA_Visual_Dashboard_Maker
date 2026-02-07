@@ -8,6 +8,43 @@ export class AttributeDisplayDSL {
     return attribute.replace(/[^a-zA-Z0-9_-]/g, '-');
   }
 
+  private async waitForSelectOption(label: string): Promise<Locator> {
+    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
+    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${label}$`, 'i') }).first();
+    await option.waitFor({ state: 'visible', timeout: 5000 });
+    return option;
+  }
+
+  private async selectAntOption(select: Locator, value: string): Promise<void> {
+    const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
+    const option = dropdown.getByRole('option', { name: new RegExp(`^${value}$`, 'i') }).first();
+    const found = await option
+      .waitFor({ state: 'visible', timeout: 2000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (found) {
+      await option.click();
+      return;
+    }
+
+    const input = select.locator('input[role="combobox"]');
+    if (await input.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await input.fill('');
+      await input.pressSequentially(value, { delay: 0 });
+      const typedOption = dropdown.getByRole('option', { name: new RegExp(`^${value}$`, 'i') }).first();
+      if (await typedOption.waitFor({ state: 'visible', timeout: 2000 }).catch(() => false)) {
+        await typedOption.click();
+      } else {
+        await this.window.keyboard.press('Enter');
+      }
+      return;
+    }
+
+    await this.window.keyboard.type(value);
+    await this.window.keyboard.press('Enter');
+  }
+
   private get panel(): Locator {
     return this.window.getByTestId('properties-panel');
   }
@@ -20,13 +57,11 @@ export class AttributeDisplayDSL {
     const select = this.panel.getByTestId('attribute-display-attribute-select');
     await expect(select).toBeVisible();
     await select.click();
-    const input = select.locator('input');
-    await expect(input).toBeVisible();
+    const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
+    await expect(dropdown).toBeVisible({ timeout: 5000 });
 
     for (const attribute of attributes) {
-      await input.fill('');
-      await input.type(attribute);
-      await this.window.keyboard.press('Enter');
+      await this.selectAntOption(select, attribute);
     }
 
     await this.window.keyboard.press('Escape');
@@ -112,10 +147,7 @@ export class AttributeDisplayDSL {
     await expect(select).toBeVisible();
     await select.click();
     const label = mode[0].toUpperCase() + mode.slice(1);
-    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
-    await expect(dropdown).toBeVisible({ timeout: 5000 });
-    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${label}$`, 'i') });
-    await expect(option).toBeVisible({ timeout: 5000 });
+    const option = await this.waitForSelectOption(label);
     await option.click({ timeout: 5000 });
     await expect(select).toContainText(new RegExp(label, 'i'));
   }
@@ -125,10 +157,7 @@ export class AttributeDisplayDSL {
     await expect(select).toBeVisible();
     await select.click();
     const label = type[0].toUpperCase() + type.slice(1);
-    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
-    await expect(dropdown).toBeVisible({ timeout: 5000 });
-    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${label}$`, 'i') });
-    await expect(option).toBeVisible({ timeout: 5000 });
+    const option = await this.waitForSelectOption(label);
     await option.click({ timeout: 5000 });
     await expect(select).toContainText(new RegExp(label, 'i'));
   }

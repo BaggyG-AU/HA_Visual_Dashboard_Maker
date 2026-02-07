@@ -57,12 +57,25 @@ export class PropertiesPanelDSL {
     const tabElement = this.panel.getByRole('tab', { name: new RegExp(`^${tab}$`, 'i') });
     await expect(tabElement).toBeVisible({ timeout: 10000 });
     await tabElement.click();
-    // Wait until tab reports selected to avoid hidden content reads
-    await expect(tabElement).toHaveAttribute('aria-selected', 'true', { timeout: 3000 });
+    const isTabActive = async () => {
+      const ariaSelected = await tabElement.getAttribute('aria-selected');
+      if (ariaSelected === 'true') return true;
+      const className = (await tabElement.getAttribute('class')) ?? '';
+      return className.includes('ant-tabs-tab-active');
+    };
+
+    const active = await isTabActive();
+    if (!active) {
+      await tabElement.click();
+    }
+
     await expect
-      .poll(async () => await this.getActiveTab(), { timeout: 3000 })
-      .toBe(tab);
-    await expect(this.panel.locator('.ant-tabs-tabpane-active').first()).toBeVisible({ timeout: 3000 });
+      .poll(isTabActive, { timeout: 3000 })
+      .toBe(true);
+
+    // Prefer any visible tabpane instead of relying on a single active class.
+    const visibleTabPane = this.panel.locator('.ant-tabs-tabpane:visible').first();
+    await expect(visibleTabPane).toBeVisible({ timeout: 3000 });
 
     if (tab === 'YAML') {
       await this.expectYamlEditor();

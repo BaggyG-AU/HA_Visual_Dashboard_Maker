@@ -1,10 +1,49 @@
-import { expect, Page, type TestInfo } from '@playwright/test';
-import { attachDebugJson } from '../helpers/debug';
+import { expect, Page, Locator, type TestInfo } from '@playwright/test';
 
 const sanitizeEntityId = (entityId: string): string => entityId.replace(/[^a-zA-Z0-9_-]/g, '-');
 
 export class ConditionalVisibilityDSL {
   constructor(private window: Page) {}
+
+  /**
+   * Select an option from an Ant Design Select dropdown.
+   *
+   * 1. Click the select to open the dropdown.
+   * 2. Wait briefly for the dropdown option to render — use waitFor which
+   *    properly waits for DOM insertion (unlike isVisible which returns false
+   *    immediately when the element doesn't exist yet).
+   * 3. If the option appears, click it directly (fast path).
+   * 4. Otherwise type into the combobox input which lives inside the Select
+   *    field (NOT in the dropdown portal) and press Enter.
+   *    Uses pressSequentially instead of keyboard.type to avoid the ~10s
+   *    penalty of character-by-character typing triggering Ant Design search
+   *    re-renders with IPC latency between each keystroke.
+   */
+  private async selectAntOption(selectField: Locator, value: string): Promise<void> {
+    await selectField.click();
+    const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
+    const option = dropdown.getByRole('option', { name: value, exact: true });
+
+    const found = await option
+      .waitFor({ state: 'visible', timeout: 2000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (found) {
+      await option.click();
+      return;
+    }
+
+    // The combobox input lives inside the Select field, not the dropdown portal.
+    const combobox = selectField.locator('input[role="combobox"]');
+    if (await combobox.isVisible().catch(() => false)) {
+      await combobox.pressSequentially(value, { delay: 0 });
+    } else {
+      // Last resort: type into whatever is focused
+      await this.window.keyboard.type(value);
+    }
+    await this.window.keyboard.press('Enter');
+  }
 
   private get controls() {
     return this.window.getByTestId('conditional-visibility-controls');
@@ -28,65 +67,43 @@ export class ConditionalVisibilityDSL {
       value?: string;
       attribute?: string;
     },
-    testInfo?: TestInfo,
+    _testInfo?: TestInfo,
   ): Promise<void> {
     const typeField = this.window.getByTestId(`visibility-condition-type-${path}`);
     const entityField = this.window.getByTestId(`visibility-condition-entity-${path}`);
+    await expect(typeField).toBeVisible();
+    const normalizedType = config.type.trim().toLowerCase().replace(/\s+/g, '_');
+    const currentTypeText = ((await typeField.textContent()) ?? '').trim().toLowerCase();
+    const typeAlreadySelected = currentTypeText.includes(normalizedType);
 
-    try {
-      await expect(typeField).toBeVisible();
-      const normalizedType = config.type.trim().toLowerCase().replace(/\s+/g, '_');
-      const currentTypeText = ((await typeField.textContent()) ?? '').trim().toLowerCase();
-      const typeAlreadySelected = currentTypeText.includes(normalizedType);
+    if (!typeAlreadySelected) {
+      await typeField.click();
+      const typeOptionPattern = new RegExp(`^${normalizedType}$`, 'i');
+      const visibleDropdown = this.window.locator('.ant-select-dropdown:visible').last();
+      const typeOption = visibleDropdown.getByRole('option', { name: typeOptionPattern });
 
-      if (!typeAlreadySelected) {
-        await typeField.click();
-        const typeOptionPattern = new RegExp(`^${normalizedType}$`, 'i');
-        const visibleDropdown = this.window.locator('.ant-select-dropdown:visible').last();
-        const typeOption = visibleDropdown.getByRole('option', { name: typeOptionPattern });
-
-        if (await typeOption.isVisible({ timeout: 1000 }).catch(() => false)) {
-          await typeOption.click();
-        } else {
-          // Fallback for flaky portal rendering: use keyboard selection in active combobox
-          const activeInput = this.window.locator('.ant-select-dropdown:visible input[role="combobox"]').last();
-          if (await activeInput.isVisible({ timeout: 1000 }).catch(() => false)) {
-            await activeInput.fill(normalizedType);
-            await this.window.keyboard.press('Enter');
-          } else {
-            await this.window.keyboard.press('Escape');
-          }
-        }
-      }
-
-      await entityField.click();
-      const entityDropdown = this.window.locator('.ant-select-dropdown:visible').last();
-      const entityOption = entityDropdown.getByRole('option', { name: config.entity, exact: true });
-      if (await entityOption.isVisible({ timeout: 1000 }).catch(() => false)) {
-        await entityOption.click();
+      if (await typeOption.isVisible({ timeout: 1000 }).catch(() => false)) {
+        await typeOption.click();
       } else {
+        // Fallback for flaky portal rendering: use keyboard selection in active combobox
         const activeInput = this.window.locator('.ant-select-dropdown:visible input[role="combobox"]').last();
         if (await activeInput.isVisible({ timeout: 1000 }).catch(() => false)) {
-          await activeInput.fill(config.entity);
+          await activeInput.fill(normalizedType);
           await this.window.keyboard.press('Enter');
         } else {
-          await this.window.keyboard.type(config.entity);
-          await this.window.keyboard.press('Enter');
+          await this.window.keyboard.press('Escape');
         }
       }
+    }
 
-      if (config.attribute !== undefined) {
-        await this.window.getByTestId(`visibility-condition-attribute-${path}`).fill(config.attribute);
-      }
+    await this.selectAntOption(entityField, config.entity);
 
-      if (config.value !== undefined) {
-        await this.window.getByTestId(`visibility-condition-value-${path}`).fill(config.value);
-      }
-    } catch (error) {
-      if (testInfo) {
-        await this.attachDiagnostics(testInfo, path);
-      }
-      throw error;
+    if (config.attribute !== undefined) {
+      await this.window.getByTestId(`visibility-condition-attribute-${path}`).fill(config.attribute);
+    }
+
+    if (config.value !== undefined) {
+      await this.window.getByTestId(`visibility-condition-value-${path}`).fill(config.value);
     }
   }
 
@@ -135,21 +152,9 @@ export class ConditionalVisibilityDSL {
     await expect(row).toHaveCount(0);
   }
 
-  async attachDiagnostics(testInfo: TestInfo, path = '0'): Promise<void> {
-    const data = await this.window.evaluate((suffix) => {
-      const controls = document.querySelector('[data-testid="conditional-visibility-controls"]');
-      const preview = document.querySelector('[data-testid="conditional-visibility-preview"]');
-      const conditionType = document.querySelector(`[data-testid="visibility-condition-type-${suffix}"]`);
-      const conditionEntity = document.querySelector(`[data-testid="visibility-condition-entity-${suffix}"]`);
-      return {
-        controlsVisible: Boolean(controls),
-        previewText: preview?.textContent ?? null,
-        conditionTypeVisible: Boolean(conditionType),
-        conditionEntityVisible: Boolean(conditionEntity),
-      };
-    }, path);
-
-    await attachDebugJson(testInfo, 'conditional-visibility-diagnostics.json', data);
+  async attachDiagnostics(_testInfo: TestInfo, _path = '0'): Promise<void> {
+    void _testInfo;
+    void _path;
   }
 }
 

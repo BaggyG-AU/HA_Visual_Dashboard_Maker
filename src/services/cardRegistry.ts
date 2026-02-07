@@ -301,6 +301,27 @@ class CardRegistry {
         defaultProps: { conditions: [], card: {} },
         requiredProps: ['conditions', 'card'],
       },
+      {
+        type: 'custom:swiper-card',
+        name: 'Swiper Carousel',
+        category: 'layout',
+        icon: 'SwapOutlined',
+        description: 'Carousel container with swipeable slides (Swiper.js)',
+        isCustom: true,
+        source: 'custom',
+        defaultProps: {
+          pagination: { type: 'bullets', clickable: true },
+          navigation: true,
+          autoplay: { enabled: false, delay: 5000, pause_on_interaction: true },
+          effect: 'slide',
+          slides_per_view: 1,
+          space_between: 16,
+          loop: false,
+          direction: 'horizontal',
+          cards: [],
+        },
+        requiredProps: ['cards'],
+      },
 
       // Custom HACS Cards
       {

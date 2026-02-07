@@ -64,7 +64,14 @@
       "Bash(unzip:*)",
       "Bash(gh pr list:*)",
       "Bash(sudo apt-get install:*)",
-      "Bash(brew install:*)"
+      "Bash(brew install:*)",
+      "Bash(git -C /home/micah/projects/HA_Visual_Dashboard_Maker log --oneline -10)",
+      "Bash(npx vite build:*)",
+      "Bash(xargs cat:*)",
+      "Bash(__NEW_LINE_ab760db05d91a523__ echo \"\")",
+      "Bash(__NEW_LINE_465206990abd7f75__ echo \"\")",
+      "Bash(__NEW_LINE_401d6fcc9cba05c1__ echo \"\")",
+      "Bash(__NEW_LINE_6628bb2df06cd76c__ echo \"\")"
     ]
   }
 }

@@ -64,7 +64,21 @@ When an AI agent fixes tests, its final response MUST include:
 - Patch summary (files changed).
 - Verification commands (and whether they were actually run).
 
-## 7) Git feature workflow (MANDATORY)
+## 7) Immutable State Updates (React + Zustand)
+All state updates in React components and Zustand stores MUST use immutable patterns:
+- Use `[...array, newItem]` instead of `array.push(newItem)`
+- Use `array.filter()` instead of `array.splice()`
+- Use `array.map()` for targeted element replacement instead of index assignment (`arr[i] = val`)
+- Use `{ ...obj, key: newValue }` instead of `obj.key = newValue`
+- Use `views.map((v, i) => i === idx ? { ...v, cards: updatedCards } : v)` for nested updates
+
+Rationale: `useMemo` and React reconciliation depend on reference equality. In-place mutation does not change the object/array reference, so React cannot detect the change and renders stale data. This was the root cause of a production bug where cards rendered at tiny dimensions (w=1, h=1).
+
+When using synchronous flags (e.g., "ignore next layout change"), prefer `useRef` over `useState` because ref updates are immediate while state updates are batched.
+
+**useEffect dependency caveat**: With immutable updates, object/array references change on every edit. If a `useEffect` depends on a prop derived from immutable state (e.g., `card`), it will fire on every update — not just when the logical identity changes. Audit all `useEffect` dependency arrays when adopting immutable patterns. Use stable identifiers like indices or IDs instead of object references where the intent is "run when a different item is selected" rather than "run when the item's content changes." This was the root cause of a white-screen crash where a feedback loop (useEffect reset → Monaco update → YAML change → state update → new card ref → useEffect reset → …) overwhelmed React's render pipeline.
+
+## 8) Git feature workflow (MANDATORY)
 
 Trigger phrases:
 

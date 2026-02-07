@@ -54,6 +54,7 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
   const state = entity?.state || 'unknown';
   const attributes = entity?.attributes || {};
   const cardType = card.type.replace('custom:mushroom-', '').replace('-card', '');
+  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
 
   // Handle empty card (v4.4.0+) - spacing/layout purposes
   if (cardType === 'empty') {
@@ -82,7 +83,6 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
   }
 
   // Determine display properties
-  const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
   const displayName =
     (card.name ? resolvedName : '') ||
     attributes.friendly_name ||

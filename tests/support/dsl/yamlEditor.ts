@@ -109,28 +109,21 @@ export class YamlEditorDSL {
    */
   async expectMonacoVisible(scope: 'properties' | 'modal' | 'canvas' = 'properties', _testInfo?: TestInfo): Promise<void> {
     void _testInfo;
-    // Disambiguate properties panel vs modal
-    const modalContent = this.window.getByTestId('yaml-editor-content');
-    const modalContainer = modalContent.getByTestId('yaml-editor-container');
-    const propsContainer = this.window.getByTestId('properties-panel').getByTestId('yaml-editor-container');
+    // Wait for Monaco readiness scoped appropriately, then assert visibility on the chosen container.
+    await this.waitForMonacoReady(scope);
 
-    let containerLocator = scope === 'modal' ? modalContainer : propsContainer;
+    const modalContainer = this.window.getByTestId('yaml-editor-content').getByTestId('yaml-editor-container');
+    let containerLocator = modalContainer;
 
-    // Auto-detect: if scope is properties but modal is visible, switch to modal
-    if (scope === 'properties') {
-      if (await modalContainer.isVisible({ timeout: 2000 }).catch(() => false)) {
-        containerLocator = modalContainer;
-      }
+    if (scope !== 'modal') {
+      // Prefer any visible YAML container to avoid brittle scoping to properties panel.
+      const visibleContainer = this.window.locator('[data-testid="yaml-editor-container"]:visible').first();
+      containerLocator = (await visibleContainer.isVisible({ timeout: 2000 }).catch(() => false)) ? visibleContainer : modalContainer;
     }
 
-    const visible = await containerLocator.isVisible({ timeout: 8000 }).catch(() => false);
-    if (!visible) throw new Error(`YAML editor container not visible for scope=${scope}`);
-
-    // Monaco can render as .monaco-editor or fall back to textarea
+    await expect(containerLocator).toBeVisible({ timeout: 8000 });
     await expect(
-      containerLocator.locator('.monaco-editor')
-        .or(containerLocator.locator('textarea'))
-        .first()
+      containerLocator.locator('.monaco-editor').or(containerLocator.locator('textarea')).first()
     ).toBeVisible({ timeout: 8000 });
   }
 

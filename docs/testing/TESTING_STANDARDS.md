@@ -100,9 +100,14 @@ Each test should assert one observable user behavior.
 
 ### 6. No Arbitrary Timeouts
 
-Using fixed delays or increasing timeouts to make tests pass is forbidden.
+Using fixed delays (`waitForTimeout`) or sleep-based synchronization to make tests pass is forbidden.
 
 All waits must be state-based and implemented in the DSL.
+
+**Exception — `test.setTimeout()` for legitimately long tests**: When a test performs many sequential UI operations that accumulate significant wall-clock time (e.g., Electron launch + multiple YAML round-trips + Ant Design dropdown interactions on WSL2), `test.setTimeout()` may be used to set a realistic per-test timeout. This is NOT a synchronization mechanism — it simply prevents a correct, running test from being killed prematurely. Requirements:
+- The root cause of slowness must be understood and documented in a comment
+- The timeout must reflect measured execution time with reasonable headroom (not an arbitrary large number)
+- The test must NOT use `waitForTimeout` for synchronization anywhere in its call chain
 
 Guardrail check:
 - Run `npm run test:e2e:guardrails` to block raw sleeps and non-unified launch helpers in E2E specs.
@@ -756,6 +761,62 @@ await expect
 ```
 
 **Known Limitation**: Some Monaco editor instances may not properly expose models to tests even with global references. If test consistently fails after multiple debugging attempts, skip test and document limitation.
+
+---
+
+## ANT DESIGN SELECT INTERACTION PATTERNS (CRITICAL)
+
+Ant Design `<Select>` components render dropdown options in a portal outside the Select field. This creates several Playwright gotchas that have caused flaky tests.
+
+### 1. Use `waitFor()` Not `isVisible()` for Dropdown Options
+
+`isVisible()` returns `false` **immediately** when an element is not yet in the DOM — the timeout parameter is ignored for non-existent elements. For dropdown options that render asynchronously in a portal, always use `waitFor({state: 'visible'})`:
+
+```typescript
+// BAD — returns false immediately if option not yet in DOM
+const found = await option.isVisible({ timeout: 2000 });
+
+// GOOD — properly waits for DOM insertion then visibility
+const found = await option
+  .waitFor({ state: 'visible', timeout: 2000 })
+  .then(() => true)
+  .catch(() => false);
+```
+
+### 2. Combobox Input Location
+
+The search input (`input[role="combobox"]`) lives inside the **Select field component**, NOT inside the dropdown portal (`.ant-select-dropdown`).
+
+```typescript
+// BAD — searches in the wrong place (dropdown portal)
+const combobox = this.window.locator('.ant-select-dropdown:visible input[role="combobox"]');
+
+// GOOD — searches inside the Select field itself
+const combobox = selectField.locator('input[role="combobox"]');
+```
+
+### 3. Use `pressSequentially()` Not `keyboard.type()` for Search
+
+`keyboard.type()` types into whatever is focused, character by character. With Ant Design's search-enabled Select, each keystroke triggers a search re-render. On WSL2 with IPC latency, typing a 31-character entity ID this way takes ~10 seconds. Use `pressSequentially()` on the specific combobox input instead:
+
+```typescript
+// BAD — 10+ seconds for long values due to per-keystroke re-renders
+await this.window.keyboard.type('input_boolean.show_controls');
+
+// GOOD — much faster, targets specific input
+await combobox.pressSequentially(value, { delay: 0 });
+```
+
+### 4. Reference Pattern: `selectAntOption()`
+
+The canonical helper for Ant Design Select interactions is in `ConditionalVisibilityDSL.selectAntOption()`. When writing new DSL methods that interact with Ant Design Selects, follow this pattern:
+
+1. Click the Select field to open the dropdown
+2. Try `waitFor()` on the desired option in the dropdown portal (fast path)
+3. If not found, fall back to `pressSequentially()` on the combobox input inside the Select field
+4. Press Enter to confirm
+
+See `tests/support/dsl/conditionalVisibility.ts` for the reference implementation.
 
 ---
 

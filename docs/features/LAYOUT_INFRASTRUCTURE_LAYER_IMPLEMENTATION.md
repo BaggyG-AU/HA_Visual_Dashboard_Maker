@@ -135,6 +135,9 @@
     - type: markdown
       content: "Welcome Home"
   ```
+- [ ] Behavior notes (v0.7.0-beta.1):
+  - [ ] Autoplay and loop are suppressed while the carousel card is selected in the visual editor.
+  - [ ] Slides inherit the parent card background unless a slide-specific background is configured.
 - [ ] Serialize carousel config to YAML correctly
 - [ ] Deserialize YAML to carousel config correctly
 - [ ] YAML editor autocomplete for carousel properties

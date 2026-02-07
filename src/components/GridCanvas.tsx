@@ -197,6 +197,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         onResizeStop={handleLayoutChange}
         isDraggable={true}
         isResizable={true}
+        draggableCancel=".swiper"
         compactType="vertical"
         preventCollision={false}
         allowOverlap={false}

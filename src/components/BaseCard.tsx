@@ -32,6 +32,7 @@ import { AutoEntitiesCardRenderer } from './cards/AutoEntitiesCardRenderer';
 import { VerticalStackInCardRenderer } from './cards/VerticalStackInCardRenderer';
 import { CustomButtonCardRenderer } from './cards/CustomButtonCardRenderer';
 import { SurveillanceCardRenderer } from './cards/SurveillanceCardRenderer';
+import { SwiperCardRenderer } from './cards/SwiperCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { evaluateVisibilityConditions } from '../services/conditionalVisibility';
@@ -43,6 +44,17 @@ interface BaseCardProps {
 }
 
 const VISIBILITY_TRANSITION_MS = 250;
+
+const isTestEnv = (): boolean => {
+  if (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1')) {
+    return true;
+  }
+  if (typeof window !== 'undefined') {
+    const testWindow = window as Window & { E2E?: string | boolean; PLAYWRIGHT_TEST?: string | boolean };
+    return Boolean(testWindow.E2E || testWindow.PLAYWRIGHT_TEST);
+  }
+  return false;
+};
 
 /**
  * BaseCard component - routes to the appropriate card renderer
@@ -59,6 +71,11 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
       return;
     }
 
+    if (isTestEnv()) {
+      setShouldRender(false);
+      return;
+    }
+
     const timeout = window.setTimeout(() => {
       setShouldRender(false);
     }, VISIBILITY_TRANSITION_MS);
@@ -70,11 +87,12 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
     return null;
   }
 
+  const transitionMs = isTestEnv() ? 0 : VISIBILITY_TRANSITION_MS;
   const transitionStyle: React.CSSProperties = {
     opacity: isVisible ? 1 : 0,
     transform: isVisible ? 'translateY(0)' : 'translateY(4px)',
     pointerEvents: isVisible ? 'auto' : 'none',
-    transition: `opacity ${VISIBILITY_TRANSITION_MS}ms ease, transform ${VISIBILITY_TRANSITION_MS}ms ease`,
+    transition: `opacity ${transitionMs}ms ease, transform ${transitionMs}ms ease`,
     height: '100%',
   };
 
@@ -220,6 +238,9 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
       break;
     case 'custom:button-card':
       renderedCard = <CustomButtonCardRenderer card={card as React.ComponentProps<typeof CustomButtonCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
+    case 'custom:swiper-card':
+      renderedCard = <SwiperCardRenderer card={card as React.ComponentProps<typeof SwiperCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
       break;
 
     // Surveillance/Camera cards
