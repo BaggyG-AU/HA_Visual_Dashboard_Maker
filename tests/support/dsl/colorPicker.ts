@@ -35,6 +35,8 @@ export class ColorPickerDSL {
       await this.openPopover(testId);
       await expect(picker).toBeVisible({ timeout: 5000 });
     }
+    // Content stability gate: wait for popover content to settle after open/re-render
+    await expect(this.getColorInput(testId)).toBeVisible({ timeout: 3000 });
   }
 
   /**
@@ -153,28 +155,29 @@ export class ColorPickerDSL {
     }
 
     const swatch = this.getColorSwatch(inputTestId);
+    await swatch.scrollIntoViewIfNeeded();
     await expect(swatch).toBeVisible();
     try {
+      // force: true — swatch may be behind AntD tab transition overlay
       await swatch.click({ trial: false, force: true });
     } catch (error) {
-      // Re-query and retry in case the element was re-rendered.
+      // Re-query and retry in case the element was re-rendered
       const retrySwatch = this.getColorSwatch(inputTestId);
+      await retrySwatch.scrollIntoViewIfNeeded();
       await expect(retrySwatch).toBeVisible();
+      // force: true — retry after re-render; same overlay rationale
       await retrySwatch.click({ trial: false, force: true });
     }
 
     try {
       await this.expectVisible(inputTestId);
     } catch {
-      // If a portal dropdown is still open, close it and retry via input + keyboard.
+      // Flow-defensive: close any orphaned portal, then re-click swatch (Standard #22)
       await this.window.keyboard.press('Escape');
-      const input = this.window.getByTestId(inputTestId);
-      if (await input.isVisible().catch(() => false)) {
-        await input.click({ force: true });
-      } else {
-        await this.focusSwatch(inputTestId);
-        await this.window.keyboard.press('Enter');
-      }
+      const retrySwatch = this.getColorSwatch(inputTestId);
+      await retrySwatch.scrollIntoViewIfNeeded();
+      // force: true — clearing orphaned portal may leave transition in progress
+      await retrySwatch.click({ force: true });
       await this.expectVisible(inputTestId, 5000);
     }
   }
@@ -281,17 +284,25 @@ export class ColorPickerDSL {
    * Automatically switches to HEX format if a hex color is provided
    */
   async setColorInput(color: string, testId = 'color-picker'): Promise<void> {
-    const input = this.getColorInput(testId);
-    await expect(input).toBeVisible();
+    await this.ensurePopoverOpen(testId);
 
     // If color starts with #, ensure we're in HEX format
     if (color.startsWith('#')) {
       await this.ensureFormat('HEX', testId);
     }
 
-    await input.clear();
-    await input.fill(color);
+    // Re-query input after ensureFormat (format toggle may have re-rendered popover content)
+    const input = this.getColorInput(testId);
+    await expect(input).toBeVisible();
+
+    // Retry clear+fill to handle DOM detachment during React re-renders
+    await expect(async () => {
+      await input.clear();
+      await input.fill(color);
+    }).toPass({ timeout: 5000 });
+
     await input.press('Enter'); // Triggers handleInputBlur -> addRecentColor
+
     const escaped = color.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     await expect(input).toHaveValue(new RegExp(escaped, 'i'));
 
@@ -327,7 +338,7 @@ export class ColorPickerDSL {
     await this.ensurePopoverOpen(testId);
     const toggle = this.getFormatToggle(testId);
     await expect(toggle).toBeVisible();
-    await toggle.scrollIntoViewIfNeeded();
+    // click() auto-scrolls and retries on DOM detachment from popover re-renders
     await toggle.click();
   }
 
@@ -376,7 +387,7 @@ export class ColorPickerDSL {
     // because ColorPickerInput passes `${testId}-picker` as the testId to ColorPicker
     const tabButton = this.window.getByTestId(`${testId}-picker-tab-${tab === 'recent' ? 'recents' : 'favorites'}`);
     await expect(tabButton).toBeVisible();
-    await tabButton.scrollIntoViewIfNeeded();
+    // click() auto-scrolls and retries on DOM detachment from popover re-renders
     await tabButton.click();
 
     // State-based content check (avoids arbitrary waits)
@@ -577,7 +588,7 @@ export class ColorPickerDSL {
     await input.focus();
     await expect(input).toBeFocused();
     await this.window.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
-    await this.window.keyboard.type(color);
+    await input.pressSequentially(color, { delay: 0 });
     await this.window.keyboard.press('Enter');
   }
 

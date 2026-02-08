@@ -36,6 +36,14 @@ For test-writing conventions and debugging guidance, follow:
 ## 4) Guardrails (Do Not Do These)
 Guardrails for tests (selectors, waits, DSL boundaries, etc.) live in `docs/testing/TESTING_STANDARDS.md`.
 
+## 4a) DSL Change Blast-Radius Check (MANDATORY)
+When modifying any shared DSL method in `tests/support/dsl/**`, the AI agent MUST:
+1. Identify all specs that call the modified method (grep across `tests/e2e/**` and `tests/integration/**`).
+2. Run all affected specs — not just the spec that motivated the change.
+3. If more than 5 specs are affected, run a full-suite regression pass.
+
+This prevents systemic regressions like the 2026-02-07 incident where a single `openPopover()` change broke 14 tests.
+
 ## 5) Test Execution & Reporting Policy
 AI agents MAY run tests when the execution environment permits it, including:
 - Lint: `npm run lint`
@@ -78,7 +86,100 @@ When using synchronous flags (e.g., "ignore next layout change"), prefer `useRef
 
 **useEffect dependency caveat**: With immutable updates, object/array references change on every edit. If a `useEffect` depends on a prop derived from immutable state (e.g., `card`), it will fire on every update — not just when the logical identity changes. Audit all `useEffect` dependency arrays when adopting immutable patterns. Use stable identifiers like indices or IDs instead of object references where the intent is "run when a different item is selected" rather than "run when the item's content changes." This was the root cause of a white-screen crash where a feedback loop (useEffect reset → Monaco update → YAML change → state update → new card ref → useEffect reset → …) overwhelmed React's render pipeline.
 
-## 8) Git feature workflow (MANDATORY)
+## 8) React Component Stability Rules — Ant Design Integration (MANDATORY)
+
+When writing or modifying React components that use Ant Design `Tabs`, `Popover`, `Modal`, or other portal-based components, follow these rules to prevent DOM destruction that breaks E2E tests and degrades user experience.
+
+### 8a) Tabs `items` Array Must Be Memoized
+
+Never pass an inline `items={[...]}` array to `<Tabs>`. Ant Design Tabs uses referential equality to decide whether to remount panel content. An inline array creates a new reference on every render, causing **all tab children to unmount and remount** — destroying Popover state, form focus, scroll position, and any in-progress user interaction.
+
+```tsx
+// BAD — unmounts/remounts all tab children on every render
+<Tabs items={[
+  { key: 'form', label: 'Form', children: <FormContent /> },
+  { key: 'style', label: 'Style', children: <StyleContent /> },
+]} />
+
+// GOOD — stable reference, children survive parent re-renders
+const tabItems = useMemo(() => [
+  { key: 'form', label: 'Form', children: <FormContent /> },
+  { key: 'style', label: 'Style', children: <StyleContent /> },
+], [/* structural deps only — e.g., card?.type, NOT card */]);
+<Tabs items={tabItems} />
+```
+
+### 8b) Popover/Portal State Must Survive Unmount/Remount
+
+If a component with an Ant Design Popover can be unmounted and remounted by a parent (e.g., inside Tabs), the popover open state must be cached at module level so it survives the cycle. Use this pattern:
+
+```tsx
+const popoverStateCache = new Map<string, { open: boolean; timestamp: number }>();
+const POPOVER_STATE_TTL = 1000; // 1 second window for cache hit
+
+// In component:
+const [open, setOpenRaw] = useState(() => {
+  const cached = popoverStateCache.get(testId);
+  if (cached && Date.now() - cached.timestamp < POPOVER_STATE_TTL) return cached.open;
+  return false;
+});
+const setOpen = useCallback((next: boolean) => {
+  popoverStateCache.set(testId, { open: next, timestamp: Date.now() });
+  setOpenRaw(next);
+}, [testId]);
+```
+
+Reference implementations: `ColorPickerInput.tsx`, `GradientPickerInput.tsx`.
+
+### 8c) useMemo/useCallback Dependencies Must Be Structural
+
+When memoizing content rendered inside Tabs or other containers that check referential equality, use **structural-only dependencies** — e.g., `card?.type` — not full object references like `card`. Form.Item values flow through Ant Design Form's internal context (via the shared `form` instance), independent of the JSX tree. Use `useRef` for values that handlers need to read but that should not trigger memo recomputation.
+
+```tsx
+// BAD — memo recomputes on every card property change, defeating the purpose
+const tabItems = useMemo(() => [...], [card, form, handleChange]);
+
+// GOOD — only recomputes when card type changes (structural change)
+const cardRef = useRef(card);
+cardRef.current = card;
+const tabItems = useMemo(() => [...], [card?.type, form, handleChange]);
+```
+
+### 8d) Rules of Hooks: No Hooks After Early Returns
+
+React hooks must be called in the same order on every render. Never place `useMemo`, `useCallback`, `useState`, or `useEffect` **after** a conditional `return`. This causes a runtime crash that breaks all tests.
+
+```tsx
+// BAD — useMemo is skipped when card is null, violating Rules of Hooks
+if (!card) return <Empty />;
+const tabItems = useMemo(() => [...], [card?.type]);
+
+// GOOD — useMemo always runs; null guard inside the callback
+const tabItems = useMemo(() => {
+  if (!card) return [];
+  return [...];
+}, [card?.type]);
+if (!card) return <Empty />;
+```
+
+### 8e) Memoize Popover/Portal Content
+
+Wrap content passed to Ant Design `<Popover content={...}>` or `<Modal>` children in `useMemo`. Without this, the portal DOM is destroyed and recreated on every parent render, causing visual flicker and breaking Playwright element references.
+
+```tsx
+// BAD — new JSX reference on every render → portal re-mount
+<Popover content={<ColorPicker value={value} onChange={onChange} />}>
+
+// GOOD — stable reference → portal survives parent re-renders
+const pickerContent = useMemo(() => (
+  <ColorPicker value={value} onChange={onChange} />
+), [value, onChange]);
+<Popover content={pickerContent}>
+```
+
+Root cause reference: See `docs/testing/E2E_FAILURES_RCA.md` "Root Cause Analysis (2026-02-08)" for the PropertiesPanel Tabs regression that these rules prevent.
+
+## 9) Git feature workflow (MANDATORY)
 
 Trigger phrases:
 

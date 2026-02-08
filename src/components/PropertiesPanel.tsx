@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip, Switch, InputNumber } from 'antd';
 import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
 import * as monaco from 'monaco-editor';
@@ -43,6 +43,28 @@ interface PropertiesPanelProps {
   onOpenEntityBrowser?: (insertCallback: (entityId: string) => void) => void;
 }
 
+const COMMIT_DEBOUNCE_MS = 800;
+const YAML_SYNC_DEBOUNCE_MS = 250;
+const YAML_PARSE_DEBOUNCE_MS = 350;
+
+const HAPTIC_PATTERN_OPTIONS = [
+  { value: 'light', label: 'Light' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'heavy', label: 'Heavy' },
+  { value: 'double', label: 'Double' },
+  { value: 'success', label: 'Success' },
+  { value: 'error', label: 'Error' },
+];
+
+const SOUND_EFFECT_OPTIONS = [
+  { value: 'click', label: 'Click/Tap' },
+  { value: 'success', label: 'Success' },
+  { value: 'error', label: 'Error' },
+  { value: 'toggle-on', label: 'Toggle On' },
+  { value: 'toggle-off', label: 'Toggle Off' },
+  { value: 'notification', label: 'Notification' },
+];
+
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   card,
   cardIndex,
@@ -71,17 +93,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const { entities } = useHAEntities();
 
-  const COMMIT_DEBOUNCE_MS = 800;
-  const YAML_SYNC_DEBOUNCE_MS = 250;
-  const YAML_PARSE_DEBOUNCE_MS = 350;
-  const HAPTIC_PATTERN_OPTIONS = [
-    { value: 'light', label: 'Light' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'heavy', label: 'Heavy' },
-    { value: 'double', label: 'Double' },
-    { value: 'success', label: 'Success' },
-    { value: 'error', label: 'Error' },
-  ];
+  // Refs for stable closures — allow useCallback/useMemo to avoid card/onChange deps
+  const cardRef = useRef(card);
+  cardRef.current = card;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   const renderHapticConfig = (testIdPrefix: string) => (
     <div>
@@ -132,15 +148,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       </Form.Item>
     </div>
   );
-
-  const SOUND_EFFECT_OPTIONS = [
-    { value: 'click', label: 'Click/Tap' },
-    { value: 'success', label: 'Success' },
-    { value: 'error', label: 'Error' },
-    { value: 'toggle-on', label: 'Toggle On' },
-    { value: 'toggle-off', label: 'Toggle Off' },
-    { value: 'notification', label: 'Notification' },
-  ];
 
   const renderSoundConfig = (testIdPrefix: string) => (
     <div>
@@ -198,7 +205,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   );
 
   const renderAttributeDisplaySection = (values: FormCardValues) => {
-    if (!card) return null;
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
 
     const entityField = typeof values.entity === 'string' ? values.entity : undefined;
     const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
@@ -212,9 +220,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
     const availableEntityIds = Object.keys(entities || {});
     const fallbackEntityId = availableEntityIds.length > 0 ? availableEntityIds[0] : null;
-    const entityId = entityField ?? card.entity ?? firstEntity ?? fallbackEntityId;
+    const entityId = entityField ?? currentCard.entity ?? firstEntity ?? fallbackEntityId;
 
-    const hasEntityConfig = Boolean(entityField || firstEntity || card.entity);
+    const hasEntityConfig = Boolean(entityField || firstEntity || currentCard.entity);
     if (!hasEntityConfig) {
       return null;
     }
@@ -238,7 +246,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   const renderContextPreviewSection = (values: FormCardValues) => {
-    if (!card) return null;
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
 
     const entityField = typeof values.entity === 'string' ? values.entity : undefined;
     const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
@@ -252,7 +261,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
     const availableEntityIds = Object.keys(entities || {});
     const fallbackEntityId = availableEntityIds.length > 0 ? availableEntityIds[0] : null;
-    const defaultEntityId = entityField ?? card.entity ?? firstEntity ?? fallbackEntityId;
+    const defaultEntityId = entityField ?? currentCard.entity ?? firstEntity ?? fallbackEntityId;
 
     const candidates = [
       { key: 'name', label: 'Name', template: typeof values.name === 'string' ? values.name : undefined },
@@ -303,13 +312,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   const renderConditionalVisibilitySection = (values: FormCardValues) => {
-    if (!card) return null;
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
 
     const supportsVisibility =
       typeof values.entity === 'string'
       || Array.isArray(values.entities)
-      || typeof card.entity === 'string'
-      || Array.isArray(card.entities);
+      || typeof currentCard.entity === 'string'
+      || Array.isArray(currentCard.entities);
 
     if (!supportsVisibility) {
       return null;
@@ -323,13 +333,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   const renderStateIconMappingSection = (values: FormCardValues) => {
-    if (!card) return null;
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
 
     const supportsStateIcons =
       typeof values.entity === 'string'
       || Array.isArray(values.entities)
-      || typeof card.entity === 'string'
-      || Array.isArray(card.entities);
+      || typeof currentCard.entity === 'string'
+      || Array.isArray(currentCard.entities);
 
     if (!supportsStateIcons) {
       return null;
@@ -345,7 +356,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           : undefined))
       : undefined;
     const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
-    const entityId = entityField ?? card.entity ?? firstEntity ?? null;
+    const entityId = entityField ?? currentCard.entity ?? firstEntity ?? null;
 
     return (
       <Form.Item name="state_icons">
@@ -355,18 +366,19 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   const renderMultiEntitySection = (values: FormCardValues) => {
-    if (!card) return null;
-    const supportsMultiEntity = card.type === 'button' || card.type === 'custom:button-card';
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
+    const supportsMultiEntity = currentCard.type === 'button' || currentCard.type === 'custom:button-card';
     if (!supportsMultiEntity) return null;
 
     const entitiesField = Array.isArray(values.entities)
       ? values.entities.filter((entry): entry is string => typeof entry === 'string')
       : [];
-    const mode = (values.multi_entity_mode as MultiEntityMode | undefined) ?? card.multi_entity_mode ?? 'individual';
+    const mode = (values.multi_entity_mode as MultiEntityMode | undefined) ?? currentCard.multi_entity_mode ?? 'individual';
     const aggregateFunction = (values.aggregate_function as AggregateFunction | undefined)
-      ?? card.aggregate_function
+      ?? currentCard.aggregate_function
       ?? 'count_on';
-    const batchActions = (Array.isArray(values.batch_actions) ? values.batch_actions : card.batch_actions)
+    const batchActions = (Array.isArray(values.batch_actions) ? values.batch_actions : currentCard.batch_actions)
       ?.map((entry) => {
         if (typeof entry === 'string') return entry;
         if (entry && typeof entry === 'object' && 'type' in entry) {
@@ -411,7 +423,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   const renderSmartDefaultsConfig = (testIdPrefix: string) => {
-    if (!card) return null;
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
 
     return (
       <div>
@@ -436,7 +449,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             const tapAction = form.getFieldValue('tap_action');
 
             const { action, source } = resolveTapAction({
-              ...card,
+              ...currentCard,
               entity: currentEntity,
               smart_defaults: smartDefaults,
               tap_action: tapAction,
@@ -768,13 +781,15 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   // Handle form value changes - sync to YAML and auto-save
-  const handleValuesChange = () => {
+  // Wrapped in useCallback with refs to avoid recreating on every card prop change,
+  // which would destabilize tab memos and cause Tabs to remount panels.
+  const handleValuesChange = useCallback(() => {
     if (isUpdatingFromYaml.current) return;
 
     isUpdatingFromForm.current = true;
 
     const values = form.getFieldsValue();
-    const updatedCard = { ...card, ...values } as Card;
+    const updatedCard = { ...cardRef.current, ...values } as Card;
     if (updatedCard.type === 'custom:swiper-card') {
       const typed = updatedCard as { slides?: unknown; cards?: unknown };
       if (Array.isArray(typed.slides) && typed.slides.length > 0) {
@@ -790,7 +805,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     }
 
     // Apply live updates immediately for preview
-    onChange(updatedCard as Card);
+    onChangeRef.current(updatedCard as Card);
 
     // Debounce YAML serialization (expensive) while typing
     if (yamlSyncTimerRef.current) clearTimeout(yamlSyncTimerRef.current);
@@ -804,9 +819,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     setTimeout(() => {
       isUpdatingFromForm.current = false;
     }, 0);
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
 
-  const handleBackgroundConfigChange = (next: BackgroundConfig) => {
+  const handleBackgroundConfigChange = useCallback((next: BackgroundConfig) => {
     const currentStyle = form.getFieldValue('style') as string | undefined;
     const updatedStyle = applyBackgroundConfigToStyle(currentStyle, next);
     setBackgroundConfig(next);
@@ -814,7 +830,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     skipStyleSyncRef.current = true;
     form.setFieldsValue({ style: updatedStyle });
     handleValuesChange();
-  };
+  }, [form, handleValuesChange]);
 
   // Handle YAML changes - sync to form and auto-save
   const handleYamlChange = (value: string | undefined) => {
@@ -886,69 +902,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     setActiveTab(nextKey);
   };
 
-  if (!card) {
-    return (
-      <div style={{ padding: '16px', color: 'white', height: '100%' }}>
-        <Title level={4} style={{ color: 'white', marginTop: 0 }}>
-          Properties
-        </Title>
-        <Text style={{ color: '#888' }}>
-          Select a card to edit its properties
-        </Text>
-      </div>
-    );
-  }
-
-  const cardMetadata = cardRegistry.get(card.type);
-  const cardName = cardMetadata?.name || card.type;
-
-  return (
-    <div data-testid="properties-panel" style={{ padding: '16px', color: 'white', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <Title level={4} style={{ color: 'white', marginTop: 0, marginBottom: 0 }}>
-          Properties
-        </Title>
-        <Space>
-          <Tooltip title="Undo last change to card properties">
-            <Button
-              size="small"
-              icon={<UndoOutlined />}
-              onClick={handleUndo}
-              disabled={undoStack.length === 0}
-            >
-              Undo
-            </Button>
-          </Tooltip>
-          {activeTab === 'yaml' && (
-            <Tooltip title="Auto-format YAML with proper indentation">
-              <Button
-                size="small"
-                icon={<FormatPainterOutlined />}
-                onClick={formatYaml}
-              >
-                Format
-              </Button>
-            </Tooltip>
-          )}
-        </Space>
-      </div>
-
-      <div style={{ marginBottom: '12px' }}>
-        <Text strong style={{ color: '#00d9ff' }}>
-          {cardName}
-        </Text>
-        <br />
-        <Text style={{ color: '#888', fontSize: '12px' }}>
-          {card.type}
-        </Text>
-      </div>
-
-      <Divider style={{ margin: '12px 0', borderColor: '#434343' }} />
-
-      <Tabs
-        activeKey={activeTab}
-        onChange={handleTabChange}
-        items={[
+  const tabItems = useMemo(() => {
+    if (!card) return [];
+    return [
           {
             key: 'form',
             label: 'Form',
@@ -3388,7 +3344,73 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </div>
             ),
           },
-        ]}
+  ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card?.type, form, handleValuesChange, entities, streamComponentEnabled, backgroundConfig, handleBackgroundConfigChange, yamlError, onOpenEntityBrowser]);
+
+  if (!card) {
+    return (
+      <div style={{ padding: '16px', color: 'white', height: '100%' }}>
+        <Title level={4} style={{ color: 'white', marginTop: 0 }}>
+          Properties
+        </Title>
+        <Text style={{ color: '#888' }}>
+          Select a card to edit its properties
+        </Text>
+      </div>
+    );
+  }
+
+  const cardMetadata = cardRegistry.get(card.type);
+  const cardName = cardMetadata?.name || card.type;
+
+  return (
+    <div data-testid="properties-panel" style={{ padding: '16px', color: 'white', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <Title level={4} style={{ color: 'white', marginTop: 0, marginBottom: 0 }}>
+          Properties
+        </Title>
+        <Space>
+          <Tooltip title="Undo last change to card properties">
+            <Button
+              size="small"
+              icon={<UndoOutlined />}
+              onClick={handleUndo}
+              disabled={undoStack.length === 0}
+            >
+              Undo
+            </Button>
+          </Tooltip>
+          {activeTab === 'yaml' && (
+            <Tooltip title="Auto-format YAML with proper indentation">
+              <Button
+                size="small"
+                icon={<FormatPainterOutlined />}
+                onClick={formatYaml}
+              >
+                Format
+              </Button>
+            </Tooltip>
+          )}
+        </Space>
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <Text strong style={{ color: '#00d9ff' }}>
+          {cardName}
+        </Text>
+        <br />
+        <Text style={{ color: '#888', fontSize: '12px' }}>
+          {card.type}
+        </Text>
+      </div>
+
+      <Divider style={{ margin: '12px 0', borderColor: '#434343' }} />
+
+      <Tabs
+        activeKey={activeTab}
+        onChange={handleTabChange}
+        items={tabItems}
       />
     </div>
   );

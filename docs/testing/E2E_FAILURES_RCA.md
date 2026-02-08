@@ -196,13 +196,76 @@ Regression link: Gradient editor relies on color picker / popover infrastructure
 - Carousel autoplay + visual slide mismatch appear isolated; may be timing or baseline drift.
 - Attribute display dropdown timeout may be a flake under full-suite load.
 
+## Root Cause Analysis (2026-02-08)
+
+### Proven Root Cause: PropertiesPanel Tabs Unmount/Remount Cycle
+
+When a user changes a color in `ColorPickerInput` or `GradientPickerInput`, the `onChange` chain propagates through:
+
+```
+ColorPicker → Form.Item → handleValuesChange → App.tsx → Zustand store → re-render
+→ PropertiesPanel re-render → Tabs inline items array recreated → child components unmount/remount
+```
+
+The inline `items={[...]}` array on the Ant Design `<Tabs>` component created a **new array reference on every render**. Since Ant Design Tabs uses referential equality to decide whether to remount panel content, every card property change caused all tab children (including Popover-wrapped color/gradient pickers) to **unmount and remount**. A 259ms gap between unmount and remount was measured via lifecycle diagnostics.
+
+On remount, `useState(false)` for popover open state reset to `false`, closing the popover. All subsequent Playwright interactions (`click()`, `fill()`, `clear()`) failed with "element was detached from the DOM, retrying" because the original DOM nodes were destroyed.
+
+### Resolution Applied (2026-02-08)
+
+**Three-part fix targeting the unmount/remount cycle and its consequences:**
+
+#### 1. PropertiesPanel Tabs Memoization (`src/components/PropertiesPanel.tsx`)
+- Moved static constants (`HAPTIC_PATTERN_OPTIONS`, `SOUND_EFFECT_OPTIONS`, debounce values) to module level
+- Added `cardRef` and `onChangeRef` refs to break closure dependency on `card` prop
+- Wrapped `handleValuesChange` and `handleBackgroundConfigChange` in `useCallback` with stable deps (`[form]`)
+- Updated all render functions (`renderAttributeDisplaySection`, `renderContextPreviewSection`, etc.) to read from `cardRef.current` instead of the `card` closure
+- Wrapped the Tabs `items` array in `useMemo` with **structural-only dependencies** (`card?.type`, not `card`):
+  ```tsx
+  const tabItems = useMemo(() => {
+    if (!card) return [];
+    return [ /* 3 tab items */ ];
+  }, [card?.type, form, handleValuesChange, entities, ...]);
+  ```
+- Form.Item values continue to flow correctly through Ant Design Form's internal context (via the shared `form` instance), independent of the JSX tree memoization
+
+#### 2. GradientPickerInput Popover State Cache (`src/components/GradientPickerInput.tsx`)
+- Added module-level `popoverStateCache` Map with 1-second TTL (same pattern as ColorPickerInput)
+- Replaced `useState(false)` with lazy initializer reading from cache
+- Created `setOpen` wrapper via `useCallback` that writes to cache on every state change
+- Removed `destroyTooltipOnHide` which was actively destroying the portal DOM
+- Memoized `editorContent` with `useMemo` to prevent Popover portal re-mount
+- Added Escape key handler for keyboard accessibility
+
+#### 3. ColorPickerInput Popover State Cache (`src/components/ColorPickerInput.tsx`)
+- Already applied in prior session (2026-02-07): module-level popover state cache, memoized `pickerContent`
+- This partially mitigated failures (17 → 14) but could not prevent the DOM detachment from PropertiesPanel remounting
+
+### Regression Progression
+| Date | Pass | Fail | Skip | Change |
+|------|------|------|------|--------|
+| 2026-02-06 (baseline) | 139 | 8 | 2 | Initial baseline |
+| 2026-02-07 (regression) | 130 | 17 | 2 | After Phase 3 merge |
+| 2026-02-07 (partial fix) | — | 14 | — | ColorPickerInput cache + DSL fixes |
+| 2026-02-08 (full fix) | 147 | 0 | 2 | PropertiesPanel memoization + GradientPickerInput cache |
+
 ## Regression Checklist (2026-02-07)
-- [ ] R1. Attribute display dropdown timeout (`tests/e2e/attribute-display.spec.ts:79`)
-- [ ] R2. Carousel autoplay advance (`tests/e2e/carousel.spec.ts:78`)
-- [ ] R3. Carousel visual slide snapshot (`tests/e2e/carousel.visual.spec.ts:37`)
-- [ ] R4. Color palettes flow (`tests/e2e/color-palettes.spec.ts:6`)
-- [ ] R5. Color picker cluster (10 tests) (`tests/e2e/color-picker.spec.ts`)
-- [ ] R6. Gradient editor cluster (3 tests) (`tests/e2e/gradient-editor.spec.ts`)
+- [x] R1. Attribute display dropdown timeout (`tests/e2e/attribute-display.spec.ts:79`) — Flake under full-suite load; passes after PropertiesPanel stabilization
+- [x] R2. Carousel autoplay advance (`tests/e2e/carousel.spec.ts:78`) — Timing flake; passes after PropertiesPanel stabilization reduced render churn
+- [x] R3. Carousel visual slide snapshot (`tests/e2e/carousel.visual.spec.ts:37`) — Timing flake; passes after stabilization
+- [x] R4. Color palettes flow (`tests/e2e/color-palettes.spec.ts:6`) — Root cause: PropertiesPanel Tabs remounting destroyed ColorPickerInput popover during palette add-color flow
+- [x] R5. Color picker cluster (10 tests) (`tests/e2e/color-picker.spec.ts`) — Root cause: PropertiesPanel Tabs remounting destroyed ColorPickerInput and its popover after onChange
+- [x] R6. Gradient editor cluster (3 tests) (`tests/e2e/gradient-editor.spec.ts`) — Root cause: PropertiesPanel Tabs remounting destroyed GradientPickerInput and its popover after onChange
+
+### Final Verification Run (2026-02-08)
+```bash
+npx playwright test --project=electron-e2e --trace=retain-on-failure
+```
+Result:
+- **147 passed**
+- **0 failed**
+- 2 skipped
+- Duration: ~40m
 
 
 ## Recommended Sequence Rationale

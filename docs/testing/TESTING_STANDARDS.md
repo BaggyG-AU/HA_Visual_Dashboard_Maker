@@ -943,7 +943,216 @@ Do not claim stabilization without these checks.
 
 Introduce/maintain a static check that fails CI when raw sleeps are added to `tests/e2e/**`, except approved debug-only files explicitly documented.
 
+### 20. DSL Change Blast-Radius Check (MANDATORY)
+
+When modifying a shared DSL method (any method in `tests/support/dsl/**` called by more than one spec), the developer or AI agent MUST:
+
+1. **Identify all consuming specs** — grep for the method name across `tests/e2e/**` and `tests/integration/**`.
+2. **Run all affected specs** before merging, not just the spec that motivated the change.
+3. **If the consuming spec count exceeds 5**, run a full-suite regression pass before merging.
+
+**Rationale**: In the 2026-02-07 regression, a single change to `ColorPickerDSL.openPopover()` caused 14 of 17 failures because 10+ specs depend on it. The change was tested only against the spec that motivated it.
+
+**Enforcement**: Pull requests that modify shared DSL methods without evidence of consuming-spec validation should be rejected.
+
+### 21. `keyboard.type()` Prohibition in DSL (MANDATORY)
+
+`keyboard.type()` types into whatever element is currently focused, one character at a time. With Ant Design search-enabled components, each keystroke triggers re-renders. On WSL2 with IPC latency, this can take 10+ seconds for long values.
+
+**Rule**: DSL methods MUST use `pressSequentially()` on a specific input locator instead of `keyboard.type()`:
+
+```typescript
+// BAD — types into focused element, one char at a time, triggers per-keystroke re-renders
+await this.window.keyboard.type('input_boolean.show_controls');
+
+// GOOD — targets specific input, much faster
+await combobox.pressSequentially(value, { delay: 0 });
+```
+
+**Exception**: `keyboard.type()` is acceptable for Monaco editor text entry (different input model) and must be documented with a comment.
+
+### 22. Popover/Portal Open Contract (MANDATORY)
+
+DSL methods that open Ant Design Popovers must follow this contract:
+
+1. **Scroll the trigger into view** before clicking: `await trigger.scrollIntoViewIfNeeded()`.
+2. **Click the trigger element itself** (e.g., the swatch button), not a parent wrapper.
+3. **Verify the popover is visible** after clicking.
+4. **Fallback path must re-click the trigger**, not a different element:
+
+```typescript
+// BAD — fallback clicks wrapper div, which doesn't trigger popover
+const input = this.window.getByTestId(inputTestId);  // wrapper <div>
+await input.click({ force: true });
+
+// GOOD — fallback re-clicks the actual trigger (swatch)
+const retrySwatch = this.getColorSwatch(inputTestId);
+await retrySwatch.scrollIntoViewIfNeeded();
+await retrySwatch.click({ force: true });
+```
+
+5. **Flow-defensive close-and-retry**: If a blocking portal/dropdown is still open, send Escape, wait for it to close, then re-click the trigger:
+
+```typescript
+try {
+  await this.expectVisible(testId);
+} catch {
+  await this.window.keyboard.press('Escape');
+  await this.window.waitForFunction(
+    () => document.querySelectorAll('.ant-popover:not(.ant-popover-hidden)').length === 0,
+    null, { timeout: 2000 }
+  ).catch(() => undefined);
+  const retrySwatch = this.getColorSwatch(testId);
+  await retrySwatch.scrollIntoViewIfNeeded();
+  await retrySwatch.click({ force: true });
+  await this.expectVisible(testId, 5000);
+}
+```
+
+6. **Idempotency**: The open method must be safe to call when the popover is already open (check first, return early if visible).
+
+### 23. `force: true` Click Rationale Requirement
+
+Every `force: true` click in DSL code must include a one-line comment explaining why it is needed. `force: true` skips Playwright's visibility, stability, and hit-target checks. While it still scrolls into view and dispatches real DOM events, it can mask genuine bugs.
+
+```typescript
+// GOOD — documented rationale
+// force: Ant Design swatch is behind transparent overlay during popover transition
+await swatch.click({ force: true });
+
+// BAD — no explanation
+await swatch.click({ force: true });
+```
+
+**Prefer alternatives first**: `waitFor({ state: 'visible' })`, `scrollIntoViewIfNeeded()`, clicking a parent element, or `dispatchEvent('click')`.
+
 ---
 
-**Last Updated**: February 5, 2026
-**Next Review**: After Phase 1 completion (v0.4.0)
+## VISUAL SNAPSHOT STABILITY RULES (NEW)
+
+These rules prevent visual regression test failures caused by subpixel rendering variance, not actual UI changes.
+
+### 24. Dimension Swap Prevention
+
+Element-based screenshots (`expect(locator).toHaveScreenshot()`) can produce 1px dimension swaps (e.g., 40x41 vs 41x40) due to subpixel bounding-box rounding. This fails the screenshot comparison even when the visual content is identical.
+
+**Rule**: When a snapshot target's bounding box can vary by 1px due to font rasterization or subpixel layout:
+
+1. Get the element's `boundingBox()` and compute a fixed-dimension `clip` with rounded coordinates.
+2. Use `page.screenshot({ clip })` instead of `expect(locator).toHaveScreenshot()`.
+3. This ensures deterministic pixel dimensions across runs.
+
+```typescript
+// BAD — element bounding box can shift by 1px between runs
+await expect(icon).toHaveScreenshot('icon.png');
+
+// GOOD — fixed clip from measured bounding box
+const box = await icon.boundingBox();
+const clip = {
+  x: Math.floor(box!.x),
+  y: Math.floor(box!.y),
+  width: Math.ceil(box!.width) + 1,  // +1 to absorb rounding
+  height: Math.ceil(box!.height) + 1,
+};
+await expect(page).toHaveScreenshot('icon.png', { clip });
+```
+
+### 25. Subpixel Drift Tolerance
+
+For known subpixel drift in small decorative elements (e.g., pagination dots, focus rings), a small `maxDiffPixels` allowance is permitted ONLY in DSL methods, not in spec files.
+
+Requirements:
+- The drift must be understood and documented with a rationale comment.
+- The value must be minimal (typically < 20 pixels).
+- Prefer `maxDiffPixelRatio` for large screenshots and `maxDiffPixels` for small, bounded elements.
+
+```typescript
+// GOOD — in DSL, documented rationale
+async expectPaginationScreenshot(name: string, cardIndex = 0): Promise<void> {
+  await expect(pagination).toHaveScreenshot(name, {
+    animations: 'disabled',
+    caret: 'hide',
+    // Allow minimal pixel drift from subpixel centering in pagination dots.
+    maxDiffPixels: 10,
+  });
+}
+```
+
+### 26. Screenshot Environment Consistency
+
+Visual regression baselines must be generated and compared within the same environment (OS, GPU, font renderer). Cross-environment comparisons (macOS vs Linux, local vs Docker) are inherently unreliable.
+
+- Store baselines per-platform using Playwright's `{name}-{projectName}-{platform}.png` naming.
+- Update baselines only after confirming behavior correctness from traces/screenshots.
+- Never update baselines to "make the test pass" without understanding what changed.
+
+---
+
+## SHARED ANT DESIGN SELECT UTILITY (NEW)
+
+### 27. Consolidate Ant Design Select Interaction Logic
+
+Multiple DSL files implement their own Ant Design Select handling (attributeDisplay, backgroundCustomizer, conditionalVisibility, stateIcons). This leads to inconsistent patterns and regression when one is fixed but others aren't.
+
+**Rule**: New DSL methods that interact with Ant Design `<Select>` components MUST use a shared utility. The canonical helper is `selectAntOption()` in `tests/support/dsl/conditionalVisibility.ts`. When a shared module is extracted, all existing DSLs must be migrated to it.
+
+The shared pattern must:
+1. Click the Select field to open the dropdown.
+2. Try `waitFor({ state: 'visible' })` on the desired option in the dropdown portal (fast path).
+3. If not found, fall back to `pressSequentially()` on the combobox input inside the Select field.
+4. Press Enter to confirm.
+
+Do NOT:
+- Use `keyboard.type()` for Select search input.
+- Use `isVisible()` to detect dropdown options (returns false immediately for non-DOM elements).
+- Duplicate this logic across multiple DSL files.
+
+---
+
+## LONG TEST TIMEOUT JUSTIFICATION (STRENGTHENED)
+
+### 29. Product Code Testability — Ant Design Rendering Stability (MANDATORY)
+
+E2E test stability depends on product-code rendering stability. The most common cause of clustered E2E failures (5+ tests failing with "element detached from DOM") is **product code that destroys and recreates DOM** during React re-renders — not bad test selectors or timing.
+
+When writing or modifying components that contain Ant Design `Tabs`, `Popover`, `Modal`, or other portal-based UI:
+
+1. **Ant Design Tabs `items` must be memoized** — Never use inline `items={[...]}`. Wrap in `useMemo` with structural-only deps (e.g., `card?.type`, not `card`). See `ai_rules.md` Rule 8a.
+
+2. **Popover state must survive parent re-renders** — If a Popover-based component lives inside Tabs or another container that may remount children, use a module-level popover state cache. See `ai_rules.md` Rule 8b.
+
+3. **Memoize Popover content** — Wrap content passed to `<Popover content={...}>` in `useMemo` to prevent portal re-mount on every render. See `ai_rules.md` Rule 8e.
+
+4. **Handlers in Tabs must use refs, not closures** — If a `useCallback` handler is in the dependency list of a tab memoization, it must use `useRef` for values that change on every render (e.g., the current card object). See `ai_rules.md` Rule 8c.
+
+5. **No hooks after early returns** — `useMemo`, `useCallback`, `useState`, and `useEffect` must never be placed after a conditional `return`. This crashes the component. See `ai_rules.md` Rule 8d.
+
+6. **Test for unmount/remount when adding components inside Tabs** — After adding a new Popover-based component to a tab panel, manually verify it survives a form value change without losing state. Add `useEffect(() => { console.log('mount'); return () => console.log('unmount'); }, [])` during development to confirm.
+
+**Root cause reference**: The 2026-02-08 regression (17 failures → 0 after fix) was caused entirely by product code — `PropertiesPanel.tsx` passing an inline `items` array to `<Tabs>`, causing ColorPickerInput and GradientPickerInput to unmount/remount on every card property change. See `E2E_FAILURES_RCA.md` "Root Cause Analysis (2026-02-08)".
+
+---
+
+### 28. Measured-Runtime Documentation Requirement
+
+When using `test.setTimeout()` for legitimately long tests (see Section 6 exception), the comment MUST include:
+
+1. **What makes the test slow** — e.g., "Electron launch + 3 YAML round-trips + 2 AntD Select interactions".
+2. **Measured execution time** — e.g., "Measured at ~65-75s on WSL2".
+3. **The headroom calculation** — e.g., "Set to 100s (75s measured + 33% headroom)".
+
+```typescript
+// GOOD — fully justified
+// This test performs: Electron launch (~8s) + dashboard create (~3s) + YAML round-trip (~5s)
+// + 3 AntD Select interactions (~10s each on WSL2) + final assertions (~5s).
+// Measured at ~55-65s on WSL2. Set to 100s (65s + 54% headroom).
+test.setTimeout(100_000);
+
+// BAD — arbitrary number, no rationale
+test.setTimeout(120000);
+```
+
+---
+
+**Last Updated**: February 8, 2026
+**Next Review**: After Phase 4 completion (v0.5.0)
