@@ -24,6 +24,8 @@ import { StateIconMappingControls } from './StateIconMappingControls';
 import type { AttributeDisplayLayout } from '../types/attributeDisplay';
 import { MultiEntityControls } from './MultiEntityControls';
 import type { AggregateFunction, BatchActionType, MultiEntityMode } from '../types/multiEntity';
+import { DEFAULT_SECTION_ICON } from '../features/accordion/accordionService';
+import type { AccordionExpandMode } from '../features/accordion/types';
 
 const { Title, Text } = Typography;
 
@@ -33,6 +35,12 @@ type MonacoTestWindow = Window & {
 };
 
 type FormCardValues = Record<string, unknown> & { entities?: unknown };
+type AccordionSectionValues = {
+  title?: string;
+  icon?: string;
+  default_expanded?: boolean;
+  cards?: unknown[];
+};
 
 interface PropertiesPanelProps {
   card: Card | null;
@@ -547,6 +555,34 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       }
     }
 
+    if (card.type === 'custom:accordion-card') {
+      const rawSections = (normalized as { sections?: unknown }).sections;
+      const sections = Array.isArray(rawSections) ? rawSections : [];
+      (normalized as { sections?: unknown }).sections = (sections.length > 0 ? sections : [{}]).map((section, index) => {
+        const typedSection = (section ?? {}) as AccordionSectionValues;
+        return {
+          title: typeof typedSection.title === 'string' && typedSection.title.trim().length > 0
+            ? typedSection.title
+            : `Section ${index + 1}`,
+          icon: typeof typedSection.icon === 'string' && typedSection.icon.trim().length > 0
+            ? typedSection.icon
+            : DEFAULT_SECTION_ICON,
+          default_expanded: Boolean(typedSection.default_expanded),
+          cards: Array.isArray(typedSection.cards) ? typedSection.cards : [],
+        };
+      });
+
+      const expandMode = (normalized as { expand_mode?: unknown }).expand_mode;
+      if (expandMode !== 'single' && expandMode !== 'multi') {
+        (normalized as { expand_mode?: unknown }).expand_mode = 'single';
+      }
+
+      const accordionStyle = (normalized as { style?: unknown }).style;
+      if (accordionStyle !== 'bordered' && accordionStyle !== 'borderless' && accordionStyle !== 'ghost') {
+        (normalized as { style?: unknown }).style = 'bordered';
+      }
+    }
+
     return normalized;
   };
 
@@ -874,6 +910,73 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       onOpenEntityBrowser(handleInsertEntity);
     }
   };
+
+  const normalizeAccordionSections = useCallback((sections: unknown[]): AccordionSectionValues[] => {
+    if (sections.length === 0) {
+      return [{ title: 'Section 1', icon: DEFAULT_SECTION_ICON, default_expanded: true, cards: [] }];
+    }
+
+    return sections.map((section, index) => {
+      const typed = (section ?? {}) as AccordionSectionValues;
+      return {
+        title: typeof typed.title === 'string' && typed.title.trim().length > 0
+          ? typed.title
+          : `Section ${index + 1}`,
+        icon: typeof typed.icon === 'string' && typed.icon.trim().length > 0
+          ? typed.icon
+          : DEFAULT_SECTION_ICON,
+        default_expanded: Boolean(typed.default_expanded),
+        cards: Array.isArray(typed.cards) ? typed.cards : [],
+      };
+    });
+  }, []);
+
+  const updateAccordionSections = useCallback((updater: (sections: AccordionSectionValues[]) => AccordionSectionValues[]) => {
+    const currentCard = cardRef.current;
+    if (!currentCard || currentCard.type !== 'custom:accordion-card') return;
+    const currentSections = form.getFieldValue('sections');
+    const normalizedSections = normalizeAccordionSections(Array.isArray(currentSections) ? currentSections : []);
+    const nextSections = updater(normalizedSections);
+    form.setFieldsValue({ sections: nextSections });
+    handleValuesChange();
+  }, [form, handleValuesChange, normalizeAccordionSections]);
+
+  const normalizeSingleModeDefaults = useCallback(() => {
+    const currentCard = cardRef.current;
+    if (!currentCard || currentCard.type !== 'custom:accordion-card') return;
+    updateAccordionSections((sections) => {
+      let seenExpanded = false;
+      return sections.map((section, index) => {
+        if (section.default_expanded && !seenExpanded) {
+          seenExpanded = true;
+          return section;
+        }
+        if (!seenExpanded && index === 0) {
+          seenExpanded = true;
+          return { ...section, default_expanded: true };
+        }
+        return { ...section, default_expanded: false };
+      });
+    });
+  }, [updateAccordionSections]);
+
+  const setAccordionExpandState = useCallback((expanded: boolean) => {
+    const currentCard = cardRef.current;
+    if (!currentCard || currentCard.type !== 'custom:accordion-card') return;
+    const mode = (form.getFieldValue('expand_mode') as AccordionExpandMode | undefined) ?? 'single';
+
+    updateAccordionSections((sections) => {
+      if (!expanded) {
+        return sections.map((section) => ({ ...section, default_expanded: false }));
+      }
+
+      if (mode === 'single') {
+        return sections.map((section, index) => ({ ...section, default_expanded: index === 0 }));
+      }
+
+      return sections.map((section) => ({ ...section, default_expanded: true }));
+    });
+  }, [form, updateAccordionSections]);
 
   const handleTabChange = (nextKey: string) => {
     if (activeTab === nextKey) {
@@ -1940,6 +2043,181 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 type="info"
                 showIcon
                 style={{ marginBottom: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:accordion-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input placeholder="Accordion title (optional)" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Accordion Behavior</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Expand Mode</span>}
+                name="expand_mode"
+              >
+                <Select
+                  placeholder="Select expand mode"
+                  options={[
+                    { value: 'single', label: 'Single (one open)' },
+                    { value: 'multi', label: 'Multi (many open)' },
+                  ]}
+                  onChange={(nextMode: AccordionExpandMode) => {
+                    if (nextMode === 'single') {
+                      normalizeSingleModeDefaults();
+                    }
+                  }}
+                  data-testid="accordion-expand-mode"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Style Mode</span>}
+                name="style"
+              >
+                <Select
+                  placeholder="Select style"
+                  options={[
+                    { value: 'bordered', label: 'Bordered' },
+                    { value: 'borderless', label: 'Borderless' },
+                    { value: 'ghost', label: 'Ghost' },
+                  ]}
+                  data-testid="accordion-style-mode"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Header Background</span>}
+                name="header_background"
+              >
+                <Input placeholder="#1f1f1f or var(--token)" data-testid="accordion-header-background" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Content Padding</span>}
+                name="content_padding"
+              >
+                <InputNumber min={0} style={{ width: '100%' }} data-testid="accordion-content-padding" />
+              </Form.Item>
+
+              <Space style={{ marginBottom: '12px' }}>
+                <Button
+                  onClick={() => setAccordionExpandState(true)}
+                  data-testid="accordion-expand-all"
+                >
+                  Expand All
+                </Button>
+                <Button
+                  onClick={() => setAccordionExpandState(false)}
+                  data-testid="accordion-collapse-all"
+                >
+                  Collapse All
+                </Button>
+              </Space>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Sections</Text>
+
+              <Form.List name="sections">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                          Section {index + 1}
+                        </Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Title</span>}
+                          name={[field.name, 'title']}
+                        >
+                          <Input
+                            placeholder={`Section ${index + 1}`}
+                            data-testid={`accordion-section-${index}-title`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Icon</span>}
+                          name={[field.name, 'icon']}
+                        >
+                          <IconSelect
+                            placeholder={DEFAULT_SECTION_ICON}
+                            data-testid={`accordion-section-${index}-icon`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Expanded by Default</span>}
+                          name={[field.name, 'default_expanded']}
+                          valuePropName="checked"
+                        >
+                          <Switch
+                            data-testid={`accordion-section-${index}-default-expanded`}
+                            onChange={(checked) => {
+                              const mode = (form.getFieldValue('expand_mode') as AccordionExpandMode | undefined) ?? 'single';
+                              if (!checked || mode !== 'single') return;
+                              updateAccordionSections((sections) => sections.map((section, sectionIndex) => ({
+                                ...section,
+                                default_expanded: sectionIndex === index,
+                              })));
+                            }}
+                          />
+                        </Form.Item>
+
+                        <Button
+                          danger
+                          onClick={() => {
+                            remove(field.name);
+                            handleValuesChange();
+                          }}
+                          data-testid={`accordion-section-${index}-remove`}
+                        >
+                          Remove Section
+                        </Button>
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        add({
+                          title: `Section ${fields.length + 1}`,
+                          icon: DEFAULT_SECTION_ICON,
+                          default_expanded: false,
+                          cards: [],
+                        });
+                        handleValuesChange();
+                      }}
+                      data-testid="accordion-section-add"
+                    >
+                      Add Section
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+
+              <Alert
+                title="Nested Cards Configuration"
+                description="Each section can contain child cards in sections[].cards. Add or edit nested cards using YAML for full control."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
               />
             </>
           )}
@@ -3106,7 +3384,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swiper-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swiper-card', 'custom:accordion-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.
@@ -3281,27 +3559,31 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     </>
                   )}
 
-                  <Form.Item
-                    label={<span style={{ color: 'white' }}>Background</span>}
-                    colon={false}
-                  >
-                    <BackgroundCustomizer
-                      value={backgroundConfig}
-                      onChange={handleBackgroundConfigChange}
-                    />
-                  </Form.Item>
+                  {card.type !== 'custom:accordion-card' && (
+                    <>
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Background</span>}
+                        colon={false}
+                      >
+                        <BackgroundCustomizer
+                          value={backgroundConfig}
+                          onChange={handleBackgroundConfigChange}
+                        />
+                      </Form.Item>
 
-                  <Form.Item
-                    label={<span style={{ color: 'white' }}>Style (CSS)</span>}
-                    name="style"
-                    help={<span style={{ color: '#666' }}>CSS applied to the card (background, color, padding, etc.)</span>}
-                  >
-                    <Input.TextArea
-                      placeholder="background: linear-gradient(...);"
-                      rows={6}
-                      style={{ fontFamily: 'monospace' }}
-                    />
-                  </Form.Item>
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Style (CSS)</span>}
+                        name="style"
+                        help={<span style={{ color: '#666' }}>CSS applied to the card (background, color, padding, etc.)</span>}
+                      >
+                        <Input.TextArea
+                          placeholder="background: linear-gradient(...);"
+                          rows={6}
+                          style={{ fontFamily: 'monospace' }}
+                        />
+                      </Form.Item>
+                    </>
+                  )}
                 </Form>
               </div>
             ),

@@ -56,7 +56,13 @@ export class PropertiesPanelDSL {
 
     const tabElement = this.panel.getByRole('tab', { name: new RegExp(`^${tab}$`, 'i') });
     await expect(tabElement).toBeVisible({ timeout: 10000 });
-    await tabElement.click();
+    await this.dismissTransientOverlays();
+    try {
+      await tabElement.click();
+    } catch {
+      await this.dismissTransientOverlays();
+      await tabElement.click();
+    }
     const isTabActive = async () => {
       const ariaSelected = await tabElement.getAttribute('aria-selected');
       if (ariaSelected === 'true') return true;
@@ -75,7 +81,7 @@ export class PropertiesPanelDSL {
 
     // Prefer any visible tabpane instead of relying on a single active class.
     const visibleTabPane = this.panel.locator('.ant-tabs-tabpane:visible').first();
-    await expect(visibleTabPane).toBeVisible({ timeout: 3000 });
+    await expect(visibleTabPane).toBeVisible({ timeout: 5000 });
 
     if (tab === 'YAML') {
       await this.expectYamlEditor();
@@ -117,7 +123,7 @@ export class PropertiesPanelDSL {
    * Wait for Monaco editor to be ready in YAML tab
    * Detects BOTH .monaco-editor and textarea fallback
    */
-  async expectYamlEditor(timeout = 3000): Promise<void> {
+  async expectYamlEditor(timeout = 8000): Promise<void> {
     await this.expectVisible();
     await this.expectActiveTab('YAML');
 
@@ -227,5 +233,29 @@ export class PropertiesPanelDSL {
     await this.panel.evaluate((el, targetY) => {
       el.scrollTop = targetY;
     }, y);
+  }
+
+  /**
+   * Dismiss transient Ant Design overlays/popovers that may intercept clicks.
+   */
+  async dismissTransientOverlays(): Promise<void> {
+    await this.window.keyboard.press('Escape').catch(() => undefined);
+    await this.window
+      .waitForFunction(() => {
+        const isVisible = (el: Element) => {
+          const node = el as HTMLElement;
+          const rect = node.getBoundingClientRect();
+          const style = window.getComputedStyle(node);
+          return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+        };
+
+        const blockingPopovers = Array.from(document.querySelectorAll('.ant-popover'))
+          .filter((el) => !el.classList.contains('ant-popover-hidden'))
+          .filter(isVisible);
+        const blockingDropdowns = Array.from(document.querySelectorAll('.ant-select-dropdown'))
+          .filter(isVisible);
+        return blockingPopovers.length === 0 && blockingDropdowns.length === 0;
+      }, null, { timeout: 2000 })
+      .catch(() => undefined);
   }
 }

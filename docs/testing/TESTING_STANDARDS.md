@@ -955,6 +955,25 @@ When modifying a shared DSL method (any method in `tests/support/dsl/**` called 
 
 **Enforcement**: Pull requests that modify shared DSL methods without evidence of consuming-spec validation should be rejected.
 
+### 20a. Shared DSL Compatibility Contract (MANDATORY)
+
+For any change in `tests/support/dsl/**`, compatibility must be explicitly validated against all consumers.
+
+Minimum required evidence:
+1. **Consumer map**: grep output showing all spec files that call each changed method.
+2. **Contract delta**: whether signature/default behavior changed (`none` is a valid explicit answer).
+3. **Consumer verification run**:
+   - all consuming specs, or
+   - full-suite run when consumer count is greater than 5.
+4. **Failure diagnostics**: trace/screenshot artifact paths for any failed consuming spec.
+5. **Final classification** for each failure encountered during verification:
+   - `product-code`
+   - `shared-dsl`
+   - `spec-noncompliance`
+   - `environmental`
+
+This contract exists to "socialize" shared DSL changes across all consumers and prevent regressions that only appear outside the motivating spec.
+
 ### 21. `keyboard.type()` Prohibition in DSL (MANDATORY)
 
 `keyboard.type()` types into whatever element is currently focused, one character at a time. With Ant Design search-enabled components, each keystroke triggers re-renders. On WSL2 with IPC latency, this can take 10+ seconds for long values.
@@ -1129,7 +1148,7 @@ When writing or modifying components that contain Ant Design `Tabs`, `Popover`, 
 
 6. **Test for unmount/remount when adding components inside Tabs** — After adding a new Popover-based component to a tab panel, manually verify it survives a form value change without losing state. Add `useEffect(() => { console.log('mount'); return () => console.log('unmount'); }, [])` during development to confirm.
 
-**Root cause reference**: The 2026-02-08 regression (17 failures → 0 after fix) was caused entirely by product code — `PropertiesPanel.tsx` passing an inline `items` array to `<Tabs>`, causing ColorPickerInput and GradientPickerInput to unmount/remount on every card property change. See `E2E_FAILURES_RCA.md` "Root Cause Analysis (2026-02-08)".
+**Root cause reference**: The 2026-02-08 regression (17 failures → 0 after fix) was caused entirely by product code — `PropertiesPanel.tsx` passing an inline `items` array to `<Tabs>`, causing ColorPickerInput and GradientPickerInput to unmount/remount on every card property change. See `docs/archive/E2E_FAILURES_RCA.md` "Root Cause Analysis (2026-02-08)".
 
 ---
 

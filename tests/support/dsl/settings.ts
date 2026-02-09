@@ -3,6 +3,10 @@ import { Page, expect } from '@playwright/test';
 export class SettingsDSL {
   constructor(private window: Page) {}
 
+  private async expectTabSelected(tab: 'Appearance' | 'Connection' | 'Diagnostics'): Promise<void> {
+    await expect(this.window.getByRole('tab', { name: tab, selected: true })).toBeVisible({ timeout: 5000 });
+  }
+
   async open(): Promise<void> {
     const settingsButton = this.window.getByRole('button', { name: /Settings/i });
     await expect(settingsButton).toBeVisible();
@@ -22,7 +26,16 @@ export class SettingsDSL {
   async selectTab(tab: 'Appearance' | 'Connection' | 'Diagnostics'): Promise<void> {
     const tabNode = this.window.getByRole('tab', { name: tab });
     await expect(tabNode).toBeVisible();
+
+    // Avoid unnecessary interaction churn if the tab is already active.
+    const isSelected = await tabNode.getAttribute('aria-selected');
+    if (isSelected === 'true') {
+      await this.expectTabSelected(tab);
+      return;
+    }
+
     await tabNode.click();
+    await this.expectTabSelected(tab);
   }
 
   async setLoggingLevel(level: string): Promise<void> {

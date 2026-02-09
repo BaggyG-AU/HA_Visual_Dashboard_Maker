@@ -30,7 +30,7 @@ Before creating any artifacts, you MUST read and understand the following docume
 ## Phase 4: Layout Infrastructure Layer - Overview
 
 **Branch Name**: `feature/layout-infrastructure-layer`
-**Version Target**: v0.7.0-beta.1
+**Version Target**: v0.7.4-beta.2
 **Dependencies**: None (independent phase - can run parallel to other phases)
 **Estimated Duration**: 2-3 weeks
 **Total Features**: 6

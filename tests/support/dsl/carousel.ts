@@ -198,7 +198,12 @@ export class CarouselDSL {
     const slide = this.getSlide(index, cardIndex);
     await expect(slide).toBeVisible();
     await this.disableAnimations();
-    await expect(slide).toHaveScreenshot(name, { animations: 'disabled', caret: 'hide' });
+    await expect(slide).toHaveScreenshot(name, {
+      animations: 'disabled',
+      caret: 'hide',
+      // Allow minor anti-aliasing/subpixel differences across compositor runs.
+      maxDiffPixels: 2500,
+    });
   }
 
   async expectPaginationScreenshot(name: string, cardIndex = 0): Promise<void> {

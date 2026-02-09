@@ -1,7 +1,7 @@
 # Layout Infrastructure Layer - Implementation Plan
 
 **Branch**: `feature/layout-infrastructure-layer`
-**Version Target**: v0.7.0-beta.1
+**Version Target**: v0.7.4-beta.2
 **Dependencies**: None (independent phase)
 **Status**: :construction: Not Started
 **Planned Start**: 2026-02-10
@@ -135,7 +135,7 @@
     - type: markdown
       content: "Welcome Home"
   ```
-- [ ] Behavior notes (v0.7.0-beta.1):
+- [ ] Behavior notes (v0.7.4-beta.2):
   - [ ] Autoplay and loop are suppressed while the carousel card is selected in the visual editor.
   - [ ] Slides inherit the parent card background unless a slide-specific background is configured.
 - [ ] Serialize carousel config to YAML correctly
@@ -234,18 +234,18 @@ This feature MUST comply with:
 
 #### Phase 1: Core Accordion Component (Days 1-2)
 
-- [ ] Create `AccordionCardRenderer.tsx` in `src/components/cards/`
-- [ ] Create `src/services/accordionService.ts` for configuration logic
-- [ ] Create `src/types/accordion.ts` for TypeScript types
+- [x] Create `AccordionCardRenderer.tsx` in `src/components/cards/`
+- [x] Create `src/features/accordion/accordionService.ts` for configuration logic
+- [x] Create `src/features/accordion/types.ts` for TypeScript types
 - [ ] Implement accordion component with:
   - [ ] Collapsible section headers (click to expand/collapse)
   - [ ] Smooth expand/collapse CSS transitions (max-height + opacity)
   - [ ] Single-expand mode (only one section open at a time)
   - [ ] Multi-expand mode (multiple sections can be open simultaneously)
   - [ ] Default expanded sections (configurable)
-  - [ ] Custom header content (text, icons, entity state badges)
+  - [ ] Custom header content (text and icons)
 - [ ] Each section holds child cards via existing `BaseCard` pattern
-- [ ] Expand/collapse chevron indicator with rotation animation
+- [ ] Expand/collapse chevron indicator (`mdi:chevron-down`) with rotation animation
 - [ ] Unit tests for accordion service
 
 #### Phase 2: Nested Accordion & Styling (Day 2)
@@ -258,7 +258,7 @@ This feature MUST comply with:
   - [ ] Ghost mode (transparent background headers)
   - [ ] Custom header background color
   - [ ] Custom content padding
-- [ ] Collapse/expand all button (toggle all sections)
+- [ ] Collapse/expand all controls in PropertiesPanel (toggle all sections)
 
 #### Phase 3: PropertiesPanel Integration (Day 2)
 
@@ -271,11 +271,14 @@ This feature MUST comply with:
   - [ ] Style selector (bordered, borderless, ghost)
 - [ ] Live preview of accordion in canvas
 - [ ] Section selection in canvas (click header to select section)
+- [ ] Defaults:
+  - [ ] Section icon defaults to `mdi:folder-outline` when not configured
+  - [ ] Accordion inherits parent card background styling by default
 
 #### Phase 4: YAML Schema & Serialization (Day 3)
 
 - [ ] Define YAML schema for accordion card type
-- [ ] Register `custom:accordion-card` in `cardRegistry.ts`
+- [x] Register `custom:accordion-card` in `cardRegistry.ts`
 - [ ] Example YAML:
   ```yaml
   type: custom:accordion-card
@@ -302,7 +305,7 @@ This feature MUST comply with:
           entity: alarm_control_panel.home
   ```
 - [ ] Serialize/deserialize accordion config
-- [ ] Update `ha-dashboard-schema.json`
+- [x] Update `ha-dashboard-schema.json`
 - [ ] YAML editor autocomplete for accordion properties
 
 #### Phase 5: Accessibility & Testing (Days 3-4)
@@ -319,7 +322,7 @@ This feature MUST comply with:
   - [ ] Home/End jump to first/last section header
   - [ ] Tab enters content when section expanded
 - [ ] Respect `prefers-reduced-motion` (disable expand/collapse animations)
-- [ ] Create `AccordionDSL` in `tests/support/dsl/accordion.ts`
+- [x] Create `AccordionDSL` in `tests/support/dsl/accordion.ts`
 - [ ] E2E tests using AccordionDSL:
   - [ ] Add accordion card from palette
   - [ ] Click section header to expand/collapse
@@ -328,9 +331,24 @@ This feature MUST comply with:
   - [ ] Nested accordion works
   - [ ] YAML round-trip serialization
   - [ ] Keyboard navigation works
-- [ ] Unit tests for accordion service
-- [ ] Visual regression tests for accordion states
+- [x] Unit tests for accordion service
+- [x] Visual regression tests for accordion states
 - [ ] Documentation with configuration examples
+
+### Locked Decisions for v0.7.4-beta.2
+
+- [ ] Entity state badges in section headers are deferred (not included in initial release scope)
+- [ ] Collapse/expand all is exposed in PropertiesPanel only (no in-card toolbar buttons)
+- [ ] Accordion inherits card background styling by default
+- [ ] Default icon behavior:
+  - [ ] Section icon fallback is `mdi:folder-outline`
+  - [ ] Expand/collapse indicator icon is `mdi:chevron-down`
+
+### Deferred Follow-ups (Post v0.7.4-beta.2)
+
+- [ ] Add optional section header entity state badges (counts/temperature/status variants)
+- [ ] Evaluate in-card expand/collapse all controls based on usability feedback
+- [ ] Add optional accordion-specific background override tokens (while keeping inherit-default behavior)
 
 ### Acceptance Criteria
 
@@ -1043,7 +1061,7 @@ This feature MUST comply with:
 ### Release Preparation
 
 - [ ] Branch merged to main (via PR)
-- [ ] Version bumped to v0.7.0-beta.1
+- [ ] Version bumped to v0.7.4-beta.2
 - [ ] Changelog updated
 - [ ] Beta release created
 - [ ] Stakeholders notified

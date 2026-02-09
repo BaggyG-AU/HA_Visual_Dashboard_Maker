@@ -187,6 +187,7 @@
             "custom:mini-graph-card",
             "custom:mini-media-player",
             "custom:swiper-card",
+            "custom:accordion-card",
             "custom:mushroom-entity-card",
             "custom:mushroom-template-card",
             "custom:mushroom-person-card",
@@ -516,6 +517,48 @@
             { "type": "string", "enum": ["auto"] }
           ],
           "description": "Slides per view"
+        },
+        "expand_mode": {
+          "type": "string",
+          "enum": ["single", "multi"],
+          "description": "Accordion expand mode"
+        },
+        "sections": {
+          "type": "array",
+          "description": "Accordion sections",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "Section header title"
+              },
+              "icon": {
+                "type": "string",
+                "description": "Section header icon (MDI)"
+              },
+              "default_expanded": {
+                "type": "boolean",
+                "description": "Whether section is expanded by default"
+              },
+              "cards": {
+                "type": "array",
+                "description": "Cards contained in this section",
+                "items": {
+                  "$ref": "#/definitions/card"
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "header_background": {
+          "type": "string",
+          "description": "Accordion header background color"
+        },
+        "content_padding": {
+          "type": "number",
+          "description": "Accordion section content padding"
         },
         "space_between": {
           "type": "number",

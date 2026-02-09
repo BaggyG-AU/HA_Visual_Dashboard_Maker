@@ -34,6 +34,7 @@ import { ConditionalVisibilityDSL } from './dsl/conditionalVisibility';
 import { StateIconsDSL } from './dsl/stateIcons';
 import { MultiEntityDSL } from './dsl/multiEntity';
 import { CarouselDSL } from './dsl/carousel';
+import { AccordionDSL } from './dsl/accordion';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -73,6 +74,7 @@ export interface TestContext extends electron.ElectronTestContext {
   stateIcons: StateIconsDSL;
   multiEntity: MultiEntityDSL;
   carousel: CarouselDSL;
+  accordion: AccordionDSL;
 }
 
 /**
@@ -107,5 +109,6 @@ export async function launchWithDSL(): Promise<TestContext> {
     stateIcons: new StateIconsDSL(electronCtx.window),
     multiEntity: new MultiEntityDSL(electronCtx.window),
     carousel: new CarouselDSL(electronCtx.window),
+    accordion: new AccordionDSL(electronCtx.window),
   };
 }

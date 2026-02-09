@@ -44,6 +44,20 @@ When modifying any shared DSL method in `tests/support/dsl/**`, the AI agent MUS
 
 This prevents systemic regressions like the 2026-02-07 incident where a single `openPopover()` change broke 14 tests.
 
+## 4b) Shared DSL Change Contract (MANDATORY)
+When changing any method in `tests/support/dsl/**`, the change is not complete until compatibility is explicitly proven for all consumers.
+
+Required deliverables (must be included in the AI response and/or PR notes):
+1. **Consumer inventory**: list all consuming specs from `tests/e2e/**` and `tests/integration/**`.
+2. **Contract statement**: state whether method signature/default behavior changed.
+3. **Compatibility statement**: if default behavior changed, document old vs new behavior and migration impact.
+4. **Execution evidence**:
+   - run results for all consuming specs, or
+   - full-suite results when consumer count is greater than 5.
+5. **Artifact paths**: include failure trace/screenshot paths under `test-results/artifacts/**` for any failing consumer.
+
+Any shared DSL change without this evidence is non-compliant.
+
 ## 5) Test Execution & Reporting Policy
 AI agents MAY run tests when the execution environment permits it, including:
 - Lint: `npm run lint`
@@ -177,7 +191,7 @@ const pickerContent = useMemo(() => (
 <Popover content={pickerContent}>
 ```
 
-Root cause reference: See `docs/testing/E2E_FAILURES_RCA.md` "Root Cause Analysis (2026-02-08)" for the PropertiesPanel Tabs regression that these rules prevent.
+Root cause reference: See `docs/archive/E2E_FAILURES_RCA.md` "Root Cause Analysis (2026-02-08)" for the PropertiesPanel Tabs regression that these rules prevent.
 
 ## 9) Git feature workflow (MANDATORY)
 

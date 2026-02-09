@@ -71,7 +71,11 @@
       "Bash(__NEW_LINE_ab760db05d91a523__ echo \"\")",
       "Bash(__NEW_LINE_465206990abd7f75__ echo \"\")",
       "Bash(__NEW_LINE_401d6fcc9cba05c1__ echo \"\")",
-      "Bash(__NEW_LINE_6628bb2df06cd76c__ echo \"\")"
+      "Bash(__NEW_LINE_6628bb2df06cd76c__ echo \"\")",
+      "WebFetch(domain:bondaracademy.com)",
+      "WebFetch(domain:playwright.dev)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:medium.com)"
     ]
   }
 }

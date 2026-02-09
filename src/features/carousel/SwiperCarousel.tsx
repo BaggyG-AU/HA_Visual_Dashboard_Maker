@@ -249,7 +249,9 @@ export const SwiperCarousel: React.FC<SwiperCarouselProps> = ({
         modules={[Navigation, Pagination, Autoplay, EffectFade, EffectCube, EffectCoverflow, EffectFlip, Keyboard, A11y]}
         navigation={config.navigation}
         pagination={paginationConfig}
-        autoplay={autoplayConfig}
+        // Hard-gate autoplay while editing/selected so Swiper doesn't start an
+        // internal timer before our stop effect runs.
+        autoplay={!isEditing ? autoplayConfig : false}
         loop={loop}
         effect={effect}
         slidesPerView={config.slides_per_view}

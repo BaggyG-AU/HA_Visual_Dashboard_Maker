@@ -28,7 +28,7 @@ You are an AI assistant implementing **Feature 4.1: Swiper.js Integration (Carou
 **Goal**: Add a Swiper.js v12+ based carousel/slider foundation to enable sliding layouts of existing cards.
 
 **Branch**: `feature/layout-infrastructure-layer`  
-**Version Target**: v0.7.0-beta.1  
+**Version Target**: v0.7.4-beta.2  
 **Dependencies**: None  
 **Estimated Effort**: 5–6 days  
 **Status**: Ready to Begin  

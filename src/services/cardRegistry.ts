@@ -322,6 +322,23 @@ class CardRegistry {
         },
         requiredProps: ['cards'],
       },
+      {
+        type: 'custom:accordion-card',
+        name: 'Accordion',
+        category: 'layout',
+        icon: 'MenuFoldOutlined',
+        description: 'Collapsible sections container for organizing cards',
+        isCustom: true,
+        source: 'custom',
+        defaultProps: {
+          expand_mode: 'single',
+          style: 'bordered',
+          sections: [
+            { title: 'Section 1', icon: 'mdi:folder-outline', default_expanded: true, cards: [] },
+          ],
+        },
+        requiredProps: ['sections'],
+      },
 
       // Custom HACS Cards
       {

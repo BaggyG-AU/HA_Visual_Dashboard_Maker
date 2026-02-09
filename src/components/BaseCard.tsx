@@ -33,6 +33,7 @@ import { VerticalStackInCardRenderer } from './cards/VerticalStackInCardRenderer
 import { CustomButtonCardRenderer } from './cards/CustomButtonCardRenderer';
 import { SurveillanceCardRenderer } from './cards/SurveillanceCardRenderer';
 import { SwiperCardRenderer } from './cards/SwiperCardRenderer';
+import { AccordionCardRenderer } from './cards/AccordionCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { evaluateVisibilityConditions } from '../services/conditionalVisibility';
@@ -241,6 +242,9 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
       break;
     case 'custom:swiper-card':
       renderedCard = <SwiperCardRenderer card={card as React.ComponentProps<typeof SwiperCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
+      break;
+    case 'custom:accordion-card':
+      renderedCard = <AccordionCardRenderer card={card as React.ComponentProps<typeof AccordionCardRenderer>['card']} isSelected={isSelected} onClick={onClick} />;
       break;
 
     // Surveillance/Camera cards

@@ -115,14 +115,18 @@ export async function launch(): Promise<ElectronTestContext> {
     console.log('[electron launch] diagnostics failed', String(err));
   }
 
-  // Maximize window for consistent viewport (fixes react-grid-layout sizing issues)
+  // Use a fixed large window size to avoid responsive wrapping without the instability
+  // that can come from maximize/fullscreen transitions during startup.
   await app.evaluate(({ BrowserWindow }) => {
     const win = BrowserWindow.getAllWindows()[0];
     if (win) {
-      win.maximize();
+      win.setBounds({ x: 0, y: 0, width: 1920, height: 1080 });
       win.show();
     }
   });
+
+  // Keep renderer viewport in sync with the full-size window for stable locator visibility.
+  await window.setViewportSize({ width: 1920, height: 1080 });
 
   // Wait for React to hydrate
   // First wait for the root div to exist
