@@ -188,6 +188,7 @@
             "custom:mini-media-player",
             "custom:swiper-card",
             "custom:accordion-card",
+            "custom:tabs-card",
             "custom:mushroom-entity-card",
             "custom:mushroom-template-card",
             "custom:mushroom-person-card",
@@ -559,6 +560,65 @@
         "content_padding": {
           "type": "number",
           "description": "Accordion section content padding"
+        },
+        "tab_position": {
+          "type": "string",
+          "enum": ["top", "bottom", "left", "right"],
+          "description": "Tabs header position"
+        },
+        "tab_size": {
+          "type": "string",
+          "enum": ["default", "small", "large"],
+          "description": "Tabs header size"
+        },
+        "default_tab": {
+          "type": "number",
+          "description": "Default active tab index"
+        },
+        "animation": {
+          "type": "string",
+          "enum": ["none", "fade", "slide"],
+          "description": "Tabs transition animation"
+        },
+        "lazy_render": {
+          "type": "boolean",
+          "description": "Render only the active tab panel"
+        },
+        "tabs": {
+          "type": "array",
+          "description": "Tabs configuration for tabs cards",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "Tab label"
+              },
+              "icon": {
+                "type": "string",
+                "description": "Tab icon (MDI)"
+              },
+              "badge": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "number" }
+                ],
+                "description": "Optional static badge text/number"
+              },
+              "count": {
+                "type": "number",
+                "description": "Optional tab count label"
+              },
+              "cards": {
+                "type": "array",
+                "description": "Cards contained in this tab panel",
+                "items": {
+                  "$ref": "#/definitions/card"
+                }
+              }
+            },
+            "additionalProperties": true
+          }
         },
         "space_between": {
           "type": "number",

@@ -339,6 +339,26 @@ class CardRegistry {
         },
         requiredProps: ['sections'],
       },
+      {
+        type: 'custom:tabs-card',
+        name: 'Tabs',
+        category: 'layout',
+        icon: 'AppstoreOutlined',
+        description: 'Tabbed container for organizing cards',
+        isCustom: true,
+        source: 'custom',
+        defaultProps: {
+          tab_position: 'top',
+          tab_size: 'default',
+          default_tab: 0,
+          animation: 'none',
+          lazy_render: true,
+          tabs: [
+            { title: 'Tab 1', icon: 'mdi:tab', cards: [] },
+          ],
+        },
+        requiredProps: ['tabs'],
+      },
 
       // Custom HACS Cards
       {

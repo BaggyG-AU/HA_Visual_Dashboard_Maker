@@ -1,10 +1,15 @@
 # Layout Infrastructure Layer - Implementation Plan
 
 **Branch**: `feature/layout-infrastructure-layer`
-**Version Target**: v0.7.4-beta.2
+**Version Target**: v0.7.4-beta.3
 **Dependencies**: None (independent phase)
-**Status**: :construction: Not Started
+**Status**: :construction: In Progress
 **Planned Start**: 2026-02-10
+
+**Versioning Convention**:
+- `v0.7.<phase>-beta.<feature>`
+- Example (current): `v0.7.4-beta.3` = Phase 4, Feature 3
+- Completed features keep their original shipped version in historical notes
 
 ---
 
@@ -31,7 +36,7 @@
 | Feature | Priority | Effort | Status |
 |---------|----------|--------|--------|
 | 4.1: Swiper.js Integration | High | 5-6 days | :hourglass: Ready to Begin |
-| 4.2: Accordion Card Module | Medium | 3-4 days | :hourglass: Ready to Begin |
+| 4.2: Accordion Card Module | Medium | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.2) |
 | 4.3: Tabs Card Module | Medium | 3-4 days | :hourglass: Ready to Begin |
 | 4.4: Popup/Modal Card System | High | 5-6 days | :hourglass: Ready to Begin |
 | 4.5: Horizontal/Vertical Layout Enhancements | Medium | 2-3 days | :hourglass: Ready to Begin |
@@ -228,7 +233,50 @@ This feature MUST comply with:
 **Priority**: Medium
 **Dependencies**: None
 **Estimated Effort**: 3-4 days
-**Status**: :hourglass: Ready to Begin
+**Status**: :white_check_mark: Complete (v0.7.4-beta.2)
+
+### Delivery Baseline (v0.7.4-beta.2)
+
+#### Completed
+
+- [x] `custom:accordion-card` product implementation delivered:
+  - [x] `src/features/accordion/types.ts`
+  - [x] `src/features/accordion/accordionService.ts`
+  - [x] `src/features/accordion/AccordionPanel.tsx`
+  - [x] `src/components/cards/AccordionCardRenderer.tsx`
+- [x] Integration points complete:
+  - [x] Card registry entry in `src/services/cardRegistry.ts`
+  - [x] BaseCard dispatch wiring in `src/components/BaseCard.tsx`
+  - [x] YAML schema updates in `src/schemas/ha-dashboard-schema.json`
+- [x] Accordion behavior shipped:
+  - [x] Single-expand and multi-expand modes
+  - [x] Default expanded section handling
+  - [x] Section header title + MDI icon + chevron rotation
+  - [x] Smooth expand/collapse transitions
+  - [x] Bordered / borderless / ghost style modes
+  - [x] Header background + content padding options
+  - [x] Nested accordion rendering with max depth guard (`MAX_ACCORDION_DEPTH = 3`)
+  - [x] Collapse all / expand all controls in PropertiesPanel
+- [x] Accessibility and keyboard support shipped:
+  - [x] `role="heading"` + `aria-level` on headers
+  - [x] `aria-expanded`, `aria-controls`, `role="region"`, `aria-labelledby`
+  - [x] Enter/Space toggle + Arrow/Home/End header navigation
+  - [x] `prefers-reduced-motion` support for transitions
+- [x] Testing delivered:
+  - [x] `tests/unit/accordion-service.spec.ts`
+  - [x] `tests/support/dsl/accordion.ts` + registration in `tests/support/index.ts`
+  - [x] `tests/e2e/accordion.spec.ts`
+  - [x] `tests/e2e/accordion.visual.spec.ts`
+
+#### Deferred (Post v0.7.4-beta.2)
+
+- [ ] Section header entity state badges (counts/temperature/status)
+- [ ] In-card toolbar for collapse all / expand all (beyond PropertiesPanel controls)
+- [ ] PropertiesPanel section reorder UX (drag/reorder controls)
+- [ ] Accordion-specific independent background override tokens (inherit-default remains target behavior)
+- [ ] Additional nested accordion E2E coverage focused on depth-3 scenarios
+
+### Original Implementation Checklist (Historical Planning Artifact)
 
 ### Implementation Checklist
 
@@ -337,12 +385,12 @@ This feature MUST comply with:
 
 ### Locked Decisions for v0.7.4-beta.2
 
-- [ ] Entity state badges in section headers are deferred (not included in initial release scope)
-- [ ] Collapse/expand all is exposed in PropertiesPanel only (no in-card toolbar buttons)
-- [ ] Accordion inherits card background styling by default
-- [ ] Default icon behavior:
-  - [ ] Section icon fallback is `mdi:folder-outline`
-  - [ ] Expand/collapse indicator icon is `mdi:chevron-down`
+- [x] Entity state badges in section headers are deferred (not included in initial release scope)
+- [x] Collapse/expand all is exposed in PropertiesPanel only (no in-card toolbar buttons)
+- [x] Accordion inherits card background styling by default
+- [x] Default icon behavior:
+  - [x] Section icon fallback is `mdi:folder-outline`
+  - [x] Expand/collapse indicator icon is `mdi:chevron-down`
 
 ### Deferred Follow-ups (Post v0.7.4-beta.2)
 
@@ -1148,7 +1196,7 @@ This phase provides foundation for:
 
 ---
 
-**Document Status**: :white_check_mark: Ready for Implementation
-**Last Updated**: February 6, 2026
-**Next Review**: After feature branch creation
+**Document Status**: :construction: In Progress (Feature 4.2 baselined complete)
+**Last Updated**: February 9, 2026
+**Next Review**: Before starting Feature 4.3 implementation
 **Owner**: Development Team

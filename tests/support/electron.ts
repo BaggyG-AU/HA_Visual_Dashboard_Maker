@@ -65,7 +65,12 @@ export async function launch(): Promise<ElectronTestContext> {
   const mainPath = path.join(__dirname, '../../.vite/build/main.js');
   const userDataDir = createIsolatedUserDataDir();
 
-  const wslFlags = ['--no-sandbox', '--disable-gpu'];
+  const wslFlags = [
+    '--no-sandbox',
+    '--disable-gpu',
+    '--disable-gpu-compositing',
+    '--disable-gpu-rasterization',
+  ];
   const baseEnv = { ...process.env };
   delete baseEnv.ELECTRON_RUN_AS_NODE;
 

@@ -26,6 +26,7 @@ import { MultiEntityControls } from './MultiEntityControls';
 import type { AggregateFunction, BatchActionType, MultiEntityMode } from '../types/multiEntity';
 import { DEFAULT_SECTION_ICON } from '../features/accordion/accordionService';
 import type { AccordionExpandMode } from '../features/accordion/types';
+import { DEFAULT_TAB_ICON, clampTabIndex } from '../services/tabsService';
 
 const { Title, Text } = Typography;
 
@@ -39,6 +40,14 @@ type AccordionSectionValues = {
   title?: string;
   icon?: string;
   default_expanded?: boolean;
+  cards?: unknown[];
+};
+
+type TabsTabValues = {
+  title?: string;
+  icon?: string;
+  badge?: string | number;
+  count?: number;
   cards?: unknown[];
 };
 
@@ -583,6 +592,53 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       }
     }
 
+    if (card.type === 'custom:tabs-card') {
+      const rawTabs = (normalized as { tabs?: unknown }).tabs;
+      const tabs = Array.isArray(rawTabs) ? rawTabs : [];
+      const normalizedTabs = (tabs.length > 0 ? tabs : [{}]).map((tab, index) => {
+        const typedTab = (tab ?? {}) as TabsTabValues;
+        return {
+          title: typeof typedTab.title === 'string' && typedTab.title.trim().length > 0
+            ? typedTab.title
+            : `Tab ${index + 1}`,
+          icon: typeof typedTab.icon === 'string' && typedTab.icon.trim().length > 0
+            ? typedTab.icon
+            : DEFAULT_TAB_ICON,
+          badge: typeof typedTab.badge === 'number' || typeof typedTab.badge === 'string'
+            ? typedTab.badge
+            : undefined,
+          count: typeof typedTab.count === 'number' && Number.isFinite(typedTab.count)
+            ? Math.max(0, Math.floor(typedTab.count))
+            : undefined,
+          cards: Array.isArray(typedTab.cards) ? typedTab.cards : [],
+        };
+      });
+      (normalized as { tabs?: unknown }).tabs = normalizedTabs;
+
+      const tabPosition = (normalized as { tab_position?: unknown }).tab_position;
+      if (tabPosition !== 'top' && tabPosition !== 'bottom' && tabPosition !== 'left' && tabPosition !== 'right') {
+        (normalized as { tab_position?: unknown }).tab_position = 'top';
+      }
+
+      const tabSize = (normalized as { tab_size?: unknown }).tab_size;
+      if (tabSize !== 'default' && tabSize !== 'small' && tabSize !== 'large') {
+        (normalized as { tab_size?: unknown }).tab_size = 'default';
+      }
+
+      const animation = (normalized as { animation?: unknown }).animation;
+      if (animation !== 'none' && animation !== 'fade' && animation !== 'slide') {
+        (normalized as { animation?: unknown }).animation = 'none';
+      }
+
+      const lazyRender = (normalized as { lazy_render?: unknown }).lazy_render;
+      if (typeof lazyRender !== 'boolean') {
+        (normalized as { lazy_render?: unknown }).lazy_render = true;
+      }
+
+      const defaultTabValue = (normalized as { default_tab?: unknown }).default_tab;
+      (normalized as { default_tab?: number }).default_tab = clampTabIndex(defaultTabValue, normalizedTabs.length);
+    }
+
     return normalized;
   };
 
@@ -977,6 +1033,43 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       return sections.map((section) => ({ ...section, default_expanded: true }));
     });
   }, [form, updateAccordionSections]);
+
+  const normalizeTabsList = useCallback((tabs: unknown[]): TabsTabValues[] => {
+    if (tabs.length === 0) {
+      return [{ title: 'Tab 1', icon: DEFAULT_TAB_ICON, cards: [] }];
+    }
+
+    return tabs.map((tab, index) => {
+      const typed = (tab ?? {}) as TabsTabValues;
+      return {
+        title: typeof typed.title === 'string' && typed.title.trim().length > 0
+          ? typed.title
+          : `Tab ${index + 1}`,
+        icon: typeof typed.icon === 'string' && typed.icon.trim().length > 0
+          ? typed.icon
+          : DEFAULT_TAB_ICON,
+        badge: typeof typed.badge === 'number' || typeof typed.badge === 'string'
+          ? typed.badge
+          : undefined,
+        count: typeof typed.count === 'number' && Number.isFinite(typed.count)
+          ? Math.max(0, Math.floor(typed.count))
+          : undefined,
+        cards: Array.isArray(typed.cards) ? typed.cards : [],
+      };
+    });
+  }, []);
+
+  const updateTabsList = useCallback((updater: (tabs: TabsTabValues[]) => TabsTabValues[]) => {
+    const currentCard = cardRef.current;
+    if (!currentCard || currentCard.type !== 'custom:tabs-card') return;
+    const currentTabs = form.getFieldValue('tabs');
+    const normalizedTabs = normalizeTabsList(Array.isArray(currentTabs) ? currentTabs : []);
+    const nextTabs = updater(normalizedTabs);
+    const safeTabs = nextTabs.length > 0 ? nextTabs : [{ title: 'Tab 1', icon: DEFAULT_TAB_ICON, cards: [] }];
+    const defaultTab = clampTabIndex(form.getFieldValue('default_tab'), safeTabs.length);
+    form.setFieldsValue({ tabs: safeTabs, default_tab: defaultTab });
+    handleValuesChange();
+  }, [form, handleValuesChange, normalizeTabsList]);
 
   const handleTabChange = (nextKey: string) => {
     if (activeTab === nextKey) {
@@ -2589,6 +2682,183 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
+          {card.type === 'custom:tabs-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input placeholder="Tabs title (optional)" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Tabs Behavior</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Tab Position</span>}
+                name="tab_position"
+              >
+                <Select
+                  placeholder="Select tab position"
+                  options={[
+                    { value: 'top', label: 'Top' },
+                    { value: 'bottom', label: 'Bottom' },
+                    { value: 'left', label: 'Left' },
+                    { value: 'right', label: 'Right' },
+                  ]}
+                  data-testid="tabs-position"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Tab Size</span>}
+                name="tab_size"
+              >
+                <Select
+                  placeholder="Select tab size"
+                  options={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'small', label: 'Small' },
+                    { value: 'large', label: 'Large' },
+                  ]}
+                  data-testid="tabs-size"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Default Active Tab</span>}
+                name="default_tab"
+              >
+                <InputNumber min={0} style={{ width: '100%' }} data-testid="tabs-default-tab" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Animation</span>}
+                name="animation"
+              >
+                <Select
+                  placeholder="Select animation"
+                  options={[
+                    { value: 'none', label: 'None' },
+                    { value: 'fade', label: 'Fade' },
+                    { value: 'slide', label: 'Slide' },
+                  ]}
+                  data-testid="tabs-animation"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Lazy Render</span>}
+                name="lazy_render"
+                valuePropName="checked"
+              >
+                <Switch data-testid="tabs-lazy-render" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Tabs</Text>
+
+              <Form.List name="tabs">
+                {(fields) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                          Tab {index + 1}
+                        </Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Title</span>}
+                          name={[field.name, 'title']}
+                        >
+                          <Input
+                            placeholder={`Tab ${index + 1}`}
+                            data-testid={`tabs-tab-${index}-title`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Icon</span>}
+                          name={[field.name, 'icon']}
+                        >
+                          <IconSelect
+                            placeholder={DEFAULT_TAB_ICON}
+                            data-testid={`tabs-tab-${index}-icon`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Badge Text</span>}
+                          name={[field.name, 'badge']}
+                        >
+                          <Input
+                            placeholder="Optional badge text"
+                            data-testid={`tabs-tab-${index}-badge`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Count</span>}
+                          name={[field.name, 'count']}
+                        >
+                          <InputNumber
+                            min={0}
+                            style={{ width: '100%' }}
+                            data-testid={`tabs-tab-${index}-count`}
+                          />
+                        </Form.Item>
+
+                        <Button
+                          danger
+                          disabled={fields.length <= 1}
+                          onClick={() => {
+                            updateTabsList((tabs) => tabs.filter((_, tabIndex) => tabIndex !== index));
+                          }}
+                          data-testid={`tabs-tab-${index}-remove`}
+                        >
+                          Remove Tab
+                        </Button>
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        updateTabsList((tabs) => [
+                          ...tabs,
+                          {
+                            title: `Tab ${tabs.length + 1}`,
+                            icon: DEFAULT_TAB_ICON,
+                            cards: [],
+                          },
+                        ]);
+                      }}
+                      data-testid="tabs-tab-add"
+                    >
+                      Add Tab
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+
+              <Alert
+                title="Nested Cards Configuration"
+                description="Each tab panel can contain child cards in tabs[].cards. Add or edit nested cards using YAML for full control."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            </>
+          )}
+
           {card.type === 'custom:bubble-card' && (
             <>
               <Form.Item
@@ -3384,7 +3654,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swiper-card', 'custom:accordion-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swiper-card', 'custom:accordion-card', 'custom:tabs-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.
@@ -3628,7 +3898,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           },
   ];
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [card?.type, form, handleValuesChange, entities, streamComponentEnabled, backgroundConfig, handleBackgroundConfigChange, yamlError, onOpenEntityBrowser]);
+  }, [card?.type, form, handleValuesChange, entities, streamComponentEnabled, backgroundConfig, handleBackgroundConfigChange, yamlError, onOpenEntityBrowser, updateTabsList]);
 
   if (!card) {
     return (

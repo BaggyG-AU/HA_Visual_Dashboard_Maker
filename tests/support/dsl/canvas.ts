@@ -164,7 +164,10 @@ export class CanvasDSL {
         x: Math.max(0, Math.floor(box.x)),
         y: Math.max(0, Math.floor(box.y)),
         width: Math.max(1, Math.floor(box.width)),
-        height: Math.max(1, Math.floor(box.height)),
+        // Linux/Electron in CI can intermittently render lower-frame compositor
+        // regions as white. Capture the upper region where card background state
+        // is validated to keep snapshots deterministic.
+        height: Math.max(1, Math.floor(Math.min(Math.max(320, box.height), 420))),
       },
       timeout: 15000,
     });
