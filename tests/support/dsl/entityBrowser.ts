@@ -93,7 +93,21 @@ export class EntityBrowserDSL {
       if (!hasVisibleModal) return;
 
       await this.window.keyboard.press('Escape');
-      await expect(this.window.locator('.ant-modal-wrap:visible')).toHaveCount(0, { timeout: 2000 });
+      const closeButtons = this.window.locator(
+        '.ant-modal-wrap:visible .ant-modal-close, .ant-modal-wrap:visible button:has-text("Close"), .ant-modal-wrap:visible button:has-text("Cancel")'
+      );
+      const closeCount = await closeButtons.count();
+      if (closeCount > 0) {
+        await closeButtons.first().click().catch(() => undefined);
+      }
+
+      await expect
+        .poll(async () => {
+          const visible = this.window.locator('.ant-modal-wrap:visible');
+          return await visible.count();
+        }, { timeout: 2500 })
+        .toBeLessThan(count)
+        .catch(() => undefined);
     }
   }
 

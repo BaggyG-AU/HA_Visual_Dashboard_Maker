@@ -62,7 +62,21 @@
       "Bash(done)",
       "Bash(curl:*)",
       "Bash(unzip:*)",
-      "Bash(gh pr list:*)"
+      "Bash(gh pr list:*)",
+      "Bash(sudo apt-get install:*)",
+      "Bash(brew install:*)",
+      "Bash(git -C /home/micah/projects/HA_Visual_Dashboard_Maker log --oneline -10)",
+      "Bash(npx vite build:*)",
+      "Bash(xargs cat:*)",
+      "Bash(__NEW_LINE_ab760db05d91a523__ echo \"\")",
+      "Bash(__NEW_LINE_465206990abd7f75__ echo \"\")",
+      "Bash(__NEW_LINE_401d6fcc9cba05c1__ echo \"\")",
+      "Bash(__NEW_LINE_6628bb2df06cd76c__ echo \"\")",
+      "WebFetch(domain:bondaracademy.com)",
+      "WebFetch(domain:playwright.dev)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:www.home-assistant.io)"
     ]
   }
 }

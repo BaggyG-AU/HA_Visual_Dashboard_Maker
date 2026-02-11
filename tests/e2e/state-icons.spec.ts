@@ -18,6 +18,10 @@ const TEST_ENTITIES = [
 
 test.describe('State Icons (Feature 3.6)', () => {
   test('maps state icons, updates live, and persists YAML', async ({ page }, testInfo) => {
+    // This test performs multiple sequential UI operations (Electron launch, YAML round-trips,
+    // Ant Design Select interactions). On slower environments these steps can exceed 60s.
+    test.setTimeout(100_000);
+
     void page;
     const ctx = await launchWithDSL();
     const {

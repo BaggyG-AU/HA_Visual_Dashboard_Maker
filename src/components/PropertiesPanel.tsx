@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip, Switch, InputNumber } from 'antd';
 import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
 import * as monaco from 'monaco-editor';
@@ -24,6 +24,22 @@ import { StateIconMappingControls } from './StateIconMappingControls';
 import type { AttributeDisplayLayout } from '../types/attributeDisplay';
 import { MultiEntityControls } from './MultiEntityControls';
 import type { AggregateFunction, BatchActionType, MultiEntityMode } from '../types/multiEntity';
+import { DEFAULT_SECTION_ICON } from '../features/accordion/accordionService';
+import type { AccordionExpandMode } from '../features/accordion/types';
+import { DEFAULT_TAB_ICON, clampTabIndex } from '../services/tabsService';
+import { DEFAULT_POPUP_TRIGGER_ICON, normalizePopupConfig } from '../features/popup/popupService';
+import {
+  clampLayoutGap,
+  DEFAULT_LAYOUT_GAP,
+  GAP_PRESET_VALUES,
+  normalizeAlignItems,
+  normalizeGapPreset,
+  normalizeJustifyContent,
+  normalizeJustifyItems,
+  normalizeWrapMode,
+  resolveGapPreset,
+  type LayoutGapPreset,
+} from '../services/layoutConfig';
 
 const { Title, Text } = Typography;
 
@@ -33,6 +49,40 @@ type MonacoTestWindow = Window & {
 };
 
 type FormCardValues = Record<string, unknown> & { entities?: unknown };
+type AccordionSectionValues = {
+  title?: string;
+  icon?: string;
+  default_expanded?: boolean;
+  cards?: unknown[];
+};
+
+type TabsTabValues = {
+  title?: string;
+  icon?: string;
+  badge?: string | number;
+  count?: number;
+  cards?: unknown[];
+};
+
+type PopupConfigValues = {
+  title?: string;
+  size?: 'auto' | 'small' | 'medium' | 'large' | 'fullscreen' | 'custom';
+  custom_size?: {
+    width?: number;
+    height?: number;
+  };
+  close_on_backdrop?: boolean;
+  backdrop_opacity?: number;
+  show_header?: boolean;
+  show_footer?: boolean;
+  close_label?: string;
+  footer_actions?: Array<{
+    label?: string;
+    action?: 'close' | 'none';
+    button_type?: 'default' | 'primary' | 'dashed' | 'link' | 'text';
+  }>;
+  cards?: unknown[];
+};
 
 interface PropertiesPanelProps {
   card: Card | null;
@@ -42,6 +92,28 @@ interface PropertiesPanelProps {
   onCancel: () => void;
   onOpenEntityBrowser?: (insertCallback: (entityId: string) => void) => void;
 }
+
+const COMMIT_DEBOUNCE_MS = 800;
+const YAML_SYNC_DEBOUNCE_MS = 250;
+const YAML_PARSE_DEBOUNCE_MS = 350;
+
+const HAPTIC_PATTERN_OPTIONS = [
+  { value: 'light', label: 'Light' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'heavy', label: 'Heavy' },
+  { value: 'double', label: 'Double' },
+  { value: 'success', label: 'Success' },
+  { value: 'error', label: 'Error' },
+];
+
+const SOUND_EFFECT_OPTIONS = [
+  { value: 'click', label: 'Click/Tap' },
+  { value: 'success', label: 'Success' },
+  { value: 'error', label: 'Error' },
+  { value: 'toggle-on', label: 'Toggle On' },
+  { value: 'toggle-off', label: 'Toggle Off' },
+  { value: 'notification', label: 'Notification' },
+];
 
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   card,
@@ -53,6 +125,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 }) => {
   void _onCancel;
   const [form] = Form.useForm();
+  const watchedGap = Form.useWatch('gap', form);
+  const watchedGridRowGap = Form.useWatch('row_gap', form);
+  const watchedGridColumnGap = Form.useWatch('column_gap', form);
   const [streamComponentEnabled, setStreamComponentEnabled] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<string>('form');
   const [yamlContent, setYamlContent] = useState<string>('');
@@ -71,17 +146,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const { entities } = useHAEntities();
 
-  const COMMIT_DEBOUNCE_MS = 800;
-  const YAML_SYNC_DEBOUNCE_MS = 250;
-  const YAML_PARSE_DEBOUNCE_MS = 350;
-  const HAPTIC_PATTERN_OPTIONS = [
-    { value: 'light', label: 'Light' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'heavy', label: 'Heavy' },
-    { value: 'double', label: 'Double' },
-    { value: 'success', label: 'Success' },
-    { value: 'error', label: 'Error' },
-  ];
+  // Refs for stable closures — allow useCallback/useMemo to avoid card/onChange deps
+  const cardRef = useRef(card);
+  cardRef.current = card;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   const renderHapticConfig = (testIdPrefix: string) => (
     <div>
@@ -132,15 +201,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       </Form.Item>
     </div>
   );
-
-  const SOUND_EFFECT_OPTIONS = [
-    { value: 'click', label: 'Click/Tap' },
-    { value: 'success', label: 'Success' },
-    { value: 'error', label: 'Error' },
-    { value: 'toggle-on', label: 'Toggle On' },
-    { value: 'toggle-off', label: 'Toggle Off' },
-    { value: 'notification', label: 'Notification' },
-  ];
 
   const renderSoundConfig = (testIdPrefix: string) => (
     <div>
@@ -198,7 +258,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   );
 
   const renderAttributeDisplaySection = (values: FormCardValues) => {
-    if (!card) return null;
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
 
     const entityField = typeof values.entity === 'string' ? values.entity : undefined;
     const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
@@ -212,9 +273,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
     const availableEntityIds = Object.keys(entities || {});
     const fallbackEntityId = availableEntityIds.length > 0 ? availableEntityIds[0] : null;
-    const entityId = entityField ?? card.entity ?? firstEntity ?? fallbackEntityId;
+    const entityId = entityField ?? currentCard.entity ?? firstEntity ?? fallbackEntityId;
 
-    const hasEntityConfig = Boolean(entityField || firstEntity || card.entity);
+    const hasEntityConfig = Boolean(entityField || firstEntity || currentCard.entity);
     if (!hasEntityConfig) {
       return null;
     }
@@ -238,7 +299,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   const renderContextPreviewSection = (values: FormCardValues) => {
-    if (!card) return null;
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
 
     const entityField = typeof values.entity === 'string' ? values.entity : undefined;
     const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
@@ -252,7 +314,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
     const availableEntityIds = Object.keys(entities || {});
     const fallbackEntityId = availableEntityIds.length > 0 ? availableEntityIds[0] : null;
-    const defaultEntityId = entityField ?? card.entity ?? firstEntity ?? fallbackEntityId;
+    const defaultEntityId = entityField ?? currentCard.entity ?? firstEntity ?? fallbackEntityId;
 
     const candidates = [
       { key: 'name', label: 'Name', template: typeof values.name === 'string' ? values.name : undefined },
@@ -303,13 +365,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   const renderConditionalVisibilitySection = (values: FormCardValues) => {
-    if (!card) return null;
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
 
     const supportsVisibility =
       typeof values.entity === 'string'
       || Array.isArray(values.entities)
-      || typeof card.entity === 'string'
-      || Array.isArray(card.entities);
+      || typeof currentCard.entity === 'string'
+      || Array.isArray(currentCard.entities);
 
     if (!supportsVisibility) {
       return null;
@@ -323,13 +386,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   const renderStateIconMappingSection = (values: FormCardValues) => {
-    if (!card) return null;
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
 
     const supportsStateIcons =
       typeof values.entity === 'string'
       || Array.isArray(values.entities)
-      || typeof card.entity === 'string'
-      || Array.isArray(card.entities);
+      || typeof currentCard.entity === 'string'
+      || Array.isArray(currentCard.entities);
 
     if (!supportsStateIcons) {
       return null;
@@ -345,7 +409,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           : undefined))
       : undefined;
     const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
-    const entityId = entityField ?? card.entity ?? firstEntity ?? null;
+    const entityId = entityField ?? currentCard.entity ?? firstEntity ?? null;
 
     return (
       <Form.Item name="state_icons">
@@ -355,18 +419,19 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   const renderMultiEntitySection = (values: FormCardValues) => {
-    if (!card) return null;
-    const supportsMultiEntity = card.type === 'button' || card.type === 'custom:button-card';
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
+    const supportsMultiEntity = currentCard.type === 'button' || currentCard.type === 'custom:button-card';
     if (!supportsMultiEntity) return null;
 
     const entitiesField = Array.isArray(values.entities)
       ? values.entities.filter((entry): entry is string => typeof entry === 'string')
       : [];
-    const mode = (values.multi_entity_mode as MultiEntityMode | undefined) ?? card.multi_entity_mode ?? 'individual';
+    const mode = (values.multi_entity_mode as MultiEntityMode | undefined) ?? currentCard.multi_entity_mode ?? 'individual';
     const aggregateFunction = (values.aggregate_function as AggregateFunction | undefined)
-      ?? card.aggregate_function
+      ?? currentCard.aggregate_function
       ?? 'count_on';
-    const batchActions = (Array.isArray(values.batch_actions) ? values.batch_actions : card.batch_actions)
+    const batchActions = (Array.isArray(values.batch_actions) ? values.batch_actions : currentCard.batch_actions)
       ?.map((entry) => {
         if (typeof entry === 'string') return entry;
         if (entry && typeof entry === 'object' && 'type' in entry) {
@@ -411,7 +476,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   const renderSmartDefaultsConfig = (testIdPrefix: string) => {
-    if (!card) return null;
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
 
     return (
       <div>
@@ -436,7 +502,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             const tapAction = form.getFieldValue('tap_action');
 
             const { action, source } = resolveTapAction({
-              ...card,
+              ...currentCard,
               entity: currentEntity,
               smart_defaults: smartDefaults,
               tap_action: tapAction,
@@ -512,6 +578,177 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         (normalized as { icon_color_mode?: unknown }).icon_color_mode = 'custom';
       } else {
         (normalized as { icon_color_mode?: unknown }).icon_color_mode = 'default';
+      }
+    }
+
+    if (card.type === 'custom:swiper-card') {
+      const hasSlides = Array.isArray((normalized as { slides?: unknown }).slides);
+      const cards = (normalized as { cards?: unknown }).cards;
+      if (!hasSlides && Array.isArray(cards)) {
+        (normalized as { slides?: unknown }).slides = cards.map((child: unknown) => ({
+          cards: child ? [child] : [],
+          alignment: 'center',
+          allow_navigation: true,
+        }));
+      } else if (hasSlides) {
+        const slides = (normalized as { slides?: unknown }).slides as Array<Record<string, unknown>>;
+        (normalized as { slides?: unknown }).slides = slides.map((slide) => ({
+          alignment: slide.alignment ?? 'center',
+          allow_navigation: slide.allow_navigation ?? true,
+          ...slide,
+        }));
+      }
+    }
+
+    if (card.type === 'custom:accordion-card') {
+      const rawSections = (normalized as { sections?: unknown }).sections;
+      const sections = Array.isArray(rawSections) ? rawSections : [];
+      (normalized as { sections?: unknown }).sections = (sections.length > 0 ? sections : [{}]).map((section, index) => {
+        const typedSection = (section ?? {}) as AccordionSectionValues;
+        return {
+          title: typeof typedSection.title === 'string' && typedSection.title.trim().length > 0
+            ? typedSection.title
+            : `Section ${index + 1}`,
+          icon: typeof typedSection.icon === 'string' && typedSection.icon.trim().length > 0
+            ? typedSection.icon
+            : DEFAULT_SECTION_ICON,
+          default_expanded: Boolean(typedSection.default_expanded),
+          cards: Array.isArray(typedSection.cards) ? typedSection.cards : [],
+        };
+      });
+
+      const expandMode = (normalized as { expand_mode?: unknown }).expand_mode;
+      if (expandMode !== 'single' && expandMode !== 'multi') {
+        (normalized as { expand_mode?: unknown }).expand_mode = 'single';
+      }
+
+      const accordionStyle = (normalized as { style?: unknown }).style;
+      if (accordionStyle !== 'bordered' && accordionStyle !== 'borderless' && accordionStyle !== 'ghost') {
+        (normalized as { style?: unknown }).style = 'bordered';
+      }
+    }
+
+    if (card.type === 'custom:tabs-card') {
+      const rawTabs = (normalized as { tabs?: unknown }).tabs;
+      const tabs = Array.isArray(rawTabs) ? rawTabs : [];
+      const normalizedTabs = (tabs.length > 0 ? tabs : [{}]).map((tab, index) => {
+        const typedTab = (tab ?? {}) as TabsTabValues;
+        return {
+          title: typeof typedTab.title === 'string' && typedTab.title.trim().length > 0
+            ? typedTab.title
+            : `Tab ${index + 1}`,
+          icon: typeof typedTab.icon === 'string' && typedTab.icon.trim().length > 0
+            ? typedTab.icon
+            : DEFAULT_TAB_ICON,
+          badge: typeof typedTab.badge === 'number' || typeof typedTab.badge === 'string'
+            ? typedTab.badge
+            : undefined,
+          count: typeof typedTab.count === 'number' && Number.isFinite(typedTab.count)
+            ? Math.max(0, Math.floor(typedTab.count))
+            : undefined,
+          cards: Array.isArray(typedTab.cards) ? typedTab.cards : [],
+        };
+      });
+      (normalized as { tabs?: unknown }).tabs = normalizedTabs;
+
+      const tabPosition = (normalized as { tab_position?: unknown }).tab_position;
+      if (tabPosition !== 'top' && tabPosition !== 'bottom' && tabPosition !== 'left' && tabPosition !== 'right') {
+        (normalized as { tab_position?: unknown }).tab_position = 'top';
+      }
+
+      const tabSize = (normalized as { tab_size?: unknown }).tab_size;
+      if (tabSize !== 'default' && tabSize !== 'small' && tabSize !== 'large') {
+        (normalized as { tab_size?: unknown }).tab_size = 'default';
+      }
+
+      const animation = (normalized as { animation?: unknown }).animation;
+      if (animation !== 'none' && animation !== 'fade' && animation !== 'slide') {
+        (normalized as { animation?: unknown }).animation = 'none';
+      }
+
+      const lazyRender = (normalized as { lazy_render?: unknown }).lazy_render;
+      if (typeof lazyRender !== 'boolean') {
+        (normalized as { lazy_render?: unknown }).lazy_render = true;
+      }
+
+      const defaultTabValue = (normalized as { default_tab?: unknown }).default_tab;
+      (normalized as { default_tab?: number }).default_tab = clampTabIndex(defaultTabValue, normalizedTabs.length);
+    }
+
+    if (card.type === 'custom:popup-card') {
+      const typed = normalized as {
+        trigger_label?: unknown;
+        trigger_icon?: unknown;
+        popup?: PopupConfigValues;
+      };
+      if (typeof typed.trigger_label !== 'string' || typed.trigger_label.trim().length === 0) {
+        typed.trigger_label = 'Open Popup';
+      }
+      if (typeof typed.trigger_icon !== 'string' || typed.trigger_icon.trim().length === 0) {
+        typed.trigger_icon = DEFAULT_POPUP_TRIGGER_ICON;
+      }
+      const popup = normalizePopupConfig(typed.popup, typed.trigger_label);
+      typed.popup = {
+        ...popup,
+        footer_actions: popup.footer_actions,
+        cards: popup.cards,
+      };
+    }
+
+    if (card.type === 'vertical-stack') {
+      const typed = normalized as {
+        gap?: unknown;
+        align_items?: unknown;
+      };
+      if (typeof typed.gap !== 'undefined') {
+        typed.gap = clampLayoutGap(typed.gap, DEFAULT_LAYOUT_GAP);
+      }
+      if (typeof typed.align_items !== 'undefined') {
+        const normalizedAlignItems = normalizeAlignItems(typed.align_items, 'stretch');
+        typed.align_items = normalizedAlignItems === 'baseline' ? 'stretch' : normalizedAlignItems;
+      }
+    }
+
+    if (card.type === 'horizontal-stack') {
+      const typed = normalized as {
+        gap?: unknown;
+        align_items?: unknown;
+        justify_content?: unknown;
+        wrap?: unknown;
+      };
+      if (typeof typed.gap !== 'undefined') {
+        typed.gap = clampLayoutGap(typed.gap, DEFAULT_LAYOUT_GAP);
+      }
+      if (typeof typed.align_items !== 'undefined') {
+        const normalizedAlignItems = normalizeAlignItems(typed.align_items, 'stretch');
+        typed.align_items = normalizedAlignItems === 'baseline' ? 'stretch' : normalizedAlignItems;
+      }
+      if (typeof typed.justify_content !== 'undefined') {
+        typed.justify_content = normalizeJustifyContent(typed.justify_content, 'start');
+      }
+      if (typeof typed.wrap !== 'undefined') {
+        typed.wrap = normalizeWrapMode(typed.wrap, 'nowrap');
+      }
+    }
+
+    if (card.type === 'grid') {
+      const typed = normalized as {
+        row_gap?: unknown;
+        column_gap?: unknown;
+        align_items?: unknown;
+        justify_items?: unknown;
+      };
+      if (typeof typed.row_gap !== 'undefined') {
+        typed.row_gap = clampLayoutGap(typed.row_gap, DEFAULT_LAYOUT_GAP);
+      }
+      if (typeof typed.column_gap !== 'undefined') {
+        typed.column_gap = clampLayoutGap(typed.column_gap, DEFAULT_LAYOUT_GAP);
+      }
+      if (typeof typed.align_items !== 'undefined') {
+        typed.align_items = normalizeAlignItems(typed.align_items, 'stretch');
+      }
+      if (typeof typed.justify_items !== 'undefined') {
+        typed.justify_items = normalizeJustifyItems(typed.justify_items, 'stretch');
       }
     }
 
@@ -691,7 +928,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     }
   }, [yamlContent, activeTab]);
 
-  // Reset form and YAML when card changes
+  // Reset form and YAML when card SELECTION changes (different card index selected).
+  // IMPORTANT: Only depend on cardIndex, NOT card. With immutable state updates,
+  // the card reference changes on every edit (handleCardUpdate creates new objects
+  // via .map()). Including `card` in deps would cause this effect to fire during
+  // normal editing, creating a feedback loop:
+  //   YAML change → onChange → new card ref → useEffect → setYamlContent → Monaco
+  //   update → onDidChangeModelContent → handleYamlChange → onChange → ...
+  // This loop overwhelms React's render pipeline and crashes the app (white screen).
   useEffect(() => {
     if (card) {
       // Clear pending timers when switching cards
@@ -710,7 +954,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       setBackgroundConfig(parseBackgroundConfig(styleValue));
       lastStyleValueRef.current = styleValue;
     }
-  }, [card, cardIndex, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardIndex, form]);
 
   // Clear timers on unmount
   useEffect(() => {
@@ -741,13 +986,21 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   // Handle form value changes - sync to YAML and auto-save
-  const handleValuesChange = () => {
+  // Wrapped in useCallback with refs to avoid recreating on every card prop change,
+  // which would destabilize tab memos and cause Tabs to remount panels.
+  const handleValuesChange = useCallback(() => {
     if (isUpdatingFromYaml.current) return;
 
     isUpdatingFromForm.current = true;
 
     const values = form.getFieldsValue();
-    const updatedCard = { ...card, ...values };
+    const updatedCard = { ...cardRef.current, ...values } as Card;
+    if (updatedCard.type === 'custom:swiper-card') {
+      const typed = updatedCard as { slides?: unknown; cards?: unknown };
+      if (Array.isArray(typed.slides) && typed.slides.length > 0) {
+        delete typed.cards;
+      }
+    }
     const styleValue = (values.style as string | undefined) ?? '';
     if (skipStyleSyncRef.current) {
       skipStyleSyncRef.current = false;
@@ -757,7 +1010,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     }
 
     // Apply live updates immediately for preview
-    onChange(updatedCard as Card);
+    onChangeRef.current(updatedCard as Card);
 
     // Debounce YAML serialization (expensive) while typing
     if (yamlSyncTimerRef.current) clearTimeout(yamlSyncTimerRef.current);
@@ -771,9 +1024,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     setTimeout(() => {
       isUpdatingFromForm.current = false;
     }, 0);
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
 
-  const handleBackgroundConfigChange = (next: BackgroundConfig) => {
+  const handleBackgroundConfigChange = useCallback((next: BackgroundConfig) => {
     const currentStyle = form.getFieldValue('style') as string | undefined;
     const updatedStyle = applyBackgroundConfigToStyle(currentStyle, next);
     setBackgroundConfig(next);
@@ -781,7 +1035,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     skipStyleSyncRef.current = true;
     form.setFieldsValue({ style: updatedStyle });
     handleValuesChange();
-  };
+  }, [form, handleValuesChange]);
 
   // Handle YAML changes - sync to form and auto-save
   const handleYamlChange = (value: string | undefined) => {
@@ -826,69 +1080,140 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     }
   };
 
-  if (!card) {
-    return (
-      <div style={{ padding: '16px', color: 'white', height: '100%' }}>
-        <Title level={4} style={{ color: 'white', marginTop: 0 }}>
-          Properties
-        </Title>
-        <Text style={{ color: '#888' }}>
-          Select a card to edit its properties
-        </Text>
-      </div>
-    );
-  }
+  const normalizeAccordionSections = useCallback((sections: unknown[]): AccordionSectionValues[] => {
+    if (sections.length === 0) {
+      return [{ title: 'Section 1', icon: DEFAULT_SECTION_ICON, default_expanded: true, cards: [] }];
+    }
 
-  const cardMetadata = cardRegistry.get(card.type);
-  const cardName = cardMetadata?.name || card.type;
+    return sections.map((section, index) => {
+      const typed = (section ?? {}) as AccordionSectionValues;
+      return {
+        title: typeof typed.title === 'string' && typed.title.trim().length > 0
+          ? typed.title
+          : `Section ${index + 1}`,
+        icon: typeof typed.icon === 'string' && typed.icon.trim().length > 0
+          ? typed.icon
+          : DEFAULT_SECTION_ICON,
+        default_expanded: Boolean(typed.default_expanded),
+        cards: Array.isArray(typed.cards) ? typed.cards : [],
+      };
+    });
+  }, []);
 
-  return (
-    <div data-testid="properties-panel" style={{ padding: '16px', color: 'white', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <Title level={4} style={{ color: 'white', marginTop: 0, marginBottom: 0 }}>
-          Properties
-        </Title>
-        <Space>
-          <Tooltip title="Undo last change to card properties">
-            <Button
-              size="small"
-              icon={<UndoOutlined />}
-              onClick={handleUndo}
-              disabled={undoStack.length === 0}
-            >
-              Undo
-            </Button>
-          </Tooltip>
-          {activeTab === 'yaml' && (
-            <Tooltip title="Auto-format YAML with proper indentation">
-              <Button
-                size="small"
-                icon={<FormatPainterOutlined />}
-                onClick={formatYaml}
-              >
-                Format
-              </Button>
-            </Tooltip>
-          )}
-        </Space>
-      </div>
+  const updateAccordionSections = useCallback((updater: (sections: AccordionSectionValues[]) => AccordionSectionValues[]) => {
+    const currentCard = cardRef.current;
+    if (!currentCard || currentCard.type !== 'custom:accordion-card') return;
+    const currentSections = form.getFieldValue('sections');
+    const normalizedSections = normalizeAccordionSections(Array.isArray(currentSections) ? currentSections : []);
+    const nextSections = updater(normalizedSections);
+    form.setFieldsValue({ sections: nextSections });
+    handleValuesChange();
+  }, [form, handleValuesChange, normalizeAccordionSections]);
 
-      <div style={{ marginBottom: '12px' }}>
-        <Text strong style={{ color: '#00d9ff' }}>
-          {cardName}
-        </Text>
-        <br />
-        <Text style={{ color: '#888', fontSize: '12px' }}>
-          {card.type}
-        </Text>
-      </div>
+  const normalizeSingleModeDefaults = useCallback(() => {
+    const currentCard = cardRef.current;
+    if (!currentCard || currentCard.type !== 'custom:accordion-card') return;
+    updateAccordionSections((sections) => {
+      let seenExpanded = false;
+      return sections.map((section, index) => {
+        if (section.default_expanded && !seenExpanded) {
+          seenExpanded = true;
+          return section;
+        }
+        if (!seenExpanded && index === 0) {
+          seenExpanded = true;
+          return { ...section, default_expanded: true };
+        }
+        return { ...section, default_expanded: false };
+      });
+    });
+  }, [updateAccordionSections]);
 
-      <Divider style={{ margin: '12px 0', borderColor: '#434343' }} />
+  const setAccordionExpandState = useCallback((expanded: boolean) => {
+    const currentCard = cardRef.current;
+    if (!currentCard || currentCard.type !== 'custom:accordion-card') return;
+    const mode = (form.getFieldValue('expand_mode') as AccordionExpandMode | undefined) ?? 'single';
 
-      <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        items={[
+    updateAccordionSections((sections) => {
+      if (!expanded) {
+        return sections.map((section) => ({ ...section, default_expanded: false }));
+      }
+
+      if (mode === 'single') {
+        return sections.map((section, index) => ({ ...section, default_expanded: index === 0 }));
+      }
+
+      return sections.map((section) => ({ ...section, default_expanded: true }));
+    });
+  }, [form, updateAccordionSections]);
+
+  const normalizeTabsList = useCallback((tabs: unknown[]): TabsTabValues[] => {
+    if (tabs.length === 0) {
+      return [{ title: 'Tab 1', icon: DEFAULT_TAB_ICON, cards: [] }];
+    }
+
+    return tabs.map((tab, index) => {
+      const typed = (tab ?? {}) as TabsTabValues;
+      return {
+        title: typeof typed.title === 'string' && typed.title.trim().length > 0
+          ? typed.title
+          : `Tab ${index + 1}`,
+        icon: typeof typed.icon === 'string' && typed.icon.trim().length > 0
+          ? typed.icon
+          : DEFAULT_TAB_ICON,
+        badge: typeof typed.badge === 'number' || typeof typed.badge === 'string'
+          ? typed.badge
+          : undefined,
+        count: typeof typed.count === 'number' && Number.isFinite(typed.count)
+          ? Math.max(0, Math.floor(typed.count))
+          : undefined,
+        cards: Array.isArray(typed.cards) ? typed.cards : [],
+      };
+    });
+  }, []);
+
+  const updateTabsList = useCallback((updater: (tabs: TabsTabValues[]) => TabsTabValues[]) => {
+    const currentCard = cardRef.current;
+    if (!currentCard || currentCard.type !== 'custom:tabs-card') return;
+    const currentTabs = form.getFieldValue('tabs');
+    const normalizedTabs = normalizeTabsList(Array.isArray(currentTabs) ? currentTabs : []);
+    const nextTabs = updater(normalizedTabs);
+    const safeTabs = nextTabs.length > 0 ? nextTabs : [{ title: 'Tab 1', icon: DEFAULT_TAB_ICON, cards: [] }];
+    const defaultTab = clampTabIndex(form.getFieldValue('default_tab'), safeTabs.length);
+    form.setFieldsValue({ tabs: safeTabs, default_tab: defaultTab });
+    handleValuesChange();
+  }, [form, handleValuesChange, normalizeTabsList]);
+
+  const handleTabChange = (nextKey: string) => {
+    if (activeTab === nextKey) {
+      return;
+    }
+
+    if (activeTab === 'yaml' && nextKey !== 'yaml') {
+      const latestYaml = monacoEditorRef.current?.getValue() ?? yamlContent;
+      setYamlContent(latestYaml);
+      isUpdatingFromYaml.current = true;
+      const parsedCard = yamlToCard(latestYaml);
+      if (parsedCard) {
+        form.setFieldsValue(normalizeCardForForm(parsedCard));
+        onChange(parsedCard);
+        onCommit(parsedCard);
+        lastCommittedCardRef.current = parsedCard;
+        const styleValue = (parsedCard as { style?: string }).style ?? '';
+        setBackgroundConfig(parseBackgroundConfig(styleValue));
+        lastStyleValueRef.current = styleValue;
+      }
+      setTimeout(() => {
+        isUpdatingFromYaml.current = false;
+      }, 0);
+    }
+
+    setActiveTab(nextKey);
+  };
+
+  const tabItems = useMemo(() => {
+    if (!card) return [];
+    return [
           {
             key: 'form',
             label: 'Form',
@@ -1877,6 +2202,105 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 <Input placeholder="Stack title (optional)" />
               </Form.Item>
 
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Layout</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Gap Preset</span>}
+                help={<span style={{ color: '#666' }}>Spacing between stack cards</span>}
+              >
+                <Select
+                  value={resolveGapPreset(watchedGap, DEFAULT_LAYOUT_GAP)}
+                  options={[
+                    { value: 'none', label: 'None (0px)' },
+                    { value: 'tight', label: 'Tight (4px)' },
+                    { value: 'normal', label: 'Normal (12px)' },
+                    { value: 'relaxed', label: 'Relaxed (24px)' },
+                    { value: 'custom', label: 'Custom' },
+                  ]}
+                  onChange={(nextPreset: LayoutGapPreset) => {
+                    const safePreset = normalizeGapPreset(nextPreset);
+                    if (safePreset !== 'custom') {
+                      form.setFieldsValue({ gap: GAP_PRESET_VALUES[safePreset] });
+                      setTimeout(() => {
+                        handleValuesChange();
+                      }, 0);
+                    }
+                  }}
+                  data-testid="layout-gap-preset"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Custom Gap (px)</span>}
+                name="gap"
+                help={<span style={{ color: '#666' }}>Range: 0 to 64 pixels</span>}
+              >
+                <div data-testid="layout-gap-custom-field">
+                  <InputNumber min={0} max={64} style={{ width: '100%' }} data-testid="layout-gap-custom" />
+                </div>
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Align Items</span>}
+                name="align_items"
+                help={<span style={{ color: '#666' }}>Cross-axis alignment of child cards</span>}
+              >
+                <Select
+                  allowClear
+                  placeholder="Default (stretch)"
+                  options={[
+                    { value: 'start', label: 'Start' },
+                    { value: 'center', label: 'Center' },
+                    { value: 'end', label: 'End' },
+                    { value: 'stretch', label: 'Stretch' },
+                    ...(card.type === 'horizontal-stack' ? [{ value: 'baseline', label: 'Baseline' }] : []),
+                  ]}
+                  data-testid="layout-align-items"
+                />
+              </Form.Item>
+
+              {card.type === 'horizontal-stack' && (
+                <>
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Justify Content</span>}
+                    name="justify_content"
+                    help={<span style={{ color: '#666' }}>Main-axis distribution when row has free space</span>}
+                  >
+                    <Select
+                      allowClear
+                      placeholder="Default (start)"
+                      options={[
+                        { value: 'start', label: 'Start' },
+                        { value: 'center', label: 'Center' },
+                        { value: 'end', label: 'End' },
+                        { value: 'space-between', label: 'Space Between' },
+                        { value: 'space-around', label: 'Space Around' },
+                        { value: 'space-evenly', label: 'Space Evenly' },
+                      ]}
+                      data-testid="layout-justify-content"
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Wrap</span>}
+                    name="wrap"
+                    help={<span style={{ color: '#666' }}>When wrapping, gap applies between rows and columns</span>}
+                  >
+                    <Select
+                      allowClear
+                      placeholder="Default (nowrap)"
+                      options={[
+                        { value: 'nowrap', label: 'No Wrap' },
+                        { value: 'wrap', label: 'Wrap' },
+                        { value: 'wrap-reverse', label: 'Wrap Reverse' },
+                      ]}
+                      data-testid="layout-wrap"
+                    />
+                  </Form.Item>
+                </>
+              )}
+
               <Alert
                 title="Nested Cards Configuration"
                 description="This stack contains other cards. Add or edit cards using the canvas. The cards are stacked in the order they appear in the YAML."
@@ -1901,7 +2325,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="columns"
                 help={<span style={{ color: '#666' }}>Number of columns in the grid</span>}
               >
-                <Input type="number" placeholder="3" min={1} max={12} />
+                <InputNumber min={1} max={12} style={{ width: '100%' }} placeholder="3" />
               </Form.Item>
 
               <Form.Item
@@ -1918,12 +2342,591 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 />
               </Form.Item>
 
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Grid Spacing</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Row Gap Preset</span>}
+              >
+                <Select
+                  value={resolveGapPreset(watchedGridRowGap, DEFAULT_LAYOUT_GAP)}
+                  options={[
+                    { value: 'none', label: 'None (0px)' },
+                    { value: 'tight', label: 'Tight (4px)' },
+                    { value: 'normal', label: 'Normal (12px)' },
+                    { value: 'relaxed', label: 'Relaxed (24px)' },
+                    { value: 'custom', label: 'Custom' },
+                  ]}
+                  onChange={(nextPreset: LayoutGapPreset) => {
+                    const safePreset = normalizeGapPreset(nextPreset);
+                    if (safePreset !== 'custom') {
+                      form.setFieldsValue({ row_gap: GAP_PRESET_VALUES[safePreset] });
+                      setTimeout(() => {
+                        handleValuesChange();
+                      }, 0);
+                    }
+                  }}
+                  data-testid="grid-row-gap-preset"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Custom Row Gap (px)</span>}
+                name="row_gap"
+              >
+                <div data-testid="grid-row-gap-custom-field">
+                  <InputNumber min={0} max={64} style={{ width: '100%' }} data-testid="grid-row-gap-custom" />
+                </div>
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Column Gap Preset</span>}
+              >
+                <Select
+                  value={resolveGapPreset(watchedGridColumnGap, DEFAULT_LAYOUT_GAP)}
+                  options={[
+                    { value: 'none', label: 'None (0px)' },
+                    { value: 'tight', label: 'Tight (4px)' },
+                    { value: 'normal', label: 'Normal (12px)' },
+                    { value: 'relaxed', label: 'Relaxed (24px)' },
+                    { value: 'custom', label: 'Custom' },
+                  ]}
+                  onChange={(nextPreset: LayoutGapPreset) => {
+                    const safePreset = normalizeGapPreset(nextPreset);
+                    if (safePreset !== 'custom') {
+                      form.setFieldsValue({ column_gap: GAP_PRESET_VALUES[safePreset] });
+                      setTimeout(() => {
+                        handleValuesChange();
+                      }, 0);
+                    }
+                  }}
+                  data-testid="grid-column-gap-preset"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Custom Column Gap (px)</span>}
+                name="column_gap"
+              >
+                <div data-testid="grid-column-gap-custom-field">
+                  <InputNumber min={0} max={64} style={{ width: '100%' }} data-testid="grid-column-gap-custom" />
+                </div>
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Align Items</span>}
+                name="align_items"
+              >
+                <Select
+                  allowClear
+                  placeholder="Default (stretch)"
+                  options={[
+                    { value: 'start', label: 'Start' },
+                    { value: 'center', label: 'Center' },
+                    { value: 'end', label: 'End' },
+                    { value: 'stretch', label: 'Stretch' },
+                  ]}
+                  data-testid="grid-align-items"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Justify Items</span>}
+                name="justify_items"
+              >
+                <Select
+                  allowClear
+                  placeholder="Default (stretch)"
+                  options={[
+                    { value: 'start', label: 'Start' },
+                    { value: 'center', label: 'Center' },
+                    { value: 'end', label: 'End' },
+                    { value: 'stretch', label: 'Stretch' },
+                  ]}
+                  data-testid="grid-justify-items"
+                />
+              </Form.Item>
+
               <Alert
                 title="Nested Cards Configuration"
                 description="This grid contains other cards. Add or edit cards using the canvas. The cards will be arranged in a grid layout."
                 type="info"
                 showIcon
                 style={{ marginBottom: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:accordion-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input placeholder="Accordion title (optional)" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Accordion Behavior</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Expand Mode</span>}
+                name="expand_mode"
+              >
+                <Select
+                  placeholder="Select expand mode"
+                  options={[
+                    { value: 'single', label: 'Single (one open)' },
+                    { value: 'multi', label: 'Multi (many open)' },
+                  ]}
+                  onChange={(nextMode: AccordionExpandMode) => {
+                    if (nextMode === 'single') {
+                      normalizeSingleModeDefaults();
+                    }
+                  }}
+                  data-testid="accordion-expand-mode"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Style Mode</span>}
+                name="style"
+              >
+                <Select
+                  placeholder="Select style"
+                  options={[
+                    { value: 'bordered', label: 'Bordered' },
+                    { value: 'borderless', label: 'Borderless' },
+                    { value: 'ghost', label: 'Ghost' },
+                  ]}
+                  data-testid="accordion-style-mode"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Header Background</span>}
+                name="header_background"
+              >
+                <Input placeholder="#1f1f1f or var(--token)" data-testid="accordion-header-background" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Content Padding</span>}
+                name="content_padding"
+              >
+                <InputNumber min={0} style={{ width: '100%' }} data-testid="accordion-content-padding" />
+              </Form.Item>
+
+              <Space style={{ marginBottom: '12px' }}>
+                <Button
+                  onClick={() => setAccordionExpandState(true)}
+                  data-testid="accordion-expand-all"
+                >
+                  Expand All
+                </Button>
+                <Button
+                  onClick={() => setAccordionExpandState(false)}
+                  data-testid="accordion-collapse-all"
+                >
+                  Collapse All
+                </Button>
+              </Space>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Sections</Text>
+
+              <Form.List name="sections">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                          Section {index + 1}
+                        </Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Title</span>}
+                          name={[field.name, 'title']}
+                        >
+                          <Input
+                            placeholder={`Section ${index + 1}`}
+                            data-testid={`accordion-section-${index}-title`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Icon</span>}
+                          name={[field.name, 'icon']}
+                        >
+                          <IconSelect
+                            placeholder={DEFAULT_SECTION_ICON}
+                            data-testid={`accordion-section-${index}-icon`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Expanded by Default</span>}
+                          name={[field.name, 'default_expanded']}
+                          valuePropName="checked"
+                        >
+                          <Switch
+                            data-testid={`accordion-section-${index}-default-expanded`}
+                            onChange={(checked) => {
+                              const mode = (form.getFieldValue('expand_mode') as AccordionExpandMode | undefined) ?? 'single';
+                              if (!checked || mode !== 'single') return;
+                              updateAccordionSections((sections) => sections.map((section, sectionIndex) => ({
+                                ...section,
+                                default_expanded: sectionIndex === index,
+                              })));
+                            }}
+                          />
+                        </Form.Item>
+
+                        <Button
+                          danger
+                          onClick={() => {
+                            remove(field.name);
+                            handleValuesChange();
+                          }}
+                          data-testid={`accordion-section-${index}-remove`}
+                        >
+                          Remove Section
+                        </Button>
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        add({
+                          title: `Section ${fields.length + 1}`,
+                          icon: DEFAULT_SECTION_ICON,
+                          default_expanded: false,
+                          cards: [],
+                        });
+                        handleValuesChange();
+                      }}
+                      data-testid="accordion-section-add"
+                    >
+                      Add Section
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+
+              <Alert
+                title="Nested Cards Configuration"
+                description="Each section can contain child cards in sections[].cards. Add or edit nested cards using YAML for full control."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:swiper-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input placeholder="Carousel title (optional)" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Carousel Controls</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Pagination Type</span>}
+                name={['pagination', 'type']}
+              >
+                <Select
+                  placeholder="Select pagination type"
+                  options={[
+                    { value: 'bullets', label: 'Bullets' },
+                    { value: 'fraction', label: 'Fraction' },
+                    { value: 'progressbar', label: 'Progress Bar' },
+                    { value: 'custom', label: 'Custom' },
+                  ]}
+                  data-testid="swiper-pagination-type"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Pagination Clickable</span>}
+                name={['pagination', 'clickable']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="swiper-pagination-clickable" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Navigation Arrows</span>}
+                name="navigation"
+                valuePropName="checked"
+              >
+                <Switch data-testid="swiper-navigation-toggle" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Autoplay</span>}
+                name={['autoplay', 'enabled']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="swiper-autoplay-toggle" />
+              </Form.Item>
+
+              <Form.Item
+                noStyle
+                shouldUpdate={(prev, curr) => prev.autoplay?.enabled !== curr.autoplay?.enabled}
+              >
+                {() => {
+                  const autoplayEnabled = Boolean(form.getFieldValue(['autoplay', 'enabled']));
+                  return (
+                    <>
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Autoplay Delay (ms)</span>}
+                        name={['autoplay', 'delay']}
+                      >
+                        <InputNumber min={0} style={{ width: '100%' }} disabled={!autoplayEnabled} data-testid="swiper-autoplay-delay" />
+                      </Form.Item>
+
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Pause on Interaction</span>}
+                        name={['autoplay', 'pause_on_interaction']}
+                        valuePropName="checked"
+                      >
+                        <Switch disabled={!autoplayEnabled} data-testid="swiper-autoplay-pause" />
+                      </Form.Item>
+
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Stop on Last Slide</span>}
+                        name={['autoplay', 'stop_on_last_slide']}
+                        valuePropName="checked"
+                      >
+                        <Switch disabled={!autoplayEnabled} data-testid="swiper-autoplay-stop-last" />
+                      </Form.Item>
+                    </>
+                  );
+                }}
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Transition Effect</span>}
+                name="effect"
+              >
+                <Select
+                  placeholder="Select effect"
+                  options={[
+                    { value: 'slide', label: 'Slide' },
+                    { value: 'fade', label: 'Fade' },
+                    { value: 'cube', label: 'Cube' },
+                    { value: 'coverflow', label: 'Coverflow' },
+                    { value: 'flip', label: 'Flip' },
+                  ]}
+                  data-testid="swiper-effect"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Slides Per View</span>}
+                name="slides_per_view"
+              >
+                <Select
+                  placeholder="Select slides per view"
+                  options={[
+                    { value: 1, label: '1' },
+                    { value: 2, label: '2' },
+                    { value: 3, label: '3' },
+                    { value: 4, label: '4' },
+                    { value: 'auto', label: 'Auto' },
+                  ]}
+                  data-testid="swiper-slides-per-view"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Space Between (px)</span>}
+                name="space_between"
+              >
+                <InputNumber min={0} style={{ width: '100%' }} data-testid="swiper-space-between" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Loop Slides</span>}
+                name="loop"
+                valuePropName="checked"
+              >
+                <Switch data-testid="swiper-loop-toggle" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Direction</span>}
+                name="direction"
+              >
+                <Select
+                  placeholder="Select direction"
+                  options={[
+                    { value: 'horizontal', label: 'Horizontal' },
+                    { value: 'vertical', label: 'Vertical' },
+                  ]}
+                  data-testid="swiper-direction"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Centered Slides</span>}
+                name="centered_slides"
+                valuePropName="checked"
+              >
+                <Switch data-testid="swiper-centered-toggle" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Free Mode</span>}
+                name="free_mode"
+                valuePropName="checked"
+              >
+                <Switch data-testid="swiper-free-mode-toggle" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Slides</Text>
+
+              <Form.List name="slides">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                          Slide {index + 1}
+                        </Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Alignment</span>}
+                          name={[field.name, 'alignment']}
+                        >
+                          <Select
+                            placeholder="Select alignment"
+                            options={[
+                              { value: 'top', label: 'Top' },
+                              { value: 'center', label: 'Center' },
+                              { value: 'bottom', label: 'Bottom' },
+                            ]}
+                            data-testid={`swiper-slide-${index}-alignment`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Allow Navigation</span>}
+                          name={[field.name, 'allow_navigation']}
+                          valuePropName="checked"
+                        >
+                          <Switch data-testid={`swiper-slide-${index}-allow-navigation`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Autoplay Delay Override (ms)</span>}
+                          name={[field.name, 'autoplay_delay']}
+                        >
+                          <InputNumber min={0} style={{ width: '100%' }} data-testid={`swiper-slide-${index}-autoplay-delay`} />
+                        </Form.Item>
+
+                        <Form.Item shouldUpdate>
+                          {() => {
+                            const slideBackground = form.getFieldValue(['slides', field.name, 'background']);
+                            const hasCustomBackground = Boolean(slideBackground);
+                            return (
+                              <>
+                                <Form.Item label={<span style={{ color: 'white' }}>Custom Background</span>} colon={false}>
+                                  <Switch
+                                    checked={hasCustomBackground}
+                                    onChange={(checked) => {
+                                      const slides = form.getFieldValue('slides') || [];
+                                      const updatedSlides = [...slides];
+                                      const currentSlide = updatedSlides[field.name] || {};
+                                      if (checked) {
+                                        updatedSlides[field.name] = {
+                                          ...currentSlide,
+                                          background: currentSlide.background || { ...DEFAULT_BACKGROUND_CONFIG },
+                                        };
+                                      } else {
+                                        const { background, ...rest } = currentSlide;
+                                        updatedSlides[field.name] = rest;
+                                      }
+                                      form.setFieldsValue({ slides: updatedSlides });
+                                      handleValuesChange();
+                                    }}
+                                    data-testid={`swiper-slide-${index}-background-toggle`}
+                                  />
+                                </Form.Item>
+
+                                {hasCustomBackground && (
+                                  <Form.Item
+                                    name={[field.name, 'background']}
+                                    valuePropName="value"
+                                    trigger="onChange"
+                                  >
+                                    <BackgroundCustomizer />
+                                  </Form.Item>
+                                )}
+                              </>
+                            );
+                          }}
+                        </Form.Item>
+
+                        <Button
+                          danger
+                          onClick={() => {
+                            remove(field.name);
+                            handleValuesChange();
+                          }}
+                          data-testid={`swiper-slide-${index}-remove`}
+                        >
+                          Remove Slide
+                        </Button>
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        add({
+                          alignment: 'center',
+                          allow_navigation: true,
+                        });
+                        handleValuesChange();
+                      }}
+                      data-testid="swiper-slide-add"
+                    >
+                      Add Slide
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+
+              <Alert
+                title="Nested Cards Configuration"
+                description="Each slide can contain one or more cards. Use the YAML editor to add cards under slides[].cards for full control."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
               />
             </>
           )}
@@ -1992,6 +2995,403 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 type="info"
                 showIcon
                 style={{ marginBottom: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:tabs-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input placeholder="Tabs title (optional)" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Tabs Behavior</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Tab Position</span>}
+                name="tab_position"
+              >
+                <Select
+                  placeholder="Select tab position"
+                  options={[
+                    { value: 'top', label: 'Top' },
+                    { value: 'bottom', label: 'Bottom' },
+                    { value: 'left', label: 'Left' },
+                    { value: 'right', label: 'Right' },
+                  ]}
+                  data-testid="tabs-position"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Tab Size</span>}
+                name="tab_size"
+              >
+                <Select
+                  placeholder="Select tab size"
+                  options={[
+                    { value: 'default', label: 'Default' },
+                    { value: 'small', label: 'Small' },
+                    { value: 'large', label: 'Large' },
+                  ]}
+                  data-testid="tabs-size"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Default Active Tab</span>}
+                name="default_tab"
+              >
+                <InputNumber min={0} style={{ width: '100%' }} data-testid="tabs-default-tab" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Animation</span>}
+                name="animation"
+              >
+                <Select
+                  placeholder="Select animation"
+                  options={[
+                    { value: 'none', label: 'None' },
+                    { value: 'fade', label: 'Fade' },
+                    { value: 'slide', label: 'Slide' },
+                  ]}
+                  data-testid="tabs-animation"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Lazy Render</span>}
+                name="lazy_render"
+                valuePropName="checked"
+              >
+                <Switch data-testid="tabs-lazy-render" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Tabs</Text>
+
+              <Form.List name="tabs">
+                {(fields) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                          Tab {index + 1}
+                        </Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Title</span>}
+                          name={[field.name, 'title']}
+                        >
+                          <Input
+                            placeholder={`Tab ${index + 1}`}
+                            data-testid={`tabs-tab-${index}-title`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Icon</span>}
+                          name={[field.name, 'icon']}
+                        >
+                          <IconSelect
+                            placeholder={DEFAULT_TAB_ICON}
+                            data-testid={`tabs-tab-${index}-icon`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Badge Text</span>}
+                          name={[field.name, 'badge']}
+                        >
+                          <Input
+                            placeholder="Optional badge text"
+                            data-testid={`tabs-tab-${index}-badge`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Count</span>}
+                          name={[field.name, 'count']}
+                        >
+                          <InputNumber
+                            min={0}
+                            style={{ width: '100%' }}
+                            data-testid={`tabs-tab-${index}-count`}
+                          />
+                        </Form.Item>
+
+                        <Button
+                          danger
+                          disabled={fields.length <= 1}
+                          onClick={() => {
+                            updateTabsList((tabs) => tabs.filter((_, tabIndex) => tabIndex !== index));
+                          }}
+                          data-testid={`tabs-tab-${index}-remove`}
+                        >
+                          Remove Tab
+                        </Button>
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        updateTabsList((tabs) => [
+                          ...tabs,
+                          {
+                            title: `Tab ${tabs.length + 1}`,
+                            icon: DEFAULT_TAB_ICON,
+                            cards: [],
+                          },
+                        ]);
+                      }}
+                      data-testid="tabs-tab-add"
+                    >
+                      Add Tab
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+
+              <Alert
+                title="Nested Cards Configuration"
+                description="Each tab panel can contain child cards in tabs[].cards. Add or edit nested cards using YAML for full control."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            </>
+          )}
+
+          {card.type === 'custom:popup-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input placeholder="Popup trigger title (optional)" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Trigger Label</span>}
+                name="trigger_label"
+              >
+                <Input placeholder="Open Popup" data-testid="popup-trigger-label" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Trigger Icon</span>}
+                name="trigger_icon"
+              >
+                <IconSelect placeholder={DEFAULT_POPUP_TRIGGER_ICON} data-testid="popup-trigger-icon" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Popup Behavior</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Popup Title</span>}
+                name={['popup', 'title']}
+              >
+                <Input placeholder="Popup title" data-testid="popup-title" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Popup Size</span>}
+                name={['popup', 'size']}
+              >
+                <Select
+                  placeholder="Select popup size"
+                  options={[
+                    { value: 'auto', label: 'Auto' },
+                    { value: 'small', label: 'Small' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'large', label: 'Large' },
+                    { value: 'fullscreen', label: 'Fullscreen' },
+                    { value: 'custom', label: 'Custom' },
+                  ]}
+                  data-testid="popup-size"
+                />
+              </Form.Item>
+
+              <Form.Item
+                noStyle
+                shouldUpdate={(prev, curr) => prev.popup?.size !== curr.popup?.size}
+              >
+                {() => {
+                  const popupSize = form.getFieldValue(['popup', 'size']);
+                  if (popupSize !== 'custom') return null;
+                  return (
+                    <>
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Custom Width</span>}
+                        name={['popup', 'custom_size', 'width']}
+                      >
+                        <InputNumber min={200} max={1920} style={{ width: '100%' }} data-testid="popup-custom-width" />
+                      </Form.Item>
+
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Custom Height</span>}
+                        name={['popup', 'custom_size', 'height']}
+                      >
+                        <InputNumber min={180} max={1200} style={{ width: '100%' }} data-testid="popup-custom-height" />
+                      </Form.Item>
+                    </>
+                  );
+                }}
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Close On Backdrop Click</span>}
+                name={['popup', 'close_on_backdrop']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="popup-close-on-backdrop" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Backdrop Opacity</span>}
+                name={['popup', 'backdrop_opacity']}
+              >
+                <InputNumber
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  style={{ width: '100%' }}
+                  data-testid="popup-backdrop-opacity"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Header</span>}
+                name={['popup', 'show_header']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="popup-show-header" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Footer</span>}
+                name={['popup', 'show_footer']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="popup-show-footer" />
+              </Form.Item>
+
+              <Form.Item
+                noStyle
+                shouldUpdate={(prev, curr) => prev.popup?.show_footer !== curr.popup?.show_footer}
+              >
+                {() => {
+                  const showFooter = form.getFieldValue(['popup', 'show_footer']);
+                  if (!showFooter) return null;
+                  return (
+                    <>
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Close Button Label</span>}
+                        name={['popup', 'close_label']}
+                      >
+                        <Input placeholder="Close" data-testid="popup-close-label" />
+                      </Form.Item>
+
+                      <Form.List name={['popup', 'footer_actions']}>
+                        {(fields, { add, remove }) => (
+                          <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                            <Text strong style={{ color: 'white' }}>Footer Actions</Text>
+                            {fields.map(({ key, name }, index) => (
+                              <div
+                                key={key}
+                                style={{
+                                  border: '1px solid #2d2d2d',
+                                  borderRadius: '8px',
+                                  padding: '12px',
+                                }}
+                              >
+                                <Text strong style={{ color: '#9aa4b2' }}>{`Action ${index + 1}`}</Text>
+
+                                <Form.Item
+                                  label={<span style={{ color: 'white' }}>Label</span>}
+                                  name={[name, 'label']}
+                                  rules={[{ required: true, message: 'Action label is required' }]}
+                                >
+                                  <Input data-testid={`popup-footer-action-${index}-label`} placeholder="Action label" />
+                                </Form.Item>
+
+                                <Form.Item
+                                  label={<span style={{ color: 'white' }}>Behavior</span>}
+                                  name={[name, 'action']}
+                                  initialValue="none"
+                                >
+                                  <Select
+                                    options={[
+                                      { value: 'none', label: 'None' },
+                                      { value: 'close', label: 'Close Popup' },
+                                    ]}
+                                    data-testid={`popup-footer-action-${index}-behavior`}
+                                  />
+                                </Form.Item>
+
+                                <Form.Item
+                                  label={<span style={{ color: 'white' }}>Button Type</span>}
+                                  name={[name, 'button_type']}
+                                  initialValue="default"
+                                >
+                                  <Select
+                                    options={[
+                                      { value: 'default', label: 'Default' },
+                                      { value: 'primary', label: 'Primary' },
+                                      { value: 'dashed', label: 'Dashed' },
+                                      { value: 'link', label: 'Link' },
+                                      { value: 'text', label: 'Text' },
+                                    ]}
+                                    data-testid={`popup-footer-action-${index}-button-type`}
+                                  />
+                                </Form.Item>
+
+                                <Button
+                                  danger
+                                  onClick={() => remove(name)}
+                                  data-testid={`popup-footer-action-${index}-remove`}
+                                >
+                                  Remove Action
+                                </Button>
+                              </div>
+                            ))}
+
+                            <Button
+                              type="dashed"
+                              onClick={() => add({ label: `Action ${fields.length + 1}`, action: 'none', button_type: 'default' })}
+                              data-testid="popup-footer-action-add"
+                            >
+                              Add Footer Action
+                            </Button>
+                          </Space>
+                        )}
+                      </Form.List>
+                    </>
+                  );
+                }}
+              </Form.Item>
+
+              <Alert
+                title="Popup Content Configuration"
+                description="Configure popup cards in popup.cards using YAML for nested card content."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
               />
             </>
           )}
@@ -2791,7 +4191,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swiper-card', 'custom:accordion-card', 'custom:tabs-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.
@@ -2966,27 +4366,31 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     </>
                   )}
 
-                  <Form.Item
-                    label={<span style={{ color: 'white' }}>Background</span>}
-                    colon={false}
-                  >
-                    <BackgroundCustomizer
-                      value={backgroundConfig}
-                      onChange={handleBackgroundConfigChange}
-                    />
-                  </Form.Item>
+                  {card.type !== 'custom:accordion-card' && (
+                    <>
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Background</span>}
+                        colon={false}
+                      >
+                        <BackgroundCustomizer
+                          value={backgroundConfig}
+                          onChange={handleBackgroundConfigChange}
+                        />
+                      </Form.Item>
 
-                  <Form.Item
-                    label={<span style={{ color: 'white' }}>Style (CSS)</span>}
-                    name="style"
-                    help={<span style={{ color: '#666' }}>CSS applied to the card (background, color, padding, etc.)</span>}
-                  >
-                    <Input.TextArea
-                      placeholder="background: linear-gradient(...);"
-                      rows={6}
-                      style={{ fontFamily: 'monospace' }}
-                    />
-                  </Form.Item>
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Style (CSS)</span>}
+                        name="style"
+                        help={<span style={{ color: '#666' }}>CSS applied to the card (background, color, padding, etc.)</span>}
+                      >
+                        <Input.TextArea
+                          placeholder="background: linear-gradient(...);"
+                          rows={6}
+                          style={{ fontFamily: 'monospace' }}
+                        />
+                      </Form.Item>
+                    </>
+                  )}
                 </Form>
               </div>
             ),
@@ -3029,7 +4433,73 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </div>
             ),
           },
-        ]}
+  ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card?.type, form, handleValuesChange, entities, streamComponentEnabled, backgroundConfig, handleBackgroundConfigChange, yamlError, onOpenEntityBrowser, updateTabsList]);
+
+  if (!card) {
+    return (
+      <div style={{ padding: '16px', color: 'white', height: '100%' }}>
+        <Title level={4} style={{ color: 'white', marginTop: 0 }}>
+          Properties
+        </Title>
+        <Text style={{ color: '#888' }}>
+          Select a card to edit its properties
+        </Text>
+      </div>
+    );
+  }
+
+  const cardMetadata = cardRegistry.get(card.type);
+  const cardName = cardMetadata?.name || card.type;
+
+  return (
+    <div data-testid="properties-panel" style={{ padding: '16px', color: 'white', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <Title level={4} style={{ color: 'white', marginTop: 0, marginBottom: 0 }}>
+          Properties
+        </Title>
+        <Space>
+          <Tooltip title="Undo last change to card properties">
+            <Button
+              size="small"
+              icon={<UndoOutlined />}
+              onClick={handleUndo}
+              disabled={undoStack.length === 0}
+            >
+              Undo
+            </Button>
+          </Tooltip>
+          {activeTab === 'yaml' && (
+            <Tooltip title="Auto-format YAML with proper indentation">
+              <Button
+                size="small"
+                icon={<FormatPainterOutlined />}
+                onClick={formatYaml}
+              >
+                Format
+              </Button>
+            </Tooltip>
+          )}
+        </Space>
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <Text strong style={{ color: '#00d9ff' }}>
+          {cardName}
+        </Text>
+        <br />
+        <Text style={{ color: '#888', fontSize: '12px' }}>
+          {card.type}
+        </Text>
+      </div>
+
+      <Divider style={{ margin: '12px 0', borderColor: '#434343' }} />
+
+      <Tabs
+        activeKey={activeTab}
+        onChange={handleTabChange}
+        items={tabItems}
       />
     </div>
   );

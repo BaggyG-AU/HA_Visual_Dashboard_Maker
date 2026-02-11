@@ -186,6 +186,10 @@
             "custom:layout-card",
             "custom:mini-graph-card",
             "custom:mini-media-player",
+            "custom:swiper-card",
+            "custom:accordion-card",
+            "custom:tabs-card",
+            "custom:popup-card",
             "custom:mushroom-entity-card",
             "custom:mushroom-template-card",
             "custom:mushroom-person-card",
@@ -428,6 +432,326 @@
             "$ref": "#/definitions/card"
           }
         },
+        "gap": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64,
+          "description": "Gap between items for vertical-stack and horizontal-stack cards (px)"
+        },
+        "row_gap": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64,
+          "description": "Grid row gap (px)"
+        },
+        "column_gap": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64,
+          "description": "Grid column gap (px)"
+        },
+        "align_items": {
+          "type": "string",
+          "enum": ["start", "center", "end", "stretch", "baseline"],
+          "description": "Cross-axis alignment for stack/grid content"
+        },
+        "justify_content": {
+          "type": "string",
+          "enum": ["start", "center", "end", "space-between", "space-around", "space-evenly"],
+          "description": "Main-axis content distribution for horizontal-stack cards"
+        },
+        "justify_items": {
+          "type": "string",
+          "enum": ["start", "center", "end", "stretch"],
+          "description": "Inline-axis alignment for grid items"
+        },
+        "wrap": {
+          "type": "string",
+          "enum": ["nowrap", "wrap", "wrap-reverse"],
+          "description": "Wrapping behavior for horizontal-stack cards"
+        },
+        "slides": {
+          "type": "array",
+          "description": "Slides for Swiper carousel cards",
+          "items": {
+            "type": "object",
+            "properties": {
+              "cards": {
+                "type": "array",
+                "description": "Cards inside this slide",
+                "items": {
+                  "$ref": "#/definitions/card"
+                }
+              },
+              "alignment": {
+                "type": "string",
+                "enum": ["top", "center", "bottom"],
+                "description": "Vertical alignment of slide content"
+              },
+              "background": {
+                "type": "object",
+                "description": "Background configuration for this slide",
+                "additionalProperties": true
+              },
+              "autoplay_delay": {
+                "type": "number",
+                "description": "Per-slide autoplay delay override (ms)"
+              },
+              "allow_navigation": {
+                "type": "boolean",
+                "description": "Allow navigation to this slide"
+              },
+              "skip_navigation": {
+                "type": "boolean",
+                "description": "Skip this slide when navigating"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "pagination": {
+          "oneOf": [
+            { "type": "boolean" },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["bullets", "fraction", "progressbar", "custom"]
+                },
+                "clickable": { "type": "boolean" }
+              },
+              "additionalProperties": true
+            }
+          ],
+          "description": "Swiper pagination configuration"
+        },
+        "navigation": {
+          "type": "boolean",
+          "description": "Enable Swiper navigation arrows"
+        },
+        "autoplay": {
+          "oneOf": [
+            { "type": "boolean" },
+            {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "delay": { "type": "number" },
+                "pause_on_interaction": { "type": "boolean" },
+                "stop_on_last_slide": { "type": "boolean" }
+              },
+              "additionalProperties": true
+            }
+          ],
+          "description": "Swiper autoplay configuration"
+        },
+        "effect": {
+          "type": "string",
+          "enum": ["slide", "fade", "cube", "coverflow", "flip"],
+          "description": "Swiper transition effect"
+        },
+        "slides_per_view": {
+          "oneOf": [
+            { "type": "number" },
+            { "type": "string", "enum": ["auto"] }
+          ],
+          "description": "Slides per view"
+        },
+        "expand_mode": {
+          "type": "string",
+          "enum": ["single", "multi"],
+          "description": "Accordion expand mode"
+        },
+        "sections": {
+          "type": "array",
+          "description": "Accordion sections",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "Section header title"
+              },
+              "icon": {
+                "type": "string",
+                "description": "Section header icon (MDI)"
+              },
+              "default_expanded": {
+                "type": "boolean",
+                "description": "Whether section is expanded by default"
+              },
+              "cards": {
+                "type": "array",
+                "description": "Cards contained in this section",
+                "items": {
+                  "$ref": "#/definitions/card"
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "header_background": {
+          "type": "string",
+          "description": "Accordion header background color"
+        },
+        "content_padding": {
+          "type": "number",
+          "description": "Accordion section content padding"
+        },
+        "tab_position": {
+          "type": "string",
+          "enum": ["top", "bottom", "left", "right"],
+          "description": "Tabs header position"
+        },
+        "tab_size": {
+          "type": "string",
+          "enum": ["default", "small", "large"],
+          "description": "Tabs header size"
+        },
+        "default_tab": {
+          "type": "number",
+          "description": "Default active tab index"
+        },
+        "animation": {
+          "type": "string",
+          "enum": ["none", "fade", "slide"],
+          "description": "Tabs transition animation"
+        },
+        "lazy_render": {
+          "type": "boolean",
+          "description": "Render only the active tab panel"
+        },
+        "tabs": {
+          "type": "array",
+          "description": "Tabs configuration for tabs cards",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "Tab label"
+              },
+              "icon": {
+                "type": "string",
+                "description": "Tab icon (MDI)"
+              },
+              "badge": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "number" }
+                ],
+                "description": "Optional static badge text/number"
+              },
+              "count": {
+                "type": "number",
+                "description": "Optional tab count label"
+              },
+              "cards": {
+                "type": "array",
+                "description": "Cards contained in this tab panel",
+                "items": {
+                  "$ref": "#/definitions/card"
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "trigger_label": {
+          "type": "string",
+          "description": "Popup trigger button label"
+        },
+        "trigger_icon": {
+          "type": "string",
+          "description": "Popup trigger icon (MDI)"
+        },
+        "popup": {
+          "type": "object",
+          "description": "Popup configuration for custom:popup-card",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "size": {
+              "type": "string",
+              "enum": ["auto", "small", "medium", "large", "fullscreen", "custom"]
+            },
+            "custom_size": {
+              "type": "object",
+              "properties": {
+                "width": { "type": "number" },
+                "height": { "type": "number" }
+              },
+              "additionalProperties": false
+            },
+            "close_on_backdrop": {
+              "type": "boolean"
+            },
+            "backdrop_opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "show_header": {
+              "type": "boolean"
+            },
+            "show_footer": {
+              "type": "boolean"
+            },
+            "close_label": {
+              "type": "string"
+            },
+            "footer_actions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "label": { "type": "string" },
+                  "action": {
+                    "type": "string",
+                    "enum": ["close", "none"]
+                  },
+                  "button_type": {
+                    "type": "string",
+                    "enum": ["default", "primary", "dashed", "link", "text"]
+                  }
+                },
+                "required": ["label"],
+                "additionalProperties": false
+              }
+            },
+            "cards": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/card"
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "space_between": {
+          "type": "number",
+          "description": "Space between slides (px)"
+        },
+        "loop": {
+          "type": "boolean",
+          "description": "Enable loop mode"
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["horizontal", "vertical"],
+          "description": "Slide direction"
+        },
+        "centered_slides": {
+          "type": "boolean",
+          "description": "Center active slide"
+        },
+        "free_mode": {
+          "type": "boolean",
+          "description": "Enable free mode (no snapping)"
+        },
         "layout": {
           "type": "object",
           "description": "Grid layout positioning (internal property)",
@@ -510,7 +834,8 @@
             "call-service",
             "navigate",
             "url",
-            "assist"
+            "assist",
+            "popup"
           ],
           "default": "more-info"
         },
@@ -605,6 +930,64 @@
             }
           ],
           "description": "Confirmation dialog configuration"
+        },
+        "popup_title": {
+          "type": "string",
+          "description": "Popup title for popup action"
+        },
+        "popup_size": {
+          "type": "string",
+          "enum": ["auto", "small", "medium", "large", "fullscreen", "custom"]
+        },
+        "popup_custom_size": {
+          "type": "object",
+          "properties": {
+            "width": { "type": "number" },
+            "height": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        "popup_close_on_backdrop": {
+          "type": "boolean"
+        },
+        "popup_backdrop_opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "popup_show_header": {
+          "type": "boolean"
+        },
+        "popup_show_footer": {
+          "type": "boolean"
+        },
+        "popup_close_label": {
+          "type": "string"
+        },
+        "popup_footer_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "action": {
+                "type": "string",
+                "enum": ["close", "none"]
+              },
+              "button_type": {
+                "type": "string",
+                "enum": ["default", "primary", "dashed", "link", "text"]
+              }
+            },
+            "required": ["label"],
+            "additionalProperties": false
+          }
+        },
+        "popup_cards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/card"
+          }
         }
       },
       "additionalProperties": true

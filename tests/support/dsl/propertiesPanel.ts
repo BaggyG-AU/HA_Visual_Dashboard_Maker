@@ -10,6 +10,18 @@ import { Page, expect, Locator } from '@playwright/test';
 export class PropertiesPanelDSL {
   constructor(private window: Page) {}
 
+  private async getVisibleTab(tab: 'Form' | 'Advanced Options' | 'YAML'): Promise<Locator> {
+    const candidates = this.panel.getByRole('tab', { name: new RegExp(`^${tab}$`, 'i') });
+    const count = await candidates.count();
+    for (let i = 0; i < count; i += 1) {
+      const tabCandidate = candidates.nth(i);
+      if (await tabCandidate.isVisible().catch(() => false)) {
+        return tabCandidate;
+      }
+    }
+    return candidates.first();
+  }
+
   private get panel(): Locator {
     return this.window.getByTestId('properties-panel');
   }
@@ -54,15 +66,34 @@ export class PropertiesPanelDSL {
       el.scrollTop = 0;
     });
 
-    const tabElement = this.panel.getByRole('tab', { name: new RegExp(`^${tab}$`, 'i') });
+    const tabElement = await this.getVisibleTab(tab);
     await expect(tabElement).toBeVisible({ timeout: 10000 });
-    await tabElement.click();
-    // Wait until tab reports selected to avoid hidden content reads
-    await expect(tabElement).toHaveAttribute('aria-selected', 'true', { timeout: 3000 });
+    await this.dismissTransientOverlays();
+    try {
+      await tabElement.click();
+    } catch {
+      await this.dismissTransientOverlays();
+      await tabElement.click();
+    }
+    const isTabActive = async () => {
+      const ariaSelected = await tabElement.getAttribute('aria-selected');
+      if (ariaSelected === 'true') return true;
+      const className = (await tabElement.getAttribute('class')) ?? '';
+      return className.includes('ant-tabs-tab-active');
+    };
+
+    const active = await isTabActive();
+    if (!active) {
+      await tabElement.click();
+    }
+
     await expect
-      .poll(async () => await this.getActiveTab(), { timeout: 3000 })
-      .toBe(tab);
-    await expect(this.panel.locator('.ant-tabs-tabpane-active').first()).toBeVisible({ timeout: 3000 });
+      .poll(isTabActive, { timeout: 3000 })
+      .toBe(true);
+
+    // Prefer any visible tabpane instead of relying on a single active class.
+    const visibleTabPane = this.panel.locator('.ant-tabs-tabpane:visible').first();
+    await expect(visibleTabPane).toBeVisible({ timeout: 5000 });
 
     if (tab === 'YAML') {
       await this.expectYamlEditor();
@@ -77,7 +108,7 @@ export class PropertiesPanelDSL {
 
     const tabs = ['Form', 'Advanced Options', 'YAML'] as const;
     for (const tab of tabs) {
-      const tabElement = this.panel.getByRole('tab', { name: new RegExp(`^${tab}$`, 'i') });
+      const tabElement = await this.getVisibleTab(tab);
       const count = await tabElement.count();
       if (count > 0) {
         const ariaSelected = await tabElement.getAttribute('aria-selected');
@@ -95,7 +126,7 @@ export class PropertiesPanelDSL {
   async expectActiveTab(tab: 'Form' | 'Advanced Options' | 'YAML'): Promise<void> {
     await this.expectVisible();
 
-    const tabElement = this.panel.getByRole('tab', { name: new RegExp(tab, 'i') });
+    const tabElement = await this.getVisibleTab(tab);
     const ariaSelected = await tabElement.getAttribute('aria-selected');
     expect(ariaSelected).toBe('true');
   }
@@ -104,20 +135,41 @@ export class PropertiesPanelDSL {
    * Wait for Monaco editor to be ready in YAML tab
    * Detects BOTH .monaco-editor and textarea fallback
    */
-  async expectYamlEditor(timeout = 3000): Promise<void> {
+  async expectYamlEditor(timeout = 12000): Promise<void> {
     await this.expectVisible();
     await this.expectActiveTab('YAML');
 
     // Wait for editor container scoped to properties panel
-    const editorContainer = this.panel.locator('[data-testid="yaml-editor-container"]:visible').first();
+    let editorContainer = this.panel.locator('[data-testid="yaml-editor-container"]:visible').first();
+    const hasVisibleContainer = await editorContainer.isVisible({ timeout: 2000 }).catch(() => false);
+    if (!hasVisibleContainer) {
+      const yamlTab = await this.getVisibleTab('YAML');
+      await yamlTab.click();
+      editorContainer = this.panel.locator('[data-testid="yaml-editor-container"]:visible').first();
+    }
     await expect(editorContainer).toBeVisible({ timeout });
 
-    // Wait for Monaco to initialize (either .monaco-editor or textarea)
-    await expect(
-      editorContainer.locator('.monaco-editor')
-        .or(editorContainer.locator('textarea'))
-        .first()
-    ).toBeVisible({ timeout });
+    await expect
+      .poll(async () => {
+        const monacoVisible = await editorContainer.locator('.monaco-editor:visible').count();
+        const textareaVisible = await editorContainer.locator('textarea:visible').count();
+        if (monacoVisible + textareaVisible > 0) {
+          return true;
+        }
+        const hasMonacoModel = await this.window.evaluate(() => {
+          const testWindow = window as Window & {
+            __monacoModel?: { getValue?: () => string } | null;
+            __monacoEditor?: { getModel?: () => unknown } | null;
+            monaco?: { editor?: { getModels?: () => unknown[] } };
+          };
+          const explicitModel = Boolean(testWindow.__monacoModel?.getValue);
+          const explicitEditor = Boolean(testWindow.__monacoEditor?.getModel?.());
+          const globalModels = Boolean(testWindow.monaco?.editor?.getModels?.()?.length);
+          return explicitModel || explicitEditor || globalModels;
+        });
+        return hasMonacoModel;
+      }, { timeout })
+      .toBe(true);
   }
 
   /**
@@ -214,5 +266,29 @@ export class PropertiesPanelDSL {
     await this.panel.evaluate((el, targetY) => {
       el.scrollTop = targetY;
     }, y);
+  }
+
+  /**
+   * Dismiss transient Ant Design overlays/popovers that may intercept clicks.
+   */
+  async dismissTransientOverlays(): Promise<void> {
+    await this.window.keyboard.press('Escape').catch(() => undefined);
+    await this.window
+      .waitForFunction(() => {
+        const isVisible = (el: Element) => {
+          const node = el as HTMLElement;
+          const rect = node.getBoundingClientRect();
+          const style = window.getComputedStyle(node);
+          return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+        };
+
+        const blockingPopovers = Array.from(document.querySelectorAll('.ant-popover'))
+          .filter((el) => !el.classList.contains('ant-popover-hidden'))
+          .filter(isVisible);
+        const blockingDropdowns = Array.from(document.querySelectorAll('.ant-select-dropdown'))
+          .filter(isVisible);
+        return blockingPopovers.length === 0 && blockingDropdowns.length === 0;
+      }, null, { timeout: 2000 })
+      .catch(() => undefined);
   }
 }

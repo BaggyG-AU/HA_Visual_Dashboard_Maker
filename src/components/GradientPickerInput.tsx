@@ -7,6 +7,14 @@ import type { GradientDefinition } from '../types/gradient';
 
 const { Text } = Typography;
 
+/**
+ * Module-level cache that persists popover open state across unmount/remount cycles.
+ * When the parent (PropertiesPanel Tabs) re-renders after an onChange and causes this
+ * component to unmount and remount, the cached state is restored if within the TTL.
+ */
+const popoverStateCache = new Map<string, { open: boolean; timestamp: number }>();
+const POPOVER_STATE_TTL = 1000;
+
 export interface GradientPickerInputProps {
   value?: string;
   onChange?: (css: string) => void;
@@ -22,7 +30,18 @@ export const GradientPickerInput: React.FC<GradientPickerInputProps> = ({
   readOnly = false,
   'data-testid': testId = 'gradient-picker-input',
 }) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpenRaw] = useState(() => {
+    const cached = popoverStateCache.get(testId);
+    if (cached && Date.now() - cached.timestamp < POPOVER_STATE_TTL) {
+      return cached.open;
+    }
+    return false;
+  });
+
+  const setOpen = useCallback((next: boolean) => {
+    popoverStateCache.set(testId, { open: next, timestamp: Date.now() });
+    setOpenRaw(next);
+  }, [testId]);
   const [localValue, setLocalValue] = useState<string | undefined>(value);
   const gradient: GradientDefinition = useMemo(() => parseGradient(localValue), [localValue]);
   const css = useMemo(() => gradientToCss(gradient), [gradient]);
@@ -36,10 +55,22 @@ export const GradientPickerInput: React.FC<GradientPickerInputProps> = ({
     onChange?.(cssValue);
   }, [onChange]);
 
-  const handlePopoverChange = (next: boolean) => {
+  const handlePopoverChange = useCallback((next: boolean) => {
     if (disabled || readOnly) return;
     setOpen(next);
-  };
+  }, [disabled, readOnly, setOpen]);
+
+  // Allow keyboard users to dismiss the popover with Escape
+  useEffect(() => {
+    if (!open) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [open, setOpen]);
 
   const swatch = (
     <div
@@ -65,6 +96,17 @@ export const GradientPickerInput: React.FC<GradientPickerInputProps> = ({
     />
   );
 
+  const editorContent = useMemo(
+    () => (
+      <GradientEditor
+        value={localValue}
+        onChange={handleChange}
+        data-testid={`${testId}-editor`}
+      />
+    ),
+    [localValue, handleChange, testId]
+  );
+
   return (
     <Popover
       open={open}
@@ -72,14 +114,7 @@ export const GradientPickerInput: React.FC<GradientPickerInputProps> = ({
       trigger="click"
       placement="bottomLeft"
       overlayStyle={{ zIndex: 1050 }}
-      destroyTooltipOnHide
-      content={
-        <GradientEditor
-          value={localValue}
-          onChange={handleChange}
-          data-testid={`${testId}-editor`}
-        />
-      }
+      content={editorContent}
       // Render in body so the editor is not clipped by the PropertiesPanel or canvas overflow
       getPopupContainer={() => document.body}
     >

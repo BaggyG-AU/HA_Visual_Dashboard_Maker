@@ -90,7 +90,7 @@ export class CardPaletteDSL {
    * Add card to canvas by double-clicking palette card
    * MUST provide exact card type matching data-testid (e.g., 'button', 'entities', 'grid')
    */
-  async addCard(cardType: string): Promise<void> {
+  async addCard(cardType: string, testInfo?: import('@playwright/test').TestInfo): Promise<void> {
     // Make the card visible: search for it to avoid collapsed categories/virtualization issues.
     const searchInput = this.window.getByTestId('card-search');
     await expect(searchInput).toBeVisible();
@@ -98,16 +98,69 @@ export class CardPaletteDSL {
     await expect(searchInput).toHaveValue(cardType);
 
     const card = this.palette.getByTestId(`palette-card-${cardType}`);
-    await expect(card).toBeVisible({ timeout: 5000 });
+    try {
+      await expect(card).toBeVisible({ timeout: 5000 });
+    } catch (error) {
+      await this.attachPaletteDiagnostics(`palette-card-${cardType}`, testInfo);
+      throw error;
+    }
     await card.scrollIntoViewIfNeeded();
     await card.dblclick();
 
     // Wait for card to appear on canvas
-    await expect(this.window.getByTestId('canvas-card').first()).toBeVisible({ timeout: 3000 });
+    const canvasCard = this.window.getByTestId('canvas-card').first();
+    try {
+      await expect(canvasCard).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      await this.attachPaletteDiagnostics(`palette-card-${cardType}`, testInfo);
+      throw error;
+    }
 
     // Clear search to leave palette clean for later steps
     await searchInput.fill('');
     await expect(searchInput).toHaveValue('');
+  }
+
+  private async attachPaletteDiagnostics(targetTestId: string, testInfo?: import('@playwright/test').TestInfo): Promise<void> {
+    if (!testInfo) return;
+    const palette = this.window.getByTestId('card-palette');
+    const diagnostics = await this.window.evaluate((testId) => {
+      const paletteRoot = document.querySelector('[data-testid="card-palette"]');
+      const searchInput = document.querySelector<HTMLInputElement>('[data-testid="card-search"]');
+      const cards = Array.from(paletteRoot?.querySelectorAll<HTMLElement>('[data-testid^="palette-card-"]') ?? []);
+      const categoryButtons = Array.from(paletteRoot?.querySelectorAll<HTMLElement>('[role="button"]') ?? []);
+      return {
+        targetTestId: testId,
+        searchValue: searchInput?.value ?? '',
+        paletteVisible: !!paletteRoot,
+        cardCount: cards.length,
+        cards: cards.map((node) => ({
+          testId: node.dataset.testid ?? null,
+          text: node.innerText?.slice(0, 120) ?? '',
+        })),
+        categories: categoryButtons.map((node) => ({
+          text: node.innerText?.slice(0, 120) ?? '',
+          ariaExpanded: node.getAttribute('aria-expanded') ?? null,
+        })),
+      };
+    }, targetTestId);
+
+    await testInfo.attach('palette-diagnostics.json', {
+      body: JSON.stringify(diagnostics, null, 2),
+      contentType: 'application/json',
+    });
+
+    await palette.screenshot({ path: testInfo.outputPath('palette-screenshot.png') });
+    await testInfo.attach('palette-screenshot.png', {
+      path: testInfo.outputPath('palette-screenshot.png'),
+      contentType: 'image/png',
+    });
+
+    await this.window.screenshot({ path: testInfo.outputPath('fullpage-screenshot.png'), fullPage: true });
+    await testInfo.attach('fullpage-screenshot.png', {
+      path: testInfo.outputPath('fullpage-screenshot.png'),
+      contentType: 'image/png',
+    });
   }
 
   /**

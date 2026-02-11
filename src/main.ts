@@ -6,6 +6,8 @@ import { createApplicationMenu } from './menu';
 import { settingsService, LoggingLevel } from './services/settingsService';
 import { logger, loggerDefaults } from './services/logger';
 
+const isE2ETestMode = process.env.E2E === '1' || process.env.PLAYWRIGHT_TEST === '1';
+
 // Normalize HA URLs while respecting the user-provided scheme (http or https)
 const normalizeHAUrl = (url: string): string => {
   let normalized = url.trim();
@@ -21,6 +23,12 @@ const normalizeHAUrl = (url: string): string => {
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
+}
+
+// E2E on Linux can intermittently render white/partial-white regions when GPU
+// compositing is enabled. Force software rendering for deterministic tests.
+if (isE2ETestMode) {
+  app.disableHardwareAcceleration();
 }
 
 // Initialize logger level from settings
@@ -818,7 +826,22 @@ const createWindow = () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', createWindow);
+app.on('ready', async () => {
+  if (isE2ETestMode) {
+    app.on('gpu-info-update', async () => {
+      try {
+        const features = app.getGPUFeatureStatus();
+        const basicInfo = await app.getGPUInfo('basic');
+        logger.info('[E2E][GPU] feature status', features);
+        logger.info('[E2E][GPU] basic info', basicInfo);
+      } catch (error) {
+        logger.warn('[E2E][GPU] diagnostics failed', error);
+      }
+    });
+  }
+
+  createWindow();
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

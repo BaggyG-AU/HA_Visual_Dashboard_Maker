@@ -1,5 +1,6 @@
 import { Card, View } from '../types/dashboard';
 import { Layout } from 'react-grid-layout';
+import { getCardSizeConstraints } from './cardSizingContract';
 
 /**
  * Parse layout-card grid configuration and convert to react-grid-layout format
@@ -111,13 +112,14 @@ export const parseViewLayout = (
 
   if (!viewLayout) {
     // No view_layout - use auto-positioning
+    const constraints = getCardSizeConstraints(card);
     const col = index % 2;
     const row = Math.floor(index / 2);
     return {
       x: col * 6,
       y: row * 4,
-      w: 6,
-      h: 4,
+      w: constraints.w,
+      h: constraints.h,
     };
   }
 

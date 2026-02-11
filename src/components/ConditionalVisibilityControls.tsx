@@ -60,6 +60,21 @@ const isGroup = (condition: VisibilityCondition): condition is Extract<Visibilit
 
 const testIdForPath = (path: number[]) => path.join('-');
 
+const collectEntitiesFromConditions = (conditions: VisibilityCondition[]): string[] => {
+  const found = new Set<string>();
+  const walk = (condition: VisibilityCondition) => {
+    if (isGroup(condition)) {
+      (condition.conditions ?? []).forEach(walk);
+      return;
+    }
+    if (condition.entity) {
+      found.add(condition.entity);
+    }
+  };
+  conditions.forEach(walk);
+  return Array.from(found);
+};
+
 const updateAtPath = (
   conditions: VisibilityCondition[],
   path: number[],
@@ -130,6 +145,9 @@ export const ConditionalVisibilityControls: React.FC<ConditionalVisibilityContro
 
   const fallbackEntityId = entityOptions[0]?.value;
   const currentEvaluation = evaluateVisibilityConditions(value, entities);
+  const referencedEntities = useMemo(() => collectEntitiesFromConditions(value), [value]);
+  const firstReferencedEntity = referencedEntities[0];
+  const firstReferencedState = firstReferencedEntity ? entities[firstReferencedEntity]?.state ?? null : null;
 
   const handleRuleTypeChange = (path: number[], nextType: VisibilityConditionType) => {
     onChange?.(
@@ -350,6 +368,14 @@ export const ConditionalVisibilityControls: React.FC<ConditionalVisibilityContro
           Current state: {currentEvaluation ? 'Visible' : 'Hidden'}
         </Tag>
       </div>
+      <div
+        data-testid="conditional-visibility-debug"
+        data-current-evaluation={currentEvaluation ? 'true' : 'false'}
+        data-entity-count={String(Object.keys(entities).length)}
+        data-first-entity={firstReferencedEntity ?? 'none'}
+        data-first-entity-state={firstReferencedState === null ? 'null' : String(firstReferencedState)}
+        style={{ display: 'none' }}
+      />
 
       {value.length === 0 && (
         <Alert

@@ -17,6 +17,7 @@ import { SplitViewEditor } from './components/SplitViewEditor';
 import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
+import { getCardSizeConstraints } from './utils/cardSizingContract';
 import { HAEntityProvider, useHAEntities } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
 import { SettingsDialog } from './components/SettingsDialog';
@@ -29,6 +30,7 @@ import { logger } from './services/logger';
 import { setSoundSettings } from './services/soundService';
 import { setHapticSettings } from './services/hapticService';
 import { entityRemappingService, type EntityMapping } from './services/entityRemapping';
+import { PopupHost } from './features/popup/PopupHost';
 import type { Card, DashboardConfig } from './types/dashboard';
 import type { LoggingLevel } from './services/settingsService';
 import type { EntityState } from './services/haWebSocketService';
@@ -86,7 +88,7 @@ const isTestEnv = (): boolean => {
 
 const App: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
-  const [ignoreNextLayoutChange, setIgnoreNextLayoutChange] = useState<boolean>(false);
+  const ignoreNextLayoutChangeRef = useRef<boolean>(false);
   const [deployDialogVisible, setDeployDialogVisible] = useState<boolean>(false);
   const [dashboardBrowserVisible, setDashboardBrowserVisible] = useState<boolean>(false);
   const [yamlEditorVisible, setYamlEditorVisible] = useState<boolean>(false);
@@ -142,6 +144,7 @@ const App: React.FC = () => {
     setSelectedCard,
     undo,
     redo,
+    isBatching,
     canUndo,
     canRedo
   } = useDashboardStore();
@@ -177,17 +180,18 @@ const App: React.FC = () => {
 
   // Apply theme to canvas when theme or mode changes
   useEffect(() => {
-    if (canvasContainerRef.current && currentTheme) {
+    const container = canvasContainerRef.current;
+    if (container && currentTheme) {
       themeService.applyThemeToElement(
-        canvasContainerRef.current,
+        container,
         currentTheme,
         darkMode
       );
     }
 
     return () => {
-      if (canvasContainerRef.current) {
-        themeService.clearThemeFromElement(canvasContainerRef.current);
+      if (container) {
+        themeService.clearThemeFromElement(container);
       }
     };
   }, [currentTheme, darkMode]);
@@ -423,24 +427,24 @@ const App: React.FC = () => {
     if (!config || selectedViewIndex === null) return;
 
     // Skip this layout change if we just added a card
-    if (ignoreNextLayoutChange) {
-      setIgnoreNextLayoutChange(false);
+    if (ignoreNextLayoutChangeRef.current) {
+      ignoreNextLayoutChangeRef.current = false;
       return;
     }
 
     // Update the layout information in the config
-    const updatedViews = [...config.views];
-    const currentView = updatedViews[selectedViewIndex];
+    const currentView = config.views[selectedViewIndex];
 
     // Check if using layout-card grid system
     const usingLayoutCard = isLayoutCardGrid(currentView);
 
     if (currentView.cards) {
+      let updatedCards;
       if (usingLayoutCard) {
         // Convert to view_layout format
         const viewLayouts = convertGridLayoutToViewLayout(layout, 12);
 
-        currentView.cards = currentView.cards.map((card, index) => {
+        updatedCards = currentView.cards.map((card, index) => {
           const viewLayout = viewLayouts[index];
           if (viewLayout) {
             // Remove internal layout property and add view_layout
@@ -458,7 +462,7 @@ const App: React.FC = () => {
         });
       } else {
         // Use internal layout property
-        currentView.cards = currentView.cards.map((card, index) => {
+        updatedCards = currentView.cards.map((card, index) => {
           const layoutItem = layout.find((item) => item.i === `card-${index}`);
           if (layoutItem) {
             return {
@@ -474,10 +478,19 @@ const App: React.FC = () => {
           return card;
         });
       }
-    }
 
-    updatedViews[selectedViewIndex] = currentView;
-    updateConfig({ ...config, views: updatedViews });
+      const updatedViews = config.views.map((view, i) =>
+        i === selectedViewIndex ? { ...view, cards: updatedCards } : view
+      );
+      // During a batch (e.g., card property editing), use applyBatchedConfig to
+      // avoid pushing intermediate states to the undo stack and prematurely
+      // ending the batch. Use updateConfig only for standalone layout changes.
+      if (isBatching) {
+        applyBatchedConfig({ ...config, views: updatedViews });
+      } else {
+        updateConfig({ ...config, views: updatedViews });
+      }
+    }
   };
 
   const handleCardAdd = (cardType: string, gridX = 0, gridY = 0) => {
@@ -498,41 +511,49 @@ const App: React.FC = () => {
       return;
     }
 
-    // Create new card with default properties
-    const newCard: CardWithInternalLayout = {
+    const baseCard = {
       type: cardType,
       ...(cardMetadata.defaultProps as Record<string, unknown>),
+    } as CardWithInternalLayout;
+    const constraints = getCardSizeConstraints(baseCard);
+    const usingLayoutCard = isLayoutCardGrid(config.views[selectedViewIndex]);
+
+    // Create new card with default properties and size it to constraints
+    const newCard: CardWithInternalLayout = {
+      ...baseCard,
       layout: {
         x: gridX,
         y: gridY,
-        w: 6,
-        h: 4,
+        w: constraints.w,
+        h: constraints.h,
       },
     };
+    if (usingLayoutCard) {
+      newCard.view_layout = {
+        grid_column: `${gridX + 1} / ${gridX + constraints.w + 1}`,
+        grid_row: `${gridY + 1} / ${gridY + constraints.h + 1}`,
+      };
+    }
 
     // Add title for certain card types
     if (['entities', 'glance'].includes(cardType)) {
       newCard.title = `New ${cardMetadata.name}`;
     }
 
-    // Update the config
-    const updatedViews = [...config.views];
-    const currentView = updatedViews[selectedViewIndex];
+    // Update the config — immutable view/cards to ensure useMemo detects the change
+    const currentView = config.views[selectedViewIndex];
+    const updatedCards = [...(currentView.cards || []), newCard];
+    const updatedViews = config.views.map((view, i) =>
+      i === selectedViewIndex ? { ...view, cards: updatedCards } : view
+    );
 
-    if (!currentView.cards) {
-      currentView.cards = [];
-    }
-
-    currentView.cards.push(newCard);
-    updatedViews[selectedViewIndex] = currentView;
-
-    // Set flag to ignore the next layout change event
-    setIgnoreNextLayoutChange(true);
+    // Set flag to ignore the next layout change event (ref for synchronous update)
+    ignoreNextLayoutChangeRef.current = true;
 
     updateConfig({ ...config, views: updatedViews });
 
     // Select the newly added card
-    setSelectedCard(selectedViewIndex, currentView.cards.length - 1);
+    setSelectedCard(selectedViewIndex, updatedCards.length - 1);
 
     message.success(`Added ${cardMetadata.name} card at (${gridX}, ${gridY})`);
   };
@@ -545,18 +566,21 @@ const App: React.FC = () => {
     if (!config || selectedViewIndex === null || selectedCardIndex === null) return;
     beginBatchUpdate();
 
-    const updatedViews = [...config.views];
-    const currentView = updatedViews[selectedViewIndex];
+    const currentView = config.views[selectedViewIndex];
 
     if (currentView.cards && currentView.cards[selectedCardIndex]) {
       // Preserve layout information
       const existingLayout = currentView.cards[selectedCardIndex].layout;
-      currentView.cards[selectedCardIndex] = {
-        ...updatedCard,
-        layout: existingLayout,
-      };
+      const existingViewLayout = currentView.cards[selectedCardIndex].view_layout;
+      const updatedCards = currentView.cards.map((card, i) =>
+        i === selectedCardIndex
+          ? { ...updatedCard, layout: existingLayout, view_layout: existingViewLayout }
+          : card
+      );
 
-      updatedViews[selectedViewIndex] = currentView;
+      const updatedViews = config.views.map((view, i) =>
+        i === selectedViewIndex ? { ...view, cards: updatedCards } : view
+      );
       applyBatchedConfig({ ...config, views: updatedViews });
     }
   };
@@ -564,21 +588,28 @@ const App: React.FC = () => {
   const handleCardCommit = (updatedCard: Card) => {
     if (!config || selectedViewIndex === null || selectedCardIndex === null) return;
 
-    const updatedViews = [...config.views];
-    const currentView = updatedViews[selectedViewIndex];
+    const currentView = config.views[selectedViewIndex];
 
     if (currentView.cards && currentView.cards[selectedCardIndex]) {
       const existingLayout = currentView.cards[selectedCardIndex].layout;
-      currentView.cards[selectedCardIndex] = {
-        ...updatedCard,
-        layout: existingLayout,
-      };
+      const existingViewLayout = currentView.cards[selectedCardIndex].view_layout;
+      const updatedCards = currentView.cards.map((card, i) =>
+        i === selectedCardIndex
+          ? { ...updatedCard, layout: existingLayout, view_layout: existingViewLayout }
+          : card
+      );
 
-      updatedViews[selectedViewIndex] = currentView;
+      const updatedViews = config.views.map((view, i) =>
+        i === selectedViewIndex ? { ...view, cards: updatedCards } : view
+      );
       applyBatchedConfig({ ...config, views: updatedViews });
       endBatchUpdate();
 
       message.success({ content: 'Card updated', key: 'card-updated', duration: 1.5 });
+      const viewIndex = selectedViewIndex;
+      const cardIndex = selectedCardIndex;
+      setSelectedCard(viewIndex, null);
+      setTimeout(() => setSelectedCard(viewIndex, cardIndex), 0);
     }
   };
 
@@ -646,12 +677,7 @@ const App: React.FC = () => {
       return;
     }
 
-    const updatedViews = [...config.views];
-    const currentView = updatedViews[selectedViewIndex];
-
-    if (!currentView.cards) {
-      currentView.cards = [];
-    }
+    const currentView = config.views[selectedViewIndex];
 
     // Create new card from clipboard (remove old layout, will get new position)
     const { layout: _layout, ...cardWithoutLayout } = clipboard.card;
@@ -666,18 +692,23 @@ const App: React.FC = () => {
       },
     };
 
+    // Build updated views immutably
+    let updatedViews = config.views.map((view, i) => {
+      if (i === selectedViewIndex) {
+        return { ...view, cards: [...(view.cards || []), pastedCard] };
+      }
+      return view;
+    });
+
     // If it was a cut operation, remove the source card
     if (clipboard.isCut && clipboard.sourceViewIndex !== null && clipboard.sourceCardIndex !== null) {
-      const sourceView = updatedViews[clipboard.sourceViewIndex];
-      if (sourceView.cards) {
-        sourceView.cards.splice(clipboard.sourceCardIndex, 1);
-        updatedViews[clipboard.sourceViewIndex] = sourceView;
-      }
+      updatedViews = updatedViews.map((view, i) => {
+        if (i === clipboard.sourceViewIndex && view.cards) {
+          return { ...view, cards: view.cards.filter((_, ci) => ci !== clipboard.sourceCardIndex) };
+        }
+        return view;
+      });
     }
-
-    // Add pasted card to current view
-    currentView.cards.push(pastedCard);
-    updatedViews[selectedViewIndex] = currentView;
 
     updateConfig({ ...config, views: updatedViews });
 
@@ -690,7 +721,8 @@ const App: React.FC = () => {
     }
 
     // Select the newly pasted card
-    setSelectedCard(selectedViewIndex, currentView.cards.length - 1);
+    const pastedViewCards = updatedViews[selectedViewIndex].cards || [];
+    setSelectedCard(selectedViewIndex, pastedViewCards.length - 1);
   };
 
   const handleCardDelete = () => {
@@ -699,16 +731,17 @@ const App: React.FC = () => {
       return;
     }
 
-    const updatedViews = [...config.views];
-    const currentView = updatedViews[selectedViewIndex];
+    const currentView = config.views[selectedViewIndex];
 
     if (!currentView.cards || !currentView.cards[selectedCardIndex]) {
       return;
     }
 
-    // Remove the card
-    currentView.cards.splice(selectedCardIndex, 1);
-    updatedViews[selectedViewIndex] = currentView;
+    // Remove the card immutably
+    const updatedCards = currentView.cards.filter((_, i) => i !== selectedCardIndex);
+    const updatedViews = config.views.map((view, i) =>
+      i === selectedViewIndex ? { ...view, cards: updatedCards } : view
+    );
 
     updateConfig({ ...config, views: updatedViews });
 
@@ -1648,6 +1681,12 @@ const App: React.FC = () => {
           }
           setRemapModalVisible(false);
           updateConfig(updatedConfig);
+          if (selectedViewIndex !== null && selectedCardIndex !== null) {
+            const viewIndex = selectedViewIndex;
+            const cardIndex = selectedCardIndex;
+            setSelectedCard(viewIndex, null);
+            setTimeout(() => setSelectedCard(viewIndex, cardIndex), 0);
+          }
           message.success(`Mapped ${mappings.length} entit${mappings.length === 1 ? 'y' : 'ies'}`);
         }}
       />
@@ -1683,6 +1722,23 @@ const App: React.FC = () => {
           style={{ display: 'none' }}
         />
       )}
+      {isTestEnv() && (
+        <div
+          data-testid="selection-debug-state"
+          data-selected-view={selectedViewIndex === null ? 'null' : String(selectedViewIndex)}
+          data-selected-card={selectedCardIndex === null ? 'null' : String(selectedCardIndex)}
+          data-selected-card-type={
+            selectedViewIndex !== null && selectedCardIndex !== null
+              ? (config?.views?.[selectedViewIndex]?.cards?.[selectedCardIndex]?.type ?? 'unknown')
+              : 'none'
+          }
+          data-selected-card-count={
+            selectedViewIndex !== null ? String(config?.views?.[selectedViewIndex]?.cards?.length ?? 0) : '0'
+          }
+          style={{ display: 'none' }}
+        />
+      )}
+      <PopupHost />
       </HAEntityProvider>
     </ConfigProvider>
   );

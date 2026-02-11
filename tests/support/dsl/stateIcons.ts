@@ -87,17 +87,22 @@ export class StateIconsDSL {
     await expect(dropdown).toBeVisible({ timeout: 5000 });
 
     const optionByText = dropdown.locator('.ant-select-item-option', { hasText: iconName }).first();
-    if (await optionByText.isVisible({ timeout: 1000 }).catch(() => false)) {
+    const found = await optionByText
+      .waitFor({ state: 'visible', timeout: 2000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (found) {
       await optionByText.click();
       return;
     }
 
     // Fallback: search input + exact option by role.
-    const input = dropdown.locator('input[role="combobox"]').last();
+    const input = select.locator('input[role="combobox"]');
     if (await input.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await input.fill(iconName);
+      await input.pressSequentially(iconName, { delay: 0 });
       const optionByRole = dropdown.getByRole('option', { name: new RegExp(`^${iconName}$`, 'i') }).first();
-      if (await optionByRole.isVisible({ timeout: 1000 }).catch(() => false)) {
+      if (await optionByRole.waitFor({ state: 'visible', timeout: 2000 }).catch(() => false)) {
         await optionByRole.click();
         return;
       }

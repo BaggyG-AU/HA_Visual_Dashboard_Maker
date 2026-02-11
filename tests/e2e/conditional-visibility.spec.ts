@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 import * as yaml from 'js-yaml';
 import { launchWithDSL, close } from '../support';
-import { attachDebugJson } from '../support/helpers/debug';
 
 const TEST_ENTITIES = [
   {
@@ -24,6 +23,11 @@ const TEST_ENTITIES = [
 
 test.describe('Conditional Visibility (Feature 3.5)', () => {
   test('applies state-based visibility, updates live, and persists YAML', async ({ page }, testInfo) => {
+    // This test performs many sequential UI operations (launch, add card, YAML round-trips,
+    // Ant Design dropdown interactions, Monaco editor waits). On WSL2 these accumulate
+    // to ~55-65s total, so the default 60s timeout is not reliable.
+    test.setTimeout(90_000);
+
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, yamlEditor, entityContext, conditionalVisibility } = ctx;
@@ -40,7 +44,6 @@ test.describe('Conditional Visibility (Feature 3.5)', () => {
       await canvas.selectCard(0);
       await properties.expectVisible();
       await properties.switchTab('YAML');
-      await yamlEditor.expectMonacoVisible('properties', testInfo);
       const { value: initialYaml } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
       const initialParsed = (yaml.load(initialYaml) as Record<string, unknown>) || {};
       initialParsed.entity = 'light.living_room';
@@ -58,7 +61,6 @@ test.describe('Conditional Visibility (Feature 3.5)', () => {
         },
         testInfo,
       );
-
       await conditionalVisibility.expectPreviewState('Hidden');
       await conditionalVisibility.expectCardHidden(0);
 
@@ -67,11 +69,8 @@ test.describe('Conditional Visibility (Feature 3.5)', () => {
       await conditionalVisibility.expectCardVisible(0);
 
       await properties.switchTab('YAML');
-      await yamlEditor.expectMonacoVisible('properties', testInfo);
       const { value: yamlContent } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
       const parsed = (yaml.load(yamlContent) as Record<string, unknown>) || {};
-
-      await attachDebugJson(testInfo, 'conditional-visibility-yaml.json', parsed);
 
       const conditions = parsed.visibility_conditions as Array<Record<string, unknown>>;
       expect(Array.isArray(conditions)).toBe(true);

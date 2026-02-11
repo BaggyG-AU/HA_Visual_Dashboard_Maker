@@ -11,11 +11,19 @@
  * </Form.Item>
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Input, Popover } from 'antd';
 import { BgColorsOutlined } from '@ant-design/icons';
 import type { ColorPickerInputProps } from '../types/color';
 import { ColorPicker } from './ColorPicker';
+
+/**
+ * Module-level cache that persists popover open state across unmount/remount cycles.
+ * When the parent (PropertiesPanel Tabs) re-renders after an onChange and causes this
+ * component to unmount and remount, the cached state is restored if within the TTL.
+ */
+const popoverStateCache = new Map<string, { open: boolean; timestamp: number }>();
+const POPOVER_STATE_TTL = 1000;
 
 /**
  * ColorPickerInput - Form-friendly color input with popover picker
@@ -37,7 +45,18 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
   ariaLabel = 'Color input',
   'data-testid': testId = 'color-picker-input',
 }) => {
-  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [popoverOpen, setPopoverOpenRaw] = useState(() => {
+    const cached = popoverStateCache.get(testId);
+    if (cached && Date.now() - cached.timestamp < POPOVER_STATE_TTL) {
+      return cached.open;
+    }
+    return false;
+  });
+
+  const setPopoverOpen = useCallback((open: boolean) => {
+    popoverStateCache.set(testId, { open, timestamp: Date.now() });
+    setPopoverOpenRaw(open);
+  }, [testId]);
 
   // Allow keyboard users to dismiss the popover with Escape
   // Ant Design Popover content renders in a portal; we attach a document-level handler
@@ -53,7 +72,7 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
 
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [popoverOpen]);
+  }, [popoverOpen, setPopoverOpen]);
 
   /**
    * Handle color change from picker
@@ -82,7 +101,7 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
     if (!disabled && !readOnly) {
       setPopoverOpen(open);
     }
-  }, [disabled, readOnly]);
+  }, [disabled, readOnly, setPopoverOpen]);
 
   /**
    * Handle swatch click - open popover
@@ -91,7 +110,7 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
     if (!disabled && !readOnly) {
       setPopoverOpen(true);
     }
-  }, [disabled, readOnly]);
+  }, [disabled, readOnly, setPopoverOpen]);
 
   /**
    * Color preview swatch (prefix icon)
@@ -123,20 +142,23 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
   );
 
   /**
-   * ColorPicker popover content
+   * ColorPicker popover content — memoized to prevent Popover portal re-mount on unrelated re-renders
    */
-  const pickerContent = (
-    <ColorPicker
-      value={value}
-      onChange={handleColorChange}
-      format={format}
-      showAlpha={showAlpha}
-      showFormatToggle={showFormatToggle}
-      showRecentColors={showRecentColors}
-      maxRecentColors={maxRecentColors}
-      disabled={disabled}
-      data-testid={`${testId}-picker`}
-    />
+  const pickerContent = useMemo(
+    () => (
+      <ColorPicker
+        value={value}
+        onChange={handleColorChange}
+        format={format}
+        showAlpha={showAlpha}
+        showFormatToggle={showFormatToggle}
+        showRecentColors={showRecentColors}
+        maxRecentColors={maxRecentColors}
+        disabled={disabled}
+        data-testid={`${testId}-picker`}
+      />
+    ),
+    [value, handleColorChange, format, showAlpha, showFormatToggle, showRecentColors, maxRecentColors, disabled, testId]
   );
 
   return (

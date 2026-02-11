@@ -160,19 +160,27 @@ export class BackgroundCustomizerDSL {
   ): Promise<void> {
     const select = this.window.getByTestId(testId);
     await expect(select).toBeVisible();
-    await select.scrollIntoViewIfNeeded();
     const selectOnce = async () => {
       await select.click({ force: true });
 
-      const scopedDropdown = await this.resolveScopedDropdown(testId);
-      if (scopedDropdown) {
-        await expect(scopedDropdown).toBeVisible({ timeout: 5000 });
-        const scopedOption = scopedDropdown
-          .locator('.ant-select-item-option')
-          .filter({ hasText: new RegExp(`^${label}$`, 'i') })
-          .first();
-        await expect(scopedOption).toBeVisible({ timeout: 5000 });
-        await scopedOption.click();
+      const dropdown = await this.resolveScopedDropdown(testId) ?? await this.resolveVisibleDropdown();
+      if (dropdown) {
+        await expect(dropdown).toBeVisible({ timeout: 5000 });
+        const option = dropdown.getByRole('option', { name: new RegExp(`^${label}$`, 'i') }).first();
+        const found = await option
+          .waitFor({ state: 'visible', timeout: 2000 })
+          .then(() => true)
+          .catch(() => false);
+        if (found) {
+          await option.click();
+          return;
+        }
+      }
+
+      const combobox = select.locator('input[role="combobox"]').first();
+      if (await combobox.isVisible().catch(() => false)) {
+        await combobox.pressSequentially(label, { delay: 0 });
+        await this.window.keyboard.press('Enter');
         return;
       }
 
@@ -181,7 +189,7 @@ export class BackgroundCustomizerDSL {
         return;
       }
 
-      throw new Error(`No scoped dropdown available for ${testId} while selecting ${label}`);
+      throw new Error(`No dropdown option available for ${testId} while selecting ${label}`);
     };
 
     try {
@@ -194,8 +202,11 @@ export class BackgroundCustomizerDSL {
         await attachDebugJson(testInfo, diagnosticsLabel, diagnostics);
       }
       try {
+        const retrySelect = this.window.getByTestId(testId);
+        await expect(retrySelect).toBeVisible();
+        await retrySelect.click({ force: true });
         await selectOnce();
-        await expect(select).toContainText(new RegExp(label, 'i'));
+        await expect(retrySelect).toContainText(new RegExp(label, 'i'));
         return;
       } catch {
         throw error;
@@ -206,7 +217,6 @@ export class BackgroundCustomizerDSL {
   async selectType(type: BackgroundTypeLabel, testInfo?: TestInfo): Promise<void> {
     const select = this.getTypeSelect();
     await expect(select).toBeVisible();
-    await select.scrollIntoViewIfNeeded();
     await this.dismissBlockingPopovers();
     try {
       await select.click();

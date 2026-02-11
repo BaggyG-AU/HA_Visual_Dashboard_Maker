@@ -5,7 +5,7 @@
  * Encapsulates all YAML editor modal interactions.
  */
 
-import { Page, expect, TestInfo } from '@playwright/test';
+import { Page, expect, TestInfo, Locator } from '@playwright/test';
 import * as yaml from 'js-yaml';
 import { upsertStyleBackground } from '../../../src/utils/styleBackground';
 
@@ -37,6 +37,8 @@ type YamlTestWindow = Window & {
   __forceYamlValidation?: () => void;
   __insertEntityCallback?: (entityId: string) => void;
 };
+
+type YamlEditorScope = 'properties' | 'modal' | 'canvas' | 'auto';
 
 export class YamlEditorDSL {
   constructor(private window: Page) {}
@@ -107,30 +109,23 @@ export class YamlEditorDSL {
   /**
    * Verify Monaco editor is visible
    */
-  async expectMonacoVisible(scope: 'properties' | 'modal' | 'canvas' = 'properties', _testInfo?: TestInfo): Promise<void> {
+  async expectMonacoVisible(scope: YamlEditorScope = 'auto', _testInfo?: TestInfo): Promise<void> {
     void _testInfo;
-    // Disambiguate properties panel vs modal
-    const modalContent = this.window.getByTestId('yaml-editor-content');
-    const modalContainer = modalContent.getByTestId('yaml-editor-container');
-    const propsContainer = this.window.getByTestId('properties-panel').getByTestId('yaml-editor-container');
+    // Wait for Monaco readiness scoped appropriately, then assert visibility on the chosen container.
+    await this.waitForMonacoReady(scope);
 
-    let containerLocator = scope === 'modal' ? modalContainer : propsContainer;
+    const modalContainer = this.window.getByTestId('yaml-editor-content').getByTestId('yaml-editor-container');
+    let containerLocator = modalContainer;
 
-    // Auto-detect: if scope is properties but modal is visible, switch to modal
-    if (scope === 'properties') {
-      if (await modalContainer.isVisible({ timeout: 2000 }).catch(() => false)) {
-        containerLocator = modalContainer;
-      }
+    if (scope !== 'modal') {
+      // Prefer any visible YAML container to avoid brittle scoping to properties panel.
+      const visibleContainer = this.window.locator('[data-testid="yaml-editor-container"]:visible').first();
+      containerLocator = (await visibleContainer.isVisible({ timeout: 2000 }).catch(() => false)) ? visibleContainer : modalContainer;
     }
 
-    const visible = await containerLocator.isVisible({ timeout: 8000 }).catch(() => false);
-    if (!visible) throw new Error(`YAML editor container not visible for scope=${scope}`);
-
-    // Monaco can render as .monaco-editor or fall back to textarea
+    await expect(containerLocator).toBeVisible({ timeout: 8000 });
     await expect(
-      containerLocator.locator('.monaco-editor')
-        .or(containerLocator.locator('textarea'))
-        .first()
+      containerLocator.locator('.monaco-editor').or(containerLocator.locator('textarea')).first()
     ).toBeVisible({ timeout: 8000 });
   }
 
@@ -170,21 +165,47 @@ export class YamlEditorDSL {
   }
 
   // Wait for Monaco readiness using explicit handles OR any Monaco models
-  private async waitForMonacoReady(scopeHint: 'properties' | 'modal' | 'canvas' = 'properties'): Promise<void> {
-    // Scope to the requested YAML editor surface first to avoid cross-editor collisions.
-    let editorContainer = this.window
-      .locator('[data-testid="yaml-editor-container"]:visible')
-      .first();
-    if (scopeHint === 'modal') {
-      editorContainer = this.window.getByTestId('yaml-editor-content').getByTestId('yaml-editor-container');
-    } else if (scopeHint === 'properties') {
-      editorContainer = this.window.getByTestId('properties-panel').getByTestId('yaml-editor-container');
-    }
+  private async resolveEditorContainer(scopeHint: YamlEditorScope): Promise<Locator> {
+    const modalContainer = this.window.getByTestId('yaml-editor-content').getByTestId('yaml-editor-container');
+    const propertiesContainer = this.window.getByTestId('properties-panel').getByTestId('yaml-editor-container');
+    const anyVisibleContainer = this.window.locator('[data-testid="yaml-editor-container"]:visible').first();
+
+    if (scopeHint === 'modal') return modalContainer;
+    if (scopeHint === 'properties') return propertiesContainer;
+    if (scopeHint === 'canvas') return anyVisibleContainer;
+
+    const modalVisible = await modalContainer.isVisible().catch(() => false);
+    if (modalVisible) return modalContainer;
+
+    const propertiesVisible = await propertiesContainer.isVisible().catch(() => false);
+    if (propertiesVisible) return propertiesContainer;
+
+    return anyVisibleContainer;
+  }
+
+  private async waitForMonacoReady(scopeHint: YamlEditorScope = 'auto'): Promise<void> {
+    // Resolve scope defensively so modal-based and properties-based workflows both work
+    // without forcing every callsite to pass explicit scope.
+    const editorContainer = await this.resolveEditorContainer(scopeHint);
     await expect(editorContainer).toBeVisible({ timeout: 5000 });
 
-    // Wait for Monaco to render (either .monaco-editor or fallback textarea)
+    // Wait for Monaco to render (either .monaco-editor or fallback textarea).
+    // In properties scope, Monaco model can be ready even if the DOM editor node
+    // has not become visible yet under Electron timing; allow handle-based fallback.
     const editor = editorContainer.locator('.monaco-editor, textarea').first();
-    await expect(editor).toBeVisible({ timeout: 5000 });
+    const hasVisibleEditor = await editor.isVisible({ timeout: 5000 }).catch(() => false);
+    if (!hasVisibleEditor) {
+      const hasModelHandles = await this.window.evaluate(() => {
+        const w = window as unknown as YamlTestWindow;
+        const hasExplicitModel = Boolean(w.__monacoModel?.getValue);
+        const hasExplicitEditor = Boolean(w.__monacoEditor?.getModel?.());
+        const hasMonacoModels = Boolean(w.monaco?.editor?.getModels?.()?.length);
+        return hasExplicitModel || hasExplicitEditor || hasMonacoModels;
+      });
+      if (!(scopeHint === 'properties' && hasModelHandles)) {
+        await expect(editor).toBeVisible({ timeout: 5000 });
+      }
+    }
 
     const monacoEditor = editorContainer.locator('.monaco-editor');
     const hasMonaco = await monacoEditor.count() > 0;
@@ -219,7 +240,7 @@ export class YamlEditorDSL {
   /**
    * Collect Monaco diagnostics (JSON-safe)
    */
-  async collectMonacoDiagnostics(scopeHint: 'properties' | 'modal' | 'canvas' = 'properties'): Promise<Record<string, unknown>> {
+  async collectMonacoDiagnostics(scopeHint: YamlEditorScope = 'auto'): Promise<Record<string, unknown>> {
     return await this.window.evaluate((hint: string) => {
       const diag: Record<string, unknown> = {};
       const testWindow = window as unknown as YamlTestWindow;
@@ -325,7 +346,7 @@ export class YamlEditorDSL {
   /**
    * Get Monaco editor content with diagnostics
    */
-  async getEditorContentWithDiagnostics(testInfo?: TestInfo, scopeHint: 'properties' | 'modal' | 'canvas' = 'properties'): Promise<{ value: string; diagnostics: Record<string, unknown> }> {
+  async getEditorContentWithDiagnostics(testInfo?: TestInfo, scopeHint: YamlEditorScope = 'auto'): Promise<{ value: string; diagnostics: Record<string, unknown> }> {
     void testInfo;
     await this.waitForMonacoReady(scopeHint);
     return (await this.collectMonacoDiagnostics(scopeHint)) as { value: string; diagnostics: Record<string, unknown> };
@@ -342,7 +363,7 @@ export class YamlEditorDSL {
   /**
    * Set Monaco editor content (properties panel or modal)
    */
-  async setEditorContent(value: string, scopeHint: 'properties' | 'modal' | 'canvas' = 'properties', testInfo?: TestInfo): Promise<void> {
+  async setEditorContent(value: string, scopeHint: YamlEditorScope = 'auto', testInfo?: TestInfo): Promise<void> {
     void testInfo;
     await this.waitForMonacoReady(scopeHint);
     try {

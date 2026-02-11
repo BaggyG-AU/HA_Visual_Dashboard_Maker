@@ -3,6 +3,7 @@ import { launchWithDSL, close } from '../support';
 
 test.describe('Card Background Customization - PropertiesPanel', () => {
   test('solid and gradient backgrounds update preview + YAML', async ({ page }, testInfo) => {
+    test.setTimeout(120000);
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, backgroundCustomizer, colorPicker, gradientEditor, yamlEditor } = ctx;
@@ -27,6 +28,8 @@ test.describe('Card Background Customization - PropertiesPanel', () => {
       await canvas.expectBackgroundLayerVisible(0);
       await canvas.expectBackgroundLayerCss(0, 'background-color', /rgba\(255, 0, 0, 0\.7/);
 
+      // Ensure any transient color-picker popover is dismissed before tab switch.
+      await properties.dismissTransientOverlays();
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
       const solidYaml = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
@@ -37,6 +40,7 @@ test.describe('Card Background Customization - PropertiesPanel', () => {
       await gradientEditor.applyPreset('material-sunset', testInfo);
       await canvas.expectBackgroundLayerCss(0, 'background-image', /linear-gradient/i);
 
+      await properties.dismissTransientOverlays();
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
       const gradientYaml = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
