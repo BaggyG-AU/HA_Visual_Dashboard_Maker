@@ -359,6 +359,34 @@ class CardRegistry {
         },
         requiredProps: ['tabs'],
       },
+      {
+        type: 'custom:popup-card',
+        name: 'Popup Card',
+        category: 'layout',
+        icon: 'ExpandOutlined',
+        description: 'Trigger a modal popup containing cards',
+        isCustom: true,
+        source: 'custom',
+        defaultProps: {
+          title: 'Popup Trigger',
+          trigger_label: 'Open Popup',
+          trigger_icon: 'mdi:open-in-new',
+          popup: {
+            title: 'Details',
+            size: 'medium',
+            close_on_backdrop: true,
+            backdrop_opacity: 0.45,
+            show_header: true,
+            show_footer: false,
+            close_label: 'Close',
+            footer_actions: [],
+            cards: [
+              { type: 'markdown', content: 'Popup content' },
+            ],
+          },
+        },
+        requiredProps: ['popup'],
+      },
 
       // Custom HACS Cards
       {

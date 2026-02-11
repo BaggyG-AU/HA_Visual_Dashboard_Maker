@@ -30,6 +30,7 @@ import { logger } from './services/logger';
 import { setSoundSettings } from './services/soundService';
 import { setHapticSettings } from './services/hapticService';
 import { entityRemappingService, type EntityMapping } from './services/entityRemapping';
+import { PopupHost } from './features/popup/PopupHost';
 import type { Card, DashboardConfig } from './types/dashboard';
 import type { LoggingLevel } from './services/settingsService';
 import type { EntityState } from './services/haWebSocketService';
@@ -1737,6 +1738,7 @@ const App: React.FC = () => {
           style={{ display: 'none' }}
         />
       )}
+      <PopupHost />
       </HAEntityProvider>
     </ConfigProvider>
   );

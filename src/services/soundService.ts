@@ -91,6 +91,7 @@ const resolveEffectForAction = (action?: Action): SoundEffect | null => {
     case 'navigate':
     case 'url':
     case 'more-info':
+    case 'popup':
       return 'click';
     case 'call-service':
       return 'success';

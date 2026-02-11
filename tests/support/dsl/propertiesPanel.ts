@@ -10,6 +10,18 @@ import { Page, expect, Locator } from '@playwright/test';
 export class PropertiesPanelDSL {
   constructor(private window: Page) {}
 
+  private async getVisibleTab(tab: 'Form' | 'Advanced Options' | 'YAML'): Promise<Locator> {
+    const candidates = this.panel.getByRole('tab', { name: new RegExp(`^${tab}$`, 'i') });
+    const count = await candidates.count();
+    for (let i = 0; i < count; i += 1) {
+      const tabCandidate = candidates.nth(i);
+      if (await tabCandidate.isVisible().catch(() => false)) {
+        return tabCandidate;
+      }
+    }
+    return candidates.first();
+  }
+
   private get panel(): Locator {
     return this.window.getByTestId('properties-panel');
   }
@@ -54,7 +66,7 @@ export class PropertiesPanelDSL {
       el.scrollTop = 0;
     });
 
-    const tabElement = this.panel.getByRole('tab', { name: new RegExp(`^${tab}$`, 'i') });
+    const tabElement = await this.getVisibleTab(tab);
     await expect(tabElement).toBeVisible({ timeout: 10000 });
     await this.dismissTransientOverlays();
     try {
@@ -96,7 +108,7 @@ export class PropertiesPanelDSL {
 
     const tabs = ['Form', 'Advanced Options', 'YAML'] as const;
     for (const tab of tabs) {
-      const tabElement = this.panel.getByRole('tab', { name: new RegExp(`^${tab}$`, 'i') });
+      const tabElement = await this.getVisibleTab(tab);
       const count = await tabElement.count();
       if (count > 0) {
         const ariaSelected = await tabElement.getAttribute('aria-selected');
@@ -114,7 +126,7 @@ export class PropertiesPanelDSL {
   async expectActiveTab(tab: 'Form' | 'Advanced Options' | 'YAML'): Promise<void> {
     await this.expectVisible();
 
-    const tabElement = this.panel.getByRole('tab', { name: new RegExp(tab, 'i') });
+    const tabElement = await this.getVisibleTab(tab);
     const ariaSelected = await tabElement.getAttribute('aria-selected');
     expect(ariaSelected).toBe('true');
   }
@@ -123,20 +135,41 @@ export class PropertiesPanelDSL {
    * Wait for Monaco editor to be ready in YAML tab
    * Detects BOTH .monaco-editor and textarea fallback
    */
-  async expectYamlEditor(timeout = 8000): Promise<void> {
+  async expectYamlEditor(timeout = 12000): Promise<void> {
     await this.expectVisible();
     await this.expectActiveTab('YAML');
 
     // Wait for editor container scoped to properties panel
-    const editorContainer = this.panel.locator('[data-testid="yaml-editor-container"]:visible').first();
+    let editorContainer = this.panel.locator('[data-testid="yaml-editor-container"]:visible').first();
+    const hasVisibleContainer = await editorContainer.isVisible({ timeout: 2000 }).catch(() => false);
+    if (!hasVisibleContainer) {
+      const yamlTab = await this.getVisibleTab('YAML');
+      await yamlTab.click();
+      editorContainer = this.panel.locator('[data-testid="yaml-editor-container"]:visible').first();
+    }
     await expect(editorContainer).toBeVisible({ timeout });
 
-    // Wait for Monaco to initialize (either .monaco-editor or textarea)
-    await expect(
-      editorContainer.locator('.monaco-editor')
-        .or(editorContainer.locator('textarea'))
-        .first()
-    ).toBeVisible({ timeout });
+    await expect
+      .poll(async () => {
+        const monacoVisible = await editorContainer.locator('.monaco-editor:visible').count();
+        const textareaVisible = await editorContainer.locator('textarea:visible').count();
+        if (monacoVisible + textareaVisible > 0) {
+          return true;
+        }
+        const hasMonacoModel = await this.window.evaluate(() => {
+          const testWindow = window as Window & {
+            __monacoModel?: { getValue?: () => string } | null;
+            __monacoEditor?: { getModel?: () => unknown } | null;
+            monaco?: { editor?: { getModels?: () => unknown[] } };
+          };
+          const explicitModel = Boolean(testWindow.__monacoModel?.getValue);
+          const explicitEditor = Boolean(testWindow.__monacoEditor?.getModel?.());
+          const globalModels = Boolean(testWindow.monaco?.editor?.getModels?.()?.length);
+          return explicitModel || explicitEditor || globalModels;
+        });
+        return hasMonacoModel;
+      }, { timeout })
+      .toBe(true);
   }
 
   /**

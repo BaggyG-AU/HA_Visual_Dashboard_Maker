@@ -56,11 +56,28 @@ export interface SpacerCard extends BaseCard {
 
 // Action types
 export interface Action {
-  action: 'more-info' | 'toggle' | 'call-service' | 'navigate' | 'url' | 'none';
+  action: 'more-info' | 'toggle' | 'call-service' | 'navigate' | 'url' | 'none' | 'popup';
   service?: string;
   service_data?: Record<string, any>;
   navigation_path?: string;
   url_path?: string;
+  popup_title?: string;
+  popup_size?: 'auto' | 'small' | 'medium' | 'large' | 'fullscreen' | 'custom';
+  popup_custom_size?: {
+    width?: number;
+    height?: number;
+  };
+  popup_close_on_backdrop?: boolean;
+  popup_backdrop_opacity?: number;
+  popup_show_header?: boolean;
+  popup_show_footer?: boolean;
+  popup_close_label?: string;
+  popup_footer_actions?: Array<{
+    label: string;
+    action?: 'close' | 'none';
+    button_type?: 'default' | 'primary' | 'dashed' | 'link' | 'text';
+  }>;
+  popup_cards?: Card[];
   confirmation?: {
     text?: string;
     exemptions?: any[];

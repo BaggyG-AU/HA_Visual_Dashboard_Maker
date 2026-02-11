@@ -36,6 +36,7 @@ import { MultiEntityDSL } from './dsl/multiEntity';
 import { CarouselDSL } from './dsl/carousel';
 import { AccordionDSL } from './dsl/accordion';
 import { TabsDSL } from './dsl/tabs';
+import { PopupDSL } from './dsl/popup';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -77,6 +78,7 @@ export interface TestContext extends electron.ElectronTestContext {
   carousel: CarouselDSL;
   accordion: AccordionDSL;
   tabs: TabsDSL;
+  popup: PopupDSL;
 }
 
 /**
@@ -113,5 +115,6 @@ export async function launchWithDSL(): Promise<TestContext> {
     carousel: new CarouselDSL(electronCtx.window),
     accordion: new AccordionDSL(electronCtx.window),
     tabs: new TabsDSL(electronCtx.window),
+    popup: new PopupDSL(electronCtx.window),
   };
 }

@@ -189,6 +189,7 @@
             "custom:swiper-card",
             "custom:accordion-card",
             "custom:tabs-card",
+            "custom:popup-card",
             "custom:mushroom-entity-card",
             "custom:mushroom-template-card",
             "custom:mushroom-person-card",
@@ -620,6 +621,78 @@
             "additionalProperties": true
           }
         },
+        "trigger_label": {
+          "type": "string",
+          "description": "Popup trigger button label"
+        },
+        "trigger_icon": {
+          "type": "string",
+          "description": "Popup trigger icon (MDI)"
+        },
+        "popup": {
+          "type": "object",
+          "description": "Popup configuration for custom:popup-card",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "size": {
+              "type": "string",
+              "enum": ["auto", "small", "medium", "large", "fullscreen", "custom"]
+            },
+            "custom_size": {
+              "type": "object",
+              "properties": {
+                "width": { "type": "number" },
+                "height": { "type": "number" }
+              },
+              "additionalProperties": false
+            },
+            "close_on_backdrop": {
+              "type": "boolean"
+            },
+            "backdrop_opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "show_header": {
+              "type": "boolean"
+            },
+            "show_footer": {
+              "type": "boolean"
+            },
+            "close_label": {
+              "type": "string"
+            },
+            "footer_actions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "label": { "type": "string" },
+                  "action": {
+                    "type": "string",
+                    "enum": ["close", "none"]
+                  },
+                  "button_type": {
+                    "type": "string",
+                    "enum": ["default", "primary", "dashed", "link", "text"]
+                  }
+                },
+                "required": ["label"],
+                "additionalProperties": false
+              }
+            },
+            "cards": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/card"
+              }
+            }
+          },
+          "additionalProperties": true
+        },
         "space_between": {
           "type": "number",
           "description": "Space between slides (px)"
@@ -723,7 +796,8 @@
             "call-service",
             "navigate",
             "url",
-            "assist"
+            "assist",
+            "popup"
           ],
           "default": "more-info"
         },
@@ -818,6 +892,64 @@
             }
           ],
           "description": "Confirmation dialog configuration"
+        },
+        "popup_title": {
+          "type": "string",
+          "description": "Popup title for popup action"
+        },
+        "popup_size": {
+          "type": "string",
+          "enum": ["auto", "small", "medium", "large", "fullscreen", "custom"]
+        },
+        "popup_custom_size": {
+          "type": "object",
+          "properties": {
+            "width": { "type": "number" },
+            "height": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        "popup_close_on_backdrop": {
+          "type": "boolean"
+        },
+        "popup_backdrop_opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "popup_show_header": {
+          "type": "boolean"
+        },
+        "popup_show_footer": {
+          "type": "boolean"
+        },
+        "popup_close_label": {
+          "type": "string"
+        },
+        "popup_footer_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "action": {
+                "type": "string",
+                "enum": ["close", "none"]
+              },
+              "button_type": {
+                "type": "string",
+                "enum": ["default", "primary", "dashed", "link", "text"]
+              }
+            },
+            "required": ["label"],
+            "additionalProperties": false
+          }
+        },
+        "popup_cards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/card"
+          }
         }
       },
       "additionalProperties": true

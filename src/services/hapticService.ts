@@ -41,6 +41,7 @@ const resolvePatternForAction = (action?: Action): HapticPattern | null => {
     case 'navigate':
     case 'url':
     case 'more-info':
+    case 'popup':
       return 'light';
     case 'call-service':
       return 'success';

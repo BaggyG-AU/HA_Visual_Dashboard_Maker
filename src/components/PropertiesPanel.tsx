@@ -27,6 +27,7 @@ import type { AggregateFunction, BatchActionType, MultiEntityMode } from '../typ
 import { DEFAULT_SECTION_ICON } from '../features/accordion/accordionService';
 import type { AccordionExpandMode } from '../features/accordion/types';
 import { DEFAULT_TAB_ICON, clampTabIndex } from '../services/tabsService';
+import { DEFAULT_POPUP_TRIGGER_ICON, normalizePopupConfig } from '../features/popup/popupService';
 
 const { Title, Text } = Typography;
 
@@ -48,6 +49,26 @@ type TabsTabValues = {
   icon?: string;
   badge?: string | number;
   count?: number;
+  cards?: unknown[];
+};
+
+type PopupConfigValues = {
+  title?: string;
+  size?: 'auto' | 'small' | 'medium' | 'large' | 'fullscreen' | 'custom';
+  custom_size?: {
+    width?: number;
+    height?: number;
+  };
+  close_on_backdrop?: boolean;
+  backdrop_opacity?: number;
+  show_header?: boolean;
+  show_footer?: boolean;
+  close_label?: string;
+  footer_actions?: Array<{
+    label?: string;
+    action?: 'close' | 'none';
+    button_type?: 'default' | 'primary' | 'dashed' | 'link' | 'text';
+  }>;
   cards?: unknown[];
 };
 
@@ -637,6 +658,26 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
       const defaultTabValue = (normalized as { default_tab?: unknown }).default_tab;
       (normalized as { default_tab?: number }).default_tab = clampTabIndex(defaultTabValue, normalizedTabs.length);
+    }
+
+    if (card.type === 'custom:popup-card') {
+      const typed = normalized as {
+        trigger_label?: unknown;
+        trigger_icon?: unknown;
+        popup?: PopupConfigValues;
+      };
+      if (typeof typed.trigger_label !== 'string' || typed.trigger_label.trim().length === 0) {
+        typed.trigger_label = 'Open Popup';
+      }
+      if (typeof typed.trigger_icon !== 'string' || typed.trigger_icon.trim().length === 0) {
+        typed.trigger_icon = DEFAULT_POPUP_TRIGGER_ICON;
+      }
+      const popup = normalizePopupConfig(typed.popup, typed.trigger_label);
+      typed.popup = {
+        ...popup,
+        footer_actions: popup.footer_actions,
+        cards: popup.cards,
+      };
     }
 
     return normalized;
@@ -2859,6 +2900,226 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
+          {card.type === 'custom:popup-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input placeholder="Popup trigger title (optional)" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Trigger Label</span>}
+                name="trigger_label"
+              >
+                <Input placeholder="Open Popup" data-testid="popup-trigger-label" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Trigger Icon</span>}
+                name="trigger_icon"
+              >
+                <IconSelect placeholder={DEFAULT_POPUP_TRIGGER_ICON} data-testid="popup-trigger-icon" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Popup Behavior</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Popup Title</span>}
+                name={['popup', 'title']}
+              >
+                <Input placeholder="Popup title" data-testid="popup-title" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Popup Size</span>}
+                name={['popup', 'size']}
+              >
+                <Select
+                  placeholder="Select popup size"
+                  options={[
+                    { value: 'auto', label: 'Auto' },
+                    { value: 'small', label: 'Small' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'large', label: 'Large' },
+                    { value: 'fullscreen', label: 'Fullscreen' },
+                    { value: 'custom', label: 'Custom' },
+                  ]}
+                  data-testid="popup-size"
+                />
+              </Form.Item>
+
+              <Form.Item
+                noStyle
+                shouldUpdate={(prev, curr) => prev.popup?.size !== curr.popup?.size}
+              >
+                {() => {
+                  const popupSize = form.getFieldValue(['popup', 'size']);
+                  if (popupSize !== 'custom') return null;
+                  return (
+                    <>
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Custom Width</span>}
+                        name={['popup', 'custom_size', 'width']}
+                      >
+                        <InputNumber min={200} max={1920} style={{ width: '100%' }} data-testid="popup-custom-width" />
+                      </Form.Item>
+
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Custom Height</span>}
+                        name={['popup', 'custom_size', 'height']}
+                      >
+                        <InputNumber min={180} max={1200} style={{ width: '100%' }} data-testid="popup-custom-height" />
+                      </Form.Item>
+                    </>
+                  );
+                }}
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Close On Backdrop Click</span>}
+                name={['popup', 'close_on_backdrop']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="popup-close-on-backdrop" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Backdrop Opacity</span>}
+                name={['popup', 'backdrop_opacity']}
+              >
+                <InputNumber
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  style={{ width: '100%' }}
+                  data-testid="popup-backdrop-opacity"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Header</span>}
+                name={['popup', 'show_header']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="popup-show-header" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Footer</span>}
+                name={['popup', 'show_footer']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="popup-show-footer" />
+              </Form.Item>
+
+              <Form.Item
+                noStyle
+                shouldUpdate={(prev, curr) => prev.popup?.show_footer !== curr.popup?.show_footer}
+              >
+                {() => {
+                  const showFooter = form.getFieldValue(['popup', 'show_footer']);
+                  if (!showFooter) return null;
+                  return (
+                    <>
+                      <Form.Item
+                        label={<span style={{ color: 'white' }}>Close Button Label</span>}
+                        name={['popup', 'close_label']}
+                      >
+                        <Input placeholder="Close" data-testid="popup-close-label" />
+                      </Form.Item>
+
+                      <Form.List name={['popup', 'footer_actions']}>
+                        {(fields, { add, remove }) => (
+                          <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                            <Text strong style={{ color: 'white' }}>Footer Actions</Text>
+                            {fields.map(({ key, name }, index) => (
+                              <div
+                                key={key}
+                                style={{
+                                  border: '1px solid #2d2d2d',
+                                  borderRadius: '8px',
+                                  padding: '12px',
+                                }}
+                              >
+                                <Text strong style={{ color: '#9aa4b2' }}>{`Action ${index + 1}`}</Text>
+
+                                <Form.Item
+                                  label={<span style={{ color: 'white' }}>Label</span>}
+                                  name={[name, 'label']}
+                                  rules={[{ required: true, message: 'Action label is required' }]}
+                                >
+                                  <Input data-testid={`popup-footer-action-${index}-label`} placeholder="Action label" />
+                                </Form.Item>
+
+                                <Form.Item
+                                  label={<span style={{ color: 'white' }}>Behavior</span>}
+                                  name={[name, 'action']}
+                                  initialValue="none"
+                                >
+                                  <Select
+                                    options={[
+                                      { value: 'none', label: 'None' },
+                                      { value: 'close', label: 'Close Popup' },
+                                    ]}
+                                    data-testid={`popup-footer-action-${index}-behavior`}
+                                  />
+                                </Form.Item>
+
+                                <Form.Item
+                                  label={<span style={{ color: 'white' }}>Button Type</span>}
+                                  name={[name, 'button_type']}
+                                  initialValue="default"
+                                >
+                                  <Select
+                                    options={[
+                                      { value: 'default', label: 'Default' },
+                                      { value: 'primary', label: 'Primary' },
+                                      { value: 'dashed', label: 'Dashed' },
+                                      { value: 'link', label: 'Link' },
+                                      { value: 'text', label: 'Text' },
+                                    ]}
+                                    data-testid={`popup-footer-action-${index}-button-type`}
+                                  />
+                                </Form.Item>
+
+                                <Button
+                                  danger
+                                  onClick={() => remove(name)}
+                                  data-testid={`popup-footer-action-${index}-remove`}
+                                >
+                                  Remove Action
+                                </Button>
+                              </div>
+                            ))}
+
+                            <Button
+                              type="dashed"
+                              onClick={() => add({ label: `Action ${fields.length + 1}`, action: 'none', button_type: 'default' })}
+                              data-testid="popup-footer-action-add"
+                            >
+                              Add Footer Action
+                            </Button>
+                          </Space>
+                        )}
+                      </Form.List>
+                    </>
+                  );
+                }}
+              </Form.Item>
+
+              <Alert
+                title="Popup Content Configuration"
+                description="Configure popup cards in popup.cards using YAML for nested card content."
+                type="info"
+                showIcon
+                style={{ marginTop: '16px' }}
+              />
+            </>
+          )}
+
           {card.type === 'custom:bubble-card' && (
             <>
               <Form.Item
@@ -3654,7 +3915,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swiper-card', 'custom:accordion-card', 'custom:tabs-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swiper-card', 'custom:accordion-card', 'custom:tabs-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.

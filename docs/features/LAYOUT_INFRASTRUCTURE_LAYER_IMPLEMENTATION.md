@@ -1,14 +1,14 @@
 # Layout Infrastructure Layer - Implementation Plan
 
 **Branch**: `feature/layout-infrastructure-layer`
-**Version Target**: v0.7.4-beta.3
+**Version Target**: v0.7.4-beta.4
 **Dependencies**: None (independent phase)
 **Status**: :construction: In Progress
 **Planned Start**: 2026-02-10
 
 **Versioning Convention**:
 - `v0.7.<phase>-beta.<feature>`
-- Example (current): `v0.7.4-beta.3` = Phase 4, Feature 3
+- Example (current): `v0.7.4-beta.4` = Phase 4, Feature 4
 - Completed features keep their original shipped version in historical notes
 
 ---
@@ -35,10 +35,10 @@
 
 | Feature | Priority | Effort | Status |
 |---------|----------|--------|--------|
-| 4.1: Swiper.js Integration | High | 5-6 days | :hourglass: Ready to Begin |
+| 4.1: Swiper.js Integration | High | 5-6 days | :construction: Implemented (documentation sync pending) |
 | 4.2: Accordion Card Module | Medium | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.2) |
-| 4.3: Tabs Card Module | Medium | 3-4 days | :hourglass: Ready to Begin |
-| 4.4: Popup/Modal Card System | High | 5-6 days | :hourglass: Ready to Begin |
+| 4.3: Tabs Card Module | Medium | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.3) |
+| 4.4: Popup/Modal Card System | High | 5-6 days | :construction: In Progress (v0.7.4-beta.4) |
 | 4.5: Horizontal/Vertical Layout Enhancements | Medium | 2-3 days | :hourglass: Ready to Begin |
 | 4.6: Card Spacing Controls | Medium | 2-3 days | :hourglass: Ready to Begin |
 
@@ -446,7 +446,39 @@ This feature MUST comply with:
 **Priority**: Medium
 **Dependencies**: None
 **Estimated Effort**: 3-4 days
-**Status**: :hourglass: Ready to Begin
+**Status**: :white_check_mark: Complete (v0.7.4-beta.3)
+
+### Delivery Baseline (v0.7.4-beta.3)
+
+#### Completed
+
+- [x] `custom:tabs-card` product implementation delivered:
+  - [x] `src/types/tabs.ts`
+  - [x] `src/services/tabsService.ts`
+  - [x] `src/features/tabs/TabsPanel.tsx`
+  - [x] `src/components/cards/TabsCardRenderer.tsx`
+- [x] Integration points complete:
+  - [x] Card registry entry in `src/services/cardRegistry.ts`
+  - [x] BaseCard dispatch wiring in `src/components/BaseCard.tsx`
+  - [x] PropertiesPanel controls in `src/components/PropertiesPanel.tsx`
+  - [x] YAML schema updates in `src/schemas/ha-dashboard-schema.json`
+- [x] Tabs behavior shipped:
+  - [x] Top/bottom/left/right tab positioning
+  - [x] Tab size selection (default/small/large)
+  - [x] Default active tab selection with bounds clamping
+  - [x] Animation mode selection (`none`, `fade`, `slide`)
+  - [x] Lazy render toggle
+  - [x] Tab icon support + static badge/count fields
+- [x] Accessibility shipped:
+  - [x] WAI-ARIA tab semantics (`tablist`, `tab`, `tabpanel`, active/focus attributes)
+  - [x] Keyboard navigation (arrow keys, Home/End, Enter/Space)
+- [x] Test coverage delivered:
+  - [x] Unit tests (`tests/unit/tabs-service.spec.ts`)
+  - [x] DSL + registration (`tests/support/dsl/tabs.ts`, `tests/support/index.ts`)
+  - [x] E2E tests (`tests/e2e/tabs.spec.ts`)
+  - [x] Visual tests (`tests/e2e/tabs.visual.spec.ts`)
+
+### Original Implementation Checklist (Historical Planning Artifact)
 
 ### Implementation Checklist
 
@@ -608,7 +640,47 @@ This feature MUST comply with:
 **Priority**: High
 **Dependencies**: None
 **Estimated Effort**: 5-6 days
-**Status**: :hourglass: Ready to Begin
+**Status**: :construction: In Progress (v0.7.4-beta.4)
+
+### Delivery Progress (v0.7.4-beta.4)
+
+#### Completed
+
+- [x] Popup feature module created:
+  - [x] `src/features/popup/types.ts`
+  - [x] `src/features/popup/popupService.ts`
+  - [x] `src/features/popup/PopupCardModal.tsx`
+  - [x] `src/features/popup/PopupHost.tsx`
+- [x] Product integrations wired:
+  - [x] `custom:popup-card` in `src/services/cardRegistry.ts`
+  - [x] BaseCard dispatch + `tap_action.action: popup` handling in `src/components/BaseCard.tsx`
+  - [x] Popup host mounted in `src/App.tsx`
+- [x] Configuration and schema updates:
+  - [x] Action type extension in `src/types/dashboard.ts`
+  - [x] Popup card + popup action schema in `src/schemas/ha-dashboard-schema.json`
+  - [x] PropertiesPanel popup controls in `src/components/PropertiesPanel.tsx`
+- [x] Core modal behavior delivered:
+  - [x] Size modes (`auto`, `small`, `medium`, `large`, `fullscreen`, `custom`)
+  - [x] Close via button/ESC/backdrop (configurable)
+  - [x] Configurable backdrop opacity
+  - [x] Header visibility toggle
+  - [x] Footer controls (`show_footer`, `close_label`, `footer_actions`)
+  - [x] Nested depth guard (`MAX_POPUP_DEPTH = 3`)
+  - [x] Deterministic stack z-index
+  - [x] Reduced-motion transition fallback
+- [x] Initial test assets authored:
+  - [x] Unit tests (`tests/unit/popup-service.spec.ts`)
+  - [x] DSL + registration (`tests/support/dsl/popup.ts`, `tests/support/index.ts`)
+  - [x] E2E spec (`tests/e2e/popup.spec.ts`)
+  - [x] Visual spec (`tests/e2e/popup.visual.spec.ts`)
+
+#### Remaining (to close before marking complete)
+
+- [ ] Run and stabilize popup-focused E2E/visual execution against final selectors and window behavior
+- [ ] Validate full acceptance checklist and finalize pass/fail evidence in this document
+- [ ] Promote status from In Progress to Complete after verification
+
+### Original Implementation Checklist (Historical Planning Artifact)
 
 ### Implementation Checklist
 
@@ -1196,7 +1268,7 @@ This phase provides foundation for:
 
 ---
 
-**Document Status**: :construction: In Progress (Feature 4.2 baselined complete)
-**Last Updated**: February 9, 2026
-**Next Review**: Before starting Feature 4.3 implementation
+**Document Status**: :construction: In Progress (Features 4.2 + 4.3 baselined complete, 4.4 in progress)
+**Last Updated**: February 10, 2026
+**Next Review**: After popup verification pass for Feature 4.4
 **Owner**: Development Team

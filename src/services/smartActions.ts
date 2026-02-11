@@ -71,6 +71,7 @@ export const formatActionLabel = (action?: Action): string => {
     case 'navigate':
     case 'url':
     case 'none':
+    case 'popup':
       return action.action;
     case 'call-service':
       return action.service ? `call-service: ${action.service}` : 'call-service';
@@ -106,4 +107,3 @@ export const resolveTapAction = (card: Card): ResolveTapActionResult => {
 
   return { action: undefined, source: 'none' };
 };
-
