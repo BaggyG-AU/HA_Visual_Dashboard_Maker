@@ -75,7 +75,8 @@
       "WebFetch(domain:bondaracademy.com)",
       "WebFetch(domain:playwright.dev)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:medium.com)"
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:www.home-assistant.io)"
     ]
   }
 }

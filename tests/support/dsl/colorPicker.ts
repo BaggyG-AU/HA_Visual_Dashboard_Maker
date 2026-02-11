@@ -207,12 +207,24 @@ export class ColorPickerDSL {
     const isVisible = await popover.isVisible().catch(() => false);
     if (!isVisible) return;
 
-    await this.window.keyboard.press('Escape');
-    await expect(async () => {
+    const isClosed = async (): Promise<boolean> => {
       const count = await popover.count();
-      if (count === 0) return;
-      await expect(popover).not.toBeVisible();
-    }).toPass({ timeout: 2000 });
+      if (count === 0) return true;
+      return !(await popover.isVisible().catch(() => false));
+    };
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await this.window.keyboard.press('Escape');
+      await expect.poll(isClosed, { timeout: 1200 }).toBe(true).catch(() => undefined);
+      if (await isClosed()) return;
+
+      // Reuse the background-customizer defensive pattern for stubborn popovers.
+      await this.window.mouse.click(5, 5);
+      await expect.poll(isClosed, { timeout: 1200 }).toBe(true).catch(() => undefined);
+      if (await isClosed()) return;
+    }
+
+    await expect.poll(isClosed, { timeout: 5000 }).toBe(true);
   }
 
   private normalizeRecentHex(color: string): string {

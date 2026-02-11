@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card as AntCard, Typography } from 'antd';
 import { AppstoreOutlined } from '@ant-design/icons';
 import { GridCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { BaseCard } from '../BaseCard';
 import { useEntityContextResolver } from '../../hooks/useEntityContext';
+import { normalizeGridLayout } from '../../services/layoutConfig';
 
 const { Text } = Typography;
 
@@ -33,6 +34,7 @@ export const GridCardRenderer: React.FC<GridCardRendererProps> = ({
     childCards.find((child) => typeof (child as any)?.entity === 'string')?.entity ?? null;
   const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId) : '';
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const layout = useMemo(() => normalizeGridLayout(card), [card]);
 
   // If no child cards, show placeholder
   if (childCards.length === 0) {
@@ -94,16 +96,22 @@ export const GridCardRenderer: React.FC<GridCardRendererProps> = ({
         overflow: 'auto',
       }}
       onClick={onClick}
+      data-testid="grid-card"
       hoverable
     >
       {/* Grid layout container */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${columns}, 1fr)`,
-        gap: '12px',
+        rowGap: `${layout.rowGap}px`,
+        columnGap: `${layout.columnGap}px`,
+        alignItems: layout.alignItems,
+        justifyItems: layout.justifyItems,
         height: '100%',
         gridAutoRows: square ? '1fr' : 'auto',
-      }}>
+      }}
+      data-testid="grid-layout-container"
+      >
         {childCards.map((childCard, index) => (
           <div
             key={index}

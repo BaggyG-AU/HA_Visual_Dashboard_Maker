@@ -1,14 +1,14 @@
 # Layout Infrastructure Layer - Implementation Plan
 
 **Branch**: `feature/layout-infrastructure-layer`
-**Version Target**: v0.7.4-beta.4
+**Version Target**: v0.7.4-beta.5
 **Dependencies**: None (independent phase)
 **Status**: :construction: In Progress
 **Planned Start**: 2026-02-10
 
 **Versioning Convention**:
 - `v0.7.<phase>-beta.<feature>`
-- Example (current): `v0.7.4-beta.4` = Phase 4, Feature 4
+- Example (current): `v0.7.4-beta.5` = Phase 4 post-Feature 4.4 stabilization build
 - Completed features keep their original shipped version in historical notes
 
 ---
@@ -38,7 +38,7 @@
 | 4.1: Swiper.js Integration | High | 5-6 days | :construction: Implemented (documentation sync pending) |
 | 4.2: Accordion Card Module | Medium | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.2) |
 | 4.3: Tabs Card Module | Medium | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.3) |
-| 4.4: Popup/Modal Card System | High | 5-6 days | :construction: In Progress (v0.7.4-beta.4) |
+| 4.4: Popup/Modal Card System | High | 5-6 days | :white_check_mark: Complete (v0.7.4-beta.5) |
 | 4.5: Horizontal/Vertical Layout Enhancements | Medium | 2-3 days | :hourglass: Ready to Begin |
 | 4.6: Card Spacing Controls | Medium | 2-3 days | :hourglass: Ready to Begin |
 
@@ -51,7 +51,12 @@
 **Priority**: High
 **Dependencies**: None
 **Estimated Effort**: 5-6 days
-**Status**: :hourglass: Ready to Begin
+**Status**: :construction: Implemented (documentation sync pending)
+
+### Tracking Note
+
+Feature 4.1 product code and tests were delivered earlier in Phase 4 and are represented in the status overview.
+The detailed per-item checklist below is retained as a historical planning artifact and has not yet been backfilled item-by-item.
 
 ### Implementation Checklist
 
@@ -640,9 +645,9 @@ This feature MUST comply with:
 **Priority**: High
 **Dependencies**: None
 **Estimated Effort**: 5-6 days
-**Status**: :construction: In Progress (v0.7.4-beta.4)
+**Status**: :white_check_mark: Complete (v0.7.4-beta.5)
 
-### Delivery Progress (v0.7.4-beta.4)
+### Delivery Baseline (v0.7.4-beta.5)
 
 #### Completed
 
@@ -673,12 +678,16 @@ This feature MUST comply with:
   - [x] DSL + registration (`tests/support/dsl/popup.ts`, `tests/support/index.ts`)
   - [x] E2E spec (`tests/e2e/popup.spec.ts`)
   - [x] Visual spec (`tests/e2e/popup.visual.spec.ts`)
+- [x] Verification completed:
+  - [x] Popup targeted E2E stabilized and passing (`tests/e2e/popup.spec.ts`)
+  - [x] Popup visual baseline snapshots created and verified (`tests/e2e/popup.visual.spec.ts`)
+  - [x] Full E2E regression run passed with popup visual baseline follow-up applied
 
-#### Remaining (to close before marking complete)
+#### Deferred Follow-Ups (Non-Blocking)
 
-- [ ] Run and stabilize popup-focused E2E/visual execution against final selectors and window behavior
-- [ ] Validate full acceptance checklist and finalize pass/fail evidence in this document
-- [ ] Promote status from In Progress to Complete after verification
+- [ ] Expand popup visual coverage with nested stack snapshots
+- [ ] Add explicit E2E coverage for nested popup depth guard behavior (`MAX_POPUP_DEPTH = 3`)
+- [ ] Evaluate form-based popup card-content management UX beyond YAML workflow
 
 ### Original Implementation Checklist (Historical Planning Artifact)
 
@@ -879,44 +888,44 @@ This feature MUST comply with:
 
 #### Phase 1: Gap/Spacing Controls (Day 1)
 
-- [ ] Enhance existing `VerticalStackCardRenderer.tsx`:
-  - [ ] Configurable `gap` property (px value, default: 12px)
-  - [ ] Gap presets: none (0), tight (4px), normal (12px), relaxed (24px), custom
-- [ ] Enhance existing `HorizontalStackCardRenderer.tsx`:
-  - [ ] Configurable `gap` property (same as vertical)
-  - [ ] Gap presets (same as vertical)
-- [ ] Enhance existing `GridCardRenderer.tsx`:
-  - [ ] Configurable `row_gap` and `column_gap` (independent)
-  - [ ] Gap presets (same pattern)
-- [ ] Update stack card types in `src/types/dashboard.ts`
-- [ ] Unit tests for gap configuration parsing
+- [x] Enhance existing `VerticalStackCardRenderer.tsx`:
+  - [x] Configurable `gap` property (px value, default: 12px)
+  - [x] Gap presets: none (0), tight (4px), normal (12px), relaxed (24px), custom
+- [x] Enhance existing `HorizontalStackCardRenderer.tsx`:
+  - [x] Configurable `gap` property (same as vertical)
+  - [x] Gap presets (same as vertical)
+- [x] Enhance existing `GridCardRenderer.tsx`:
+  - [x] Configurable `row_gap` and `column_gap` (independent)
+  - [x] Gap presets (same pattern)
+- [x] Update stack card types in `src/types/dashboard.ts`
+- [x] Unit tests for gap configuration parsing
 
 #### Phase 2: Alignment Controls (Day 1)
 
-- [ ] Add alignment options to stack cards:
-  - [ ] Vertical stack: `align_items` (start, center, end, stretch)
-  - [ ] Horizontal stack: `align_items` (start, center, end, stretch, baseline)
-  - [ ] Horizontal stack: `justify_content` (start, center, end, space-between, space-around, space-evenly)
-  - [ ] Grid card: `align_items` and `justify_items`
-- [ ] Add wrap behavior for horizontal stack:
-  - [ ] `wrap` property: nowrap (default), wrap, wrap-reverse
-  - [ ] When wrapped, gap applies between rows too
-- [ ] Update renderers with alignment CSS properties
-- [ ] Unit tests for alignment configuration
+- [x] Add alignment options to stack cards:
+  - [x] Vertical stack: `align_items` (start, center, end, stretch)
+  - [x] Horizontal stack: `align_items` (start, center, end, stretch, baseline)
+  - [x] Horizontal stack: `justify_content` (start, center, end, space-between, space-around, space-evenly)
+  - [x] Grid card: `align_items` and `justify_items`
+- [x] Add wrap behavior for horizontal stack:
+  - [x] `wrap` property: nowrap (default), wrap, wrap-reverse
+  - [x] When wrapped, gap applies between rows too
+- [x] Update renderers with alignment CSS properties
+- [x] Unit tests for alignment configuration
 
 #### Phase 3: PropertiesPanel Integration (Day 2)
 
-- [ ] Add layout-specific property controls to PropertiesPanel for stack/grid cards:
-  - [ ] Gap control (slider or input with presets)
-  - [ ] Alignment selector (visual buttons showing alignment options)
-  - [ ] Justify content selector (for horizontal stack)
-  - [ ] Wrap toggle (for horizontal stack)
-- [ ] Live preview reflects layout changes immediately
+- [x] Add layout-specific property controls to PropertiesPanel for stack/grid cards:
+  - [x] Gap control (input with presets)
+  - [x] Alignment selector (Select controls)
+  - [x] Justify content selector (for horizontal stack)
+  - [x] Wrap toggle (for horizontal stack)
+- [x] Live preview reflects layout changes immediately
 - [ ] Visual alignment preview (icon buttons showing alignment options)
 
 #### Phase 4: YAML Schema & Serialization (Day 2)
 
-- [ ] Update YAML schema for enhanced stack/grid cards
+- [x] Update YAML schema for enhanced stack/grid cards
 - [ ] Example YAML (vertical stack with gap/alignment):
   ```yaml
   type: vertical-stack
@@ -943,23 +952,27 @@ This feature MUST comply with:
     - type: button
       entity: light.bedroom
   ```
-- [ ] Serialize/deserialize enhanced layout config
-- [ ] Update `ha-dashboard-schema.json`
-- [ ] Backward compatible: missing properties use current defaults
+- [x] Serialize/deserialize enhanced layout config
+- [x] Update `ha-dashboard-schema.json`
+- [x] Backward compatible: missing properties use current defaults
 
 #### Phase 5: Testing & Documentation (Days 2-3)
 
-- [ ] Create `LayoutDSL` in `tests/support/dsl/layout.ts`
-- [ ] E2E tests using LayoutDSL:
-  - [ ] Gap configuration changes layout spacing
-  - [ ] Alignment options apply correctly
-  - [ ] Wrap behavior works for horizontal stack
-  - [ ] Justify content options work
-  - [ ] YAML round-trip serialization
-  - [ ] Backward compatibility (existing stacks unchanged)
-- [ ] Unit tests for layout configuration parsing
-- [ ] Visual regression tests for alignment/gap combinations
+- [x] Create `LayoutDSL` in `tests/support/dsl/layout.ts`
+- [x] E2E tests using LayoutDSL:
+  - [x] Gap configuration changes layout spacing
+  - [x] Alignment options apply correctly
+  - [x] Wrap behavior works for horizontal stack
+  - [x] Justify content options work
+  - [x] YAML round-trip serialization
+  - [x] Backward compatibility (existing stacks unchanged)
+- [x] Unit tests for layout configuration parsing
+- [x] Visual regression tests for alignment/gap combinations
 - [ ] Documentation with layout examples
+
+### Deferred Decisions
+
+- `align_content` for multi-row horizontal wrap is explicitly deferred to a later enhancement to keep Feature 4.5 MVP scope focused on `align_items` + `justify_content` + `wrap`.
 
 ### Acceptance Criteria
 
@@ -1268,7 +1281,7 @@ This phase provides foundation for:
 
 ---
 
-**Document Status**: :construction: In Progress (Features 4.2 + 4.3 baselined complete, 4.4 in progress)
+**Document Status**: :construction: In Progress (Features 4.2, 4.3, 4.4 baselined complete)
 **Last Updated**: February 10, 2026
-**Next Review**: After popup verification pass for Feature 4.4
+**Next Review**: Before starting Feature 4.5 implementation
 **Owner**: Development Team

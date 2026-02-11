@@ -432,6 +432,44 @@
             "$ref": "#/definitions/card"
           }
         },
+        "gap": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64,
+          "description": "Gap between items for vertical-stack and horizontal-stack cards (px)"
+        },
+        "row_gap": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64,
+          "description": "Grid row gap (px)"
+        },
+        "column_gap": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 64,
+          "description": "Grid column gap (px)"
+        },
+        "align_items": {
+          "type": "string",
+          "enum": ["start", "center", "end", "stretch", "baseline"],
+          "description": "Cross-axis alignment for stack/grid content"
+        },
+        "justify_content": {
+          "type": "string",
+          "enum": ["start", "center", "end", "space-between", "space-around", "space-evenly"],
+          "description": "Main-axis content distribution for horizontal-stack cards"
+        },
+        "justify_items": {
+          "type": "string",
+          "enum": ["start", "center", "end", "stretch"],
+          "description": "Inline-axis alignment for grid items"
+        },
+        "wrap": {
+          "type": "string",
+          "enum": ["nowrap", "wrap", "wrap-reverse"],
+          "description": "Wrapping behavior for horizontal-stack cards"
+        },
         "slides": {
           "type": "array",
           "description": "Slides for Swiper carousel cards",

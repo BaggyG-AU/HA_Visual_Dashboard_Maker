@@ -243,12 +243,18 @@ export interface HorizontalStackCard extends BaseCard {
   type: 'horizontal-stack';
   cards: Card[];
   title?: string;
+  gap?: number;
+  align_items?: 'start' | 'center' | 'end' | 'stretch' | 'baseline';
+  justify_content?: 'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly';
+  wrap?: 'nowrap' | 'wrap' | 'wrap-reverse';
 }
 
 export interface VerticalStackCard extends BaseCard {
   type: 'vertical-stack';
   cards: Card[];
   title?: string;
+  gap?: number;
+  align_items?: 'start' | 'center' | 'end' | 'stretch';
 }
 
 export interface GridCard extends BaseCard {
@@ -257,6 +263,10 @@ export interface GridCard extends BaseCard {
   title?: string;
   columns?: number;
   square?: boolean;
+  row_gap?: number;
+  column_gap?: number;
+  align_items?: 'start' | 'center' | 'end' | 'stretch';
+  justify_items?: 'start' | 'center' | 'end' | 'stretch';
 }
 
 export interface ConditionalCard extends BaseCard {

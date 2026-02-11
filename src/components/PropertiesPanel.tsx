@@ -28,6 +28,18 @@ import { DEFAULT_SECTION_ICON } from '../features/accordion/accordionService';
 import type { AccordionExpandMode } from '../features/accordion/types';
 import { DEFAULT_TAB_ICON, clampTabIndex } from '../services/tabsService';
 import { DEFAULT_POPUP_TRIGGER_ICON, normalizePopupConfig } from '../features/popup/popupService';
+import {
+  clampLayoutGap,
+  DEFAULT_LAYOUT_GAP,
+  GAP_PRESET_VALUES,
+  normalizeAlignItems,
+  normalizeGapPreset,
+  normalizeJustifyContent,
+  normalizeJustifyItems,
+  normalizeWrapMode,
+  resolveGapPreset,
+  type LayoutGapPreset,
+} from '../services/layoutConfig';
 
 const { Title, Text } = Typography;
 
@@ -113,6 +125,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 }) => {
   void _onCancel;
   const [form] = Form.useForm();
+  const watchedGap = Form.useWatch('gap', form);
+  const watchedGridRowGap = Form.useWatch('row_gap', form);
+  const watchedGridColumnGap = Form.useWatch('column_gap', form);
   const [streamComponentEnabled, setStreamComponentEnabled] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<string>('form');
   const [yamlContent, setYamlContent] = useState<string>('');
@@ -678,6 +693,63 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         footer_actions: popup.footer_actions,
         cards: popup.cards,
       };
+    }
+
+    if (card.type === 'vertical-stack') {
+      const typed = normalized as {
+        gap?: unknown;
+        align_items?: unknown;
+      };
+      if (typeof typed.gap !== 'undefined') {
+        typed.gap = clampLayoutGap(typed.gap, DEFAULT_LAYOUT_GAP);
+      }
+      if (typeof typed.align_items !== 'undefined') {
+        const normalizedAlignItems = normalizeAlignItems(typed.align_items, 'stretch');
+        typed.align_items = normalizedAlignItems === 'baseline' ? 'stretch' : normalizedAlignItems;
+      }
+    }
+
+    if (card.type === 'horizontal-stack') {
+      const typed = normalized as {
+        gap?: unknown;
+        align_items?: unknown;
+        justify_content?: unknown;
+        wrap?: unknown;
+      };
+      if (typeof typed.gap !== 'undefined') {
+        typed.gap = clampLayoutGap(typed.gap, DEFAULT_LAYOUT_GAP);
+      }
+      if (typeof typed.align_items !== 'undefined') {
+        const normalizedAlignItems = normalizeAlignItems(typed.align_items, 'stretch');
+        typed.align_items = normalizedAlignItems === 'baseline' ? 'stretch' : normalizedAlignItems;
+      }
+      if (typeof typed.justify_content !== 'undefined') {
+        typed.justify_content = normalizeJustifyContent(typed.justify_content, 'start');
+      }
+      if (typeof typed.wrap !== 'undefined') {
+        typed.wrap = normalizeWrapMode(typed.wrap, 'nowrap');
+      }
+    }
+
+    if (card.type === 'grid') {
+      const typed = normalized as {
+        row_gap?: unknown;
+        column_gap?: unknown;
+        align_items?: unknown;
+        justify_items?: unknown;
+      };
+      if (typeof typed.row_gap !== 'undefined') {
+        typed.row_gap = clampLayoutGap(typed.row_gap, DEFAULT_LAYOUT_GAP);
+      }
+      if (typeof typed.column_gap !== 'undefined') {
+        typed.column_gap = clampLayoutGap(typed.column_gap, DEFAULT_LAYOUT_GAP);
+      }
+      if (typeof typed.align_items !== 'undefined') {
+        typed.align_items = normalizeAlignItems(typed.align_items, 'stretch');
+      }
+      if (typeof typed.justify_items !== 'undefined') {
+        typed.justify_items = normalizeJustifyItems(typed.justify_items, 'stretch');
+      }
     }
 
     return normalized;
@@ -2130,6 +2202,105 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 <Input placeholder="Stack title (optional)" />
               </Form.Item>
 
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Layout</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Gap Preset</span>}
+                help={<span style={{ color: '#666' }}>Spacing between stack cards</span>}
+              >
+                <Select
+                  value={resolveGapPreset(watchedGap, DEFAULT_LAYOUT_GAP)}
+                  options={[
+                    { value: 'none', label: 'None (0px)' },
+                    { value: 'tight', label: 'Tight (4px)' },
+                    { value: 'normal', label: 'Normal (12px)' },
+                    { value: 'relaxed', label: 'Relaxed (24px)' },
+                    { value: 'custom', label: 'Custom' },
+                  ]}
+                  onChange={(nextPreset: LayoutGapPreset) => {
+                    const safePreset = normalizeGapPreset(nextPreset);
+                    if (safePreset !== 'custom') {
+                      form.setFieldsValue({ gap: GAP_PRESET_VALUES[safePreset] });
+                      setTimeout(() => {
+                        handleValuesChange();
+                      }, 0);
+                    }
+                  }}
+                  data-testid="layout-gap-preset"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Custom Gap (px)</span>}
+                name="gap"
+                help={<span style={{ color: '#666' }}>Range: 0 to 64 pixels</span>}
+              >
+                <div data-testid="layout-gap-custom-field">
+                  <InputNumber min={0} max={64} style={{ width: '100%' }} data-testid="layout-gap-custom" />
+                </div>
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Align Items</span>}
+                name="align_items"
+                help={<span style={{ color: '#666' }}>Cross-axis alignment of child cards</span>}
+              >
+                <Select
+                  allowClear
+                  placeholder="Default (stretch)"
+                  options={[
+                    { value: 'start', label: 'Start' },
+                    { value: 'center', label: 'Center' },
+                    { value: 'end', label: 'End' },
+                    { value: 'stretch', label: 'Stretch' },
+                    ...(card.type === 'horizontal-stack' ? [{ value: 'baseline', label: 'Baseline' }] : []),
+                  ]}
+                  data-testid="layout-align-items"
+                />
+              </Form.Item>
+
+              {card.type === 'horizontal-stack' && (
+                <>
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Justify Content</span>}
+                    name="justify_content"
+                    help={<span style={{ color: '#666' }}>Main-axis distribution when row has free space</span>}
+                  >
+                    <Select
+                      allowClear
+                      placeholder="Default (start)"
+                      options={[
+                        { value: 'start', label: 'Start' },
+                        { value: 'center', label: 'Center' },
+                        { value: 'end', label: 'End' },
+                        { value: 'space-between', label: 'Space Between' },
+                        { value: 'space-around', label: 'Space Around' },
+                        { value: 'space-evenly', label: 'Space Evenly' },
+                      ]}
+                      data-testid="layout-justify-content"
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Wrap</span>}
+                    name="wrap"
+                    help={<span style={{ color: '#666' }}>When wrapping, gap applies between rows and columns</span>}
+                  >
+                    <Select
+                      allowClear
+                      placeholder="Default (nowrap)"
+                      options={[
+                        { value: 'nowrap', label: 'No Wrap' },
+                        { value: 'wrap', label: 'Wrap' },
+                        { value: 'wrap-reverse', label: 'Wrap Reverse' },
+                      ]}
+                      data-testid="layout-wrap"
+                    />
+                  </Form.Item>
+                </>
+              )}
+
               <Alert
                 title="Nested Cards Configuration"
                 description="This stack contains other cards. Add or edit cards using the canvas. The cards are stacked in the order they appear in the YAML."
@@ -2154,7 +2325,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="columns"
                 help={<span style={{ color: '#666' }}>Number of columns in the grid</span>}
               >
-                <Input type="number" placeholder="3" min={1} max={12} />
+                <InputNumber min={1} max={12} style={{ width: '100%' }} placeholder="3" />
               </Form.Item>
 
               <Form.Item
@@ -2168,6 +2339,111 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     { value: true, label: 'Yes' },
                     { value: false, label: 'No' },
                   ]}
+                />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Grid Spacing</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Row Gap Preset</span>}
+              >
+                <Select
+                  value={resolveGapPreset(watchedGridRowGap, DEFAULT_LAYOUT_GAP)}
+                  options={[
+                    { value: 'none', label: 'None (0px)' },
+                    { value: 'tight', label: 'Tight (4px)' },
+                    { value: 'normal', label: 'Normal (12px)' },
+                    { value: 'relaxed', label: 'Relaxed (24px)' },
+                    { value: 'custom', label: 'Custom' },
+                  ]}
+                  onChange={(nextPreset: LayoutGapPreset) => {
+                    const safePreset = normalizeGapPreset(nextPreset);
+                    if (safePreset !== 'custom') {
+                      form.setFieldsValue({ row_gap: GAP_PRESET_VALUES[safePreset] });
+                      setTimeout(() => {
+                        handleValuesChange();
+                      }, 0);
+                    }
+                  }}
+                  data-testid="grid-row-gap-preset"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Custom Row Gap (px)</span>}
+                name="row_gap"
+              >
+                <div data-testid="grid-row-gap-custom-field">
+                  <InputNumber min={0} max={64} style={{ width: '100%' }} data-testid="grid-row-gap-custom" />
+                </div>
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Column Gap Preset</span>}
+              >
+                <Select
+                  value={resolveGapPreset(watchedGridColumnGap, DEFAULT_LAYOUT_GAP)}
+                  options={[
+                    { value: 'none', label: 'None (0px)' },
+                    { value: 'tight', label: 'Tight (4px)' },
+                    { value: 'normal', label: 'Normal (12px)' },
+                    { value: 'relaxed', label: 'Relaxed (24px)' },
+                    { value: 'custom', label: 'Custom' },
+                  ]}
+                  onChange={(nextPreset: LayoutGapPreset) => {
+                    const safePreset = normalizeGapPreset(nextPreset);
+                    if (safePreset !== 'custom') {
+                      form.setFieldsValue({ column_gap: GAP_PRESET_VALUES[safePreset] });
+                      setTimeout(() => {
+                        handleValuesChange();
+                      }, 0);
+                    }
+                  }}
+                  data-testid="grid-column-gap-preset"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Custom Column Gap (px)</span>}
+                name="column_gap"
+              >
+                <div data-testid="grid-column-gap-custom-field">
+                  <InputNumber min={0} max={64} style={{ width: '100%' }} data-testid="grid-column-gap-custom" />
+                </div>
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Align Items</span>}
+                name="align_items"
+              >
+                <Select
+                  allowClear
+                  placeholder="Default (stretch)"
+                  options={[
+                    { value: 'start', label: 'Start' },
+                    { value: 'center', label: 'Center' },
+                    { value: 'end', label: 'End' },
+                    { value: 'stretch', label: 'Stretch' },
+                  ]}
+                  data-testid="grid-align-items"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Justify Items</span>}
+                name="justify_items"
+              >
+                <Select
+                  allowClear
+                  placeholder="Default (stretch)"
+                  options={[
+                    { value: 'start', label: 'Start' },
+                    { value: 'center', label: 'Center' },
+                    { value: 'end', label: 'End' },
+                    { value: 'stretch', label: 'Stretch' },
+                  ]}
+                  data-testid="grid-justify-items"
                 />
               </Form.Item>
 

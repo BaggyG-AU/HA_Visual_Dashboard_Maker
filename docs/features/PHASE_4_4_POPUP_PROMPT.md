@@ -7,7 +7,7 @@ You are an AI assistant implementing **Feature 4.4: Popup/Modal Card System** fo
 **Phase 4 is independent** (no dependencies on prior phases), but must follow established patterns in code and testing.
 
 **Versioning convention**: `v0.7.<phase>-beta.<feature>`
-**Version target for this work**: `v0.7.4-beta.4` (Phase 4, Feature 4)
+**Version target for this work**: `v0.7.4-beta.5` (Phase 4, Feature 4 delivery/stabilization)
 
 **Mandatory tripwire phrase (quote exactly in your response):** "The fastest correct fix is already in the repository."
 
@@ -60,10 +60,10 @@ Follow the same structure, naming conventions, and integration points used by de
 **Goal**: Add a popup/modal system that can be triggered from cards (including actions) and render existing cards inside modal content.
 
 **Branch**: `feature/layout-infrastructure-layer` (already exists; continue on this branch)
-**Version Target**: `v0.7.4-beta.4`
+**Version Target**: `v0.7.4-beta.5`
 **Dependencies**: None
 **Estimated Effort**: 5-6 days
-**Status**: Ready to Begin
+**Status**: Delivered (tracking baseline captured in `LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`)
 
 ### Key Requirements
 

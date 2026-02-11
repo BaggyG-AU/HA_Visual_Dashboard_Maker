@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card as AntCard, Typography } from 'antd';
 import { BorderHorizontalOutlined } from '@ant-design/icons';
 import { HorizontalStackCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { BaseCard } from '../BaseCard';
 import { useEntityContextResolver } from '../../hooks/useEntityContext';
+import { normalizeHorizontalStackLayout } from '../../services/layoutConfig';
 
 const { Text } = Typography;
 
@@ -31,6 +32,7 @@ export const HorizontalStackCardRenderer: React.FC<HorizontalStackCardRendererPr
     childCards.find((child) => typeof (child as any)?.entity === 'string')?.entity ?? null;
   const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId) : '';
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const layout = useMemo(() => normalizeHorizontalStackLayout(card), [card]);
 
   // If no child cards, show placeholder
   if (childCards.length === 0) {
@@ -92,23 +94,30 @@ export const HorizontalStackCardRenderer: React.FC<HorizontalStackCardRendererPr
         overflow: 'hidden',
       }}
       onClick={onClick}
+      data-testid="horizontal-stack-card"
       hoverable
     >
       {/* Horizontal layout container */}
       <div style={{
         display: 'flex',
         flexDirection: 'row',
-        gap: '12px',
+        gap: `${layout.gap}px`,
+        alignItems: layout.alignItems,
+        justifyContent: layout.justifyContent,
+        flexWrap: layout.wrap,
         height: '100%',
         overflow: 'auto',
-      }}>
+      }}
+      data-testid="horizontal-stack-container"
+      >
         {childCards.map((childCard, index) => (
           <div
             key={index}
             style={{
-              flex: '1 1 0',
+              flex: layout.wrap === 'nowrap' ? '1 1 0' : '1 1 150px',
               minWidth: '150px',
-              height: '100%',
+              height: layout.alignItemsValue === 'stretch' ? '100%' : 'auto',
+              maxWidth: '100%',
             }}
           >
             <BaseCard

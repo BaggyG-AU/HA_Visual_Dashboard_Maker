@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card as AntCard, Typography } from 'antd';
 import { BorderVerticleOutlined } from '@ant-design/icons';
 import { VerticalStackCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { BaseCard } from '../BaseCard';
 import { useEntityContextResolver } from '../../hooks/useEntityContext';
+import { normalizeVerticalStackLayout } from '../../services/layoutConfig';
 
 const { Text } = Typography;
 
@@ -31,6 +32,7 @@ export const VerticalStackCardRenderer: React.FC<VerticalStackCardRendererProps>
     childCards.find((child) => typeof (child as any)?.entity === 'string')?.entity ?? null;
   const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId) : '';
   const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const layout = useMemo(() => normalizeVerticalStackLayout(card), [card]);
 
   // If no child cards, show placeholder
   if (childCards.length === 0) {
@@ -92,20 +94,26 @@ export const VerticalStackCardRenderer: React.FC<VerticalStackCardRendererProps>
         overflow: 'auto',
       }}
       onClick={onClick}
+      data-testid="vertical-stack-card"
       hoverable
     >
       {/* Vertical layout container */}
       <div style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px',
+        gap: `${layout.gap}px`,
+        alignItems: layout.alignItems,
         height: '100%',
-      }}>
+      }}
+      data-testid="vertical-stack-container"
+      >
         {childCards.map((childCard, index) => (
           <div
             key={index}
             style={{
               minHeight: '100px',
+              width: layout.alignItemsValue === 'stretch' ? '100%' : undefined,
+              maxWidth: '100%',
             }}
           >
             <BaseCard
