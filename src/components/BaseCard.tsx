@@ -257,7 +257,7 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
     case 'custom:expander-card':
       renderedCard = <ExpanderCardRenderer card={card as React.ComponentProps<typeof ExpanderCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
-    case 'custom:tabs-card':
+    case 'custom:tabbed-card':
       renderedCard = <TabsCardRenderer card={card as React.ComponentProps<typeof TabsCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
     case 'custom:popup-card':

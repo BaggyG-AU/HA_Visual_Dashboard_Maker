@@ -1,28 +1,32 @@
 import { expect, test } from '@playwright/test';
 import { close, launchWithDSL } from '../support';
 
-const BASE_YAML = `type: custom:tabs-card
-tab_position: top
-tab_size: default
-default_tab: 1
-animation: none
-lazy_render: true
+const BASE_YAML = `type: custom:tabbed-card
+options:
+  defaultTabIndex: 1
+_havdm_tab_position: top
+_havdm_tab_size: default
+_havdm_animation: none
+_havdm_lazy_render: true
 tabs:
-  - title: "Lights"
-    icon: mdi:lightbulb
-    cards:
-      - type: markdown
-        content: "## Lights"
-  - title: "Climate"
-    icon: mdi:thermometer
-    cards:
-      - type: markdown
-        content: "## Climate"
-  - title: "Media"
-    icon: mdi:play-circle
-    cards:
-      - type: markdown
-        content: "## Media"
+  - attributes:
+      label: "Lights"
+      icon: mdi:lightbulb
+    card:
+      type: markdown
+      content: "## Lights"
+  - attributes:
+      label: "Climate"
+      icon: mdi:thermometer
+    card:
+      type: markdown
+      content: "## Climate"
+  - attributes:
+      label: "Media"
+      icon: mdi:play-circle
+    card:
+      type: markdown
+      content: "## Media"
 `;
 
 test.describe('Tabs Card', () => {
@@ -98,7 +102,7 @@ test.describe('Tabs Card', () => {
       await tabs.addTabsCard(testInfo);
       await canvas.selectCard(0);
       await properties.switchTab('YAML');
-      await yamlEditor.setEditorContent(BASE_YAML.replace('default_tab: 1', 'default_tab: 2'), 'properties');
+      await yamlEditor.setEditorContent(BASE_YAML.replace('defaultTabIndex: 1', 'defaultTabIndex: 2'), 'properties');
       await properties.switchTab('Form');
 
       await tabs.expectTabActive(2, 0);
@@ -128,11 +132,12 @@ test.describe('Tabs Card', () => {
       await properties.switchTab('YAML');
 
       const yamlText = await yamlEditor.getEditorContent();
-      expect(yamlText).toContain('type: custom:tabs-card');
-      expect(yamlText).toContain('animation: fade');
-      expect(yamlText).toContain('default_tab: 2');
-      expect(yamlText).toContain('tab_position: left');
+      expect(yamlText).toContain('type: custom:tabbed-card');
+      expect(yamlText).toContain('defaultTabIndex: 2');
       expect(yamlText).toContain('tabs:');
+      expect(yamlText).not.toContain('_havdm_');
+      expect(yamlText).not.toContain('animation:');
+      expect(yamlText).not.toContain('tab_position:');
     } finally {
       await close(ctx);
     }

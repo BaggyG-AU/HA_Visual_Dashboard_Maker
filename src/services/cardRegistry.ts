@@ -339,21 +339,19 @@ class CardRegistry {
         requiredProps: ['cards'],
       },
       {
-        type: 'custom:tabs-card',
-        name: 'Tabs',
+        type: 'custom:tabbed-card',
+        name: 'Tabbed Card',
         category: 'layout',
         icon: 'AppstoreOutlined',
         description: 'Tabbed container for organizing cards',
         isCustom: true,
-        source: 'custom',
+        source: 'hacs',
         defaultProps: {
-          tab_position: 'top',
-          tab_size: 'default',
-          default_tab: 0,
-          animation: 'none',
-          lazy_render: true,
           tabs: [
-            { title: 'Tab 1', icon: 'mdi:tab', cards: [] },
+            {
+              attributes: { label: 'Tab 1', icon: 'mdi:tab' },
+              card: { type: 'markdown', content: 'Tab content' },
+            },
           ],
         },
         requiredProps: ['tabs'],

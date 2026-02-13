@@ -3,6 +3,8 @@ import { DashboardConfig, YAMLParseResult } from '../types/dashboard';
 import { logger } from './logger';
 import { toUpstreamSwipeCardFromConfig } from '../features/carousel/carouselService';
 import type { SwiperCardConfig } from '../features/carousel/types';
+import { normalizeTabsConfig, toUpstreamTabbedCard } from './tabsService';
+import type { TabsCardConfig } from '../types/tabs';
 
 class YAMLService {
   /**
@@ -144,6 +146,10 @@ class YAMLService {
 
               if (cleanCard.type === 'custom:swipe-card') {
                 return toUpstreamSwipeCardFromConfig(cleanCard as SwiperCardConfig);
+              }
+              if (cleanCard.type === 'custom:tabbed-card') {
+                const normalizedTabs = normalizeTabsConfig(cleanCard as TabsCardConfig);
+                return toUpstreamTabbedCard(normalizedTabs, cleanCard as TabsCardConfig);
               }
 
               return cleanCard;

@@ -188,7 +188,7 @@
             "custom:mini-media-player",
             "custom:swipe-card",
             "custom:expander-card",
-            "custom:tabs-card",
+            "custom:tabbed-card",
             "custom:popup-card",
             "custom:mushroom-entity-card",
             "custom:mushroom-template-card",
