@@ -83,7 +83,8 @@
       "Bash(chmod:*)",
       "Bash(./tools/backup:*)",
       "Bash(./tools/restore:*)",
-      "Bash(gh release delete:*)"
+      "Bash(gh release delete:*)",
+      "WebFetch(domain:community.home-assistant.io)"
     ]
   }
 }

@@ -358,10 +358,10 @@ class CardRegistry {
       },
       {
         type: 'custom:popup-card',
-        name: 'Popup Card',
+        name: 'Popup Card (HAVDM-only)',
         category: 'layout',
         icon: 'ExpandOutlined',
-        description: 'Trigger a modal popup containing cards',
+        description: 'Trigger a modal popup containing cards. HAVDM editor feature - not a standard HACS card.',
         isCustom: true,
         source: 'custom',
         defaultProps: {

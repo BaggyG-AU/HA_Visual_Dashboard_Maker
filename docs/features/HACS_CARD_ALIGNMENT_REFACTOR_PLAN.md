@@ -299,7 +299,11 @@ Add an immutable rule that all custom card types must map to real upstream HACS 
 **Decision**: Keep `custom:popup-card` as a HAVDM-only feature.
 - No upstream HACS equivalent exists
 - Bubble Card pop-up architecture is too different (subview-based, hash routing) to align
-- Mark clearly in registry metadata, add export warning comment
+- Mark clearly in registry metadata and card palette UI as HAVDM-only
+- On HA export, prepend warning comments when `custom:popup-card` is present:
+  - `# WARNING: custom:popup-card is a HAVDM editor feature.`
+  - `# This card will not render in Home Assistant without the HAVDM runtime.`
+  - `# Consider using browser_mod popup or Bubble Card pop-up for HA-native popups.`
 - Future consideration: optional export conversion to Bubble Card pop-up format
 
 ### Phase R6: Schema & Registry Updates

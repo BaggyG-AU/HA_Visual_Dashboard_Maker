@@ -215,6 +215,19 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
                               }}
                             />
                           )}
+                          {card.type === 'custom:popup-card' && (
+                            <Tooltip title="HAVDM-only - not available as a standalone HACS card" placement="top">
+                              <Badge
+                                count="HAVDM-only"
+                                style={{
+                                  backgroundColor: '#d46b08',
+                                  fontSize: '10px',
+                                  height: '18px',
+                                  lineHeight: '18px',
+                                }}
+                              />
+                            </Tooltip>
+                          )}
                         </div>
                       </div>
                     </Tooltip>

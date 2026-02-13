@@ -7,6 +7,12 @@ import { normalizeTabsConfig, toUpstreamTabbedCard } from './tabsService';
 import type { TabsCardConfig } from '../types/tabs';
 
 class YAMLService {
+  private static readonly POPUP_EXPORT_WARNING = [
+    '# WARNING: custom:popup-card is a HAVDM editor feature.',
+    '# This card will not render in Home Assistant without the HAVDM runtime.',
+    '# Consider using browser_mod popup or Bubble Card pop-up for HA-native popups.',
+  ].join('\n');
+
   /**
    * Parse YAML string to DashboardConfig
    */
@@ -179,7 +185,29 @@ class YAMLService {
   serializeForHA(config: DashboardConfig): string {
     const sanitized = this.sanitizeForHA(config);
     logger.debug('Sanitized config for HA', sanitized);
-    return this.serializeDashboard(sanitized);
+    const serialized = this.serializeDashboard(sanitized);
+
+    if (!this.containsPopupCard(sanitized)) {
+      return serialized;
+    }
+
+    return `${YAMLService.POPUP_EXPORT_WARNING}\n${serialized}`;
+  }
+
+  private containsPopupCard(value: unknown): boolean {
+    if (Array.isArray(value)) {
+      return value.some(item => this.containsPopupCard(item));
+    }
+    if (!value || typeof value !== 'object') {
+      return false;
+    }
+
+    const record = value as Record<string, unknown>;
+    if (record.type === 'custom:popup-card') {
+      return true;
+    }
+
+    return Object.values(record).some(entry => this.containsPopupCard(entry));
   }
 }
 
