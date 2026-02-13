@@ -33,7 +33,7 @@ import { VerticalStackInCardRenderer } from './cards/VerticalStackInCardRenderer
 import { CustomButtonCardRenderer } from './cards/CustomButtonCardRenderer';
 import { SurveillanceCardRenderer } from './cards/SurveillanceCardRenderer';
 import { SwiperCardRenderer } from './cards/SwiperCardRenderer';
-import { AccordionCardRenderer } from './cards/AccordionCardRenderer';
+import { ExpanderCardRenderer } from './cards/ExpanderCardRenderer';
 import { TabsCardRenderer } from './cards/TabsCardRenderer';
 import { PopupTriggerCardRenderer } from './cards/PopupTriggerCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
@@ -254,8 +254,8 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
     case 'custom:swipe-card':
       renderedCard = <SwiperCardRenderer card={card as React.ComponentProps<typeof SwiperCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
-    case 'custom:accordion-card':
-      renderedCard = <AccordionCardRenderer card={card as React.ComponentProps<typeof AccordionCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+    case 'custom:expander-card':
+      renderedCard = <ExpanderCardRenderer card={card as React.ComponentProps<typeof ExpanderCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
     case 'custom:tabs-card':
       renderedCard = <TabsCardRenderer card={card as React.ComponentProps<typeof TabsCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;

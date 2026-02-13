@@ -1,62 +1,31 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 
 export class AccordionDSL {
   constructor(private window: Page) {}
-
-  private getVisibleSelectDropdown() {
-    return this.window.locator('.ant-select-dropdown:visible').last();
-  }
-
-  private async waitForAllSelectDropdownsToClose(): Promise<void> {
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
-  }
-
-  private async openSelectDropdown(select: Locator): Promise<void> {
-    await select.click();
-    let dropdown = this.getVisibleSelectDropdown();
-    const visibleAfterFirstClick = await dropdown.isVisible().catch(() => false);
-    if (visibleAfterFirstClick) return;
-
-    // Retry once to handle focus/overlay timing in Electron + Ant Select portal rendering.
-    await select.click();
-    dropdown = this.getVisibleSelectDropdown();
-    await expect(dropdown).toBeVisible({ timeout: 5000 });
-  }
-
-  private async selectOptionByText(pattern: RegExp): Promise<void> {
-    await expect(this.getVisibleSelectDropdown()).toBeVisible({ timeout: 5000 });
-    const option = this.window.locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: pattern }).first();
-    await expect(option).toBeVisible();
-    await option.evaluate((el) => {
-      (el as HTMLElement).click();
-    });
-    await this.window.keyboard.press('Escape').catch(() => undefined);
-    await this.waitForAllSelectDropdownsToClose();
-  }
 
   private getCard(cardIndex = 0) {
     const cards = this.window.getByTestId('canvas-card');
     return cardIndex === 0 ? cards.first() : cards.nth(cardIndex);
   }
 
-  private getAccordion(cardIndex = 0) {
-    return this.getCard(cardIndex).getByTestId('accordion-card');
+  private getExpander(cardIndex = 0) {
+    return this.getCard(cardIndex).getByTestId('expander-card');
   }
 
-  private getHeader(index: number, cardIndex = 0) {
-    return this.getCard(cardIndex).getByTestId(`accordion-section-header-${index}`);
+  private getHeader(cardIndex = 0) {
+    return this.getCard(cardIndex).getByTestId('expander-section-header-0');
   }
 
-  private getContent(index: number, cardIndex = 0) {
-    return this.getCard(cardIndex).getByTestId(`accordion-section-content-${index}`);
+  private getContent(cardIndex = 0) {
+    return this.getCard(cardIndex).getByTestId('expander-section-content-0');
   }
 
   async addAccordionCard(testInfo?: import('@playwright/test').TestInfo): Promise<void> {
     const searchInput = this.window.getByTestId('card-search');
     await expect(searchInput).toBeVisible();
-    await searchInput.fill('custom:accordion-card');
+    await searchInput.fill('custom:expander-card');
 
-    const card = this.window.getByTestId('card-palette').getByTestId('palette-card-custom:accordion-card');
+    const card = this.window.getByTestId('card-palette').getByTestId('palette-card-custom:expander-card');
     await expect(card).toBeVisible({ timeout: 5000 });
     await card.dblclick();
 
@@ -68,81 +37,36 @@ export class AccordionDSL {
   }
 
   async expectVisible(cardIndex = 0): Promise<void> {
-    await expect(this.getAccordion(cardIndex)).toBeVisible();
+    await expect(this.getExpander(cardIndex)).toBeVisible();
   }
 
-  async clickSectionHeader(index: number, cardIndex = 0): Promise<void> {
-    const header = this.getHeader(index, cardIndex);
+  async toggleExpanded(cardIndex = 0): Promise<void> {
+    const header = this.getHeader(cardIndex);
     await expect(header).toBeVisible();
     await header.click();
   }
 
-  async expectSectionExpanded(index: number, cardIndex = 0): Promise<void> {
-    await expect(this.getHeader(index, cardIndex)).toHaveAttribute('aria-expanded', 'true');
-    const content = this.getContent(index, cardIndex);
-    await expect(content).toHaveCSS('opacity', '1');
+  async expectExpanded(cardIndex = 0): Promise<void> {
+    await expect(this.getHeader(cardIndex)).toHaveAttribute('aria-expanded', 'true');
+    await expect(this.getContent(cardIndex)).toHaveCSS('opacity', '1');
   }
 
-  async expectSectionCollapsed(index: number, cardIndex = 0): Promise<void> {
-    await expect(this.getHeader(index, cardIndex)).toHaveAttribute('aria-expanded', 'false');
+  async expectCollapsed(cardIndex = 0): Promise<void> {
+    await expect(this.getHeader(cardIndex)).toHaveAttribute('aria-expanded', 'false');
   }
 
-  async expectSectionCount(count: number, cardIndex = 0): Promise<void> {
-    await expect(this.getCard(cardIndex).locator('[data-testid^="accordion-section-header-"]')).toHaveCount(count);
-  }
-
-  async expectSectionTitle(index: number, title: string, cardIndex = 0): Promise<void> {
-    await expect(this.getHeader(index, cardIndex)).toContainText(title);
-  }
-
-  async setSectionTitle(index: number, title: string): Promise<void> {
-    const input = this.window.getByTestId(`accordion-section-${index}-title`);
+  async setTitle(title: string): Promise<void> {
+    const input = this.window.getByTestId('expander-title');
     await expect(input).toBeVisible();
     await input.fill(title);
     await input.blur();
   }
 
-  async setExpandMode(mode: 'single' | 'multi'): Promise<void> {
-    const select = this.window.getByTestId('accordion-expand-mode');
-    await expect(select).toBeVisible();
-    await this.openSelectDropdown(select);
-    await this.selectOptionByText(mode === 'single' ? /Single/i : /Multi/i);
-    await expect(select).toContainText(mode === 'single' ? /Single/i : /Multi/i);
-  }
-
-  async setStyleMode(mode: 'bordered' | 'borderless' | 'ghost'): Promise<void> {
-    const select = this.window.getByTestId('accordion-style-mode');
-    await expect(select).toBeVisible();
-    await this.openSelectDropdown(select);
-    await this.selectOptionByText(new RegExp(`^${mode}$`, 'i'));
-    await expect(select).toContainText(new RegExp(mode, 'i'));
-  }
-
-  async collapseAll(): Promise<void> {
-    const button = this.window.getByTestId('accordion-collapse-all');
-    await expect(button).toBeVisible();
-    await button.click();
-  }
-
-  async expandAll(): Promise<void> {
-    const button = this.window.getByTestId('accordion-expand-all');
-    await expect(button).toBeVisible();
-    await button.click();
-  }
-
-  async navigateToHeader(index: number, cardIndex = 0): Promise<void> {
-    const header = this.getHeader(index, cardIndex);
-    await expect(header).toBeVisible();
-    await header.focus();
-    await expect(header).toBeFocused();
-  }
-
-  async toggleViaKeyboard(key: 'Enter' | 'Space' = 'Enter'): Promise<void> {
-    await this.window.keyboard.press(key === 'Space' ? ' ' : key);
-  }
-
-  async pressHeaderKey(key: 'ArrowUp' | 'ArrowDown' | 'Home' | 'End'): Promise<void> {
-    await this.window.keyboard.press(key);
+  async setTitleCard(cardYaml: string): Promise<void> {
+    const input = this.window.getByTestId('expander-title-card');
+    await expect(input).toBeVisible();
+    await input.fill(cardYaml);
+    await input.blur();
   }
 
   async expectCardScreenshot(name: string, cardIndex = 0): Promise<void> {
@@ -163,8 +87,8 @@ export class AccordionDSL {
       }
     });
 
-    await expect(this.getAccordion(cardIndex)).toBeVisible();
-    await expect(this.getAccordion(cardIndex)).toHaveScreenshot(name, {
+    await expect(this.getExpander(cardIndex)).toBeVisible();
+    await expect(this.getExpander(cardIndex)).toHaveScreenshot(name, {
       animations: 'disabled',
       caret: 'hide',
       timeout: 15000,

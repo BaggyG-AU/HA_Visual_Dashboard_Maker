@@ -1,37 +1,34 @@
 import type { Card } from '../../types/dashboard';
 
-export type AccordionExpandMode = 'single' | 'multi';
-export type AccordionStyleMode = 'bordered' | 'borderless' | 'ghost';
-
-export interface AccordionSectionConfig {
+export interface ExpanderCardConfig {
+  type: 'custom:expander-card';
   title?: string;
-  icon?: string;
-  default_expanded?: boolean;
+  'title-card'?: Card;
+  'title-card-button-overlay'?: boolean;
   cards?: Card[];
+  expanded?: boolean;
+  'expanded-icon'?: string;
+  'collapsed-icon'?: string;
+  gap?: string;
+  padding?: string;
+  clear?: boolean;
+  'overlay-margin'?: string;
+  'child-padding'?: string;
+  'button-background'?: string;
 }
 
-export interface AccordionCardConfig {
-  type: 'custom:accordion-card';
-  title?: string;
-  expand_mode?: AccordionExpandMode;
-  style?: AccordionStyleMode;
-  header_background?: string;
-  content_padding?: number;
-  sections?: AccordionSectionConfig[];
-  _accordionDepth?: number;
-}
-
-export interface NormalizedAccordionSection {
+export interface NormalizedExpanderConfig {
   title: string;
-  icon: string;
-  default_expanded: boolean;
+  titleCard?: Card;
+  titleCardButtonOverlay: boolean;
   cards: Card[];
-}
-
-export interface NormalizedAccordionConfig {
-  expand_mode: AccordionExpandMode;
-  style: AccordionStyleMode;
-  header_background?: string;
-  content_padding: number;
-  sections: NormalizedAccordionSection[];
+  expanded: boolean;
+  expandedIcon: string;
+  collapsedIcon: string;
+  gap: string;
+  padding: string;
+  clear: boolean;
+  overlayMargin: string;
+  childPadding: string;
+  buttonBackground?: string;
 }

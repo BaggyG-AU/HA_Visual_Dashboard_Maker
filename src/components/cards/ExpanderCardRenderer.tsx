@@ -1,25 +1,27 @@
 import React, { useMemo } from 'react';
 import { Alert, Card as AntCard, Typography } from 'antd';
 import { MenuFoldOutlined } from '@ant-design/icons';
-import type { AccordionCardConfig } from '../../features/accordion/types';
-import { AccordionPanel } from '../../features/accordion/AccordionPanel';
-import { MAX_ACCORDION_DEPTH, normalizeAccordionConfig } from '../../features/accordion/accordionService';
+import type { ExpanderCardConfig } from '../../features/accordion/types';
+import { ExpanderPanel } from '../../features/accordion/ExpanderPanel';
+import { MAX_EXPANDER_DEPTH, normalizeExpanderConfig } from '../../features/accordion/accordionService';
 
 const { Text } = Typography;
 
-interface AccordionCardRendererProps {
-  card: AccordionCardConfig;
+interface ExpanderCardRendererProps {
+  card: ExpanderCardConfig;
   isSelected?: boolean;
   onClick?: () => void;
 }
 
-export const AccordionCardRenderer: React.FC<AccordionCardRendererProps> = ({
+export const ExpanderCardRenderer: React.FC<ExpanderCardRendererProps> = ({
   card,
   isSelected = false,
   onClick,
 }) => {
-  const normalized = useMemo(() => normalizeAccordionConfig(card), [card]);
-  const depth = typeof card._accordionDepth === 'number' ? card._accordionDepth : 1;
+  const normalized = useMemo(() => normalizeExpanderConfig(card), [card]);
+  const depth = typeof (card as { _expanderDepth?: unknown })._expanderDepth === 'number'
+    ? ((card as { _expanderDepth?: number })._expanderDepth as number)
+    : 1;
 
   return (
     <AntCard
@@ -44,18 +46,18 @@ export const AccordionCardRenderer: React.FC<AccordionCardRendererProps> = ({
         overflow: 'auto',
       }}
       onClick={onClick}
-      data-testid="accordion-card"
+      data-testid="expander-card"
       hoverable
     >
-      {depth > MAX_ACCORDION_DEPTH ? (
+      {depth > MAX_EXPANDER_DEPTH ? (
         <Alert
           type="warning"
           showIcon
-          message="Accordion nesting limit reached"
-          description={`Maximum supported accordion nesting depth is ${MAX_ACCORDION_DEPTH}.`}
+          message="Expander nesting limit reached"
+          description={`Maximum supported expander nesting depth is ${MAX_EXPANDER_DEPTH}.`}
         />
       ) : (
-        <AccordionPanel card={card} depth={depth} onCardClick={onClick} />
+        <ExpanderPanel card={card} depth={depth} onCardClick={onClick} />
       )}
 
       {isSelected && (
@@ -73,11 +75,11 @@ export const AccordionCardRenderer: React.FC<AccordionCardRendererProps> = ({
           pointerEvents: 'none',
         }}>
           <MenuFoldOutlined style={{ marginRight: '4px' }} />
-          ACCORDION
+          EXPANDER
         </div>
       )}
 
-      {normalized.sections.length === 0 && (
+      {normalized.cards.length === 0 && (
         <div style={{
           position: 'absolute',
           bottom: '8px',
@@ -87,7 +89,7 @@ export const AccordionCardRenderer: React.FC<AccordionCardRendererProps> = ({
           borderRadius: '4px',
         }}>
           <Text type="secondary" style={{ fontSize: '11px' }}>
-            Add sections in Properties Panel
+            Add nested cards in Properties Panel
           </Text>
         </div>
       )}
