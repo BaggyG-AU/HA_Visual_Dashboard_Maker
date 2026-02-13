@@ -251,7 +251,7 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
     case 'custom:button-card':
       renderedCard = <CustomButtonCardRenderer card={card as React.ComponentProps<typeof CustomButtonCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
-    case 'custom:swiper-card':
+    case 'custom:swipe-card':
       renderedCard = <SwiperCardRenderer card={card as React.ComponentProps<typeof SwiperCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
     case 'custom:accordion-card':

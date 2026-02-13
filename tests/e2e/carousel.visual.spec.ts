@@ -1,36 +1,25 @@
 import { test } from '@playwright/test';
 import { launchWithDSL, close } from '../support';
 
-const BASE_YAML = `type: custom:swiper-card
-pagination:
-  type: bullets
-  clickable: true
-navigation: true
-autoplay:
-  enabled: false
-  delay: 800
-  pause_on_interaction: true
-effect: slide
-slides_per_view: 1
-space_between: 16
-loop: false
-direction: horizontal
-slides:
-  - alignment: center
-    allow_navigation: true
-    cards:
-      - type: markdown
-        content: "Slide One"
-  - alignment: center
-    allow_navigation: true
-    cards:
-      - type: markdown
-        content: "Slide Two"
-  - alignment: center
-    allow_navigation: true
-    cards:
-      - type: markdown
-        content: "Slide Three"
+const BASE_YAML = `type: custom:swipe-card
+start_card: 1
+parameters:
+  pagination:
+    type: bullets
+    clickable: true
+  navigation: true
+  effect: slide
+  slidesPerView: 1
+  spaceBetween: 16
+  loop: false
+  direction: horizontal
+cards:
+  - type: markdown
+    content: "Slide One"
+  - type: markdown
+    content: "Slide Two"
+  - type: markdown
+    content: "Slide Three"
 `;
 
 test.describe('Carousel Visual Regression', () => {
@@ -43,7 +32,7 @@ test.describe('Carousel Visual Regression', () => {
       await appDSL.waitUntilReady();
       await dashboard.createNew();
 
-      await palette.addCard('custom:swiper-card', testInfo);
+      await palette.addCard('custom:swipe-card', testInfo);
       await canvas.selectCard(0);
       await properties.switchTab('YAML');
       await yamlEditor.setEditorContent(BASE_YAML, 'properties');

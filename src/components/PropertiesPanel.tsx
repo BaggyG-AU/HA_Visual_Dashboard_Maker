@@ -29,6 +29,11 @@ import type { AccordionExpandMode } from '../features/accordion/types';
 import { DEFAULT_TAB_ICON, clampTabIndex } from '../services/tabsService';
 import { DEFAULT_POPUP_TRIGGER_ICON, normalizePopupConfig } from '../features/popup/popupService';
 import {
+  parseUpstreamSwipeCard,
+  toUpstreamSwipeCardFromConfig,
+} from '../features/carousel/carouselService';
+import type { SwiperCardConfig, UpstreamSwipeCardConfig } from '../features/carousel/types';
+import {
   clampLayoutGap,
   DEFAULT_LAYOUT_GAP,
   GAP_PRESET_VALUES,
@@ -581,7 +586,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       }
     }
 
-    if (card.type === 'custom:swiper-card') {
+    if (card.type === 'custom:swipe-card') {
+      const parsedSwipeCard = parseUpstreamSwipeCard(normalized as unknown as UpstreamSwipeCardConfig);
+      Object.assign(normalized, parsedSwipeCard);
+      delete (normalized as { parameters?: unknown }).parameters;
+
       const hasSlides = Array.isArray((normalized as { slides?: unknown }).slides);
       const cards = (normalized as { cards?: unknown }).cards;
       if (!hasSlides && Array.isArray(cards)) {
@@ -758,7 +767,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   // Convert card to YAML string
   const cardToYaml = (card: Card): string => {
     try {
-      return yaml.dump(card, {
+      const cardForYaml = card.type === 'custom:swipe-card'
+        ? toUpstreamSwipeCardFromConfig(card as unknown as SwiperCardConfig)
+        : card;
+      return yaml.dump(cardForYaml, {
         indent: 2,
         lineWidth: -1,
         noRefs: true,
@@ -774,6 +786,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const yamlToCard = (yamlStr: string): Card | null => {
     try {
       const parsed = yaml.load(yamlStr) as Card;
+      if (parsed?.type === 'custom:swipe-card') {
+        setYamlError(null);
+        return parseUpstreamSwipeCard(parsed as unknown as UpstreamSwipeCardConfig) as unknown as Card;
+      }
       setYamlError(null);
       return parsed;
     } catch (error) {
@@ -995,11 +1011,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
     const values = form.getFieldsValue();
     const updatedCard = { ...cardRef.current, ...values } as Card;
-    if (updatedCard.type === 'custom:swiper-card') {
-      const typed = updatedCard as { slides?: unknown; cards?: unknown };
+    if (updatedCard.type === 'custom:swipe-card') {
+      const typed = updatedCard as { slides?: unknown; cards?: unknown; parameters?: unknown };
       if (Array.isArray(typed.slides) && typed.slides.length > 0) {
         delete typed.cards;
       }
+      delete typed.parameters;
     }
     const styleValue = (values.style as string | undefined) ?? '';
     if (skipStyleSyncRef.current) {
@@ -2632,7 +2649,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
-          {card.type === 'custom:swiper-card' && (
+          {card.type === 'custom:swipe-card' && (
             <>
               <Form.Item
                 label={<span style={{ color: 'white' }}>Title</span>}
@@ -4191,7 +4208,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swiper-card', 'custom:accordion-card', 'custom:tabs-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:accordion-card', 'custom:tabs-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.

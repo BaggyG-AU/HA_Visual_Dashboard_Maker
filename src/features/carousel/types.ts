@@ -30,7 +30,7 @@ export interface CarouselSlideConfig {
 }
 
 export interface SwiperCardConfig {
-  type: 'custom:swiper-card';
+  type: 'custom:swipe-card';
   title?: string;
   pagination?: CarouselPaginationConfig | boolean;
   navigation?: boolean;
@@ -42,9 +42,20 @@ export interface SwiperCardConfig {
   direction?: CarouselDirection;
   centered_slides?: boolean;
   free_mode?: boolean;
+  start_card?: number;
+  reset_after?: number;
   cards?: Card[];
   slides?: CarouselSlideConfig[];
+  parameters?: Record<string, unknown>;
   style?: string;
+}
+
+export interface UpstreamSwipeCardConfig {
+  type: 'custom:swipe-card';
+  cards?: Card[];
+  parameters?: Record<string, unknown>;
+  start_card?: number;
+  reset_after?: number;
 }
 
 export interface NormalizedCarouselConfig {
@@ -58,5 +69,7 @@ export interface NormalizedCarouselConfig {
   direction: CarouselDirection;
   centered_slides: boolean;
   free_mode: boolean;
+  start_card?: number;
+  reset_after?: number;
   slides: CarouselSlideConfig[];
 }

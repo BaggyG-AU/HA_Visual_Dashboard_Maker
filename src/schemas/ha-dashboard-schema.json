@@ -186,7 +186,7 @@
             "custom:layout-card",
             "custom:mini-graph-card",
             "custom:mini-media-player",
-            "custom:swiper-card",
+            "custom:swipe-card",
             "custom:accordion-card",
             "custom:tabs-card",
             "custom:popup-card",
@@ -529,6 +529,21 @@
         "navigation": {
           "type": "boolean",
           "description": "Enable Swiper navigation arrows"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Upstream swipe-card Swiper.js parameters (camelCase passthrough)",
+          "additionalProperties": true
+        },
+        "start_card": {
+          "type": "number",
+          "minimum": 1,
+          "description": "1-indexed card to show first"
+        },
+        "reset_after": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Seconds of inactivity before resetting to start_card"
         },
         "autoplay": {
           "oneOf": [

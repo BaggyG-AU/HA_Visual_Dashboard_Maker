@@ -1,6 +1,8 @@
 import * as yaml from 'js-yaml';
 import { DashboardConfig, YAMLParseResult } from '../types/dashboard';
 import { logger } from './logger';
+import { toUpstreamSwipeCardFromConfig } from '../features/carousel/carouselService';
+import type { SwiperCardConfig } from '../features/carousel/types';
 
 class YAMLService {
   /**
@@ -139,6 +141,10 @@ class YAMLService {
                   delete cleanCard[key];
                 }
               });
+
+              if (cleanCard.type === 'custom:swipe-card') {
+                return toUpstreamSwipeCardFromConfig(cleanCard as SwiperCardConfig);
+              }
 
               return cleanCard;
             }) || []
