@@ -1,10 +1,7 @@
 import * as yaml from 'js-yaml';
 import { DashboardConfig, YAMLParseResult } from '../types/dashboard';
 import { logger } from './logger';
-import { toUpstreamSwipeCardFromConfig } from '../features/carousel/carouselService';
-import type { SwiperCardConfig } from '../features/carousel/types';
-import { normalizeTabsConfig, toUpstreamTabbedCard } from './tabsService';
-import type { TabsCardConfig } from '../types/tabs';
+import { exportDashboard, importDashboard } from './yamlConversionService';
 
 class YAMLService {
   private static readonly POPUP_EXPORT_WARNING = [
@@ -36,12 +33,14 @@ class YAMLService {
         };
       }
 
+      const imported = importDashboard(data as Record<string, unknown>) as Record<string, unknown>;
+
       // Basic validation passed
       const dashboardConfig: DashboardConfig = {
-        title: data.title,
-        views: data.views,
-        background: data.background,
-        theme: data.theme
+        title: imported.title as string | undefined,
+        views: imported.views as DashboardConfig['views'],
+        background: imported.background as string | undefined,
+        theme: imported.theme as string | undefined
       };
 
       return {
@@ -150,14 +149,6 @@ class YAMLService {
                 }
               });
 
-              if (cleanCard.type === 'custom:swipe-card') {
-                return toUpstreamSwipeCardFromConfig(cleanCard as SwiperCardConfig);
-              }
-              if (cleanCard.type === 'custom:tabbed-card') {
-                const normalizedTabs = normalizeTabsConfig(cleanCard as TabsCardConfig);
-                return toUpstreamTabbedCard(normalizedTabs, cleanCard as TabsCardConfig);
-              }
-
               return cleanCard;
             }) || []
         };
@@ -175,7 +166,7 @@ class YAMLService {
       theme: config.theme
     };
 
-    return sanitized;
+    return exportDashboard(sanitized as unknown as Record<string, unknown>) as DashboardConfig;
   }
 
   /**
