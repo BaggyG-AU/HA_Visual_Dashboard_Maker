@@ -3533,6 +3533,321 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
+          {card.type === 'custom:modern-circular-gauge' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Start Angle</span>}
+                name="start_angle"
+                help={<span style={{ color: '#666' }}>Rotation offset in degrees</span>}
+              >
+                <InputNumber data-testid="progress-ring-start-angle" style={{ width: '100%' }} min={-360} max={360} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Direction</span>}
+                name="direction"
+              >
+                <Select
+                  data-testid="progress-ring-direction"
+                  options={[
+                    { value: 'clockwise', label: 'Clockwise' },
+                    { value: 'counter-clockwise', label: 'Counter-clockwise' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Default Thickness</span>}
+                name="thickness"
+              >
+                <InputNumber data-testid="progress-ring-thickness" style={{ width: '100%' }} min={4} max={32} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Animate</span>}
+                name="animate"
+                valuePropName="checked"
+              >
+                <Switch data-testid="progress-ring-animate" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Animation Duration (ms)</span>}
+                name="animation_duration_ms"
+              >
+                <InputNumber data-testid="progress-ring-animation-duration" style={{ width: '100%' }} min={0} max={5000} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Labels</span>}
+                name="show_labels"
+                valuePropName="checked"
+              >
+                <Switch data-testid="progress-ring-show-labels" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Label Precision</span>}
+                name="label_precision"
+              >
+                <InputNumber data-testid="progress-ring-label-precision" style={{ width: '100%' }} min={0} max={3} />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Rings</Text>
+
+              <Form.List name="rings">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>Ring {index + 1}</Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Entity</span>}
+                          name={[field.name, 'entity']}
+                          rules={[{ required: true, message: 'Entity is required' }]}
+                        >
+                          <EntitySelect
+                            data-testid={`progress-ring-${index}-entity`}
+                            placeholder="Select sensor"
+                            filterDomains={['sensor', 'binary_sensor', 'number', 'input_number']}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Label</span>}
+                          name={[field.name, 'label']}
+                        >
+                          <Input data-testid={`progress-ring-${index}-label`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Minimum</span>}
+                          name={[field.name, 'min']}
+                        >
+                          <InputNumber data-testid={`progress-ring-${index}-min`} style={{ width: '100%' }} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Maximum</span>}
+                          name={[field.name, 'max']}
+                        >
+                          <InputNumber data-testid={`progress-ring-${index}-max`} style={{ width: '100%' }} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Thickness</span>}
+                          name={[field.name, 'thickness']}
+                        >
+                          <InputNumber data-testid={`progress-ring-${index}-thickness`} style={{ width: '100%' }} min={4} max={32} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Color</span>}
+                          name={[field.name, 'color']}
+                        >
+                          <ColorPickerInput
+                            testId={`progress-ring-${index}-color`}
+                            value={form.getFieldValue(['rings', field.name, 'color']) as string | undefined}
+                            onChange={(nextColor) => {
+                              form.setFieldValue(['rings', field.name, 'color'], nextColor);
+                              handleValuesChange();
+                            }}
+                          />
+                        </Form.Item>
+
+                        <Divider style={{ borderColor: '#333', margin: '8px 0' }} />
+                        <Text style={{ color: '#d9d9d9', fontSize: '12px' }}>Gradient Stroke (optional)</Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Gradient Type</span>}
+                          name={[field.name, 'gradient', 'type']}
+                        >
+                          <Select
+                            data-testid={`progress-ring-${index}-gradient-type`}
+                            allowClear
+                            options={[
+                              { value: 'linear', label: 'Linear' },
+                              { value: 'radial', label: 'Radial' },
+                            ]}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Gradient Angle</span>}
+                          name={[field.name, 'gradient', 'angle']}
+                        >
+                          <InputNumber data-testid={`progress-ring-${index}-gradient-angle`} style={{ width: '100%' }} min={-360} max={360} />
+                        </Form.Item>
+
+                        <Form.List name={[field.name, 'gradient', 'stops']}>
+                          {(stopFields, stopOps) => (
+                            <Space direction="vertical" style={{ width: '100%' }} size="small">
+                              {stopFields.map((stopField, stopIndex) => (
+                                <div key={stopField.key} style={{ border: '1px solid #303030', borderRadius: 8, padding: 8 }}>
+                                  <Text style={{ color: '#bfbfbf', fontSize: '11px' }}>Gradient Stop {stopIndex + 1}</Text>
+                                  <Form.Item
+                                    label={<span style={{ color: 'white' }}>Position</span>}
+                                    name={[stopField.name, 'position']}
+                                  >
+                                    <InputNumber data-testid={`progress-ring-${index}-gradient-stop-${stopIndex}-position`} style={{ width: '100%' }} min={0} max={100} />
+                                  </Form.Item>
+                                  <Form.Item
+                                    label={<span style={{ color: 'white' }}>Color</span>}
+                                    name={[stopField.name, 'color']}
+                                  >
+                                    <ColorPickerInput
+                                      testId={`progress-ring-${index}-gradient-stop-${stopIndex}-color`}
+                                      value={form.getFieldValue(['rings', field.name, 'gradient', 'stops', stopField.name, 'color']) as string | undefined}
+                                      onChange={(nextColor) => {
+                                        form.setFieldValue(['rings', field.name, 'gradient', 'stops', stopField.name, 'color'], nextColor);
+                                        handleValuesChange();
+                                      }}
+                                    />
+                                  </Form.Item>
+                                  <Button
+                                    danger
+                                    icon={<MinusCircleOutlined />}
+                                    onClick={() => {
+                                      stopOps.remove(stopField.name);
+                                      handleValuesChange();
+                                    }}
+                                    data-testid={`progress-ring-${index}-gradient-stop-${stopIndex}-remove`}
+                                  >
+                                    Remove Stop
+                                  </Button>
+                                </div>
+                              ))}
+
+                              <Button
+                                type="dashed"
+                                icon={<PlusOutlined />}
+                                onClick={() => {
+                                  stopOps.add({ position: stopFields.length === 0 ? 0 : 100, color: '#4fa3ff' });
+                                  handleValuesChange();
+                                }}
+                                data-testid={`progress-ring-${index}-gradient-stop-add`}
+                              >
+                                Add Gradient Stop
+                              </Button>
+                            </Space>
+                          )}
+                        </Form.List>
+
+                        <Divider style={{ borderColor: '#333', margin: '8px 0' }} />
+                        <Text style={{ color: '#d9d9d9', fontSize: '12px' }}>Threshold Colors (optional)</Text>
+
+                        <Form.List name={[field.name, 'thresholds']}>
+                          {(thresholdFields, thresholdOps) => (
+                            <Space direction="vertical" style={{ width: '100%' }} size="small">
+                              {thresholdFields.map((thresholdField, thresholdIndex) => (
+                                <div key={thresholdField.key} style={{ border: '1px solid #303030', borderRadius: 8, padding: 8 }}>
+                                  <Text style={{ color: '#bfbfbf', fontSize: '11px' }}>Threshold {thresholdIndex + 1}</Text>
+                                  <Form.Item
+                                    label={<span style={{ color: 'white' }}>Value</span>}
+                                    name={[thresholdField.name, 'value']}
+                                  >
+                                    <InputNumber data-testid={`progress-ring-${index}-threshold-${thresholdIndex}-value`} style={{ width: '100%' }} />
+                                  </Form.Item>
+                                  <Form.Item
+                                    label={<span style={{ color: 'white' }}>Color</span>}
+                                    name={[thresholdField.name, 'color']}
+                                  >
+                                    <ColorPickerInput
+                                      testId={`progress-ring-${index}-threshold-${thresholdIndex}-color`}
+                                      value={form.getFieldValue(['rings', field.name, 'thresholds', thresholdField.name, 'color']) as string | undefined}
+                                      onChange={(nextColor) => {
+                                        form.setFieldValue(['rings', field.name, 'thresholds', thresholdField.name, 'color'], nextColor);
+                                        handleValuesChange();
+                                      }}
+                                    />
+                                  </Form.Item>
+                                  <Button
+                                    danger
+                                    icon={<MinusCircleOutlined />}
+                                    onClick={() => {
+                                      thresholdOps.remove(thresholdField.name);
+                                      handleValuesChange();
+                                    }}
+                                    data-testid={`progress-ring-${index}-threshold-${thresholdIndex}-remove`}
+                                  >
+                                    Remove Threshold
+                                  </Button>
+                                </div>
+                              ))}
+
+                              <Button
+                                type="dashed"
+                                icon={<PlusOutlined />}
+                                onClick={() => {
+                                  thresholdOps.add({ value: 0, color: '#4fa3ff' });
+                                  handleValuesChange();
+                                }}
+                                data-testid={`progress-ring-${index}-threshold-add`}
+                              >
+                                Add Threshold
+                              </Button>
+                            </Space>
+                          )}
+                        </Form.List>
+
+                        {fields.length > 1 && (
+                          <Button
+                            danger
+                            icon={<MinusCircleOutlined />}
+                            onClick={() => {
+                              remove(field.name);
+                              handleValuesChange();
+                            }}
+                            data-testid={`progress-ring-${index}-remove`}
+                          >
+                            Remove Ring
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      icon={<PlusOutlined />}
+                      onClick={() => {
+                        add({
+                          entity: '',
+                          label: '',
+                          min: 0,
+                          max: 100,
+                          color: '#4fa3ff',
+                          thickness: 12,
+                          gradient: {
+                            type: 'linear',
+                            angle: 90,
+                            stops: [
+                              { position: 0, color: '#6ccf7f' },
+                              { position: 100, color: '#2ca58d' },
+                            ],
+                          },
+                        });
+                        handleValuesChange();
+                      }}
+                      data-testid="progress-ring-add"
+                    >
+                      Add Ring
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+            </>
+          )}
+
           {card.type === 'custom:tabbed-card' && (
             <>
               <Divider />
@@ -4791,7 +5106,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:native-graph-card', 'custom:gauge-card-pro', 'custom:slider-button-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:native-graph-card', 'custom:gauge-card-pro', 'custom:slider-button-card', 'custom:modern-circular-gauge', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.

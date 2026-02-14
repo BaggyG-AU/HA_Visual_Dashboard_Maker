@@ -39,6 +39,7 @@ import { PopupTriggerCardRenderer } from './cards/PopupTriggerCardRenderer';
 import { NativeGraphsCardRenderer } from './cards/NativeGraphsCardRenderer';
 import { GaugeCardProCardRenderer } from './cards/GaugeCardProCardRenderer';
 import { AdvancedSliderCardRenderer } from './cards/AdvancedSliderCardRenderer';
+import { ProgressRingCardRenderer } from './cards/ProgressRingCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { evaluateVisibilityConditions } from '../services/conditionalVisibility';
@@ -218,6 +219,9 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
       break;
     case 'custom:slider-button-card':
       renderedCard = <AdvancedSliderCardRenderer card={card as React.ComponentProps<typeof AdvancedSliderCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+      break;
+    case 'custom:modern-circular-gauge':
+      renderedCard = <ProgressRingCardRenderer card={card as React.ComponentProps<typeof ProgressRingCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
     case 'custom:power-flow-card-plus':
     case 'custom:power-flow-card':
