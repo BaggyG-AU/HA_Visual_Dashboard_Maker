@@ -602,6 +602,39 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       }
     }
 
+    if (card.type === 'custom:mini-graph-card') {
+      const typed = normalized as FormCardValues & {
+        show?: Record<string, unknown>;
+        hours_to_show?: unknown;
+        points_per_hour?: unknown;
+        line_width?: unknown;
+        height?: unknown;
+      };
+
+      const show = typed.show && typeof typed.show === 'object' ? typed.show : {};
+      typed.show = {
+        name: show.name !== false,
+        state: show.state !== false,
+        icon: show.icon !== false,
+        fill: show.fill === true,
+        extrema: show.extrema === true,
+      };
+
+      const normalizeNumber = (value: unknown, fallback: number): number => {
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (typeof value === 'string') {
+          const parsed = Number(value);
+          if (Number.isFinite(parsed)) return parsed;
+        }
+        return fallback;
+      };
+
+      typed.hours_to_show = normalizeNumber(typed.hours_to_show, 24);
+      typed.points_per_hour = normalizeNumber(typed.points_per_hour, 1);
+      typed.line_width = normalizeNumber(typed.line_width, 2);
+      typed.height = normalizeNumber(typed.height, 96);
+    }
+
     // Normalize icon color mode for form selection when stored on the card
     const hasStateColors = typeof (normalized as { icon_color_states?: unknown }).icon_color_states === 'object';
     if (!(normalized as { icon_color_mode?: unknown }).icon_color_mode) {
@@ -1808,63 +1841,88 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 rules={[{ required: true, message: 'At least one entity is required' }]}
                 help={<span style={{ color: '#666' }}>Select entities to graph</span>}
               >
-                <EntityMultiSelect placeholder="Select entities" filterDomains={['sensor', 'binary_sensor']} />
+                <EntityMultiSelect data-testid="sparkline-entities" placeholder="Select entities" filterDomains={['sensor', 'binary_sensor']} />
               </Form.Item>
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Graph title" />
+                <Input data-testid="sparkline-name" placeholder="Graph title" />
               </Form.Item>
 
               <Form.Item
-                label={<span style={{ color: 'white' }}>Hours to Show</span>}
+                label={<span style={{ color: 'white' }}>Time Range</span>}
                 name="hours_to_show"
+                help={<span style={{ color: '#666' }}>Preset sparkline history range</span>}
               >
-                <Input type="number" placeholder="24" />
+                <Select
+                  data-testid="sparkline-range"
+                  options={[
+                    { value: 1, label: '1h' },
+                    { value: 6, label: '6h' },
+                    { value: 24, label: '24h' },
+                    { value: 168, label: '7d' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Sparkline Style</span>}
+                name={['show', 'fill']}
+              >
+                <Select
+                  data-testid="sparkline-style"
+                  options={[
+                    { value: false, label: 'line' },
+                    { value: true, label: 'area' },
+                  ]}
+                />
               </Form.Item>
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Points per Hour</span>}
                 name="points_per_hour"
-                help={<span style={{ color: '#666' }}>Data point density (default: 0.5)</span>}
+                help={<span style={{ color: '#666' }}>Data point density</span>}
               >
-                <Input type="number" step="0.1" placeholder="0.5" />
+                <Input data-testid="sparkline-points-per-hour" type="number" step="0.25" min="0.25" max="24" />
               </Form.Item>
 
               <Form.Item
-                label={<span style={{ color: 'white' }}>Line Width</span>}
+                label={<span style={{ color: 'white' }}>Stroke Width</span>}
                 name="line_width"
               >
-                <Input type="number" placeholder="5" />
+                <Input data-testid="sparkline-line-width" type="number" min="1" max="8" />
               </Form.Item>
 
               <Form.Item
-                label={<span style={{ color: 'white' }}>Animate</span>}
-                name="animate"
-                help={<span style={{ color: '#666' }}>Enable graph animations</span>}
+                label={<span style={{ color: 'white' }}>Render Density</span>}
+                name="height"
+                help={<span style={{ color: '#666' }}>Compact mode helps dense dashboards</span>}
               >
                 <Select
-                  placeholder="Select option"
+                  data-testid="sparkline-density"
                   options={[
-                    { value: true, label: 'Enabled' },
-                    { value: false, label: 'Disabled' },
+                    { value: 64, label: 'Compact' },
+                    { value: 96, label: 'Regular' },
                   ]}
                 />
               </Form.Item>
 
               <Form.Item
-                label={<span style={{ color: 'white' }}>Show State</span>}
-                name="show_state"
+                label={<span style={{ color: 'white' }}>Show Min/Max Markers</span>}
+                name={['show', 'extrema']}
+                valuePropName="checked"
               >
-                <Select
-                  placeholder="Select option"
-                  options={[
-                    { value: true, label: 'Show' },
-                    { value: false, label: 'Hide' },
-                  ]}
-                />
+                <Switch data-testid="sparkline-show-min-max" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Current Marker</span>}
+                name={['show', 'state']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="sparkline-show-current" />
               </Form.Item>
             </>
           )}

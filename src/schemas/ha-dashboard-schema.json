@@ -369,6 +369,49 @@
           "description": "Whether to show icon",
           "default": true
         },
+        "hours_to_show": {
+          "type": "number",
+          "description": "History window in hours (sparkline/mini-graph)",
+          "minimum": 1
+        },
+        "points_per_hour": {
+          "type": "number",
+          "description": "Sampling density for sparkline/mini-graph",
+          "minimum": 0.25
+        },
+        "line_width": {
+          "type": "number",
+          "description": "Sparkline stroke width",
+          "minimum": 1
+        },
+        "height": {
+          "type": "number",
+          "description": "Card graph area height in pixels"
+        },
+        "show": {
+          "type": "object",
+          "description": "Per-element visibility options (used by mini-graph-card)",
+          "properties": {
+            "name": {
+              "type": "boolean"
+            },
+            "state": {
+              "type": "boolean"
+            },
+            "icon": {
+              "type": "boolean"
+            },
+            "fill": {
+              "type": "boolean",
+              "description": "Area fill under sparkline"
+            },
+            "extrema": {
+              "type": "boolean",
+              "description": "Show min/max markers"
+            }
+          },
+          "additionalProperties": true
+        },
         "tap_action": {
           "$ref": "#/definitions/action",
           "description": "Action on tap/click"

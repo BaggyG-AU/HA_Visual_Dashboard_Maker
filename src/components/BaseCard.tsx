@@ -12,7 +12,7 @@ import { HorizontalStackCardRenderer } from './cards/HorizontalStackCardRenderer
 import { VerticalStackCardRenderer } from './cards/VerticalStackCardRenderer';
 import { GridCardRenderer } from './cards/GridCardRenderer';
 import { MushroomCardRenderer } from './cards/MushroomCardRenderer';
-import { MiniGraphCardRenderer } from './cards/MiniGraphCardRenderer';
+import { SparklineCardRenderer } from './cards/SparklineCardRenderer';
 import { BubbleCardRenderer } from './cards/BubbleCardRenderer';
 import { GaugeCardRenderer } from './cards/GaugeCardRenderer';
 import { LightCardRenderer } from './cards/LightCardRenderer';
@@ -231,7 +231,7 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
       renderedCard = <BetterThermostatCardRenderer card={card as React.ComponentProps<typeof BetterThermostatCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
     case 'custom:mini-graph-card':
-      renderedCard = <MiniGraphCardRenderer card={card as React.ComponentProps<typeof MiniGraphCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+      renderedCard = <SparklineCardRenderer card={card as React.ComponentProps<typeof SparklineCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
     case 'custom:bubble-card':
       renderedCard = <BubbleCardRenderer card={card as React.ComponentProps<typeof BubbleCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;

@@ -388,13 +388,26 @@ class CardRegistry {
       // Custom HACS Cards
       {
         type: 'custom:mini-graph-card',
-        name: 'Mini Graph',
+        name: 'Sparkline (Mini Graph)',
         category: 'custom',
         icon: 'LineChartOutlined',
-        description: 'Compact graph card (HACS)',
+        description: 'Compact sparkline trend card (HACS mini-graph-card)',
         isCustom: true,
         source: 'hacs',
-        defaultProps: { entities: [] },
+        defaultProps: {
+          entities: [],
+          hours_to_show: 24,
+          points_per_hour: 1,
+          line_width: 2,
+          height: 96,
+          show: {
+            name: true,
+            state: true,
+            icon: true,
+            fill: false,
+            extrema: false,
+          },
+        },
         requiredProps: ['entities'],
       },
       {
