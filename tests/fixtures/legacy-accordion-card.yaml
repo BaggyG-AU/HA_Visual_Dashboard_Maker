@@ -1,0 +1,17 @@
+type: custom:accordion-card
+expand_mode: single
+style: bordered
+header_background: '#1a1a2e'
+content_padding: 12
+sections:
+  - title: Living Room
+    icon: mdi:sofa
+    default_expanded: true
+    cards:
+      - type: button
+        entity: light.living_room
+  - title: Kitchen
+    icon: mdi:food
+    cards:
+      - type: button
+        entity: light.kitchen

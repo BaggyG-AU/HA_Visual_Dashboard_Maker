@@ -23,7 +23,6 @@ export const TabsCardRenderer: React.FC<TabsCardRendererProps> = ({
   return (
     <AntCard
       size="small"
-      title={card.title || undefined}
       style={{
         height: '100%',
         cursor: 'pointer',
@@ -39,7 +38,7 @@ export const TabsCardRenderer: React.FC<TabsCardRendererProps> = ({
       }}
       bodyStyle={{
         padding: 0,
-        height: card.title ? 'calc(100% - 48px)' : '100%',
+        height: '100%',
         overflow: 'hidden',
       }}
       onClick={onClick}

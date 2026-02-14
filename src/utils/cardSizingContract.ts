@@ -196,7 +196,7 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       break;
     }
 
-    case 'custom:swiper-card': {
+    case 'custom:swipe-card': {
       const slideCount = Array.isArray(card.slides) ? card.slides.length : Array.isArray(card.cards) ? card.cards.length : 0;
       height = Math.max(4, Math.min(12, 4 + Math.floor(slideCount / 3)));
       width = 12;

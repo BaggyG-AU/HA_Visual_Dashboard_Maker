@@ -186,9 +186,9 @@
             "custom:layout-card",
             "custom:mini-graph-card",
             "custom:mini-media-player",
-            "custom:swiper-card",
-            "custom:accordion-card",
-            "custom:tabs-card",
+            "custom:swipe-card",
+            "custom:expander-card",
+            "custom:tabbed-card",
             "custom:popup-card",
             "custom:mushroom-entity-card",
             "custom:mushroom-template-card",
@@ -530,6 +530,21 @@
           "type": "boolean",
           "description": "Enable Swiper navigation arrows"
         },
+        "parameters": {
+          "type": "object",
+          "description": "Upstream swipe-card Swiper.js parameters (camelCase passthrough)",
+          "additionalProperties": true
+        },
+        "start_card": {
+          "type": "number",
+          "minimum": 1,
+          "description": "1-indexed card to show first"
+        },
+        "reset_after": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Seconds of inactivity before resetting to start_card"
+        },
         "autoplay": {
           "oneOf": [
             { "type": "boolean" },
@@ -558,47 +573,49 @@
           ],
           "description": "Slides per view"
         },
-        "expand_mode": {
+        "title-card": {
+          "$ref": "#/definitions/card",
+          "description": "Card rendered in the expander header"
+        },
+        "title-card-button-overlay": {
+          "type": "boolean",
+          "description": "Whether the expand button overlays the title-card"
+        },
+        "expanded": {
+          "type": "boolean",
+          "description": "Whether expander starts open"
+        },
+        "expanded-icon": {
           "type": "string",
-          "enum": ["single", "multi"],
-          "description": "Accordion expand mode"
+          "description": "Icon used when expander is open"
         },
-        "sections": {
-          "type": "array",
-          "description": "Accordion sections",
-          "items": {
-            "type": "object",
-            "properties": {
-              "title": {
-                "type": "string",
-                "description": "Section header title"
-              },
-              "icon": {
-                "type": "string",
-                "description": "Section header icon (MDI)"
-              },
-              "default_expanded": {
-                "type": "boolean",
-                "description": "Whether section is expanded by default"
-              },
-              "cards": {
-                "type": "array",
-                "description": "Cards contained in this section",
-                "items": {
-                  "$ref": "#/definitions/card"
-                }
-              }
-            },
-            "additionalProperties": true
-          }
-        },
-        "header_background": {
+        "collapsed-icon": {
           "type": "string",
-          "description": "Accordion header background color"
+          "description": "Icon used when expander is closed"
         },
-        "content_padding": {
-          "type": "number",
-          "description": "Accordion section content padding"
+        "gap": {
+          "type": "string",
+          "description": "Gap between header and content"
+        },
+        "padding": {
+          "type": "string",
+          "description": "Padding of content area"
+        },
+        "clear": {
+          "type": "boolean",
+          "description": "Whether to clear floats in content area"
+        },
+        "overlay-margin": {
+          "type": "string",
+          "description": "Margin for the overlaid expand button"
+        },
+        "child-padding": {
+          "type": "string",
+          "description": "Padding applied to each child card"
+        },
+        "button-background": {
+          "type": "string",
+          "description": "Background color of expand/collapse button"
         },
         "tab_position": {
           "type": "string",

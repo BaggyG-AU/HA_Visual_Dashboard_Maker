@@ -83,9 +83,9 @@ export class TabsDSL {
   async addTabsCard(testInfo?: import('@playwright/test').TestInfo): Promise<void> {
     const searchInput = this.window.getByTestId('card-search');
     await expect(searchInput).toBeVisible();
-    await searchInput.fill('custom:tabs-card');
+    await searchInput.fill('custom:tabbed-card');
 
-    const card = this.window.getByTestId('card-palette').getByTestId('palette-card-custom:tabs-card');
+    const card = this.window.getByTestId('card-palette').getByTestId('palette-card-custom:tabbed-card');
     await expect(card).toBeVisible({ timeout: 5000 });
     await card.dblclick();
 
@@ -140,13 +140,28 @@ export class TabsDSL {
   }
 
   async setDefaultTab(index: number): Promise<void> {
-    const { byTestId, byLabel } = this.getDefaultTabInput();
-    const hasByTestId = await byTestId.count();
-    const input = hasByTestId > 0 ? byTestId : byLabel;
-    await expect(input).toBeVisible({ timeout: 5000 });
-    await input.scrollIntoViewIfNeeded();
-    await input.fill(String(index));
-    await input.blur();
+    const value = String(index);
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const { byTestId, byLabel } = this.getDefaultTabInput();
+      const hasByTestId = await byTestId.count();
+      const input = (hasByTestId > 0 ? byTestId : byLabel).first();
+
+      await expect(input).toBeVisible({ timeout: 5000 });
+
+      try {
+        await input.click({ clickCount: 3 });
+        await input.fill(value);
+        await input.blur();
+        return;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '';
+        const isDetached = message.includes('not attached to the DOM');
+        if (!isDetached || attempt === 1) {
+          throw error;
+        }
+      }
+    }
   }
 
   async setAnimation(mode: 'none' | 'fade' | 'slide'): Promise<void> {

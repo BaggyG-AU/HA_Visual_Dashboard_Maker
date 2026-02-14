@@ -1,0 +1,19 @@
+type: custom:swiper-card
+pagination:
+  type: bullets
+  clickable: true
+navigation: true
+autoplay:
+  enabled: true
+  delay: 5000
+  pause_on_interaction: true
+effect: slide
+slides_per_view: 1
+space_between: 16
+loop: false
+direction: horizontal
+centered_slides: false
+free_mode: false
+cards:
+  - type: button
+    entity: light.living_room

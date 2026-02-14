@@ -4,6 +4,7 @@ import type {
   CarouselSlideConfig,
   NormalizedCarouselConfig,
   SwiperCardConfig,
+  UpstreamSwipeCardConfig,
 } from './types';
 import { DEFAULT_BACKGROUND_CONFIG } from '../../utils/backgroundStyle';
 
@@ -39,6 +40,12 @@ const toBoolean = (value: unknown, fallback: boolean): boolean => {
 
 const toNumber = (value: unknown, fallback: number, min?: number): number => {
   if (typeof value !== 'number' || Number.isNaN(value)) return fallback;
+  if (typeof min === 'number') return Math.max(min, value);
+  return value;
+};
+
+const toOptionalNumber = (value: unknown, min?: number): number | undefined => {
+  if (typeof value !== 'number' || Number.isNaN(value)) return undefined;
   if (typeof min === 'number') return Math.max(min, value);
   return value;
 };
@@ -111,19 +118,174 @@ const normalizeSlides = (card: SwiperCardConfig): CarouselSlideConfig[] => {
   ];
 };
 
-export const normalizeSwiperConfig = (card: SwiperCardConfig): NormalizedCarouselConfig => {
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const parseUpstreamPagination = (pagination: unknown): SwiperCardConfig['pagination'] => {
+  if (pagination === false) return false;
+  if (pagination === true) return true;
+  if (!isRecord(pagination)) return undefined;
   return {
-    pagination: normalizePagination(card.pagination),
-    navigation: toBoolean(card.navigation, DEFAULT_CONFIG.navigation),
-    autoplay: normalizeAutoplay(card.autoplay),
-    effect: card.effect ?? DEFAULT_CONFIG.effect,
-    slides_per_view: card.slides_per_view ?? DEFAULT_CONFIG.slides_per_view,
-    space_between: toNumber(card.space_between, DEFAULT_CONFIG.space_between, 0),
-    loop: toBoolean(card.loop, DEFAULT_CONFIG.loop),
-    direction: card.direction ?? DEFAULT_CONFIG.direction,
-    centered_slides: toBoolean(card.centered_slides, DEFAULT_CONFIG.centered_slides),
-    free_mode: toBoolean(card.free_mode, DEFAULT_CONFIG.free_mode),
-    slides: normalizeSlides(card),
+    type: pagination.type as CarouselPaginationConfig['type'],
+    clickable: typeof pagination.clickable === 'boolean' ? pagination.clickable : undefined,
+  };
+};
+
+const parseUpstreamAutoplay = (autoplay: unknown): SwiperCardConfig['autoplay'] => {
+  if (autoplay === false) return false;
+  if (autoplay === true) return true;
+  if (!isRecord(autoplay)) return undefined;
+  return {
+    enabled: true,
+    delay: typeof autoplay.delay === 'number' ? autoplay.delay : undefined,
+    pause_on_interaction: typeof autoplay.disableOnInteraction === 'boolean' ? autoplay.disableOnInteraction : undefined,
+    stop_on_last_slide: typeof autoplay.stopOnLastSlide === 'boolean' ? autoplay.stopOnLastSlide : undefined,
+  };
+};
+
+export const parseUpstreamSwipeCard = (yamlConfig: UpstreamSwipeCardConfig): SwiperCardConfig => {
+  const parameters = isRecord(yamlConfig.parameters) ? yamlConfig.parameters : {};
+  const autoplay = parseUpstreamAutoplay(parameters.autoplay);
+  const pagination = parseUpstreamPagination(parameters.pagination);
+  const slidesPerView = parameters.slidesPerView;
+
+  return {
+    type: 'custom:swipe-card',
+    cards: Array.isArray(yamlConfig.cards) ? yamlConfig.cards : [],
+    pagination,
+    navigation: typeof parameters.navigation === 'boolean' ? parameters.navigation : undefined,
+    autoplay,
+    effect: parameters.effect as SwiperCardConfig['effect'],
+    slides_per_view: typeof slidesPerView === 'number' || slidesPerView === 'auto'
+      ? slidesPerView
+      : undefined,
+    space_between: typeof parameters.spaceBetween === 'number' ? parameters.spaceBetween : undefined,
+    loop: typeof parameters.loop === 'boolean' ? parameters.loop : undefined,
+    direction: parameters.direction as SwiperCardConfig['direction'],
+    centered_slides: typeof parameters.centeredSlides === 'boolean' ? parameters.centeredSlides : undefined,
+    free_mode: typeof parameters.freeMode === 'boolean' ? parameters.freeMode : undefined,
+    start_card: toOptionalNumber(yamlConfig.start_card, 1),
+    reset_after: toOptionalNumber(yamlConfig.reset_after, 0),
+  };
+};
+
+const slideToExportCard = (slide: CarouselSlideConfig) => {
+  const slideCards = Array.isArray(slide.cards) ? slide.cards : [];
+  if (slideCards.length === 0) return undefined;
+  if (slideCards.length === 1) return slideCards[0];
+  return {
+    type: 'vertical-stack',
+    cards: slideCards,
+  };
+};
+
+export const toUpstreamSwipeCard = (config: NormalizedCarouselConfig): UpstreamSwipeCardConfig => {
+  const parameters: Record<string, unknown> = {
+    effect: config.effect,
+    slidesPerView: config.slides_per_view,
+    spaceBetween: config.space_between,
+    loop: config.loop,
+    direction: config.direction,
+    centeredSlides: config.centered_slides,
+    freeMode: config.free_mode,
+  };
+
+  if (config.pagination === false) {
+    parameters.pagination = false;
+  } else {
+    parameters.pagination = {
+      ...(config.pagination.type ? { type: config.pagination.type } : {}),
+      ...(typeof config.pagination.clickable === 'boolean' ? { clickable: config.pagination.clickable } : {}),
+    };
+  }
+
+  parameters.navigation = config.navigation;
+
+  if (config.autoplay && config.autoplay.enabled !== false) {
+    parameters.autoplay = {
+      delay: config.autoplay.delay ?? 5000,
+      disableOnInteraction: config.autoplay.pause_on_interaction ?? true,
+      stopOnLastSlide: config.autoplay.stop_on_last_slide ?? false,
+    };
+  }
+
+  const cards = config.slides
+    .map(slideToExportCard)
+    .filter((slideCard): slideCard is NonNullable<ReturnType<typeof slideToExportCard>> => Boolean(slideCard));
+
+  return {
+    type: 'custom:swipe-card',
+    cards,
+    parameters,
+    ...(typeof config.start_card === 'number' ? { start_card: Math.max(1, config.start_card) } : {}),
+    ...(typeof config.reset_after === 'number' ? { reset_after: Math.max(0, config.reset_after) } : {}),
+  };
+};
+
+export const toUpstreamSwipeCardFromConfig = (card: SwiperCardConfig): UpstreamSwipeCardConfig & Record<string, unknown> => {
+  const normalized = normalizeSwiperConfig(card);
+  const upstream = toUpstreamSwipeCard(normalized);
+  const passthrough = { ...(card as SwiperCardConfig & Record<string, unknown>) };
+  delete passthrough.pagination;
+  delete passthrough.navigation;
+  delete passthrough.autoplay;
+  delete passthrough.effect;
+  delete passthrough.slides_per_view;
+  delete passthrough.space_between;
+  delete passthrough.loop;
+  delete passthrough.direction;
+  delete passthrough.centered_slides;
+  delete passthrough.free_mode;
+  delete passthrough.slides;
+  delete passthrough.parameters;
+  delete passthrough.cards;
+  delete passthrough.start_card;
+  delete passthrough.reset_after;
+
+  return {
+    ...passthrough,
+    ...upstream,
+  };
+};
+
+export const normalizeSwiperConfig = (card: SwiperCardConfig): NormalizedCarouselConfig => {
+  const parsedCard = card.parameters
+    ? parseUpstreamSwipeCard(card as UpstreamSwipeCardConfig)
+    : null;
+  const workingCard = parsedCard
+    ? {
+      ...parsedCard,
+      ...card,
+      pagination: card.pagination ?? parsedCard.pagination,
+      autoplay: card.autoplay ?? parsedCard.autoplay,
+      navigation: card.navigation ?? parsedCard.navigation,
+      effect: card.effect ?? parsedCard.effect,
+      slides_per_view: card.slides_per_view ?? parsedCard.slides_per_view,
+      space_between: card.space_between ?? parsedCard.space_between,
+      loop: card.loop ?? parsedCard.loop,
+      direction: card.direction ?? parsedCard.direction,
+      centered_slides: card.centered_slides ?? parsedCard.centered_slides,
+      free_mode: card.free_mode ?? parsedCard.free_mode,
+      cards: card.cards ?? parsedCard.cards,
+      start_card: card.start_card ?? parsedCard.start_card,
+      reset_after: card.reset_after ?? parsedCard.reset_after,
+    }
+    : card;
+
+  return {
+    pagination: normalizePagination(workingCard.pagination),
+    navigation: toBoolean(workingCard.navigation, DEFAULT_CONFIG.navigation),
+    autoplay: normalizeAutoplay(workingCard.autoplay),
+    effect: workingCard.effect ?? DEFAULT_CONFIG.effect,
+    slides_per_view: workingCard.slides_per_view ?? DEFAULT_CONFIG.slides_per_view,
+    space_between: toNumber(workingCard.space_between, DEFAULT_CONFIG.space_between, 0),
+    loop: toBoolean(workingCard.loop, DEFAULT_CONFIG.loop),
+    direction: workingCard.direction ?? DEFAULT_CONFIG.direction,
+    centered_slides: toBoolean(workingCard.centered_slides, DEFAULT_CONFIG.centered_slides),
+    free_mode: toBoolean(workingCard.free_mode, DEFAULT_CONFIG.free_mode),
+    start_card: toOptionalNumber(workingCard.start_card, 1),
+    reset_after: toOptionalNumber(workingCard.reset_after, 0),
+    slides: normalizeSlides(workingCard),
   };
 };
 

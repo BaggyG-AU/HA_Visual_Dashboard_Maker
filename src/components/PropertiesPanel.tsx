@@ -24,10 +24,27 @@ import { StateIconMappingControls } from './StateIconMappingControls';
 import type { AttributeDisplayLayout } from '../types/attributeDisplay';
 import { MultiEntityControls } from './MultiEntityControls';
 import type { AggregateFunction, BatchActionType, MultiEntityMode } from '../types/multiEntity';
-import { DEFAULT_SECTION_ICON } from '../features/accordion/accordionService';
-import type { AccordionExpandMode } from '../features/accordion/types';
-import { DEFAULT_TAB_ICON, clampTabIndex } from '../services/tabsService';
+import {
+  DEFAULT_CHILD_PADDING,
+  DEFAULT_COLLAPSED_ICON,
+  DEFAULT_EXPANDED_ICON,
+  DEFAULT_GAP,
+  DEFAULT_OVERLAY_MARGIN,
+  DEFAULT_PADDING,
+} from '../features/accordion/accordionService';
+import {
+  DEFAULT_TAB_ICON,
+  clampTabIndex,
+  normalizeTabsConfig,
+  toUpstreamTabbedCard,
+} from '../services/tabsService';
 import { DEFAULT_POPUP_TRIGGER_ICON, normalizePopupConfig } from '../features/popup/popupService';
+import {
+  parseUpstreamSwipeCard,
+  toUpstreamSwipeCardFromConfig,
+} from '../features/carousel/carouselService';
+import type { SwiperCardConfig, UpstreamSwipeCardConfig } from '../features/carousel/types';
+import type { TabsCardConfig } from '../types/tabs';
 import {
   clampLayoutGap,
   DEFAULT_LAYOUT_GAP,
@@ -49,19 +66,36 @@ type MonacoTestWindow = Window & {
 };
 
 type FormCardValues = Record<string, unknown> & { entities?: unknown };
-type AccordionSectionValues = {
+type ExpanderFormValues = {
   title?: string;
-  icon?: string;
-  default_expanded?: boolean;
   cards?: unknown[];
+  expanded?: boolean;
+  'title-card'?: unknown;
+  'title-card-button-overlay'?: boolean;
+  'expanded-icon'?: string;
+  'collapsed-icon'?: string;
+  gap?: string;
+  padding?: string;
+  clear?: boolean;
+  'overlay-margin'?: string;
+  'child-padding'?: string;
+  'button-background'?: string;
 };
 
 type TabsTabValues = {
-  title?: string;
-  icon?: string;
+  attributes?: {
+    label?: string;
+    icon?: string;
+    stacked?: boolean;
+    isFadingIndicator?: boolean;
+    minWidth?: boolean;
+    isMinWidthIndicator?: boolean;
+  };
+  styles?: Record<string, string>;
   badge?: string | number;
   count?: number;
   cards?: unknown[];
+  card?: unknown;
 };
 
 type PopupConfigValues = {
@@ -581,7 +615,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       }
     }
 
-    if (card.type === 'custom:swiper-card') {
+    if (card.type === 'custom:swipe-card') {
+      const parsedSwipeCard = parseUpstreamSwipeCard(normalized as unknown as UpstreamSwipeCardConfig);
+      Object.assign(normalized, parsedSwipeCard);
+      delete (normalized as { parameters?: unknown }).parameters;
+
       const hasSlides = Array.isArray((normalized as { slides?: unknown }).slides);
       const cards = (normalized as { cards?: unknown }).cards;
       if (!hasSlides && Array.isArray(cards)) {
@@ -600,79 +638,101 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       }
     }
 
-    if (card.type === 'custom:accordion-card') {
-      const rawSections = (normalized as { sections?: unknown }).sections;
-      const sections = Array.isArray(rawSections) ? rawSections : [];
-      (normalized as { sections?: unknown }).sections = (sections.length > 0 ? sections : [{}]).map((section, index) => {
-        const typedSection = (section ?? {}) as AccordionSectionValues;
-        return {
-          title: typeof typedSection.title === 'string' && typedSection.title.trim().length > 0
-            ? typedSection.title
-            : `Section ${index + 1}`,
-          icon: typeof typedSection.icon === 'string' && typedSection.icon.trim().length > 0
-            ? typedSection.icon
-            : DEFAULT_SECTION_ICON,
-          default_expanded: Boolean(typedSection.default_expanded),
-          cards: Array.isArray(typedSection.cards) ? typedSection.cards : [],
-        };
-      });
-
-      const expandMode = (normalized as { expand_mode?: unknown }).expand_mode;
-      if (expandMode !== 'single' && expandMode !== 'multi') {
-        (normalized as { expand_mode?: unknown }).expand_mode = 'single';
+    if (card.type === 'custom:expander-card') {
+      const typed = normalized as ExpanderFormValues;
+      if (typeof typed['title-card'] === 'string') {
+        const titleCardYaml = typed['title-card'].trim();
+        if (titleCardYaml.length === 0) {
+          delete typed['title-card'];
+        } else {
+          try {
+            const parsed = yaml.load(titleCardYaml);
+            typed['title-card'] = typeof parsed === 'object' && parsed !== null ? parsed : undefined;
+          } catch {
+            // Keep user input untouched until YAML is valid.
+          }
+        }
       }
-
-      const accordionStyle = (normalized as { style?: unknown }).style;
-      if (accordionStyle !== 'bordered' && accordionStyle !== 'borderless' && accordionStyle !== 'ghost') {
-        (normalized as { style?: unknown }).style = 'bordered';
+      if (!Array.isArray(typed.cards)) {
+        typed.cards = [];
+      }
+      if (typeof typed.expanded !== 'boolean') {
+        typed.expanded = false;
+      }
+      if (typeof typed['title-card-button-overlay'] !== 'boolean') {
+        typed['title-card-button-overlay'] = false;
+      }
+      if (typeof typed['expanded-icon'] !== 'string' || typed['expanded-icon'].trim().length === 0) {
+        typed['expanded-icon'] = DEFAULT_EXPANDED_ICON;
+      }
+      if (typeof typed['collapsed-icon'] !== 'string' || typed['collapsed-icon'].trim().length === 0) {
+        typed['collapsed-icon'] = DEFAULT_COLLAPSED_ICON;
+      }
+      if (typeof typed.gap !== 'string' || typed.gap.trim().length === 0) {
+        typed.gap = DEFAULT_GAP;
+      }
+      if (typeof typed.padding !== 'string' || typed.padding.trim().length === 0) {
+        typed.padding = DEFAULT_PADDING;
+      }
+      if (typeof typed.clear !== 'boolean') {
+        typed.clear = false;
+      }
+      if (typeof typed['overlay-margin'] !== 'string' || typed['overlay-margin'].trim().length === 0) {
+        typed['overlay-margin'] = DEFAULT_OVERLAY_MARGIN;
+      }
+      if (typeof typed['child-padding'] !== 'string' || typed['child-padding'].trim().length === 0) {
+        typed['child-padding'] = DEFAULT_CHILD_PADDING;
       }
     }
 
-    if (card.type === 'custom:tabs-card') {
-      const rawTabs = (normalized as { tabs?: unknown }).tabs;
-      const tabs = Array.isArray(rawTabs) ? rawTabs : [];
-      const normalizedTabs = (tabs.length > 0 ? tabs : [{}]).map((tab, index) => {
-        const typedTab = (tab ?? {}) as TabsTabValues;
-        return {
-          title: typeof typedTab.title === 'string' && typedTab.title.trim().length > 0
-            ? typedTab.title
-            : `Tab ${index + 1}`,
-          icon: typeof typedTab.icon === 'string' && typedTab.icon.trim().length > 0
-            ? typedTab.icon
-            : DEFAULT_TAB_ICON,
-          badge: typeof typedTab.badge === 'number' || typeof typedTab.badge === 'string'
-            ? typedTab.badge
-            : undefined,
-          count: typeof typedTab.count === 'number' && Number.isFinite(typedTab.count)
-            ? Math.max(0, Math.floor(typedTab.count))
-            : undefined,
-          cards: Array.isArray(typedTab.cards) ? typedTab.cards : [],
-        };
-      });
+    if (card.type === 'custom:tabbed-card') {
+      const typedCard = normalized as unknown as TabsCardConfig;
+      const tabsConfig = normalizeTabsConfig(typedCard);
+      const rawTabsSource = (typedCard as { tabs?: unknown }).tabs;
+      const rawTabs = Array.isArray(rawTabsSource) ? rawTabsSource : [];
+      const normalizedTabs = tabsConfig.tabs.length > 0
+        ? tabsConfig.tabs.map((tab, index) => {
+          const sourceTab = (rawTabs[index] ?? {}) as TabsTabValues;
+          const attributes = {
+            ...((sourceTab.attributes && typeof sourceTab.attributes === 'object') ? sourceTab.attributes : {}),
+            label: tab.title,
+            icon: tab.icon,
+          };
+
+          const cardValue = sourceTab.card;
+          const cardsValue = Array.isArray(sourceTab.cards)
+            ? sourceTab.cards
+            : cardValue && typeof cardValue === 'object'
+              ? [cardValue]
+              : tab.cards;
+
+          return {
+            attributes,
+            styles: typeof sourceTab.styles === 'object' && sourceTab.styles
+              ? sourceTab.styles
+              : undefined,
+            badge: typeof sourceTab.badge === 'number' || typeof sourceTab.badge === 'string'
+              ? sourceTab.badge
+              : undefined,
+            count: typeof sourceTab.count === 'number' && Number.isFinite(sourceTab.count)
+              ? Math.max(0, Math.floor(sourceTab.count))
+              : undefined,
+            cards: cardsValue,
+          };
+        })
+        : [{
+          attributes: { label: 'Tab 1', icon: DEFAULT_TAB_ICON },
+          cards: [],
+        }];
+
       (normalized as { tabs?: unknown }).tabs = normalizedTabs;
-
-      const tabPosition = (normalized as { tab_position?: unknown }).tab_position;
-      if (tabPosition !== 'top' && tabPosition !== 'bottom' && tabPosition !== 'left' && tabPosition !== 'right') {
-        (normalized as { tab_position?: unknown }).tab_position = 'top';
-      }
-
-      const tabSize = (normalized as { tab_size?: unknown }).tab_size;
-      if (tabSize !== 'default' && tabSize !== 'small' && tabSize !== 'large') {
-        (normalized as { tab_size?: unknown }).tab_size = 'default';
-      }
-
-      const animation = (normalized as { animation?: unknown }).animation;
-      if (animation !== 'none' && animation !== 'fade' && animation !== 'slide') {
-        (normalized as { animation?: unknown }).animation = 'none';
-      }
-
-      const lazyRender = (normalized as { lazy_render?: unknown }).lazy_render;
-      if (typeof lazyRender !== 'boolean') {
-        (normalized as { lazy_render?: unknown }).lazy_render = true;
-      }
-
-      const defaultTabValue = (normalized as { default_tab?: unknown }).default_tab;
-      (normalized as { default_tab?: number }).default_tab = clampTabIndex(defaultTabValue, normalizedTabs.length);
+      (normalized as { options?: { defaultTabIndex?: number } }).options = {
+        defaultTabIndex: clampTabIndex(tabsConfig.default_tab, normalizedTabs.length),
+      };
+      (normalized as { _havdm_tab_position?: unknown })._havdm_tab_position = tabsConfig.tab_position;
+      (normalized as { _havdm_tab_size?: unknown })._havdm_tab_size = tabsConfig.tab_size;
+      (normalized as { _havdm_animation?: unknown })._havdm_animation = tabsConfig.animation;
+      (normalized as { _havdm_lazy_render?: unknown })._havdm_lazy_render = tabsConfig.lazy_render;
     }
 
     if (card.type === 'custom:popup-card') {
@@ -758,7 +818,17 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   // Convert card to YAML string
   const cardToYaml = (card: Card): string => {
     try {
-      return yaml.dump(card, {
+      let cardForYaml: Card | Record<string, unknown> = card;
+      if (card.type === 'custom:swipe-card') {
+        cardForYaml = toUpstreamSwipeCardFromConfig(card as unknown as SwiperCardConfig);
+      } else if (card.type === 'custom:tabbed-card') {
+        const normalizedTabs = normalizeTabsConfig(card as unknown as TabsCardConfig);
+        cardForYaml = toUpstreamTabbedCard(
+          normalizedTabs,
+          card as unknown as TabsCardConfig,
+        ) as unknown as Record<string, unknown>;
+      }
+      return yaml.dump(cardForYaml, {
         indent: 2,
         lineWidth: -1,
         noRefs: true,
@@ -774,6 +844,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const yamlToCard = (yamlStr: string): Card | null => {
     try {
       const parsed = yaml.load(yamlStr) as Card;
+      if (parsed?.type === 'custom:swipe-card') {
+        setYamlError(null);
+        return parseUpstreamSwipeCard(parsed as unknown as UpstreamSwipeCardConfig) as unknown as Card;
+      }
+      if (parsed?.type === 'custom:tabbed-card') {
+        setYamlError(null);
+        return parsed;
+      }
       setYamlError(null);
       return parsed;
     } catch (error) {
@@ -995,10 +1073,35 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
     const values = form.getFieldsValue();
     const updatedCard = { ...cardRef.current, ...values } as Card;
-    if (updatedCard.type === 'custom:swiper-card') {
-      const typed = updatedCard as { slides?: unknown; cards?: unknown };
+    if (updatedCard.type === 'custom:swipe-card') {
+      const typed = updatedCard as { slides?: unknown; cards?: unknown; parameters?: unknown };
       if (Array.isArray(typed.slides) && typed.slides.length > 0) {
         delete typed.cards;
+      }
+      delete typed.parameters;
+    }
+    if (updatedCard.type === 'custom:tabbed-card') {
+      const typed = updatedCard as TabsCardConfig;
+      const previousCard = cardRef.current?.type === 'custom:tabbed-card'
+        ? cardRef.current as TabsCardConfig
+        : null;
+      const previousTabs = Array.isArray(previousCard?.tabs) ? previousCard.tabs : [];
+
+      if ((!Array.isArray(typed.tabs) || typed.tabs.length === 0) && previousTabs.length > 0) {
+        typed.tabs = previousTabs;
+      } else if (Array.isArray(typed.tabs)) {
+        typed.tabs = typed.tabs.map((tab, index) => {
+          const existingTab = previousTabs[index];
+          if (!existingTab) return tab;
+          if (Array.isArray(tab.cards) || (tab.card && typeof tab.card === 'object')) return tab;
+          if (Array.isArray(existingTab.cards)) {
+            return { ...tab, cards: existingTab.cards };
+          }
+          if (existingTab.card && typeof existingTab.card === 'object') {
+            return { ...tab, cards: [existingTab.card] };
+          }
+          return tab;
+        });
       }
     }
     const styleValue = (values.style as string | undefined) ?? '';
@@ -1080,107 +1183,54 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     }
   };
 
-  const normalizeAccordionSections = useCallback((sections: unknown[]): AccordionSectionValues[] => {
-    if (sections.length === 0) {
-      return [{ title: 'Section 1', icon: DEFAULT_SECTION_ICON, default_expanded: true, cards: [] }];
-    }
-
-    return sections.map((section, index) => {
-      const typed = (section ?? {}) as AccordionSectionValues;
-      return {
-        title: typeof typed.title === 'string' && typed.title.trim().length > 0
-          ? typed.title
-          : `Section ${index + 1}`,
-        icon: typeof typed.icon === 'string' && typed.icon.trim().length > 0
-          ? typed.icon
-          : DEFAULT_SECTION_ICON,
-        default_expanded: Boolean(typed.default_expanded),
-        cards: Array.isArray(typed.cards) ? typed.cards : [],
-      };
-    });
-  }, []);
-
-  const updateAccordionSections = useCallback((updater: (sections: AccordionSectionValues[]) => AccordionSectionValues[]) => {
-    const currentCard = cardRef.current;
-    if (!currentCard || currentCard.type !== 'custom:accordion-card') return;
-    const currentSections = form.getFieldValue('sections');
-    const normalizedSections = normalizeAccordionSections(Array.isArray(currentSections) ? currentSections : []);
-    const nextSections = updater(normalizedSections);
-    form.setFieldsValue({ sections: nextSections });
-    handleValuesChange();
-  }, [form, handleValuesChange, normalizeAccordionSections]);
-
-  const normalizeSingleModeDefaults = useCallback(() => {
-    const currentCard = cardRef.current;
-    if (!currentCard || currentCard.type !== 'custom:accordion-card') return;
-    updateAccordionSections((sections) => {
-      let seenExpanded = false;
-      return sections.map((section, index) => {
-        if (section.default_expanded && !seenExpanded) {
-          seenExpanded = true;
-          return section;
-        }
-        if (!seenExpanded && index === 0) {
-          seenExpanded = true;
-          return { ...section, default_expanded: true };
-        }
-        return { ...section, default_expanded: false };
-      });
-    });
-  }, [updateAccordionSections]);
-
-  const setAccordionExpandState = useCallback((expanded: boolean) => {
-    const currentCard = cardRef.current;
-    if (!currentCard || currentCard.type !== 'custom:accordion-card') return;
-    const mode = (form.getFieldValue('expand_mode') as AccordionExpandMode | undefined) ?? 'single';
-
-    updateAccordionSections((sections) => {
-      if (!expanded) {
-        return sections.map((section) => ({ ...section, default_expanded: false }));
-      }
-
-      if (mode === 'single') {
-        return sections.map((section, index) => ({ ...section, default_expanded: index === 0 }));
-      }
-
-      return sections.map((section) => ({ ...section, default_expanded: true }));
-    });
-  }, [form, updateAccordionSections]);
-
   const normalizeTabsList = useCallback((tabs: unknown[]): TabsTabValues[] => {
     if (tabs.length === 0) {
-      return [{ title: 'Tab 1', icon: DEFAULT_TAB_ICON, cards: [] }];
+      return [{ attributes: { label: 'Tab 1', icon: DEFAULT_TAB_ICON }, cards: [] }];
     }
 
     return tabs.map((tab, index) => {
       const typed = (tab ?? {}) as TabsTabValues;
+      const sourceAttributes = typed.attributes && typeof typed.attributes === 'object' ? typed.attributes : {};
+      const label = typeof sourceAttributes.label === 'string' && sourceAttributes.label.trim().length > 0
+        ? sourceAttributes.label
+        : `Tab ${index + 1}`;
+      const icon = typeof sourceAttributes.icon === 'string' && sourceAttributes.icon.trim().length > 0
+        ? sourceAttributes.icon
+        : DEFAULT_TAB_ICON;
       return {
-        title: typeof typed.title === 'string' && typed.title.trim().length > 0
-          ? typed.title
-          : `Tab ${index + 1}`,
-        icon: typeof typed.icon === 'string' && typed.icon.trim().length > 0
-          ? typed.icon
-          : DEFAULT_TAB_ICON,
+        attributes: {
+          ...sourceAttributes,
+          label,
+          icon,
+        },
+        styles: typeof typed.styles === 'object' && typed.styles ? typed.styles : undefined,
         badge: typeof typed.badge === 'number' || typeof typed.badge === 'string'
           ? typed.badge
           : undefined,
         count: typeof typed.count === 'number' && Number.isFinite(typed.count)
           ? Math.max(0, Math.floor(typed.count))
           : undefined,
-        cards: Array.isArray(typed.cards) ? typed.cards : [],
+        cards: Array.isArray(typed.cards)
+          ? typed.cards
+          : typed.card && typeof typed.card === 'object'
+            ? [typed.card]
+            : [],
       };
     });
   }, []);
 
   const updateTabsList = useCallback((updater: (tabs: TabsTabValues[]) => TabsTabValues[]) => {
     const currentCard = cardRef.current;
-    if (!currentCard || currentCard.type !== 'custom:tabs-card') return;
+    if (!currentCard || currentCard.type !== 'custom:tabbed-card') return;
     const currentTabs = form.getFieldValue('tabs');
     const normalizedTabs = normalizeTabsList(Array.isArray(currentTabs) ? currentTabs : []);
     const nextTabs = updater(normalizedTabs);
-    const safeTabs = nextTabs.length > 0 ? nextTabs : [{ title: 'Tab 1', icon: DEFAULT_TAB_ICON, cards: [] }];
-    const defaultTab = clampTabIndex(form.getFieldValue('default_tab'), safeTabs.length);
-    form.setFieldsValue({ tabs: safeTabs, default_tab: defaultTab });
+    const safeTabs = nextTabs.length > 0 ? nextTabs : [{ attributes: { label: 'Tab 1', icon: DEFAULT_TAB_ICON }, cards: [] }];
+    const defaultTab = clampTabIndex(form.getFieldValue(['options', 'defaultTabIndex']), safeTabs.length);
+    form.setFieldsValue({
+      tabs: safeTabs,
+      options: { ...(form.getFieldValue('options') ?? {}), defaultTabIndex: defaultTab },
+    });
     handleValuesChange();
   }, [form, handleValuesChange, normalizeTabsList]);
 
@@ -2457,174 +2507,103 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
-          {card.type === 'custom:accordion-card' && (
+          {card.type === 'custom:expander-card' && (
             <>
               <Form.Item
                 label={<span style={{ color: 'white' }}>Title</span>}
                 name="title"
               >
-                <Input placeholder="Accordion title (optional)" />
+                <Input placeholder="Section title" data-testid="expander-title" />
               </Form.Item>
 
-              <Divider />
-              <Text strong style={{ color: 'white' }}>Accordion Behavior</Text>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Expanded by Default</span>}
+                name="expanded"
+                valuePropName="checked"
+              >
+                <Switch data-testid="expander-expanded" />
+              </Form.Item>
 
               <Form.Item
-                label={<span style={{ color: 'white' }}>Expand Mode</span>}
-                name="expand_mode"
+                label={<span style={{ color: 'white' }}>Use Title Card</span>}
+                name="title-card"
               >
-                <Select
-                  placeholder="Select expand mode"
-                  options={[
-                    { value: 'single', label: 'Single (one open)' },
-                    { value: 'multi', label: 'Multi (many open)' },
-                  ]}
-                  onChange={(nextMode: AccordionExpandMode) => {
-                    if (nextMode === 'single') {
-                      normalizeSingleModeDefaults();
-                    }
-                  }}
-                  data-testid="accordion-expand-mode"
+                <Input.TextArea
+                  rows={4}
+                  style={{ fontFamily: 'monospace' }}
+                  placeholder={'type: entities\nentities:\n  - light.kitchen'}
+                  data-testid="expander-title-card"
                 />
               </Form.Item>
 
               <Form.Item
-                label={<span style={{ color: 'white' }}>Style Mode</span>}
-                name="style"
+                label={<span style={{ color: 'white' }}>Overlay Toggle on Title Card</span>}
+                name="title-card-button-overlay"
+                valuePropName="checked"
               >
-                <Select
-                  placeholder="Select style"
-                  options={[
-                    { value: 'bordered', label: 'Bordered' },
-                    { value: 'borderless', label: 'Borderless' },
-                    { value: 'ghost', label: 'Ghost' },
-                  ]}
-                  data-testid="accordion-style-mode"
-                />
+                <Switch data-testid="expander-title-card-button-overlay" />
               </Form.Item>
 
               <Form.Item
-                label={<span style={{ color: 'white' }}>Header Background</span>}
-                name="header_background"
+                label={<span style={{ color: 'white' }}>Expanded Icon</span>}
+                name="expanded-icon"
               >
-                <Input placeholder="#1f1f1f or var(--token)" data-testid="accordion-header-background" />
+                <IconSelect placeholder={DEFAULT_EXPANDED_ICON} data-testid="expander-expanded-icon" />
               </Form.Item>
 
               <Form.Item
-                label={<span style={{ color: 'white' }}>Content Padding</span>}
-                name="content_padding"
+                label={<span style={{ color: 'white' }}>Collapsed Icon</span>}
+                name="collapsed-icon"
               >
-                <InputNumber min={0} style={{ width: '100%' }} data-testid="accordion-content-padding" />
+                <IconSelect placeholder={DEFAULT_COLLAPSED_ICON} data-testid="expander-collapsed-icon" />
               </Form.Item>
 
-              <Space style={{ marginBottom: '12px' }}>
-                <Button
-                  onClick={() => setAccordionExpandState(true)}
-                  data-testid="accordion-expand-all"
-                >
-                  Expand All
-                </Button>
-                <Button
-                  onClick={() => setAccordionExpandState(false)}
-                  data-testid="accordion-collapse-all"
-                >
-                  Collapse All
-                </Button>
-              </Space>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Gap</span>}
+                name="gap"
+              >
+                <Input placeholder={DEFAULT_GAP} data-testid="expander-gap" />
+              </Form.Item>
 
-              <Divider />
-              <Text strong style={{ color: 'white' }}>Sections</Text>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Padding</span>}
+                name="padding"
+              >
+                <Input placeholder={DEFAULT_PADDING} data-testid="expander-padding" />
+              </Form.Item>
 
-              <Form.List name="sections">
-                {(fields, { add, remove }) => (
-                  <Space direction="vertical" style={{ width: '100%' }} size="large">
-                    {fields.map((field, index) => (
-                      <div
-                        key={field.key}
-                        style={{
-                          padding: '12px',
-                          border: '1px solid #2a2a2a',
-                          borderRadius: '8px',
-                          background: '#1a1a1a',
-                        }}
-                      >
-                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
-                          Section {index + 1}
-                        </Text>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Clear Floats</span>}
+                name="clear"
+                valuePropName="checked"
+              >
+                <Switch data-testid="expander-clear" />
+              </Form.Item>
 
-                        <Form.Item
-                          label={<span style={{ color: 'white' }}>Title</span>}
-                          name={[field.name, 'title']}
-                        >
-                          <Input
-                            placeholder={`Section ${index + 1}`}
-                            data-testid={`accordion-section-${index}-title`}
-                          />
-                        </Form.Item>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Overlay Margin</span>}
+                name="overlay-margin"
+              >
+                <Input placeholder={DEFAULT_OVERLAY_MARGIN} data-testid="expander-overlay-margin" />
+              </Form.Item>
 
-                        <Form.Item
-                          label={<span style={{ color: 'white' }}>Icon</span>}
-                          name={[field.name, 'icon']}
-                        >
-                          <IconSelect
-                            placeholder={DEFAULT_SECTION_ICON}
-                            data-testid={`accordion-section-${index}-icon`}
-                          />
-                        </Form.Item>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Child Padding</span>}
+                name="child-padding"
+              >
+                <Input placeholder={DEFAULT_CHILD_PADDING} data-testid="expander-child-padding" />
+              </Form.Item>
 
-                        <Form.Item
-                          label={<span style={{ color: 'white' }}>Expanded by Default</span>}
-                          name={[field.name, 'default_expanded']}
-                          valuePropName="checked"
-                        >
-                          <Switch
-                            data-testid={`accordion-section-${index}-default-expanded`}
-                            onChange={(checked) => {
-                              const mode = (form.getFieldValue('expand_mode') as AccordionExpandMode | undefined) ?? 'single';
-                              if (!checked || mode !== 'single') return;
-                              updateAccordionSections((sections) => sections.map((section, sectionIndex) => ({
-                                ...section,
-                                default_expanded: sectionIndex === index,
-                              })));
-                            }}
-                          />
-                        </Form.Item>
-
-                        <Button
-                          danger
-                          onClick={() => {
-                            remove(field.name);
-                            handleValuesChange();
-                          }}
-                          data-testid={`accordion-section-${index}-remove`}
-                        >
-                          Remove Section
-                        </Button>
-                      </div>
-                    ))}
-
-                    <Button
-                      type="dashed"
-                      onClick={() => {
-                        add({
-                          title: `Section ${fields.length + 1}`,
-                          icon: DEFAULT_SECTION_ICON,
-                          default_expanded: false,
-                          cards: [],
-                        });
-                        handleValuesChange();
-                      }}
-                      data-testid="accordion-section-add"
-                    >
-                      Add Section
-                    </Button>
-                  </Space>
-                )}
-              </Form.List>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Button Background</span>}
+                name="button-background"
+              >
+                <Input placeholder="rgba(0,0,0,0.3)" data-testid="expander-button-background" />
+              </Form.Item>
 
               <Alert
                 title="Nested Cards Configuration"
-                description="Each section can contain child cards in sections[].cards. Add or edit nested cards using YAML for full control."
+                description="Expander child cards are configured in cards[]. Add or edit nested cards using YAML for full control."
                 type="info"
                 showIcon
                 style={{ marginTop: '16px' }}
@@ -2632,7 +2611,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
-          {card.type === 'custom:swiper-card' && (
+          {card.type === 'custom:swipe-card' && (
             <>
               <Form.Item
                 label={<span style={{ color: 'white' }}>Title</span>}
@@ -2999,21 +2978,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
-          {card.type === 'custom:tabs-card' && (
+          {card.type === 'custom:tabbed-card' && (
             <>
-              <Form.Item
-                label={<span style={{ color: 'white' }}>Title</span>}
-                name="title"
-              >
-                <Input placeholder="Tabs title (optional)" />
-              </Form.Item>
-
               <Divider />
               <Text strong style={{ color: 'white' }}>Tabs Behavior</Text>
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Tab Position</span>}
-                name="tab_position"
+                name="_havdm_tab_position"
               >
                 <Select
                   placeholder="Select tab position"
@@ -3029,7 +3001,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Tab Size</span>}
-                name="tab_size"
+                name="_havdm_tab_size"
               >
                 <Select
                   placeholder="Select tab size"
@@ -3044,14 +3016,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Default Active Tab</span>}
-                name="default_tab"
+                name={['options', 'defaultTabIndex']}
               >
                 <InputNumber min={0} style={{ width: '100%' }} data-testid="tabs-default-tab" />
               </Form.Item>
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Animation</span>}
-                name="animation"
+                name="_havdm_animation"
               >
                 <Select
                   placeholder="Select animation"
@@ -3066,10 +3038,69 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Lazy Render</span>}
-                name="lazy_render"
+                name="_havdm_lazy_render"
                 valuePropName="checked"
               >
                 <Switch data-testid="tabs-lazy-render" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Global Attributes</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Stacked Icon + Label</span>}
+                name={['attributes', 'stacked']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="tabs-global-stacked" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Fading Indicator</span>}
+                name={['attributes', 'isFadingIndicator']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="tabs-global-fading-indicator" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Min Width Tabs</span>}
+                name={['attributes', 'minWidth']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="tabs-global-min-width" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Min Width Indicator</span>}
+                name={['attributes', 'isMinWidthIndicator']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="tabs-global-min-width-indicator" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Global Styles</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Primary Color</span>}
+                name={['styles', '--mdc-theme-primary']}
+              >
+                <Input placeholder="e.g., yellow" data-testid="tabs-style-primary" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Inactive Label Color</span>}
+                name={['styles', '--mdc-tab-text-label-color-default']}
+              >
+                <Input placeholder="e.g., rgba(225,225,225,0.8)" data-testid="tabs-style-label-default" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Label Font Size</span>}
+                name={['styles', '--mdc-typography-button-font-size']}
+              >
+                <Input placeholder="e.g., 14px" data-testid="tabs-style-font-size" />
               </Form.Item>
 
               <Divider />
@@ -3093,8 +3124,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                         </Text>
 
                         <Form.Item
-                          label={<span style={{ color: 'white' }}>Title</span>}
-                          name={[field.name, 'title']}
+                          label={<span style={{ color: 'white' }}>Label</span>}
+                          name={[field.name, 'attributes', 'label']}
                         >
                           <Input
                             placeholder={`Tab ${index + 1}`}
@@ -3104,12 +3135,20 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
                         <Form.Item
                           label={<span style={{ color: 'white' }}>Icon</span>}
-                          name={[field.name, 'icon']}
+                          name={[field.name, 'attributes', 'icon']}
                         >
                           <IconSelect
                             placeholder={DEFAULT_TAB_ICON}
                             data-testid={`tabs-tab-${index}-icon`}
                           />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Stacked</span>}
+                          name={[field.name, 'attributes', 'stacked']}
+                          valuePropName="checked"
+                        >
+                          <Switch data-testid={`tabs-tab-${index}-stacked`} />
                         </Form.Item>
 
                         <Form.Item
@@ -3148,15 +3187,17 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
                     <Button
                       type="dashed"
-                      onClick={() => {
-                        updateTabsList((tabs) => [
-                          ...tabs,
-                          {
-                            title: `Tab ${tabs.length + 1}`,
-                            icon: DEFAULT_TAB_ICON,
-                            cards: [],
-                          },
-                        ]);
+                        onClick={() => {
+                          updateTabsList((tabs) => [
+                            ...tabs,
+                            {
+                              attributes: {
+                                label: `Tab ${tabs.length + 1}`,
+                                icon: DEFAULT_TAB_ICON,
+                              },
+                              cards: [],
+                            },
+                          ]);
                       }}
                       data-testid="tabs-tab-add"
                     >
@@ -3168,7 +3209,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
               <Alert
                 title="Nested Cards Configuration"
-                description="Each tab panel can contain child cards in tabs[].cards. Add or edit nested cards using YAML for full control."
+                description="Upstream tabbed-card uses tabs[].card (single). HAVDM supports multiple cards in the editor and exports them as vertical-stack in tabs[].card."
                 type="info"
                 showIcon
                 style={{ marginTop: '16px' }}
@@ -4191,7 +4232,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swiper-card', 'custom:accordion-card', 'custom:tabs-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.
@@ -4366,7 +4407,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     </>
                   )}
 
-                  {card.type !== 'custom:accordion-card' && (
+                  {card.type !== 'custom:expander-card' && (
                     <>
                       <Form.Item
                         label={<span style={{ color: 'white' }}>Background</span>}

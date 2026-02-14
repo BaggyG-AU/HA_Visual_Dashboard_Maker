@@ -1,115 +1,104 @@
 import { describe, expect, it } from 'vitest';
 import type { Card } from '../../src/types/dashboard';
 import {
-  getDefaultExpandedSections,
-  normalizeAccordionConfig,
-  setAllSectionsExpanded,
-  toggleAccordionSection,
-  validateAccordionNestingDepth,
+  getExpanderNestingDepth,
+  normalizeExpanderConfig,
+  validateExpanderNestingDepth,
 } from '../../src/features/accordion/accordionService';
-import type { AccordionCardConfig } from '../../src/features/accordion/types';
+import type { ExpanderCardConfig } from '../../src/features/accordion/types';
 
-const makeCard = (overrides: Partial<AccordionCardConfig> = {}): AccordionCardConfig => ({
-  type: 'custom:accordion-card',
+const makeCard = (overrides: Partial<ExpanderCardConfig> = {}): ExpanderCardConfig => ({
+  type: 'custom:expander-card',
   ...overrides,
 });
 
 describe('accordionService', () => {
-  it('normalizes defaults and section fallbacks', () => {
-    const config = normalizeAccordionConfig(makeCard({ sections: [{}] }));
+  it('normalizes upstream defaults', () => {
+    const config = normalizeExpanderConfig(makeCard({}));
 
-    expect(config.expand_mode).toBe('single');
-    expect(config.style).toBe('bordered');
-    expect(config.content_padding).toBe(12);
-    expect(config.sections[0]).toMatchObject({
-      title: 'Section 1',
-      icon: 'mdi:folder-outline',
-      default_expanded: false,
-    });
+    expect(config.title).toBe('');
+    expect(config.cards).toEqual([]);
+    expect(config.expanded).toBe(false);
+    expect(config.expandedIcon).toBe('mdi:chevron-up');
+    expect(config.collapsedIcon).toBe('mdi:chevron-down');
+    expect(config.gap).toBe('0.6em');
+    expect(config.padding).toBe('0');
+    expect(config.clear).toBe(false);
+    expect(config.overlayMargin).toBe('2em');
+    expect(config.childPadding).toBe('0');
   });
 
-  it('enforces single-expand defaults to one section', () => {
-    const config = normalizeAccordionConfig(makeCard({
-      expand_mode: 'single',
-      sections: [
-        { title: 'One', default_expanded: true },
-        { title: 'Two', default_expanded: true },
+  it('normalizes title-card variant', () => {
+    const titleCard: Card = {
+      type: 'entities',
+      entities: ['light.living_room'],
+    } as unknown as Card;
+
+    const config = normalizeExpanderConfig(makeCard({
+      'title-card': titleCard,
+      'title-card-button-overlay': true,
+      cards: [{ type: 'button', entity: 'switch.tv' } as unknown as Card],
+    }));
+
+    expect(config.title).toBe('');
+    expect(config.titleCard).toEqual(titleCard);
+    expect(config.titleCardButtonOverlay).toBe(true);
+    expect(config.cards).toHaveLength(1);
+  });
+
+  it('keeps explicit upstream values', () => {
+    const config = normalizeExpanderConfig(makeCard({
+      title: 'My Section',
+      expanded: true,
+      gap: '1em',
+      padding: '8px',
+      'expanded-icon': 'mdi:chevron-up',
+      'collapsed-icon': 'mdi:chevron-down',
+      'button-background': 'rgba(0,0,0,0.3)',
+      cards: [
+        { type: 'button', entity: 'light.living_room' } as unknown as Card,
+        { type: 'entities', entities: ['sensor.temperature'] } as unknown as Card,
       ],
     }));
 
-    expect(config.sections.filter((section) => section.default_expanded)).toHaveLength(1);
-    expect(getDefaultExpandedSections(config)).toEqual([0]);
+    expect(config.title).toBe('My Section');
+    expect(config.expanded).toBe(true);
+    expect(config.gap).toBe('1em');
+    expect(config.padding).toBe('8px');
+    expect(config.expandedIcon).toBe('mdi:chevron-up');
+    expect(config.collapsedIcon).toBe('mdi:chevron-down');
+    expect(config.buttonBackground).toBe('rgba(0,0,0,0.3)');
+    expect(config.cards).toHaveLength(2);
   });
 
-  it('allows all sections collapsed in single mode when none are default-expanded', () => {
-    const config = normalizeAccordionConfig(makeCard({
-      expand_mode: 'single',
-      sections: [
-        { title: 'One', default_expanded: false },
-        { title: 'Two', default_expanded: false },
-      ],
-    }));
-
-    expect(getDefaultExpandedSections(config)).toEqual([]);
-  });
-
-  it('supports multi-expand default indexes', () => {
-    const config = normalizeAccordionConfig(makeCard({
-      expand_mode: 'multi',
-      sections: [
-        { title: 'One', default_expanded: true },
-        { title: 'Two', default_expanded: false },
-        { title: 'Three', default_expanded: true },
-      ],
-    }));
-
-    expect(getDefaultExpandedSections(config)).toEqual([0, 2]);
-  });
-
-  it('toggles section expansion by mode', () => {
-    const single = toggleAccordionSection(new Set([0]), 1, 'single');
-    expect([...single]).toEqual([1]);
-
-    const multi = toggleAccordionSection(new Set([0]), 1, 'multi');
-    expect([...multi].sort((a, b) => a - b)).toEqual([0, 1]);
-  });
-
-  it('expands and collapses all sections with mode semantics', () => {
-    expect([...setAllSectionsExpanded(3, true, 'multi')]).toEqual([0, 1, 2]);
-    expect([...setAllSectionsExpanded(3, true, 'single')]).toEqual([0]);
-    expect([...setAllSectionsExpanded(3, false, 'multi')]).toEqual([]);
-  });
-
-  it('validates nesting depth at max 3 levels', () => {
+  it('calculates and validates nesting depth at max 3 levels', () => {
     const level3: Card = {
-      type: 'custom:accordion-card',
-      sections: [{ title: 'Level 3', cards: [] }],
+      type: 'custom:expander-card',
+      cards: [],
     } as unknown as Card;
 
     const level2: Card = {
-      type: 'custom:accordion-card',
-      sections: [{ title: 'Level 2', cards: [level3] }],
+      type: 'custom:expander-card',
+      cards: [level3],
     } as unknown as Card;
 
     const level1: Card = {
-      type: 'custom:accordion-card',
-      sections: [{ title: 'Level 1', cards: [level2] }],
+      type: 'custom:expander-card',
+      cards: [level2],
     } as unknown as Card;
 
     const level4: Card = {
-      type: 'custom:accordion-card',
-      sections: [{
-        title: 'Level 0',
-        cards: [
-          {
-            type: 'custom:accordion-card',
-            sections: [{ title: 'L1', cards: [level1] }],
-          } as unknown as Card,
-        ],
-      }],
+      type: 'custom:expander-card',
+      cards: [
+        {
+          type: 'custom:expander-card',
+          cards: [level1],
+        } as unknown as Card,
+      ],
     } as unknown as Card;
 
-    expect(validateAccordionNestingDepth(level1)).toBe(true);
-    expect(validateAccordionNestingDepth(level4)).toBe(false);
+    expect(getExpanderNestingDepth(level1)).toBe(3);
+    expect(validateExpanderNestingDepth(level1)).toBe(true);
+    expect(validateExpanderNestingDepth(level4)).toBe(false);
   });
 });

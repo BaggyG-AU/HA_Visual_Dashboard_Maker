@@ -1,28 +1,32 @@
 import { test } from '@playwright/test';
 import { close, launchWithDSL } from '../support';
 
-const BASE_YAML = `type: custom:tabs-card
-tab_position: top
-tab_size: default
-default_tab: 0
-animation: none
-lazy_render: false
+const BASE_YAML = `type: custom:tabbed-card
+options:
+  defaultTabIndex: 0
+_havdm_tab_position: top
+_havdm_tab_size: default
+_havdm_animation: none
+_havdm_lazy_render: false
 tabs:
-  - title: "Lights"
-    icon: mdi:lightbulb
-    cards:
-      - type: markdown
-        content: "## Lights"
-  - title: "Climate"
-    icon: mdi:thermometer
-    cards:
-      - type: markdown
-        content: "## Climate"
-  - title: "Media"
-    icon: mdi:play-circle
-    cards:
-      - type: markdown
-        content: "## Media"
+  - attributes:
+      label: "Lights"
+      icon: mdi:lightbulb
+    card:
+      type: markdown
+      content: "## Lights"
+  - attributes:
+      label: "Climate"
+      icon: mdi:thermometer
+    card:
+      type: markdown
+      content: "## Climate"
+  - attributes:
+      label: "Media"
+      icon: mdi:play-circle
+    card:
+      type: markdown
+      content: "## Media"
 `;
 
 test.describe('Tabs Visual Regression', () => {

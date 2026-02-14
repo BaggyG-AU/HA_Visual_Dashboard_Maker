@@ -126,7 +126,7 @@ test.describe('Popup Card', () => {
       await popup.setPopupSize('fullscreen');
       await popup.setCloseOnBackdrop(false);
       await properties.switchTab('YAML');
-      const yamlText = await yamlEditor.getEditorContent();
+      const yamlText = await yamlEditor.getEditorContent('properties');
       expect(yamlText).toContain('type: custom:popup-card');
       expect(yamlText).toContain('size: fullscreen');
       expect(yamlText).toContain('close_on_backdrop: false');

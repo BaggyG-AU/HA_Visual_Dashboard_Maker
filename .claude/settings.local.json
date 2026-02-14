@@ -76,7 +76,15 @@
       "WebFetch(domain:playwright.dev)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:medium.com)",
-      "WebFetch(domain:www.home-assistant.io)"
+      "WebFetch(domain:www.home-assistant.io)",
+      "Bash(git check-ignore:*)",
+      "Bash(git remote get-url:*)",
+      "Bash(gh repo create:*)",
+      "Bash(chmod:*)",
+      "Bash(./tools/backup:*)",
+      "Bash(./tools/restore:*)",
+      "Bash(gh release delete:*)",
+      "WebFetch(domain:community.home-assistant.io)"
     ]
   }
 }

@@ -355,8 +355,8 @@ export class YamlEditorDSL {
   /**
    * Get Monaco editor content via evaluate
    */
-  async getEditorContent(): Promise<string> {
-    const result = await this.getEditorContentWithDiagnostics();
+  async getEditorContent(scopeHint: YamlEditorScope = 'auto'): Promise<string> {
+    const result = await this.getEditorContentWithDiagnostics(undefined, scopeHint);
     return result.value ?? '';
   }
 

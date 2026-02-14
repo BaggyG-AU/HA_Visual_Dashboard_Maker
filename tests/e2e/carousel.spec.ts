@@ -1,36 +1,49 @@
 import { test, expect } from '@playwright/test';
 import { launchWithDSL, close } from '../support';
 
-const BASE_YAML = `type: custom:swiper-card
-pagination:
-  type: bullets
-  clickable: true
-navigation: true
-autoplay:
-  enabled: false
-  delay: 500
-  pause_on_interaction: true
-effect: slide
-slides_per_view: 1
-space_between: 16
-loop: false
-direction: horizontal
-slides:
-  - alignment: center
-    allow_navigation: true
-    cards:
-      - type: markdown
-        content: "Slide One"
-  - alignment: center
-    allow_navigation: true
-    cards:
-      - type: markdown
-        content: "Slide Two"
-  - alignment: center
-    allow_navigation: true
-    cards:
-      - type: markdown
-        content: "Slide Three"
+const BASE_YAML = `type: custom:swipe-card
+start_card: 1
+parameters:
+  pagination:
+    type: bullets
+    clickable: true
+  navigation: true
+  effect: slide
+  slidesPerView: 1
+  spaceBetween: 16
+  loop: false
+  direction: horizontal
+cards:
+  - type: markdown
+    content: "Slide One"
+  - type: markdown
+    content: "Slide Two"
+  - type: markdown
+    content: "Slide Three"
+`;
+
+const AUTOPLAY_YAML = `type: custom:swipe-card
+start_card: 1
+parameters:
+  pagination:
+    type: bullets
+    clickable: true
+  navigation: true
+  autoplay:
+    delay: 500
+    disableOnInteraction: true
+  effect: slide
+  slidesPerView: 1
+  spaceBetween: 16
+  loop: false
+  direction: horizontal
+cards:
+  - type: markdown
+    content: "Slide One"
+  - type: markdown
+    content: "Slide Two"
+  - type: markdown
+    content: "Slide Three"
 `;
 
 test.describe('Carousel (Swiper)', () => {
@@ -43,7 +56,7 @@ test.describe('Carousel (Swiper)', () => {
       await appDSL.waitUntilReady();
       await dashboard.createNew();
 
-      await palette.addCard('custom:swiper-card', testInfo);
+      await palette.addCard('custom:swipe-card', testInfo);
       await canvas.selectCard(0);
       await properties.switchTab('YAML');
       await yamlEditor.setEditorContent(BASE_YAML, 'properties');
@@ -84,10 +97,10 @@ test.describe('Carousel (Swiper)', () => {
       await appDSL.waitUntilReady();
       await dashboard.createNew();
 
-      await palette.addCard('custom:swiper-card', testInfo);
+      await palette.addCard('custom:swipe-card', testInfo);
       await canvas.selectCard(0);
       await properties.switchTab('YAML');
-      await yamlEditor.setEditorContent(BASE_YAML.replace('enabled: false', 'enabled: true'), 'properties');
+      await yamlEditor.setEditorContent(AUTOPLAY_YAML, 'properties');
       await properties.switchTab('Form');
 
       await carousel.expectActiveSlide(0, 0);
@@ -110,7 +123,7 @@ test.describe('Carousel (Swiper)', () => {
       await appDSL.waitUntilReady();
       await dashboard.createNew();
 
-      await palette.addCard('custom:swiper-card', testInfo);
+      await palette.addCard('custom:swipe-card', testInfo);
       await canvas.selectCard(0);
       await properties.switchTab('YAML');
       await yamlEditor.setEditorContent(BASE_YAML, 'properties');
@@ -121,8 +134,9 @@ test.describe('Carousel (Swiper)', () => {
 
       await properties.switchTab('YAML');
       const yamlText = await yamlEditor.getEditorContent();
-      expect(yamlText).toContain('custom:swiper-card');
+      expect(yamlText).toContain('custom:swipe-card');
       expect(yamlText).toContain('type: fraction');
+      expect(yamlText).toContain('parameters:');
     } finally {
       await close(ctx);
     }

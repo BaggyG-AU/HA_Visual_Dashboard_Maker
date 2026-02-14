@@ -1,0 +1,22 @@
+type: custom:swipe-card
+start_card: 2
+reset_after: 30
+parameters:
+  slidesPerView: 2
+  spaceBetween: 20
+  centeredSlides: true
+  loop: true
+  autoplay:
+    delay: 3000
+    disableOnInteraction: true
+  pagination:
+    type: fraction
+  navigation: true
+  effect: coverflow
+cards:
+  - type: button
+    entity: light.room_1
+  - type: button
+    entity: light.room_2
+  - type: button
+    entity: light.room_3

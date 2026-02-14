@@ -1,0 +1,17 @@
+type: custom:tabs-card
+tab_position: top
+tab_size: default
+default_tab: 0
+animation: none
+lazy_render: true
+tabs:
+  - title: Lights
+    icon: mdi:lightbulb
+    badge: "3"
+    count: 5
+    cards:
+      - type: button
+        entity: light.living_room
+      - type: entities
+        entities:
+          - sensor.temperature

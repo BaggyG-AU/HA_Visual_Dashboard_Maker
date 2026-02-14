@@ -218,3 +218,24 @@ Decision policy:
 - Default to safest option (do not merge if unsure).
 
 Never do ad-hoc git operations outside these scripts unless the scripts are missing or broken.
+
+## 10) HACS Card Alignment Rule (MANDATORY)
+
+All custom card types implemented in HAVDM **must** map to a real upstream HACS or base Home Assistant card. HAVDM must not invent card type strings (e.g., `custom:my-invented-card`) that do not exist in the HA/HACS ecosystem.
+
+### Requirements:
+1. **Card type strings** must match the upstream HACS card exactly (e.g., `custom:swipe-card`, `custom:tabbed-card`, `custom:expander-card`).
+2. **YAML structure** must match the upstream card's schema so that exported YAML renders correctly when pasted into a Home Assistant dashboard with the corresponding HACS card installed.
+3. **Import compatibility**: HAVDM must correctly parse YAML from real Home Assistant dashboards using these HACS cards.
+
+### HAVDM-Only Extensions:
+HAVDM may add editor-only properties (e.g., visual editor conveniences, tab positioning, animations) that extend beyond what the upstream card supports. These extensions must:
+- Be clearly documented as HAVDM-only in the schema and property panel.
+- Be **stripped or converted** when exporting YAML for Home Assistant deployment.
+- Never conflict with upstream property names or semantics.
+
+### Exception — `custom:popup-card`:
+`custom:popup-card` is a HAVDM-only feature with no upstream HACS equivalent. It is exempt from the mapping requirement but must be clearly documented as HAVDM-only, and YAML exports must include a warning comment.
+
+### Authoritative Reference:
+See `docs/features/HACS_CARD_ALIGNMENT_REFACTOR_PLAN.md` for the mapping between upstream HACS cards and HAVDM implementations.
