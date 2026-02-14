@@ -1,0 +1,25 @@
+type: custom:tabbed-card
+options:
+  defaultTabIndex: 1
+styles:
+  --mdc-theme-primary: yellow
+attributes:
+  stacked: true
+tabs:
+  - attributes:
+      label: Lights
+      icon: mdi:lightbulb
+    card:
+      type: entities
+      entities:
+        - light.living_room
+  - attributes:
+      label: Climate
+      icon: mdi:thermometer
+    card:
+      type: vertical-stack
+      cards:
+        - type: thermostat
+          entity: climate.living_room
+        - type: sensor
+          entity: sensor.temperature

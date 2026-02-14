@@ -1,0 +1,15 @@
+type: custom:expander-card
+title: Living Room Controls
+expanded: true
+gap: 1em
+padding: 8px
+expanded-icon: mdi:chevron-up
+collapsed-icon: mdi:chevron-down
+button-background: rgba(0,0,0,0.3)
+cards:
+  - type: button
+    entity: light.living_room
+  - type: entities
+    entities:
+      - sensor.temperature
+      - sensor.humidity

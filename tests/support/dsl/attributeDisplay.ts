@@ -8,6 +8,24 @@ export class AttributeDisplayDSL {
     return attribute.replace(/[^a-zA-Z0-9_-]/g, '-');
   }
 
+  private getVisibleSelectDropdown(): Locator {
+    return this.window.locator('.ant-select-dropdown:visible').last();
+  }
+
+  private async openSelectDropdown(select: Locator): Promise<void> {
+    await expect(select).toBeVisible({ timeout: 5000 });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await select.click().catch(() => undefined);
+      const dropdown = this.getVisibleSelectDropdown();
+      const visible = await dropdown.isVisible().catch(() => false);
+      if (visible) return;
+      await this.window.keyboard.press('Escape').catch(() => undefined);
+    }
+
+    await select.click({ force: true });
+    await expect(this.getVisibleSelectDropdown()).toBeVisible({ timeout: 5000 });
+  }
+
   private async waitForSelectOption(label: string): Promise<Locator> {
     const optionPattern = new RegExp(`^${label}$`, 'i');
     await expect.poll(async () => await this.window.locator('.ant-select-dropdown:visible').count(), {
@@ -119,7 +137,7 @@ export class AttributeDisplayDSL {
   async setLayout(layout: 'inline' | 'stacked' | 'table'): Promise<void> {
     const select = this.panel.getByTestId('attribute-display-layout-select');
     await expect(select).toBeVisible();
-    await select.click();
+    await this.openSelectDropdown(select);
     const label = layout[0].toUpperCase() + layout.slice(1);
     const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
@@ -183,7 +201,7 @@ export class AttributeDisplayDSL {
     await this.setFormatType(attribute, 'timestamp');
     const select = this.panel.getByTestId(`attribute-display-format-timestampMode-${this.toTestId(attribute)}`);
     await expect(select).toBeVisible();
-    await select.click();
+    await this.openSelectDropdown(select);
     const label = mode[0].toUpperCase() + mode.slice(1);
     if (await this.clickVisibleSelectOption(label)) {
       await expect(select).toContainText(new RegExp(label, 'i'));
@@ -205,7 +223,7 @@ export class AttributeDisplayDSL {
       return;
     }
 
-    await select.click();
+    await this.openSelectDropdown(select);
     if (await this.clickVisibleSelectOption(label)) {
       await expect(select).toContainText(new RegExp(label, 'i'));
       return;
