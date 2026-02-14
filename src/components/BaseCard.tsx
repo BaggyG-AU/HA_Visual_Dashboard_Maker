@@ -36,6 +36,7 @@ import { SwiperCardRenderer } from './cards/SwiperCardRenderer';
 import { ExpanderCardRenderer } from './cards/ExpanderCardRenderer';
 import { TabsCardRenderer } from './cards/TabsCardRenderer';
 import { PopupTriggerCardRenderer } from './cards/PopupTriggerCardRenderer';
+import { NativeGraphsCardRenderer } from './cards/NativeGraphsCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { evaluateVisibilityConditions } from '../services/conditionalVisibility';
@@ -206,6 +207,9 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
       break;
     case 'custom:apexcharts-card':
       renderedCard = <ApexChartsCardRenderer card={card as React.ComponentProps<typeof ApexChartsCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+      break;
+    case 'custom:native-graph-card':
+      renderedCard = <NativeGraphsCardRenderer card={card as React.ComponentProps<typeof NativeGraphsCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
     case 'custom:power-flow-card-plus':
     case 'custom:power-flow-card':

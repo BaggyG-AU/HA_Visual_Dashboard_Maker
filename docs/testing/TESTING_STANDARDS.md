@@ -276,6 +276,26 @@ non-deterministic in test environment.
 
 **Enforcement**: AI agents that continue past three cycles without pausing violate this standard and the behavior should be reported.
 
+### 12a. AI Fast-Gate Approval Checkpoint (MANDATORY)
+
+For implementation prompts or feature-delivery tasks, AI agents must run **exactly one Fast Gate pass** and then pause for explicit user approval before continuing with any additional fixes or test runs.
+
+Required sequence:
+1. Run one Fast Gate pass using the commands in the Regression Gate Matrix.
+2. Stop and provide a summary report with:
+   - Exact commands executed
+   - Pass/fail status per command
+   - Any failing tests and artifact paths under `test-results/artifacts/**`
+   - Root-cause diagnosis and proposed next step
+3. Ask for user approval to proceed.
+
+Prohibited behavior before approval:
+- Running a second test pass
+- Entering autonomous fix/retest loops
+- Continuing to additional gates (medium/slow) unless explicitly requested
+
+This checkpoint applies even when failures are obvious; the user must be given a review/decision point after the first Fast Gate run.
+
 ---
 
 ## FEATURE DEVELOPMENT – TESTING CHECKLIST (MANDATORY)

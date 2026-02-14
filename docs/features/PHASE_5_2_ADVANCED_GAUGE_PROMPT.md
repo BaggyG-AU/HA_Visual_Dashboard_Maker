@@ -101,3 +101,22 @@ ranges:
 1. Should the advanced gauge replace existing gauge behavior or be a new custom card?
 2. Are range boundaries inclusive on both ends or lower-inclusive/upper-exclusive?
 3. Should unavailable state render last-known value or explicit unavailable UI?
+
+---
+
+## Validation
+
+After implementation, run exactly one **Fast Gate** pass and then stop:
+
+1. `npm run lint`
+2. `npm run test:unit`
+3. `npm run test:e2e -- <targeted-specs-or-folder> --project=electron-e2e --workers=1 --trace=retain-on-failure`
+4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
+
+After this single Fast Gate run, provide a summary report that includes:
+- Exact commands executed
+- Pass/fail status for each command
+- Any failing tests with artifact paths under `test-results/artifacts/**`
+- Root-cause diagnosis and proposed next step
+
+Do not run additional tests or fixes until the user explicitly approves proceeding.

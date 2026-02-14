@@ -2979,6 +2979,203 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
+          {card.type === 'custom:native-graph-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Chart Type</span>}
+                name="chart_type"
+              >
+                <Select
+                  data-testid="native-graph-chart-type"
+                  options={[
+                    { value: 'line', label: 'Line' },
+                    { value: 'bar', label: 'Bar' },
+                    { value: 'area', label: 'Area' },
+                    { value: 'pie', label: 'Pie' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Time Range</span>}
+                name="time_range"
+              >
+                <Select
+                  data-testid="native-graph-time-range"
+                  options={[
+                    { value: '1h', label: '1h' },
+                    { value: '6h', label: '6h' },
+                    { value: '12h', label: '12h' },
+                    { value: '24h', label: '24h' },
+                    { value: '7d', label: '7d' },
+                    { value: '30d', label: '30d' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Refresh Interval</span>}
+                name="refresh_interval"
+              >
+                <Select
+                  data-testid="native-graph-refresh-interval"
+                  options={[
+                    { value: '10s', label: '10s' },
+                    { value: '30s', label: '30s' },
+                    { value: '1m', label: '1m' },
+                    { value: '5m', label: '5m' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>X Axis Mode</span>}
+                name={['x_axis', 'mode']}
+              >
+                <Select
+                  data-testid="native-graph-x-axis-mode"
+                  options={[
+                    { value: 'time', label: 'Time' },
+                    { value: 'category', label: 'Category' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Y Axis Minimum</span>}
+                name={['y_axis', 'min']}
+              >
+                <Input data-testid="native-graph-y-axis-min" placeholder="auto or number" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Y Axis Maximum</span>}
+                name={['y_axis', 'max']}
+              >
+                <Input data-testid="native-graph-y-axis-max" placeholder="auto or number" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Zoom and Pan</span>}
+                name="zoom_pan"
+                valuePropName="checked"
+              >
+                <Switch data-testid="native-graph-zoom-pan" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Series</Text>
+
+              <Form.List name="series">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                          Series {index + 1}
+                        </Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Entity</span>}
+                          name={[field.name, 'entity']}
+                          rules={[{ required: true, message: 'Entity is required' }]}
+                        >
+                          <EntitySelect
+                            placeholder="sensor.example"
+                            filterDomains={['sensor', 'binary_sensor']}
+                            data-testid={`native-graph-series-${index}-entity`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Label</span>}
+                          name={[field.name, 'label']}
+                        >
+                          <Input data-testid={`native-graph-series-${index}-label`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Color</span>}
+                          name={[field.name, 'color']}
+                        >
+                          <Input data-testid={`native-graph-series-${index}-color`} placeholder="#4fa3ff" />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Axis</span>}
+                          name={[field.name, 'axis']}
+                        >
+                          <Select
+                            data-testid={`native-graph-series-${index}-axis`}
+                            options={[
+                              { value: 'left', label: 'Left' },
+                              { value: 'right', label: 'Right' },
+                            ]}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Smooth Line</span>}
+                          name={[field.name, 'smooth']}
+                          valuePropName="checked"
+                        >
+                          <Switch data-testid={`native-graph-series-${index}-smooth`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Stacked</span>}
+                          name={[field.name, 'stack']}
+                          valuePropName="checked"
+                        >
+                          <Switch data-testid={`native-graph-series-${index}-stack`} />
+                        </Form.Item>
+
+                        {fields.length > 1 && (
+                          <Button
+                            danger
+                            onClick={() => {
+                              remove(field.name);
+                              handleValuesChange();
+                            }}
+                            data-testid={`native-graph-series-${index}-remove`}
+                          >
+                            Remove Series
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        add({
+                          entity: '',
+                          label: '',
+                          color: '#4fa3ff',
+                          axis: 'left',
+                          smooth: true,
+                          stack: false,
+                        });
+                        handleValuesChange();
+                      }}
+                      data-testid="native-graph-series-add"
+                    >
+                      Add Series
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+            </>
+          )}
+
           {card.type === 'custom:tabbed-card' && (
             <>
               <Divider />
@@ -4237,7 +4434,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:native-graph-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.

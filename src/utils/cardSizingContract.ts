@@ -142,6 +142,16 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       break;
     }
 
+    case 'custom:native-graph-card': {
+      height = 5;
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 4;
+      maxH = 20;
+      break;
+    }
+
     case 'custom:power-flow-card-plus':
     case 'custom:power-flow-card': {
       // Power flow cards are compact in HA - around 280px total

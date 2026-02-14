@@ -2,7 +2,7 @@
 
 **Branch**: `feature/advanced-visualization-layer`  
 **Version Baseline**: `v0.7.5-beta.0`  
-**Version Range (Feature Delivery)**: `v0.7.5-beta.1` to `v0.7.5-beta.8`  
+**Version Range (Feature Delivery)**: `v0.7.5-beta.1` to `v0.7.5-beta.9`  
 **Dependencies**: Phases 1-4 complete (colors, gradients, animations, layout infrastructure)  
 **Status**: :construction: In Progress (Kickoff)  
 **Planned Start**: 2026-02-14
@@ -17,7 +17,7 @@
 
 **IMPORTANT**: Before implementation, read [ai_rules.md](../../ai_rules.md), [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md), [PLAYWRIGHT_TESTING.md](../testing/PLAYWRIGHT_TESTING.md), and [ARCHITECTURE.md](../architecture/ARCHITECTURE.md).
 
-**Phase Goal**: Deliver production-ready advanced visualization capabilities for Home Assistant dashboards, including native graphs, advanced gauges/sliders, progress rings, sparklines, timeline, calendar, and enhanced weather visualization.
+**Phase Goal**: Deliver production-ready advanced visualization capabilities for Home Assistant dashboards, including native graphs, advanced gauges/sliders, progress rings, sparklines, timeline, calendar, enhanced weather visualization, and ApexCharts advanced integration.
 
 **Business Value**:
 - Enables high-information dashboards with richer visual analysis.
@@ -30,7 +30,13 @@
 - **YAML Contract First**: Every feature requires schema + round-trip coverage.
 - **Accessibility by Default**: Keyboard navigation + ARIA semantics + reduced-motion support.
 - **Deterministic Rendering**: Stable canvas behavior in Electron constraints.
-- **Incremental Releases**: One feature per beta increment (`.1` through `.8`).
+- **Incremental Releases**: One feature per beta increment (`.1` through `.9`).
+
+## Scope Update (New)
+
+- **Date Added**: 2026-02-14
+- **Scope Change**: Added **Feature 5.9 - ApexCharts Advanced Integration** as new Phase 5 scope.
+- **Reason**: Expand advanced charting support for HACS ApexCharts workflows while preserving native graph scope in 5.1.
 
 ---
 
@@ -46,8 +52,9 @@
 | 5.6 Timeline Card | Medium | 4-5 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.6` | `docs/features/PHASE_5_6_TIMELINE_CARD_PROMPT.md` |
 | 5.7 Calendar View Card | High | 5-6 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.7` | `docs/features/PHASE_5_7_CALENDAR_VIEW_PROMPT.md` |
 | 5.8 Weather Forecast Visualization | Medium | 4-5 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.8` | `docs/features/PHASE_5_8_WEATHER_FORECAST_VISUALIZATION_PROMPT.md` |
+| 5.9 ApexCharts Advanced Integration | High | 8-12 days | :hourglass_flowing_sand: New Scope Added | `v0.7.5-beta.9` | `docs/features/PHASE_5_9_APEXCHARTS_ADVANCED_INTEGRATION_PROMPT.md` |
 
-**Total Estimated Effort**: 35-43 days (3-4 weeks with parallelizable tasks and overlap).
+**Total Estimated Effort**: 43-55 days (4-5 weeks with parallelizable tasks and overlap).
 
 ---
 
@@ -559,6 +566,74 @@
 
 ---
 
+## Feature 5.9: ApexCharts Advanced Integration (New Scope)
+
+**Priority**: High  
+**Dependencies**: 5.1 graph learnings + existing ApexCharts renderer path  
+**Estimated Effort**: 8-12 days  
+**Status**: :hourglass_flowing_sand: New Scope Added
+
+### Implementation Checklist
+
+#### Phase 1: Architecture & Contracts
+- [ ] Create `src/features/apexcharts/` normalization/types contracts for editor-facing Apex configuration
+- [ ] Define first-class supported Apex options in form UX vs YAML pass-through-only
+- [ ] Add compatibility rules for preserving unknown advanced Apex config
+
+#### Phase 2: Renderer Hardening
+- [ ] Extend `src/components/cards/ApexChartsCardRenderer.tsx` with deterministic update paths
+- [ ] Add explicit fallback/error rendering for malformed series/config
+- [ ] Ensure preview behavior remains stable during frequent config edits
+
+#### Phase 3: PropertiesPanel Integration
+- [ ] Expand `src/components/PropertiesPanel.tsx` controls for common Apex workflows (graph span, update interval, chart type, series basics)
+- [ ] Keep advanced options available via YAML without destructive normalization
+- [ ] Add user-facing guardrails for unsupported combinations
+
+#### Phase 4: Schema + YAML
+- [ ] Update `src/schemas/ha-dashboard-schema.json` with Apex-related constraints where safe
+- [ ] Preserve full YAML round-trip for `custom:apexcharts-card`
+- [ ] Add import/export edge-case handling tests
+
+#### Phase 5: Testing + Docs
+- [ ] Unit tests for Apex normalization and fallback behavior
+- [ ] E2E tests for editor workflow + YAML round-trip preservation
+- [ ] Visual tests for core Apex preview modes
+- [ ] Documentation updates and migration notes
+
+### Acceptance Criteria
+
+**Must Have**
+- [ ] ApexCharts card remains functional with existing YAML configurations
+- [ ] Expanded form controls map correctly to Apex YAML fields
+- [ ] Unsupported advanced config is preserved without data loss
+- [ ] Deterministic preview updates with no render-loop regressions
+- [ ] Unit + E2E + visual tests pass
+
+**Should Have**
+- [ ] Warning banners for unsupported or high-risk config combinations
+- [ ] Optional helper presets for common Apex configurations
+
+**Won't Have**
+- [ ] Full one-to-one UI coverage for every ApexCharts upstream option
+- [ ] Automated conversion between native graphs and Apex cards in this phase
+
+### Risk Register
+
+| Risk | Impact | Probability | Mitigation |
+|------|--------|-------------|------------|
+| Apex option surface area causes schema drift | High | High | Define MVP form subset and preserve unknown YAML keys |
+| Preview instability under frequent option edits | High | Medium | Immutable update discipline + targeted renderer fallback states |
+| Upstream Apex card changes alter expected config behavior | Medium | Medium | Keep pass-through design and add compatibility validation tests |
+
+### Compliance
+- ✅ [ai_rules.md](../../ai_rules.md)
+- ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md)
+- ✅ [PLAYWRIGHT_TESTING.md](../testing/PLAYWRIGHT_TESTING.md)
+- ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)
+
+---
+
 ## Feature Prompt Linkage and Execution Order
 
 Execution order and feature prompt references:
@@ -570,11 +645,13 @@ Execution order and feature prompt references:
 6. 5.6 Timeline Card → `docs/features/PHASE_5_6_TIMELINE_CARD_PROMPT.md`
 7. 5.7 Calendar View Card → `docs/features/PHASE_5_7_CALENDAR_VIEW_PROMPT.md`
 8. 5.8 Weather Forecast Visualization → `docs/features/PHASE_5_8_WEATHER_FORECAST_VISUALIZATION_PROMPT.md`
+9. 5.9 ApexCharts Advanced Integration → `docs/features/PHASE_5_9_APEXCHARTS_ADVANCED_INTEGRATION_PROMPT.md`
 
 Dependency notes:
 - 5.2, 5.4, 5.5 depend on 5.1 graph primitives.
 - 5.7 depends on timeline/event modeling from 5.6.
 - 5.8 can run parallel to 5.6/5.7 after 5.1.
+- 5.9 depends on existing ApexCharts renderer behavior and should execute after 5.1 baseline stabilization.
 
 ---
 
@@ -661,12 +738,22 @@ Dependency notes:
 - **Labels**: `phase-5`, `weather`, `visualization`
 - **Compliance**: Same phase compliance bundle
 
+### Story 5.9
+- **Title**: Expand ApexCharts advanced integration in editor workflows
+- **User Story**: As a dashboard author, I want stronger ApexCharts editor support so that I can configure advanced graph cards with safer defaults and reliable YAML preservation.
+- **Scope In**: Apex form controls expansion, renderer hardening, schema guardrails, YAML round-trip, tests
+- **Scope Out**: Full UI parity for every upstream Apex option and auto-conversion from native graphs
+- **Dependencies**: Existing Apex renderer path + Feature 5.1 stability baseline
+- **Effort**: L
+- **Labels**: `phase-5`, `apexcharts`, `hacs`, `visualization`, `testing`, `schema`
+- **Compliance**: Same phase compliance bundle
+
 ---
 
 ## Phase Completion Checklist
 
 ### Implementation Complete
-- [ ] All eight features implemented and integrated
+- [ ] All nine features implemented and integrated
 - [ ] All schema additions merged without breaking existing cards
 - [ ] YAML import/export round-trip stable for all 5.x cards
 
@@ -702,6 +789,7 @@ Dependency notes:
 | `v0.7.5-beta.6` | Feature 5.6 Timeline | Timeline card + tests + docs |
 | `v0.7.5-beta.7` | Feature 5.7 Calendar View | Calendar card + tests + docs |
 | `v0.7.5-beta.8` | Feature 5.8 Weather Viz | Weather viz card + tests + docs |
+| `v0.7.5-beta.9` | Feature 5.9 ApexCharts Integration | ApexCharts advanced integration + tests + schema + docs |
 
 Release discipline:
 - One feature release must pass feature-targeted tests before next feature begins.
@@ -714,7 +802,7 @@ Release discipline:
 Pending decisions from phase prompt are tracked and defaulted as follows until changed by user:
 - Performance constraints: prioritize correctness first, add bounded defaults and downsampling now.
 - Card strategy: new custom card types for 5.x (no replacement of existing baseline renderers in this phase).
-- Release cadence: strict one-feature-per-beta (`.1` to `.8`).
+- Release cadence: strict one-feature-per-beta (`.1` to `.9`).
 - Timeline/calendar model: shared normalized event model introduced by 5.6 and reused by 5.7.
 - Weather MVP metrics: temperature, precipitation, wind speed mandatory.
 

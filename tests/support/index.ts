@@ -39,6 +39,7 @@ import { TabsDSL } from './dsl/tabs';
 import { PopupDSL } from './dsl/popup';
 import { LayoutDSL } from './dsl/layout';
 import { SpacingDSL } from './dsl/spacing';
+import { GraphsDSL } from './dsl/graphs';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -83,6 +84,7 @@ export interface TestContext extends electron.ElectronTestContext {
   popup: PopupDSL;
   layout: LayoutDSL;
   spacing: SpacingDSL;
+  graphs: GraphsDSL;
 }
 
 /**
@@ -122,5 +124,6 @@ export async function launchWithDSL(): Promise<TestContext> {
     popup: new PopupDSL(electronCtx.window),
     layout: new LayoutDSL(electronCtx.window),
     spacing: new SpacingDSL(electronCtx.window),
+    graphs: new GraphsDSL(electronCtx.window),
   };
 }

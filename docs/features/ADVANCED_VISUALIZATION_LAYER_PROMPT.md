@@ -32,8 +32,8 @@ Before creating any artifacts, you MUST read and understand the following docume
 **Branch Name**: `feature/advanced-visualization-layer`  
 **Version Baseline**: `v0.7.5-beta.0` (phase kickoff, no feature delivery yet)  
 **Dependencies**: Phases 1-4 foundations available  
-**Estimated Duration**: 3-4 weeks  
-**Total Features**: 8
+**Estimated Duration**: 4-5 weeks  
+**Total Features**: 9
 
 **Versioning Convention**:
 - `v0.7.<phase>-beta.<feature>`
@@ -51,6 +51,7 @@ Before creating any artifacts, you MUST read and understand the following docume
 | 5.6: Timeline Card | Medium | 4-5 days | `PHASE_5_6_TIMELINE_CARD_PROMPT.md` |
 | 5.7: Calendar View Card | High | 5-6 days | `PHASE_5_7_CALENDAR_VIEW_PROMPT.md` |
 | 5.8: Weather Forecast Visualization | Medium | 4-5 days | `PHASE_5_8_WEATHER_FORECAST_VISUALIZATION_PROMPT.md` |
+| 5.9: ApexCharts Advanced Integration | High | 8-12 days | `PHASE_5_9_APEXCHARTS_ADVANCED_INTEGRATION_PROMPT.md` |
 
 ### Technology Decisions
 
@@ -71,7 +72,7 @@ Create `docs/features/ADVANCED_VISUALIZATION_LAYER_IMPLEMENTATION.md`.
 Minimum required sections:
 - Header (branch, version baseline, dependencies, status)
 - Overview (phase goals, business value, key principles)
-- Feature status table (5.1-5.8)
+- Feature status table (5.1-5.9)
 - For each feature:
   - Priority, dependencies, estimated effort, status
   - Implementation checklist by phase (component/service/schema/tests/docs)
@@ -79,7 +80,7 @@ Minimum required sections:
   - Risk register
   - Compliance section (ai rules, testing, architecture)
 - Phase completion checklist
-- Release plan (`v0.7.5-beta.1` to `v0.7.5-beta.8`)
+- Release plan (`v0.7.5-beta.1` to `v0.7.5-beta.9`)
 
 ### 2. Kanban User Stories
 
@@ -139,7 +140,7 @@ Before proceeding with artifact creation, ask these clarifying questions:
 
 1. Should chart-heavy cards prioritize performance constraints for large datasets now, or defer heavy optimization to a follow-up?
 2. Do we want all Phase 5 features as new custom card types, or should some extend existing HA/native renderers?
-3. What release cadence is preferred: strict one-feature-per-beta (`.1` to `.8`) or grouped releases?
+3. What release cadence is preferred: strict one-feature-per-beta (`.1` to `.9`) or grouped releases?
 4. Should timeline/calendar use shared event models in Phase 5, or independent MVP models first?
 5. For weather visualization, which metrics are mandatory in MVP across all providers?
 
@@ -168,3 +169,22 @@ Use the same quality bar and structure for Phase 5 planning and execution artifa
 **Document Created**: 2026-02-14  
 **Purpose**: Prompt for AI to create Phase 5 implementation artifacts  
 **Owner**: Development Team
+
+---
+
+## Validation
+
+After implementation, run exactly one **Fast Gate** pass and then stop:
+
+1. `npm run lint`
+2. `npm run test:unit`
+3. `npm run test:e2e -- <targeted-specs-or-folder> --project=electron-e2e --workers=1 --trace=retain-on-failure`
+4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
+
+After this single Fast Gate run, provide a summary report that includes:
+- Exact commands executed
+- Pass/fail status for each command
+- Any failing tests with artifact paths under `test-results/artifacts/**`
+- Root-cause diagnosis and proposed next step
+
+Do not run additional tests or fixes until the user explicitly approves proceeding.

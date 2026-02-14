@@ -175,6 +175,7 @@
             "vertical-stack",
             "weather-forecast",
             "custom:apexcharts-card",
+            "custom:native-graph-card",
             "custom:auto-entities",
             "custom:button-card",
             "custom:card-mod",
@@ -628,6 +629,76 @@
             { "type": "string", "enum": ["auto"] }
           ],
           "description": "Slides per view"
+        },
+        "chart_type": {
+          "type": "string",
+          "enum": ["line", "bar", "area", "pie"],
+          "description": "Native graph chart mode"
+        },
+        "time_range": {
+          "type": "string",
+          "pattern": "^\\d+(s|m|h|d)$",
+          "description": "Graph time range (e.g. 30m, 24h, 7d)"
+        },
+        "refresh_interval": {
+          "type": "string",
+          "pattern": "^\\d+(s|m|h|d)$",
+          "description": "Graph data refresh interval"
+        },
+        "x_axis": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["time", "category"]
+            }
+          },
+          "additionalProperties": true
+        },
+        "y_axis": {
+          "type": "object",
+          "properties": {
+            "min": {
+              "oneOf": [
+                { "type": "number" },
+                { "type": "string", "enum": ["auto"] }
+              ]
+            },
+            "max": {
+              "oneOf": [
+                { "type": "number" },
+                { "type": "string", "enum": ["auto"] }
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        "series": {
+          "type": "array",
+          "description": "Series configuration for native graph cards",
+          "items": {
+            "type": "object",
+            "properties": {
+              "entity": {
+                "type": "string",
+                "pattern": "^[a-z_]+\\.[a-z0-9_]+$"
+              },
+              "label": { "type": "string" },
+              "color": { "type": "string" },
+              "axis": {
+                "type": "string",
+                "enum": ["left", "right"]
+              },
+              "smooth": { "type": "boolean" },
+              "stack": { "type": "boolean" }
+            },
+            "required": ["entity"],
+            "additionalProperties": true
+          }
+        },
+        "zoom_pan": {
+          "type": "boolean",
+          "description": "Enable brush-based zoom/pan controls for line/area charts"
         },
         "title-card": {
           "$ref": "#/definitions/card",

@@ -72,3 +72,22 @@ stroke_width: 2
 1. Should sparklines be a standalone card or embeddable subcomponent for other cards in this phase?
 2. Is downsampling strategy fixed (largest-triangle/mean) or configurable?
 3. Should missing data points be interpolated or shown as gaps?
+
+---
+
+## Validation
+
+After implementation, run exactly one **Fast Gate** pass and then stop:
+
+1. `npm run lint`
+2. `npm run test:unit`
+3. `npm run test:e2e -- <targeted-specs-or-folder> --project=electron-e2e --workers=1 --trace=retain-on-failure`
+4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
+
+After this single Fast Gate run, provide a summary report that includes:
+- Exact commands executed
+- Pass/fail status for each command
+- Any failing tests with artifact paths under `test-results/artifacts/**`
+- Root-cause diagnosis and proposed next step
+
+Do not run additional tests or fixes until the user explicitly approves proceeding.
