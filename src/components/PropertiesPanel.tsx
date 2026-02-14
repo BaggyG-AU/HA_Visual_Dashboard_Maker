@@ -3355,6 +3355,184 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
+          {card.type === 'custom:slider-button-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect
+                  data-testid="advanced-slider-entity"
+                  placeholder="Select entity"
+                  filterDomains={['input_number', 'number', 'light', 'fan', 'media_player', 'cover']}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Minimum</span>}
+                name="min"
+              >
+                <InputNumber data-testid="advanced-slider-min" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Maximum</span>}
+                name="max"
+              >
+                <InputNumber data-testid="advanced-slider-max" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Step</span>}
+                name="step"
+              >
+                <InputNumber data-testid="advanced-slider-step" style={{ width: '100%' }} min={0.000001} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Precision</span>}
+                name="precision"
+                help={<span style={{ color: '#666' }}>Decimal precision for rounding and labels</span>}
+              >
+                <InputNumber data-testid="advanced-slider-precision" style={{ width: '100%' }} min={0} max={6} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Orientation</span>}
+                name="orientation"
+              >
+                <Select
+                  data-testid="advanced-slider-orientation"
+                  options={[
+                    { value: 'horizontal', label: 'Horizontal' },
+                    { value: 'vertical', label: 'Vertical' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Markers</span>}
+                name="show_markers"
+                valuePropName="checked"
+              >
+                <Switch data-testid="advanced-slider-show-markers" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Value</span>}
+                name="show_value"
+                valuePropName="checked"
+              >
+                <Switch data-testid="advanced-slider-show-value" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Commit on Release</span>}
+                name="commit_on_release"
+                valuePropName="checked"
+                help={<span style={{ color: '#666' }}>When enabled, value commits on pointer/key release only</span>}
+              >
+                <Switch data-testid="advanced-slider-commit-on-release" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Animated Fill Track</span>}
+                name="animate_fill"
+                valuePropName="checked"
+              >
+                <Switch data-testid="advanced-slider-animate-fill" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Zone Coloring</Text>
+
+              <Form.List name="zones">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>Zone {index + 1}</Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>From</span>}
+                          name={[field.name, 'from']}
+                        >
+                          <InputNumber data-testid={`advanced-slider-zone-${index}-from`} style={{ width: '100%' }} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>To</span>}
+                          name={[field.name, 'to']}
+                        >
+                          <InputNumber data-testid={`advanced-slider-zone-${index}-to`} style={{ width: '100%' }} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Label</span>}
+                          name={[field.name, 'label']}
+                        >
+                          <Input data-testid={`advanced-slider-zone-${index}-label`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Color</span>}
+                          name={[field.name, 'color']}
+                        >
+                          <ColorPickerInput
+                            testId={`advanced-slider-zone-${index}-color`}
+                            value={form.getFieldValue(['zones', field.name, 'color']) as string | undefined}
+                            onChange={(nextColor) => {
+                              form.setFieldValue(['zones', field.name, 'color'], nextColor);
+                              handleValuesChange();
+                            }}
+                          />
+                        </Form.Item>
+
+                        {fields.length > 1 && (
+                          <Button
+                            danger
+                            icon={<MinusCircleOutlined />}
+                            onClick={() => {
+                              remove(field.name);
+                              handleValuesChange();
+                            }}
+                            data-testid={`advanced-slider-zone-${index}-remove`}
+                          >
+                            Remove Zone
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      icon={<PlusOutlined />}
+                      onClick={() => {
+                        add({ from: 0, to: 100, color: '#4fa3ff', label: '' });
+                        handleValuesChange();
+                      }}
+                      data-testid="advanced-slider-zone-add"
+                    >
+                      Add Zone
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+
+              {renderHapticConfig('advanced-slider')}
+              {renderSoundConfig('advanced-slider')}
+            </>
+          )}
+
           {card.type === 'custom:tabbed-card' && (
             <>
               <Divider />
@@ -4613,7 +4791,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:native-graph-card', 'custom:gauge-card-pro', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:native-graph-card', 'custom:gauge-card-pro', 'custom:slider-button-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.

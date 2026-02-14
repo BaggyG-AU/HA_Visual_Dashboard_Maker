@@ -177,6 +177,7 @@
             "custom:apexcharts-card",
             "custom:native-graph-card",
             "custom:gauge-card-pro",
+            "custom:slider-button-card",
             "custom:auto-entities",
             "custom:button-card",
             "custom:card-mod",
