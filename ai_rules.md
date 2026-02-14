@@ -65,6 +65,11 @@ AI agents MAY run tests when the execution environment permits it, including:
 - E2E: `npm run test:e2e` (or targeted `npx playwright test ... --project=electron-e2e`)
 - Integration: `npm run test:integration` (or `npx playwright test ... --project=electron-integration`)
 
+Regression gate definitions and trigger rules are normative in:
+- `docs/testing/TESTING_STANDARDS.md` → **Regression Gate Matrix (MANDATORY)**
+
+If the user asks for `fast gate`, `medium gate`, `slow gate`, or `full regression`, execute the corresponding matrix commands from that section.
+
 Rules:
 - Never claim you ran tests unless you actually executed them and have output.
 - After development, the AI may run tests. After **one** test run, the AI MUST pause and:

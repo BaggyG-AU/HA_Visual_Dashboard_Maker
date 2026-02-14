@@ -36,7 +36,7 @@ Feature 4.1 was delivered successfully and establishes the pattern you MUST foll
 | **Service** | `src/features/carousel/carouselService.ts` |
 | **Feature component** | `src/features/carousel/SwiperCarousel.tsx` |
 | **Card renderer** | `src/components/cards/SwiperCardRenderer.tsx` |
-| **Card registry entry** | `src/services/cardRegistry.ts` (search `custom:swiper-card`) |
+| **Card registry entry** | `src/services/cardRegistry.ts` (search `custom:swipe-card`) |
 | **BaseCard dispatch** | `src/components/BaseCard.tsx` (search `swiper-card`) |
 | **DSL** | `tests/support/dsl/carousel.ts` |
 | **DSL registration** | `tests/support/index.ts` |
@@ -94,10 +94,10 @@ Follow the same structure, naming conventions, and integration points exactly.
 
 ### YAML Schema
 
-Register as `custom:accordion-card` in the card registry. Example YAML:
+Register as `custom:expander-card` in the card registry. Example YAML:
 
 ```yaml
-type: custom:accordion-card
+type: custom:expander-card
 expand_mode: single
 style: bordered
 sections:
@@ -129,7 +129,7 @@ Follow the existing pattern in `src/services/cardRegistry.ts`:
 
 ```typescript
 {
-  type: 'custom:accordion-card',
+  type: 'custom:expander-card',
   name: 'Accordion',
   category: 'layout',
   icon: 'MenuFoldOutlined',  // or appropriate Ant Design icon

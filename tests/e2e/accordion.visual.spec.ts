@@ -28,8 +28,10 @@ test.describe('Accordion Visual Regression', () => {
       await yamlEditor.setEditorContent(BASE_YAML, 'properties');
       await properties.switchTab('Form');
 
+      await accordion.expectExpanded(0);
       await accordion.expectCardScreenshot('accordion-bordered-expanded.png', 0);
       await accordion.toggleExpanded(0);
+      await accordion.expectCollapsed(0);
       await accordion.expectCardScreenshot('accordion-bordered-collapsed.png', 0);
     } finally {
       await close(ctx);

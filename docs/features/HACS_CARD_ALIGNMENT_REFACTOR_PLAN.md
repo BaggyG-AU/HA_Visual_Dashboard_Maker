@@ -1,8 +1,15 @@
 # HACS Card Alignment Refactor Plan
 
 **Branch**: `refactor/hacs-card-alignment`
-**Status**: Planning
+**Status**: In Progress (R2/R3/R4 aligned; popup alignment research active)
 **Created**: 2026-02-11
+
+---
+
+## Current Tracking Note (2026-02-14)
+
+- Carousel, accordion, and tabs naming/schema alignment work has been implemented in product code (`custom:swipe-card`, `custom:expander-card`, `custom:tabbed-card`) with legacy migration support.
+- Popup is not fully complete from an alignment perspective. The current `custom:popup-card` implementation remains HAVDM-specific while HACS alignment options are being researched.
 
 ---
 
@@ -23,9 +30,9 @@ Align all HAVDM custom card implementations with real upstream HACS card YAML sc
 
 ## Research Findings: Upstream HACS Cards vs. HAVDM Implementations
 
-### 1. Carousel/Swiper
+### 1. Carousel/Swiper (Historical Pre-Alignment Snapshot)
 
-| Aspect | Upstream: `custom:swipe-card` (bramkragten) | HAVDM: `custom:swiper-card` |
+| Aspect | Upstream: `custom:swipe-card` (bramkragten) | HAVDM Legacy (pre-refactor): `custom:swiper-card` |
 |--------|----------------------------------------------|------------------------------|
 | Card type string | `custom:swipe-card` | `custom:swiper-card` |
 | Parameter naming | camelCase (Swiper.js native) in `parameters` object | snake_case flat top-level properties |
@@ -64,9 +71,9 @@ cards:
       - sensor.temperature
 ```
 
-### 2. Accordion/Expander
+### 2. Accordion/Expander (Historical Pre-Alignment Snapshot)
 
-| Aspect | Upstream: `custom:expander-card` (Alia5) | HAVDM: `custom:accordion-card` |
+| Aspect | Upstream: `custom:expander-card` (Alia5) | HAVDM Legacy (pre-refactor): `custom:accordion-card` |
 |--------|-------------------------------------------|--------------------------------|
 | Card type string | `custom:expander-card` | `custom:accordion-card` |
 | Structure | Single expandable section with `title` + `cards` | Multi-section via `sections[]` array |
@@ -107,9 +114,9 @@ cards:
 - `expander-card` supports `title-card` (render any HA card as the header), HAVDM only supports a string title.
 - `expander-card` has `title-card-button-overlay` to overlay the expand button on the title card.
 
-### 3. Tabs
+### 3. Tabs (Historical Pre-Alignment Snapshot)
 
-| Aspect | Upstream: `custom:tabbed-card` (kinghat) | HAVDM: `custom:tabs-card` |
+| Aspect | Upstream: `custom:tabbed-card` (kinghat) | HAVDM Legacy (pre-refactor): `custom:tabs-card` |
 |--------|-------------------------------------------|----------------------------|
 | Card type string | `custom:tabbed-card` | `custom:tabs-card` |
 | Tab content | `tabs[].card` (single card per tab) | `tabs[].cards[]` (array of cards per tab) |

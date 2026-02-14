@@ -64,12 +64,12 @@ You are an AI assistant implementing **Feature 4.1: Swiper.js Integration (Carou
   - `carouselService.ts` (configuration + parsing)
   - `types.ts` (TypeScript types)
 - Add renderer in `src/components/cards/SwiperCardRenderer.tsx`
-- Register card in `cardRegistry.ts` as `custom:swiper-card`
+- Register card in `cardRegistry.ts` as `custom:swipe-card`
 
 ### YAML Example
 
 ```yaml
-type: custom:swiper-card
+type: custom:swipe-card
 pagination:
   type: bullets
   clickable: true

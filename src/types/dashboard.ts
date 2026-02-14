@@ -7,6 +7,7 @@ import type { SoundCardConfig } from './sounds';
 import type { AttributeDisplayItem, AttributeDisplayLayout } from './attributeDisplay';
 import type { StateIconsMap } from './stateIcons';
 import type { AggregateFunction, BatchActionConfig, MultiEntityMode } from './multiEntity';
+import type { CardSpacingValue } from './spacing';
 
 // Layout-card view_layout configuration
 export interface ViewLayout {
@@ -46,6 +47,8 @@ export interface BaseCard {
   hold_action?: Action;
   double_tap_action?: Action;
   view_layout?: ViewLayout; // Layout-card positioning
+  card_margin?: CardSpacingValue;
+  card_padding?: CardSpacingValue;
 }
 
 // Spacer card for layout purposes (internal use only, not exported to YAML)

@@ -702,6 +702,37 @@ All tests run automatically on:
 - Before merge to main
 - Nightly builds (full regression suite)
 
+### Regression Gate Matrix (MANDATORY)
+
+Use this matrix to decide which test gate to run and to standardize AI-agent execution.  
+If the user asks for a gate by name (`fast gate`, `medium gate`, `slow gate`), run the commands exactly as listed.
+
+| Gate | Purpose | Typical Trigger | Required Commands |
+|------|---------|------------------|-------------------|
+| **Fast Gate** | PR-speed confidence on changed behavior | Every feature/fix commit before handoff | `npm run lint`<br>`npm run test:unit`<br>`npm run test:e2e -- <targeted-specs-or-folder> --project=electron-e2e --workers=1 --trace=retain-on-failure` (targeted only)<br>`npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if impacted) |
+| **Medium Gate** | Pre-merge/domain confidence | Before merge to main, or when blast radius crosses feature boundary | `./tools/checks`<br>`npm run test:e2e -- <affected-domain-globs> --project=electron-e2e --workers=1 --trace=retain-on-failure`<br>`npm run test:integration -- <affected-domain-globs> --project=electron-integration --workers=1 --trace=retain-on-failure` |
+| **Slow Gate** | Full regression confidence | Nightly, release candidate, phase completion, or high-risk shared change | `./tools/checks`<br>`npm test -- --workers=1 --trace=retain-on-failure` |
+
+#### Trigger Rules
+
+1. **Default per feature/bugfix**: run **Fast Gate**.
+2. **Shared DSL change in `tests/support/dsl/**`**:
+   - Run all consuming specs (see Rules 20/20a).
+   - If consuming spec count is greater than 5, escalate to **Slow Gate**.
+3. **Cross-cutting product code changes** (for example `src/components/PropertiesPanel.tsx`, shared card renderers, YAML conversion/services, schema changes):
+   - Minimum **Medium Gate**.
+4. **Major phase/release completion**:
+   - Run **Slow Gate** once all targeted fixes are green.
+5. **Flake stabilization claims**:
+   - Must satisfy Rule 18 (targeted run + 5x loop + full-suite pass).
+
+#### Command Request Shortcuts (for user prompts)
+
+When asked:
+- “Run **fast gate**” → execute Fast Gate commands.
+- “Run **medium gate**” → execute Medium Gate commands.
+- “Run **slow gate**” or “Run **full regression**” → execute Slow Gate commands.
+
 **CI Pipeline**:
 1. Lint (ESLint + Prettier)
 2. Unit tests (Jest + Vitest)

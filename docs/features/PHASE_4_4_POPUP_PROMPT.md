@@ -63,7 +63,7 @@ Follow the same structure, naming conventions, and integration points used by de
 **Version Target**: `v0.7.4-beta.5`
 **Dependencies**: None
 **Estimated Effort**: 5-6 days
-**Status**: Delivered (tracking baseline captured in `LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`)
+**Status**: Partially Complete (HAVDM baseline delivered; HACS alignment under active research, see `LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`)
 
 ### Key Requirements
 

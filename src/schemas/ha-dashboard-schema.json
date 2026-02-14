@@ -470,6 +470,62 @@
           "enum": ["nowrap", "wrap", "wrap-reverse"],
           "description": "Wrapping behavior for horizontal-stack cards"
         },
+        "card_margin": {
+          "description": "HAVDM: Per-card margin control",
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 64
+            },
+            {
+              "type": "string",
+              "enum": ["none", "tight", "normal", "relaxed", "spacious", "custom"]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*\\d+(?:\\.\\d+)?(?:px)?(?:\\s+\\d+(?:\\.\\d+)?(?:px)?){0,3}\\s*$"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "top": { "type": "number", "minimum": 0, "maximum": 64 },
+                "right": { "type": "number", "minimum": 0, "maximum": 64 },
+                "bottom": { "type": "number", "minimum": 0, "maximum": 64 },
+                "left": { "type": "number", "minimum": 0, "maximum": 64 }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "card_padding": {
+          "description": "HAVDM: Per-card padding control",
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 64
+            },
+            {
+              "type": "string",
+              "enum": ["none", "tight", "normal", "relaxed", "spacious", "custom"]
+            },
+            {
+              "type": "string",
+              "pattern": "^\\s*\\d+(?:\\.\\d+)?(?:px)?(?:\\s+\\d+(?:\\.\\d+)?(?:px)?){0,3}\\s*$"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "top": { "type": "number", "minimum": 0, "maximum": 64 },
+                "right": { "type": "number", "minimum": 0, "maximum": 64 },
+                "bottom": { "type": "number", "minimum": 0, "maximum": 64 },
+                "left": { "type": "number", "minimum": 0, "maximum": 64 }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
         "slides": {
           "type": "array",
           "description": "Slides for Swiper carousel cards",

@@ -38,6 +38,7 @@ import { AccordionDSL } from './dsl/accordion';
 import { TabsDSL } from './dsl/tabs';
 import { PopupDSL } from './dsl/popup';
 import { LayoutDSL } from './dsl/layout';
+import { SpacingDSL } from './dsl/spacing';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -81,6 +82,7 @@ export interface TestContext extends electron.ElectronTestContext {
   tabs: TabsDSL;
   popup: PopupDSL;
   layout: LayoutDSL;
+  spacing: SpacingDSL;
 }
 
 /**
@@ -119,5 +121,6 @@ export async function launchWithDSL(): Promise<TestContext> {
     tabs: new TabsDSL(electronCtx.window),
     popup: new PopupDSL(electronCtx.window),
     layout: new LayoutDSL(electronCtx.window),
+    spacing: new SpacingDSL(electronCtx.window),
   };
 }
