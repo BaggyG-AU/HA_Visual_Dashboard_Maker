@@ -1,9 +1,9 @@
 # Layout Infrastructure Layer - Implementation Plan
 
 **Branch**: `feature/layout-infrastructure-layer`
-**Version Target**: v0.7.4-beta.5
+**Version Target**: v0.7.4 complete; Phase 5 kickoff baseline v0.7.5-beta.0
 **Dependencies**: None (independent phase)
-**Status**: :construction: In Progress
+**Status**: :white_check_mark: Complete (Phase 4 delivered)
 **Planned Start**: 2026-02-10
 
 **Versioning Convention**:
@@ -35,10 +35,10 @@
 
 | Feature | Priority | Effort | Status |
 |---------|----------|--------|--------|
-| 4.1: Swiper.js Integration | High | 5-6 days | :construction: Implemented (documentation sync pending) |
+| 4.1: Swiper.js Integration | High | 5-6 days | :white_check_mark: Complete (v0.7.4-beta.2 baseline) |
 | 4.2: Accordion Card Module | Medium | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.2) |
 | 4.3: Tabs Card Module | Medium | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.3) |
-| 4.4: Popup/Modal Card System | High | 5-6 days | :warning: Partially Complete (HAVDM popup shipped; HACS alignment in research) |
+| 4.4: Popup/Modal Card System | High | 5-6 days | :white_check_mark: Complete (v0.7.4-beta.5 baseline; HACS follow-ups deferred) |
 | 4.5: Horizontal/Vertical Layout Enhancements | Medium | 2-3 days | :white_check_mark: Complete (implementation/tests complete; docs follow-ups open) |
 | 4.6: Card Spacing Controls | Medium | 2-3 days | :white_check_mark: Complete (v0.7.4-beta.R) |
 
@@ -645,12 +645,12 @@ This feature MUST comply with:
 **Priority**: High
 **Dependencies**: None
 **Estimated Effort**: 5-6 days
-**Status**: :warning: Partially Complete (v0.7.4-beta.5 baseline shipped; HACS alignment pending)
+**Status**: :white_check_mark: Complete (v0.7.4-beta.5 baseline shipped; HACS follow-ups deferred)
 
 ### Tracking Note (2026-02-14)
 
-Popup baseline behavior is implemented and regression-tested in HAVDM, but this feature is not considered fully complete.
-The team is actively researching HACS-aligned options for popup behavior/modeling before declaring Feature 4.4 complete.
+Popup baseline behavior is implemented and regression-tested in HAVDM.
+HACS alignment refinements remain tracked as deferred follow-up work and are non-blocking for Phase 4 completion.
 
 ### Delivery Baseline (v0.7.4-beta.5)
 
@@ -1286,7 +1286,7 @@ This phase provides foundation for:
 
 ---
 
-**Document Status**: :construction: In Progress (4.1-4.3 complete, 4.4 partial pending HACS alignment, 4.5 complete, 4.6 complete)
+**Document Status**: :white_check_mark: Complete (Phase 4 delivered; deferred HACS follow-ups tracked)
 **Last Updated**: February 14, 2026
-**Next Review**: Before starting Feature 4.6 implementation
+**Next Review**: Before Phase 5 release candidate planning
 **Owner**: Development Team

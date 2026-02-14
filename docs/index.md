@@ -12,7 +12,7 @@ Use this page to navigate project docs. Follow the storage standards in `ai_rule
   - Mandatory standards: `TESTING_STANDARDS.md`
 - **Releases**: `docs/releases/`
   - Release process: `RELEASES.md`
-  - Latest notes: `RELEASE_NOTES_v0.4.0-beta.1.md`
+  - Latest notes: `RELEASE_NOTES_v0.7.5-beta.0.md`
   - Previous: `RELEASE_NOTES_v0.2.0-beta.2.md`, `RELEASE_NOTES_v0.2.0-beta.1.md`
   - Older notes archived under `docs/archive/releases/`
 - **Product**: `docs/product/`
