@@ -437,6 +437,32 @@ class CardRegistry {
         requiredProps: ['series'],
       },
       {
+        type: 'custom:gauge-card-pro',
+        name: 'Gauge Card Pro',
+        category: 'custom',
+        icon: 'DashboardOutlined',
+        description: 'HACS Gauge Card Pro with segments, gradient, and needle modes',
+        isCustom: true,
+        source: 'hacs',
+        defaultProps: {
+          entity: 'sensor.example_temperature',
+          header: 'Gauge Card Pro',
+          min: 0,
+          max: 100,
+          needle: false,
+          gradient: false,
+          segments: [
+            { from: 0, color: '#ff6b6b', label: 'Low' },
+            { from: 30, color: '#ffd166', label: 'Medium' },
+            { from: 70, color: '#6ccf7f', label: 'High' },
+          ],
+          value_texts: {
+            primary_unit: '%',
+          },
+        },
+        requiredProps: ['entity'],
+      },
+      {
         type: 'custom:button-card',
         name: 'Button Card',
         category: 'custom',

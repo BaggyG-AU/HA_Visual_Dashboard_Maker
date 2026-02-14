@@ -37,6 +37,7 @@ import { ExpanderCardRenderer } from './cards/ExpanderCardRenderer';
 import { TabsCardRenderer } from './cards/TabsCardRenderer';
 import { PopupTriggerCardRenderer } from './cards/PopupTriggerCardRenderer';
 import { NativeGraphsCardRenderer } from './cards/NativeGraphsCardRenderer';
+import { GaugeCardProCardRenderer } from './cards/GaugeCardProCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { evaluateVisibilityConditions } from '../services/conditionalVisibility';
@@ -210,6 +211,9 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
       break;
     case 'custom:native-graph-card':
       renderedCard = <NativeGraphsCardRenderer card={card as React.ComponentProps<typeof NativeGraphsCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+      break;
+    case 'custom:gauge-card-pro':
+      renderedCard = <GaugeCardProCardRenderer card={card as React.ComponentProps<typeof GaugeCardProCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
     case 'custom:power-flow-card-plus':
     case 'custom:power-flow-card':

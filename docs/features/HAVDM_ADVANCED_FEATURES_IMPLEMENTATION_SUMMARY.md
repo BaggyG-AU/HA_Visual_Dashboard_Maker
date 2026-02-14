@@ -52,6 +52,14 @@
 - **i18n**: Phase-based (English in Phase 1, translations later)
 - **Backward Compatibility**: Progressive enhancement + auto-mapping + graceful degradation
 
+### Upstream Card Alignment Gate (Mandatory for 5.x and Later)
+
+For Phase 5+ implementation and prompt artifacts:
+- Review relevant upstream base HA/HACS card implementations before coding
+- Confirm real upstream `type` mapping and YAML contract parity
+- If unmapped, document feasibility analysis (alternative upstream card, effort/risk, and now-vs-new-feature recommendation)
+- Do not introduce invented custom card type strings unless explicitly exempted in `ai_rules.md`
+
 ---
 
 ## Phase Breakdown

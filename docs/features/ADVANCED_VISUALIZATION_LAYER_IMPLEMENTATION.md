@@ -32,6 +32,19 @@
 - **Deterministic Rendering**: Stable canvas behavior in Electron constraints.
 - **Incremental Releases**: One feature per beta increment (`.1` through `.9`).
 
+## Upstream Alignment Gate (Mandatory for 5.x and Later)
+
+Before implementation starts for any Phase 5+ feature, complete an upstream-alignment review:
+
+1. Review the relevant upstream card implementation/docs (base Home Assistant and/or HACS).
+2. Confirm whether the proposed card maps to a real upstream card type and YAML contract (`ai_rules.md` Rule 10).
+3. If it does not map directly, perform and document a feasibility assessment:
+   - Best upstream alternative card(s) and exact `type` strings
+   - YAML schema and round-trip compatibility impact
+   - Refactor effort and risk (scope estimate)
+   - Recommendation: refactor now in current feature vs schedule as a new feature (e.g., `5.10`)
+4. Do not ship invented custom card type strings unless explicitly allowed by an exception in `ai_rules.md`.
+
 ## Scope Update (New)
 
 - **Date Added**: 2026-02-14
@@ -134,62 +147,61 @@
 ## Feature 5.2: Advanced Gauge Card
 
 **Priority**: High  
-**Dependencies**: 5.1 + gradients/animations  
+**Dependencies**: 5.1 + HACS alignment gate  
 **Estimated Effort**: 5-6 days  
 **Status**: :hourglass_flowing_sand: Ready to Begin
 
 ### Implementation Checklist
 
-#### Phase 1: Types & Service
+#### Phase 1: Upstream Mapping + Types & Service
+- [ ] Confirm upstream mapping for built-in `gauge` and HACS `custom:gauge-card-pro`
 - [ ] Create `src/features/gauge/types.ts`
 - [ ] Create `src/features/gauge/gaugeService.ts`
-- [ ] Add range/threshold normalization logic
+- [ ] Add segment/threshold normalization logic for Gauge Card Pro
 
 #### Phase 2: Renderer
-- [ ] Create `src/features/gauge/AdvancedGaugeCard.tsx`
-- [ ] Create `src/components/cards/AdvancedGaugeCardRenderer.tsx`
-- [ ] Register card + BaseCard wiring
+- [ ] Create `src/features/gauge/GaugeCardProCard.tsx`
+- [ ] Create `src/components/cards/GaugeCardProCardRenderer.tsx`
+- [ ] Register `custom:gauge-card-pro` + BaseCard wiring
 
 #### Phase 3: PropertiesPanel
-- [ ] Add circular/linear mode controls
-- [ ] Add threshold/range editor
-- [ ] Add gradient/animation controls
+- [ ] Enhance built-in `gauge` controls (min/max/unit/needle/severity)
+- [ ] Add basic Gauge Card Pro controls (header/segments/gradient/needle/unit text)
 
 #### Phase 4: Schema & YAML
-- [ ] Add gauge schema support
-- [ ] Add YAML parser/serializer support
-- [ ] Add round-trip test cases
+- [ ] Add `custom:gauge-card-pro` schema support
+- [ ] Verify YAML parser/serializer support
+- [ ] Add round-trip test cases for built-in gauge + Gauge Card Pro
 
 #### Phase 5: Testing & Docs
-- [ ] Unit tests for value/range normalization
-- [ ] E2E tests for configuration + runtime updates
-- [ ] Visual snapshots for circular/linear states
+- [ ] Unit tests for value/segment normalization
+- [ ] E2E tests for built-in gauge + Gauge Card Pro configuration/runtime updates
+- [ ] Visual snapshots for Gauge Card Pro threshold/needle states
 - [ ] Accessibility validation + docs
 
 ### Acceptance Criteria
 
 **Must Have**
-- [ ] Circular and linear modes functional
-- [ ] Threshold/range colors apply correctly
-- [ ] Animation respects reduced-motion
-- [ ] YAML round-trip is stable
+- [ ] Built-in `gauge` workflow remains stable with richer controls
+- [ ] Basic `custom:gauge-card-pro` compatibility works and round-trips YAML
+- [ ] Segment/threshold colors apply correctly
 - [ ] Tests pass
 
 **Should Have**
-- [ ] Configurable needle and progress animation styles
-- [ ] Custom unavailable state display
+- [ ] Shared UX patterns between built-in gauge and Gauge Card Pro sections
+- [ ] Clear unsupported-option messaging for deferred Gauge Card Pro fields
 
 **Won't Have**
-- [ ] 3D gauge effects
-- [ ] Historical trend overlays inside gauge
+- [ ] Full Gauge Card Pro parity (defer to Feature 5.10)
+- [ ] 3D gauge effects or historical overlays inside gauge
 
 ### Risk Register
 
 | Risk | Impact | Probability | Mitigation |
 |------|--------|-------------|------------|
 | Range interpretation ambiguity | Medium | Medium | Lock inclusive/exclusive behavior in service tests |
-| Visual regressions across gauge modes | Medium | Medium | Snapshot matrix by mode/range state |
-| Conflicts with existing gauge renderer | Medium | Low | Isolate under new card type and migration notes |
+| Gauge Card Pro option surface area expands scope | High | Medium | Keep 5.2 basic compatibility and plan full parity as 5.10 |
+| Conflicts with existing gauge renderer | Medium | Low | Keep built-in `gauge` path intact and separate from Gauge Card Pro renderer |
 
 ### Compliance
 - ✅ [ai_rules.md](../../ai_rules.md)
@@ -669,11 +681,11 @@ Dependency notes:
 - **Compliance**: `ai_rules.md`, `TESTING_STANDARDS.md`, `PLAYWRIGHT_TESTING.md`, `ARCHITECTURE.md`
 
 ### Story 5.2
-- **Title**: Deliver advanced gauge card with threshold ranges and gradients
-- **User Story**: As a user, I want expressive gauge options so that I can monitor values with clearer visual thresholds.
-- **Scope In**: Circular/linear gauge, ranges, gradients, YAML, tests
-- **Scope Out**: 3D/advanced trend overlays
-- **Dependencies**: 5.1
+- **Title**: Align gauge workflows with built-in gauge and basic Gauge Card Pro compatibility
+- **User Story**: As a user, I want gauge enhancements that map to real HA/HACS cards so YAML exports deploy cleanly.
+- **Scope In**: Built-in `gauge` enhancements, basic `custom:gauge-card-pro` compatibility, YAML/tests
+- **Scope Out**: Full Gauge Card Pro parity (defer to `5.10`)
+- **Dependencies**: 5.1 + HACS alignment gate
 - **Effort**: L
 - **Labels**: `phase-5`, `gauge`, `visualization`, `accessibility`
 - **Compliance**: Same phase compliance bundle
@@ -773,6 +785,7 @@ Dependency notes:
 - [ ] `TESTING_STANDARDS.md` requirements met
 - [ ] `PLAYWRIGHT_TESTING.md` runbook and stability patterns met
 - [ ] `ARCHITECTURE.md` organization patterns met
+- [ ] Upstream Alignment Gate completed and documented for each 5.x+ feature (mapping or feasibility assessment)
 
 ---
 

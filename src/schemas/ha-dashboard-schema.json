@@ -176,6 +176,7 @@
             "weather-forecast",
             "custom:apexcharts-card",
             "custom:native-graph-card",
+            "custom:gauge-card-pro",
             "custom:auto-entities",
             "custom:button-card",
             "custom:card-mod",

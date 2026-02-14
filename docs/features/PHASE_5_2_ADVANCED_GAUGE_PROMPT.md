@@ -20,6 +20,21 @@ You are an AI assistant implementing **Feature 5.2: Advanced Gauge Card** for HA
 
 ---
 
+## Mandatory Upstream Alignment Gate (HACS/HA Mapping)
+
+Before implementation, complete this gate and include results in your response:
+
+1. Review the relevant upstream card implementation/docs (Home Assistant built-in docs and/or HACS repo) for the target card behavior.
+2. Confirm whether the proposed card type maps to a real upstream base HA card or HACS card, per `ai_rules.md` Rule 10.
+3. If no direct upstream mapping exists, perform a feasibility assessment that includes:
+   - Best alternative upstream card option(s) (exact `type` strings)
+   - YAML schema/round-trip compatibility impact
+   - Estimated refactor effort (scope + risk)
+   - Recommendation: do refactor in the current feature or schedule it as a new feature in the relevant phase (e.g., `5.10`)
+4. Do not implement invented custom card types unless covered by an explicit exception in `ai_rules.md`.
+
+---
+
 ## Reference Implementations
 
 - `src/components/cards/GaugeCardRenderer.tsx`
@@ -32,22 +47,20 @@ You are an AI assistant implementing **Feature 5.2: Advanced Gauge Card** for HA
 
 ## Feature 5.2 Overview
 
-**Goal**: Implement an advanced gauge card supporting circular and linear modes, threshold ranges, gradients, and animated value transitions.
+**Goal**: Align gauge improvements to upstream cards by enhancing built-in `gauge` workflows and adding basic compatibility for HACS `custom:gauge-card-pro`.
 
 **Branch**: `feature/advanced-visualization-layer`
 **Version Target**: `v0.7.5-beta.2`
-**Dependencies**: Feature 5.1 + gradients/animations from prior phases
+**Dependencies**: Feature 5.1 + HACS alignment requirements
 **Estimated Effort**: 5-6 days
 **Status**: Ready to Begin
 
 ### Key Requirements
 
-- Circular and linear gauge layouts
-- Threshold/range segments with color and labels
-- Gradient fill support
-- Needle/progress animation with reduced-motion fallback
-- Min/max/unit/value formatting controls
-- YAML round-trip + schema support
+- Built-in `gauge` support with richer editor controls (min/max/unit/needle/severity)
+- Basic HACS `custom:gauge-card-pro` compatibility (entity, header, min/max, needle, gradient, segments, unit text)
+- YAML round-trip + schema support for both card types
+- No invented custom card types for this feature
 
 ---
 
@@ -57,8 +70,8 @@ You are an AI assistant implementing **Feature 5.2: Advanced Gauge Card** for HA
 |---------|------|
 | Types | `src/features/gauge/types.ts` |
 | Service | `src/features/gauge/gaugeService.ts` |
-| Component | `src/features/gauge/AdvancedGaugeCard.tsx` |
-| Renderer | `src/components/cards/AdvancedGaugeCardRenderer.tsx` |
+| Component | `src/features/gauge/GaugeCardProCard.tsx` |
+| Renderer | `src/components/cards/GaugeCardProCardRenderer.tsx` |
 | Registry + BaseCard | `src/services/cardRegistry.ts`, `src/components/BaseCard.tsx` |
 | PropertiesPanel | `src/components/PropertiesPanel.tsx` |
 | Schema | `src/schemas/ha-dashboard-schema.json` |
@@ -66,41 +79,43 @@ You are an AI assistant implementing **Feature 5.2: Advanced Gauge Card** for HA
 ### YAML Example
 
 ```yaml
-type: custom:advanced-gauge-card
+type: custom:gauge-card-pro
 entity: sensor.water_tank_level
-mode: circular
+header: Water Tank
 min: 0
 max: 100
-unit: "%"
-animation: smooth
-ranges:
+needle: true
+gradient: true
+segments:
   - from: 0
-    to: 30
     color: "#ff6b6b"
+    label: "Low"
   - from: 30
-    to: 70
     color: "#ffd166"
+    label: "Medium"
   - from: 70
-    to: 100
     color: "#6ccf7f"
+    label: "High"
+value_texts:
+  primary_unit: "%"
 ```
 
 ---
 
 ## Testing Requirements
 
-- Unit: value normalization, range validation, gradient mapping
-- E2E: add card, configure ranges, verify runtime updates, YAML round-trip
-- Visual: circular/linear variants and threshold color states
-- Accessibility: labels, keyboard navigation, reduced motion
+- Unit: value normalization, segment validation, gradient mapping
+- E2E: built-in gauge + gauge-card-pro add/configure flows, YAML round-trip
+- Visual: gauge-card-pro threshold/needle states
+- Accessibility: labels and keyboard navigation
 
 ---
 
 ## Clarifying Questions
 
-1. Should the advanced gauge replace existing gauge behavior or be a new custom card?
-2. Are range boundaries inclusive on both ends or lower-inclusive/upper-exclusive?
-3. Should unavailable state render last-known value or explicit unavailable UI?
+1. Is the current basic Gauge Card Pro subset sufficient for 5.2, with full parity deferred to 5.10?
+2. Which Gauge Card Pro options must be first in scope for 5.10 (inner gauge, setpoints, icons, shapes)?
+3. Should built-in gauge and Gauge Card Pro share one editor section or remain split?
 
 ---
 

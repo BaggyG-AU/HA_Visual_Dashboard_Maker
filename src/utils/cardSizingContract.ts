@@ -152,6 +152,16 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       break;
     }
 
+    case 'custom:gauge-card-pro': {
+      height = 4;
+      width = 4;
+      minW = 3;
+      maxW = 8;
+      minH = 3;
+      maxH = 10;
+      break;
+    }
+
     case 'custom:power-flow-card-plus':
     case 'custom:power-flow-card': {
       // Power flow cards are compact in HA - around 280px total

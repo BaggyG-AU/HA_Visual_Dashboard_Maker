@@ -99,6 +99,14 @@ Prepare user stories (one per feature minimum) with:
 
 For each feature work item, reference its dedicated prompt file and ensure execution order/dependencies are explicit.
 
+### 4. Upstream Alignment Gate (Mandatory for 5.x and Later)
+
+For every 5.x+ feature prompt and implementation checklist, include a mandatory pre-implementation gate that requires:
+- Review of the relevant upstream base HA/HACS card implementation/docs
+- Mapping confirmation to a real upstream card type and YAML contract (`ai_rules.md` Rule 10)
+- If unmapped: feasibility assessment of alternative upstream cards, refactor effort/risk, and recommendation to do now vs create a new feature in the relevant phase (for example `5.10`)
+- Explicit prohibition on invented custom card type strings unless covered by an exception in `ai_rules.md`
+
 ---
 
 ## Standards Compliance Requirements
@@ -109,6 +117,7 @@ All artifacts MUST include explicit compliance statements for:
 2. **TESTING_STANDARDS.md** (DSL-first policy and regression gate expectations)
 3. **PLAYWRIGHT_TESTING.md** (Electron testing and trace-driven debugging)
 4. **ARCHITECTURE.md** (project structure and integration conventions)
+5. **HACS/HA upstream mapping gate** for 5.x+ feature prompts and implementation plans
 
 ---
 

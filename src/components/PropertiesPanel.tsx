@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip, Switch, InputNumber } from 'antd';
-import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined, PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import * as monaco from 'monaco-editor';
 import * as yaml from 'js-yaml';
 import { Card } from '../types/dashboard';
@@ -1402,14 +1402,53 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Min</span>}
                     name="min"
                   >
-                    <Input type="number" placeholder="0" />
+                    <Input data-testid="ha-gauge-min" type="number" placeholder="0" />
                   </Form.Item>
 
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Max</span>}
                     name="max"
                   >
-                    <Input type="number" placeholder="100" />
+                    <Input data-testid="ha-gauge-max" type="number" placeholder="100" />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Unit</span>}
+                    name="unit"
+                  >
+                    <Input data-testid="ha-gauge-unit" placeholder="%, °C, kWh..." />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Needle</span>}
+                    name="needle"
+                    valuePropName="checked"
+                  >
+                    <Switch data-testid="ha-gauge-needle" />
+                  </Form.Item>
+
+                  <Divider />
+                  <Text strong style={{ color: 'white' }}>Severity Thresholds</Text>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Green From</span>}
+                    name={['severity', 'green']}
+                  >
+                    <Input type="number" placeholder="0" />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Yellow From</span>}
+                    name={['severity', 'yellow']}
+                  >
+                    <Input type="number" placeholder="50" />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Red From</span>}
+                    name={['severity', 'red']}
+                  >
+                    <Input type="number" placeholder="80" />
                   </Form.Item>
                 </>
               )}
@@ -3176,6 +3215,146 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
+          {card.type === 'custom:gauge-card-pro' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect
+                  data-testid="gauge-pro-entity"
+                  placeholder="Select sensor"
+                  filterDomains={['sensor', 'binary_sensor', 'number', 'input_number']}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Header</span>}
+                name="header"
+              >
+                <Input data-testid="gauge-pro-header" placeholder="Gauge Card Pro" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Minimum</span>}
+                name="min"
+              >
+                <InputNumber data-testid="gauge-pro-min" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Maximum</span>}
+                name="max"
+              >
+                <InputNumber data-testid="gauge-pro-max" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Primary Unit</span>}
+                name={['value_texts', 'primary_unit']}
+              >
+                <Input data-testid="gauge-pro-primary-unit" placeholder="%" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Needle Mode</span>}
+                name="needle"
+                valuePropName="checked"
+              >
+                <Switch data-testid="gauge-pro-needle" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Gradient</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Enable Gradient</span>}
+                name="gradient"
+                valuePropName="checked"
+              >
+                <Switch data-testid="gauge-pro-gradient" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Segments</Text>
+
+              <Form.List name="segments">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>Segment {index + 1}</Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>From</span>}
+                          name={[field.name, 'from']}
+                        >
+                          <InputNumber data-testid={`gauge-pro-segment-${index}-from`} style={{ width: '100%' }} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Label</span>}
+                          name={[field.name, 'label']}
+                        >
+                          <Input data-testid={`gauge-pro-segment-${index}-label`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Color</span>}
+                          name={[field.name, 'color']}
+                        >
+                          <ColorPickerInput
+                            testId={`gauge-pro-segment-${index}-color`}
+                            value={form.getFieldValue(['segments', field.name, 'color']) as string | undefined}
+                            onChange={(nextColor) => {
+                              form.setFieldValue(['segments', field.name, 'color'], nextColor);
+                              handleValuesChange();
+                            }}
+                          />
+                        </Form.Item>
+
+                        {fields.length > 1 && (
+                          <Button
+                            danger
+                            icon={<MinusCircleOutlined />}
+                            onClick={() => {
+                              remove(field.name);
+                              handleValuesChange();
+                            }}
+                            data-testid={`gauge-pro-segment-${index}-remove`}
+                          >
+                            Remove Segment
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      icon={<PlusOutlined />}
+                      onClick={() => {
+                        add({ from: 0, color: '#4fa3ff', label: '' });
+                        handleValuesChange();
+                      }}
+                      data-testid="gauge-pro-segment-add"
+                    >
+                      Add Segment
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+            </>
+          )}
+
           {card.type === 'custom:tabbed-card' && (
             <>
               <Divider />
@@ -4434,7 +4613,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:native-graph-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:native-graph-card', 'custom:gauge-card-pro', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.

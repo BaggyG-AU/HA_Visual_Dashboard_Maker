@@ -73,6 +73,7 @@ export const GaugeCardRenderer: React.FC<GaugeCardRendererProps> = ({
   return (
     <AntCard
       size="small"
+      data-testid="ha-gauge-card"
       style={{
         height: '100%',
         cursor: 'pointer',

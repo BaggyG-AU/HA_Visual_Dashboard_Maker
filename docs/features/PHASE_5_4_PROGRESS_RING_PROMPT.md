@@ -18,6 +18,21 @@ Implement **Feature 5.4: Progress Ring Visualization** for **Phase 5: Advanced V
 
 ---
 
+## Mandatory Upstream Alignment Gate (HACS/HA Mapping)
+
+Before implementation, complete this gate and include results in your response:
+
+1. Review the relevant upstream card implementation/docs (Home Assistant built-in docs and/or HACS repo) for the target card behavior.
+2. Confirm whether the proposed card type maps to a real upstream base HA card or HACS card, per `ai_rules.md` Rule 10.
+3. If no direct upstream mapping exists, perform a feasibility assessment that includes:
+   - Best alternative upstream card option(s) (exact `type` strings)
+   - YAML schema/round-trip compatibility impact
+   - Estimated refactor effort (scope + risk)
+   - Recommendation: do refactor in the current feature or schedule it as a new feature in the relevant phase (e.g., `5.10`)
+4. Do not implement invented custom card types unless covered by an explicit exception in `ai_rules.md`.
+
+---
+
 ## References
 
 - `src/components/cards/GaugeCardRenderer.tsx`
