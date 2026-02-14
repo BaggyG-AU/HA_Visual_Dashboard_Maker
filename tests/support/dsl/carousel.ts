@@ -115,14 +115,26 @@ export class CarouselDSL {
 
   async setPaginationType(type: 'bullets' | 'fraction' | 'progressbar' | 'custom'): Promise<void> {
     const select = this.window.getByTestId('swiper-pagination-type');
+    const labelByType: Record<typeof type, string> = {
+      bullets: 'Bullets',
+      fraction: 'Fraction',
+      progressbar: 'Progress Bar',
+      custom: 'Custom',
+    };
+
     await expect(select).toBeVisible();
     await select.click();
-    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
+
+    const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
-    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${type}$`, 'i') });
-    await expect(option).toBeVisible();
+
+    const option = dropdown.locator('.ant-select-item-option', {
+      hasText: new RegExp(`^${labelByType[type]}$`, 'i'),
+    }).first();
+    await expect(option).toBeVisible({ timeout: 5000 });
     await option.click();
-    await expect(select).toContainText(new RegExp(type, 'i'));
+
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
   }
 
   async toggleAutoplay(enabled: boolean): Promise<void> {

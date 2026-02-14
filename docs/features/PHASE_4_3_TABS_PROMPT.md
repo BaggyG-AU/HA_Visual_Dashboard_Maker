@@ -95,10 +95,10 @@ Follow the same structure, naming conventions, and integration points used by de
 
 ### YAML Schema
 
-Register as `custom:tabs-card` in card registry. Example YAML:
+Register as `custom:tabbed-card` in card registry. Example YAML:
 
 ```yaml
-type: custom:tabs-card
+type: custom:tabbed-card
 tab_position: top
 tab_size: default
 default_tab: 0
@@ -130,7 +130,7 @@ Update `src/schemas/ha-dashboard-schema.json` with tabs-card schema.
 
 ```typescript
 {
-  type: 'custom:tabs-card',
+  type: 'custom:tabbed-card',
   name: 'Tabs',
   category: 'layout',
   icon: 'AppstoreOutlined',

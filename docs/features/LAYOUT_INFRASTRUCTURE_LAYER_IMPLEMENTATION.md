@@ -38,9 +38,9 @@
 | 4.1: Swiper.js Integration | High | 5-6 days | :construction: Implemented (documentation sync pending) |
 | 4.2: Accordion Card Module | Medium | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.2) |
 | 4.3: Tabs Card Module | Medium | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.3) |
-| 4.4: Popup/Modal Card System | High | 5-6 days | :white_check_mark: Complete (v0.7.4-beta.5) |
-| 4.5: Horizontal/Vertical Layout Enhancements | Medium | 2-3 days | :hourglass: Ready to Begin |
-| 4.6: Card Spacing Controls | Medium | 2-3 days | :hourglass: Ready to Begin |
+| 4.4: Popup/Modal Card System | High | 5-6 days | :warning: Partially Complete (HAVDM popup shipped; HACS alignment in research) |
+| 4.5: Horizontal/Vertical Layout Enhancements | Medium | 2-3 days | :white_check_mark: Complete (implementation/tests complete; docs follow-ups open) |
+| 4.6: Card Spacing Controls | Medium | 2-3 days | :white_check_mark: Complete (v0.7.4-beta.R) |
 
 **Total Estimated Effort**: 20-26 days (2-3 weeks with parallel work on independent features)
 
@@ -80,7 +80,7 @@ The detailed per-item checklist below is retained as a historical planning artif
 
 #### Phase 2: Card Registry & Renderer Integration (Day 2)
 
-- [ ] Register `custom:swiper-card` in `cardRegistry.ts`
+- [ ] Register `custom:swipe-card` in `cardRegistry.ts`
 - [ ] Create `SwiperCardRenderer.tsx` in `src/components/cards/`
 - [ ] Wire renderer to existing card rendering pipeline
 - [ ] Support nested cards: each slide holds one or more cards
@@ -122,7 +122,7 @@ The detailed per-item checklist below is retained as a historical planning artif
 - [ ] Define YAML schema for carousel card type
 - [ ] Example YAML:
   ```yaml
-  type: custom:swiper-card
+  type: custom:swipe-card
   pagination:
     type: bullets
     clickable: true
@@ -244,7 +244,7 @@ This feature MUST comply with:
 
 #### Completed
 
-- [x] `custom:accordion-card` product implementation delivered:
+- [x] `custom:expander-card` product implementation delivered:
   - [x] `src/features/accordion/types.ts`
   - [x] `src/features/accordion/accordionService.ts`
   - [x] `src/features/accordion/AccordionPanel.tsx`
@@ -331,10 +331,10 @@ This feature MUST comply with:
 #### Phase 4: YAML Schema & Serialization (Day 3)
 
 - [ ] Define YAML schema for accordion card type
-- [x] Register `custom:accordion-card` in `cardRegistry.ts`
+- [x] Register `custom:expander-card` in `cardRegistry.ts`
 - [ ] Example YAML:
   ```yaml
-  type: custom:accordion-card
+  type: custom:expander-card
   expand_mode: single
   style: bordered
   sections:
@@ -457,7 +457,7 @@ This feature MUST comply with:
 
 #### Completed
 
-- [x] `custom:tabs-card` product implementation delivered:
+- [x] `custom:tabbed-card` product implementation delivered:
   - [x] `src/types/tabs.ts`
   - [x] `src/services/tabsService.ts`
   - [x] `src/features/tabs/TabsPanel.tsx`
@@ -518,7 +518,7 @@ This feature MUST comply with:
   - [ ] Lazy rendering (only render active tab content, not all tabs)
   - [ ] Centered tabs toggle
 - [ ] Support badge/count indicators on tabs (e.g., "Lights (3)")
-- [ ] Register `custom:tabs-card` in `cardRegistry.ts`
+- [ ] Register `custom:tabbed-card` in `cardRegistry.ts`
 
 #### Phase 3: PropertiesPanel Integration (Day 2)
 
@@ -538,7 +538,7 @@ This feature MUST comply with:
 - [ ] Define YAML schema for tabs card type
 - [ ] Example YAML:
   ```yaml
-  type: custom:tabs-card
+  type: custom:tabbed-card
   tab_position: top
   tab_size: default
   default_tab: 0
@@ -645,7 +645,12 @@ This feature MUST comply with:
 **Priority**: High
 **Dependencies**: None
 **Estimated Effort**: 5-6 days
-**Status**: :white_check_mark: Complete (v0.7.4-beta.5)
+**Status**: :warning: Partially Complete (v0.7.4-beta.5 baseline shipped; HACS alignment pending)
+
+### Tracking Note (2026-02-14)
+
+Popup baseline behavior is implemented and regression-tested in HAVDM, but this feature is not considered fully complete.
+The team is actively researching HACS-aligned options for popup behavior/modeling before declaring Feature 4.4 complete.
 
 ### Delivery Baseline (v0.7.4-beta.5)
 
@@ -882,7 +887,7 @@ This feature MUST comply with:
 **Priority**: Medium
 **Dependencies**: None
 **Estimated Effort**: 2-3 days
-**Status**: :hourglass: Ready to Begin
+**Status**: :white_check_mark: Complete (implementation/tests complete; documentation follow-ups pending)
 
 ### Implementation Checklist
 
@@ -1019,48 +1024,48 @@ This feature MUST comply with:
 **Priority**: Medium
 **Dependencies**: None
 **Estimated Effort**: 2-3 days
-**Status**: :hourglass: Ready to Begin
+**Status**: :white_check_mark: Complete (v0.7.4-beta.R)
 
 ### Implementation Checklist
 
 #### Phase 1: Margin & Padding Service (Day 1)
 
-- [ ] Create `src/services/cardSpacing.ts` service
-  - [ ] Parse spacing configuration (margin/padding)
-  - [ ] Support all-sides shorthand: `margin: 8` (all sides 8px)
-  - [ ] Support per-side values: `margin: { top: 8, right: 16, bottom: 8, left: 16 }`
-  - [ ] Support CSS shorthand format: `margin: "8px 16px"` (top/bottom left/right)
-  - [ ] Spacing presets: none (0), tight (4px), normal (8px), relaxed (16px), spacious (24px), custom
-  - [ ] Convert spacing config to CSS margin/padding inline styles
-- [ ] Create `src/types/spacing.ts` for TypeScript types
-- [ ] Unit tests for spacing service (all formats, presets, edge cases)
+- [x] Create `src/services/cardSpacing.ts` service
+  - [x] Parse spacing configuration (margin/padding)
+  - [x] Support all-sides shorthand: `margin: 8` (all sides 8px)
+  - [x] Support per-side values: `margin: { top: 8, right: 16, bottom: 8, left: 16 }`
+  - [x] Support CSS shorthand format: `margin: "8px 16px"` (top/bottom left/right)
+  - [x] Spacing presets: none (0), tight (4px), normal (8px), relaxed (16px), spacious (24px), custom
+  - [x] Convert spacing config to CSS margin/padding inline styles
+- [x] Create `src/types/spacing.ts` for TypeScript types
+- [x] Unit tests for spacing service (all formats, presets, edge cases)
 
 #### Phase 2: Card Integration (Day 1)
 
-- [ ] Apply spacing to `BaseCard.tsx` wrapper component:
-  - [ ] Read `card_margin` and `card_padding` from card config
-  - [ ] Apply as inline styles on card wrapper element
-  - [ ] Ensure spacing doesn't break existing card layouts
-- [ ] Support spacing on all card types (applied at BaseCard level)
-- [ ] Handle negative margin gracefully (warn or clamp to 0)
-- [ ] Spacing applies in both editor canvas and preview
+- [x] Apply spacing to `BaseCard.tsx` wrapper component:
+  - [x] Read `card_margin` and `card_padding` from card config
+  - [x] Apply as inline styles on card wrapper element
+  - [x] Ensure spacing doesn't break existing card layouts
+- [x] Support spacing on all card types (applied at BaseCard level)
+- [x] Handle negative margin gracefully (warn or clamp to 0)
+- [x] Spacing applies in both editor canvas and preview
 
 #### Phase 3: PropertiesPanel Integration (Day 2)
 
-- [ ] Create `SpacingControls.tsx` component for PropertiesPanel:
-  - [ ] Margin section with visual box model diagram
-  - [ ] Padding section with visual box model diagram
-  - [ ] All-sides mode (single input applies to all sides)
-  - [ ] Per-side mode (individual inputs for top/right/bottom/left)
-  - [ ] Toggle between all-sides and per-side modes
-  - [ ] Spacing preset dropdown (none, tight, normal, relaxed, spacious, custom)
-  - [ ] Unit display (px)
-- [ ] Add spacing controls to PropertiesPanel for all card types
-- [ ] Live preview of spacing changes in canvas
+- [x] Create `SpacingControls.tsx` component for PropertiesPanel:
+  - [x] Margin section with visual box model diagram
+  - [x] Padding section with visual box model diagram
+  - [x] All-sides mode (single input applies to all sides)
+  - [x] Per-side mode (individual inputs for top/right/bottom/left)
+  - [x] Toggle between all-sides and per-side modes
+  - [x] Spacing preset dropdown (none, tight, normal, relaxed, spacious, custom)
+  - [x] Unit display (px)
+- [x] Add spacing controls to PropertiesPanel for all card types
+- [x] Live preview of spacing changes in canvas
 
 #### Phase 4: YAML Schema & Serialization (Day 2)
 
-- [ ] Define YAML schema for spacing properties
+- [x] Define YAML schema for spacing properties
 - [ ] Example YAML (all-sides):
   ```yaml
   type: button
@@ -1089,35 +1094,35 @@ This feature MUST comply with:
   card_margin: relaxed
   card_padding: normal
   ```
-- [ ] Serialize/deserialize spacing config
-- [ ] Update `ha-dashboard-schema.json`
-- [ ] Backward compatible: missing spacing properties = no spacing changes
+- [x] Serialize/deserialize spacing config
+- [x] Update `ha-dashboard-schema.json`
+- [x] Backward compatible: missing spacing properties = no spacing changes
 
 #### Phase 5: Testing & Documentation (Days 2-3)
 
-- [ ] Create `SpacingDSL` in `tests/support/dsl/spacing.ts`
-- [ ] E2E tests using SpacingDSL:
-  - [ ] Set margin via PropertiesPanel
-  - [ ] Set padding via PropertiesPanel
-  - [ ] Toggle all-sides vs per-side mode
-  - [ ] Spacing presets apply correctly
-  - [ ] YAML round-trip serialization
-  - [ ] Backward compatibility (existing cards unchanged)
-  - [ ] Spacing visible in canvas preview
-- [ ] Unit tests for spacing service
-- [ ] Visual regression tests for spacing combinations
-- [ ] Documentation with spacing examples
+- [x] Create `SpacingDSL` in `tests/support/dsl/spacing.ts`
+- [x] E2E tests using SpacingDSL:
+  - [x] Set margin via PropertiesPanel
+  - [x] Set padding via PropertiesPanel
+  - [x] Toggle all-sides vs per-side mode
+  - [x] Spacing presets apply correctly
+  - [x] YAML round-trip serialization
+  - [x] Backward compatibility (existing cards unchanged)
+  - [x] Spacing visible in canvas preview
+- [x] Unit tests for spacing service
+- [x] Visual regression tests for spacing combinations
+- [x] Documentation with spacing examples
 
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
-- [ ] Margin controls work (all-sides and per-side)
-- [ ] Padding controls work (all-sides and per-side)
-- [ ] Spacing presets work (none, tight, normal, relaxed, spacious)
-- [ ] Spacing applies to all card types (via BaseCard)
-- [ ] Existing dashboards are not affected (backward compatible)
-- [ ] YAML round-trip serialization preserves spacing config
-- [ ] PropertiesPanel shows spacing controls for all cards
+- [x] Margin controls work (all-sides and per-side)
+- [x] Padding controls work (all-sides and per-side)
+- [x] Spacing presets work (none, tight, normal, relaxed, spacious)
+- [x] Spacing applies to all card types (via BaseCard)
+- [x] Existing dashboards are not affected (backward compatible)
+- [x] YAML round-trip serialization preserves spacing config
+- [x] PropertiesPanel shows spacing controls for all cards
 - [ ] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
@@ -1281,7 +1286,7 @@ This phase provides foundation for:
 
 ---
 
-**Document Status**: :construction: In Progress (Features 4.2, 4.3, 4.4 baselined complete)
-**Last Updated**: February 10, 2026
-**Next Review**: Before starting Feature 4.5 implementation
+**Document Status**: :construction: In Progress (4.1-4.3 complete, 4.4 partial pending HACS alignment, 4.5 complete, 4.6 complete)
+**Last Updated**: February 14, 2026
+**Next Review**: Before starting Feature 4.6 implementation
 **Owner**: Development Team

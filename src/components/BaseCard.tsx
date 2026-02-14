@@ -40,6 +40,7 @@ import { UnsupportedCard } from './cards/UnsupportedCard';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { evaluateVisibilityConditions } from '../services/conditionalVisibility';
 import { popupStackService, resolvePopupFromAction } from '../features/popup/popupService';
+import { resolveCardSpacingStyles } from '../services/cardSpacing';
 
 interface BaseCardProps {
   card: Card;
@@ -99,6 +100,7 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
     transition: `opacity ${transitionMs}ms ease, transform ${transitionMs}ms ease`,
     height: '100%',
   };
+  const spacingStyle = resolveCardSpacingStyles(card);
 
   // Check if this is a spacer card
   const isSpacer = card.type === 'spacer' || '_isSpacer' in card;
@@ -278,7 +280,11 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
   }
 
   return (
-    <div data-testid="conditional-visibility-wrapper" data-visible={isVisible ? 'true' : 'false'} style={transitionStyle}>
+    <div
+      data-testid="conditional-visibility-wrapper"
+      data-visible={isVisible ? 'true' : 'false'}
+      style={{ ...transitionStyle, ...spacingStyle }}
+    >
       {renderedCard}
     </div>
   );

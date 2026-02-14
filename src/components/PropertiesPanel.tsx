@@ -24,6 +24,7 @@ import { StateIconMappingControls } from './StateIconMappingControls';
 import type { AttributeDisplayLayout } from '../types/attributeDisplay';
 import { MultiEntityControls } from './MultiEntityControls';
 import type { AggregateFunction, BatchActionType, MultiEntityMode } from '../types/multiEntity';
+import { SpacingControls } from './SpacingControls';
 import {
   DEFAULT_CHILD_PADDING,
   DEFAULT_COLLAPSED_ICON,
@@ -1071,7 +1072,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
     isUpdatingFromForm.current = true;
 
-    const values = form.getFieldsValue();
+    const values = form.getFieldsValue(true);
     const updatedCard = { ...cardRef.current, ...values } as Card;
     if (updatedCard.type === 'custom:swipe-card') {
       const typed = updatedCard as { slides?: unknown; cards?: unknown; parameters?: unknown };
@@ -4220,6 +4221,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 style={{ marginTop: '16px' }}
               />
             </>
+          )}
+
+          {card.type !== 'spacer' && (
+            <SpacingControls form={form} onProgrammaticChange={handleValuesChange} />
           )}
 
           {card.type === 'spacer' && (

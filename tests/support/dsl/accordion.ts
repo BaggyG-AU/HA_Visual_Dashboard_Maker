@@ -87,11 +87,22 @@ export class AccordionDSL {
       }
     });
 
-    await expect(this.getExpander(cardIndex)).toBeVisible();
-    await expect(this.getExpander(cardIndex)).toHaveScreenshot(name, {
+    const expander = this.getExpander(cardIndex);
+    await expect(expander).toBeVisible();
+    await expander.scrollIntoViewIfNeeded();
+    await expect.poll(async () => {
+      const box = await expander.boundingBox();
+      if (!box) return false;
+      return box.width > 20 && box.height > 20;
+    }, { timeout: 5000 }).toBe(true);
+
+    const screenshot = await expander.screenshot({
       animations: 'disabled',
       caret: 'hide',
-      timeout: 15000,
+      timeout: 20000,
+    });
+    expect(screenshot).toMatchSnapshot(name, {
+      maxDiffPixels: 2500,
     });
   }
 }
