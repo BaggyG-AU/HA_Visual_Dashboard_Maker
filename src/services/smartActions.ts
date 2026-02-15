@@ -1,4 +1,5 @@
 import type { Action, Card } from '../types/dashboard';
+import type { ActionTrigger, CardActionField, ResolvedAction } from '../types/actions';
 
 export type SupportedDomain =
   | 'switch'
@@ -80,15 +81,22 @@ export const formatActionLabel = (action?: Action): string => {
   }
 };
 
-type ResolveTapActionResult = {
-  action?: Action;
-  source: 'user' | 'smart' | 'legacy' | 'none';
+const actionFieldByTrigger: Record<ActionTrigger, CardActionField> = {
+  tap: 'tap_action',
+  hold: 'hold_action',
+  double_tap: 'double_tap_action',
 };
 
-export const resolveTapAction = (card: Card): ResolveTapActionResult => {
-  // Precedence: explicit user tap_action always wins.
-  if (card.tap_action) {
-    return { action: card.tap_action, source: 'user' };
+const getActionForTrigger = (card: Card, trigger: ActionTrigger): Action | undefined => {
+  const field = actionFieldByTrigger[trigger];
+  return card[field];
+};
+
+export const resolveCardAction = (card: Card, trigger: ActionTrigger): ResolvedAction => {
+  // Precedence: explicit user action always wins.
+  const explicitAction = getActionForTrigger(card, trigger);
+  if (explicitAction) {
+    return { action: explicitAction, source: 'user' };
   }
 
   // Smart defaults apply only when explicitly enabled.
@@ -96,14 +104,21 @@ export const resolveTapAction = (card: Card): ResolveTapActionResult => {
     return { action: getSmartDefaultAction(card.entity), source: 'smart' };
   }
 
-  // Legacy behavior preservation (pre-Feature 3.1):
-  // Button cards historically defaulted to toggle when no tap_action was set.
-  // To avoid breaking existing dashboards, we keep this fallback when the YAML
-  // does not explicitly opt in/out via `smart_defaults`.
-  const isLegacyEligible = card.smart_defaults === undefined && (card.type === 'button' || card.type === 'custom:button-card');
-  if (isLegacyEligible) {
+  // Legacy behavior preservation is tap-only.
+  const isLegacyTap = trigger === 'tap'
+    && card.smart_defaults === undefined
+    && (card.type === 'button' || card.type === 'custom:button-card');
+  if (isLegacyTap) {
     return { action: { action: 'toggle' }, source: 'legacy' };
   }
 
   return { action: undefined, source: 'none' };
 };
+
+export const resolveAllCardActions = (card: Card): Record<ActionTrigger, ResolvedAction> => ({
+  tap: resolveCardAction(card, 'tap'),
+  hold: resolveCardAction(card, 'hold'),
+  double_tap: resolveCardAction(card, 'double_tap'),
+});
+
+export const resolveTapAction = (card: Card): ResolvedAction => resolveCardAction(card, 'tap');

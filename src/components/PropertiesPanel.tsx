@@ -14,7 +14,7 @@ import { haConnectionService } from '../services/haConnectionService';
 import { createDebouncedCommit, DebouncedCommit } from '../utils/debouncedCommit';
 import { extractStyleColor, upsertStyleColor } from '../utils/styleBackground';
 import { applyBackgroundConfigToStyle, DEFAULT_BACKGROUND_CONFIG, parseBackgroundConfig, type BackgroundConfig } from '../utils/backgroundStyle';
-import { formatActionLabel, resolveTapAction } from '../services/smartActions';
+import { formatActionLabel, resolveAllCardActions } from '../services/smartActions';
 import { logger } from '../services/logger';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { getMissingEntityReferences, hasEntityContextVariables, resolveEntityContext } from '../services/entityContext';
@@ -520,7 +520,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <Text strong style={{ color: 'white' }}>Smart Default Actions</Text>
         <Form.Item
           label={
-            <Tooltip title="When enabled, tap_action is computed automatically based on the entity domain unless you define tap_action explicitly.">
+            <Tooltip title="When enabled, tap/hold/double actions are computed automatically based on the entity domain unless you define each action explicitly.">
               <span style={{ color: 'white' }}>Use Smart Defaults</span>
             </Tooltip>
           }
@@ -535,15 +535,19 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             const currentEntity = form.getFieldValue('entity') as string | undefined;
             const smartDefaults = form.getFieldValue('smart_defaults') as boolean | undefined;
             const tapAction = form.getFieldValue('tap_action');
+            const holdAction = form.getFieldValue('hold_action');
+            const doubleTapAction = form.getFieldValue('double_tap_action');
 
-            const { action, source } = resolveTapAction({
+            const resolved = resolveAllCardActions({
               ...currentCard,
               entity: currentEntity,
               smart_defaults: smartDefaults,
               tap_action: tapAction,
+              hold_action: holdAction,
+              double_tap_action: doubleTapAction,
             });
 
-            const sourceLabel =
+            const sourceLabel = (source: 'user' | 'smart' | 'legacy' | 'none') =>
               source === 'user'
                 ? 'User-defined'
                 : source === 'smart'
@@ -562,10 +566,22 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 }}
                 data-testid={`${testIdPrefix}-smart-defaults-preview`}
               >
-                <Text style={{ color: '#bbb', fontSize: 12 }}>
-                  Tap action used: <Text style={{ color: '#fff' }}>{formatActionLabel(action)}</Text>{' '}
-                  <Text style={{ color: '#666' }}>({sourceLabel})</Text>
-                </Text>
+                <div style={{ color: '#bbb', fontSize: 12 }}>
+                  <Text style={{ color: '#bbb', fontSize: 12 }}>
+                    Tap action used: <Text style={{ color: '#fff' }}>{formatActionLabel(resolved.tap.action)}</Text>{' '}
+                    <Text style={{ color: '#666' }}>({sourceLabel(resolved.tap.source)})</Text>
+                  </Text>
+                  <br />
+                  <Text style={{ color: '#bbb', fontSize: 12 }}>
+                    Hold action used: <Text style={{ color: '#fff' }}>{formatActionLabel(resolved.hold.action)}</Text>{' '}
+                    <Text style={{ color: '#666' }}>({sourceLabel(resolved.hold.source)})</Text>
+                  </Text>
+                  <br />
+                  <Text style={{ color: '#bbb', fontSize: 12 }}>
+                    Double-tap action used: <Text style={{ color: '#fff' }}>{formatActionLabel(resolved.double_tap.action)}</Text>{' '}
+                    <Text style={{ color: '#666' }}>({sourceLabel(resolved.double_tap.source)})</Text>
+                  </Text>
+                </div>
               </div>
             );
           }}

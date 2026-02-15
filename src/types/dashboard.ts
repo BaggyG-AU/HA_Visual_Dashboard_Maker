@@ -8,6 +8,17 @@ import type { AttributeDisplayItem, AttributeDisplayLayout } from './attributeDi
 import type { StateIconsMap } from './stateIcons';
 import type { AggregateFunction, BatchActionConfig, MultiEntityMode } from './multiEntity';
 import type { CardSpacingValue } from './spacing';
+import type { Action } from './actions';
+import type { Phase6CardContracts } from './phase6';
+import type { VisibilityCondition } from './logic';
+
+export type { Action } from './actions';
+export type {
+  VisibilityCondition,
+  VisibilityConditionGroup,
+  VisibilityConditionRule,
+  VisibilityConditionType,
+} from './logic';
 
 // Layout-card view_layout configuration
 export interface ViewLayout {
@@ -19,15 +30,13 @@ export interface ViewLayout {
 }
 
 // Base card configuration
-export interface BaseCard {
+export interface BaseCard extends Phase6CardContracts {
   type: string;
   entity?: string;
   entities?: any[]; // Can be string[] or (string | EntityConfig)[]
   name?: string;
   icon?: string;
   style?: string;
-  smart_defaults?: boolean;
-  visibility_conditions?: VisibilityCondition[];
   attribute_display?: AttributeDisplayItem[];
   attribute_display_layout?: AttributeDisplayLayout;
   haptic?: HapticCardConfig;
@@ -43,9 +52,6 @@ export interface BaseCard {
   show_name?: boolean;
   show_icon?: boolean;
   show_state?: boolean;
-  tap_action?: Action;
-  hold_action?: Action;
-  double_tap_action?: Action;
   view_layout?: ViewLayout; // Layout-card positioning
   card_margin?: CardSpacingValue;
   card_padding?: CardSpacingValue;
@@ -55,36 +61,6 @@ export interface BaseCard {
 export interface SpacerCard extends BaseCard {
   type: 'spacer';
   _isSpacer?: boolean;
-}
-
-// Action types
-export interface Action {
-  action: 'more-info' | 'toggle' | 'call-service' | 'navigate' | 'url' | 'none' | 'popup';
-  service?: string;
-  service_data?: Record<string, any>;
-  navigation_path?: string;
-  url_path?: string;
-  popup_title?: string;
-  popup_size?: 'auto' | 'small' | 'medium' | 'large' | 'fullscreen' | 'custom';
-  popup_custom_size?: {
-    width?: number;
-    height?: number;
-  };
-  popup_close_on_backdrop?: boolean;
-  popup_backdrop_opacity?: number;
-  popup_show_header?: boolean;
-  popup_show_footer?: boolean;
-  popup_close_label?: string;
-  popup_footer_actions?: Array<{
-    label: string;
-    action?: 'close' | 'none';
-    button_type?: 'default' | 'primary' | 'dashed' | 'link' | 'text';
-  }>;
-  popup_cards?: Card[];
-  confirmation?: {
-    text?: string;
-    exemptions?: any[];
-  };
 }
 
 // Standard card types
@@ -106,31 +82,6 @@ export interface EntityConfig {
   type?: string;
   visibility_conditions?: VisibilityCondition[];
 }
-
-export type VisibilityConditionType =
-  | 'state_equals'
-  | 'state_not_equals'
-  | 'state_in'
-  | 'state_not_in'
-  | 'attribute_equals'
-  | 'attribute_greater_than'
-  | 'attribute_less_than'
-  | 'entity_exists';
-
-export interface VisibilityConditionRule {
-  condition: VisibilityConditionType;
-  entity: string;
-  attribute?: string;
-  value?: string | number | boolean;
-  values?: Array<string | number | boolean>;
-}
-
-export interface VisibilityConditionGroup {
-  condition: 'and' | 'or';
-  conditions: VisibilityCondition[];
-}
-
-export type VisibilityCondition = VisibilityConditionRule | VisibilityConditionGroup;
 
 export interface ButtonCard extends BaseCard {
   type: 'button';

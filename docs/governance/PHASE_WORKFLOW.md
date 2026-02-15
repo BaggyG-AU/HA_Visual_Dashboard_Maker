@@ -90,6 +90,7 @@ For each slice:
    - Diagnose
    - Propose fix
    - Pause and ask before continuing
+8. Commit slice
 
 Each slice must:
 
