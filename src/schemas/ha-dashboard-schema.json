@@ -299,6 +299,10 @@
           "$ref": "#/definitions/visibilityConditions",
           "description": "Conditional visibility rules for cards/entities"
         },
+        "trigger_animations": {
+          "$ref": "#/definitions/triggerAnimations",
+          "description": "Trigger-driven card animation rules"
+        },
         "attribute_display": {
           "type": "array",
           "description": "Attribute display configuration for entity attributes",
@@ -1441,6 +1445,46 @@
       "type": "array",
       "items": {
         "$ref": "#/definitions/visibilityCondition"
+      }
+    },
+    "triggerAnimation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "trigger": {
+          "type": "string",
+          "enum": ["state-change", "action", "manual"]
+        },
+        "target": {
+          "type": "string",
+          "pattern": "^[a-z_]+\\.[a-z0-9_]+$"
+        },
+        "animation": {
+          "type": "string"
+        },
+        "duration_ms": {
+          "type": "number",
+          "minimum": 80,
+          "maximum": 5000
+        },
+        "iterations": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "easing": {
+          "type": "string"
+        }
+      },
+      "required": ["trigger", "animation"],
+      "additionalProperties": false
+    },
+    "triggerAnimations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/triggerAnimation"
       }
     }
   }

@@ -15,6 +15,8 @@ Constraints:
 
 Test Execution Policy:
 
+Before writing/modifying tests, quote the relevant TESTING_STANDARDS.md section(s) you will follow, and map each new assertion to those sections.
+
 - Run relevant tests.
 - If any failures occur:
   1) List failures.

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card } from '../types/dashboard';
 import { EntitiesCardRenderer } from './cards/EntitiesCardRenderer';
 import { ButtonCardRenderer } from './cards/ButtonCardRenderer';
@@ -47,6 +47,13 @@ import { useHAEntities } from '../contexts/HAEntityContext';
 import { evaluateVisibilityConditions } from '../services/conditionalVisibility';
 import { popupStackService, resolvePopupFromAction } from '../features/popup/popupService';
 import { resolveCardSpacingStyles } from '../services/cardSpacing';
+import {
+  normalizeTriggerAnimations,
+  resolveStateChangeTrigger,
+  resolveTriggerAnimation,
+  toAnimationKeyframes,
+  toAnimationTiming,
+} from '../services/triggerAnimationService';
 
 interface BaseCardProps {
   card: Card;
@@ -75,6 +82,18 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
   const { entities } = useHAEntities();
   const isVisible = evaluateVisibilityConditions(card.visibility_conditions, entities);
   const [shouldRender, setShouldRender] = useState(isVisible);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const stateSnapshotsRef = useRef<Record<string, string>>({});
+  const triggerSequenceRef = useRef(0);
+  const [activeAnimationKey, setActiveAnimationKey] = useState<string | null>(null);
+  const [pendingTriggerAnimation, setPendingTriggerAnimation] = useState<{
+    key: string;
+    config: ReturnType<typeof normalizeTriggerAnimations>[number];
+  } | null>(null);
+  const triggerAnimations = useMemo(
+    () => normalizeTriggerAnimations(card.trigger_animations),
+    [card.trigger_animations],
+  );
 
   useEffect(() => {
     if (isVisible) {
@@ -93,6 +112,59 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
 
     return () => window.clearTimeout(timeout);
   }, [isVisible]);
+
+  useEffect(() => {
+    const { triggered, nextSnapshots } = resolveStateChangeTrigger(
+      card,
+      triggerAnimations,
+      entities,
+      stateSnapshotsRef.current,
+    );
+    stateSnapshotsRef.current = nextSnapshots;
+    if (!triggered) {
+      return;
+    }
+
+    triggerSequenceRef.current += 1;
+    setPendingTriggerAnimation({
+      key: `${triggered.id}-${triggerSequenceRef.current}`,
+      config: triggered,
+    });
+  }, [card, entities, triggerAnimations]);
+
+  useEffect(() => {
+    if (!pendingTriggerAnimation || !wrapperRef.current || isTestEnv()) {
+      return;
+    }
+
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
+    const keyframes = toAnimationKeyframes(pendingTriggerAnimation.config.animationName);
+    if (keyframes.length === 0 || typeof wrapperRef.current.animate !== 'function') {
+      return;
+    }
+
+    const animationKey = pendingTriggerAnimation.key;
+    setActiveAnimationKey(animationKey);
+
+    const animation = wrapperRef.current.animate(
+      keyframes,
+      toAnimationTiming(pendingTriggerAnimation.config),
+    );
+
+    const clear = () => {
+      setActiveAnimationKey((current) => (current === animationKey ? null : current));
+    };
+
+    animation.onfinish = clear;
+    animation.oncancel = clear;
+
+    return () => {
+      animation.cancel();
+    };
+  }, [pendingTriggerAnimation]);
 
   if (!shouldRender) {
     return null;
@@ -113,7 +185,12 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
 
   if (isSpacer) {
     return (
-      <div data-testid="conditional-visibility-wrapper" data-visible={isVisible ? 'true' : 'false'} style={transitionStyle}>
+      <div
+        data-testid="conditional-visibility-wrapper"
+        data-visible={isVisible ? 'true' : 'false'}
+        data-trigger-animation-active={activeAnimationKey ? 'true' : 'false'}
+        style={transitionStyle}
+      >
         <div
           style={{
             height: '100%',
@@ -137,6 +214,15 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
   }
 
   const handleCardClick = (event?: React.MouseEvent<HTMLElement>) => {
+    const actionAnimation = resolveTriggerAnimation(triggerAnimations, 'action');
+    if (actionAnimation) {
+      triggerSequenceRef.current += 1;
+      setPendingTriggerAnimation({
+        key: `${actionAnimation.id}-${triggerSequenceRef.current}`,
+        config: actionAnimation,
+      });
+    }
+
     onClick?.(event);
     const popupAction = resolvePopupFromAction(card.tap_action);
     if (popupAction) {
@@ -305,8 +391,10 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
 
   return (
     <div
+      ref={wrapperRef}
       data-testid="conditional-visibility-wrapper"
       data-visible={isVisible ? 'true' : 'false'}
+      data-trigger-animation-active={activeAnimationKey ? 'true' : 'false'}
       style={{ ...transitionStyle, ...spacingStyle }}
     >
       {renderedCard}

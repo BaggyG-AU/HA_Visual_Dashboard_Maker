@@ -21,6 +21,7 @@ import { getMissingEntityReferences, hasEntityContextVariables, resolveEntityCon
 import { AttributeDisplayControls } from './AttributeDisplayControls';
 import { ConditionalVisibilityControls } from './ConditionalVisibilityControls';
 import { StateIconMappingControls } from './StateIconMappingControls';
+import { TriggerAnimationControls } from './TriggerAnimationControls';
 import type { AttributeDisplayLayout } from '../types/attributeDisplay';
 import { MultiEntityControls } from './MultiEntityControls';
 import type { AggregateFunction, BatchActionType, MultiEntityMode } from '../types/multiEntity';
@@ -416,6 +417,39 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     return (
       <Form.Item name="visibility_conditions">
         <ConditionalVisibilityControls />
+      </Form.Item>
+    );
+  };
+
+  const renderTriggerAnimationSection = (values: FormCardValues) => {
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
+
+    const supportsTriggerAnimations =
+      typeof values.entity === 'string'
+      || Array.isArray(values.entities)
+      || typeof currentCard.entity === 'string'
+      || Array.isArray(currentCard.entities);
+
+    if (!supportsTriggerAnimations) {
+      return null;
+    }
+
+    const entityField = typeof values.entity === 'string' ? values.entity : undefined;
+    const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
+    const firstEntityValue = entitiesField
+      ? (typeof entitiesField[0] === 'string'
+        ? entitiesField[0]
+        : (typeof entitiesField[0] === 'object' && entitiesField[0] !== null && 'entity' in entitiesField[0]
+          ? (entitiesField[0] as { entity?: unknown }).entity
+          : undefined))
+      : undefined;
+    const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
+    const defaultEntityId = entityField ?? currentCard.entity ?? firstEntity ?? null;
+
+    return (
+      <Form.Item name="trigger_animations">
+        <TriggerAnimationControls defaultEntityId={defaultEntityId} />
       </Form.Item>
     );
   };
@@ -1411,6 +1445,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
       <Form.Item noStyle shouldUpdate>
         {() => renderConditionalVisibilitySection(form.getFieldsValue(true) as FormCardValues)}
+      </Form.Item>
+
+      <Form.Item noStyle shouldUpdate>
+        {() => renderTriggerAnimationSection(form.getFieldsValue(true) as FormCardValues)}
       </Form.Item>
 
       <Form.Item noStyle shouldUpdate>
