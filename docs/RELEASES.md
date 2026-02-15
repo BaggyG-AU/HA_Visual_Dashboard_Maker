@@ -1,10 +1,14 @@
 # Releases
 
-Repo versioning follows the `package.json` version and annotated git tags. Current package version: `0.4.3-beta.1`; next tag should match the version bump (e.g., `v0.4.3-beta.2` or higher).
+Repo versioning follows the `package.json` version and annotated git tags. Current package version: `0.7.5-beta.10`; next tag should match the version bump (e.g., `v0.7.5-beta.10` or higher).
 
 ## Current Progress Snapshot
-- Entity Intelligence Feature 3.7 (Multi-entity Support): complete in working tree (2026-02-05).
-- Detailed implementation, Must Have/Should Have status, and verification commands are recorded in `docs/features/ENTITY_INTELLIGENCE_LAYER_IMPLIMENTATION.md`.
+- Phase 4 (Layout Infrastructure Layer): complete (v0.7.4) as of 2026-02-14.
+- Phase 5 (Advanced Visualization Layer): delivered and consolidated in v0.7.5-beta.10.
+- Detailed implementation status and verification guidance are tracked in:
+  - `docs/archive/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
+  - `docs/features/HAVDM_ADVANCED_FEATURES_PHASES_SUMMARY.md`
+  - `docs/releases/RELEASE_NOTES_v0.7.5-beta.10.md`
 
 ## Preconditions
 - All tests green:

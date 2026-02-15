@@ -11,6 +11,19 @@
 - Carousel, accordion, and tabs naming/schema alignment work has been implemented in product code (`custom:swipe-card`, `custom:expander-card`, `custom:tabbed-card`) with legacy migration support.
 - Popup is not fully complete from an alignment perspective. The current `custom:popup-card` implementation remains HAVDM-specific while HACS alignment options are being researched.
 
+## Phase 5 Alignment Addendum (2026-02-15)
+
+- Advanced Visualization delivery in `v0.7.5-beta.10` includes upstream-aligned card types for:
+  - `custom:apexcharts-card`
+  - `custom:gauge-card-pro`
+  - `custom:slider-button-card`
+  - `custom:mini-graph-card`
+  - Built-in `calendar` and `weather-forecast`
+- Remaining Phase 5 alignment debt is explicitly tracked for:
+  - `custom:native-graph-card`
+  - `custom:modern-circular-gauge`
+- These two types require a dedicated conversion decision (upstream mapping and export contract) before Phase 5 can be considered fully HACS-aligned.
+
 ---
 
 ## Objective

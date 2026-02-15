@@ -99,7 +99,7 @@ Phase 8 documentation is completed for the Color Picker Foundation Layer work:
   - Skipped tests registry (with revisit triggers)
 
 Key files:
-- `docs/features/FOUNDATION_LAYER_IMPLEMENTATION.md`
+- `docs/archive/features/FOUNDATION_LAYER_IMPLEMENTATION.md`
 - `docs/features/COLOR_PICKER_COMPONENT_API.md`
 - `docs/product/COLOR_PICKER_USER_GUIDE.md`
 - `docs/product/KEYBOARD_SHORTCUTS.md`

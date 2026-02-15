@@ -217,7 +217,16 @@ export interface WeatherForecastCard extends BaseCard {
   type: 'weather-forecast';
   entity: string;
   name?: string;
+  forecast_type?: 'daily' | 'hourly';
+  mode?: 'daily' | 'hourly';
+  metrics?: Array<'temperature' | 'precipitation' | 'wind_speed'>;
+  icon_animation?: 'off' | 'subtle' | 'pulse';
+  days?: number;
+  locale?: string;
+  unit_system?: 'auto' | 'metric' | 'imperial';
+  show_current?: boolean;
   show_forecast?: boolean;
+  round_temperature?: boolean;
   theme?: string;
 }
 

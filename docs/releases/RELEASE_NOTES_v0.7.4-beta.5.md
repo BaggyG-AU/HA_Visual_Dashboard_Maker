@@ -69,11 +69,11 @@ Testing standards compliance:
 
 ## 📝 Documentation
 
-- Updated `docs/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md` with Feature 4.5 completion and deferred follow-up notes.
+- Updated `docs/archive/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md` with Feature 4.5 completion and deferred follow-up notes.
 - Added Feature 4.5 prompt/spec reference document:
-  - `docs/features/PHASE_4_5_LAYOUT_ENHANCEMENTS_PROMPT.md`
+  - `docs/archive/features/PHASE_4_5_LAYOUT_ENHANCEMENTS_PROMPT.md`
 - Added Feature 4.6 prompt/spec reference document:
-  - `docs/features/PHASE_4_6_CARD_SPACING_PROMPT.md`
+  - `docs/archive/features/PHASE_4_6_CARD_SPACING_PROMPT.md`
 - Updated/maintained standards and prompt alignment docs for Phase 4 implementation flow.
 
 ---

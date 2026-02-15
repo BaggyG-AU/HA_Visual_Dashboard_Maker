@@ -1,52 +1,14 @@
 import React, { useMemo } from 'react';
-import { Card as AntCard } from 'antd';
+import { Alert, Card as AntCard, Empty } from 'antd';
 import ReactApexChart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useEntityContextResolver } from '../../hooks/useEntityContext';
-
-interface ApexChartsSeries {
-  entity: string;
-  name?: string;
-  type?: 'line' | 'area' | 'column' | 'bar';
-  stroke_width?: number;
-  color?: string;
-  group_by?: {
-    func?: string;
-    duration?: string;
-  };
-  [key: string]: any;
-}
-
-interface ApexChartsCardConfig {
-  type: 'custom:apexcharts-card';
-  header?: {
-    title?: string;
-    show?: boolean;
-    show_states?: boolean;
-    colorize_states?: boolean;
-  };
-  graph_span?: string;
-  update_interval?: string;
-  series: ApexChartsSeries[];
-  apex_config?: {
-    chart?: {
-      height?: number;
-      type?: string;
-      [key: string]: any;
-    };
-    stroke?: {
-      width?: number;
-      curve?: string;
-    };
-    [key: string]: any;
-  };
-  yaxis?: any[];
-  experimental?: {
-    color_threshold?: boolean;
-  };
-  [key: string]: any;
-}
+import {
+  buildDeterministicSeriesData,
+  normalizeApexChartsCardConfig,
+} from '../../features/apexcharts/apexchartsService';
+import { ApexChartsCardConfig } from '../../features/apexcharts/types';
 
 interface ApexChartsCardRendererProps {
   card: ApexChartsCardConfig;
@@ -54,21 +16,41 @@ interface ApexChartsCardRendererProps {
   onClick?: () => void;
 }
 
-// Default colors for chart series
 const DEFAULT_COLORS = [
-  '#00d9ff', // Cyan
-  '#52c41a', // Green
-  '#faad14', // Orange
-  '#f5222d', // Red
-  '#722ed1', // Purple
-  '#13c2c2', // Teal
-  '#eb2f96', // Magenta
-  '#1890ff', // Blue
+  '#00d9ff',
+  '#52c41a',
+  '#faad14',
+  '#f5222d',
+  '#722ed1',
+  '#13c2c2',
+  '#eb2f96',
+  '#1890ff',
 ];
 
+const buildFallback = (message: string): React.ReactElement => (
+  <div
+    data-testid="apexcharts-fallback"
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 220,
+      borderRadius: 8,
+      border: '1px dashed #5c5c5c',
+      background: '#161616',
+      padding: 16,
+    }}
+  >
+    <Empty
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+      description={<span style={{ color: '#bfbfbf' }}>{message}</span>}
+    />
+  </div>
+);
+
 /**
- * Visual renderer for ApexCharts card type
- * Displays interactive charts using ApexCharts library
+ * Visual renderer for ApexCharts card type with deterministic preview behavior.
+ * Keeps unsupported advanced options as YAML pass-through while hardening common fields.
  */
 export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
   card,
@@ -76,114 +58,141 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
   onClick,
 }) => {
   const resolveContext = useEntityContextResolver();
-  const defaultEntityId = card.series?.[0]?.entity;
-  const resolvedTitle = card.header?.title ? resolveContext(card.header.title, defaultEntityId ?? null) : '';
-  const title = (card.header?.title ? resolvedTitle : '') || 'Chart';
-  const showHeader = card.header?.show !== false;
-  const chartHeight = card.apex_config?.chart?.height || 280;
-  const backgroundStyle = getCardBackgroundStyle((card as { style?: string }).style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const normalized = useMemo(() => normalizeApexChartsCardConfig(card), [card]);
+  const defaultEntityId = normalized.series[0]?.entity;
+  const resolvedTitle = normalized.header?.title
+    ? resolveContext(normalized.header.title, defaultEntityId ?? null)
+    : '';
+  const title = (normalized.header?.title ? resolvedTitle : '') || 'Apex Chart';
+  const showHeader = normalized.header?.show !== false;
+  const chartHeight = normalized.apex_config.chart.height;
 
-  // Generate mock data for demonstration
-  const { series, options } = useMemo(() => {
-    const seriesData = (card.series || []).map((s, idx) => ({
-      name: s.name ? resolveContext(s.name, s.entity) : s.entity.split('.')[1]?.replace(/_/g, ' ') || `Series ${idx + 1}`,
-      data: generateMockData(30), // Generate 30 data points
-    }));
+  const backgroundStyle = getCardBackgroundStyle(
+    (card as { style?: string }).style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
-    const apexOptions: ApexOptions = {
-      chart: {
-        type: (card.apex_config?.chart?.type as any) || 'line',
-        height: chartHeight,
-        background: 'transparent',
-        toolbar: {
-          show: false,
-        },
-        animations: {
-          enabled: false, // Disable for better performance in editor
-        },
-        ...card.apex_config?.chart,
-      },
-      theme: {
-        mode: 'dark',
-      },
-      colors: card.series?.map((s, idx) => s.color || DEFAULT_COLORS[idx % DEFAULT_COLORS.length]),
-      stroke: {
-        width: card.apex_config?.stroke?.width || 2,
-        curve: (card.apex_config?.stroke?.curve as any) || 'smooth',
-      },
-      xaxis: {
-        type: 'datetime',
-        labels: {
-          style: {
-            colors: '#999',
-            fontSize: '10px',
+  const computedChart = useMemo(() => {
+    if (normalized.series.length === 0) {
+      return {
+        fallback: 'No valid Apex series configured. Add at least one series entity in Form or YAML.',
+      } as const;
+    }
+
+    try {
+      const series = normalized.series.map((entry) => ({
+        name: entry.name ? resolveContext(entry.name, entry.entity) : entry.name,
+        data: buildDeterministicSeriesData(entry, normalized.graph_span_seconds),
+      }));
+
+      const options: ApexOptions = {
+        chart: {
+          type: normalized.apex_config.chart.type,
+          height: chartHeight,
+          background: 'transparent',
+          toolbar: {
+            show: false,
           },
-          datetimeFormatter: {
-            hour: 'HH:mm',
+          animations: {
+            enabled: false,
           },
+          ...normalized.apex_config.chart,
         },
-      },
-      yaxis: {
-        labels: {
-          style: {
-            colors: '#999',
-            fontSize: '10px',
-          },
-          formatter: (value: number) => value.toFixed(1),
+        theme: {
+          mode: 'dark',
         },
-        ...card.yaxis?.[0],
-      },
-      grid: {
-        borderColor: '#434343',
-        strokeDashArray: 3,
+        colors: normalized.series.map((entry, idx) => entry.color || DEFAULT_COLORS[idx % DEFAULT_COLORS.length]),
+        stroke: {
+          width: normalized.apex_config.stroke.width,
+          curve: normalized.apex_config.stroke.curve,
+          ...normalized.apex_config.stroke,
+        },
         xaxis: {
-          lines: {
-            show: true,
+          type: 'datetime',
+          labels: {
+            style: {
+              colors: '#999',
+              fontSize: '10px',
+            },
+            datetimeFormatter: {
+              hour: 'HH:mm',
+            },
           },
         },
         yaxis: {
-          lines: {
-            show: true,
+          labels: {
+            style: {
+              colors: '#999',
+              fontSize: '10px',
+            },
+            formatter: (value: number) => value.toFixed(1),
+          },
+          ...(normalized.yaxis?.[0] || {}),
+        },
+        grid: {
+          borderColor: '#434343',
+          strokeDashArray: 3,
+          xaxis: {
+            lines: {
+              show: true,
+            },
+          },
+          yaxis: {
+            lines: {
+              show: true,
+            },
           },
         },
-      },
-      tooltip: {
-        theme: 'dark',
-        x: {
-          format: 'HH:mm',
+        tooltip: {
+          theme: 'dark',
+          x: {
+            format: 'HH:mm',
+          },
         },
-      },
-      legend: {
-        show: true,
-        position: 'bottom',
-        fontSize: '11px',
-        labels: {
-          colors: '#e6e6e6',
+        legend: {
+          show: true,
+          position: 'bottom',
+          fontSize: '11px',
+          labels: {
+            colors: '#e6e6e6',
+          },
+          markers: {
+            width: 8,
+            height: 8,
+          },
         },
-        markers: {
-          width: 8,
-          height: 8,
+        dataLabels: {
+          enabled: false,
         },
-      },
-      dataLabels: {
-        enabled: false,
-      },
-    };
+        ...normalized.apex_config,
+      };
 
-    return { series: seriesData, options: apexOptions };
-  }, [card, chartHeight, resolveContext]);
+      return {
+        series,
+        options,
+      } as const;
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'Unknown ApexCharts preview error';
+      return {
+        fallback: `ApexCharts preview unavailable: ${reason}`,
+      } as const;
+    }
+  }, [normalized, chartHeight, resolveContext]);
 
   return (
     <AntCard
       size="small"
+      data-testid="apexcharts-card"
       title={
         showHeader ? (
-          <div style={{
-            fontSize: '16px',
-            fontWeight: 500,
-            color: '#e1e1e1',
-            padding: '0',
-          }}>
+          <div
+            style={{
+              fontSize: '16px',
+              fontWeight: 500,
+              color: '#e1e1e1',
+              padding: '0',
+            }}
+          >
             {title}
           </div>
         ) : undefined
@@ -208,45 +217,36 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
           height: showHeader ? 'calc(100% - 48px)' : '100%',
           display: 'flex',
           flexDirection: 'column',
+          gap: 12,
         },
       }}
       onClick={onClick}
       hoverable
     >
-      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        <ReactApexChart
-          options={options}
-          series={series}
-          type={(card.apex_config?.chart?.type as any) || 'line'}
-          height="100%"
+      {normalized.warnings.length > 0 && (
+        <Alert
+          data-testid="apexcharts-warning"
+          type="warning"
+          showIcon
+          message="Preview guardrails applied"
+          description={normalized.warnings[0]}
         />
+      )}
+
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        {'fallback' in computedChart ? (
+          buildFallback(computedChart.fallback)
+        ) : (
+          <div data-testid="apexcharts-chart">
+            <ReactApexChart
+              options={computedChart.options}
+              series={computedChart.series}
+              type={normalized.apex_config.chart.type}
+              height="100%"
+            />
+          </div>
+        )}
       </div>
     </AntCard>
   );
 };
-
-/**
- * Generate mock data points for chart demonstration
- * In a real implementation, this would fetch actual historical data from Home Assistant
- */
-function generateMockData(points: number): Array<{ x: number; y: number }> {
-  const now = Date.now();
-  const interval = 300000; // 5 minutes in milliseconds
-  const data: Array<{ x: number; y: number }> = [];
-
-  let value = Math.random() * 100 + 50; // Start with random value
-
-  for (let i = points - 1; i >= 0; i--) {
-    const timestamp = now - i * interval;
-    // Random walk with some variance
-    const change = (Math.random() - 0.5) * 20;
-    value = Math.max(0, value + change);
-
-    data.push({
-      x: timestamp,
-      y: parseFloat(value.toFixed(2)),
-    });
-  }
-
-  return data;
-}

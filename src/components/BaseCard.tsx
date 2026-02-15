@@ -12,7 +12,7 @@ import { HorizontalStackCardRenderer } from './cards/HorizontalStackCardRenderer
 import { VerticalStackCardRenderer } from './cards/VerticalStackCardRenderer';
 import { GridCardRenderer } from './cards/GridCardRenderer';
 import { MushroomCardRenderer } from './cards/MushroomCardRenderer';
-import { MiniGraphCardRenderer } from './cards/MiniGraphCardRenderer';
+import { SparklineCardRenderer } from './cards/SparklineCardRenderer';
 import { BubbleCardRenderer } from './cards/BubbleCardRenderer';
 import { GaugeCardRenderer } from './cards/GaugeCardRenderer';
 import { LightCardRenderer } from './cards/LightCardRenderer';
@@ -36,6 +36,12 @@ import { SwiperCardRenderer } from './cards/SwiperCardRenderer';
 import { ExpanderCardRenderer } from './cards/ExpanderCardRenderer';
 import { TabsCardRenderer } from './cards/TabsCardRenderer';
 import { PopupTriggerCardRenderer } from './cards/PopupTriggerCardRenderer';
+import { NativeGraphsCardRenderer } from './cards/NativeGraphsCardRenderer';
+import { GaugeCardProCardRenderer } from './cards/GaugeCardProCardRenderer';
+import { AdvancedSliderCardRenderer } from './cards/AdvancedSliderCardRenderer';
+import { ProgressRingCardRenderer } from './cards/ProgressRingCardRenderer';
+import { TimelineCardRenderer } from './cards/TimelineCardRenderer';
+import { CalendarViewCardRenderer } from './cards/CalendarViewCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { evaluateVisibilityConditions } from '../services/conditionalVisibility';
@@ -174,6 +180,12 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
     case 'weather-forecast':
       renderedCard = <WeatherForecastCardRenderer card={card as React.ComponentProps<typeof WeatherForecastCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
+    case 'logbook':
+      renderedCard = <TimelineCardRenderer card={card as React.ComponentProps<typeof TimelineCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+      break;
+    case 'calendar':
+      renderedCard = <CalendarViewCardRenderer card={card as React.ComponentProps<typeof CalendarViewCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+      break;
     case 'map':
       renderedCard = <MapCardRenderer card={card as React.ComponentProps<typeof MapCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
@@ -207,6 +219,18 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
     case 'custom:apexcharts-card':
       renderedCard = <ApexChartsCardRenderer card={card as React.ComponentProps<typeof ApexChartsCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
+    case 'custom:native-graph-card':
+      renderedCard = <NativeGraphsCardRenderer card={card as React.ComponentProps<typeof NativeGraphsCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+      break;
+    case 'custom:gauge-card-pro':
+      renderedCard = <GaugeCardProCardRenderer card={card as React.ComponentProps<typeof GaugeCardProCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+      break;
+    case 'custom:slider-button-card':
+      renderedCard = <AdvancedSliderCardRenderer card={card as React.ComponentProps<typeof AdvancedSliderCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+      break;
+    case 'custom:modern-circular-gauge':
+      renderedCard = <ProgressRingCardRenderer card={card as React.ComponentProps<typeof ProgressRingCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+      break;
     case 'custom:power-flow-card-plus':
     case 'custom:power-flow-card':
       renderedCard = <PowerFlowCardRenderer card={card as React.ComponentProps<typeof PowerFlowCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
@@ -215,7 +239,7 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
       renderedCard = <BetterThermostatCardRenderer card={card as React.ComponentProps<typeof BetterThermostatCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
     case 'custom:mini-graph-card':
-      renderedCard = <MiniGraphCardRenderer card={card as React.ComponentProps<typeof MiniGraphCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+      renderedCard = <SparklineCardRenderer card={card as React.ComponentProps<typeof SparklineCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
     case 'custom:bubble-card':
       renderedCard = <BubbleCardRenderer card={card as React.ComponentProps<typeof BubbleCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;

@@ -175,6 +175,10 @@
             "vertical-stack",
             "weather-forecast",
             "custom:apexcharts-card",
+            "custom:native-graph-card",
+            "custom:gauge-card-pro",
+            "custom:slider-button-card",
+            "custom:modern-circular-gauge",
             "custom:auto-entities",
             "custom:button-card",
             "custom:card-mod",
@@ -240,6 +244,56 @@
               }
             ]
           }
+        },
+        "forecast_type": {
+          "type": "string",
+          "description": "Weather forecast mode",
+          "enum": ["daily", "hourly"]
+        },
+        "mode": {
+          "type": "string",
+          "description": "Legacy alias for weather forecast mode",
+          "enum": ["daily", "hourly"]
+        },
+        "metrics": {
+          "type": "array",
+          "description": "Weather metrics to render in visual mode",
+          "items": {
+            "type": "string",
+            "enum": ["temperature", "precipitation", "wind_speed"]
+          }
+        },
+        "icon_animation": {
+          "type": "string",
+          "description": "Icon animation mode for weather cards",
+          "enum": ["off", "subtle", "pulse"]
+        },
+        "days": {
+          "type": "integer",
+          "description": "Forecast horizon in days",
+          "minimum": 1,
+          "maximum": 7
+        },
+        "locale": {
+          "type": "string",
+          "description": "Locale used for weather date formatting"
+        },
+        "unit_system": {
+          "type": "string",
+          "description": "Preferred unit system for weather value formatting",
+          "enum": ["auto", "metric", "imperial"]
+        },
+        "show_current": {
+          "type": "boolean",
+          "description": "Display current weather state in card header"
+        },
+        "show_forecast": {
+          "type": "boolean",
+          "description": "Display forecast chart and points"
+        },
+        "round_temperature": {
+          "type": "boolean",
+          "description": "Round rendered temperature values"
         },
         "visibility_conditions": {
           "$ref": "#/definitions/visibilityConditions",
@@ -364,6 +418,112 @@
           "type": "boolean",
           "description": "Whether to show icon",
           "default": true
+        },
+        "calendar_entities": {
+          "type": "array",
+          "description": "HAVDM: Calendar source entities for calendar card editing",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z_]+\\.[a-z0-9_]+$"
+          }
+        },
+        "initial_view": {
+          "type": "string",
+          "description": "Calendar initial view (upstream Home Assistant)",
+          "enum": ["day", "list", "month"]
+        },
+        "view": {
+          "type": "string",
+          "description": "HAVDM: Calendar editor view mode",
+          "enum": ["month", "week", "day"]
+        },
+        "show_week_numbers": {
+          "type": "boolean",
+          "description": "HAVDM: Show week numbers in calendar preview"
+        },
+        "show_agenda": {
+          "type": "boolean",
+          "description": "HAVDM: Show agenda sidebar in calendar preview"
+        },
+        "on_date_select": {
+          "$ref": "#/definitions/action",
+          "description": "HAVDM: Action metadata for date selection interactions"
+        },
+        "hours_to_show": {
+          "type": "number",
+          "description": "History window in hours (sparkline/mini-graph/timeline)",
+          "minimum": 1
+        },
+        "max_items": {
+          "type": "integer",
+          "description": "Maximum rendered event items for timeline/logbook cards",
+          "minimum": 1
+        },
+        "orientation": {
+          "type": "string",
+          "description": "Timeline orientation",
+          "enum": ["vertical", "horizontal"]
+        },
+        "show_now_marker": {
+          "type": "boolean",
+          "description": "Show the current-time marker in timeline cards"
+        },
+        "group_by": {
+          "type": "string",
+          "description": "Timeline grouping strategy",
+          "enum": ["none", "day", "hour"]
+        },
+        "enable_scrubber": {
+          "type": "boolean",
+          "description": "Enable interactive timeline scrubber"
+        },
+        "item_density": {
+          "type": "string",
+          "description": "Timeline item density",
+          "enum": ["compact", "comfortable"]
+        },
+        "truncate_length": {
+          "type": "integer",
+          "description": "Max characters before truncating timeline item text",
+          "minimum": 1
+        },
+        "points_per_hour": {
+          "type": "number",
+          "description": "Sampling density for sparkline/mini-graph",
+          "minimum": 0.25
+        },
+        "line_width": {
+          "type": "number",
+          "description": "Sparkline stroke width",
+          "minimum": 1
+        },
+        "height": {
+          "type": "number",
+          "description": "Card graph area height in pixels"
+        },
+        "show": {
+          "type": "object",
+          "description": "Per-element visibility options (used by mini-graph-card)",
+          "properties": {
+            "name": {
+              "type": "boolean"
+            },
+            "state": {
+              "type": "boolean"
+            },
+            "icon": {
+              "type": "boolean"
+            },
+            "fill": {
+              "type": "boolean",
+              "description": "Area fill under sparkline"
+            },
+            "extrema": {
+              "type": "boolean",
+              "description": "Show min/max markers"
+            }
+          },
+          "additionalProperties": true
         },
         "tap_action": {
           "$ref": "#/definitions/action",
@@ -628,6 +788,155 @@
             { "type": "string", "enum": ["auto"] }
           ],
           "description": "Slides per view"
+        },
+        "chart_type": {
+          "type": "string",
+          "enum": ["line", "bar", "area", "pie"],
+          "description": "Native graph chart mode"
+        },
+        "time_range": {
+          "type": "string",
+          "pattern": "^\\d+(s|m|h|d)$",
+          "description": "Graph time range (e.g. 30m, 24h, 7d)"
+        },
+        "refresh_interval": {
+          "type": "string",
+          "pattern": "^\\d+(s|m|h|d)$",
+          "description": "Graph data refresh interval"
+        },
+        "graph_span": {
+          "type": "string",
+          "pattern": "^\\d+(m|h|d|w)$",
+          "description": "Apex chart time span (e.g. 6h, 24h, 7d)"
+        },
+        "update_interval": {
+          "oneOf": [
+            { "type": "string", "pattern": "^\\d+(s|m|h|d|w)$" },
+            { "type": "number", "minimum": 0 }
+          ],
+          "description": "Update interval for cards supporting polling/refresh cadence"
+        },
+        "header": {
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "object",
+              "properties": {
+                "title": { "type": "string" },
+                "show": { "type": "boolean" },
+                "show_states": { "type": "boolean" },
+                "colorize_states": { "type": "boolean" }
+              },
+              "additionalProperties": true
+            }
+          ],
+          "description": "Header configuration"
+        },
+        "apex_config": {
+          "type": "object",
+          "description": "ApexCharts advanced pass-through configuration",
+          "properties": {
+            "chart": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["line", "area", "bar", "column"]
+                },
+                "height": {
+                  "type": "number",
+                  "minimum": 120,
+                  "maximum": 720
+                }
+              },
+              "additionalProperties": true
+            },
+            "stroke": {
+              "type": "object",
+              "properties": {
+                "width": { "type": "number", "minimum": 0, "maximum": 12 },
+                "curve": {
+                  "type": "string",
+                  "enum": ["smooth", "straight", "stepline"]
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": true
+        },
+        "x_axis": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["time", "category"]
+            }
+          },
+          "additionalProperties": true
+        },
+        "y_axis": {
+          "type": "object",
+          "properties": {
+            "min": {
+              "oneOf": [
+                { "type": "number" },
+                { "type": "string", "enum": ["auto"] }
+              ]
+            },
+            "max": {
+              "oneOf": [
+                { "type": "number" },
+                { "type": "string", "enum": ["auto"] }
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        "series": {
+          "type": "array",
+          "description": "Series configuration for native graph and ApexCharts cards",
+          "items": {
+            "type": "object",
+            "properties": {
+              "entity": {
+                "type": "string",
+                "pattern": "^[a-z_]+\\.[a-z0-9_]+$"
+              },
+              "name": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": ["line", "area", "column", "bar"]
+              },
+              "stroke_width": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 12
+              },
+              "group_by": {
+                "type": "object",
+                "properties": {
+                  "func": { "type": "string" },
+                  "duration": { "type": "string" }
+                },
+                "additionalProperties": true
+              },
+              "label": { "type": "string" },
+              "color": { "type": "string" },
+              "axis": {
+                "type": "string",
+                "enum": ["left", "right"]
+              },
+              "smooth": { "type": "boolean" },
+              "stack": { "type": "boolean" }
+            },
+            "required": ["entity"],
+            "additionalProperties": true
+          }
+        },
+        "zoom_pan": {
+          "type": "boolean",
+          "description": "Enable brush-based zoom/pan controls for line/area charts"
         },
         "title-card": {
           "$ref": "#/definitions/card",

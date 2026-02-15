@@ -1,8 +1,8 @@
 # HAVDM Advanced Features - Implementation Summary
 
-**Date**: January 4, 2026
-**Status**: ✅ Planning Complete - Ready for Implementation
-**Next Step**: Begin Phase 1 Development
+**Date**: February 14, 2026
+**Status**: :white_check_mark: Phase 5 delivered and stabilized
+**Next Step**: Phase 6 planning and scope confirmation
 
 ---
 
@@ -11,7 +11,7 @@
 **Total Features**: 53 features (45 advanced features + 8 existing feature alignment)
 **Timeline**: 22-24 weeks (5.5-6 months)
 **Phases**: 7 dependency-based phases + 1 alignment phase
-**First Release**: v0.4.0 (Phase 1 complete - Foundation Layer)
+**Current Baseline**: v0.7.5-beta.10 (Phase 5 delivery consolidation)
 **Production Release**: v1.0.0 (All phases complete)
 
 ---
@@ -51,6 +51,14 @@
 - **Accessibility**: WCAG 2.1 AA compliance (mandatory)
 - **i18n**: Phase-based (English in Phase 1, translations later)
 - **Backward Compatibility**: Progressive enhancement + auto-mapping + graceful degradation
+
+### Upstream Card Alignment Gate (Mandatory for 5.x and Later)
+
+For Phase 5+ implementation and prompt artifacts:
+- Review relevant upstream base HA/HACS card implementations before coding
+- Confirm real upstream `type` mapping and YAML contract parity
+- If unmapped, document feasibility analysis (alternative upstream card, effort/risk, and now-vs-new-feature recommendation)
+- Do not introduce invented custom card type strings unless explicitly exempted in `ai_rules.md`
 
 ---
 
@@ -120,9 +128,9 @@
 
 ---
 
-### Phase 5: Advanced Visualization Layer (3-4 weeks)
+### Phase 5: Advanced Visualization Layer (4-5 weeks)
 **Dependencies**: Phases 1-4 (Colors, Animations, Gradients, Layouts)
-**Features**: 8
+**Features**: 9
 
 1. Native Graphs (Recharts) - 6-7 days
 2. Advanced Gauge Card - 5-6 days
@@ -132,6 +140,7 @@
 6. Timeline Card - 4-5 days
 7. Calendar View Card - 5-6 days
 8. Weather Forecast Visualization - 4-5 days
+9. ApexCharts Advanced Integration - 8-12 days
 
 **Deliverables**: Rich data visualization
 **Release**: v0.8.0
@@ -282,6 +291,6 @@ Each phase complete when:
 
 ---
 
-**Status**: ✅ Ready for Phase 1 Implementation
-**Next Milestone**: v0.4.0 (Phase 1 Complete)
-**Target Date**: ~3 weeks from start
+**Status**: :white_check_mark: Phase 5 Delivered
+**Next Milestone**: Phase 6 planning baseline
+**Target Date**: TBD by roadmap review

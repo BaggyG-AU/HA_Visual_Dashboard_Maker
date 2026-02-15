@@ -1,7 +1,7 @@
 {
   "name": "ha-visual-dashboard-maker",
   "productName": "HA Visual Dashboard Maker",
-  "version": "0.7.4-beta.R",
+  "version": "0.7.5-beta.10",
   "description": "A visual WYSIWYG editor for Home Assistant dashboards with support for custom cards",
   "main": ".vite/build/main.js",
   "private": true,
@@ -102,6 +102,7 @@
     "react-colorful": "^5.6.1",
     "react-dom": "^19.2.3",
     "react-grid-layout": "^2.2.2",
+    "recharts": "^3.7.0",
     "swiper": "^12.1.0",
     "ws": "^8.18.3",
     "zustand": "^5.0.9"

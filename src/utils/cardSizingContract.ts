@@ -142,6 +142,26 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       break;
     }
 
+    case 'custom:native-graph-card': {
+      height = 5;
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 4;
+      maxH = 20;
+      break;
+    }
+
+    case 'custom:gauge-card-pro': {
+      height = 4;
+      width = 4;
+      minW = 3;
+      maxW = 8;
+      minH = 3;
+      maxH = 10;
+      break;
+    }
+
     case 'custom:power-flow-card-plus':
     case 'custom:power-flow-card': {
       // Power flow cards are compact in HA - around 280px total
@@ -252,6 +272,16 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
     case 'history-graph':
       // History graph cards need space for timeline (~280px in HA)
       // 280 / 56 ≈ 5 rows
+      height = 5;
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 4;
+      maxH = 12;
+      break;
+
+    case 'logbook':
+      // Logbook/timeline cards are similar in density to history graph cards
       height = 5;
       width = 6;
       minW = 4;

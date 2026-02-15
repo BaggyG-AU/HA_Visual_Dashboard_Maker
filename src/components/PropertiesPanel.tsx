@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Form, Input, Button, Space, Typography, Divider, Select, Alert, Tabs, message, Tooltip, Switch, InputNumber } from 'antd';
-import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { UndoOutlined, FormatPainterOutlined, DatabaseOutlined, PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import * as monaco from 'monaco-editor';
 import * as yaml from 'js-yaml';
 import { Card } from '../types/dashboard';
@@ -600,6 +600,39 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         // Keep the complex object structure intact
         // The form won't show EntityMultiSelect for these
       }
+    }
+
+    if (card.type === 'custom:mini-graph-card') {
+      const typed = normalized as FormCardValues & {
+        show?: Record<string, unknown>;
+        hours_to_show?: unknown;
+        points_per_hour?: unknown;
+        line_width?: unknown;
+        height?: unknown;
+      };
+
+      const show = typed.show && typeof typed.show === 'object' ? typed.show : {};
+      typed.show = {
+        name: show.name !== false,
+        state: show.state !== false,
+        icon: show.icon !== false,
+        fill: show.fill === true,
+        extrema: show.extrema === true,
+      };
+
+      const normalizeNumber = (value: unknown, fallback: number): number => {
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (typeof value === 'string') {
+          const parsed = Number(value);
+          if (Number.isFinite(parsed)) return parsed;
+        }
+        return fallback;
+      };
+
+      typed.hours_to_show = normalizeNumber(typed.hours_to_show, 24);
+      typed.points_per_hour = normalizeNumber(typed.points_per_hour, 1);
+      typed.line_width = normalizeNumber(typed.line_width, 2);
+      typed.height = normalizeNumber(typed.height, 96);
     }
 
     // Normalize icon color mode for form selection when stored on the card
@@ -1402,14 +1435,53 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Min</span>}
                     name="min"
                   >
-                    <Input type="number" placeholder="0" />
+                    <Input data-testid="ha-gauge-min" type="number" placeholder="0" />
                   </Form.Item>
 
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Max</span>}
                     name="max"
                   >
-                    <Input type="number" placeholder="100" />
+                    <Input data-testid="ha-gauge-max" type="number" placeholder="100" />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Unit</span>}
+                    name="unit"
+                  >
+                    <Input data-testid="ha-gauge-unit" placeholder="%, °C, kWh..." />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Needle</span>}
+                    name="needle"
+                    valuePropName="checked"
+                  >
+                    <Switch data-testid="ha-gauge-needle" />
+                  </Form.Item>
+
+                  <Divider />
+                  <Text strong style={{ color: 'white' }}>Severity Thresholds</Text>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Green From</span>}
+                    name={['severity', 'green']}
+                  >
+                    <Input type="number" placeholder="0" />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Yellow From</span>}
+                    name={['severity', 'yellow']}
+                  >
+                    <Input type="number" placeholder="50" />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Red From</span>}
+                    name={['severity', 'red']}
+                  >
+                    <Input type="number" placeholder="80" />
                   </Form.Item>
                 </>
               )}
@@ -1438,6 +1510,174 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="hours_to_show"
               >
                 <Input type="number" placeholder="24" />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'calendar' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input data-testid="calendar-title" placeholder="Calendar" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Calendar Entities</span>}
+                name="calendar_entities"
+                help={<span style={{ color: '#666' }}>Choose Home Assistant calendar entities</span>}
+              >
+                <EntityMultiSelect
+                  dataTestId="calendar-entities"
+                  placeholder="calendar.home"
+                  filterDomains={['calendar']}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>View</span>}
+                name="view"
+              >
+                <Select
+                  data-testid="calendar-view"
+                  options={[
+                    { value: 'month', label: 'Month' },
+                    { value: 'week', label: 'Week' },
+                    { value: 'day', label: 'Day' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Week Numbers</span>}
+                name="show_week_numbers"
+                valuePropName="checked"
+              >
+                <Switch data-testid="calendar-show-week-numbers" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Agenda Sidebar</span>}
+                name="show_agenda"
+                valuePropName="checked"
+              >
+                <Switch data-testid="calendar-show-agenda" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Date Selection Action</span>}
+                name={['on_date_select', 'action']}
+                initialValue="more-info"
+              >
+                <Select
+                  data-testid="calendar-on-date-select-action"
+                  options={[
+                    { value: 'none', label: 'None' },
+                    { value: 'more-info', label: 'More Info' },
+                    { value: 'toggle', label: 'Toggle' },
+                    { value: 'call-service', label: 'Call Service' },
+                    { value: 'navigate', label: 'Navigate' },
+                    { value: 'url', label: 'URL' },
+                    { value: 'popup', label: 'Popup' },
+                  ]}
+                />
+              </Form.Item>
+            </>
+          )}
+
+          {card.type === 'logbook' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input data-testid="timeline-title" placeholder="Timeline" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                help={<span style={{ color: '#666' }}>Optional event source entity (sensor/calendar/logbook)</span>}
+              >
+                <EntitySelect data-testid="timeline-entity" placeholder="sensor.home_events" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Hours to Show</span>}
+                name="hours_to_show"
+              >
+                <InputNumber data-testid="timeline-hours-to-show" style={{ width: '100%' }} min={1} max={168} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Orientation</span>}
+                name="orientation"
+              >
+                <Select
+                  data-testid="timeline-orientation"
+                  options={[
+                    { value: 'vertical', label: 'Vertical' },
+                    { value: 'horizontal', label: 'Horizontal' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Group By</span>}
+                name="group_by"
+              >
+                <Select
+                  data-testid="timeline-group-by"
+                  options={[
+                    { value: 'none', label: 'None' },
+                    { value: 'day', label: 'Day' },
+                    { value: 'hour', label: 'Hour' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Now Marker</span>}
+                name="show_now_marker"
+                valuePropName="checked"
+              >
+                <Switch data-testid="timeline-show-now-marker" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Enable Scrubber</span>}
+                name="enable_scrubber"
+                valuePropName="checked"
+              >
+                <Switch data-testid="timeline-enable-scrubber" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Max Items</span>}
+                name="max_items"
+              >
+                <InputNumber data-testid="timeline-max-items" style={{ width: '100%' }} min={5} max={200} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Item Density</span>}
+                name="item_density"
+              >
+                <Select
+                  data-testid="timeline-item-density"
+                  options={[
+                    { value: 'comfortable', label: 'Comfortable' },
+                    { value: 'compact', label: 'Compact' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Truncate Length</span>}
+                name="truncate_length"
+              >
+                <InputNumber data-testid="timeline-truncate-length" style={{ width: '100%' }} min={24} max={160} />
               </Form.Item>
             </>
           )}
@@ -1679,6 +1919,92 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               >
                 <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Forecast Mode</span>}
+                name="forecast_type"
+              >
+                <Select
+                  data-testid="weather-viz-mode"
+                  options={[
+                    { value: 'daily', label: 'Daily' },
+                    { value: 'hourly', label: 'Hourly' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Metrics</span>}
+                name="metrics"
+              >
+                <Select
+                  data-testid="weather-viz-metrics"
+                  mode="multiple"
+                  options={[
+                    { value: 'temperature', label: 'Temperature' },
+                    { value: 'precipitation', label: 'Precipitation' },
+                    { value: 'wind_speed', label: 'Wind Speed' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon Animation</span>}
+                name="icon_animation"
+              >
+                <Select
+                  data-testid="weather-viz-icon-animation"
+                  options={[
+                    { value: 'off', label: 'Off' },
+                    { value: 'subtle', label: 'Subtle' },
+                    { value: 'pulse', label: 'Pulse' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Days</span>}
+                name="days"
+              >
+                <InputNumber data-testid="weather-viz-days" style={{ width: '100%' }} min={1} max={7} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Unit System</span>}
+                name="unit_system"
+              >
+                <Select
+                  data-testid="weather-viz-unit-system"
+                  options={[
+                    { value: 'auto', label: 'Auto' },
+                    { value: 'metric', label: 'Metric' },
+                    { value: 'imperial', label: 'Imperial' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Locale</span>}
+                name="locale"
+              >
+                <Input data-testid="weather-viz-locale" placeholder="e.g. en-US" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Current</span>}
+                name="show_current"
+                valuePropName="checked"
+              >
+                <Switch data-testid="weather-viz-show-current" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Forecast</span>}
+                name="show_forecast"
+                valuePropName="checked"
+              >
+                <Switch data-testid="weather-viz-show-forecast" />
+              </Form.Item>
             </>
           )}
 
@@ -1769,63 +2095,88 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 rules={[{ required: true, message: 'At least one entity is required' }]}
                 help={<span style={{ color: '#666' }}>Select entities to graph</span>}
               >
-                <EntityMultiSelect placeholder="Select entities" filterDomains={['sensor', 'binary_sensor']} />
+                <EntityMultiSelect data-testid="sparkline-entities" placeholder="Select entities" filterDomains={['sensor', 'binary_sensor']} />
               </Form.Item>
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Name</span>}
                 name="name"
               >
-                <Input placeholder="Graph title" />
+                <Input data-testid="sparkline-name" placeholder="Graph title" />
               </Form.Item>
 
               <Form.Item
-                label={<span style={{ color: 'white' }}>Hours to Show</span>}
+                label={<span style={{ color: 'white' }}>Time Range</span>}
                 name="hours_to_show"
+                help={<span style={{ color: '#666' }}>Preset sparkline history range</span>}
               >
-                <Input type="number" placeholder="24" />
+                <Select
+                  data-testid="sparkline-range"
+                  options={[
+                    { value: 1, label: '1h' },
+                    { value: 6, label: '6h' },
+                    { value: 24, label: '24h' },
+                    { value: 168, label: '7d' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Sparkline Style</span>}
+                name={['show', 'fill']}
+              >
+                <Select
+                  data-testid="sparkline-style"
+                  options={[
+                    { value: false, label: 'line' },
+                    { value: true, label: 'area' },
+                  ]}
+                />
               </Form.Item>
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Points per Hour</span>}
                 name="points_per_hour"
-                help={<span style={{ color: '#666' }}>Data point density (default: 0.5)</span>}
+                help={<span style={{ color: '#666' }}>Data point density</span>}
               >
-                <Input type="number" step="0.1" placeholder="0.5" />
+                <Input data-testid="sparkline-points-per-hour" type="number" step="0.25" min="0.25" max="24" />
               </Form.Item>
 
               <Form.Item
-                label={<span style={{ color: 'white' }}>Line Width</span>}
+                label={<span style={{ color: 'white' }}>Stroke Width</span>}
                 name="line_width"
               >
-                <Input type="number" placeholder="5" />
+                <Input data-testid="sparkline-line-width" type="number" min="1" max="8" />
               </Form.Item>
 
               <Form.Item
-                label={<span style={{ color: 'white' }}>Animate</span>}
-                name="animate"
-                help={<span style={{ color: '#666' }}>Enable graph animations</span>}
+                label={<span style={{ color: 'white' }}>Render Density</span>}
+                name="height"
+                help={<span style={{ color: '#666' }}>Compact mode helps dense dashboards</span>}
               >
                 <Select
-                  placeholder="Select option"
+                  data-testid="sparkline-density"
                   options={[
-                    { value: true, label: 'Enabled' },
-                    { value: false, label: 'Disabled' },
+                    { value: 64, label: 'Compact' },
+                    { value: 96, label: 'Regular' },
                   ]}
                 />
               </Form.Item>
 
               <Form.Item
-                label={<span style={{ color: 'white' }}>Show State</span>}
-                name="show_state"
+                label={<span style={{ color: 'white' }}>Show Min/Max Markers</span>}
+                name={['show', 'extrema']}
+                valuePropName="checked"
               >
-                <Select
-                  placeholder="Select option"
-                  options={[
-                    { value: true, label: 'Show' },
-                    { value: false, label: 'Hide' },
-                  ]}
-                />
+                <Switch data-testid="sparkline-show-min-max" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Current Marker</span>}
+                name={['show', 'state']}
+                valuePropName="checked"
+              >
+                <Switch data-testid="sparkline-show-current" />
               </Form.Item>
             </>
           )}
@@ -2946,14 +3297,39 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="graph_span"
                 help={<span style={{ color: '#666' }}>Time span to display (e.g., 1h, 12h, 1d, 1w)</span>}
               >
-                <Input placeholder="1d" />
+                <Select
+                  data-testid="apexcharts-graph-span"
+                  options={[
+                    { value: '1h', label: '1h' },
+                    { value: '6h', label: '6h' },
+                    { value: '12h', label: '12h' },
+                    { value: '24h', label: '24h' },
+                    { value: '7d', label: '7d' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Update Interval</span>}
+                name="update_interval"
+                help={<span style={{ color: '#666' }}>Refresh cadence used by ApexCharts</span>}
+              >
+                <Select
+                  data-testid="apexcharts-update-interval"
+                  options={[
+                    { value: '10s', label: '10s' },
+                    { value: '30s', label: '30s' },
+                    { value: '1m', label: '1m' },
+                    { value: '5m', label: '5m' },
+                  ]}
+                />
               </Form.Item>
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Header Title</span>}
                 name={['header', 'title']}
               >
-                <Input placeholder="Chart title" />
+                <Input data-testid="apexcharts-header-title" placeholder="Chart title" />
               </Form.Item>
 
               <Form.Item
@@ -2961,6 +3337,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name={['header', 'show']}
               >
                 <Select
+                  data-testid="apexcharts-header-show"
                   placeholder="Select option"
                   options={[
                     { value: true, label: 'Show' },
@@ -2969,13 +3346,990 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 />
               </Form.Item>
 
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Chart Type</span>}
+                name={['apex_config', 'chart', 'type']}
+              >
+                <Select
+                  data-testid="apexcharts-chart-type"
+                  options={[
+                    { value: 'line', label: 'Line' },
+                    { value: 'area', label: 'Area' },
+                    { value: 'bar', label: 'Bar' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Chart Height</span>}
+                name={['apex_config', 'chart', 'height']}
+              >
+                <InputNumber
+                  data-testid="apexcharts-chart-height"
+                  min={120}
+                  max={720}
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Stroke Width</span>}
+                name={['apex_config', 'stroke', 'width']}
+              >
+                <InputNumber
+                  data-testid="apexcharts-stroke-width"
+                  min={0}
+                  max={12}
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Stroke Curve</span>}
+                name={['apex_config', 'stroke', 'curve']}
+              >
+                <Select
+                  data-testid="apexcharts-stroke-curve"
+                  options={[
+                    { value: 'smooth', label: 'Smooth' },
+                    { value: 'straight', label: 'Straight' },
+                    { value: 'stepline', label: 'Step Line' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Series</Text>
+
+              <Form.List name="series">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                          Series {index + 1}
+                        </Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Entity</span>}
+                          name={[field.name, 'entity']}
+                          rules={[{ required: true, message: 'Entity is required' }]}
+                        >
+                          <EntitySelect
+                            placeholder="sensor.example"
+                            filterDomains={['sensor', 'binary_sensor']}
+                            data-testid={`apexcharts-series-${index}-entity`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Name</span>}
+                          name={[field.name, 'name']}
+                        >
+                          <Input data-testid={`apexcharts-series-${index}-name`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Series Type</span>}
+                          name={[field.name, 'type']}
+                        >
+                          <Select
+                            data-testid={`apexcharts-series-${index}-type`}
+                            options={[
+                              { value: 'line', label: 'Line' },
+                              { value: 'area', label: 'Area' },
+                              { value: 'column', label: 'Column' },
+                              { value: 'bar', label: 'Bar' },
+                            ]}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Color</span>}
+                          name={[field.name, 'color']}
+                        >
+                          <Input data-testid={`apexcharts-series-${index}-color`} placeholder="#00d9ff" />
+                        </Form.Item>
+
+                        {fields.length > 1 && (
+                          <Button
+                            danger
+                            onClick={() => {
+                              remove(field.name);
+                              handleValuesChange();
+                            }}
+                            data-testid={`apexcharts-series-${index}-remove`}
+                          >
+                            Remove Series
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        add({
+                          entity: '',
+                          name: '',
+                          type: 'line',
+                          color: '#00d9ff',
+                        });
+                        handleValuesChange();
+                      }}
+                      data-testid="apexcharts-series-add"
+                    >
+                      Add Series
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+
               <Alert
                 title="Advanced Chart Configuration"
-                description="ApexCharts cards require series configuration. Use the YAML editor to configure chart series, entities, and advanced options."
+                description="This form covers common Apex workflows. Advanced options in apex_config remain YAML pass-through and are preserved on round-trip."
                 type="info"
                 showIcon
                 style={{ marginBottom: '16px' }}
               />
+            </>
+          )}
+
+          {card.type === 'custom:native-graph-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Chart Type</span>}
+                name="chart_type"
+              >
+                <Select
+                  data-testid="native-graph-chart-type"
+                  options={[
+                    { value: 'line', label: 'Line' },
+                    { value: 'bar', label: 'Bar' },
+                    { value: 'area', label: 'Area' },
+                    { value: 'pie', label: 'Pie' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Time Range</span>}
+                name="time_range"
+              >
+                <Select
+                  data-testid="native-graph-time-range"
+                  options={[
+                    { value: '1h', label: '1h' },
+                    { value: '6h', label: '6h' },
+                    { value: '12h', label: '12h' },
+                    { value: '24h', label: '24h' },
+                    { value: '7d', label: '7d' },
+                    { value: '30d', label: '30d' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Refresh Interval</span>}
+                name="refresh_interval"
+              >
+                <Select
+                  data-testid="native-graph-refresh-interval"
+                  options={[
+                    { value: '10s', label: '10s' },
+                    { value: '30s', label: '30s' },
+                    { value: '1m', label: '1m' },
+                    { value: '5m', label: '5m' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>X Axis Mode</span>}
+                name={['x_axis', 'mode']}
+              >
+                <Select
+                  data-testid="native-graph-x-axis-mode"
+                  options={[
+                    { value: 'time', label: 'Time' },
+                    { value: 'category', label: 'Category' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Y Axis Minimum</span>}
+                name={['y_axis', 'min']}
+              >
+                <Input data-testid="native-graph-y-axis-min" placeholder="auto or number" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Y Axis Maximum</span>}
+                name={['y_axis', 'max']}
+              >
+                <Input data-testid="native-graph-y-axis-max" placeholder="auto or number" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Zoom and Pan</span>}
+                name="zoom_pan"
+                valuePropName="checked"
+              >
+                <Switch data-testid="native-graph-zoom-pan" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Series</Text>
+
+              <Form.List name="series">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                          Series {index + 1}
+                        </Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Entity</span>}
+                          name={[field.name, 'entity']}
+                          rules={[{ required: true, message: 'Entity is required' }]}
+                        >
+                          <EntitySelect
+                            placeholder="sensor.example"
+                            filterDomains={['sensor', 'binary_sensor']}
+                            data-testid={`native-graph-series-${index}-entity`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Label</span>}
+                          name={[field.name, 'label']}
+                        >
+                          <Input data-testid={`native-graph-series-${index}-label`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Color</span>}
+                          name={[field.name, 'color']}
+                        >
+                          <Input data-testid={`native-graph-series-${index}-color`} placeholder="#4fa3ff" />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Axis</span>}
+                          name={[field.name, 'axis']}
+                        >
+                          <Select
+                            data-testid={`native-graph-series-${index}-axis`}
+                            options={[
+                              { value: 'left', label: 'Left' },
+                              { value: 'right', label: 'Right' },
+                            ]}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Smooth Line</span>}
+                          name={[field.name, 'smooth']}
+                          valuePropName="checked"
+                        >
+                          <Switch data-testid={`native-graph-series-${index}-smooth`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Stacked</span>}
+                          name={[field.name, 'stack']}
+                          valuePropName="checked"
+                        >
+                          <Switch data-testid={`native-graph-series-${index}-stack`} />
+                        </Form.Item>
+
+                        {fields.length > 1 && (
+                          <Button
+                            danger
+                            onClick={() => {
+                              remove(field.name);
+                              handleValuesChange();
+                            }}
+                            data-testid={`native-graph-series-${index}-remove`}
+                          >
+                            Remove Series
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        add({
+                          entity: '',
+                          label: '',
+                          color: '#4fa3ff',
+                          axis: 'left',
+                          smooth: true,
+                          stack: false,
+                        });
+                        handleValuesChange();
+                      }}
+                      data-testid="native-graph-series-add"
+                    >
+                      Add Series
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+            </>
+          )}
+
+          {card.type === 'custom:gauge-card-pro' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect
+                  data-testid="gauge-pro-entity"
+                  placeholder="Select sensor"
+                  filterDomains={['sensor', 'binary_sensor', 'number', 'input_number']}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Header</span>}
+                name="header"
+              >
+                <Input data-testid="gauge-pro-header" placeholder="Gauge Card Pro" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Minimum</span>}
+                name="min"
+              >
+                <InputNumber data-testid="gauge-pro-min" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Maximum</span>}
+                name="max"
+              >
+                <InputNumber data-testid="gauge-pro-max" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Primary Unit</span>}
+                name={['value_texts', 'primary_unit']}
+              >
+                <Input data-testid="gauge-pro-primary-unit" placeholder="%" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Needle Mode</span>}
+                name="needle"
+                valuePropName="checked"
+              >
+                <Switch data-testid="gauge-pro-needle" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Gradient</Text>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Enable Gradient</span>}
+                name="gradient"
+                valuePropName="checked"
+              >
+                <Switch data-testid="gauge-pro-gradient" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Segments</Text>
+
+              <Form.List name="segments">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>Segment {index + 1}</Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>From</span>}
+                          name={[field.name, 'from']}
+                        >
+                          <InputNumber data-testid={`gauge-pro-segment-${index}-from`} style={{ width: '100%' }} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Label</span>}
+                          name={[field.name, 'label']}
+                        >
+                          <Input data-testid={`gauge-pro-segment-${index}-label`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Color</span>}
+                          name={[field.name, 'color']}
+                        >
+                          <ColorPickerInput
+                            testId={`gauge-pro-segment-${index}-color`}
+                            value={form.getFieldValue(['segments', field.name, 'color']) as string | undefined}
+                            onChange={(nextColor) => {
+                              form.setFieldValue(['segments', field.name, 'color'], nextColor);
+                              handleValuesChange();
+                            }}
+                          />
+                        </Form.Item>
+
+                        {fields.length > 1 && (
+                          <Button
+                            danger
+                            icon={<MinusCircleOutlined />}
+                            onClick={() => {
+                              remove(field.name);
+                              handleValuesChange();
+                            }}
+                            data-testid={`gauge-pro-segment-${index}-remove`}
+                          >
+                            Remove Segment
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      icon={<PlusOutlined />}
+                      onClick={() => {
+                        add({ from: 0, color: '#4fa3ff', label: '' });
+                        handleValuesChange();
+                      }}
+                      data-testid="gauge-pro-segment-add"
+                    >
+                      Add Segment
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+            </>
+          )}
+
+          {card.type === 'custom:slider-button-card' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                rules={[{ required: true, message: 'Entity is required' }]}
+              >
+                <EntitySelect
+                  data-testid="advanced-slider-entity"
+                  placeholder="Select entity"
+                  filterDomains={['input_number', 'number', 'light', 'fan', 'media_player', 'cover']}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Minimum</span>}
+                name="min"
+              >
+                <InputNumber data-testid="advanced-slider-min" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Maximum</span>}
+                name="max"
+              >
+                <InputNumber data-testid="advanced-slider-max" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Step</span>}
+                name="step"
+              >
+                <InputNumber data-testid="advanced-slider-step" style={{ width: '100%' }} min={0.000001} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Precision</span>}
+                name="precision"
+                help={<span style={{ color: '#666' }}>Decimal precision for rounding and labels</span>}
+              >
+                <InputNumber data-testid="advanced-slider-precision" style={{ width: '100%' }} min={0} max={6} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Orientation</span>}
+                name="orientation"
+              >
+                <Select
+                  data-testid="advanced-slider-orientation"
+                  options={[
+                    { value: 'horizontal', label: 'Horizontal' },
+                    { value: 'vertical', label: 'Vertical' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Markers</span>}
+                name="show_markers"
+                valuePropName="checked"
+              >
+                <Switch data-testid="advanced-slider-show-markers" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Value</span>}
+                name="show_value"
+                valuePropName="checked"
+              >
+                <Switch data-testid="advanced-slider-show-value" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Commit on Release</span>}
+                name="commit_on_release"
+                valuePropName="checked"
+                help={<span style={{ color: '#666' }}>When enabled, value commits on pointer/key release only</span>}
+              >
+                <Switch data-testid="advanced-slider-commit-on-release" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Animated Fill Track</span>}
+                name="animate_fill"
+                valuePropName="checked"
+              >
+                <Switch data-testid="advanced-slider-animate-fill" />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Zone Coloring</Text>
+
+              <Form.List name="zones">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>Zone {index + 1}</Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>From</span>}
+                          name={[field.name, 'from']}
+                        >
+                          <InputNumber data-testid={`advanced-slider-zone-${index}-from`} style={{ width: '100%' }} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>To</span>}
+                          name={[field.name, 'to']}
+                        >
+                          <InputNumber data-testid={`advanced-slider-zone-${index}-to`} style={{ width: '100%' }} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Label</span>}
+                          name={[field.name, 'label']}
+                        >
+                          <Input data-testid={`advanced-slider-zone-${index}-label`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Color</span>}
+                          name={[field.name, 'color']}
+                        >
+                          <ColorPickerInput
+                            testId={`advanced-slider-zone-${index}-color`}
+                            value={form.getFieldValue(['zones', field.name, 'color']) as string | undefined}
+                            onChange={(nextColor) => {
+                              form.setFieldValue(['zones', field.name, 'color'], nextColor);
+                              handleValuesChange();
+                            }}
+                          />
+                        </Form.Item>
+
+                        {fields.length > 1 && (
+                          <Button
+                            danger
+                            icon={<MinusCircleOutlined />}
+                            onClick={() => {
+                              remove(field.name);
+                              handleValuesChange();
+                            }}
+                            data-testid={`advanced-slider-zone-${index}-remove`}
+                          >
+                            Remove Zone
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      icon={<PlusOutlined />}
+                      onClick={() => {
+                        add({ from: 0, to: 100, color: '#4fa3ff', label: '' });
+                        handleValuesChange();
+                      }}
+                      data-testid="advanced-slider-zone-add"
+                    >
+                      Add Zone
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+
+              {renderHapticConfig('advanced-slider')}
+              {renderSoundConfig('advanced-slider')}
+            </>
+          )}
+
+          {card.type === 'custom:modern-circular-gauge' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Start Angle</span>}
+                name="start_angle"
+                help={<span style={{ color: '#666' }}>Rotation offset in degrees</span>}
+              >
+                <InputNumber data-testid="progress-ring-start-angle" style={{ width: '100%' }} min={-360} max={360} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Direction</span>}
+                name="direction"
+              >
+                <Select
+                  data-testid="progress-ring-direction"
+                  options={[
+                    { value: 'clockwise', label: 'Clockwise' },
+                    { value: 'counter-clockwise', label: 'Counter-clockwise' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Default Thickness</span>}
+                name="thickness"
+              >
+                <InputNumber data-testid="progress-ring-thickness" style={{ width: '100%' }} min={4} max={32} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Animate</span>}
+                name="animate"
+                valuePropName="checked"
+              >
+                <Switch data-testid="progress-ring-animate" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Animation Duration (ms)</span>}
+                name="animation_duration_ms"
+              >
+                <InputNumber data-testid="progress-ring-animation-duration" style={{ width: '100%' }} min={0} max={5000} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Labels</span>}
+                name="show_labels"
+                valuePropName="checked"
+              >
+                <Switch data-testid="progress-ring-show-labels" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Label Precision</span>}
+                name="label_precision"
+              >
+                <InputNumber data-testid="progress-ring-label-precision" style={{ width: '100%' }} min={0} max={3} />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Rings</Text>
+
+              <Form.List name="rings">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>Ring {index + 1}</Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Entity</span>}
+                          name={[field.name, 'entity']}
+                          rules={[{ required: true, message: 'Entity is required' }]}
+                        >
+                          <EntitySelect
+                            data-testid={`progress-ring-${index}-entity`}
+                            placeholder="Select sensor"
+                            filterDomains={['sensor', 'binary_sensor', 'number', 'input_number']}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Label</span>}
+                          name={[field.name, 'label']}
+                        >
+                          <Input data-testid={`progress-ring-${index}-label`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Minimum</span>}
+                          name={[field.name, 'min']}
+                        >
+                          <InputNumber data-testid={`progress-ring-${index}-min`} style={{ width: '100%' }} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Maximum</span>}
+                          name={[field.name, 'max']}
+                        >
+                          <InputNumber data-testid={`progress-ring-${index}-max`} style={{ width: '100%' }} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Thickness</span>}
+                          name={[field.name, 'thickness']}
+                        >
+                          <InputNumber data-testid={`progress-ring-${index}-thickness`} style={{ width: '100%' }} min={4} max={32} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Color</span>}
+                          name={[field.name, 'color']}
+                        >
+                          <ColorPickerInput
+                            testId={`progress-ring-${index}-color`}
+                            value={form.getFieldValue(['rings', field.name, 'color']) as string | undefined}
+                            onChange={(nextColor) => {
+                              form.setFieldValue(['rings', field.name, 'color'], nextColor);
+                              handleValuesChange();
+                            }}
+                          />
+                        </Form.Item>
+
+                        <Divider style={{ borderColor: '#333', margin: '8px 0' }} />
+                        <Text style={{ color: '#d9d9d9', fontSize: '12px' }}>Gradient Stroke (optional)</Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Gradient Type</span>}
+                          name={[field.name, 'gradient', 'type']}
+                        >
+                          <Select
+                            data-testid={`progress-ring-${index}-gradient-type`}
+                            allowClear
+                            options={[
+                              { value: 'linear', label: 'Linear' },
+                              { value: 'radial', label: 'Radial' },
+                            ]}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Gradient Angle</span>}
+                          name={[field.name, 'gradient', 'angle']}
+                        >
+                          <InputNumber data-testid={`progress-ring-${index}-gradient-angle`} style={{ width: '100%' }} min={-360} max={360} />
+                        </Form.Item>
+
+                        <Form.List name={[field.name, 'gradient', 'stops']}>
+                          {(stopFields, stopOps) => (
+                            <Space direction="vertical" style={{ width: '100%' }} size="small">
+                              {stopFields.map((stopField, stopIndex) => (
+                                <div key={stopField.key} style={{ border: '1px solid #303030', borderRadius: 8, padding: 8 }}>
+                                  <Text style={{ color: '#bfbfbf', fontSize: '11px' }}>Gradient Stop {stopIndex + 1}</Text>
+                                  <Form.Item
+                                    label={<span style={{ color: 'white' }}>Position</span>}
+                                    name={[stopField.name, 'position']}
+                                  >
+                                    <InputNumber data-testid={`progress-ring-${index}-gradient-stop-${stopIndex}-position`} style={{ width: '100%' }} min={0} max={100} />
+                                  </Form.Item>
+                                  <Form.Item
+                                    label={<span style={{ color: 'white' }}>Color</span>}
+                                    name={[stopField.name, 'color']}
+                                  >
+                                    <ColorPickerInput
+                                      testId={`progress-ring-${index}-gradient-stop-${stopIndex}-color`}
+                                      value={form.getFieldValue(['rings', field.name, 'gradient', 'stops', stopField.name, 'color']) as string | undefined}
+                                      onChange={(nextColor) => {
+                                        form.setFieldValue(['rings', field.name, 'gradient', 'stops', stopField.name, 'color'], nextColor);
+                                        handleValuesChange();
+                                      }}
+                                    />
+                                  </Form.Item>
+                                  <Button
+                                    danger
+                                    icon={<MinusCircleOutlined />}
+                                    onClick={() => {
+                                      stopOps.remove(stopField.name);
+                                      handleValuesChange();
+                                    }}
+                                    data-testid={`progress-ring-${index}-gradient-stop-${stopIndex}-remove`}
+                                  >
+                                    Remove Stop
+                                  </Button>
+                                </div>
+                              ))}
+
+                              <Button
+                                type="dashed"
+                                icon={<PlusOutlined />}
+                                onClick={() => {
+                                  stopOps.add({ position: stopFields.length === 0 ? 0 : 100, color: '#4fa3ff' });
+                                  handleValuesChange();
+                                }}
+                                data-testid={`progress-ring-${index}-gradient-stop-add`}
+                              >
+                                Add Gradient Stop
+                              </Button>
+                            </Space>
+                          )}
+                        </Form.List>
+
+                        <Divider style={{ borderColor: '#333', margin: '8px 0' }} />
+                        <Text style={{ color: '#d9d9d9', fontSize: '12px' }}>Threshold Colors (optional)</Text>
+
+                        <Form.List name={[field.name, 'thresholds']}>
+                          {(thresholdFields, thresholdOps) => (
+                            <Space direction="vertical" style={{ width: '100%' }} size="small">
+                              {thresholdFields.map((thresholdField, thresholdIndex) => (
+                                <div key={thresholdField.key} style={{ border: '1px solid #303030', borderRadius: 8, padding: 8 }}>
+                                  <Text style={{ color: '#bfbfbf', fontSize: '11px' }}>Threshold {thresholdIndex + 1}</Text>
+                                  <Form.Item
+                                    label={<span style={{ color: 'white' }}>Value</span>}
+                                    name={[thresholdField.name, 'value']}
+                                  >
+                                    <InputNumber data-testid={`progress-ring-${index}-threshold-${thresholdIndex}-value`} style={{ width: '100%' }} />
+                                  </Form.Item>
+                                  <Form.Item
+                                    label={<span style={{ color: 'white' }}>Color</span>}
+                                    name={[thresholdField.name, 'color']}
+                                  >
+                                    <ColorPickerInput
+                                      testId={`progress-ring-${index}-threshold-${thresholdIndex}-color`}
+                                      value={form.getFieldValue(['rings', field.name, 'thresholds', thresholdField.name, 'color']) as string | undefined}
+                                      onChange={(nextColor) => {
+                                        form.setFieldValue(['rings', field.name, 'thresholds', thresholdField.name, 'color'], nextColor);
+                                        handleValuesChange();
+                                      }}
+                                    />
+                                  </Form.Item>
+                                  <Button
+                                    danger
+                                    icon={<MinusCircleOutlined />}
+                                    onClick={() => {
+                                      thresholdOps.remove(thresholdField.name);
+                                      handleValuesChange();
+                                    }}
+                                    data-testid={`progress-ring-${index}-threshold-${thresholdIndex}-remove`}
+                                  >
+                                    Remove Threshold
+                                  </Button>
+                                </div>
+                              ))}
+
+                              <Button
+                                type="dashed"
+                                icon={<PlusOutlined />}
+                                onClick={() => {
+                                  thresholdOps.add({ value: 0, color: '#4fa3ff' });
+                                  handleValuesChange();
+                                }}
+                                data-testid={`progress-ring-${index}-threshold-add`}
+                              >
+                                Add Threshold
+                              </Button>
+                            </Space>
+                          )}
+                        </Form.List>
+
+                        {fields.length > 1 && (
+                          <Button
+                            danger
+                            icon={<MinusCircleOutlined />}
+                            onClick={() => {
+                              remove(field.name);
+                              handleValuesChange();
+                            }}
+                            data-testid={`progress-ring-${index}-remove`}
+                          >
+                            Remove Ring
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      icon={<PlusOutlined />}
+                      onClick={() => {
+                        add({
+                          entity: '',
+                          label: '',
+                          min: 0,
+                          max: 100,
+                          color: '#4fa3ff',
+                          thickness: 12,
+                          gradient: {
+                            type: 'linear',
+                            angle: 90,
+                            stops: [
+                              { position: 0, color: '#6ccf7f' },
+                              { position: 100, color: '#2ca58d' },
+                            ],
+                          },
+                        });
+                        handleValuesChange();
+                      }}
+                      data-testid="progress-ring-add"
+                    >
+                      Add Ring
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
             </>
           )}
 
@@ -4237,7 +5591,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'calendar', 'logbook', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:native-graph-card', 'custom:gauge-card-pro', 'custom:slider-button-card', 'custom:modern-circular-gauge', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.

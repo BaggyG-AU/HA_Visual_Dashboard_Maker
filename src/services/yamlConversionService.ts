@@ -88,6 +88,15 @@ const TABS_HAVDM_ONLY_KEYS = new Set([
 ]);
 
 const TAB_HAVDM_ONLY_KEYS = new Set(['title', 'icon', 'cards', 'badge', 'count']);
+const CALENDAR_HAVDM_ONLY_KEYS = new Set([
+  'calendar_entities',
+  'view',
+  'show_week_numbers',
+  'show_agenda',
+  'on_date_select',
+  'selected_date',
+  'events',
+]);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -307,6 +316,18 @@ const tabIconFromAttributes = (attributes: unknown): string | undefined => {
     : undefined;
 };
 
+const viewFromInitialView = (value: unknown): 'month' | 'week' | 'day' => {
+  if (value === 'day') return 'day';
+  if (value === 'list') return 'week';
+  return 'month';
+};
+
+const initialViewFromView = (value: unknown): 'month' | 'list' | 'day' => {
+  if (value === 'day') return 'day';
+  if (value === 'week') return 'list';
+  return 'month';
+};
+
 const mergeAttributes = (
   globalAttributes: Record<string, unknown> | undefined,
   tabAttributes: Record<string, unknown> | undefined,
@@ -358,6 +379,20 @@ const importTabbedCard = (inputCard: Record<string, unknown>): Record<string, un
     tabs,
     ...(isRecord(inputCard.styles) ? { _havdm_styles: inputCard.styles } : {}),
   };
+};
+
+const importCalendarCard = (inputCard: Record<string, unknown>): Record<string, unknown> => {
+  const mapped: Record<string, unknown> = { ...inputCard };
+
+  if (Array.isArray(inputCard.entities)) {
+    mapped.calendar_entities = inputCard.entities.filter((entity): entity is string => typeof entity === 'string');
+  }
+
+  if (typeof inputCard.initial_view === 'string' && typeof inputCard.view !== 'string') {
+    mapped.view = viewFromInitialView(inputCard.initial_view);
+  }
+
+  return mapped;
 };
 
 const tabCardsToUpstreamCard = (cards: unknown): Record<string, unknown> | undefined => {
@@ -419,6 +454,20 @@ const exportTabbedCard = (inputCard: Record<string, unknown>): Record<string, un
     },
     ...(cardStyles ? { styles: cardStyles } : {}),
     ...(isRecord(inputCard.attributes) ? { attributes: inputCard.attributes } : {}),
+  };
+};
+
+const exportCalendarCard = (inputCard: Record<string, unknown>): Record<string, unknown> => {
+  const passthrough = omitKeys(inputCard, CALENDAR_HAVDM_ONLY_KEYS);
+  const calendarEntities = Array.isArray(inputCard.calendar_entities)
+    ? inputCard.calendar_entities.filter((entity): entity is string => typeof entity === 'string' && entity.trim().length > 0)
+    : [];
+
+  return {
+    ...passthrough,
+    type: 'calendar',
+    ...(calendarEntities.length > 0 ? { entities: calendarEntities } : Array.isArray(inputCard.entities) ? { entities: inputCard.entities } : {}),
+    ...(typeof inputCard.view === 'string' ? { initial_view: initialViewFromView(inputCard.view) } : typeof inputCard.initial_view === 'string' ? { initial_view: inputCard.initial_view } : {}),
   };
 };
 
@@ -549,6 +598,10 @@ export function importCard(card: Record<string, unknown>): Record<string, unknow
     return importTabbedCard(migrated as TabsCardConfig as unknown as Record<string, unknown>);
   }
 
+  if (migrated.type === 'calendar') {
+    return importCalendarCard(migrated);
+  }
+
   return { ...migrated };
 }
 
@@ -563,6 +616,10 @@ export function exportCard(card: Record<string, unknown>): Record<string, unknow
 
   if (card.type === 'custom:tabbed-card') {
     return exportTabbedCard(card);
+  }
+
+  if (card.type === 'calendar') {
+    return exportCalendarCard(card);
   }
 
   return { ...card };
