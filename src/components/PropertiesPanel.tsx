@@ -3297,14 +3297,39 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name="graph_span"
                 help={<span style={{ color: '#666' }}>Time span to display (e.g., 1h, 12h, 1d, 1w)</span>}
               >
-                <Input placeholder="1d" />
+                <Select
+                  data-testid="apexcharts-graph-span"
+                  options={[
+                    { value: '1h', label: '1h' },
+                    { value: '6h', label: '6h' },
+                    { value: '12h', label: '12h' },
+                    { value: '24h', label: '24h' },
+                    { value: '7d', label: '7d' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Update Interval</span>}
+                name="update_interval"
+                help={<span style={{ color: '#666' }}>Refresh cadence used by ApexCharts</span>}
+              >
+                <Select
+                  data-testid="apexcharts-update-interval"
+                  options={[
+                    { value: '10s', label: '10s' },
+                    { value: '30s', label: '30s' },
+                    { value: '1m', label: '1m' },
+                    { value: '5m', label: '5m' },
+                  ]}
+                />
               </Form.Item>
 
               <Form.Item
                 label={<span style={{ color: 'white' }}>Header Title</span>}
                 name={['header', 'title']}
               >
-                <Input placeholder="Chart title" />
+                <Input data-testid="apexcharts-header-title" placeholder="Chart title" />
               </Form.Item>
 
               <Form.Item
@@ -3312,6 +3337,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 name={['header', 'show']}
               >
                 <Select
+                  data-testid="apexcharts-header-show"
                   placeholder="Select option"
                   options={[
                     { value: true, label: 'Show' },
@@ -3320,9 +3346,156 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 />
               </Form.Item>
 
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Chart Type</span>}
+                name={['apex_config', 'chart', 'type']}
+              >
+                <Select
+                  data-testid="apexcharts-chart-type"
+                  options={[
+                    { value: 'line', label: 'Line' },
+                    { value: 'area', label: 'Area' },
+                    { value: 'bar', label: 'Bar' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Chart Height</span>}
+                name={['apex_config', 'chart', 'height']}
+              >
+                <InputNumber
+                  data-testid="apexcharts-chart-height"
+                  min={120}
+                  max={720}
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Stroke Width</span>}
+                name={['apex_config', 'stroke', 'width']}
+              >
+                <InputNumber
+                  data-testid="apexcharts-stroke-width"
+                  min={0}
+                  max={12}
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Stroke Curve</span>}
+                name={['apex_config', 'stroke', 'curve']}
+              >
+                <Select
+                  data-testid="apexcharts-stroke-curve"
+                  options={[
+                    { value: 'smooth', label: 'Smooth' },
+                    { value: 'straight', label: 'Straight' },
+                    { value: 'stepline', label: 'Step Line' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Divider />
+              <Text strong style={{ color: 'white' }}>Series</Text>
+
+              <Form.List name="series">
+                {(fields, { add, remove }) => (
+                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.key}
+                        style={{
+                          padding: '12px',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          background: '#1a1a1a',
+                        }}
+                      >
+                        <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                          Series {index + 1}
+                        </Text>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Entity</span>}
+                          name={[field.name, 'entity']}
+                          rules={[{ required: true, message: 'Entity is required' }]}
+                        >
+                          <EntitySelect
+                            placeholder="sensor.example"
+                            filterDomains={['sensor', 'binary_sensor']}
+                            data-testid={`apexcharts-series-${index}-entity`}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Name</span>}
+                          name={[field.name, 'name']}
+                        >
+                          <Input data-testid={`apexcharts-series-${index}-name`} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Series Type</span>}
+                          name={[field.name, 'type']}
+                        >
+                          <Select
+                            data-testid={`apexcharts-series-${index}-type`}
+                            options={[
+                              { value: 'line', label: 'Line' },
+                              { value: 'area', label: 'Area' },
+                              { value: 'column', label: 'Column' },
+                              { value: 'bar', label: 'Bar' },
+                            ]}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Color</span>}
+                          name={[field.name, 'color']}
+                        >
+                          <Input data-testid={`apexcharts-series-${index}-color`} placeholder="#00d9ff" />
+                        </Form.Item>
+
+                        {fields.length > 1 && (
+                          <Button
+                            danger
+                            onClick={() => {
+                              remove(field.name);
+                              handleValuesChange();
+                            }}
+                            data-testid={`apexcharts-series-${index}-remove`}
+                          >
+                            Remove Series
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        add({
+                          entity: '',
+                          name: '',
+                          type: 'line',
+                          color: '#00d9ff',
+                        });
+                        handleValuesChange();
+                      }}
+                      data-testid="apexcharts-series-add"
+                    >
+                      Add Series
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+
               <Alert
                 title="Advanced Chart Configuration"
-                description="ApexCharts cards require series configuration. Use the YAML editor to configure chart series, entities, and advanced options."
+                description="This form covers common Apex workflows. Advanced options in apex_config remain YAML pass-through and are preserved on round-trip."
                 type="info"
                 showIcon
                 style={{ marginBottom: '16px' }}

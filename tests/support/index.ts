@@ -47,6 +47,7 @@ import { SparklineDSL } from './dsl/sparkline';
 import { TimelineDSL } from './dsl/timeline';
 import { CalendarDSL } from './dsl/calendar';
 import { WeatherVizDSL } from './dsl/weatherViz';
+import { ApexChartsDSL } from './dsl/apexCharts';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -99,6 +100,7 @@ export interface TestContext extends electron.ElectronTestContext {
   timeline: TimelineDSL;
   calendar: CalendarDSL;
   weatherViz: WeatherVizDSL;
+  apexCharts: ApexChartsDSL;
 }
 
 /**
@@ -146,5 +148,6 @@ export async function launchWithDSL(): Promise<TestContext> {
     timeline: new TimelineDSL(electronCtx.window),
     calendar: new CalendarDSL(electronCtx.window),
     weatherViz: new WeatherVizDSL(electronCtx.window),
+    apexCharts: new ApexChartsDSL(electronCtx.window),
   };
 }

@@ -461,10 +461,35 @@ class CardRegistry {
         name: 'ApexCharts',
         category: 'custom',
         icon: 'AreaChartOutlined',
-        description: 'Advanced charting (HACS)',
+        description: 'Advanced charting (HACS) with safe editor defaults',
         isCustom: true,
         source: 'hacs',
-        defaultProps: { series: [] },
+        defaultProps: {
+          graph_span: '24h',
+          update_interval: '30s',
+          header: {
+            title: 'Apex Chart',
+            show: true,
+          },
+          apex_config: {
+            chart: {
+              type: 'line',
+              height: 280,
+            },
+            stroke: {
+              width: 2,
+              curve: 'smooth',
+            },
+          },
+          series: [
+            {
+              entity: 'sensor.example_temperature',
+              name: 'Temperature',
+              type: 'line',
+              color: '#00d9ff',
+            },
+          ],
+        },
         requiredProps: ['series'],
       },
       {

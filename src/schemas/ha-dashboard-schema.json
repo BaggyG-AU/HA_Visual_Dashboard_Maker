@@ -804,6 +804,67 @@
           "pattern": "^\\d+(s|m|h|d)$",
           "description": "Graph data refresh interval"
         },
+        "graph_span": {
+          "type": "string",
+          "pattern": "^\\d+(m|h|d|w)$",
+          "description": "Apex chart time span (e.g. 6h, 24h, 7d)"
+        },
+        "update_interval": {
+          "oneOf": [
+            { "type": "string", "pattern": "^\\d+(s|m|h|d|w)$" },
+            { "type": "number", "minimum": 0 }
+          ],
+          "description": "Update interval for cards supporting polling/refresh cadence"
+        },
+        "header": {
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "object",
+              "properties": {
+                "title": { "type": "string" },
+                "show": { "type": "boolean" },
+                "show_states": { "type": "boolean" },
+                "colorize_states": { "type": "boolean" }
+              },
+              "additionalProperties": true
+            }
+          ],
+          "description": "Header configuration"
+        },
+        "apex_config": {
+          "type": "object",
+          "description": "ApexCharts advanced pass-through configuration",
+          "properties": {
+            "chart": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["line", "area", "bar", "column"]
+                },
+                "height": {
+                  "type": "number",
+                  "minimum": 120,
+                  "maximum": 720
+                }
+              },
+              "additionalProperties": true
+            },
+            "stroke": {
+              "type": "object",
+              "properties": {
+                "width": { "type": "number", "minimum": 0, "maximum": 12 },
+                "curve": {
+                  "type": "string",
+                  "enum": ["smooth", "straight", "stepline"]
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": true
+        },
         "x_axis": {
           "type": "object",
           "properties": {
@@ -834,13 +895,31 @@
         },
         "series": {
           "type": "array",
-          "description": "Series configuration for native graph cards",
+          "description": "Series configuration for native graph and ApexCharts cards",
           "items": {
             "type": "object",
             "properties": {
               "entity": {
                 "type": "string",
                 "pattern": "^[a-z_]+\\.[a-z0-9_]+$"
+              },
+              "name": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": ["line", "area", "column", "bar"]
+              },
+              "stroke_width": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 12
+              },
+              "group_by": {
+                "type": "object",
+                "properties": {
+                  "func": { "type": "string" },
+                  "duration": { "type": "string" }
+                },
+                "additionalProperties": true
               },
               "label": { "type": "string" },
               "color": { "type": "string" },
