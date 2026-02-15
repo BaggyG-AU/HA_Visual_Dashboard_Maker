@@ -27,8 +27,8 @@ Read these files BEFORE writing any code. They contain immutable rules, architec
 2. `docs/testing/TESTING_STANDARDS.md` - DSL-first testing, testability requirements
 3. `docs/testing/PLAYWRIGHT_TESTING.md` - Troubleshooting and reliable Electron waits
 4. `docs/architecture/ARCHITECTURE.md` - Project structure and integration patterns
-5. `docs/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md` - Feature 4.6 spec and checklist
-6. `docs/features/PHASE_4_5_LAYOUT_ENHANCEMENTS_PROMPT.md` - reference prompt format and standards framing
+5. `docs/archive/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md` - Feature 4.6 spec and checklist
+6. `docs/archive/features/PHASE_4_5_LAYOUT_ENHANCEMENTS_PROMPT.md` - reference prompt format and standards framing
 
 ---
 
@@ -253,7 +253,7 @@ Create `tests/e2e/spacing.visual.spec.ts`:
    - E2E tests (`tests/e2e/spacing.spec.ts`)
    - Visual tests (`tests/e2e/spacing.visual.spec.ts`)
 4. **Documentation**
-   - Update Feature 4.6 checklist in `docs/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
+   - Update Feature 4.6 checklist in `docs/archive/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
    - Record deferred decisions explicitly
 
 ---

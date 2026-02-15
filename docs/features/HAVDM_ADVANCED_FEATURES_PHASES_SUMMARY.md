@@ -2,7 +2,7 @@
 
 **Project**: HA Visual Dashboard Maker
 **Planning Date**: January 4, 2026
-**Status**: Phase 4 Complete (v0.7.4) · Phase 5 In Progress (v0.7.5-beta.0 kickoff)
+**Status**: Phase 4 Complete (v0.7.4) · Phase 5 Delivered (v0.7.5-beta.10)
 
 ---
 
@@ -206,7 +206,7 @@
 
 ## Phase 5: Advanced Visualization Layer (4-5 weeks)
 
-**Phase Status**: :construction: In Progress (kickoff v0.7.5-beta.0)
+**Phase Status**: :white_check_mark: Delivered (v0.7.5-beta.10)
 
 **Dependencies**: Phases 1-4 (Colors, Animations, Gradients, Graphs, Layouts)
 **Goal**: Complex data visualization
@@ -513,7 +513,7 @@ Each phase is considered complete when:
 
 ## Next Steps
 
-1. **Phase 5 Prompt Execution**: Start with Feature 5.1 (`docs/features/PHASE_5_1_NATIVE_GRAPHS_PROMPT.md`)
+1. **Phase 5 Prompt Execution**: Start with Feature 5.1 (`docs/archive/features/PHASE_5_1_NATIVE_GRAPHS_PROMPT.md`)
 2. **Track Progress**: Update Phase 5 status after each feature delivery in this document and user stories
 3. **Regression Discipline**: Run phase-appropriate unit/E2E/visual gates for each Feature 5.x delivery
 4. **Release Cadence**: Cut incremental beta releases (`v0.7.5-beta.1` through `v0.7.5-beta.9`) per feature

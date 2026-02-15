@@ -17,7 +17,7 @@ You are an AI assistant implementing **Feature 5.9: ApexCharts Advanced Integrat
 4. `docs/architecture/ARCHITECTURE.md`
 5. `docs/features/HAVDM_ADVANCED_FEATURES_PHASES_SUMMARY.md`
 6. `docs/features/HAVDM_ADVANCED_FEATURES_USER_STORIES.md`
-7. `docs/features/ADVANCED_VISUALIZATION_LAYER_IMPLEMENTATION.md`
+7. `docs/archive/features/ADVANCED_VISUALIZATION_LAYER_IMPLEMENTATION.md`
 
 ---
 

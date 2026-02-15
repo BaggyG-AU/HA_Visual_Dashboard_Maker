@@ -20,7 +20,7 @@
 - Added user-facing guide detailing supported CSS formats, keyboard workflow, presets import/export, accessibility notes, and troubleshooting (`docs/product/GRADIENT_EDITOR_USER_GUIDE.md`).
 - Published component API reference for `GradientEditor` and `GradientPickerInput` with props, behaviors, and testing hooks (`docs/features/GRADIENT_EDITOR_COMPONENT_API.md`).
 - Updated README to surface Gradient Editor overview and link to docs.
-- Implementation plan updated to mark Phase 7 and Must Have items complete (`docs/features/UI_ENHANCEMENT_LAYER_IMPLEMENTATION.md`).
+- Implementation plan updated to mark Phase 7 and Must Have items complete (`docs/archive/features/UI_ENHANCEMENT_LAYER_IMPLEMENTATION.md`).
 
 ### Testing Standards
 - Added Gradient Editor testing patterns to `docs/testing/TESTING_STANDARDS.md`, emphasizing DSL-only usage, keyboard coverage, preset workflows, and YAML round-trip checks.
@@ -39,7 +39,7 @@
 
 - New: `docs/product/GRADIENT_EDITOR_USER_GUIDE.md`
 - New: `docs/features/GRADIENT_EDITOR_COMPONENT_API.md`
-- Updated: `docs/features/UI_ENHANCEMENT_LAYER_IMPLEMENTATION.md` (Phase 7 checklist), `docs/testing/TESTING_STANDARDS.md` (gradient patterns), `README.md` (version and feature overview)
+- Updated: `docs/archive/features/UI_ENHANCEMENT_LAYER_IMPLEMENTATION.md` (Phase 7 checklist), `docs/testing/TESTING_STANDARDS.md` (gradient patterns), `README.md` (version and feature overview)
 
 ---
 

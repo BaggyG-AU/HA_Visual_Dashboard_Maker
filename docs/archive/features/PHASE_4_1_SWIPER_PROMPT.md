@@ -19,7 +19,7 @@ You are an AI assistant implementing **Feature 4.1: Swiper.js Integration (Carou
 5. `docs/features/HAVDM_ADVANCED_FEATURES_PLANNING.md`
 6. `docs/features/HAVDM_ADVANCED_FEATURES_USER_STORIES.md`
 7. `docs/features/HAVDM_ADVANCED_FEATURES_PHASES_SUMMARY.md`
-8. `docs/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
+8. `docs/archive/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
 
 ---
 

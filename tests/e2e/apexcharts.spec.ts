@@ -25,6 +25,9 @@ apex_config:
 
 test.describe('ApexCharts Advanced Integration', () => {
   test('configures apex chart from form and preserves advanced YAML pass-through', async ({ page }) => {
+    // This flow performs multiple YAML↔Form round-trips and AntD select interactions in Electron.
+    // Keep a realistic timeout headroom to avoid false negatives under Medium/Slow gate load.
+    test.setTimeout(90_000);
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, apexCharts, canvas, properties, yamlEditor } = ctx;

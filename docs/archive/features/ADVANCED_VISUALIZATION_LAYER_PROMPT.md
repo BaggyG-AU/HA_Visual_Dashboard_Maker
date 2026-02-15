@@ -67,7 +67,7 @@ Before creating any artifacts, you MUST read and understand the following docume
 
 ### 1. Implementation Plan Document
 
-Create `docs/features/ADVANCED_VISUALIZATION_LAYER_IMPLEMENTATION.md`.
+Create `do./ADVANCED_VISUALIZATION_LAYER_IMPLEMENTATION.md`.
 
 Minimum required sections:
 - Header (branch, version baseline, dependencies, status)
@@ -159,7 +159,7 @@ Before proceeding with artifact creation, ask these clarifying questions:
 
 After clarifying questions are resolved, deliver:
 
-1. `docs/features/ADVANCED_VISUALIZATION_LAYER_IMPLEMENTATION.md`
+1. `do./ADVANCED_VISUALIZATION_LAYER_IMPLEMENTATION.md`
 2. Ready-to-import Phase 5 user stories for project tracking
 3. A concise execution summary and next-step sequencing by feature
 
@@ -168,7 +168,7 @@ After clarifying questions are resolved, deliver:
 ## Reference: Prior Phase Baseline
 
 Phase 4 completion artifacts and implementation references:
-- `docs/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
+- `do./LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
 - `docs/releases/RELEASE_NOTES_v0.7.4-beta.5.md`
 
 Use the same quality bar and structure for Phase 5 planning and execution artifacts.

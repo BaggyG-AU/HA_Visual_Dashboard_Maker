@@ -22,7 +22,7 @@ Read these files BEFORE writing any code. They contain immutable rules, architec
 2. `docs/testing/TESTING_STANDARDS.md` — DSL-first testing, Standard #29 (Product Code Testability)
 3. `docs/testing/PLAYWRIGHT_TESTING.md` — Troubleshooting, especially "PropertiesPanel Child Components Losing State"
 4. `docs/architecture/ARCHITECTURE.md` — Project structure and patterns
-5. `docs/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md` — Feature 4.2 spec (lines 226-376)
+5. `docs/archive/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md` — Feature 4.2 spec (lines 226-376)
 
 ---
 
@@ -57,7 +57,7 @@ Follow the same structure, naming conventions, and integration points exactly.
 **Estimated Effort**: 3-4 days
 **Status**: Completed (implemented in v0.7.4-beta.2)
 
-> Note: This prompt is retained as implementation history. Baseline completion and deferred follow-ups are tracked in `docs/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`.
+> Note: This prompt is retained as implementation history. Baseline completion and deferred follow-ups are tracked in `docs/archive/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`.
 
 ### Key Requirements
 
@@ -276,7 +276,7 @@ Create `tests/e2e/accordion.visual.spec.ts`:
    - E2E tests (accordion.spec.ts)
    - Visual regression tests (accordion.visual.spec.ts)
 4. **Documentation**
-   - Update Feature 4.2 checklist in `docs/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
+   - Update Feature 4.2 checklist in `docs/archive/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
 
 ---
 

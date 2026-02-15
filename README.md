@@ -4,7 +4,7 @@ A cross-platform desktop application for visually designing Home Assistant dashb
 
 ## Project Status
 
-- **Version**: `0.7.5-beta.0`
+- **Version**: `0.7.5-beta.10`
 - **Current focus**: Entity Type Dashboard Generator feature with 9 pre-built dashboard categories. Electron app + visual editor with Playwright tests green.
 - **Planning docs**: see `/docs/index.md` for architecture, plan, testing, releases, and research.
 
@@ -14,7 +14,7 @@ A cross-platform desktop application for visually designing Home Assistant dashb
 - [Architecture](docs/architecture/ARCHITECTURE.md) — technical design and decisions
 - [Testing standards](docs/testing/TESTING_STANDARDS.md) — required Playwright conventions
 - [AI rules](ai_rules.md) — immutable rules and constraints for AI agents
-- [Release notes](docs/releases/RELEASE_NOTES_v0.7.5-beta.0.md) — latest release details
+- [Release notes](docs/releases/RELEASE_NOTES_v0.7.5-beta.10.md) — latest release details
 
 ## Vision
 

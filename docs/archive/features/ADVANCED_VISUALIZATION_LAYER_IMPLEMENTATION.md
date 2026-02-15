@@ -57,15 +57,15 @@ Before implementation starts for any Phase 5+ feature, complete an upstream-alig
 
 | Feature | Priority | Effort | Status | Target Version | Prompt |
 |---------|----------|--------|--------|----------------|--------|
-| 5.1 Native Graphs | High | 6-7 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.1` | `docs/features/PHASE_5_1_NATIVE_GRAPHS_PROMPT.md` |
-| 5.2 Advanced Gauge Card | High | 5-6 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.2` | `docs/features/PHASE_5_2_ADVANCED_GAUGE_PROMPT.md` |
-| 5.3 Advanced Slider Card | High | 5-6 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.3` | `docs/features/PHASE_5_3_ADVANCED_SLIDER_PROMPT.md` |
-| 5.4 Progress Ring Visualization | Medium | 3-4 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.4` | `docs/features/PHASE_5_4_PROGRESS_RING_PROMPT.md` |
-| 5.5 Sparkline Mini-graphs | Medium | 3-4 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.5` | `docs/features/PHASE_5_5_SPARKLINE_MINI_GRAPHS_PROMPT.md` |
-| 5.6 Timeline Card | Medium | 4-5 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.6` | `docs/features/PHASE_5_6_TIMELINE_CARD_PROMPT.md` |
-| 5.7 Calendar View Card | High | 5-6 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.7` | `docs/features/PHASE_5_7_CALENDAR_VIEW_PROMPT.md` |
-| 5.8 Weather Forecast Visualization | Medium | 4-5 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.8` | `docs/features/PHASE_5_8_WEATHER_FORECAST_VISUALIZATION_PROMPT.md` |
-| 5.9 ApexCharts Advanced Integration | High | 8-12 days | :hourglass_flowing_sand: New Scope Added | `v0.7.5-beta.9` | `docs/features/PHASE_5_9_APEXCHARTS_ADVANCED_INTEGRATION_PROMPT.md` |
+| 5.1 Native Graphs | High | 6-7 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.1` | `docs/archive/features/PHASE_5_1_NATIVE_GRAPHS_PROMPT.md` |
+| 5.2 Advanced Gauge Card | High | 5-6 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.2` | `docs/archive/features/PHASE_5_2_ADVANCED_GAUGE_PROMPT.md` |
+| 5.3 Advanced Slider Card | High | 5-6 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.3` | `docs/archive/features/PHASE_5_3_ADVANCED_SLIDER_PROMPT.md` |
+| 5.4 Progress Ring Visualization | Medium | 3-4 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.4` | `docs/archive/features/PHASE_5_4_PROGRESS_RING_PROMPT.md` |
+| 5.5 Sparkline Mini-graphs | Medium | 3-4 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.5` | `docs/archive/features/PHASE_5_5_SPARKLINE_MINI_GRAPHS_PROMPT.md` |
+| 5.6 Timeline Card | Medium | 4-5 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.6` | `docs/archive/features/PHASE_5_6_TIMELINE_CARD_PROMPT.md` |
+| 5.7 Calendar View Card | High | 5-6 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.7` | `docs/archive/features/PHASE_5_7_CALENDAR_VIEW_PROMPT.md` |
+| 5.8 Weather Forecast Visualization | Medium | 4-5 days | :hourglass_flowing_sand: Ready | `v0.7.5-beta.8` | `docs/archive/features/PHASE_5_8_WEATHER_FORECAST_VISUALIZATION_PROMPT.md` |
+| 5.9 ApexCharts Advanced Integration | High | 8-12 days | :hourglass_flowing_sand: New Scope Added | `v0.7.5-beta.9` | `docs/archive/features/PHASE_5_9_APEXCHARTS_ADVANCED_INTEGRATION_PROMPT.md` |
 
 **Total Estimated Effort**: 43-55 days (4-5 weeks with parallelizable tasks and overlap).
 
@@ -649,15 +649,15 @@ Before implementation starts for any Phase 5+ feature, complete an upstream-alig
 ## Feature Prompt Linkage and Execution Order
 
 Execution order and feature prompt references:
-1. 5.1 Native Graphs → `docs/features/PHASE_5_1_NATIVE_GRAPHS_PROMPT.md`
-2. 5.2 Advanced Gauge Card → `docs/features/PHASE_5_2_ADVANCED_GAUGE_PROMPT.md`
-3. 5.3 Advanced Slider Card → `docs/features/PHASE_5_3_ADVANCED_SLIDER_PROMPT.md`
-4. 5.4 Progress Ring Visualization → `docs/features/PHASE_5_4_PROGRESS_RING_PROMPT.md`
-5. 5.5 Sparkline Mini-graphs → `docs/features/PHASE_5_5_SPARKLINE_MINI_GRAPHS_PROMPT.md`
-6. 5.6 Timeline Card → `docs/features/PHASE_5_6_TIMELINE_CARD_PROMPT.md`
-7. 5.7 Calendar View Card → `docs/features/PHASE_5_7_CALENDAR_VIEW_PROMPT.md`
-8. 5.8 Weather Forecast Visualization → `docs/features/PHASE_5_8_WEATHER_FORECAST_VISUALIZATION_PROMPT.md`
-9. 5.9 ApexCharts Advanced Integration → `docs/features/PHASE_5_9_APEXCHARTS_ADVANCED_INTEGRATION_PROMPT.md`
+1. 5.1 Native Graphs → `docs/archive/features/PHASE_5_1_NATIVE_GRAPHS_PROMPT.md`
+2. 5.2 Advanced Gauge Card → `docs/archive/features/PHASE_5_2_ADVANCED_GAUGE_PROMPT.md`
+3. 5.3 Advanced Slider Card → `docs/archive/features/PHASE_5_3_ADVANCED_SLIDER_PROMPT.md`
+4. 5.4 Progress Ring Visualization → `docs/archive/features/PHASE_5_4_PROGRESS_RING_PROMPT.md`
+5. 5.5 Sparkline Mini-graphs → `docs/archive/features/PHASE_5_5_SPARKLINE_MINI_GRAPHS_PROMPT.md`
+6. 5.6 Timeline Card → `docs/archive/features/PHASE_5_6_TIMELINE_CARD_PROMPT.md`
+7. 5.7 Calendar View Card → `docs/archive/features/PHASE_5_7_CALENDAR_VIEW_PROMPT.md`
+8. 5.8 Weather Forecast Visualization → `docs/archive/features/PHASE_5_8_WEATHER_FORECAST_VISUALIZATION_PROMPT.md`
+9. 5.9 ApexCharts Advanced Integration → `docs/archive/features/PHASE_5_9_APEXCHARTS_ADVANCED_INTEGRATION_PROMPT.md`
 
 Dependency notes:
 - 5.2, 5.4, 5.5 depend on 5.1 graph primitives.

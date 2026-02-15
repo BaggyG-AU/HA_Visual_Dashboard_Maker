@@ -135,7 +135,7 @@
 - Icon color modes documentation in implementation plan
 
 ### Updated Documentation
-- `docs/features/UI_ENHANCEMENT_LAYER_IMPLEMENTATION.md` — All Feature 2.x items marked complete
+- `docs/archive/features/UI_ENHANCEMENT_LAYER_IMPLEMENTATION.md` — All Feature 2.x items marked complete
 - `docs/testing/TESTING_STANDARDS.md` — Gradient and icon color testing patterns added
 - `README.md` — Feature overview updated with Phase 2 completion
 - `ai_rules.md` — Testing standards and workflow policies clarified

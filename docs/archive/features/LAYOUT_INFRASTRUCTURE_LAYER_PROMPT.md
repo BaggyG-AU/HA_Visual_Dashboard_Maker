@@ -64,7 +64,7 @@ Before creating any artifacts, you MUST read and understand the following docume
 
 ### 1. Implementation Plan Document
 
-Create `docs/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md` following the exact format of `ENTITY_INTELLIGENCE_LAYER_IMPLIMENTATION.md`:
+Create `do./LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md` following the exact format of `ENTITY_INTELLIGENCE_LAYER_IMPLIMENTATION.md`:
 
 **Required Sections**:
 - Header with branch name, version target, dependencies, status, planned start
@@ -220,7 +220,7 @@ Before proceeding with artifact creation, please ask any clarifying questions ab
 
 After clarifying questions are resolved, deliver:
 
-1. **File**: `docs/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
+1. **File**: `do./LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
    - Complete implementation plan following the template format
    - All 6 features detailed with checklists
    - Risk registers and compliance sections

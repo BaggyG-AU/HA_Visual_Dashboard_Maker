@@ -20,20 +20,20 @@
 ### Planning and Prompt Artifacts
 
 Added:
-- `docs/features/PHASE_5_1_NATIVE_GRAPHS_PROMPT.md`
-- `docs/features/PHASE_5_2_ADVANCED_GAUGE_PROMPT.md`
-- `docs/features/PHASE_5_3_ADVANCED_SLIDER_PROMPT.md`
-- `docs/features/PHASE_5_4_PROGRESS_RING_PROMPT.md`
-- `docs/features/PHASE_5_5_SPARKLINE_MINI_GRAPHS_PROMPT.md`
-- `docs/features/PHASE_5_6_TIMELINE_CARD_PROMPT.md`
-- `docs/features/PHASE_5_7_CALENDAR_VIEW_PROMPT.md`
-- `docs/features/PHASE_5_8_WEATHER_FORECAST_VISUALIZATION_PROMPT.md`
+- `docs/archive/features/PHASE_5_1_NATIVE_GRAPHS_PROMPT.md`
+- `docs/archive/features/PHASE_5_2_ADVANCED_GAUGE_PROMPT.md`
+- `docs/archive/features/PHASE_5_3_ADVANCED_SLIDER_PROMPT.md`
+- `docs/archive/features/PHASE_5_4_PROGRESS_RING_PROMPT.md`
+- `docs/archive/features/PHASE_5_5_SPARKLINE_MINI_GRAPHS_PROMPT.md`
+- `docs/archive/features/PHASE_5_6_TIMELINE_CARD_PROMPT.md`
+- `docs/archive/features/PHASE_5_7_CALENDAR_VIEW_PROMPT.md`
+- `docs/archive/features/PHASE_5_8_WEATHER_FORECAST_VISUALIZATION_PROMPT.md`
 
 Updated progress/state docs:
 - `docs/features/HAVDM_ADVANCED_FEATURES_PHASES_SUMMARY.md`
 - `docs/features/HAVDM_ADVANCED_FEATURES_USER_STORIES.md`
 - `docs/features/HAVDM_ADVANCED_FEATURES_IMPLEMENTATION_SUMMARY.md`
-- `docs/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
+- `docs/archive/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
 
 Updated version/index docs:
 - `package.json`

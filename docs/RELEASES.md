@@ -1,13 +1,14 @@
 # Releases
 
-Repo versioning follows the `package.json` version and annotated git tags. Current package version: `0.7.5-beta.0`; next tag should match the version bump (e.g., `v0.7.5-beta.1` or higher).
+Repo versioning follows the `package.json` version and annotated git tags. Current package version: `0.7.5-beta.10`; next tag should match the version bump (e.g., `v0.7.5-beta.10` or higher).
 
 ## Current Progress Snapshot
 - Phase 4 (Layout Infrastructure Layer): complete (v0.7.4) as of 2026-02-14.
-- Phase 5 (Advanced Visualization Layer): initiated in v0.7.5-beta.0 with prompt set prepared.
+- Phase 5 (Advanced Visualization Layer): delivered and consolidated in v0.7.5-beta.10.
 - Detailed implementation status and verification guidance are tracked in:
-  - `docs/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
+  - `docs/archive/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
   - `docs/features/HAVDM_ADVANCED_FEATURES_PHASES_SUMMARY.md`
+  - `docs/releases/RELEASE_NOTES_v0.7.5-beta.10.md`
 
 ## Preconditions
 - All tests green:
