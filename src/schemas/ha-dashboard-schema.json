@@ -245,6 +245,56 @@
             ]
           }
         },
+        "forecast_type": {
+          "type": "string",
+          "description": "Weather forecast mode",
+          "enum": ["daily", "hourly"]
+        },
+        "mode": {
+          "type": "string",
+          "description": "Legacy alias for weather forecast mode",
+          "enum": ["daily", "hourly"]
+        },
+        "metrics": {
+          "type": "array",
+          "description": "Weather metrics to render in visual mode",
+          "items": {
+            "type": "string",
+            "enum": ["temperature", "precipitation", "wind_speed"]
+          }
+        },
+        "icon_animation": {
+          "type": "string",
+          "description": "Icon animation mode for weather cards",
+          "enum": ["off", "subtle", "pulse"]
+        },
+        "days": {
+          "type": "integer",
+          "description": "Forecast horizon in days",
+          "minimum": 1,
+          "maximum": 7
+        },
+        "locale": {
+          "type": "string",
+          "description": "Locale used for weather date formatting"
+        },
+        "unit_system": {
+          "type": "string",
+          "description": "Preferred unit system for weather value formatting",
+          "enum": ["auto", "metric", "imperial"]
+        },
+        "show_current": {
+          "type": "boolean",
+          "description": "Display current weather state in card header"
+        },
+        "show_forecast": {
+          "type": "boolean",
+          "description": "Display forecast chart and points"
+        },
+        "round_temperature": {
+          "type": "boolean",
+          "description": "Round rendered temperature values"
+        },
         "visibility_conditions": {
           "$ref": "#/definitions/visibilityConditions",
           "description": "Conditional visibility rules for cards/entities"

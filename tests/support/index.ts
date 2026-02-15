@@ -46,6 +46,7 @@ import { ProgressRingDSL } from './dsl/progressRing';
 import { SparklineDSL } from './dsl/sparkline';
 import { TimelineDSL } from './dsl/timeline';
 import { CalendarDSL } from './dsl/calendar';
+import { WeatherVizDSL } from './dsl/weatherViz';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -97,6 +98,7 @@ export interface TestContext extends electron.ElectronTestContext {
   sparkline: SparklineDSL;
   timeline: TimelineDSL;
   calendar: CalendarDSL;
+  weatherViz: WeatherVizDSL;
 }
 
 /**
@@ -143,5 +145,6 @@ export async function launchWithDSL(): Promise<TestContext> {
     sparkline: new SparklineDSL(electronCtx.window),
     timeline: new TimelineDSL(electronCtx.window),
     calendar: new CalendarDSL(electronCtx.window),
+    weatherViz: new WeatherVizDSL(electronCtx.window),
   };
 }

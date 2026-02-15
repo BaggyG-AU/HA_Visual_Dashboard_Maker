@@ -1919,6 +1919,92 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               >
                 <Input data-testid="card-name-input" placeholder="Display name" />
               </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Forecast Mode</span>}
+                name="forecast_type"
+              >
+                <Select
+                  data-testid="weather-viz-mode"
+                  options={[
+                    { value: 'daily', label: 'Daily' },
+                    { value: 'hourly', label: 'Hourly' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Metrics</span>}
+                name="metrics"
+              >
+                <Select
+                  data-testid="weather-viz-metrics"
+                  mode="multiple"
+                  options={[
+                    { value: 'temperature', label: 'Temperature' },
+                    { value: 'precipitation', label: 'Precipitation' },
+                    { value: 'wind_speed', label: 'Wind Speed' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Icon Animation</span>}
+                name="icon_animation"
+              >
+                <Select
+                  data-testid="weather-viz-icon-animation"
+                  options={[
+                    { value: 'off', label: 'Off' },
+                    { value: 'subtle', label: 'Subtle' },
+                    { value: 'pulse', label: 'Pulse' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Days</span>}
+                name="days"
+              >
+                <InputNumber data-testid="weather-viz-days" style={{ width: '100%' }} min={1} max={7} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Unit System</span>}
+                name="unit_system"
+              >
+                <Select
+                  data-testid="weather-viz-unit-system"
+                  options={[
+                    { value: 'auto', label: 'Auto' },
+                    { value: 'metric', label: 'Metric' },
+                    { value: 'imperial', label: 'Imperial' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Locale</span>}
+                name="locale"
+              >
+                <Input data-testid="weather-viz-locale" placeholder="e.g. en-US" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Current</span>}
+                name="show_current"
+                valuePropName="checked"
+              >
+                <Switch data-testid="weather-viz-show-current" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Forecast</span>}
+                name="show_forecast"
+                valuePropName="checked"
+              >
+                <Switch data-testid="weather-viz-show-forecast" />
+              </Form.Item>
             </>
           )}
 

@@ -304,7 +304,14 @@ class CardRegistry {
         description: 'Display weather forecast',
         isCustom: false,
         source: 'builtin',
-        defaultProps: {},
+        defaultProps: {
+          forecast_type: 'daily',
+          metrics: ['temperature', 'precipitation', 'wind_speed'],
+          icon_animation: 'subtle',
+          days: 5,
+          unit_system: 'auto',
+          show_forecast: true,
+        },
         requiredProps: ['entity'],
       },
       {
