@@ -1,33 +1,327 @@
 {
   "version": "2.0.0",
-  "tasks": [
+
+  "inputs": [
     {
-      "label": "Prompts: Open Claude Feature Prompt",
+      "id": "name",
+      "type": "promptString",
+      "description": "Name for tools/* scripts (e.g. phase-7-blueprint-archival)",
+      "default": ""
+    },
+    {
+      "id": "phaseAction",
+      "type": "pickString",
+      "description": "Phase orchestrator action",
+      "options": ["start", "close"],
+      "default": "start"
+    },
+    {
+      "id": "phaseNumber",
+      "type": "promptString",
+      "description": "Phase number (e.g. 7)",
+      "default": "X"
+    },
+    {
+      "id": "phaseTitle",
+      "type": "promptString",
+      "description": "Phase title (optional) (e.g. Canvas Structural Parity). Leave blank if none.",
+      "default": ""
+    },
+    {
+      "id": "currentVersion",
+      "type": "promptString",
+      "description": "CURRENT_VERSION (from package.json) (e.g. 0.7.5-beta.10)",
+      "default": ""
+    },
+    {
+      "id": "initiationVersion",
+      "type": "promptString",
+      "description": "INITIATION_VERSION (e.g. 0.7.6-beta.0)",
+      "default": ""
+    },
+    {
+      "id": "phaseSlug",
+      "type": "promptString",
+      "description": "Phase slug for archive file (e.g. phase-7-canvas-structural-parity)",
+      "default": "phase-x"
+    }
+  ],
+
+  "tasks": [
+    /* ===============================
+       PROMPT SHORTCUTS
+       =============================== */
+
+    {
+      "label": "HAVDM: Prompts — Open Claude Feature Prompt",
       "type": "shell",
       "command": "code",
       "args": ["-r", "${workspaceFolder}/prompts/claude/feature-development.md"],
-      "problemMatcher": []
+      "problemMatcher": [],
+      "group": "build"
     },
     {
-      "label": "Prompts: Open Codex Playwright Fix Prompt",
+      "label": "HAVDM: Prompts — Open Codex Playwright Fix Prompt",
       "type": "shell",
       "command": "code",
       "args": ["-r", "${workspaceFolder}/prompts/codex/playwright-fix.md"],
-      "problemMatcher": []
+      "problemMatcher": [],
+      "group": "build"
     },
     {
-      "label": "Prompts: Open Shared AI Rules",
+      "label": "HAVDM: Prompts — Open Shared AI Rules",
       "type": "shell",
       "command": "code",
       "args": ["-r", "${workspaceFolder}/prompts/shared/ai_rules.md"],
-      "problemMatcher": []
+      "problemMatcher": [],
+      "group": "build"
     },
     {
-      "label": "Prompts: Open Shared Verification Rules",
+      "label": "HAVDM: Prompts — Open Shared Verification Rules",
       "type": "shell",
       "command": "code",
       "args": ["-r", "${workspaceFolder}/prompts/shared/verification-rules.md"],
-      "problemMatcher": []
+      "problemMatcher": [],
+      "group": "build"
+    },
+
+    /* ===============================
+       GOVERNANCE PROMPT GENERATORS
+       =============================== */
+
+    {
+      "label": "HAVDM: Governance — Generate Phase Activation Prompt (scratch file)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "mkdir -p .vscode && PHASE_TITLE_SUFFIX=\"\"; if [ -n \"${input:phaseTitle}\" ]; then PHASE_TITLE_SUFFIX=\" – ${input:phaseTitle}\"; fi; cat > .vscode/HAVDM_PHASE_ACTIVATION_PROMPT.md <<EOF\n# HAVDM Phase Activation Prompt (File-Write Mode)\n\nRead docs/governance/PHASE_ORCHESTRATION_FRAMEWORK.md in full.\n\nActivate governance mode for:\n\nPHASE_NAME: Phase ${input:phaseNumber}${PHASE_TITLE_SUFFIX}\nCURRENT_VERSION: ${input:currentVersion}\nINITIATION_VERSION: ${input:initiationVersion}\n\nConstraints:\n\n- Governance mode only.\n- Do NOT implement code.\n- Write the governance blueprint directly to:\n  docs/governance/phases/${input:phaseSlug}-blueprint.md\n- Include required metadata header.\n- Validate CURRENT_VERSION against package.json.\n- Validate INITIATION_VERSION bump logic.\n- If version progression is ambiguous → STOP and ask.\n- Explicitly enforce ai_rules.md compliance.\n- Produce executable feature prompts for every slice.\n- Include packaging plan.\n- Include Stop Conditions.\n- Include Medium Gate prompt.\n- Stage the file and prepare commit message.\n- Ask before committing.\n\nOutput only:\n- Confirmation that file was written\n- Filename\n- Proposed commit message\n- Ask whether to commit\nEOF\ncode -r .vscode/HAVDM_PHASE_ACTIVATION_PROMPT.md"
+      ],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HAVDM: Governance — Generate Medium Gate Archive Prompt (scratch file)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "mkdir -p .vscode && PHASE_TITLE_SUFFIX=\"\"; if [ -n \"${input:phaseTitle}\" ]; then PHASE_TITLE_SUFFIX=\" – ${input:phaseTitle}\"; fi; cat > .vscode/HAVDM_MEDIUM_GATE_PROMPT.md <<EOF\n# HAVDM Medium Gate Prompt (Archive Mode)\n\nRead the phase blueprint at:\n- docs/governance/phases/${input:phaseSlug}-blueprint.md\n\nRun the Medium Gate audit (governance mode only):\n\nConstraints:\n- Do NOT implement code.\n- Do NOT modify non-governance files.\n- Audit architecture compliance, regression stability, performance budgets, YAML compatibility, Monaco correctness, IPC integrity, and adherence to ai_rules.md.\n- Produce severity ratings, Go/No-Go decision, and confidence score.\n\nAfter producing the Medium Gate output:\n\n1) Ensure directory exists:\n   docs/governance/phases/\n\n2) Write the Medium Gate report to:\n   docs/governance/phases/${input:phaseSlug}-medium-gate.md\n\n3) Include header metadata:\n   Phase Name: Phase ${input:phaseNumber}${PHASE_TITLE_SUFFIX}\n   Related Blueprint: ${input:phaseSlug}-blueprint.md\n   CURRENT_VERSION: ${input:currentVersion}\n   Evaluated On: <ISO timestamp>\n   Governance Mode: HARD MODE++\n   AI Model: <model name>\n   References:\n     - ai_rules.md\n     - docs/governance/PHASE_ORCHESTRATION_FRAMEWORK.md\n\n4) Stage the report and propose a commit message:\n   chore(governance): add medium gate for ${input:phaseSlug}\n\n5) Ask the user whether to commit.\nEOF\ncode -r .vscode/HAVDM_MEDIUM_GATE_PROMPT.md"
+      ],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HAVDM: Governance — Open Current Phase Blueprint (by slug)",
+      "type": "shell",
+      "command": "code",
+      "args": ["-r", "${workspaceFolder}/docs/governance/phases/${input:phaseSlug}-blueprint.md"],
+      "problemMatcher": [],
+      "group": "build"
+    },
+
+    /* ===============================
+       NEW: SINGLE META TASK (PHASE ORCHESTRATOR)
+       =============================== */
+
+    {
+      "label": "HAVDM: Meta — Phase Orchestrator (Start/Close)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail; ACTION=\"${input:phaseAction}\"; if [ \"$ACTION\" = \"start\" ]; then ./tools/feature-start \"${input:name}\"; mkdir -p .vscode; PHASE_TITLE_SUFFIX=\"\"; if [ -n \"${input:phaseTitle}\" ]; then PHASE_TITLE_SUFFIX=\" – ${input:phaseTitle}\"; fi; cat > .vscode/HAVDM_PHASE_ACTIVATION_PROMPT.md <<EOF\n# HAVDM Phase Activation Prompt (File-Write Mode)\n\nRead docs/governance/PHASE_ORCHESTRATION_FRAMEWORK.md in full.\n\nActivate governance mode for:\n\nPHASE_NAME: Phase ${input:phaseNumber}${PHASE_TITLE_SUFFIX}\nCURRENT_VERSION: ${input:currentVersion}\nINITIATION_VERSION: ${input:initiationVersion}\n\nConstraints:\n\n- Governance mode only.\n- Do NOT implement code.\n- Write the governance blueprint directly to:\n  docs/governance/phases/${input:phaseSlug}-blueprint.md\n- Include required metadata header.\n- Validate CURRENT_VERSION against package.json.\n- Validate INITIATION_VERSION bump logic.\n- If version progression is ambiguous → STOP and ask.\n- Explicitly enforce ai_rules.md compliance.\n- Produce executable feature prompts for every slice.\n- Include packaging plan.\n- Include Stop Conditions.\n- Include Medium Gate prompt.\n- Stage the file and prepare commit message.\n- Ask before committing.\n\nOutput only:\n- Confirmation that file was written\n- Filename\n- Proposed commit message\n- Ask whether to commit\nEOF\ncode -r .vscode/HAVDM_PHASE_ACTIVATION_PROMPT.md; else mkdir -p .vscode; PHASE_TITLE_SUFFIX=\"\"; if [ -n \"${input:phaseTitle}\" ]; then PHASE_TITLE_SUFFIX=\" – ${input:phaseTitle}\"; fi; cat > .vscode/HAVDM_MEDIUM_GATE_PROMPT.md <<EOF\n# HAVDM Medium Gate Prompt (Archive Mode)\n\nRead the phase blueprint at:\n- docs/governance/phases/${input:phaseSlug}-blueprint.md\n\nRun the Medium Gate audit (governance mode only):\n\nConstraints:\n- Do NOT implement code.\n- Do NOT modify non-governance files.\n- Audit architecture compliance, regression stability, performance budgets, YAML compatibility, Monaco correctness, IPC integrity, and adherence to ai_rules.md.\n- Produce severity ratings, Go/No-Go decision, and confidence score.\n\nAfter producing the Medium Gate output:\n\n1) Ensure directory exists:\n   docs/governance/phases/\n\n2) Write the Medium Gate report to:\n   docs/governance/phases/${input:phaseSlug}-medium-gate.md\n\n3) Include header metadata:\n   Phase Name: Phase ${input:phaseNumber}${PHASE_TITLE_SUFFIX}\n   Related Blueprint: ${input:phaseSlug}-blueprint.md\n   CURRENT_VERSION: ${input:currentVersion}\n   Evaluated On: <ISO timestamp>\n   Governance Mode: HARD MODE++\n   AI Model: <model name>\n   References:\n     - ai_rules.md\n     - docs/governance/PHASE_ORCHESTRATION_FRAMEWORK.md\n\n4) Stage the report and propose a commit message:\n   chore(governance): add medium gate for ${input:phaseSlug}\n\n5) Ask the user whether to commit.\nEOF\ncode -r .vscode/HAVDM_MEDIUM_GATE_PROMPT.md; ./tools/feature-finish \"${input:name}\"; fi"
+      ],
+      "problemMatcher": [],
+      "group": "build"
+    },
+
+    /* ===============================
+       GOVERNANCE NAV
+       =============================== */
+
+    {
+      "label": "HAVDM: Governance — Open Phase Framework",
+      "type": "shell",
+      "command": "code",
+      "args": ["-r", "${workspaceFolder}/docs/governance/PHASE_ORCHESTRATION_FRAMEWORK.md"],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HAVDM: Governance — Open Phase Workflow",
+      "type": "shell",
+      "command": "code",
+      "args": ["-r", "${workspaceFolder}/docs/governance/PHASE_WORKFLOW.md"],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HAVDM: Governance — Open Archived Phases Folder",
+      "type": "shell",
+      "command": "code",
+      "args": ["-r", "${workspaceFolder}/docs/governance/phases"],
+      "problemMatcher": [],
+      "group": "build"
+    },
+
+    /* ===============================
+       UTILITIES
+       =============================== */
+
+    {
+      "label": "HAVDM: Utils — Open commands.md",
+      "type": "shell",
+      "command": "code",
+      "args": ["-r", "${workspaceFolder}/commands.md"],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HAVDM: Utils — Git Status",
+      "type": "shell",
+      "command": "git status",
+      "problemMatcher": [],
+      "group": "build"
+    },
+
+    /* ===============================
+       GIT WORKFLOW (TOOLS SCRIPTS)
+       =============================== */
+
+    {
+      "label": "HAVDM: Git — feature-start",
+      "type": "shell",
+      "command": "./tools/feature-start \"${input:name}\"",
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HAVDM: Git — feature-finish",
+      "type": "shell",
+      "command": "./tools/feature-finish \"${input:name}\"",
+      "problemMatcher": [],
+      "group": "build"
+    },
+
+    {
+      "label": "HAVDM: Git — test-start",
+      "type": "shell",
+      "command": "./tools/test-start \"${input:name}\"",
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HAVDM: Git — test-finish",
+      "type": "shell",
+      "command": "./tools/test-finish \"${input:name}\"",
+      "problemMatcher": [],
+      "group": "build"
+    },
+
+    {
+      "label": "HAVDM: Git — fix-start",
+      "type": "shell",
+      "command": "./tools/fix-start \"${input:name}\"",
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HAVDM: Git — fix-finish",
+      "type": "shell",
+      "command": "./tools/fix-finish \"${input:name}\"",
+      "problemMatcher": [],
+      "group": "build"
+    },
+
+    {
+      "label": "HAVDM: Git — refactor-start",
+      "type": "shell",
+      "command": "./tools/refactor-start \"${input:name}\"",
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HAVDM: Git — refactor-finish",
+      "type": "shell",
+      "command": "./tools/refactor-finish \"${input:name}\"",
+      "problemMatcher": [],
+      "group": "build"
+    },
+
+    {
+      "label": "HAVDM: Git — chore-start",
+      "type": "shell",
+      "command": "./tools/chore-start \"${input:name}\"",
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "HAVDM: Git — chore-finish",
+      "type": "shell",
+      "command": "./tools/chore-finish \"${input:name}\"",
+      "problemMatcher": [],
+      "group": "build"
+    },
+
+    /* ===============================
+       DEV & TEST
+       =============================== */
+
+    {
+      "label": "HAVDM: Dev — Start App (WSL)",
+      "type": "shell",
+      "command": "npm run start:wsl",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "HAVDM: Build — Make Win32 x64",
+      "type": "shell",
+      "command": "npm run make -- --platform=win32 --arch=x64",
+      "problemMatcher": [],
+      "group": "test"
+    },
+
+    {
+      "label": "HAVDM: Quality — Lint",
+      "type": "shell",
+      "command": "npm run lint",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "HAVDM: Quality — Unit Tests",
+      "type": "shell",
+      "command": "npm run test:unit",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "HAVDM: Quality — E2E (trace retain)",
+      "type": "shell",
+      "command": "npm run test:e2e --trace=retain-on-failure",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "HAVDM: Quality — Test Last Failed (trace retain)",
+      "type": "shell",
+      "command": "npm test --trace=retain-on-failure --last-failed",
+      "problemMatcher": [],
+      "group": "test"
+    },
+
+    /* ===============================
+       SAFE MAIN UPDATE
+       =============================== */
+
+    {
+      "label": "HAVDM: Git — Update Main (FF Only)",
+      "type": "shell",
+      "command": "git fetch origin && git checkout main && git pull --ff-only origin main",
+      "problemMatcher": [],
+      "group": "build"
     }
   ]
 }
