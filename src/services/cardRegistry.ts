@@ -151,6 +151,25 @@ class CardRegistry {
         requiredProps: ['entities'],
       },
       {
+        type: 'calendar',
+        name: 'Calendar View',
+        category: 'sensor',
+        icon: 'CalendarOutlined',
+        description: 'Calendar events with month, week, and day previews',
+        isCustom: false,
+        source: 'builtin',
+        defaultProps: {
+          title: 'Calendar',
+          calendar_entities: ['calendar.home'],
+          view: 'month',
+          show_week_numbers: true,
+          show_agenda: true,
+          on_date_select: {
+            action: 'more-info',
+          },
+        },
+      },
+      {
         type: 'logbook',
         name: 'Timeline (Logbook)',
         category: 'sensor',

@@ -41,6 +41,7 @@ import { GaugeCardProCardRenderer } from './cards/GaugeCardProCardRenderer';
 import { AdvancedSliderCardRenderer } from './cards/AdvancedSliderCardRenderer';
 import { ProgressRingCardRenderer } from './cards/ProgressRingCardRenderer';
 import { TimelineCardRenderer } from './cards/TimelineCardRenderer';
+import { CalendarViewCardRenderer } from './cards/CalendarViewCardRenderer';
 import { UnsupportedCard } from './cards/UnsupportedCard';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { evaluateVisibilityConditions } from '../services/conditionalVisibility';
@@ -181,6 +182,9 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
       break;
     case 'logbook':
       renderedCard = <TimelineCardRenderer card={card as React.ComponentProps<typeof TimelineCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
+      break;
+    case 'calendar':
+      renderedCard = <CalendarViewCardRenderer card={card as React.ComponentProps<typeof CalendarViewCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;
       break;
     case 'map':
       renderedCard = <MapCardRenderer card={card as React.ComponentProps<typeof MapCardRenderer>['card']} isSelected={isSelected} onClick={handleCardClick} />;

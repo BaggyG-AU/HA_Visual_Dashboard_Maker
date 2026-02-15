@@ -370,4 +370,44 @@ describe('yaml conversion service', () => {
     expect((exported as Record<string, unknown>).lazy_render).toBeUndefined();
     expect(exported).toMatchObject({ tabs: [], options: { defaultTabIndex: 0 } });
   });
+
+  it('imports and exports calendar card while converting HAVDM-only fields', () => {
+    const upstream = {
+      type: 'calendar',
+      title: 'Household',
+      entities: ['calendar.home', 'calendar.work'],
+      initial_view: 'list',
+      extra: 'keep',
+    };
+
+    const imported = importCard(upstream);
+    expect(imported).toMatchObject({
+      type: 'calendar',
+      calendar_entities: ['calendar.home', 'calendar.work'],
+      view: 'week',
+      extra: 'keep',
+    });
+
+    const exported = exportCard({
+      ...imported,
+      show_week_numbers: true,
+      show_agenda: true,
+      on_date_select: { action: 'more-info' },
+      selected_date: '2026-02-15',
+      events: [{ title: 'Preview event', start: '2026-02-15T10:00:00Z' }],
+    });
+
+    expect(exported).toMatchObject({
+      type: 'calendar',
+      title: 'Household',
+      entities: ['calendar.home', 'calendar.work'],
+      initial_view: 'list',
+      extra: 'keep',
+    });
+    expect((exported as Record<string, unknown>).show_week_numbers).toBeUndefined();
+    expect((exported as Record<string, unknown>).show_agenda).toBeUndefined();
+    expect((exported as Record<string, unknown>).calendar_entities).toBeUndefined();
+    expect((exported as Record<string, unknown>).on_date_select).toBeUndefined();
+    expect((exported as Record<string, unknown>).events).toBeUndefined();
+  });
 });

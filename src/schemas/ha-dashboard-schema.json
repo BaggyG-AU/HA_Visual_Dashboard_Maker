@@ -369,6 +369,36 @@
           "description": "Whether to show icon",
           "default": true
         },
+        "calendar_entities": {
+          "type": "array",
+          "description": "HAVDM: Calendar source entities for calendar card editing",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z_]+\\.[a-z0-9_]+$"
+          }
+        },
+        "initial_view": {
+          "type": "string",
+          "description": "Calendar initial view (upstream Home Assistant)",
+          "enum": ["day", "list", "month"]
+        },
+        "view": {
+          "type": "string",
+          "description": "HAVDM: Calendar editor view mode",
+          "enum": ["month", "week", "day"]
+        },
+        "show_week_numbers": {
+          "type": "boolean",
+          "description": "HAVDM: Show week numbers in calendar preview"
+        },
+        "show_agenda": {
+          "type": "boolean",
+          "description": "HAVDM: Show agenda sidebar in calendar preview"
+        },
+        "on_date_select": {
+          "$ref": "#/definitions/action",
+          "description": "HAVDM: Action metadata for date selection interactions"
+        },
         "hours_to_show": {
           "type": "number",
           "description": "History window in hours (sparkline/mini-graph/timeline)",
