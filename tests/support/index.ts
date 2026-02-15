@@ -44,6 +44,7 @@ import { GaugeProDSL } from './dsl/gaugePro';
 import { AdvancedSliderDSL } from './dsl/advancedSlider';
 import { ProgressRingDSL } from './dsl/progressRing';
 import { SparklineDSL } from './dsl/sparkline';
+import { TimelineDSL } from './dsl/timeline';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -93,6 +94,7 @@ export interface TestContext extends electron.ElectronTestContext {
   advancedSlider: AdvancedSliderDSL;
   progressRing: ProgressRingDSL;
   sparkline: SparklineDSL;
+  timeline: TimelineDSL;
 }
 
 /**
@@ -137,5 +139,6 @@ export async function launchWithDSL(): Promise<TestContext> {
     advancedSlider: new AdvancedSliderDSL(electronCtx.window),
     progressRing: new ProgressRingDSL(electronCtx.window),
     sparkline: new SparklineDSL(electronCtx.window),
+    timeline: new TimelineDSL(electronCtx.window),
   };
 }

@@ -150,6 +150,26 @@ class CardRegistry {
         defaultProps: { entities: [], hours_to_show: 24 },
         requiredProps: ['entities'],
       },
+      {
+        type: 'logbook',
+        name: 'Timeline (Logbook)',
+        category: 'sensor',
+        icon: 'ClockCircleOutlined',
+        description: 'Chronological event timeline backed by Home Assistant logbook semantics',
+        isCustom: false,
+        source: 'builtin',
+        defaultProps: {
+          title: 'Timeline',
+          hours_to_show: 24,
+          orientation: 'vertical',
+          show_now_marker: true,
+          group_by: 'day',
+          max_items: 50,
+          enable_scrubber: true,
+          item_density: 'comfortable',
+          truncate_length: 72,
+        },
+      },
 
       // Control Cards
       {

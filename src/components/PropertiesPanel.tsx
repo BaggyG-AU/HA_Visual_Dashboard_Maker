@@ -1514,6 +1514,102 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </>
           )}
 
+          {card.type === 'logbook' && (
+            <>
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Title</span>}
+                name="title"
+              >
+                <Input data-testid="timeline-title" placeholder="Timeline" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Entity</span>}
+                name="entity"
+                help={<span style={{ color: '#666' }}>Optional event source entity (sensor/calendar/logbook)</span>}
+              >
+                <EntitySelect data-testid="timeline-entity" placeholder="sensor.home_events" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Hours to Show</span>}
+                name="hours_to_show"
+              >
+                <InputNumber data-testid="timeline-hours-to-show" style={{ width: '100%' }} min={1} max={168} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Orientation</span>}
+                name="orientation"
+              >
+                <Select
+                  data-testid="timeline-orientation"
+                  options={[
+                    { value: 'vertical', label: 'Vertical' },
+                    { value: 'horizontal', label: 'Horizontal' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Group By</span>}
+                name="group_by"
+              >
+                <Select
+                  data-testid="timeline-group-by"
+                  options={[
+                    { value: 'none', label: 'None' },
+                    { value: 'day', label: 'Day' },
+                    { value: 'hour', label: 'Hour' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Show Now Marker</span>}
+                name="show_now_marker"
+                valuePropName="checked"
+              >
+                <Switch data-testid="timeline-show-now-marker" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Enable Scrubber</span>}
+                name="enable_scrubber"
+                valuePropName="checked"
+              >
+                <Switch data-testid="timeline-enable-scrubber" />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Max Items</span>}
+                name="max_items"
+              >
+                <InputNumber data-testid="timeline-max-items" style={{ width: '100%' }} min={5} max={200} />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Item Density</span>}
+                name="item_density"
+              >
+                <Select
+                  data-testid="timeline-item-density"
+                  options={[
+                    { value: 'comfortable', label: 'Comfortable' },
+                    { value: 'compact', label: 'Compact' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={<span style={{ color: 'white' }}>Truncate Length</span>}
+                name="truncate_length"
+              >
+                <InputNumber data-testid="timeline-truncate-length" style={{ width: '100%' }} min={24} max={160} />
+              </Form.Item>
+            </>
+          )}
+
           {card.type === 'picture' && (
             <>
               <Form.Item
@@ -5164,7 +5260,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
 
           {/* Generic fallback for layout cards and other types */}
-          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:native-graph-card', 'custom:gauge-card-pro', 'custom:slider-button-card', 'custom:modern-circular-gauge', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
+          {!['entities', 'glance', 'button', 'markdown', 'sensor', 'gauge', 'history-graph', 'logbook', 'picture', 'picture-entity', 'picture-glance', 'light', 'thermostat', 'media-control', 'weather-forecast', 'map', 'alarm-panel', 'plant-status', 'custom:mini-graph-card', 'custom:button-card', 'custom:mushroom-entity-card', 'custom:mushroom-light-card', 'custom:mushroom-climate-card', 'custom:mushroom-cover-card', 'custom:mushroom-fan-card', 'custom:mushroom-switch-card', 'custom:mushroom-chips-card', 'custom:mushroom-title-card', 'custom:mushroom-template-card', 'custom:mushroom-select-card', 'custom:mushroom-number-card', 'custom:mushroom-person-card', 'custom:mushroom-media-player-card', 'custom:mushroom-lock-card', 'custom:mushroom-alarm-control-panel-card', 'custom:mushroom-vacuum-card', 'horizontal-stack', 'vertical-stack', 'grid', 'conditional', 'spacer', 'custom:swipe-card', 'custom:expander-card', 'custom:tabbed-card', 'custom:popup-card', 'custom:apexcharts-card', 'custom:native-graph-card', 'custom:gauge-card-pro', 'custom:slider-button-card', 'custom:modern-circular-gauge', 'custom:bubble-card', 'custom:better-thermostat-ui-card', 'custom:power-flow-card', 'custom:power-flow-card-plus', 'custom:webrtc-camera', 'custom:surveillance-card', 'custom:frigate-card', 'custom:camera-card', 'custom:card-mod', 'custom:auto-entities', 'custom:vertical-stack-in-card', 'custom:mini-media-player', 'custom:multiple-entity-row', 'custom:fold-entity-row', 'custom:slider-entity-row', 'custom:battery-state-card', 'custom:simple-swipe-card', 'custom:decluttering-card'].includes(card.type) && (
             <div style={{ color: '#888', fontSize: '12px' }}>
               <Text style={{ color: '#888' }}>
                 Property editor for {card.type} cards is not yet implemented.

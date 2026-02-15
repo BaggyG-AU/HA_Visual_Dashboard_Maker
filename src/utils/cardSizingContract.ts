@@ -280,6 +280,16 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       maxH = 12;
       break;
 
+    case 'logbook':
+      // Logbook/timeline cards are similar in density to history graph cards
+      height = 5;
+      width = 6;
+      minW = 4;
+      maxW = 12;
+      minH = 4;
+      maxH = 12;
+      break;
+
     case 'map':
       // Map cards need significant space for visualization (~350px in HA)
       // 350 / 56 ≈ 6.25 rows

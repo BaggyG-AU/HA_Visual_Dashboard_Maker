@@ -371,7 +371,40 @@
         },
         "hours_to_show": {
           "type": "number",
-          "description": "History window in hours (sparkline/mini-graph)",
+          "description": "History window in hours (sparkline/mini-graph/timeline)",
+          "minimum": 1
+        },
+        "max_items": {
+          "type": "integer",
+          "description": "Maximum rendered event items for timeline/logbook cards",
+          "minimum": 1
+        },
+        "orientation": {
+          "type": "string",
+          "description": "Timeline orientation",
+          "enum": ["vertical", "horizontal"]
+        },
+        "show_now_marker": {
+          "type": "boolean",
+          "description": "Show the current-time marker in timeline cards"
+        },
+        "group_by": {
+          "type": "string",
+          "description": "Timeline grouping strategy",
+          "enum": ["none", "day", "hour"]
+        },
+        "enable_scrubber": {
+          "type": "boolean",
+          "description": "Enable interactive timeline scrubber"
+        },
+        "item_density": {
+          "type": "string",
+          "description": "Timeline item density",
+          "enum": ["compact", "comfortable"]
+        },
+        "truncate_length": {
+          "type": "integer",
+          "description": "Max characters before truncating timeline item text",
           "minimum": 1
         },
         "points_per_hour": {
