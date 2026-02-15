@@ -11,6 +11,7 @@ import type { CardSpacingValue } from './spacing';
 import type { Action } from './actions';
 import type { Phase6CardContracts } from './phase6';
 import type { VisibilityCondition } from './logic';
+import type { IconColorMode, StateStyleMap } from './stateStyling';
 
 export type { Action } from './actions';
 export type {
@@ -42,8 +43,8 @@ export interface BaseCard extends Phase6CardContracts {
   haptic?: HapticCardConfig;
   sound?: SoundCardConfig;
   icon_color?: string;
-  icon_color_mode?: 'default' | 'custom' | 'state' | 'attribute';
-  icon_color_states?: Record<string, string>;
+  icon_color_mode?: IconColorMode;
+  icon_color_states?: StateStyleMap<string>;
   icon_color_attribute?: string;
   state_icons?: StateIconsMap;
   multi_entity_mode?: MultiEntityMode;

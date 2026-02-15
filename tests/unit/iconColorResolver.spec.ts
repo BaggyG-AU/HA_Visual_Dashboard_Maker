@@ -27,6 +27,26 @@ describe('iconColorResolver', () => {
     expect(result).toBe('#123456');
   });
 
+  it('matches state colors case-insensitively', () => {
+    const result = resolveIconColor({
+      mode: 'state',
+      stateColors: { on: '#00ff00' },
+      entityState: 'ON',
+      defaultColor: '#123456',
+    });
+    expect(result).toBe('#00ff00');
+  });
+
+  it('uses unknown state color before default fallback', () => {
+    const result = resolveIconColor({
+      mode: 'state',
+      stateColors: { unknown: '#777777', default: '#222222' },
+      entityState: '',
+      defaultColor: '#123456',
+    });
+    expect(result).toBe('#777777');
+  });
+
   it('uses attribute value when mode is attribute', () => {
     const result = resolveIconColor({
       mode: 'attribute',
