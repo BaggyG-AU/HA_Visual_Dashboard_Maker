@@ -1,12 +1,12 @@
 import { parseColor } from './colorConversions';
 import { isGradientString } from './gradientConversions';
-
-export type IconColorMode = 'default' | 'custom' | 'state' | 'attribute';
+import { resolveStateStyleValue } from '../services/stateStyleMapping';
+import type { IconColorMode, StateStyleMap } from '../types/stateStyling';
 
 export interface IconColorResolverInput {
   mode?: IconColorMode;
   customColor?: string;
-  stateColors?: Record<string, string>;
+  stateColors?: StateStyleMap<string>;
   attribute?: string;
   entityState?: string;
   entityAttributes?: Record<string, unknown>;
@@ -40,8 +40,10 @@ export const resolveIconColor = ({
   }
 
   if (mode === 'state') {
-    const stateKey = entityState || 'unknown';
-    const stateColor = stateColors?.[stateKey] || stateColors?.default;
+    const stateColor = resolveStateStyleValue({
+      state: entityState,
+      styles: stateColors,
+    });
     return isValidColor(stateColor) || resolvedCustom || defaultColor;
   }
 

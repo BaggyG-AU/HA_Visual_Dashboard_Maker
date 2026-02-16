@@ -14,13 +14,14 @@ import { haConnectionService } from '../services/haConnectionService';
 import { createDebouncedCommit, DebouncedCommit } from '../utils/debouncedCommit';
 import { extractStyleColor, upsertStyleColor } from '../utils/styleBackground';
 import { applyBackgroundConfigToStyle, DEFAULT_BACKGROUND_CONFIG, parseBackgroundConfig, type BackgroundConfig } from '../utils/backgroundStyle';
-import { formatActionLabel, resolveTapAction } from '../services/smartActions';
+import { formatActionLabel, resolveAllCardActions } from '../services/smartActions';
 import { logger } from '../services/logger';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import { getMissingEntityReferences, hasEntityContextVariables, resolveEntityContext } from '../services/entityContext';
 import { AttributeDisplayControls } from './AttributeDisplayControls';
 import { ConditionalVisibilityControls } from './ConditionalVisibilityControls';
 import { StateIconMappingControls } from './StateIconMappingControls';
+import { TriggerAnimationControls } from './TriggerAnimationControls';
 import type { AttributeDisplayLayout } from '../types/attributeDisplay';
 import { MultiEntityControls } from './MultiEntityControls';
 import type { AggregateFunction, BatchActionType, MultiEntityMode } from '../types/multiEntity';
@@ -420,6 +421,39 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     );
   };
 
+  const renderTriggerAnimationSection = (values: FormCardValues) => {
+    const currentCard = cardRef.current;
+    if (!currentCard) return null;
+
+    const supportsTriggerAnimations =
+      typeof values.entity === 'string'
+      || Array.isArray(values.entities)
+      || typeof currentCard.entity === 'string'
+      || Array.isArray(currentCard.entities);
+
+    if (!supportsTriggerAnimations) {
+      return null;
+    }
+
+    const entityField = typeof values.entity === 'string' ? values.entity : undefined;
+    const entitiesField = Array.isArray(values.entities) ? values.entities : undefined;
+    const firstEntityValue = entitiesField
+      ? (typeof entitiesField[0] === 'string'
+        ? entitiesField[0]
+        : (typeof entitiesField[0] === 'object' && entitiesField[0] !== null && 'entity' in entitiesField[0]
+          ? (entitiesField[0] as { entity?: unknown }).entity
+          : undefined))
+      : undefined;
+    const firstEntity = typeof firstEntityValue === 'string' ? firstEntityValue : undefined;
+    const defaultEntityId = entityField ?? currentCard.entity ?? firstEntity ?? null;
+
+    return (
+      <Form.Item name="trigger_animations">
+        <TriggerAnimationControls defaultEntityId={defaultEntityId} />
+      </Form.Item>
+    );
+  };
+
   const renderStateIconMappingSection = (values: FormCardValues) => {
     const currentCard = cardRef.current;
     if (!currentCard) return null;
@@ -520,7 +554,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <Text strong style={{ color: 'white' }}>Smart Default Actions</Text>
         <Form.Item
           label={
-            <Tooltip title="When enabled, tap_action is computed automatically based on the entity domain unless you define tap_action explicitly.">
+            <Tooltip title="When enabled, tap/hold/double actions are computed automatically based on the entity domain unless you define each action explicitly.">
               <span style={{ color: 'white' }}>Use Smart Defaults</span>
             </Tooltip>
           }
@@ -535,15 +569,19 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             const currentEntity = form.getFieldValue('entity') as string | undefined;
             const smartDefaults = form.getFieldValue('smart_defaults') as boolean | undefined;
             const tapAction = form.getFieldValue('tap_action');
+            const holdAction = form.getFieldValue('hold_action');
+            const doubleTapAction = form.getFieldValue('double_tap_action');
 
-            const { action, source } = resolveTapAction({
+            const resolved = resolveAllCardActions({
               ...currentCard,
               entity: currentEntity,
               smart_defaults: smartDefaults,
               tap_action: tapAction,
+              hold_action: holdAction,
+              double_tap_action: doubleTapAction,
             });
 
-            const sourceLabel =
+            const sourceLabel = (source: 'user' | 'smart' | 'legacy' | 'none') =>
               source === 'user'
                 ? 'User-defined'
                 : source === 'smart'
@@ -562,10 +600,22 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 }}
                 data-testid={`${testIdPrefix}-smart-defaults-preview`}
               >
-                <Text style={{ color: '#bbb', fontSize: 12 }}>
-                  Tap action used: <Text style={{ color: '#fff' }}>{formatActionLabel(action)}</Text>{' '}
-                  <Text style={{ color: '#666' }}>({sourceLabel})</Text>
-                </Text>
+                <div style={{ color: '#bbb', fontSize: 12 }}>
+                  <Text style={{ color: '#bbb', fontSize: 12 }}>
+                    Tap action used: <Text style={{ color: '#fff' }}>{formatActionLabel(resolved.tap.action)}</Text>{' '}
+                    <Text style={{ color: '#666' }}>({sourceLabel(resolved.tap.source)})</Text>
+                  </Text>
+                  <br />
+                  <Text style={{ color: '#bbb', fontSize: 12 }}>
+                    Hold action used: <Text style={{ color: '#fff' }}>{formatActionLabel(resolved.hold.action)}</Text>{' '}
+                    <Text style={{ color: '#666' }}>({sourceLabel(resolved.hold.source)})</Text>
+                  </Text>
+                  <br />
+                  <Text style={{ color: '#bbb', fontSize: 12 }}>
+                    Double-tap action used: <Text style={{ color: '#fff' }}>{formatActionLabel(resolved.double_tap.action)}</Text>{' '}
+                    <Text style={{ color: '#666' }}>({sourceLabel(resolved.double_tap.source)})</Text>
+                  </Text>
+                </div>
               </div>
             );
           }}
@@ -1395,6 +1445,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
       <Form.Item noStyle shouldUpdate>
         {() => renderConditionalVisibilitySection(form.getFieldsValue(true) as FormCardValues)}
+      </Form.Item>
+
+      <Form.Item noStyle shouldUpdate>
+        {() => renderTriggerAnimationSection(form.getFieldsValue(true) as FormCardValues)}
       </Form.Item>
 
       <Form.Item noStyle shouldUpdate>

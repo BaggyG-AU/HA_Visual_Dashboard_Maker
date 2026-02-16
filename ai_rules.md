@@ -4,243 +4,295 @@ These rules apply to any AI agent (ChatGPT/OpenAI/Claude/Copilot/etc.) working i
 
 Tripwire phrase: “The fastest correct fix is already in the repository.”
 
-## 0) Precedence & Locations
-- Read this file first; then check `docs/testing/TESTING_STANDARDS.md`, `docs/testing/PLAYWRIGHT_TESTING.md`, `docs/releases/RELEASES.md`, and `docs/product/PROJECT_PLAN.md` for context.
-- AI rules live at the repository root to be discoverable by default. Link to them whenever you reference testing or workflow policy.
+---
 
-## 1) Immutable Reuse Rule
+# 0) Precedence & Locations
+
+- Read this file first.
+- Then check:
+  - `docs/testing/TESTING_STANDARDS.md`
+  - `docs/testing/PLAYWRIGHT_TESTING.md`
+  - `docs/releases/RELEASES.md`
+  - `docs/product/PROJECT_PLAN.md`
+  - `docs/governance/PHASE_ORCHESTRATION_FRAMEWORK.md` (Phase-level governance)
+
+AI rules live at the repository root to be discoverable by default. Link to them whenever you reference testing or workflow policy.
+
+---
+
+# 0a) Phase Governance Precedence (MANDATORY)
+
+If a Phase Orchestration Framework document exists under:
+
+```
+docs/governance/PHASE_ORCHESTRATION_FRAMEWORK.md
+```
+
+and the user explicitly invokes it, the AI agent MUST:
+
+1. Treat that framework as binding for:
+   - Phase planning
+   - Slice design
+   - Refactor scope
+   - Packaging rules
+   - Stop conditions
+   - Medium Gate enforcement
+   - Version bump validation
+
+2. Not implement phase-level work without first producing the required governance blueprint (unless explicitly instructed to bypass).
+
+3. Follow Stop Conditions defined in the active Phase Governance document in addition to the rules in `ai_rules.md`.
+
+Precedence boundaries:
+- `ai_rules.md` governs **implementation behavior, test safety, DSL discipline, state integrity, React correctness, and Git workflow**.
+- The Phase Governance Framework governs **phase structure, packaging, blast radius control, and release readiness**.
+
+If conflicts arise:
+- Implementation safety rules in `ai_rules.md` cannot be bypassed.
+- Governance rules control scope and sequencing.
+
+---
+
+# 0b) Version Integrity Rule (MANDATORY)
+
+When initiating a new Phase:
+
+- Validate `CURRENT_VERSION` against `package.json`.
+- Validate `INITIATION_VERSION` bump logic.
+- Determine if bump is:
+  - Beta patch
+  - Beta minor
+  - Stable minor
+  - Major (1.x.y)
+- Do not proceed if version bump logic is inconsistent.
+
+Never guess version progression.
+
+---
+
+# 1) Immutable Reuse Rule
+
 When debugging or changing tests/automation, you MUST first search for a working pattern and reuse it.
+
 Search in this order:
 1. Passing specs in `tests/**/*.spec.ts`
 2. DSLs in `tests/support/dsl/**`
 3. Helpers/fixtures in `tests/support/**` and `tests/helpers/**`
 
-Only invent a new selector/wait/helper when no working example exists. Never add duplicate DSL methods for the same action.
+Only invent a new selector/wait/helper when no working example exists.
 
-## 2) Document Storage Standards (New)
-- All new or updated docs must live under `/docs` in the appropriate folder:
-  - Architecture → `docs/architecture/`
-  - Security → `docs/security/`
-  - Testing → `docs/testing/`
-  - Releases → `docs/releases/`
-  - Product/plan/templates → `docs/product/`
-  - Research/diagnostics → `docs/research/` (move stale to `docs/archive/`)
-- Archive research, obsolete release notes, or exploratory content under `docs/archive/**` instead of deleting.
-- Root markdown should stay minimal: `README.md`, `LICENSE`, `ai_rules.md`.
+Never add duplicate DSL methods for the same action.
 
-## 3) Required Workflow for Fixing Failing Tests
-For test-writing conventions and debugging guidance, follow:
-- `docs/testing/TESTING_STANDARDS.md` (normative standards)
-- `docs/testing/PLAYWRIGHT_TESTING.md` (runbook + troubleshooting)
+---
 
-## 4) Guardrails (Do Not Do These)
-Guardrails for tests (selectors, waits, DSL boundaries, etc.) live in `docs/testing/TESTING_STANDARDS.md`.
+# 2) Document Storage Standards
 
-## 4a) DSL Change Blast-Radius Check (MANDATORY)
-When modifying any shared DSL method in `tests/support/dsl/**`, the AI agent MUST:
-1. Identify all specs that call the modified method (grep across `tests/e2e/**` and `tests/integration/**`).
-2. Run all affected specs — not just the spec that motivated the change.
-3. If more than 5 specs are affected, run a full-suite regression pass.
+All new or updated docs must live under `/docs`:
 
-This prevents systemic regressions like the 2026-02-07 incident where a single `openPopover()` change broke 14 tests.
+- Architecture → `docs/architecture/`
+- Security → `docs/security/`
+- Testing → `docs/testing/`
+- Releases → `docs/releases/`
+- Product/plan/templates → `docs/product/`
+- Governance → `docs/governance/`
+- Research/diagnostics → `docs/research/`
+- Archive stale content → `docs/archive/**`
 
-## 4b) Shared DSL Change Contract (MANDATORY)
-When changing any method in `tests/support/dsl/**`, the change is not complete until compatibility is explicitly proven for all consumers.
+Root markdown must stay minimal:
+- `README.md`
+- `LICENSE`
+- `ai_rules.md`
 
-Required deliverables (must be included in the AI response and/or PR notes):
-1. **Consumer inventory**: list all consuming specs from `tests/e2e/**` and `tests/integration/**`.
-2. **Contract statement**: state whether method signature/default behavior changed.
-3. **Compatibility statement**: if default behavior changed, document old vs new behavior and migration impact.
-4. **Execution evidence**:
-   - run results for all consuming specs, or
-   - full-suite results when consumer count is greater than 5.
-5. **Artifact paths**: include failure trace/screenshot paths under `test-results/artifacts/**` for any failing consumer.
+---
 
-Any shared DSL change without this evidence is non-compliant.
+# 3) Required Workflow for Fixing Failing Tests
 
-## 5) Test Execution & Reporting Policy
-AI agents MAY run tests when the execution environment permits it, including:
+Follow:
+- `docs/testing/TESTING_STANDARDS.md`
+- `docs/testing/PLAYWRIGHT_TESTING.md`
+
+Regression Gate Matrix is normative and mandatory.
+
+---
+
+# 4) Guardrails
+
+Guardrails for selectors, waits, DSL boundaries, and regression triggers live in:
+
+```
+docs/testing/TESTING_STANDARDS.md
+```
+
+---
+
+# 4a) DSL Change Blast-Radius Check (MANDATORY)
+
+When modifying any shared DSL method in `tests/support/dsl/**`, the AI MUST:
+
+1. Identify all consuming specs (`tests/e2e/**`, `tests/integration/**`).
+2. Run all affected specs.
+3. If >5 specs affected → run full suite.
+
+Never merge shared DSL changes without regression proof.
+
+---
+
+# 4b) Shared DSL Change Contract (MANDATORY)
+
+When changing any method in `tests/support/dsl/**`, include:
+
+1. Consumer inventory.
+2. Contract statement (signature/behavior changes).
+3. Compatibility statement.
+4. Execution evidence.
+5. Artifact paths under `test-results/artifacts/**`.
+
+Shared DSL change without this evidence is non-compliant.
+
+---
+
+# 5) Test Execution & Reporting Policy
+
+AI MAY run tests when environment permits:
+
 - Lint: `npm run lint`
 - Unit: `npm run test:unit`
-- E2E: `npm run test:e2e` (or targeted `npx playwright test ... --project=electron-e2e`)
-- Integration: `npm run test:integration` (or `npx playwright test ... --project=electron-integration`)
-
-Regression gate definitions and trigger rules are normative in:
-- `docs/testing/TESTING_STANDARDS.md` → **Regression Gate Matrix (MANDATORY)**
-
-If the user asks for `fast gate`, `medium gate`, `slow gate`, or `full regression`, execute the corresponding matrix commands from that section.
+- Integration: `npm run test:integration`
+- E2E: `npm run test:e2e`
 
 Rules:
-- Never claim you ran tests unless you actually executed them and have output.
-- After development, the AI may run tests. After **one** test run, the AI MUST pause and:
-  1) List any errors/failures (by test + file path),
-  2) Provide a diagnosis and proposed resolution,
-  3) Ask the user whether to proceed with fixes and/or another test run.
-- Repeat this pause → diagnose → ask workflow until failures are resolved or the user instructs otherwise.
 
-Always provide a copy/paste verification plan:
-1) Minimal repro command for the failing test (headed, with trace).
-2) Trace viewer command (`npx playwright show-trace <path>/trace.zip`) and artifact paths (under `test-results/artifacts`).
-3) Stability loop (run 5x) with platform-specific loops.
-4) Regression checks for reused reference specs/helpers.
+- Never claim you ran tests unless you actually executed them.
+- After ONE test run:
+  1. List failures (by file + test name)
+  2. Provide diagnosis
+  3. Propose resolution
+  4. Ask before continuing
 
-## 6) Deliverables for Test Fixes (AI)
-When an AI agent fixes tests, its final response MUST include:
-- References to reused tests/helpers (paths).
-- Root cause explanation.
-- Patch summary (files changed).
-- Verification commands (and whether they were actually run).
+Always provide copy/paste verification plan.
 
-## 7) Immutable State Updates (React + Zustand)
-All state updates in React components and Zustand stores MUST use immutable patterns:
-- Use `[...array, newItem]` instead of `array.push(newItem)`
-- Use `array.filter()` instead of `array.splice()`
-- Use `array.map()` for targeted element replacement instead of index assignment (`arr[i] = val`)
-- Use `{ ...obj, key: newValue }` instead of `obj.key = newValue`
-- Use `views.map((v, i) => i === idx ? { ...v, cards: updatedCards } : v)` for nested updates
+---
 
-Rationale: `useMemo` and React reconciliation depend on reference equality. In-place mutation does not change the object/array reference, so React cannot detect the change and renders stale data. This was the root cause of a production bug where cards rendered at tiny dimensions (w=1, h=1).
+# 6) Deliverables for Test Fixes
 
-When using synchronous flags (e.g., "ignore next layout change"), prefer `useRef` over `useState` because ref updates are immediate while state updates are batched.
+Must include:
+- Reused test/helper references
+- Root cause explanation
+- Patch summary
+- Verification commands
 
-**useEffect dependency caveat**: With immutable updates, object/array references change on every edit. If a `useEffect` depends on a prop derived from immutable state (e.g., `card`), it will fire on every update — not just when the logical identity changes. Audit all `useEffect` dependency arrays when adopting immutable patterns. Use stable identifiers like indices or IDs instead of object references where the intent is "run when a different item is selected" rather than "run when the item's content changes." This was the root cause of a white-screen crash where a feedback loop (useEffect reset → Monaco update → YAML change → state update → new card ref → useEffect reset → …) overwhelmed React's render pipeline.
+---
 
-## 8) React Component Stability Rules — Ant Design Integration (MANDATORY)
+# 7) Immutable State Updates (React + Zustand)
 
-When writing or modifying React components that use Ant Design `Tabs`, `Popover`, `Modal`, or other portal-based components, follow these rules to prevent DOM destruction that breaks E2E tests and degrades user experience.
+All state updates must use immutable patterns.
 
-### 8a) Tabs `items` Array Must Be Memoized
+Never mutate arrays or objects in place.
 
-Never pass an inline `items={[...]}` array to `<Tabs>`. Ant Design Tabs uses referential equality to decide whether to remount panel content. An inline array creates a new reference on every render, causing **all tab children to unmount and remount** — destroying Popover state, form focus, scroll position, and any in-progress user interaction.
+Use:
+- Spread operators
+- `map`, `filter`
+- Object cloning
+- Nested immutable patterns
 
-```tsx
-// BAD — unmounts/remounts all tab children on every render
-<Tabs items={[
-  { key: 'form', label: 'Form', children: <FormContent /> },
-  { key: 'style', label: 'Style', children: <StyleContent /> },
-]} />
+Audit `useEffect` dependency arrays when adopting immutability.
 
-// GOOD — stable reference, children survive parent re-renders
-const tabItems = useMemo(() => [
-  { key: 'form', label: 'Form', children: <FormContent /> },
-  { key: 'style', label: 'Style', children: <StyleContent /> },
-], [/* structural deps only — e.g., card?.type, NOT card */]);
-<Tabs items={tabItems} />
-```
+Prefer `useRef` for synchronous flags.
 
-### 8b) Popover/Portal State Must Survive Unmount/Remount
+---
 
-If a component with an Ant Design Popover can be unmounted and remounted by a parent (e.g., inside Tabs), the popover open state must be cached at module level so it survives the cycle. Use this pattern:
+# 8) React Component Stability Rules — Ant Design (MANDATORY)
 
-```tsx
-const popoverStateCache = new Map<string, { open: boolean; timestamp: number }>();
-const POPOVER_STATE_TTL = 1000; // 1 second window for cache hit
+Follow:
 
-// In component:
-const [open, setOpenRaw] = useState(() => {
-  const cached = popoverStateCache.get(testId);
-  if (cached && Date.now() - cached.timestamp < POPOVER_STATE_TTL) return cached.open;
-  return false;
-});
-const setOpen = useCallback((next: boolean) => {
-  popoverStateCache.set(testId, { open: next, timestamp: Date.now() });
-  setOpenRaw(next);
-}, [testId]);
-```
+- Memoize `Tabs` `items` arrays.
+- Preserve Popover state across unmount/remount.
+- Use structural dependencies in `useMemo`.
+- Never call hooks after early return.
+- Memoize portal content.
 
-Reference implementations: `ColorPickerInput.tsx`, `GradientPickerInput.tsx`.
+Reference:
+`docs/archive/E2E_FAILURES_RCA.md` (PropertiesPanel Tabs regression).
 
-### 8c) useMemo/useCallback Dependencies Must Be Structural
+---
 
-When memoizing content rendered inside Tabs or other containers that check referential equality, use **structural-only dependencies** — e.g., `card?.type` — not full object references like `card`. Form.Item values flow through Ant Design Form's internal context (via the shared `form` instance), independent of the JSX tree. Use `useRef` for values that handlers need to read but that should not trigger memo recomputation.
-
-```tsx
-// BAD — memo recomputes on every card property change, defeating the purpose
-const tabItems = useMemo(() => [...], [card, form, handleChange]);
-
-// GOOD — only recomputes when card type changes (structural change)
-const cardRef = useRef(card);
-cardRef.current = card;
-const tabItems = useMemo(() => [...], [card?.type, form, handleChange]);
-```
-
-### 8d) Rules of Hooks: No Hooks After Early Returns
-
-React hooks must be called in the same order on every render. Never place `useMemo`, `useCallback`, `useState`, or `useEffect` **after** a conditional `return`. This causes a runtime crash that breaks all tests.
-
-```tsx
-// BAD — useMemo is skipped when card is null, violating Rules of Hooks
-if (!card) return <Empty />;
-const tabItems = useMemo(() => [...], [card?.type]);
-
-// GOOD — useMemo always runs; null guard inside the callback
-const tabItems = useMemo(() => {
-  if (!card) return [];
-  return [...];
-}, [card?.type]);
-if (!card) return <Empty />;
-```
-
-### 8e) Memoize Popover/Portal Content
-
-Wrap content passed to Ant Design `<Popover content={...}>` or `<Modal>` children in `useMemo`. Without this, the portal DOM is destroyed and recreated on every parent render, causing visual flicker and breaking Playwright element references.
-
-```tsx
-// BAD — new JSX reference on every render → portal re-mount
-<Popover content={<ColorPicker value={value} onChange={onChange} />}>
-
-// GOOD — stable reference → portal survives parent re-renders
-const pickerContent = useMemo(() => (
-  <ColorPicker value={value} onChange={onChange} />
-), [value, onChange]);
-<Popover content={pickerContent}>
-```
-
-Root cause reference: See `docs/archive/E2E_FAILURES_RCA.md` "Root Cause Analysis (2026-02-08)" for the PropertiesPanel Tabs regression that these rules prevent.
-
-## 9) Git feature workflow (MANDATORY)
+# 9) Git Feature Workflow (MANDATORY)
 
 Trigger phrases:
 
-1) If the user says: "I want to start a new feature called <feature_name>"
-   - You MUST run: ./tools/feature-start "<feature_name>"
-   - Before running, check repo state (git status) and explain any blockers plainly.
+If user says:
+"I want to start a new feature called <feature_name>"
 
-2) If the user says: "I have completed <feature_name>"
-   - You MUST run: ./tools/feature-finish "<feature_name>"
-   - If checks fail, DO NOT merge. Explain what failed and give the exact commands to fix.
+→ MUST run:
+```
+./tools/feature-start "<feature_name>"
+```
 
-State validation (do this at each major step):
-- Confirm current branch name
-- Confirm working tree is clean
-- Confirm main is up to date with origin
-- Confirm feature branch is up to date/rebased
-- Confirm required checks/tests have passed (either run them or instruct user to run them)
+If user says:
+"I have completed <feature_name>"
 
-Decision policy:
-- If you need input (e.g., rebase vs merge, deleting branch, skipping tests), ask in plain English.
-- For each option, list impacts (risk, history cleanliness, effort, safety).
-- Default to safest option (do not merge if unsure).
+→ MUST run:
+```
+./tools/feature-finish "<feature_name>"
+```
 
-Never do ad-hoc git operations outside these scripts unless the scripts are missing or broken.
+Never perform ad-hoc git operations outside these scripts.
 
-## 10) HACS Card Alignment Rule (MANDATORY)
+Always validate:
+- Current branch
+- Clean working tree
+- Main up-to-date
+- Tests passed
 
-All custom card types implemented in HAVDM **must** map to a real upstream HACS or base Home Assistant card. HAVDM must not invent card type strings (e.g., `custom:my-invented-card`) that do not exist in the HA/HACS ecosystem.
+Default to safest option.
 
-### Requirements:
-1. **Card type strings** must match the upstream HACS card exactly (e.g., `custom:swipe-card`, `custom:tabbed-card`, `custom:expander-card`).
-2. **YAML structure** must match the upstream card's schema so that exported YAML renders correctly when pasted into a Home Assistant dashboard with the corresponding HACS card installed.
-3. **Import compatibility**: HAVDM must correctly parse YAML from real Home Assistant dashboards using these HACS cards.
+---
 
-### HAVDM-Only Extensions:
-HAVDM may add editor-only properties (e.g., visual editor conveniences, tab positioning, animations) that extend beyond what the upstream card supports. These extensions must:
-- Be clearly documented as HAVDM-only in the schema and property panel.
-- Be **stripped or converted** when exporting YAML for Home Assistant deployment.
-- Never conflict with upstream property names or semantics.
+# 9a) Commit Packaging Discipline (MANDATORY Under Phase Governance)
 
-### Exception — `custom:popup-card`:
-`custom:popup-card` is a HAVDM-only feature with no upstream HACS equivalent. It is exempt from the mapping requirement but must be clearly documented as HAVDM-only, and YAML exports must include a warning comment.
+When operating under an active Phase Governance Framework:
 
-### Authoritative Reference:
-See `docs/features/HACS_CARD_ALIGNMENT_REFACTOR_PLAN.md` for the mapping between upstream HACS cards and HAVDM implementations.
+- Each commit must represent one functional objective.
+- Do not combine unrelated refactors with behavioral changes.
+- Prefer separating scaffolding/tests from behavior when beneficial.
+- Keep branch in regression-safe state.
+- Run required regression checks before proceeding to next commit.
+- Follow Self-Review Checklist defined in the active Phase Governance document.
+
+Never “push through” instability to finish a slice.
+
+---
+
+# 9b) Stop Condition Enforcement (MANDATORY)
+
+If any Stop Condition defined in the active Phase Governance document is triggered:
+
+The AI MUST:
+
+1. Halt further implementation.
+2. Re-run required regression gates.
+3. Provide failure analysis.
+4. Propose rollback or re-scope.
+5. Await explicit user instruction before continuing.
+
+AI must never continue blindly past Stop Conditions.
+
+---
+
+# 10) HACS Card Alignment Rule (MANDATORY)
+
+All custom card types must map to real upstream HACS or base Home Assistant cards.
+
+Requirements:
+- Card type strings must match upstream exactly.
+- YAML schema must match upstream.
+- HAVDM-only extensions must:
+  - Be documented
+  - Be stripped/converted on export
+  - Not conflict with upstream schema
+
+Exception:
+`custom:popup-card` is HAVDM-only but must be documented clearly.
+
+Reference:
+`docs/features/HACS_CARD_ALIGNMENT_REFACTOR_PLAN.md`

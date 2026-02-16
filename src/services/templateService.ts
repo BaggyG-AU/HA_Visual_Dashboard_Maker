@@ -5,31 +5,9 @@
  * Provides template discovery, loading, and metadata management.
  */
 import { logger } from './logger';
+import type { DashboardTemplate, TemplateCategory, TemplateMetadata, TemplateDifficulty } from '../types/templates';
 
-export interface DashboardTemplate {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  file: string;
-  preview?: string;
-  features: string[];
-  requiredEntities: string[];
-  tags: string[];
-}
-
-export interface TemplateCategory {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-}
-
-export interface TemplateMetadata {
-  templates: DashboardTemplate[];
-  categories: TemplateCategory[];
-}
+export type { DashboardTemplate, TemplateCategory, TemplateMetadata } from '../types/templates';
 
 class TemplateService {
   private metadata: TemplateMetadata | null = null;
@@ -78,7 +56,7 @@ class TemplateService {
   /**
    * Get templates by difficulty
    */
-  async getTemplatesByDifficulty(difficulty: 'beginner' | 'intermediate' | 'advanced'): Promise<DashboardTemplate[]> {
+  async getTemplatesByDifficulty(difficulty: TemplateDifficulty): Promise<DashboardTemplate[]> {
     const templates = await this.getTemplates();
     return templates.filter(t => t.difficulty === difficulty);
   }

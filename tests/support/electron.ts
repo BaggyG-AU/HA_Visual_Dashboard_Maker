@@ -23,6 +23,94 @@ export interface ElectronTestContext {
   userDataDir: string;
 }
 
+interface ElectronLaunchDiagnostics {
+  timestamp: string;
+  elapsedMs: number;
+  timeoutMs: number;
+  playwrightWindows: Array<{
+    index: number;
+    url: string;
+    isClosed: boolean;
+  }>;
+  browserWindows: {
+    count: number;
+    windows: Array<{
+      index: number;
+      url: string;
+      isVisible: boolean;
+      isDestroyed: boolean;
+      isMinimized: boolean;
+      isLoading: boolean;
+    }>;
+  } | null;
+  errors: string[];
+}
+
+function diagnosticsArtifactPath(): string {
+  const dir = path.join(process.cwd(), 'test-results', 'artifacts');
+  fs.mkdirSync(dir, { recursive: true });
+  return path.join(dir, `electron-launch-diagnostics-${Date.now()}.json`);
+}
+
+async function captureLaunchDiagnostics(
+  app: ElectronApplication,
+  startMs: number,
+  timeoutMs: number
+): Promise<{ artifactPath: string; diagnostics: ElectronLaunchDiagnostics }> {
+  const diagnostics: ElectronLaunchDiagnostics = {
+    timestamp: new Date().toISOString(),
+    elapsedMs: Date.now() - startMs,
+    timeoutMs,
+    playwrightWindows: [],
+    browserWindows: null,
+    errors: [],
+  };
+
+  try {
+    diagnostics.playwrightWindows = app.windows().map((page, index) => {
+      let url = '';
+      try {
+        url = page.url();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        diagnostics.errors.push(`playwright window[${index}] url read failed: ${message}`);
+      }
+      return {
+        index,
+        url,
+        isClosed: page.isClosed(),
+      };
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    diagnostics.errors.push(`playwright windows snapshot failed: ${message}`);
+  }
+
+  try {
+    diagnostics.browserWindows = await app.evaluate(({ BrowserWindow }) => {
+      const wins = BrowserWindow.getAllWindows();
+      return {
+        count: wins.length,
+        windows: wins.map((win, index) => ({
+          index,
+          url: win.webContents.getURL(),
+          isVisible: win.isVisible(),
+          isDestroyed: win.isDestroyed(),
+          isMinimized: win.isMinimized(),
+          isLoading: win.webContents.isLoading(),
+        })),
+      };
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    diagnostics.errors.push(`browser windows snapshot failed: ${message}`);
+  }
+
+  const artifactPath = diagnosticsArtifactPath();
+  fs.writeFileSync(artifactPath, `${JSON.stringify(diagnostics, null, 2)}\n`, 'utf8');
+  return { artifactPath, diagnostics };
+}
+
 /**
  * Find the main app window, filtering out DevTools (which can appear first)
  */
@@ -41,7 +129,16 @@ async function findMainWindow(app: ElectronApplication, timeoutMs = 15000): Prom
     }
   }
 
-  throw new Error('Could not find main app window (non-DevTools)');
+  const { artifactPath, diagnostics } = await captureLaunchDiagnostics(app, start, timeoutMs);
+  // eslint-disable-next-line no-console
+  console.error('[electron launch] main window not found', JSON.stringify({
+    artifactPath,
+    elapsedMs: diagnostics.elapsedMs,
+    playwrightWindows: diagnostics.playwrightWindows,
+    browserWindowCount: diagnostics.browserWindows?.count ?? null,
+    errors: diagnostics.errors,
+  }));
+  throw new Error(`Could not find main app window (non-DevTools). Diagnostics: ${artifactPath}`);
 }
 
 /**

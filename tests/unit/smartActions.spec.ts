@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Action, Card } from '../../src/types/dashboard';
-import { formatActionLabel, getSmartDefaultAction, resolveTapAction } from '../../src/services/smartActions';
+import { formatActionLabel, getSmartDefaultAction, resolveAllCardActions, resolveCardAction, resolveTapAction } from '../../src/services/smartActions';
 
 describe('smartActions', () => {
   it('maps common domains to expected default actions', () => {
@@ -59,6 +59,14 @@ describe('smartActions', () => {
     expect(result.action).toEqual({ action: 'toggle' });
   });
 
+  it('applies smart defaults consistently across tap/hold/double when enabled', () => {
+    const card = { type: 'button', entity: 'switch.kitchen', smart_defaults: true } as unknown as Card;
+
+    expect(resolveCardAction(card, 'tap')).toEqual({ action: { action: 'toggle' }, source: 'smart' });
+    expect(resolveCardAction(card, 'hold')).toEqual({ action: { action: 'toggle' }, source: 'smart' });
+    expect(resolveCardAction(card, 'double_tap')).toEqual({ action: { action: 'toggle' }, source: 'smart' });
+  });
+
   it('preserves legacy toggle default when smart_defaults is absent (button types only)', () => {
     const button = { type: 'button', entity: 'sensor.temperature' } as unknown as Card;
     const customButton = { type: 'custom:button-card', entity: 'sensor.temperature' } as unknown as Card;
@@ -69,10 +77,42 @@ describe('smartActions', () => {
     expect(resolveTapAction(sensor)).toEqual({ action: undefined, source: 'none' });
   });
 
+  it('keeps legacy fallback tap-only and preserves user overrides per trigger', () => {
+    const card = {
+      type: 'button',
+      entity: 'switch.kitchen',
+      hold_action: { action: 'none' },
+    } as unknown as Card;
+
+    expect(resolveCardAction(card, 'tap')).toEqual({ action: { action: 'toggle' }, source: 'legacy' });
+    expect(resolveCardAction(card, 'hold')).toEqual({ action: { action: 'none' }, source: 'user' });
+    expect(resolveCardAction(card, 'double_tap')).toEqual({ action: undefined, source: 'none' });
+  });
+
+  it('resolves all triggers in one pass with consistent sources', () => {
+    const card = {
+      type: 'custom:button-card',
+      entity: 'lock.front_door',
+      smart_defaults: true,
+      tap_action: { action: 'more-info' },
+    } as unknown as Card;
+
+    expect(resolveAllCardActions(card)).toEqual({
+      tap: { action: { action: 'more-info' }, source: 'user' },
+      hold: {
+        action: { action: 'call-service', service: 'lock.unlock', service_data: { entity_id: 'lock.front_door' } },
+        source: 'smart',
+      },
+      double_tap: {
+        action: { action: 'call-service', service: 'lock.unlock', service_data: { entity_id: 'lock.front_door' } },
+        source: 'smart',
+      },
+    });
+  });
+
   it('formats action labels for UI preview', () => {
     expect(formatActionLabel({ action: 'toggle' })).toBe('toggle');
     expect(formatActionLabel({ action: 'call-service', service: 'lock.unlock' })).toBe('call-service: lock.unlock');
     expect(formatActionLabel(undefined)).toBe('None');
   });
 });
-
