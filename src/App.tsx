@@ -891,6 +891,16 @@ const App: React.FC = () => {
   const handleDashboardDownload = (dashboardYaml: string, dashboardTitle: string, dashboardId: string) => {
     // Load the downloaded dashboard into the editor
     loadDashboard(dashboardYaml, `${dashboardTitle} (${dashboardId})`);
+    const parsed = yamlService.parseDashboard(dashboardYaml);
+    if (parsed.success && parsed.data) {
+      const referenced = entityRemappingService.extractEntityIds(parsed.data);
+      const missing = entityRemappingService.detectMissing(referenced, availableEntities);
+      setMissingEntities(missing);
+      setAutoRemapPending(false);
+      if (missing.length > 0) {
+        setRemapModalVisible(true);
+      }
+    }
     message.success(`Dashboard "${dashboardTitle}" loaded successfully!`);
   };
 
