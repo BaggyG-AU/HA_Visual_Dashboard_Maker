@@ -28,6 +28,26 @@ export class CanvasDSL {
   }
 
   /**
+   * Toggle card selection using Ctrl/Meta + click.
+   */
+  async toggleCardSelection(index: number): Promise<void> {
+    const cards = this.window.getByTestId('canvas-card');
+    const card = cards.nth(index);
+    await expect(card).toBeVisible();
+    await card.click({ modifiers: ['Control'] });
+  }
+
+  /**
+   * Extend selection from anchor using Shift + click.
+   */
+  async rangeSelectCard(index: number): Promise<void> {
+    const cards = this.window.getByTestId('canvas-card');
+    const card = cards.nth(index);
+    await expect(card).toBeVisible();
+    await card.click({ modifiers: ['Shift'] });
+  }
+
+  /**
    * Deselect current card by clicking empty canvas area
    */
   async deselectCard(): Promise<void> {
@@ -75,6 +95,13 @@ export class CanvasDSL {
    */
   async expectNoSelection(): Promise<void> {
     await expect(this.window.getByTestId('properties-panel')).toHaveCount(0);
+  }
+
+  async expectSelectedCards(indices: number[]): Promise<void> {
+    const sorted = [...indices].sort((a, b) => a - b).join(',');
+    const debugState = this.window.getByTestId('selection-debug-state');
+    await expect(debugState).toHaveAttribute('data-selected-cards', sorted);
+    await expect(debugState).toHaveAttribute('data-selected-cards-count', String(indices.length));
   }
 
   /**

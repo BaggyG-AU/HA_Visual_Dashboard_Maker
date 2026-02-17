@@ -16,9 +16,10 @@ interface SplitViewEditorProps {
 
   /** Current selected card index */
   selectedCardIndex: number | null;
+  selectedCardIndices?: number[];
 
   /** Card selection callback */
-  onCardSelect: (cardIndex: number | null) => void;
+  onCardSelect: (cardIndex: number | null, options?: { mode?: 'replace' | 'toggle' | 'range' }) => void;
 
   /** Layout change callback (from visual canvas) */
   onLayoutChange: (layout: unknown[]) => void;
@@ -49,6 +50,7 @@ interface SplitViewEditorProps {
 export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
   selectedViewIndex,
   selectedCardIndex,
+  selectedCardIndices = [],
   onCardSelect,
   onLayoutChange,
   onCardDrop,
@@ -312,6 +314,7 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
               <GridCanvas
                 view={currentView}
                 selectedCardIndex={selectedCardIndex}
+                selectedCardIndices={selectedCardIndices}
                 onCardSelect={onCardSelect}
                 onLayoutChange={onLayoutChange}
                 onCardDrop={onCardDrop}

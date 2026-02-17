@@ -123,6 +123,7 @@ type PopupConfigValues = {
 interface PropertiesPanelProps {
   card: Card | null;
   cardIndex: number | null;
+  historyNavigationVersion?: number;
   onChange: (updatedCard: Card) => void;
   onCommit: (updatedCard: Card) => void;
   onCancel: () => void;
@@ -154,6 +155,7 @@ const SOUND_EFFECT_OPTIONS = [
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   card,
   cardIndex,
+  historyNavigationVersion = 0,
   onChange,
   onCommit,
   onCancel: _onCancel,
@@ -172,7 +174,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const [backgroundConfig, setBackgroundConfig] = useState<BackgroundConfig>(DEFAULT_BACKGROUND_CONFIG);
   const isUpdatingFromForm = useRef(false);
   const isUpdatingFromYaml = useRef(false);
-  const debouncedCommitRef = useRef<DebouncedCommit<Card> | null>(null);
+  const debouncedCommitRef = useRef<DebouncedCommit<{ card: Card; version: number }> | null>(null);
   const yamlSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const yamlParseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCommittedCardRef = useRef<Card | null>(null);
@@ -180,6 +182,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const skipStyleSyncRef = useRef(false);
   const monacoEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
+  const commitVersionRef = useRef(0);
+  const yamlContentRef = useRef('');
   const { entities } = useHAEntities();
 
   // Refs for stable closures — allow useCallback/useMemo to avoid card/onChange deps
@@ -962,6 +966,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
     const previousCard = undoStack[undoStack.length - 1];
     setUndoStack(prev => prev.slice(0, -1));
+    debouncedCommitRef.current?.cancel();
+    commitVersionRef.current += 1;
 
     // Update form and YAML
     form.setFieldsValue(normalizeCardForForm(previousCard));
@@ -1082,6 +1088,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   // Update Monaco editor value when yamlContent changes externally (e.g., card selection)
   // but DON'T recreate the entire editor
   useEffect(() => {
+    yamlContentRef.current = yamlContent;
     if (monacoEditorRef.current && activeTab === 'yaml') {
       const currentValue = monacoEditorRef.current.getValue();
       if (currentValue !== yamlContent) {
@@ -1106,6 +1113,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       yamlSyncTimerRef.current = null;
       yamlParseTimerRef.current = null;
       debouncedCommitRef.current?.cancel();
+      commitVersionRef.current += 1;
       lastCommittedCardRef.current = card;
 
       form.setFieldsValue(normalizeCardForForm(card));
@@ -1119,6 +1127,36 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardIndex, form]);
 
+  // Keep form/YAML aligned when the selected card object changes externally
+  // (e.g., undo/redo on same selected index) without triggering feedback loops.
+  useEffect(() => {
+    if (!card) return;
+    if (isUpdatingFromForm.current || isUpdatingFromYaml.current) return;
+
+    debouncedCommitRef.current?.cancel();
+    commitVersionRef.current += 1;
+
+    const nextYaml = cardToYaml(card);
+    if (nextYaml === yamlContentRef.current) {
+      lastCommittedCardRef.current = card;
+      return;
+    }
+
+    isUpdatingFromYaml.current = true;
+    form.setFieldsValue(normalizeCardForForm(card));
+    setYamlContent(nextYaml);
+
+    const styleValue = (card as { style?: string }).style ?? '';
+    setBackgroundConfig(parseBackgroundConfig(styleValue));
+    lastStyleValueRef.current = styleValue;
+    lastCommittedCardRef.current = card;
+
+    setTimeout(() => {
+      isUpdatingFromYaml.current = false;
+    }, 0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card, form]);
+
   // Clear timers on unmount
   useEffect(() => {
     return () => {
@@ -1128,9 +1166,20 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     };
   }, []);
 
+  // Invalidate pending panel-side commits whenever store history navigation
+  // occurs (undo/redo), preventing stale debounced writes from reapplying.
+  useEffect(() => {
+    debouncedCommitRef.current?.cancel();
+    if (yamlSyncTimerRef.current) clearTimeout(yamlSyncTimerRef.current);
+    if (yamlParseTimerRef.current) clearTimeout(yamlParseTimerRef.current);
+    yamlSyncTimerRef.current = null;
+    yamlParseTimerRef.current = null;
+    commitVersionRef.current += 1;
+  }, [historyNavigationVersion]);
+
   const scheduleCommit = (updatedCard: Card) => {
     if (!debouncedCommitRef.current) {
-      debouncedCommitRef.current = createDebouncedCommit<Card>({
+      debouncedCommitRef.current = createDebouncedCommit<{ card: Card; version: number }>({
         delayMs: COMMIT_DEBOUNCE_MS,
         onBeforeCommit: () => {
           if (lastCommittedCardRef.current) {
@@ -1138,13 +1187,19 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           }
         },
         onCommit: (next) => {
-          lastCommittedCardRef.current = next;
-          onCommit(next);
+          if (next.version !== commitVersionRef.current) {
+            return;
+          }
+          lastCommittedCardRef.current = next.card;
+          onCommit(next.card);
         },
       });
     }
 
-    debouncedCommitRef.current.schedule(updatedCard);
+    debouncedCommitRef.current.schedule({
+      card: updatedCard,
+      version: commitVersionRef.current,
+    });
   };
 
   // Handle form value changes - sync to YAML and auto-save

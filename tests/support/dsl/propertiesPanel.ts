@@ -191,6 +191,16 @@ export class PropertiesPanelDSL {
     await expect(nameInput).toBeVisible();
     await nameInput.clear();
     await nameInput.fill(name);
+    await nameInput.blur();
+    await expect(nameInput).toHaveValue(name);
+  }
+
+  /**
+   * Verify card name input value.
+   */
+  async expectCardName(name: string): Promise<void> {
+    await this.expectVisible();
+    const nameInput = this.window.getByTestId('card-name-input');
     await expect(nameInput).toHaveValue(name);
   }
 

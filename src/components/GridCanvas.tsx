@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import GridLayout, { Layout } from 'react-grid-layout';
 import { View, Card } from '../types/dashboard';
 import { getBackgroundLayerStyle } from '../utils/backgroundStyle';
@@ -14,7 +14,8 @@ import './GridCanvas.css';
 interface GridCanvasProps {
   view: View;
   selectedCardIndex: number | null;
-  onCardSelect: (cardIndex: number | null) => void;
+  selectedCardIndices?: number[];
+  onCardSelect: (cardIndex: number | null, options?: { mode?: 'replace' | 'toggle' | 'range' }) => void;
   onLayoutChange: (layout: Layout[]) => void;
   onCardDrop?: (cardType: string, x: number, y: number) => void;
   onCardCut?: () => void;
@@ -82,6 +83,7 @@ const generateLayout = (view: View, cards: Card[]): Layout[] => {
 export const GridCanvas: React.FC<GridCanvasProps> = ({
   view,
   selectedCardIndex,
+  selectedCardIndices = [],
   onCardSelect,
   onLayoutChange,
   onCardDrop,
@@ -92,6 +94,23 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   canPaste,
 }) => {
   const cards = view.cards || [];
+  const selectedCardSet = useMemo(() => new Set(selectedCardIndices), [selectedCardIndices]);
+  const pendingSelectionModeRef = useRef<{ index: number; mode: 'toggle' | 'range' } | null>(null);
+
+  const consumeSelectionMode = (
+    index: number,
+    event?: React.MouseEvent<HTMLElement>,
+  ): 'replace' | 'toggle' | 'range' => {
+    const pending = pendingSelectionModeRef.current;
+    if (pending && pending.index === index) {
+      pendingSelectionModeRef.current = null;
+      return pending.mode;
+    }
+
+    if (event?.shiftKey) return 'range';
+    if (event?.ctrlKey || event?.metaKey) return 'toggle';
+    return 'replace';
+  };
 
   // Generate layout for all cards
   const layout = useMemo(() => {
@@ -140,7 +159,6 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
           cols={12}
           rowHeight={56}
           width={1200}
-          onLayoutChange={handleLayoutChange}
           isDraggable={false}
           isResizable={false}
           compactType="vertical"
@@ -179,8 +197,8 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         const target = event.target as HTMLElement | null;
         if (!target) return;
         if (target.closest('[data-testid="canvas-card"]')) return;
-        if (selectedCardIndex !== null) {
-          onCardSelect(null);
+        if (selectedCardIndex !== null || selectedCardIndices.length > 0) {
+          onCardSelect(null, { mode: 'replace' });
         }
       }}
       onDragOver={handleDragOver}
@@ -192,7 +210,6 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         cols={12}
         rowHeight={56}
         width={1200}
-        onLayoutChange={handleLayoutChange}
         onDragStop={handleLayoutChange}
         onResizeStop={handleLayoutChange}
         isDraggable={true}
@@ -239,31 +256,56 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
                 );
               })()}
               <div style={{ position: 'relative', zIndex: 1, height: '100%' }}>
+                <div
+                  style={{ height: '100%' }}
+                  onMouseDownCapture={(event) => {
+                    if (event.shiftKey) {
+                      pendingSelectionModeRef.current = { index, mode: 'range' };
+                      return;
+                    }
+                    if (event.ctrlKey || event.metaKey) {
+                      pendingSelectionModeRef.current = { index, mode: 'toggle' };
+                      return;
+                    }
+                    pendingSelectionModeRef.current = null;
+                  }}
+                >
                 <CardContextMenu
                   onCut={() => {
-                    onCardSelect(index);
+                    if (!selectedCardSet.has(index)) {
+                      onCardSelect(index, { mode: 'replace' });
+                    }
                     onCardCut?.();
                   }}
                   onCopy={() => {
-                    onCardSelect(index);
+                    if (!selectedCardSet.has(index)) {
+                      onCardSelect(index, { mode: 'replace' });
+                    }
                     onCardCopy?.();
                   }}
                   onPaste={() => {
-                    onCardSelect(index);
+                    if (!selectedCardSet.has(index)) {
+                      onCardSelect(index, { mode: 'replace' });
+                    }
                     onCardPaste?.();
                   }}
                   onDelete={() => {
-                    onCardSelect(index);
+                    if (!selectedCardSet.has(index)) {
+                      onCardSelect(index, { mode: 'replace' });
+                    }
                     onCardDelete?.();
                   }}
                   canPaste={canPaste ?? false}
                 >
                   <BaseCard
                     card={card}
-                    isSelected={selectedCardIndex === index}
-                    onClick={() => onCardSelect(index)}
+                    isSelected={selectedCardSet.has(index)}
+                    onClick={(event) => {
+                      onCardSelect(index, { mode: consumeSelectionMode(index, event) });
+                    }}
                   />
                 </CardContextMenu>
+                </div>
               </div>
             </div>
           </div>
