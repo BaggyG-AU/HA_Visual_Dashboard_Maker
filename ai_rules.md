@@ -291,8 +291,8 @@ Requirements:
   - Be stripped/converted on export
   - Not conflict with upstream schema
 
-Exception:
-`custom:popup-card` is HAVDM-only but must be documented clearly.
+Interim Exception:
+`custom:popup-card` is currently HAVDM-only. Bubble Card (`custom:bubble-card` + `card_type: pop-up`) alignment is planned as Phase 8. Until Phase 8 is delivered, the popup card must be documented as HAVDM-only and exports must include a warning comment.
 
 Reference:
 `docs/features/HACS_CARD_ALIGNMENT_REFACTOR_PLAN.md`

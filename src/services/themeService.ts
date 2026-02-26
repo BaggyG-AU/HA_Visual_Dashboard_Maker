@@ -1,5 +1,10 @@
 import { Theme } from '../types/homeassistant';
 import { logger } from './logger';
+import {
+  THEME_MANAGER_EXPORT_VERSION,
+  normalizeThemeManagerExportPayload,
+  type ThemeManagerExportPayload,
+} from '../features/theme-manager';
 
 /**
  * Theme Service
@@ -103,6 +108,28 @@ export class ThemeService {
       primaryBackground: finalVars['primary-background-color'] as string,
       cardBackground: finalVars['card-background-color'] as string,
     };
+  }
+
+  /**
+   * Serialize theme manager payload to JSON
+   */
+  serializeThemeManagerPayload(payload: Omit<ThemeManagerExportPayload, 'version'>): string {
+    return JSON.stringify(
+      {
+        version: THEME_MANAGER_EXPORT_VERSION,
+        ...payload,
+      },
+      null,
+      2
+    );
+  }
+
+  /**
+   * Parse and normalize imported theme manager payload
+   */
+  parseThemeManagerPayload(rawJson: string): ThemeManagerExportPayload {
+    const parsed = JSON.parse(rawJson) as unknown;
+    return normalizeThemeManagerExportPayload(parsed);
   }
 }
 

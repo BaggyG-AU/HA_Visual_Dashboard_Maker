@@ -314,17 +314,18 @@ Add an immutable rule that all custom card types must map to real upstream HACS 
 
 **Complexity**: Medium (mostly structural property renaming + adding nested attributes/styles)
 
-### Phase R5: Popup Alignment (Decision: Keep as HAVDM-only)
+### Phase R5: Popup Alignment (Decision: Align with Bubble Card — Phase 8)
 
-**Decision**: Keep `custom:popup-card` as a HAVDM-only feature.
-- No upstream HACS equivalent exists
-- Bubble Card pop-up architecture is too different (subview-based, hash routing) to align
-- Mark clearly in registry metadata and card palette UI as HAVDM-only
-- On HA export, prepend warning comments when `custom:popup-card` is present:
-  - `# WARNING: custom:popup-card is a HAVDM editor feature.`
-  - `# This card will not render in Home Assistant without the HAVDM runtime.`
-  - `# Consider using browser_mod popup or Bubble Card pop-up for HA-native popups.`
-- Future consideration: optional export conversion to Bubble Card pop-up format
+**Decision**: Align `custom:popup-card` with Bubble Card (`custom:bubble-card` + `card_type: pop-up`).
+
+Research identified Bubble Card (3.9k GitHub stars, actively maintained) as the community-standard popup solution. The architectural differences are significant but solvable via the yamlConversionService:
+- Bubble Card uses a sibling-based model (popup config is first card in a vertical-stack; child cards are siblings)
+- HAVDM uses a nested model (`popup.cards[]`)
+- Bubble Card triggers via hash navigation (`#popup-name`); HAVDM triggers programmatically
+
+**Scope**: R5 within this refactor will handle minimal type registration and metadata updates. The full Bubble Card alignment is planned as **Phase 8** in the HAVDM Advanced Features roadmap, which includes structural model conversion, property mapping, import/export integration, and hash-based trigger system.
+
+See `docs/features/HAVDM_ADVANCED_FEATURES_PHASES_SUMMARY.md` → Phase 8 for the complete plan.
 
 ### Phase R6: Schema & Registry Updates
 
@@ -376,7 +377,7 @@ After all changes:
 | Breaking existing user dashboards saved in HAVDM format | High | Migration function that auto-converts old format on load |
 | Test suite breakage from renames | Medium | Methodical search-replace with blast-radius check per ai_rules §4a |
 | Per-slide config loss on export | Low | Document as HAVDM-only; preserve internally, strip on export |
-| Popup architectural gap | Medium | Option B keeps existing functionality; document limitations |
+| Popup Bubble Card alignment complexity | Medium | Planned as Phase 8; structural conversion handled by yamlConversionService |
 | Accordion multi-section → single-section migration | High | Multi-section configs auto-convert to vertical-stack of expander-cards |
 
 ---
@@ -397,7 +398,7 @@ Self-contained prompts for each phase are in `docs/refactor/hacs-alignment/`:
 | R2 | `R2_CAROUSEL_ALIGNMENT.md` | Codex | Medium-High |
 | R3 | `R3_ACCORDION_ALIGNMENT.md` | Claude | High |
 | R4 | `R4_TABS_ALIGNMENT.md` | Codex | Medium |
-| R5 | `R5_POPUP_ALIGNMENT.md` | Codex | Low |
+| R5 | `R5_POPUP_ALIGNMENT.md` | Codex | Low (full alignment deferred to Phase 8) |
 | R7 | `R7_IMPORT_EXPORT_SERVICE.md` | Claude | Medium |
 | R8 | `R8_REGRESSION_TESTING.md` | Either | Medium |
 

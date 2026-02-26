@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Flex, Button, Alert, Space, Typography, Spin, Tag, Empty, Tooltip } from 'antd';
-import { DownloadOutlined, FileTextOutlined, ReloadOutlined, HomeOutlined } from '@ant-design/icons';
+import { Modal, Flex, Button, Alert, Space, Typography, Spin, Tag, Empty, Tooltip, Tabs } from 'antd';
+import { DownloadOutlined, FileTextOutlined, ReloadOutlined, HomeOutlined, ShopOutlined } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 import { logger } from '../services/logger';
+import { PresetMarketplacePanel } from '../features/preset-marketplace/PresetMarketplacePanel';
 import * as yaml from 'js-yaml';
 
 const { Text } = Typography;
+
+type BrowserTab = 'dashboards' | 'presets';
 
 interface Dashboard {
   id: string;
@@ -39,13 +42,14 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<BrowserTab>('dashboards');
 
   // Load dashboards when dialog opens
   useEffect(() => {
-    if (visible) {
-      loadDashboards();
+    if (visible && activeTab === 'dashboards') {
+      void loadDashboards();
     }
-  }, [visible]);
+  }, [visible, activeTab]);
 
   const loadDashboards = async () => {
     if (!haConnectionService.isConnected()) {
@@ -219,7 +223,9 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
           <Button
             type="primary"
             icon={<DownloadOutlined />}
-            onClick={() => handleDownloadDashboard(dashboard)}
+            onClick={() => {
+              void handleDownloadDashboard(dashboard);
+            }}
             loading={isDownloading}
             disabled={downloading !== null && !isDownloading}
           >
@@ -227,6 +233,108 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
           </Button>
         </Tooltip>
       </div>
+    );
+  };
+
+  const renderDashboardTab = () => {
+    return (
+      <>
+        {!haConnectionService.isConnected() && (
+          <Alert
+            title="Not Connected"
+            description="Please connect to Home Assistant first to browse dashboards."
+            type="warning"
+            showIcon
+            style={{ marginBottom: '16px' }}
+          />
+        )}
+
+        <Alert
+          title="How to Load Your Dashboards"
+          description={
+            <div style={{ fontSize: '12px' }}>
+              <p style={{ marginTop: '8px', marginBottom: '8px' }}>
+                Click <strong>"Refresh Dashboards"</strong> to connect to your Home Assistant instance
+                and automatically discover all available dashboards.
+              </p>
+              <p style={{ marginTop: '0', marginBottom: 0 }}>
+                Once loaded, click <strong>"Download"</strong> next to any dashboard to load it into the editor.
+                No manual file downloads needed!
+              </p>
+            </div>
+          }
+          type="info"
+          showIcon
+          closable
+          style={{ marginBottom: '16px' }}
+        />
+
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={() => {
+            void loadDashboards();
+          }}
+          loading={loading}
+          type="primary"
+          style={{ marginBottom: '16px' }}
+          data-testid="ha-dashboard-refresh"
+        >
+          Refresh Dashboards
+        </Button>
+
+        {error && (
+          <Alert
+            title="Error Loading Dashboards"
+            description={error}
+            type="error"
+            showIcon
+            closable
+            onClose={() => setError(null)}
+            style={{ marginBottom: '16px' }}
+          />
+        )}
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <Spin size="large" />
+            <div style={{ marginTop: '16px' }}>
+              <Text type="secondary">Loading dashboards from Home Assistant...</Text>
+            </div>
+          </div>
+        ) : dashboards.length === 0 && !error ? (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <Space direction="vertical">
+                <Text type="secondary">No dashboards found</Text>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  Connect to Home Assistant and click Refresh
+                </Text>
+              </Space>
+            }
+          />
+        ) : (
+          <>
+            <div style={{ marginBottom: '16px' }}>
+              <Text type="secondary">
+                Found {dashboards.length} dashboard{dashboards.length !== 1 ? 's' : ''} in your Home
+                Assistant instance
+              </Text>
+            </div>
+
+            <Flex
+              vertical
+              gap="small"
+              style={{
+                maxHeight: '420px',
+                overflowY: 'auto',
+              }}
+            >
+              {dashboards.map(renderDashboardItem)}
+            </Flex>
+          </>
+        )}
+      </>
     );
   };
 
@@ -241,98 +349,47 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
       open={visible}
       onCancel={onClose}
       footer={[
-        <Button key="refresh" icon={<ReloadOutlined />} onClick={loadDashboards} loading={loading} type="primary">
-          Refresh Dashboards
-        </Button>,
         <Button key="close" onClick={onClose}>
           Close
         </Button>,
       ]}
-      width={800}
+      width={900}
       style={{ top: 20 }}
+      data-testid="dashboard-browser-modal"
     >
-      {!haConnectionService.isConnected() && (
-        <Alert
-          title="Not Connected"
-          description="Please connect to Home Assistant first to browse dashboards."
-          type="warning"
-          showIcon
-          style={{ marginBottom: '16px' }}
-        />
-      )}
-
-      <Alert
-        title="How to Load Your Dashboards"
-        description={
-          <div style={{ fontSize: '12px' }}>
-            <p style={{ marginTop: '8px', marginBottom: '8px' }}>
-              Click <strong>"Refresh Dashboards"</strong> to connect to your Home Assistant instance
-              and automatically discover all available dashboards.
-            </p>
-            <p style={{ marginTop: '0', marginBottom: 0 }}>
-              Once loaded, click <strong>"Download"</strong> next to any dashboard to load it into the editor.
-              No manual file downloads needed!
-            </p>
-          </div>
-        }
-        type="info"
-        showIcon
-        closable
-        style={{ marginBottom: '16px' }}
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key as BrowserTab)}
+        items={[
+          {
+            key: 'dashboards',
+            label: (
+              <Space size={6}>
+                <FileTextOutlined />
+                <span>Home Assistant Dashboards</span>
+              </Space>
+            ),
+            children: renderDashboardTab(),
+          },
+          {
+            key: 'presets',
+            label: (
+              <Space size={6}>
+                <ShopOutlined />
+                <span>Preset Marketplace</span>
+              </Space>
+            ),
+            children: (
+              <PresetMarketplacePanel
+                onPresetImport={(dashboardYaml, dashboardTitle, dashboardId) => {
+                  onDashboardDownload(dashboardYaml, dashboardTitle, dashboardId);
+                  onClose();
+                }}
+              />
+            ),
+          },
+        ]}
       />
-
-      {error && (
-        <Alert
-          title="Error Loading Dashboards"
-          description={error}
-          type="error"
-          showIcon
-          closable
-          onClose={() => setError(null)}
-          style={{ marginBottom: '16px' }}
-        />
-      )}
-
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 0' }}>
-          <Spin size="large" />
-          <div style={{ marginTop: '16px' }}>
-            <Text type="secondary">Loading dashboards from Home Assistant...</Text>
-          </div>
-        </div>
-      ) : dashboards.length === 0 && !error ? (
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description={
-            <Space orientation="vertical">
-              <Text type="secondary">No dashboards found</Text>
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                Connect to Home Assistant and click Refresh
-              </Text>
-            </Space>
-          }
-        />
-      ) : (
-        <>
-          <div style={{ marginBottom: '16px' }}>
-            <Text type="secondary">
-              Found {dashboards.length} dashboard{dashboards.length !== 1 ? 's' : ''} in your Home
-              Assistant instance
-            </Text>
-          </div>
-
-          <Flex
-            vertical
-            gap="small"
-            style={{
-              maxHeight: '500px',
-              overflowY: 'auto',
-            }}
-          >
-            {dashboards.map(renderDashboardItem)}
-          </Flex>
-        </>
-      )}
 
       <div
         style={{
@@ -343,9 +400,8 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
         }}
       >
         <Text style={{ color: '#666', fontSize: '11px' }}>
-          💡 <strong style={{ color: '#888' }}>Tip:</strong> Downloaded dashboards will be loaded
-          into the editor. You can make changes and save them locally or deploy back to Home
-          Assistant.
+          <strong style={{ color: '#888' }}>Tip:</strong> Imported dashboards and presets load into the editor.
+          You can make changes and save locally or deploy to Home Assistant.
         </Text>
       </div>
     </Modal>

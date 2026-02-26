@@ -108,4 +108,44 @@ test.describe('Theme Integration', () => {
       await close(ctx);
     }
   });
+
+  test('supports save/export/import workflows in theme manager tab', async () => {
+    const ctx = await launchWithDSL();
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await connectWithMockThemes(ctx);
+
+      await ctx.settings.open();
+      await ctx.settings.selectTab('Appearance');
+
+      await ctx.window.getByRole('tab', { name: /Theme Manager/i }).last().click();
+
+      await ctx.window.getByTestId('theme-manager-save-name').fill('snapshot-integration');
+      await ctx.window.getByTestId('theme-manager-save').click();
+
+      await ctx.window.getByTestId('theme-manager-saved-select').click();
+      const options = ctx.window.locator('.ant-select-item-option');
+      await expect(options.filter({ hasText: /^snapshot-integration$/ }).first()).toBeVisible({ timeout: 5000 });
+      await options.filter({ hasText: /^snapshot-integration$/ }).first().click();
+
+      await ctx.window.getByTestId('theme-manager-load').click();
+      await expect(ctx.window.getByTestId('theme-settings-sync')).not.toBeChecked();
+
+      await ctx.window.getByTestId('theme-manager-export').click();
+      const exportJson = await ctx.window.getByTestId('theme-manager-json').inputValue();
+      expect(exportJson).toContain('snapshot-integration');
+
+      await ctx.window.getByTestId('theme-manager-delete').click();
+      await ctx.window.getByTestId('theme-manager-json').fill(exportJson);
+      await ctx.window.getByTestId('theme-manager-import').click();
+
+      await ctx.window.getByTestId('theme-manager-saved-select').click();
+      await expect(options.filter({ hasText: /^snapshot-integration$/ }).first()).toBeVisible({ timeout: 5000 });
+      await ctx.window.keyboard.press('Escape');
+
+      await ctx.settings.close();
+    } finally {
+      await close(ctx);
+    }
+  });
 });

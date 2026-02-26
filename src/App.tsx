@@ -35,6 +35,12 @@ import type { Card, DashboardConfig } from './types/dashboard';
 import type { LoggingLevel } from './services/settingsService';
 import type { EntityState } from './services/haWebSocketService';
 import EntityRemappingModal from './components/EntityRemappingModal';
+import {
+  applyBulkCardUpdate,
+  removeCardsByIndices,
+  resolveOperationSelection,
+  type SelectionMode,
+} from './utils/bulkSelection';
 
 const { Header, Content, Sider } = Layout;
 type CardWithInternalLayout = Card & {
@@ -52,6 +58,13 @@ type TestThemeData = {
 type TestThemeApi = {
   setConnected: (connected: boolean) => void;
   applyThemes: (themesData: TestThemeData) => void;
+};
+
+type DashboardTestApi = {
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  undo: () => void;
+  redo: () => void;
 };
 
 interface RemapWatcherProps {
@@ -120,11 +133,11 @@ const App: React.FC = () => {
 
   // Clipboard state for cut/copy/paste operations
   const [clipboard, setClipboard] = useState<{
-    card: CardWithInternalLayout | null;
+    cards: CardWithInternalLayout[] | null;
     isCut: boolean;
     sourceViewIndex: number | null;
-    sourceCardIndex: number | null;
-  }>({ card: null, isCut: false, sourceViewIndex: null, sourceCardIndex: null });
+    sourceCardIndices: number[];
+  }>({ cards: null, isCut: false, sourceViewIndex: null, sourceCardIndices: [] });
 
   // Dashboard store
   const {
@@ -134,6 +147,10 @@ const App: React.FC = () => {
     isDirty,
     selectedViewIndex,
     selectedCardIndex,
+    selectedCardIndices,
+    historyNavigationVersion,
+    past,
+    future,
     loadDashboard,
     updateConfig,
     beginBatchUpdate,
@@ -142,6 +159,8 @@ const App: React.FC = () => {
     markClean,
     setSelectedView,
     setSelectedCard,
+    setSelectedCards,
+    selectCardWithMode,
     undo,
     redo,
     isBatching,
@@ -417,10 +436,19 @@ const App: React.FC = () => {
     });
   };
 
-  const handleCardSelect = (cardIndex: number | null) => {
-    if (selectedViewIndex !== null) {
-      setSelectedCard(selectedViewIndex, cardIndex);
+  const resolveSelectedIndices = (cardsLength: number): number[] =>
+    resolveOperationSelection(selectedCardIndex, selectedCardIndices, cardsLength);
+
+  const handleCardSelect = (cardIndex: number | null, options?: { mode?: SelectionMode }) => {
+    if (selectedViewIndex === null) return;
+
+    const currentCards = config?.views?.[selectedViewIndex]?.cards ?? [];
+    if (cardIndex === null) {
+      setSelectedCards(selectedViewIndex, [], null);
+      return;
     }
+
+    selectCardWithMode(selectedViewIndex, cardIndex, options?.mode ?? 'replace', currentCards.length);
   };
 
   const handleLayoutChange = (layout: GridLayoutType[]) => {
@@ -434,9 +462,43 @@ const App: React.FC = () => {
 
     // Update the layout information in the config
     const currentView = config.views[selectedViewIndex];
+    const currentCards = currentView.cards || [];
+
+    // Ignore transient stale layout events that can occur during rapid
+    // state transitions (e.g., undo/redo) before the grid fully rebinds.
+    if (layout.length !== currentCards.length) {
+      return;
+    }
 
     // Check if using layout-card grid system
     const usingLayoutCard = isLayoutCardGrid(currentView);
+
+    const hasLayoutDelta = (() => {
+      if (!currentView.cards || currentView.cards.length === 0) {
+        return false;
+      }
+
+      if (usingLayoutCard) {
+        const nextViewLayouts = convertGridLayoutToViewLayout(layout, 12);
+        return currentView.cards.some((card, index) => {
+          const next = nextViewLayouts[index];
+          const current = card.view_layout;
+          if (!next || !current) return true;
+          return current.grid_column !== next.grid_column || current.grid_row !== next.grid_row;
+        });
+      }
+
+      return currentView.cards.some((card, index) => {
+        const next = layout.find((item) => item.i === `card-${index}`);
+        const current = card.layout;
+        if (!next || !current) return true;
+        return current.x !== next.x || current.y !== next.y || current.w !== next.w || current.h !== next.h;
+      });
+    })();
+
+    if (!hasLayoutDelta) {
+      return;
+    }
 
     if (currentView.cards) {
       let updatedCards;
@@ -567,16 +629,9 @@ const App: React.FC = () => {
     beginBatchUpdate();
 
     const currentView = config.views[selectedViewIndex];
-
     if (currentView.cards && currentView.cards[selectedCardIndex]) {
-      // Preserve layout information
-      const existingLayout = currentView.cards[selectedCardIndex].layout;
-      const existingViewLayout = currentView.cards[selectedCardIndex].view_layout;
-      const updatedCards = currentView.cards.map((card, i) =>
-        i === selectedCardIndex
-          ? { ...updatedCard, layout: existingLayout, view_layout: existingViewLayout }
-          : card
-      );
+      const targetIndices = resolveSelectedIndices(currentView.cards.length);
+      const { cards: updatedCards } = applyBulkCardUpdate(currentView.cards, targetIndices, updatedCard);
 
       const updatedViews = config.views.map((view, i) =>
         i === selectedViewIndex ? { ...view, cards: updatedCards } : view
@@ -591,13 +646,8 @@ const App: React.FC = () => {
     const currentView = config.views[selectedViewIndex];
 
     if (currentView.cards && currentView.cards[selectedCardIndex]) {
-      const existingLayout = currentView.cards[selectedCardIndex].layout;
-      const existingViewLayout = currentView.cards[selectedCardIndex].view_layout;
-      const updatedCards = currentView.cards.map((card, i) =>
-        i === selectedCardIndex
-          ? { ...updatedCard, layout: existingLayout, view_layout: existingViewLayout }
-          : card
-      );
+      const targetIndices = resolveSelectedIndices(currentView.cards.length);
+      const { cards: updatedCards, updatedCount } = applyBulkCardUpdate(currentView.cards, targetIndices, updatedCard);
 
       const updatedViews = config.views.map((view, i) =>
         i === selectedViewIndex ? { ...view, cards: updatedCards } : view
@@ -605,7 +655,11 @@ const App: React.FC = () => {
       applyBatchedConfig({ ...config, views: updatedViews });
       endBatchUpdate();
 
-      message.success({ content: 'Card updated', key: 'card-updated', duration: 1.5 });
+      message.success({
+        content: updatedCount > 1 ? `Updated ${updatedCount} cards` : 'Card updated',
+        key: 'card-updated',
+        duration: 1.5,
+      });
       const viewIndex = selectedViewIndex;
       const cardIndex = selectedCardIndex;
       setSelectedCard(viewIndex, null);
@@ -617,57 +671,77 @@ const App: React.FC = () => {
     endBatchUpdate();
     // Deselect card
     if (selectedViewIndex !== null) {
-      setSelectedCard(selectedViewIndex, null);
+      setSelectedCards(selectedViewIndex, [], null);
     }
   };
 
   // Clipboard operations
   const handleCardCut = () => {
-    if (!config || selectedViewIndex === null || selectedCardIndex === null) {
+    if (!config || selectedViewIndex === null) {
       message.warning('No card selected');
       return;
     }
 
     const currentView = config.views[selectedViewIndex];
-    if (!currentView.cards || !currentView.cards[selectedCardIndex]) {
+    if (!currentView.cards || currentView.cards.length === 0) {
       return;
     }
 
-    const cardToCut = currentView.cards[selectedCardIndex];
+    const selectedIndices = resolveSelectedIndices(currentView.cards.length);
+    if (selectedIndices.length === 0) {
+      message.warning('No card selected');
+      return;
+    }
+
+    const cardsToCut = selectedIndices
+      .map((index) => currentView.cards?.[index])
+      .filter((card): card is CardWithInternalLayout => Boolean(card))
+      .map((card) => ({ ...card }));
+
     setClipboard({
-      card: { ...cardToCut },
+      cards: cardsToCut,
       isCut: true,
       sourceViewIndex: selectedViewIndex,
-      sourceCardIndex: selectedCardIndex,
+      sourceCardIndices: selectedIndices,
     });
 
-    message.info('Card cut to clipboard');
+    message.info(cardsToCut.length > 1 ? `${cardsToCut.length} cards cut to clipboard` : 'Card cut to clipboard');
   };
 
   const handleCardCopy = () => {
-    if (!config || selectedViewIndex === null || selectedCardIndex === null) {
+    if (!config || selectedViewIndex === null) {
       message.warning('No card selected');
       return;
     }
 
     const currentView = config.views[selectedViewIndex];
-    if (!currentView.cards || !currentView.cards[selectedCardIndex]) {
+    if (!currentView.cards || currentView.cards.length === 0) {
       return;
     }
 
-    const cardToCopy = currentView.cards[selectedCardIndex];
+    const selectedIndices = resolveSelectedIndices(currentView.cards.length);
+    if (selectedIndices.length === 0) {
+      message.warning('No card selected');
+      return;
+    }
+
+    const cardsToCopy = selectedIndices
+      .map((index) => currentView.cards?.[index])
+      .filter((card): card is CardWithInternalLayout => Boolean(card))
+      .map((card) => ({ ...card }));
+
     setClipboard({
-      card: { ...cardToCopy },
+      cards: cardsToCopy,
       isCut: false,
       sourceViewIndex: selectedViewIndex,
-      sourceCardIndex: selectedCardIndex,
+      sourceCardIndices: selectedIndices,
     });
 
-    message.info('Card copied to clipboard');
+    message.info(cardsToCopy.length > 1 ? `${cardsToCopy.length} cards copied to clipboard` : 'Card copied to clipboard');
   };
 
   const handleCardPaste = () => {
-    if (!clipboard.card) {
+    if (!clipboard.cards || clipboard.cards.length === 0) {
       message.warning('Clipboard is empty');
       return;
     }
@@ -679,32 +753,34 @@ const App: React.FC = () => {
 
     const currentView = config.views[selectedViewIndex];
 
-    // Create new card from clipboard (remove old layout, will get new position)
-    const { layout: _layout, ...cardWithoutLayout } = clipboard.card;
-    void _layout;
-    const pastedCard = {
-      ...cardWithoutLayout,
-      layout: {
-        x: 0,
-        y: Infinity, // Place at bottom
-        w: clipboard.card.layout?.w || 6,
-        h: clipboard.card.layout?.h || 4,
-      },
-    };
+    // Create new cards from clipboard (remove old layout, will get new position)
+    const pastedCards = clipboard.cards.map((clipboardCard) => {
+      const { layout: _layout, ...cardWithoutLayout } = clipboardCard;
+      void _layout;
+      return {
+        ...cardWithoutLayout,
+        layout: {
+          x: 0,
+          y: Infinity, // Place at bottom
+          w: clipboardCard.layout?.w || 6,
+          h: clipboardCard.layout?.h || 4,
+        },
+      };
+    });
 
     // Build updated views immutably
     let updatedViews = config.views.map((view, i) => {
       if (i === selectedViewIndex) {
-        return { ...view, cards: [...(view.cards || []), pastedCard] };
+        return { ...view, cards: [...(view.cards || []), ...pastedCards] };
       }
       return view;
     });
 
-    // If it was a cut operation, remove the source card
-    if (clipboard.isCut && clipboard.sourceViewIndex !== null && clipboard.sourceCardIndex !== null) {
+    // If it was a cut operation, remove source cards
+    if (clipboard.isCut && clipboard.sourceViewIndex !== null && clipboard.sourceCardIndices.length > 0) {
       updatedViews = updatedViews.map((view, i) => {
         if (i === clipboard.sourceViewIndex && view.cards) {
-          return { ...view, cards: view.cards.filter((_, ci) => ci !== clipboard.sourceCardIndex) };
+          return { ...view, cards: removeCardsByIndices(view.cards, clipboard.sourceCardIndices) };
         }
         return view;
       });
@@ -714,31 +790,39 @@ const App: React.FC = () => {
 
     // Clear clipboard if it was a cut operation
     if (clipboard.isCut) {
-      setClipboard({ card: null, isCut: false, sourceViewIndex: null, sourceCardIndex: null });
-      message.success('Card moved');
+      setClipboard({ cards: null, isCut: false, sourceViewIndex: null, sourceCardIndices: [] });
+      message.success(pastedCards.length > 1 ? `${pastedCards.length} cards moved` : 'Card moved');
     } else {
-      message.success('Card pasted');
+      message.success(pastedCards.length > 1 ? `${pastedCards.length} cards pasted` : 'Card pasted');
     }
 
-    // Select the newly pasted card
+    // Select newly pasted cards
     const pastedViewCards = updatedViews[selectedViewIndex].cards || [];
-    setSelectedCard(selectedViewIndex, pastedViewCards.length - 1);
+    const startIndex = pastedViewCards.length - pastedCards.length;
+    const nextSelection = Array.from({ length: pastedCards.length }, (_, offset) => startIndex + offset);
+    setSelectedCards(selectedViewIndex, nextSelection, nextSelection[nextSelection.length - 1] ?? null);
   };
 
   const handleCardDelete = () => {
-    if (!config || selectedViewIndex === null || selectedCardIndex === null) {
+    if (!config || selectedViewIndex === null) {
       message.warning('No card selected');
       return;
     }
 
     const currentView = config.views[selectedViewIndex];
 
-    if (!currentView.cards || !currentView.cards[selectedCardIndex]) {
+    if (!currentView.cards || currentView.cards.length === 0) {
+      return;
+    }
+
+    const selectedIndices = resolveSelectedIndices(currentView.cards.length);
+    if (selectedIndices.length === 0) {
+      message.warning('No card selected');
       return;
     }
 
     // Remove the card immutably
-    const updatedCards = currentView.cards.filter((_, i) => i !== selectedCardIndex);
+    const updatedCards = removeCardsByIndices(currentView.cards, selectedIndices);
     const updatedViews = config.views.map((view, i) =>
       i === selectedViewIndex ? { ...view, cards: updatedCards } : view
     );
@@ -746,9 +830,9 @@ const App: React.FC = () => {
     updateConfig({ ...config, views: updatedViews });
 
     // Deselect card
-    setSelectedCard(selectedViewIndex, null);
+    setSelectedCards(selectedViewIndex, [], null);
 
-    message.success('Card deleted');
+    message.success(selectedIndices.length > 1 ? `${selectedIndices.length} cards deleted` : 'Card deleted');
   };
 
   const handleOpenConnectionDialog = () => {
@@ -832,6 +916,26 @@ const App: React.FC = () => {
   }, [setAvailableThemes]);
 
   useEffect(() => {
+    const testWindow = window as Window & { __dashboardTestApi?: DashboardTestApi };
+    testWindow.__dashboardTestApi = {
+      canUndo: () => useDashboardStore.getState().canUndo(),
+      canRedo: () => useDashboardStore.getState().canRedo(),
+      undo: () => {
+        ignoreNextLayoutChangeRef.current = true;
+        useDashboardStore.getState().undo();
+      },
+      redo: () => {
+        ignoreNextLayoutChangeRef.current = true;
+        useDashboardStore.getState().redo();
+      },
+    };
+
+    return () => {
+      delete testWindow.__dashboardTestApi;
+    };
+  }, []);
+
+  useEffect(() => {
     // Disable Ant motion in automated tests to avoid hidden/animating portals
     if (isTestEnv()) {
       document.body.classList.add('ant-motion-disabled');
@@ -891,6 +995,16 @@ const App: React.FC = () => {
   const handleDashboardDownload = (dashboardYaml: string, dashboardTitle: string, dashboardId: string) => {
     // Load the downloaded dashboard into the editor
     loadDashboard(dashboardYaml, `${dashboardTitle} (${dashboardId})`);
+    const parsed = yamlService.parseDashboard(dashboardYaml);
+    if (parsed.success && parsed.data) {
+      const referenced = entityRemappingService.extractEntityIds(parsed.data);
+      const missing = entityRemappingService.detectMissing(referenced, availableEntities);
+      setMissingEntities(missing);
+      setAutoRemapPending(false);
+      if (missing.length > 0) {
+        setRemapModalVisible(true);
+      }
+    }
     message.success(`Dashboard "${dashboardTitle}" loaded successfully!`);
   };
 
@@ -1245,6 +1359,7 @@ const App: React.FC = () => {
       else if (event.ctrlKey && !event.shiftKey && event.key === 'z') {
         event.preventDefault();
         if (canUndo()) {
+          ignoreNextLayoutChangeRef.current = true;
           undo();
           message.info('Undo');
         }
@@ -1253,6 +1368,7 @@ const App: React.FC = () => {
       else if ((event.ctrlKey && event.key === 'y') || (event.ctrlKey && event.shiftKey && event.key === 'z')) {
         event.preventDefault();
         if (canRedo()) {
+          ignoreNextLayoutChangeRef.current = true;
           redo();
           message.info('Redo');
         }
@@ -1284,7 +1400,7 @@ const App: React.FC = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedViewIndex, selectedCardIndex, clipboard, config, handleSave, undo, redo, canUndo, canRedo]);
+  }, [selectedViewIndex, selectedCardIndex, selectedCardIndices, clipboard, config, handleSave, undo, redo, canUndo, canRedo]);
 
   return (
     <ConfigProvider
@@ -1320,6 +1436,7 @@ const App: React.FC = () => {
                   size="small"
                   icon={<UndoOutlined />}
                   onClick={() => {
+                    ignoreNextLayoutChangeRef.current = true;
                     undo();
                     message.info('Undo');
                   }}
@@ -1331,6 +1448,7 @@ const App: React.FC = () => {
                   size="small"
                   icon={<RedoOutlined />}
                   onClick={() => {
+                    ignoreNextLayoutChangeRef.current = true;
                     redo();
                     message.info('Redo');
                   }}
@@ -1561,6 +1679,7 @@ const App: React.FC = () => {
                       <SplitViewEditor
                         selectedViewIndex={selectedViewIndex}
                         selectedCardIndex={selectedCardIndex}
+                        selectedCardIndices={selectedCardIndices}
                         onCardSelect={handleCardSelect}
                         onLayoutChange={handleLayoutChange}
                         onCardDrop={handleCardDrop}
@@ -1568,7 +1687,7 @@ const App: React.FC = () => {
                         onCardCopy={handleCardCopy}
                         onCardPaste={handleCardPaste}
                         onCardDelete={handleCardDelete}
-                        canPaste={clipboard.card !== null}
+                        canPaste={clipboard.cards !== null}
                       />
                     ) : (
                     <Tabs
@@ -1582,6 +1701,7 @@ const App: React.FC = () => {
                             <GridCanvas
                               view={view}
                               selectedCardIndex={selectedCardIndex}
+                              selectedCardIndices={selectedCardIndices}
                               onCardSelect={handleCardSelect}
                               onLayoutChange={handleLayoutChange}
                               onCardDrop={handleCardDrop}
@@ -1589,7 +1709,7 @@ const App: React.FC = () => {
                               onCardCopy={handleCardCopy}
                               onCardPaste={handleCardPaste}
                               onCardDelete={handleCardDelete}
-                              canPaste={clipboard.card !== null}
+                              canPaste={clipboard.cards !== null}
                             />
                           </div>
                         ),
@@ -1610,6 +1730,7 @@ const App: React.FC = () => {
                   : null
               }
               cardIndex={selectedCardIndex}
+              historyNavigationVersion={historyNavigationVersion}
               onChange={handleCardUpdate}
               onCommit={handleCardCommit}
               onCancel={handlePropertiesCancel}
@@ -1727,6 +1848,8 @@ const App: React.FC = () => {
           data-testid="selection-debug-state"
           data-selected-view={selectedViewIndex === null ? 'null' : String(selectedViewIndex)}
           data-selected-card={selectedCardIndex === null ? 'null' : String(selectedCardIndex)}
+          data-selected-cards={selectedCardIndices.join(',')}
+          data-selected-cards-count={String(selectedCardIndices.length)}
           data-selected-card-type={
             selectedViewIndex !== null && selectedCardIndex !== null
               ? (config?.views?.[selectedViewIndex]?.cards?.[selectedCardIndex]?.type ?? 'unknown')
@@ -1735,6 +1858,16 @@ const App: React.FC = () => {
           data-selected-card-count={
             selectedViewIndex !== null ? String(config?.views?.[selectedViewIndex]?.cards?.length ?? 0) : '0'
           }
+          style={{ display: 'none' }}
+        />
+      )}
+      {isTestEnv() && (
+        <div
+          data-testid="history-debug-state"
+          data-past-length={String(past.length)}
+          data-future-length={String(future.length)}
+          data-can-undo={canUndo() ? '1' : '0'}
+          data-can-redo={canRedo() ? '1' : '0'}
           style={{ display: 'none' }}
         />
       )}

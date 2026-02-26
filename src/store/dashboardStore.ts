@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { DashboardConfig, DashboardState } from '../types/dashboard';
 import { yamlService } from '../services/yamlService';
+import { normalizeCardIndices, resolveSelectionState, type SelectionMode } from '../utils/bulkSelection';
 
 interface HistoryState {
   past: DashboardConfig[];
@@ -15,6 +16,8 @@ interface DashboardActions {
   endBatchUpdate: () => void;
   setSelectedView: (index: number | null) => void;
   setSelectedCard: (viewIndex: number | null, cardIndex: number | null) => void;
+  setSelectedCards: (viewIndex: number | null, cardIndices: number[], primaryCardIndex?: number | null) => void;
+  selectCardWithMode: (viewIndex: number | null, cardIndex: number | null, mode?: SelectionMode, cardCount?: number) => void;
   markDirty: () => void;
   markClean: () => void;
   clearDashboard: () => void;
@@ -25,9 +28,22 @@ interface DashboardActions {
   canRedo: () => boolean;
 }
 
-type DashboardStore = DashboardState & DashboardActions & HistoryState;
+type SelectionState = {
+  selectedCardIndices: number[];
+  selectionAnchorCardIndex: number | null;
+  historyNavigationVersion: number;
+};
 
-const initialState: DashboardState & HistoryState = {
+type DashboardStore = DashboardState & DashboardActions & HistoryState & SelectionState;
+
+const cloneConfig = (config: DashboardConfig): DashboardConfig => {
+  if (typeof structuredClone === 'function') {
+    return structuredClone(config) as DashboardConfig;
+  }
+  return JSON.parse(JSON.stringify(config)) as DashboardConfig;
+};
+
+const initialState: DashboardState & HistoryState & SelectionState = {
   config: null,
   filePath: null,
   isLoading: false,
@@ -35,6 +51,9 @@ const initialState: DashboardState & HistoryState = {
   isDirty: false,
   selectedViewIndex: null,
   selectedCardIndex: null,
+  selectedCardIndices: [],
+  selectionAnchorCardIndex: null,
+  historyNavigationVersion: 0,
   isBatching: false,
   past: [],
   future: [],
@@ -57,6 +76,8 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         isDirty: false,
         selectedViewIndex: result.data.views.length > 0 ? 0 : null,
         selectedCardIndex: null,
+        selectedCardIndices: [],
+        selectionAnchorCardIndex: null,
       });
     } else {
       set({
@@ -74,7 +95,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     // Only add to history if there's a current config
     if (currentConfig) {
       set((state) => ({
-        past: [...state.past, currentConfig],
+        past: [...state.past, cloneConfig(currentConfig)],
         future: [], // Clear future when making a new change
         config,
         isDirty: true,
@@ -98,7 +119,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     }
 
     set((current) => ({
-      past: [...current.past, current.config as DashboardConfig],
+      past: [...current.past, cloneConfig(current.config as DashboardConfig)],
       future: [],
       isBatching: true,
     }));
@@ -122,6 +143,8 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     set({
       selectedViewIndex: index,
       selectedCardIndex: null,
+      selectedCardIndices: [],
+      selectionAnchorCardIndex: null,
     });
   },
 
@@ -129,6 +152,54 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     set({
       selectedViewIndex: viewIndex,
       selectedCardIndex: cardIndex,
+      selectedCardIndices: cardIndex === null ? [] : [cardIndex],
+      selectionAnchorCardIndex: cardIndex,
+    });
+  },
+
+  setSelectedCards: (viewIndex: number | null, cardIndices: number[], primaryCardIndex: number | null = null) => {
+    const normalized = normalizeCardIndices(cardIndices);
+    const nextPrimary =
+      primaryCardIndex !== null && normalized.includes(primaryCardIndex)
+        ? primaryCardIndex
+        : (normalized[0] ?? null);
+
+    set({
+      selectedViewIndex: viewIndex,
+      selectedCardIndex: nextPrimary,
+      selectedCardIndices: normalized,
+      selectionAnchorCardIndex: nextPrimary,
+    });
+  },
+
+  selectCardWithMode: (viewIndex: number | null, cardIndex: number | null, mode: SelectionMode = 'replace', cardCount?: number) => {
+    if (viewIndex === null || cardIndex === null) {
+      set({
+        selectedViewIndex: viewIndex,
+        selectedCardIndex: null,
+        selectedCardIndices: [],
+        selectionAnchorCardIndex: null,
+      });
+      return;
+    }
+
+    const current = get();
+    const nextSelection = resolveSelectionState({
+      previous: {
+        selectedCardIndex: current.selectedCardIndex,
+        selectedCardIndices: current.selectedCardIndices,
+        anchorCardIndex: current.selectionAnchorCardIndex,
+      },
+      clickedCardIndex: cardIndex,
+      mode,
+      cardCount,
+    });
+
+    set({
+      selectedViewIndex: viewIndex,
+      selectedCardIndex: nextSelection.selectedCardIndex,
+      selectedCardIndices: nextSelection.selectedCardIndices,
+      selectionAnchorCardIndex: nextSelection.anchorCardIndex,
     });
   },
 
@@ -157,10 +228,11 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
 
     set({
       past: newPast,
-      future: state.config ? [state.config, ...state.future] : state.future,
-      config: previous,
+      future: state.config ? [cloneConfig(state.config), ...state.future] : state.future,
+      config: cloneConfig(previous),
       isDirty: true,
       isBatching: false,
+      historyNavigationVersion: state.historyNavigationVersion + 1,
     });
   },
 
@@ -172,11 +244,12 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     const newFuture = state.future.slice(1);
 
     set({
-      past: state.config ? [...state.past, state.config] : state.past,
+      past: state.config ? [...state.past, cloneConfig(state.config)] : state.past,
       future: newFuture,
-      config: next,
+      config: cloneConfig(next),
       isDirty: true,
       isBatching: false,
+      historyNavigationVersion: state.historyNavigationVersion + 1,
     });
   },
 

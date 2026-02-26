@@ -10,6 +10,10 @@ import { Page, expect } from '@playwright/test';
 export class AppDSL {
   constructor(private window: Page) {}
 
+  private get historyDebug() {
+    return this.window.getByTestId('history-debug-state');
+  }
+
   /**
    * Wait for app to be fully ready
    */
@@ -104,4 +108,91 @@ export class AppDSL {
       testWindow.__testThemeApi?.setConnected(isConnected);
     }, connected);
   }
+
+  async undo(): Promise<void> {
+    const usedStoreHook = await this.window.evaluate(() => {
+      const testWindow = window as Window & {
+        __dashboardTestApi?: { canUndo: () => boolean; undo: () => void };
+      };
+      if (testWindow.__dashboardTestApi?.canUndo?.()) {
+        testWindow.__dashboardTestApi.undo();
+        return true;
+      }
+      return false;
+    });
+    if (usedStoreHook) return;
+
+    const clicked = await this.window.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.ant-layout-header button'));
+      const undoButton = buttons.find((button) => button.querySelector('.anticon-undo'));
+      if (!undoButton || undoButton.disabled) {
+        return false;
+      }
+      undoButton.click();
+      return true;
+    });
+    if (clicked) return;
+
+    await this.window.evaluate(() => {
+      const event = new KeyboardEvent('keydown', { key: 'z', code: 'KeyZ', ctrlKey: true, bubbles: true });
+      window.dispatchEvent(event);
+      document.dispatchEvent(event);
+      (document.activeElement as HTMLElement | null)?.dispatchEvent(event);
+    });
+    await this.window.keyboard.press('Control+z').catch(() => undefined);
+  }
+
+  async redo(): Promise<void> {
+    const usedStoreHook = await this.window.evaluate(() => {
+      const testWindow = window as Window & {
+        __dashboardTestApi?: { canRedo: () => boolean; redo: () => void };
+      };
+      if (testWindow.__dashboardTestApi?.canRedo?.()) {
+        testWindow.__dashboardTestApi.redo();
+        return true;
+      }
+      return false;
+    });
+    if (usedStoreHook) return;
+
+    const clicked = await this.window.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.ant-layout-header button'));
+      const redoButton = buttons.find((button) => button.querySelector('.anticon-redo'));
+      if (!redoButton || redoButton.disabled) {
+        return false;
+      }
+      redoButton.click();
+      return true;
+    });
+    if (clicked) return;
+
+    await this.window.evaluate(() => {
+      const event = new KeyboardEvent('keydown', { key: 'y', code: 'KeyY', ctrlKey: true, bubbles: true });
+      window.dispatchEvent(event);
+      document.dispatchEvent(event);
+      (document.activeElement as HTMLElement | null)?.dispatchEvent(event);
+    });
+    await this.window.keyboard.press('Control+y').catch(() => undefined);
+  }
+
+  async copy(): Promise<void> {
+    await this.window.keyboard.press('Control+c');
+  }
+
+  async cut(): Promise<void> {
+    await this.window.keyboard.press('Control+x');
+  }
+
+  async paste(): Promise<void> {
+    await this.window.keyboard.press('Control+v');
+  }
+
+  async deleteSelection(): Promise<void> {
+    await this.window.keyboard.press('Delete');
+  }
+
+  async expectCanUndo(expected: boolean): Promise<void> {
+    await expect(this.historyDebug).toHaveAttribute('data-can-undo', expected ? '1' : '0');
+  }
+
 }
