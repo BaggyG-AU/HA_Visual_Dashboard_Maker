@@ -216,7 +216,6 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
               label={solarLabel}
               value={mockValues.solar}
               color="#faad14"
-              entity={entities.solar}
             />
             <FlowLine active={mockValues.solar > 0} vertical />
           </div>
@@ -240,7 +239,6 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
                 label={gridLabel}
                 value={mockValues.grid}
                 color={mockValues.grid > 0 ? '#f5222d' : '#52c41a'}
-                entity={entities.grid}
               />
               <FlowLine active={Math.abs(mockValues.grid) > 0} />
             </div>
@@ -253,7 +251,6 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
               label={homeLabel}
               value={mockValues.home}
               color="#00d9ff"
-              entity={entities.home}
             />
           )}
 
@@ -266,7 +263,6 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
                 label={batteryLabel}
                 value={mockValues.battery}
                 color={mockValues.battery < 0 ? '#52c41a' : '#722ed1'}
-                entity={entities.battery}
               />
             </div>
           )}

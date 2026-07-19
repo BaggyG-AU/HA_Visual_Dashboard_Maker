@@ -31,6 +31,7 @@ export interface PopupCardConfig {
   title?: string;
   trigger_label?: string;
   trigger_icon?: string;
+  style?: string;
   popup?: PopupConfig;
 }
 

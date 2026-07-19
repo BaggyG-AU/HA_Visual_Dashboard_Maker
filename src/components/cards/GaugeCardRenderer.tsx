@@ -172,7 +172,7 @@ export const GaugeCardRenderer: React.FC<GaugeCardRendererProps> = ({
       </Text>
 
       {/* Range display */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', paddingX: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 8px' }}>
         <Text type="secondary" style={{ fontSize: '11px' }}>
           {min}
         </Text>

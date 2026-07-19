@@ -157,8 +157,8 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
             colors: '#e6e6e6',
           },
           markers: {
-            width: 8,
-            height: 8,
+            // ApexCharts v4 replaced legend marker `width`/`height` with `size`.
+            size: 8,
           },
         },
         dataLabels: {

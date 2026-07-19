@@ -38,7 +38,7 @@ export const BetterThermostatCardRenderer: React.FC<BetterThermostatCardRenderer
   const currentTemp = attributes.current_temperature || 0;
   const targetTemp = attributes.temperature || 0;
   const hvacMode = state;
-  const hvacModes = attributes.hvac_modes || ['heat', 'cool', 'auto', 'off'];
+  const hvacModes: string[] = (attributes.hvac_modes as string[] | undefined) || ['heat', 'cool', 'auto', 'off'];
   const unit = attributes.unit_of_measurement || '°C';
 
   // Better Thermostat specific attributes

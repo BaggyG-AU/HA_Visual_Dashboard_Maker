@@ -88,7 +88,12 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
     attributes.friendly_name ||
     card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
     'Entity';
-  const layout = card.layout || 'default'; // 'default' or 'horizontal'
+  // Upstream Mushroom's `layout` option is a string ('default' | 'horizontal' |
+  // 'vertical'), but HAVDM's BaseCard.layout is the react-grid-layout position
+  // object — the two collide on the same key. Only a string value is a Mushroom
+  // layout; a position object means the option was never set.
+  const rawLayout: unknown = (card as { layout?: unknown }).layout;
+  const layout = typeof rawLayout === 'string' ? rawLayout : 'default';
   const hideState = card.hide_state === true;
   const hideIcon = card.hide_icon === true;
   const hideName = card.hide_name === true;
