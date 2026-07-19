@@ -155,7 +155,7 @@ const slideCardsToCards = (slides: unknown, fallbackCards: unknown): Record<stri
 };
 
 const importSwipeCard = (inputCard: Record<string, unknown>): Record<string, unknown> => {
-  const parsed = parseUpstreamSwipeCard(inputCard as SwiperCardConfig);
+  const parsed = parseUpstreamSwipeCard(inputCard as unknown as SwiperCardConfig);
   const parameters = isRecord(inputCard.parameters) ? inputCard.parameters : {};
   const autoplay = isRecord(parameters.autoplay) ? parameters.autoplay : null;
 
@@ -485,7 +485,7 @@ const migrateLegacyAccordion = (inputCard: Record<string, unknown>): Record<stri
         cards: Array.isArray(section.cards) ? section.cards.filter(isRecord) : [],
       };
     })
-    .filter((section): section is Record<string, unknown> => Boolean(section));
+    .filter((section): section is NonNullable<typeof section> => section !== null);
 
   return {
     type: 'vertical-stack',
@@ -595,7 +595,7 @@ export function importCard(card: Record<string, unknown>): Record<string, unknow
   }
 
   if (migrated.type === 'custom:tabbed-card') {
-    return importTabbedCard(migrated as TabsCardConfig as unknown as Record<string, unknown>);
+    return importTabbedCard(migrated as unknown as TabsCardConfig as unknown as Record<string, unknown>);
   }
 
   if (migrated.type === 'calendar') {

@@ -34,7 +34,6 @@ class CredentialsService {
 
   constructor() {
     this.store = new Store<CredentialsStore>({
-      projectName: 'ha-visual-dashboard-maker',
       name: 'ha-credentials',
       defaults: {
         credentials: [],

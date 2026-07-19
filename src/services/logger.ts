@@ -23,9 +23,11 @@ const redact = (value: unknown): unknown => {
   }
   if (typeof value === 'object' && value !== null) {
     const cloned = Array.isArray(value) ? [...value] : { ...(value as Record<string, unknown>) };
-    for (const key of Object.keys(cloned)) {
+    // Index through a keyed view so array-ness of `cloned` is preserved for the caller.
+    const keyed = cloned as Record<string, unknown>;
+    for (const key of Object.keys(keyed)) {
       if (/token|authorization|auth/i.test(key)) {
-        cloned[key] = '[REDACTED]';
+        keyed[key] = '[REDACTED]';
       }
     }
     return cloned;
@@ -33,7 +35,11 @@ const redact = (value: unknown): unknown => {
   return value;
 };
 
-const logAt = (level: LoggingLevel, method: keyof Console, args: unknown[]) => {
+// Narrowed to the console methods logger actually dispatches to — `keyof Console`
+// also covers non-callable members such as the `Console` constructor.
+type ConsoleMethod = 'error' | 'warn' | 'info' | 'debug' | 'log';
+
+const logAt = (level: LoggingLevel, method: ConsoleMethod, args: unknown[]) => {
   if (weights[level] === 0) return;
   if (weights[level] <= weights[currentLevel]) {
     const safeArgs = args.map(redact);

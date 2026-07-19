@@ -181,7 +181,7 @@ export class HAWebSocketService {
   /**
    * Send a message and wait for response
    */
-  private async sendAndWait<T>(message: Omit<WebSocketMessage, 'id'>): Promise<T> {
+  private async sendAndWait<T>(message: WebSocketMessage): Promise<T> {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       throw new Error('WebSocket is not connected');
     }
