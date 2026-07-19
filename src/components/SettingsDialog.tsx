@@ -298,7 +298,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
                         min={0}
                         max={100}
                         value={hapticsIntensity}
-                        onChange={(value) => handleHapticsIntensityChange(Number(value))}
+                        onChange={(value: number) => handleHapticsIntensityChange(Number(value))}
                         disabled={!hapticsEnabled}
                         data-testid="haptic-feedback-intensity-slider"
                       />
@@ -366,7 +366,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
                         min={0}
                         max={100}
                         value={soundsVolume}
-                        onChange={(value) => handleSoundsVolumeChange(Number(value))}
+                        onChange={(value: number) => handleSoundsVolumeChange(Number(value))}
                         disabled={!soundsEnabled}
                         data-testid="ui-sounds-volume-slider"
                       />

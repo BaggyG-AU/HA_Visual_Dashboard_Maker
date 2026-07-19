@@ -6,7 +6,6 @@ import { yamlService } from '../services/yamlService';
 import { logger } from '../services/logger';
 
 const { Text } = Typography;
-const { Step } = Steps;
 
 interface DeployDialogProps {
   visible: boolean;
@@ -265,12 +264,16 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
       // Deployment progress
       return (
         <div>
-          <Steps current={deployStatus.step - 1} style={{ marginBottom: '24px' }}>
-            <Step title="Validate YAML" description="Checking dashboard config" />
-            <Step title="Connection" description="Verifying HA connection" />
-            <Step title="Deploy" description="Uploading dashboard" />
-            <Step title="Complete" description="Finishing up" />
-          </Steps>
+          <Steps
+            current={deployStatus.step - 1}
+            style={{ marginBottom: '24px' }}
+            items={[
+              { title: 'Validate YAML', content: 'Checking dashboard config' },
+              { title: 'Connection', content: 'Verifying HA connection' },
+              { title: 'Deploy', content: 'Uploading dashboard' },
+              { title: 'Complete', content: 'Finishing up' },
+            ]}
+          />
 
           <div style={{
             padding: '16px',

@@ -100,7 +100,7 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ valu
           min={0}
           max={100}
           value={opacityValue}
-          onChange={(val) => onUpdate(typeof val === 'number' ? clamp(val) : opacityValue)}
+          onChange={(val: number) => onUpdate(typeof val === 'number' ? clamp(val) : opacityValue)}
           data-testid={testId}
         />
         <InputNumber
@@ -273,7 +273,7 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ valu
                 min={0}
                 max={30}
                 value={value.imageBlur}
-                onChange={(val) => update({ imageBlur: typeof val === 'number' ? val : value.imageBlur })}
+                onChange={(val: number) => update({ imageBlur: typeof val === 'number' ? val : value.imageBlur })}
                 data-testid="background-image-blur-slider"
               />
               <InputNumber
@@ -332,7 +332,7 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ valu
                 min={0}
                 max={30}
                 value={value.blurAmount}
-                onChange={(val) => update({ blurAmount: typeof val === 'number' ? val : value.blurAmount })}
+                onChange={(val: number) => update({ blurAmount: typeof val === 'number' ? val : value.blurAmount })}
                 data-testid="background-blur-slider"
               />
               <InputNumber

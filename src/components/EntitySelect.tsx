@@ -269,8 +269,10 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
         style={{ width: '100%' }}
         popupClassName="entity-select-dropdown"
         styles={{
-          dropdown: {
-            backgroundColor: '#1f1f1f',
+          popup: {
+            root: {
+              backgroundColor: '#1f1f1f',
+            },
           },
         }}
         data-testid={dataTestId}

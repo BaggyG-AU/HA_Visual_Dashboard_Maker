@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Modal, Typography, List, Select, Space, Button, Tag, Input, Divider, Alert, Tabs, Empty } from 'antd';
+import { Modal, Typography, List, Select, Space, Flex, Button, Tag, Input, Divider, Alert, Tabs, Empty } from 'antd';
 import type { EntityState } from '../services/haWebSocketService';
 import { entityRemappingService, type EntityMapping, type EntitySuggestion } from '../services/entityRemapping';
 import type { DashboardConfig } from '../types/dashboard';
@@ -173,13 +173,13 @@ export const EntityRemappingModal: React.FC<Props> = ({
             showIcon
           />
 
-          <Space align="center" justify="space-between" style={{ width: '100%' }}>
+          <Flex align="center" justify="space-between" style={{ width: '100%' }}>
             <Title level={5} style={{ margin: 0 }}>Missing Entities ({missingEntities.length})</Title>
             <Space>
               <Button onClick={handleAutoMapAll} data-testid="remap-auto-map">Auto-map All</Button>
               <Button type="primary" onClick={handleApply} disabled={!Object.values(mappingState).some(Boolean)} data-testid="remap-apply">Apply Mappings</Button>
             </Space>
-          </Space>
+          </Flex>
 
           <List
             dataSource={missingEntities}
@@ -234,10 +234,10 @@ export const EntityRemappingModal: React.FC<Props> = ({
 
       {activeTab === 'history' && (
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          <Space align="center" justify="space-between" style={{ width: '100%' }}>
+          <Flex align="center" justify="space-between" style={{ width: '100%' }}>
             <Title level={5} style={{ margin: 0 }}>Saved Mappings</Title>
             <Button danger onClick={handleClearSaved} disabled={!savedMappings.length} data-testid="remap-clear-history">Clear All</Button>
-          </Space>
+          </Flex>
           {savedMappings.length === 0 && <Empty description="No saved mappings" />}
           {savedMappings.length > 0 && (
             <List
