@@ -73,6 +73,13 @@ tokens.json
 *.key
 *.pem
 
+# Claude Code local settings — machine-local permissions/tokens, never commit
+.claude/settings.local.json
+
+# Migration / crash artifacts
+*.stackdump
+gitignored_files_migration.tar.gz
+
 # User data
 user-data/
 dashboards/
@@ -102,6 +109,14 @@ release/
 # Local planning artifacts
 havdm.kanban
 
-# Tools
-tools/
+# Local prompt scratch (tool scripts under tools/ ARE version-controlled —
+# ignoring tools/ silently dropped new scripts like check-e2e-guardrails.sh)
 prompts/
+
+# MemPalace per-project files (issue #185)
+mempalace.yaml
+entities.json
+
+# MCP server registration (machine-specific paths; WSL-native command differs
+# from the Windows `command: wsl` variant, so this is not committed)
+.mcp.json
