@@ -58,7 +58,7 @@ views:
 `;
 
       await ctx.window.evaluate((yaml) => {
-        const testWindow = window as TestWindow;
+        const testWindow = window as unknown as TestWindow;
         const model =
           testWindow.__monacoModel ||
           testWindow.monaco?.editor?.getModels?.()[0];
@@ -96,7 +96,7 @@ views:
 `;
 
       await ctx.window.evaluate((yaml) => {
-        const testWindow = window as TestWindow;
+        const testWindow = window as unknown as TestWindow;
         const model =
           testWindow.__monacoModel ||
           testWindow.monaco?.editor?.getModels?.()[0];
@@ -129,7 +129,7 @@ views:
 `;
 
       await ctx.window.evaluate((yaml) => {
-        const testWindow = window as TestWindow;
+        const testWindow = window as unknown as TestWindow;
         const model =
           testWindow.__monacoModel ||
           testWindow.monaco?.editor?.getModels?.()[0];
@@ -160,7 +160,7 @@ views:
 `;
 
       await ctx.window.evaluate((yaml) => {
-        const testWindow = window as TestWindow;
+        const testWindow = window as unknown as TestWindow;
         const model =
           testWindow.__monacoModel ||
           testWindow.monaco?.editor?.getModels?.()[0];
@@ -192,7 +192,7 @@ views:
 `;
 
       await ctx.window.evaluate((yaml) => {
-        const testWindow = window as TestWindow;
+        const testWindow = window as unknown as TestWindow;
         const model =
           testWindow.__monacoModel ||
           testWindow.monaco?.editor?.getModels?.()[0];
@@ -221,7 +221,7 @@ test('should handle file not found', async () => {
       // Attempt to read a non-existent file via preload API and assert rejection
       await expect(
         window.evaluate(async () => {
-          return (window as TestWindow).electronAPI.readFile('Z:/this/does/not/exist.yaml');
+          return (window as unknown as TestWindow).electronAPI.readFile('Z:/this/does/not/exist.yaml');
         })
       ).rejects.toThrow(/ENOENT/);
 
@@ -242,13 +242,13 @@ test('should handle file not found', async () => {
       await stubIpcFailure(app, 'fs:writeFile', 'EACCES: permission denied');
 
       // Ensure preload API is available
-      await window.waitForFunction(() => Boolean((window as TestWindow).electronAPI?.writeFile), null, {
+      await window.waitForFunction(() => Boolean((window as unknown as TestWindow).electronAPI?.writeFile), null, {
         timeout: 5000,
       });
 
       await expect(
         window.evaluate(async ({ filePath, data }) => {
-          return await (window as TestWindow).electronAPI.writeFile(filePath, data);
+          return await (window as unknown as TestWindow).electronAPI.writeFile(filePath, data);
         }, { filePath: 'C:/restricted/path.yaml', data: 'title: Test\nviews: []\n' })
       ).rejects.toThrow(/EACCES/i);
 
@@ -270,7 +270,7 @@ test('should handle file not found', async () => {
 
       await expect(
         window.evaluate(async ({ filePath, data }) => {
-          return await (window as TestWindow).electronAPI.writeFile(filePath, data);
+          return await (window as unknown as TestWindow).electronAPI.writeFile(filePath, data);
         }, { filePath: 'C:/diskfull/path.yaml', data: 'title: Test\nviews: []\n' })
       ).rejects.toThrow(/ENOSPC/i);
 
@@ -291,7 +291,7 @@ test('should handle file not found', async () => {
 
       await expect(
         window.evaluate(async ({ filePath, data }) => {
-          return await (window as TestWindow).electronAPI.writeFile(filePath, data);
+          return await (window as unknown as TestWindow).electronAPI.writeFile(filePath, data);
         }, { filePath: 'C:/locked/path.yaml', data: 'title: Test\nviews: []\n' })
       ).rejects.toThrow(/EBUSY/i);
 
@@ -312,14 +312,14 @@ test.describe('Home Assistant Connection Errors', () => {
       await stubIpcFailure(app, 'ha:ws:connect', 'ETIMEDOUT: connection timed out');
 
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.haWsConnect),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.haWsConnect),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async ({ url, token }) => {
-          return await (window as TestWindow).electronAPI.haWsConnect(url, token);
+          return await (window as unknown as TestWindow).electronAPI.haWsConnect(url, token);
         }, { url: 'http://slow-ha.local:8123', token: 'abc' })
       ).rejects.toThrow(/ETIMEDOUT/i);
 
@@ -339,14 +339,14 @@ test.describe('Home Assistant Connection Errors', () => {
       await stubIpcFailure(app, 'ha:ws:connect', '401 Unauthorized: invalid token');
 
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.haWsConnect),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.haWsConnect),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async ({ url, token }) => {
-          return await (window as TestWindow).electronAPI.haWsConnect(url, token);
+          return await (window as unknown as TestWindow).electronAPI.haWsConnect(url, token);
         }, { url: 'http://ha.local:8123', token: 'bad-token' })
       ).rejects.toThrow(/401|unauthorized/i);
 
@@ -382,14 +382,14 @@ test.describe('Home Assistant Connection Errors', () => {
       await stubIpcFailure(app, 'ha:ws:getThemes', '500 Internal Server Error');
 
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.haWsGetThemes),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.haWsGetThemes),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async () => {
-          return await (window as TestWindow).electronAPI.haWsGetThemes();
+          return await (window as unknown as TestWindow).electronAPI.haWsGetThemes();
         })
       ).rejects.toThrow(/500/i);
 
@@ -409,14 +409,14 @@ test.describe('Home Assistant Connection Errors', () => {
       await stubIpcFailure(app, 'ha:ws:isConnected', 'ECONNREFUSED: websocket failure');
 
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.haWsIsConnected),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.haWsIsConnected),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async () => {
-          return await (window as TestWindow).electronAPI.haWsIsConnected();
+          return await (window as unknown as TestWindow).electronAPI.haWsIsConnected();
         })
       ).rejects.toThrow(/ECONNREFUSED/i);
 
@@ -437,14 +437,14 @@ test.describe('Home Assistant Connection Errors', () => {
       await stubIpcFailure(app, 'ha:ws:isConnected', '401 Unauthorized: session expired');
 
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.haWsIsConnected),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.haWsIsConnected),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async () => {
-          return await (window as TestWindow).electronAPI.haWsIsConnected();
+          return await (window as unknown as TestWindow).electronAPI.haWsIsConnected();
         })
       ).rejects.toThrow(/401|unauthorized/i);
 
@@ -472,13 +472,13 @@ test.describe('Home Assistant Connection Errors', () => {
 
       // Ensure preload API is available
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.haWsFetchEntities),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.haWsFetchEntities),
         null,
         { timeout: 5000 }
       );
 
       const result = await window.evaluate(async () => {
-        return await (window as TestWindow).electronAPI.haWsFetchEntities();
+        return await (window as unknown as TestWindow).electronAPI.haWsFetchEntities();
       });
 
       expect(result?.success).toBeTruthy();
@@ -501,14 +501,14 @@ test.describe('Home Assistant Connection Errors', () => {
       await stubIpcFailure(app, 'ha:fetch', 'STREAM_NOT_ENABLED: stream component missing');
 
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.haFetch),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.haFetch),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async () => {
-          return await (window as TestWindow).electronAPI.haFetch('http://ha.local/api/config', 'token');
+          return await (window as unknown as TestWindow).electronAPI.haFetch('http://ha.local/api/config', 'token');
         })
       ).rejects.toThrow(/stream|enabled/i);
 
@@ -532,14 +532,14 @@ test.describe('Deployment Errors', () => {
 
       // Ensure preload API is available
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.haWsDeployDashboard),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.haWsDeployDashboard),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async ({ tempPath, productionPath }) => {
-          return await (window as TestWindow).electronAPI.haWsDeployDashboard(tempPath, productionPath);
+          return await (window as unknown as TestWindow).electronAPI.haWsDeployDashboard(tempPath, productionPath);
         }, { tempPath: '/tmp/test-dashboard.yaml', productionPath: '/tmp/prod-dashboard.yaml' })
       ).rejects.toThrow(/EACCES/i);
 
@@ -558,14 +558,14 @@ test.describe('Deployment Errors', () => {
       await stubIpcFailure(app, 'ha:ws:deployDashboard', '409 Conflict: dashboard changed on server');
 
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.haWsDeployDashboard),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.haWsDeployDashboard),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async ({ tempPath, productionPath }) => {
-          return await (window as TestWindow).electronAPI.haWsDeployDashboard(tempPath, productionPath);
+          return await (window as unknown as TestWindow).electronAPI.haWsDeployDashboard(tempPath, productionPath);
         }, { tempPath: '/tmp/test-dashboard.yaml', productionPath: '/tmp/prod-dashboard.yaml' })
       ).rejects.toThrow(/409|conflict/i);
 
@@ -584,14 +584,14 @@ test.describe('Deployment Errors', () => {
       await stubIpcFailure(app, 'ha:ws:deployDashboard', 'ROLLBACK_FAILED: deployment aborted');
 
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.haWsDeployDashboard),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.haWsDeployDashboard),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async ({ tempPath, productionPath }) => {
-          return await (window as TestWindow).electronAPI.haWsDeployDashboard(tempPath, productionPath);
+          return await (window as unknown as TestWindow).electronAPI.haWsDeployDashboard(tempPath, productionPath);
         }, { tempPath: '/tmp/test-dashboard.yaml', productionPath: '/tmp/prod-dashboard.yaml' })
       ).rejects.toThrow(/rollback/i);
 
@@ -610,14 +610,14 @@ test.describe('Deployment Errors', () => {
       await stubIpcFailure(app, 'fs:createBackup', 'EACCES: failed to create backup directory');
 
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.createBackup),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.createBackup),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async ({ filePath }) => {
-          return await (window as TestWindow).electronAPI.createBackup(filePath);
+          return await (window as unknown as TestWindow).electronAPI.createBackup(filePath);
         }, { filePath: '/tmp/test-dashboard.yaml' })
       ).rejects.toThrow(/EACCES|backup/i);
 
@@ -638,14 +638,14 @@ test.describe('Credential Storage Errors', () => {
       await stubIpcFailure(app, 'credentials:isEncryptionAvailable', 'ENCRYPTION_UNAVAILABLE');
 
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.credentialsIsEncryptionAvailable),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.credentialsIsEncryptionAvailable),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async () => {
-          return await (window as TestWindow).electronAPI.credentialsIsEncryptionAvailable();
+          return await (window as unknown as TestWindow).electronAPI.credentialsIsEncryptionAvailable();
         })
       ).rejects.toThrow(/encryption/i);
 
@@ -664,14 +664,14 @@ test.describe('Credential Storage Errors', () => {
       await stubIpcFailure(app, 'credentials:get', 'DECRYPT_FAILED: invalid token');
 
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.credentialsGet),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.credentialsGet),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async () => {
-          return await (window as TestWindow).electronAPI.credentialsGet('id-123');
+          return await (window as unknown as TestWindow).electronAPI.credentialsGet('id-123');
         })
       ).rejects.toThrow(/decrypt/i);
 
@@ -693,7 +693,7 @@ test.describe('Template Loading Errors', () => {
 
       await expect(
         window.evaluate(async () => {
-          return (window as TestWindow).electronAPI.readFile('templates/missing-template.yaml');
+          return (window as unknown as TestWindow).electronAPI.readFile('templates/missing-template.yaml');
         })
       ).rejects.toThrow(/ENOENT/i);
 
@@ -714,7 +714,7 @@ test.describe('Template Loading Errors', () => {
 
       await expect(
         window.evaluate(async () => {
-          return (window as TestWindow).electronAPI.readFile('templates/templates.json');
+          return (window as unknown as TestWindow).electronAPI.readFile('templates/templates.json');
         })
       ).rejects.toThrow(/json|template|unexpected/i);
 
@@ -734,7 +734,7 @@ test.describe('Template Loading Errors', () => {
 
       await expect(
         window.evaluate(async () => {
-          return (window as TestWindow).electronAPI.readFile('templates/invalid-template.yaml');
+          return (window as unknown as TestWindow).electronAPI.readFile('templates/invalid-template.yaml');
         })
       ).rejects.toThrow(/yaml/i);
 
@@ -918,14 +918,14 @@ test.describe('Recovery and Resilience', () => {
       const tempPath = 'C:/Windows/Temp/ha_dashboard_auto_save.yaml';
 
       await window.waitForFunction(
-        () => Boolean((window as TestWindow).electronAPI?.writeFile),
+        () => Boolean((window as unknown as TestWindow).electronAPI?.writeFile),
         null,
         { timeout: 5000 }
       );
 
       await expect(
         window.evaluate(async ({ filePath, data }) => {
-          return await (window as TestWindow).electronAPI.writeFile(filePath, data);
+          return await (window as unknown as TestWindow).electronAPI.writeFile(filePath, data);
         }, { filePath: tempPath, data: content })
       ).resolves.not.toThrow();
 
