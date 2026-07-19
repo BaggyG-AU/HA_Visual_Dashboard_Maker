@@ -5,6 +5,7 @@ import { CheckOutlined, RollbackOutlined, SyncOutlined } from '@ant-design/icons
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 import { GridCanvas } from './GridCanvas';
+import type { Layout } from 'react-grid-layout';
 import { YamlEditor } from './YamlEditor';
 import { yamlService } from '../services/yamlService';
 import { useEditorModeStore } from '../store/editorModeStore';
@@ -22,7 +23,7 @@ interface SplitViewEditorProps {
   onCardSelect: (cardIndex: number | null, options?: { mode?: 'replace' | 'toggle' | 'range' }) => void;
 
   /** Layout change callback (from visual canvas) */
-  onLayoutChange: (layout: unknown[]) => void;
+  onLayoutChange: (layout: Layout) => void;
 
   /** Card drop callback */
   onCardDrop: (cardType: string, x: number, y: number) => void;

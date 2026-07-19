@@ -32,6 +32,7 @@ import { setHapticSettings } from './services/hapticService';
 import { entityRemappingService, type EntityMapping } from './services/entityRemapping';
 import { PopupHost } from './features/popup/PopupHost';
 import type { Card, DashboardConfig } from './types/dashboard';
+import type { Theme } from './types/homeassistant';
 import type { LoggingLevel } from './services/settingsService';
 import type { EntityState } from './services/haWebSocketService';
 import EntityRemappingModal from './components/EntityRemappingModal';
@@ -250,7 +251,7 @@ const App: React.FC = () => {
           useThemeStore.getState().setAvailableThemes({
             default_theme: themesData?.default_theme ?? themeName ?? 'default',
             default_dark_theme: themesData?.default_dark_theme ?? null,
-            themes: (themesData?.themes ?? {}) as Record<string, unknown>,
+            themes: (themesData?.themes ?? {}) as unknown as Record<string, Theme>,
             darkMode:
               typeof themesData?.darkMode === 'boolean'
                 ? themesData.darkMode
@@ -501,7 +502,10 @@ const App: React.FC = () => {
     }
 
     if (currentView.cards) {
-      let updatedCards;
+      // The layout-card branch spreads through Record<string, unknown>, which
+      // drops the discriminating `type` from the Card union — annotate so both
+      // branches land back on Card[].
+      let updatedCards: Card[];
       if (usingLayoutCard) {
         // Convert to view_layout format
         const viewLayouts = convertGridLayoutToViewLayout(layout);
@@ -518,7 +522,7 @@ const App: React.FC = () => {
                 grid_column: viewLayout.grid_column,
                 grid_row: viewLayout.grid_row,
               },
-            };
+            } as unknown as Card;
           }
           return card;
         });
