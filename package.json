@@ -46,7 +46,7 @@
     "url": "https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker/issues"
   },
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=22.0.0",
     "npm": ">=10.0.0"
   },
   "devDependencies": {
