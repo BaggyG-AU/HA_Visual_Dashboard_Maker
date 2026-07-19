@@ -1311,7 +1311,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     const editor = monacoEditorRef.current;
     if (!editor) return;
 
-    const selection = editor.getSelection();
+    const selection = editor.getSelection() ?? editor.getModel()?.getFullModelRange();
+    if (!selection) return;
     const id = { major: 1, minor: 1 };
     const op = { identifier: id, range: selection, text: entityId, forceMoveMarkers: true };
     editor.executeEdits("insert-entity", [op]);

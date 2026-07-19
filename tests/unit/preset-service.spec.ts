@@ -63,7 +63,7 @@ describe('presetService', () => {
 
     expect(imported).not.toBeNull();
     expect(imported?.title).toBe('Sample Preset');
-    expect(imported?.config.views[0].cards).toHaveLength(1);
-    expect((imported?.config.views[0].cards[0] as { entity?: string }).entity).toBe('light.sample');
+    expect(imported?.config.views[0]?.cards).toHaveLength(1);
+    expect((imported?.config.views[0]?.cards?.[0] as { entity?: string }).entity).toBe('light.sample');
   });
 });

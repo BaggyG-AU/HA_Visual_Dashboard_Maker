@@ -78,7 +78,7 @@ const resolveTabIcon = (tab: TabbedCardTab | Record<string, unknown>): string =>
   return DEFAULT_TAB_ICON;
 };
 
-const normalizeTab = (tab: TabsCardConfig['tabs'][number], index: number): NormalizedTabConfig => {
+const normalizeTab = (tab: NonNullable<TabsCardConfig['tabs']>[number], index: number): NormalizedTabConfig => {
   const cards = resolveTabCards((tab ?? {}) as TabbedCardTab | Record<string, unknown>);
   const badgeRaw = tab?.badge ?? (tab as { badge?: unknown })?.badge;
   const badge = typeof badgeRaw === 'string'

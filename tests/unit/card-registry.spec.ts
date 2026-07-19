@@ -69,9 +69,9 @@ describe('cardRegistry', () => {
     expect(meta).toBeTruthy();
 
     // Basic invariants (avoid brittle asserts like exact name)
-    expect(meta.type).toBe('button');
-    expect(typeof meta.name).toBe('string');
-    expect(typeof meta.category).toBe('string');
+    expect(meta?.type).toBe('button');
+    expect(typeof meta?.name).toBe('string');
+    expect(typeof meta?.category).toBe('string');
   });
 
   it('should filter by category when getByCategory() is available', () => {
@@ -146,9 +146,9 @@ describe('cardRegistry', () => {
 
     const meta = reg.get?.(customType);
     expect(meta).toBeTruthy();
-    expect(meta.type).toBe(customType);
-    expect(meta.category).toBe('custom');
-    if (meta.source != null) {
+    expect(meta?.type).toBe(customType);
+    expect(meta?.category).toBe('custom');
+    if (meta?.source != null) {
       expect(meta.source).toBe('custom');
     }
   });

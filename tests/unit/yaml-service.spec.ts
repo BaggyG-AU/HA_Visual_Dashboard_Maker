@@ -61,9 +61,9 @@ describe('yamlService', () => {
 
       const sanitized = yamlService.sanitizeForHA(configWithLayout);
 
-      expect(sanitized.views[0].cards[0]).not.toHaveProperty('layout');
-      expect(sanitized.views[0].cards[0].type).toBe('markdown');
-      expect((sanitized.views[0].cards[0] as any).content).toBe('Hello');
+      expect(sanitized.views[0]?.cards?.[0]).not.toHaveProperty('layout');
+      expect(sanitized.views[0]?.cards?.[0]?.type).toBe('markdown');
+      expect((sanitized.views[0]?.cards?.[0] as any).content).toBe('Hello');
     });
 
     it('removes spacer cards from views', () => {
@@ -85,9 +85,9 @@ describe('yamlService', () => {
 
       const sanitized = yamlService.sanitizeForHA(configWithSpacers);
 
-      expect(sanitized.views[0].cards.length).toBe(2);
-      expect((sanitized.views[0].cards[0] as any).content).toBe('Real card');
-      expect((sanitized.views[0].cards[1] as any).content).toBe('Another real card');
+      expect(sanitized.views[0]?.cards?.length).toBe(2);
+      expect((sanitized.views[0]?.cards?.[0] as any).content).toBe('Real card');
+      expect((sanitized.views[0]?.cards?.[1] as any).content).toBe('Another real card');
     });
 
     it('removes HAVDM-specific view properties', () => {
@@ -170,7 +170,7 @@ describe('yamlService', () => {
 
       expect(sanitized.views[0]).not.toHaveProperty('icon');
       expect(sanitized.views[0]).not.toHaveProperty('theme');
-      expect(sanitized.views[0].cards[0]).not.toHaveProperty('entity');
+      expect(sanitized.views[0]?.cards?.[0]).not.toHaveProperty('entity');
     });
 
     it('handles empty cards array', () => {
@@ -219,8 +219,8 @@ describe('yamlService', () => {
       expect(parsed.success).toBe(true);
       expect(parsed.data?.views[0]).not.toHaveProperty('type');
       expect(parsed.data?.views[0]).not.toHaveProperty('layout');
-      expect(parsed.data?.views[0].cards.length).toBe(1); // Spacer removed
-      expect(parsed.data?.views[0].cards[0]).not.toHaveProperty('layout');
+      expect(parsed.data?.views[0]?.cards?.length).toBe(1); // Spacer removed
+      expect(parsed.data?.views[0]?.cards?.[0]).not.toHaveProperty('layout');
     });
 
     it('produces valid YAML output', () => {

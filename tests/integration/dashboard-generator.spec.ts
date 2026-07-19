@@ -175,11 +175,12 @@ test.describe.skip('Dashboard Generator Service (covered by unit tests)', () => 
   test('should assign grid layout positions to cards', () => {
     const dashboard = dashboardGeneratorService.generateDashboard('lights', mockEntities);
 
-    expect(dashboard?.views[0].cards?.[0].layout).toBeDefined();
-    expect(dashboard?.views[0].cards?.[0].layout.x).toBeGreaterThanOrEqual(0);
-    expect(dashboard?.views[0].cards?.[0].layout.y).toBeGreaterThanOrEqual(0);
-    expect(dashboard?.views[0].cards?.[0].layout.w).toBeGreaterThan(0);
-    expect(dashboard?.views[0].cards?.[0].layout.h).toBeGreaterThan(0);
+    const layout = dashboard?.views[0]?.cards?.[0]?.layout;
+    expect(layout).toBeDefined();
+    expect(layout?.x).toBeGreaterThanOrEqual(0);
+    expect(layout?.y).toBeGreaterThanOrEqual(0);
+    expect(layout?.w).toBeGreaterThan(0);
+    expect(layout?.h).toBeGreaterThan(0);
   });
 
   test('should get correct entity count for category', () => {

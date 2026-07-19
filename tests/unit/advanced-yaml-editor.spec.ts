@@ -150,7 +150,7 @@ describe('Advanced YAML Editor - Round-Trip Serialization', () => {
       const view = result.data?.views[0];
 
       expect(view).toHaveProperty('layout');
-      expect(view.layout).toEqual({
+      expect(view?.layout).toEqual({
         grid_template_columns: 'repeat(12, 1fr)',
         grid_template_rows: 'repeat(auto-fill, 56px)',
         grid_gap: '8px',

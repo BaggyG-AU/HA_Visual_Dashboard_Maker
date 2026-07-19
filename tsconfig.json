@@ -10,6 +10,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "noImplicitAny": true,
+    "strictNullChecks": true,
     "sourceMap": true,
     "baseUrl": ".",
     "noEmit": true

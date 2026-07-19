@@ -53,7 +53,8 @@ export async function configureYamlSchema() {
         // Match files that look like dashboard YAML
         uri: 'https://home-assistant.io/schemas/dashboard.json',
         fileMatch: ['*'],
-        schema: dashboardSchema,
+        // The generated dashboard schema is wider than monaco-yaml's JSONSchema type.
+        schema: dashboardSchema as unknown as Record<string, unknown>,
       },
     ],
   });

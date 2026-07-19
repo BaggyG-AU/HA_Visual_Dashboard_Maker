@@ -44,9 +44,12 @@ const normalizeGradient = (gradient: unknown): NormalizedProgressRingGradient | 
 
   const type = (gradient as { type?: unknown }).type === 'radial' ? 'radial' : 'linear';
   const angle = toFiniteNumber((gradient as { angle?: unknown }).angle, 90);
-  const stops = Array.isArray((gradient as { stops?: unknown[] }).stops)
-    ? (gradient as { stops?: unknown[] }).stops
-      .map((stop) => {
+  // Hoisted so the Array.isArray narrowing survives — a repeated cast expression
+  // is a fresh reference each time and does not carry the guard.
+  const rawStops = (gradient as { stops?: unknown }).stops;
+  const stops = Array.isArray(rawStops)
+    ? rawStops
+      .map((stop: unknown) => {
         if (!stop || typeof stop !== 'object') return null;
         const color = typeof (stop as { color?: unknown }).color === 'string'
           ? (stop as { color: string }).color.trim()
