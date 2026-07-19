@@ -249,7 +249,7 @@ export async function launch(): Promise<ElectronTestContext> {
   // Ensure renderer can detect test mode even when built in production mode
   await window.evaluate(() => {
     type TestFlagWindow = Window & { E2E?: string; PLAYWRIGHT_TEST?: string };
-    const testWindow = window as TestFlagWindow;
+    const testWindow = window as unknown as TestFlagWindow;
     testWindow.E2E = '1';
     testWindow.PLAYWRIGHT_TEST = '1';
   });

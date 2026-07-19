@@ -143,7 +143,7 @@ test.describe.skip('Dashboard Generator Service (covered by unit tests)', () => 
     expect(dashboard?.title).toBe('Surveillance Dashboard');
     expect(dashboard?.views[0].cards).toHaveLength(2);
     expect(dashboard?.views[0].cards?.[0].type).toBe('picture-entity');
-    expect(dashboard?.views[0].cards?.[0].camera_view).toBe('live');
+    expect((dashboard?.views[0].cards?.[0] as { camera_view?: string })?.camera_view).toBe('live');
   });
 
   test('should generate power dashboard with sensor cards', () => {
@@ -152,7 +152,7 @@ test.describe.skip('Dashboard Generator Service (covered by unit tests)', () => 
     expect(dashboard).not.toBeNull();
     expect(dashboard?.title).toBe('Power Management Dashboard');
     expect(dashboard?.views[0].cards?.[0].type).toBe('sensor');
-    expect(dashboard?.views[0].cards?.[0].graph).toBe('line');
+    expect((dashboard?.views[0].cards?.[0] as { graph?: string })?.graph).toBe('line');
   });
 
   test('should generate climate dashboard with thermostat cards', () => {

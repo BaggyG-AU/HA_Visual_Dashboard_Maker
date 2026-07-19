@@ -14,6 +14,7 @@ type MonacoModelLike = {
   setValue?: (value: string) => void;
   getLineCount?: () => number;
   getLineMaxColumn?: (lineNumber: number) => number;
+  uri?: { toString?: () => string };
 };
 
 type MonacoEditorLike = {
