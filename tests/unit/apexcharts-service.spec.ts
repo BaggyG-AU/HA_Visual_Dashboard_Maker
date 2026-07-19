@@ -59,7 +59,7 @@ describe('apexchartsService', () => {
       makeCard({
         graph_span: 'xyz',
         update_interval: 'abc',
-        series: [{ entity: '   ' }, { entity: 'sensor.humidity', type: 'invalid-type' }],
+        series: [{ entity: '   ' }, { entity: 'sensor.humidity', type: 'invalid-type' }] as unknown as ApexChartsCardConfig['series'],
         apex_config: {
           chart: { type: 'radialBar', height: 9999 },
           stroke: { width: 99, curve: 'zigzag' },

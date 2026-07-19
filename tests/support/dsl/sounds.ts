@@ -65,8 +65,8 @@ export class SoundsDSL {
         }
       }
 
-      (testWindow as Window & { AudioContext?: typeof AudioContext }).AudioContext = MockAudioContext;
-      (testWindow as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext = MockAudioContext;
+      (testWindow as Window & { AudioContext?: typeof AudioContext }).AudioContext = MockAudioContext as unknown as typeof AudioContext;
+      (testWindow as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext = MockAudioContext as unknown as typeof AudioContext;
     });
   }
 
