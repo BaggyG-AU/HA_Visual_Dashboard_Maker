@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Space, message, Modal, Tooltip } from 'antd';
 import { EditOutlined, DeploymentUnitOutlined, CloseOutlined } from '@ant-design/icons';
-import GridLayout, { Layout } from 'react-grid-layout';
+import GridLayout from 'react-grid-layout/legacy';
+import type { Layout } from 'react-grid-layout';
 import { View } from '../types/dashboard';
 import { generateMasonryLayout, getCardSizeConstraints } from '../utils/cardSizingContract';
 import { isLayoutCardGrid, convertLayoutCardToGridLayout } from '../utils/layoutCardParser';
@@ -13,7 +14,7 @@ interface HADashboardIframeProps {
   view: View;
   haUrl: string;
   tempDashboardPath: string | null;
-  onLayoutChange: (layout: Layout[]) => void;
+  onLayoutChange: (layout: Layout) => void;
   onDeploy: () => void;
   onClose: () => void;
 }
@@ -33,7 +34,7 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
   onClose,
 }) => {
   const [editMode, setEditMode] = useState(true);
-  const [layout, setLayout] = useState<Layout[]>([]);
+  const [layout, setLayout] = useState<Layout>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Generate layout from cards
@@ -98,7 +99,7 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
     ? `${haUrl}/${tempDashboardPath}?kiosk`
     : `${haUrl}/lovelace/0?kiosk`;
 
-  const handleLayoutChange = async (newLayout: Layout[]) => {
+  const handleLayoutChange = async (newLayout: Layout) => {
     setLayout(newLayout);
     onLayoutChange(newLayout);
 

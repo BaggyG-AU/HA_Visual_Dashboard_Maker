@@ -1,5 +1,6 @@
 import React, { useMemo, useRef } from 'react';
-import GridLayout, { Layout } from 'react-grid-layout';
+import GridLayout from 'react-grid-layout/legacy';
+import type { Layout } from 'react-grid-layout';
 import { View, Card } from '../types/dashboard';
 import { getBackgroundLayerStyle } from '../utils/backgroundStyle';
 import { BaseCard } from './BaseCard';
@@ -16,7 +17,7 @@ interface GridCanvasProps {
   selectedCardIndex: number | null;
   selectedCardIndices?: number[];
   onCardSelect: (cardIndex: number | null, options?: { mode?: 'replace' | 'toggle' | 'range' }) => void;
-  onLayoutChange: (layout: Layout[]) => void;
+  onLayoutChange: (layout: Layout) => void;
   onCardDrop?: (cardType: string, x: number, y: number) => void;
   onCardCut?: () => void;
   onCardCopy?: () => void;
@@ -30,7 +31,7 @@ interface GridCanvasProps {
 // 1. Layout-card grid (view_layout with grid positioning)
 // 2. Internal layout (custom layout property)
 // 3. Smart masonry (auto-calculated based on content)
-const generateLayout = (view: View, cards: Card[]): Layout[] => {
+const generateLayout = (view: View, cards: Card[]): Layout => {
   // Mode 1: Check if using layout-card grid system
   if (isLayoutCardGrid(view)) {
     const gridLayout = convertLayoutCardToGridLayout(view);
@@ -117,7 +118,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
     return generateLayout(view, cards);
   }, [view, cards]);
 
-  const handleLayoutChange = (newLayout: Layout[]) => {
+  const handleLayoutChange = (newLayout: Layout) => {
     onLayoutChange(newLayout);
   };
 

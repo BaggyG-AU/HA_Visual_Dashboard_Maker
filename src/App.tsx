@@ -451,7 +451,7 @@ const App: React.FC = () => {
     selectCardWithMode(selectedViewIndex, cardIndex, options?.mode ?? 'replace', currentCards.length);
   };
 
-  const handleLayoutChange = (layout: GridLayoutType[]) => {
+  const handleLayoutChange = (layout: GridLayoutType) => {
     if (!config || selectedViewIndex === null) return;
 
     // Skip this layout change if we just added a card
@@ -479,7 +479,7 @@ const App: React.FC = () => {
       }
 
       if (usingLayoutCard) {
-        const nextViewLayouts = convertGridLayoutToViewLayout(layout, 12);
+        const nextViewLayouts = convertGridLayoutToViewLayout(layout);
         return currentView.cards.some((card, index) => {
           const next = nextViewLayouts[index];
           const current = card.view_layout;
@@ -504,7 +504,7 @@ const App: React.FC = () => {
       let updatedCards;
       if (usingLayoutCard) {
         // Convert to view_layout format
-        const viewLayouts = convertGridLayoutToViewLayout(layout, 12);
+        const viewLayouts = convertGridLayoutToViewLayout(layout);
 
         updatedCards = currentView.cards.map((card, index) => {
           const viewLayout = viewLayouts[index];

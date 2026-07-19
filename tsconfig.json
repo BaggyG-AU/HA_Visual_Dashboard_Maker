@@ -14,6 +14,6 @@
     "baseUrl": ".",
     "noEmit": true
   },
-  "include": ["src", "tests"],
+  "include": ["src", "tests", "forge.env.d.ts"],
   "exclude": ["node_modules", "dist", "out", ".vite"]
 }

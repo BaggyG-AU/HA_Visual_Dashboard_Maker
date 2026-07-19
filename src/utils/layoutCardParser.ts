@@ -216,7 +216,7 @@ export const convertLayoutCardToGridLayout = (view: View): LayoutItem[] => {
  * Convert react-grid-layout back to layout-card view_layout
  */
 export const convertGridLayoutToViewLayout = (
-  layout: LayoutItem[]
+  layout: readonly LayoutItem[]
 ): Array<{ grid_column: string; grid_row: string }> => {
   return layout.map(item => {
     // Convert to CSS Grid 1-indexed positions

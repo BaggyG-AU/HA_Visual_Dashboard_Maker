@@ -33,6 +33,7 @@ export interface ViewLayout {
 // Base card configuration
 export interface BaseCard extends Phase6CardContracts {
   type: string;
+  title?: string;
   entity?: string;
   entities?: any[]; // Can be string[] or (string | EntityConfig)[]
   name?: string;

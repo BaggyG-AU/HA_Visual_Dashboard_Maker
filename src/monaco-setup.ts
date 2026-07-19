@@ -38,10 +38,11 @@ monacoGlobal.MonacoEnvironment = {
  * This enables autocomplete and validation for HA dashboard YAML files
  */
 export async function configureYamlSchema() {
-  // Dynamically import setDiagnosticsOptions from monaco-yaml
-  const { setDiagnosticsOptions } = await import('monaco-yaml');
+  // monaco-yaml v5 replaced setDiagnosticsOptions with configureMonacoYaml(monaco, options)
+  const { configureMonacoYaml } = await import('monaco-yaml');
+  const monaco = await import('monaco-editor');
 
-  setDiagnosticsOptions({
+  configureMonacoYaml(monaco, {
     enableSchemaRequest: true,
     hover: true,
     completion: true,
