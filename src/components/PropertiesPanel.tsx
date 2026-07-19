@@ -3907,7 +3907,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           name={[field.name, 'color']}
                         >
                           <ColorPickerInput
-                            testId={`gauge-pro-segment-${index}-color`}
+                            data-testid={`gauge-pro-segment-${index}-color`}
                             value={form.getFieldValue(['segments', field.name, 'color']) as string | undefined}
                             onChange={(nextColor) => {
                               form.setFieldValue(['segments', field.name, 'color'], nextColor);
@@ -4082,7 +4082,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           name={[field.name, 'color']}
                         >
                           <ColorPickerInput
-                            testId={`advanced-slider-zone-${index}-color`}
+                            data-testid={`advanced-slider-zone-${index}-color`}
                             value={form.getFieldValue(['zones', field.name, 'color']) as string | undefined}
                             onChange={(nextColor) => {
                               form.setFieldValue(['zones', field.name, 'color'], nextColor);
@@ -4250,7 +4250,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           name={[field.name, 'color']}
                         >
                           <ColorPickerInput
-                            testId={`progress-ring-${index}-color`}
+                            data-testid={`progress-ring-${index}-color`}
                             value={form.getFieldValue(['rings', field.name, 'color']) as string | undefined}
                             onChange={(nextColor) => {
                               form.setFieldValue(['rings', field.name, 'color'], nextColor);
@@ -4300,7 +4300,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                     name={[stopField.name, 'color']}
                                   >
                                     <ColorPickerInput
-                                      testId={`progress-ring-${index}-gradient-stop-${stopIndex}-color`}
+                                      data-testid={`progress-ring-${index}-gradient-stop-${stopIndex}-color`}
                                       value={form.getFieldValue(['rings', field.name, 'gradient', 'stops', stopField.name, 'color']) as string | undefined}
                                       onChange={(nextColor) => {
                                         form.setFieldValue(['rings', field.name, 'gradient', 'stops', stopField.name, 'color'], nextColor);
@@ -4357,7 +4357,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                     name={[thresholdField.name, 'color']}
                                   >
                                     <ColorPickerInput
-                                      testId={`progress-ring-${index}-threshold-${thresholdIndex}-color`}
+                                      data-testid={`progress-ring-${index}-threshold-${thresholdIndex}-color`}
                                       value={form.getFieldValue(['rings', field.name, 'thresholds', thresholdField.name, 'color']) as string | undefined}
                                       onChange={(nextColor) => {
                                         form.setFieldValue(['rings', field.name, 'thresholds', thresholdField.name, 'color'], nextColor);

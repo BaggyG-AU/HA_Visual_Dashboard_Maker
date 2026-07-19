@@ -97,7 +97,7 @@ export class ThemeService {
       ? theme.modes?.dark || {}
       : theme.modes?.light || {};
 
-    const finalVars = { ...baseVars, ...modeVars };
+    const finalVars = { ...baseVars, ...modeVars } as unknown as Record<string, string>;
 
     // Extract commonly used colors
     return {
