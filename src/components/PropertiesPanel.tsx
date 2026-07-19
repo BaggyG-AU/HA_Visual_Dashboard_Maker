@@ -41,6 +41,7 @@ import {
   toUpstreamTabbedCard,
 } from '../services/tabsService';
 import { DEFAULT_POPUP_TRIGGER_ICON, normalizePopupConfig } from '../features/popup/popupService';
+import type { PopupConfig } from '../features/popup/types';
 import {
   parseUpstreamSwipeCard,
   toUpstreamSwipeCardFromConfig,
@@ -829,13 +830,16 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         trigger_icon?: unknown;
         popup?: PopupConfigValues;
       };
-      if (typeof typed.trigger_label !== 'string' || typed.trigger_label.trim().length === 0) {
-        typed.trigger_label = 'Open Popup';
-      }
+      const triggerLabel = typeof typed.trigger_label === 'string' && typed.trigger_label.trim().length > 0
+        ? typed.trigger_label
+        : 'Open Popup';
+      typed.trigger_label = triggerLabel;
       if (typeof typed.trigger_icon !== 'string' || typed.trigger_icon.trim().length === 0) {
         typed.trigger_icon = DEFAULT_POPUP_TRIGGER_ICON;
       }
-      const popup = normalizePopupConfig(typed.popup, typed.trigger_label);
+      // PopupConfigValues is the partially-filled *form* shape (every field
+      // optional); normalizePopupConfig validates and defaults each one.
+      const popup = normalizePopupConfig(typed.popup as unknown as PopupConfig, triggerLabel);
       typed.popup = {
         ...popup,
         footer_actions: popup.footer_actions,
