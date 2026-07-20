@@ -2882,20 +2882,28 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     />
                   </Form.Item>
 
-                  <Form.Item
-                    label={<span style={{ color: 'white' }}>Custom Gap (px)</span>}
-                    name="gap"
-                    help={<span style={{ color: '#666' }}>Range: 0 to 64 pixels</span>}
-                  >
-                    <div data-testid="layout-gap-custom-field">
+                  {/* The `-field` wrapper stays OUTSIDE the Form.Item. AntD
+                      clones only the Form.Item's DIRECT child to inject
+                      value/onChange, so a wrapper placed inside binds the <div>
+                      and leaves the InputNumber unbound; rc-field-form then
+                      stores the bubbled event's raw `target.value` — a STRING —
+                      and the gap serialised to YAML as `gap: '8'` rather than
+                      `gap: 8`. The wrapper is kept (outside) because the e2e DSL
+                      locates the control through `<testid>-field`. */}
+                  <div data-testid="layout-gap-custom-field">
+                    <Form.Item
+                      label={<span style={{ color: 'white' }}>Custom Gap (px)</span>}
+                      name="gap"
+                      help={<span style={{ color: '#666' }}>Range: 0 to 64 pixels</span>}
+                    >
                       <InputNumber
                         min={0}
                         max={64}
                         style={{ width: '100%' }}
                         data-testid="layout-gap-custom"
                       />
-                    </div>
-                  </Form.Item>
+                    </Form.Item>
+                  </div>
 
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Align Items</span>}
@@ -3035,19 +3043,21 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     />
                   </Form.Item>
 
-                  <Form.Item
-                    label={<span style={{ color: 'white' }}>Custom Row Gap (px)</span>}
-                    name="row_gap"
-                  >
-                    <div data-testid="grid-row-gap-custom-field">
+                  {/* Wrapper outside the Form.Item — see the note on the stack
+                      gap field above. */}
+                  <div data-testid="grid-row-gap-custom-field">
+                    <Form.Item
+                      label={<span style={{ color: 'white' }}>Custom Row Gap (px)</span>}
+                      name="row_gap"
+                    >
                       <InputNumber
                         min={0}
                         max={64}
                         style={{ width: '100%' }}
                         data-testid="grid-row-gap-custom"
                       />
-                    </div>
-                  </Form.Item>
+                    </Form.Item>
+                  </div>
 
                   <Form.Item label={<span style={{ color: 'white' }}>Column Gap Preset</span>}>
                     <Select
@@ -3072,19 +3082,21 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     />
                   </Form.Item>
 
-                  <Form.Item
-                    label={<span style={{ color: 'white' }}>Custom Column Gap (px)</span>}
-                    name="column_gap"
-                  >
-                    <div data-testid="grid-column-gap-custom-field">
+                  {/* Wrapper outside the Form.Item — see the note on the stack
+                      gap field above. */}
+                  <div data-testid="grid-column-gap-custom-field">
+                    <Form.Item
+                      label={<span style={{ color: 'white' }}>Custom Column Gap (px)</span>}
+                      name="column_gap"
+                    >
                       <InputNumber
                         min={0}
                         max={64}
                         style={{ width: '100%' }}
                         data-testid="grid-column-gap-custom"
                       />
-                    </div>
-                  </Form.Item>
+                    </Form.Item>
+                  </div>
 
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Align Items</span>}
