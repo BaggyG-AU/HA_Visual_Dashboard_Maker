@@ -216,4 +216,23 @@ export class AppDSL {
   async expectCanUndo(expected: boolean): Promise<void> {
     await expect(this.historyDebug).toHaveAttribute('data-can-undo', expected ? '1' : '0');
   }
+
+  async expectCanRedo(expected: boolean): Promise<void> {
+    await expect(this.historyDebug).toHaveAttribute('data-can-redo', expected ? '1' : '0');
+  }
+
+  /**
+   * Current undo/redo stack depths. Use this to assert that an action which
+   * should not be undoable (e.g. selecting a card) leaves history untouched.
+   */
+  async getHistoryDepth(): Promise<{ past: number; future: number }> {
+    const past = await this.historyDebug.getAttribute('data-past-length');
+    const future = await this.historyDebug.getAttribute('data-future-length');
+    return { past: Number(past ?? 0), future: Number(future ?? 0) };
+  }
+
+  async expectHistoryDepth(expected: { past: number; future: number }): Promise<void> {
+    await expect(this.historyDebug).toHaveAttribute('data-past-length', String(expected.past));
+    await expect(this.historyDebug).toHaveAttribute('data-future-length', String(expected.future));
+  }
 }

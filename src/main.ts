@@ -765,6 +765,12 @@ const createWindow = () => {
 
   // Save window state on resize and move
   const saveWindowState = () => {
+    // The debounced save can outlive the window (resize or move, then quit
+    // within the debounce interval). Touching a destroyed BrowserWindow throws
+    // "Object has been destroyed" as an uncaught main-process exception, which
+    // Electron surfaces as a modal error dialog.
+    if (mainWindow.isDestroyed()) return;
+
     const bounds = mainWindow.getBounds();
     settingsService.setWindowState({
       x: bounds.x,
@@ -789,7 +795,18 @@ const createWindow = () => {
 
   // Save state before closing
   mainWindow.on('close', () => {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
     saveWindowState();
+  });
+
+  mainWindow.on('closed', () => {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
   });
 
   const isAutomatedTest = process.env.PLAYWRIGHT_TEST === '1' || process.env.E2E === '1';
