@@ -713,6 +713,37 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     );
   };
 
+  // Load a card into the form, clearing fields the card no longer has.
+  //
+  // antd's setFieldsValue MERGES: keys absent from the argument keep their old
+  // value. normalizeCardForForm is a spread of the card, so a fresh button card
+  // has no `name` key and a previously-typed name survived an undo forever.
+  //
+  // The stale set is computed from the LIVE form store, not from a ref tracking
+  // what was last applied here. That distinction is the whole fix: a value the
+  // user typed never passes through this helper, so a tracking ref never sees it
+  // and the stale set comes out empty. (Three earlier attempts tracked the
+  // applied keys and cleared nothing as a result.)
+  //
+  // Keys that normalizeCardForForm derives rather than copies — icon_color_mode
+  // always, plus `show`/`slides` for some card types — are present in
+  // `normalized` on every pass, so they are never treated as stale. Clearing
+  // those would make the next pass re-derive them and the
+  // form -> card -> cardToYaml -> Monaco -> parse cycle would never settle.
+  const applyCardValuesToForm = (nextCard: Card) => {
+    const normalized = normalizeCardForForm(nextCard);
+    const nextKeys = new Set(Object.keys(normalized));
+    const liveValues = form.getFieldsValue(true) as Record<string, unknown>;
+    const stale = Object.keys(liveValues).filter((key) => !nextKeys.has(key));
+
+    if (stale.length > 0) {
+      const cleared: Record<string, undefined> = {};
+      for (const key of stale) cleared[key] = undefined;
+      form.setFieldsValue(cleared);
+    }
+    form.setFieldsValue(normalized);
+  };
+
   // Helper function to normalize entities for form display
   const normalizeCardForForm = (card: Card): FormCardValues => {
     const normalized: FormCardValues = { ...(card as Record<string, unknown>) };
@@ -1234,7 +1265,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       commitVersionRef.current += 1;
       lastCommittedCardRef.current = card;
 
-      form.setFieldsValue(normalizeCardForForm(card));
+      applyCardValuesToForm(card);
       setYamlContent(cardToYaml(card));
       setUndoStack([]); // Clear undo stack when switching cards
 
@@ -1261,7 +1292,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     }
 
     isUpdatingFromYaml.current = true;
-    form.setFieldsValue(normalizeCardForForm(card));
+    applyCardValuesToForm(card);
     setYamlContent(nextYaml);
 
     const styleValue = (card as { style?: string }).style ?? '';
@@ -1272,6 +1303,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     setTimeout(() => {
       isUpdatingFromYaml.current = false;
     }, 0);
+    // applyCardValuesToForm is deliberately NOT a dependency: it is recreated on
+    // every render, so depending on it would run this effect on every render and
+    // restart the feedback loop described above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card, form]);
 
   // Clear timers on unmount

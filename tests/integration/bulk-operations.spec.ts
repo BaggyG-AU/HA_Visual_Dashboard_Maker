@@ -30,17 +30,14 @@ test.describe('Bulk Operations Integration', () => {
     }
   });
 
-  // NOTE: undo granularity is NOT the problem — that part of this test's name is a
-  // leftover from a misdiagnosis. Measured on 2026-07-20: a bulk multi-select edit
-  // records exactly ONE history entry and ONE undo restores BOTH cards on the
-  // canvas. What still fails is the assertion path: expectCardName() reads the
-  // properties form, and the form keeps showing the edited value after undo.
-  // See docs/testing/SKIPPED_TESTS_REGISTER.md for the full reason.
-  test.fixme('applies bulk property edit to selected cards and preserves undo granularity', async () => {
-    test.fixme(
-      true,
-      'Known issue: after undo the properties form still shows the edited value. antd setFieldsValue merges, so a key the reverted card no longer has is never cleared. The canvas and the undo history are both correct.',
-    );
+  // NOTE: undo granularity was never the problem — that part of this test's name
+  // is a leftover from a misdiagnosis. A bulk multi-select edit records exactly
+  // ONE history entry and ONE undo restores BOTH cards. What kept this skipped
+  // was the assertion path: expectCardName() reads the properties form, and the
+  // form kept showing the edited value after undo because antd's setFieldsValue
+  // merges. Unskipped once PropertiesPanel began clearing fields the reloaded
+  // card no longer has.
+  test('applies bulk property edit to selected cards and preserves undo granularity', async () => {
     const ctx = await launchWithDSL();
 
     try {
