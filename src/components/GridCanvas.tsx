@@ -1,6 +1,6 @@
 import React, { useMemo, useRef } from 'react';
 import GridLayout, { getCompactor } from 'react-grid-layout';
-import type { Layout } from 'react-grid-layout';
+import type { Layout, LayoutItem } from 'react-grid-layout';
 import { View, Card } from '../types/dashboard';
 import { getBackgroundLayerStyle } from '../utils/backgroundStyle';
 import { BaseCard } from './BaseCard';
@@ -57,7 +57,7 @@ interface GridCanvasProps {
     options?: { mode?: 'replace' | 'toggle' | 'range' },
   ) => void;
   onLayoutChange: (layout: Layout) => void;
-  onCardDrop?: (cardType: string, x: number, y: number) => void;
+  onCardDrop?: (cardType: string, x?: number, y?: number) => void;
   onCardCut?: () => void;
   onCardCopy?: () => void;
   onCardPaste?: () => void;
@@ -161,6 +161,28 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
     onLayoutChange(newLayout);
   };
 
+  // DRAG_THRESHOLD is 0 so that a click still selects a card, which means every
+  // click also completes a zero-distance drag and fires onDragStop. Committing
+  // that would push a junk undo entry and clear the redo stack purely from
+  // selecting a card, so ignore stops where the item did not actually move.
+  const handleDragStop = (
+    newLayout: Layout,
+    oldItem: LayoutItem | null,
+    newItem: LayoutItem | null,
+  ) => {
+    if (
+      oldItem &&
+      newItem &&
+      oldItem.x === newItem.x &&
+      oldItem.y === newItem.y &&
+      oldItem.w === newItem.w &&
+      oldItem.h === newItem.h
+    ) {
+      return;
+    }
+    onLayoutChange(newLayout);
+  };
+
   // Simple drop handler - just adds card at bottom of layout
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -174,8 +196,10 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
       const cardType = data.cardType;
       if (!cardType) return;
 
-      // Just add at 0,0 - react-grid-layout will auto-position to bottom with compactType="vertical"
-      onCardDrop(cardType, 0, 0);
+      // No explicit position: let the caller place the card below existing
+      // content, matching where the vertical compactor renders it. Passing
+      // (0, 0) here instead would store a position the grid never uses.
+      onCardDrop(cardType);
     } catch (error) {
       logger.warn('Failed to parse drop data', error);
     }
@@ -245,7 +269,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         layout={layout}
         width={1200}
         gridConfig={GRID_CONFIG}
-        onDragStop={handleLayoutChange}
+        onDragStop={handleDragStop}
         onResizeStop={handleLayoutChange}
         dragConfig={{ enabled: true, cancel: '.swiper', threshold: DRAG_THRESHOLD }}
         resizeConfig={{ enabled: true }}

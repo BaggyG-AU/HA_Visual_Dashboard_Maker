@@ -140,6 +140,19 @@ const isTestEnv = (): boolean => {
   return false;
 };
 
+// Row immediately below all existing cards, in grid units. Used to place cards
+// added from the palette, which arrive without coordinates.
+const nextFreeRow = (cards: Card[]): number =>
+  cards.reduce((bottom, card) => {
+    const layout = (card as CardWithInternalLayout).layout;
+    if (layout) {
+      return Math.max(bottom, layout.y + layout.h);
+    }
+    const gridRowEnd = card.view_layout?.grid_row?.split('/')[1];
+    const end = gridRowEnd ? Number.parseInt(gridRowEnd.trim(), 10) : Number.NaN;
+    return Number.isFinite(end) ? Math.max(bottom, end - 1) : bottom;
+  }, 0);
+
 const App: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
   const ignoreNextLayoutChangeRef = useRef<boolean>(false);
@@ -648,7 +661,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleCardAdd = (cardType: string, gridX = 0, gridY = 0) => {
+  const handleCardAdd = (cardType: string, gridX?: number, gridY?: number) => {
     if (!config) {
       message.warning('Please load a dashboard first');
       return;
@@ -671,22 +684,31 @@ const App: React.FC = () => {
       ...(cardMetadata.defaultProps as Record<string, unknown>),
     } as CardWithInternalLayout;
     const constraints = getCardSizeConstraints(baseCard);
-    const usingLayoutCard = isLayoutCardGrid(config.views[selectedViewIndex]);
+    const currentView = config.views[selectedViewIndex];
+    const usingLayoutCard = isLayoutCardGrid(currentView);
+
+    // Palette adds arrive without coordinates. Defaulting them to (0, 0) stacks
+    // every card at the origin, so the stored layout disagrees with what the
+    // vertical compactor actually renders — and the next drag stop then persists
+    // that difference as an undoable edit. Place the card where the compactor
+    // would put it instead.
+    const x = gridX ?? 0;
+    const y = gridY ?? nextFreeRow(currentView.cards || []);
 
     // Create new card with default properties and size it to constraints
     const newCard: CardWithInternalLayout = {
       ...baseCard,
       layout: {
-        x: gridX,
-        y: gridY,
+        x,
+        y,
         w: constraints.w,
         h: constraints.h,
       },
     };
     if (usingLayoutCard) {
       newCard.view_layout = {
-        grid_column: `${gridX + 1} / ${gridX + constraints.w + 1}`,
-        grid_row: `${gridY + 1} / ${gridY + constraints.h + 1}`,
+        grid_column: `${x + 1} / ${x + constraints.w + 1}`,
+        grid_row: `${y + 1} / ${y + constraints.h + 1}`,
       };
     }
 
@@ -696,7 +718,6 @@ const App: React.FC = () => {
     }
 
     // Update the config — immutable view/cards to ensure useMemo detects the change
-    const currentView = config.views[selectedViewIndex];
     const updatedCards = [...(currentView.cards || []), newCard];
     const updatedViews = config.views.map((view, i) =>
       i === selectedViewIndex ? { ...view, cards: updatedCards } : view,
@@ -710,10 +731,10 @@ const App: React.FC = () => {
     // Select the newly added card
     setSelectedCard(selectedViewIndex, updatedCards.length - 1);
 
-    message.success(`Added ${cardMetadata.name} card at (${gridX}, ${gridY})`);
+    message.success(`Added ${cardMetadata.name} card at (${x}, ${y})`);
   };
 
-  const handleCardDrop = (cardType: string, x: number, y: number) => {
+  const handleCardDrop = (cardType: string, x?: number, y?: number) => {
     handleCardAdd(cardType, x, y);
   };
 
