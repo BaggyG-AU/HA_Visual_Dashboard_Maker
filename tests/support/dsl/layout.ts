@@ -10,34 +10,90 @@ export class LayoutDSL {
     return cardIndex === 0 ? cards.first() : cards.nth(cardIndex);
   }
 
-  private getVisibleSelectDropdown() {
-    return this.window.locator('.ant-select-dropdown:visible').last();
+  /**
+   * The per-Select open/closed signal.
+   *
+   * AntD renders a hidden `input[role="combobox"]` inside the Select field whose
+   * `aria-expanded` tracks its own dropdown. That is the only handle observed to
+   * bind a dropdown to *its* Select — see the notes on `selectOptionByText` for
+   * the alternatives that were measured and rejected.
+   */
+  private getCombobox(select: Locator): Locator {
+    return select.locator('input[role="combobox"]').first();
   }
 
-  private async waitForAllSelectDropdownsToClose(): Promise<void> {
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
-      timeout: 5000,
-    });
+  private async isDropdownOpen(select: Locator): Promise<boolean> {
+    const expanded = await this.getCombobox(select)
+      .getAttribute('aria-expanded')
+      .catch(() => null);
+    return expanded === 'true';
   }
 
-  private async openSelectDropdown(select: Locator): Promise<void> {
-    await expect(select).toBeVisible({ timeout: 5000 });
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        await select.click();
-        const dropdown = this.getVisibleSelectDropdown();
-        const visible = await dropdown.isVisible().catch(() => false);
-        if (visible) return;
-      } catch (error) {
-        if (attempt === 1) throw error;
-      }
-      await this.window.keyboard.press('Escape').catch(() => undefined);
+  private async waitForDropdownState(select: Locator, open: boolean, timeout = 5000) {
+    await expect(this.getCombobox(select)).toHaveAttribute(
+      'aria-expanded',
+      open ? 'true' : 'false',
+      { timeout },
+    );
+
+    if (!open) {
+      // `aria-expanded` flips as soon as AntD commits the state change, while the
+      // portal is still playing its leave animation and still intercepting
+      // pointer events. Returning on the attribute alone hands control back
+      // mid-animation and the caller's next click races the closing overlay, so
+      // wait for the portal to actually be gone as well.
+      await expect(
+        this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)'),
+      ).toHaveCount(0, { timeout });
     }
+  }
 
-    // AntD select trigger can be briefly obscured by a transient portal during animation;
-    // use force only as a final fallback after normal click + escape retry.
-    await select.click({ force: true });
-    await expect(this.getVisibleSelectDropdown()).toBeVisible({ timeout: 5000 });
+  /**
+   * Open `select`'s dropdown and return the dropdown locator.
+   *
+   * The previous implementation probed the freshly-portalled dropdown with
+   * `isVisible()`, which returns false *immediately* for a node that is not in
+   * the DOM yet (the documented rule in TESTING_STANDARDS.md). The dropdown was
+   * measured taking ~370ms to mount, position and settle, so that probe lost the
+   * race under load, and the "recovery" — Escape then click again — toggled the
+   * now-open dropdown back shut. That produced both observed failures: the
+   * dropdown ending up closed, and the option locator going unmatchable
+   * mid-call. Waiting on `aria-expanded` removes the race and the false recovery.
+   */
+  private async openSelectDropdown(select: Locator): Promise<Locator> {
+    await expect(select).toBeVisible({ timeout: 5000 });
+
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        if (!(await this.isDropdownOpen(select))) {
+          await select.click({ timeout: 5000 });
+        }
+        await this.waitForDropdownState(select, true, 3000);
+        return this.getOpenDropdown();
+      } catch (error) {
+        lastError = error;
+        // Reset to a known-closed state before retrying so the next click opens
+        // rather than toggles.
+        await this.window.keyboard.press('Escape').catch(() => undefined);
+        await this.waitForDropdownState(select, false, 2000).catch(() => undefined);
+      }
+    }
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('Failed to open Ant Design select dropdown');
+  }
+
+  /**
+   * Matches on the `ant-select-dropdown-hidden` class rather than Playwright's
+   * `:visible`. While the dropdown animates open AntD parks it off-screen at
+   * `inset: -1000vh auto auto -1000vw`; `:visible` is a layout predicate and
+   * flips as that position changes, so a locator carrying `:visible` can stop
+   * matching between one call and the next. The class is the state AntD actually
+   * sets when it closes a dropdown.
+   */
+  private getOpenDropdown(): Locator {
+    return this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
   }
 
   private getInputNumberInput(testId: string): Locator {
@@ -50,17 +106,44 @@ export class LayoutDSL {
     return byWrapper.or(byDirect).first();
   }
 
-  private async selectOptionByText(pattern: RegExp): Promise<void> {
-    await expect(this.getVisibleSelectDropdown()).toBeVisible({ timeout: 5000 });
-    const option = this.window
-      .locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: pattern })
-      .first();
-    await expect(option).toBeVisible({ timeout: 5000 });
-    await option.evaluate((el) => {
-      (el as HTMLElement).click();
-    });
-    await this.window.keyboard.press('Escape').catch(() => undefined);
-    await this.waitForAllSelectDropdownsToClose();
+  /**
+   * Open `select` and pick the option matching `pattern`.
+   *
+   * Options are matched on `.ant-select-item-option`, deliberately not by role.
+   * AntD mirrors the option list into a 0x0 `overflow:hidden` element for
+   * assistive tech, and that mirror is virtualised — with five options only
+   * three carry `role="option"`, none of them are inside `.ant-select-dropdown`,
+   * and none are visible. `getByRole('option')` therefore matches an incomplete
+   * set of unclickable nodes.
+   */
+  private async selectOptionByText(select: Locator, pattern: RegExp): Promise<void> {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const dropdown = await this.openSelectDropdown(select);
+        const option = dropdown.locator('.ant-select-item-option').filter({ hasText: pattern });
+        await expect(option.first()).toBeVisible({ timeout: 5000 });
+
+        // A real click auto-waits for actionability, so it rides out the open
+        // animation instead of firing a synthetic event into a widget that is
+        // still parked off-screen and mid-motion.
+        await option.first().click({ timeout: 5000 });
+
+        // AntD closes a single-value Select on pick; that close is the signal the
+        // click was actually received by the component, not just dispatched.
+        await this.waitForDropdownState(select, false, 5000);
+        return;
+      } catch (error) {
+        lastError = error;
+        await this.window.keyboard.press('Escape').catch(() => undefined);
+        await this.waitForDropdownState(select, false, 2000).catch(() => undefined);
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error(`Failed to select Ant Design option matching ${pattern}`);
   }
 
   private async addLayoutCard(
@@ -110,8 +193,7 @@ export class LayoutDSL {
       return;
     }
 
-    await this.openSelectDropdown(presetSelect);
-    await this.selectOptionByText(new RegExp(`^${valueOrPreset}`, 'i'));
+    await this.selectOptionByText(presetSelect, new RegExp(`^${valueOrPreset}`, 'i'));
   }
 
   async setGridRowGap(valueOrPreset: LayoutGapInput): Promise<void> {
@@ -130,8 +212,7 @@ export class LayoutDSL {
       return;
     }
 
-    await this.openSelectDropdown(presetSelect);
-    await this.selectOptionByText(new RegExp(`^${valueOrPreset}`, 'i'));
+    await this.selectOptionByText(presetSelect, new RegExp(`^${valueOrPreset}`, 'i'));
   }
 
   async setGridColumnGap(valueOrPreset: LayoutGapInput): Promise<void> {
@@ -150,18 +231,21 @@ export class LayoutDSL {
       return;
     }
 
-    await this.openSelectDropdown(presetSelect);
-    await this.selectOptionByText(new RegExp(`^${valueOrPreset}`, 'i'));
+    await this.selectOptionByText(presetSelect, new RegExp(`^${valueOrPreset}`, 'i'));
   }
 
   async setAlignItems(value: 'start' | 'center' | 'end' | 'stretch' | 'baseline'): Promise<void> {
-    const stackSelect = this.window.getByTestId('layout-align-items');
-    const gridSelect = this.window.getByTestId('grid-align-items');
-    const select = (await stackSelect.isVisible().catch(() => false)) ? stackSelect : gridSelect;
+    // Stack and grid cards expose different test ids for the same control. `.or()`
+    // resolves to whichever is present and still auto-waits; the previous
+    // `isVisible()` probe resolved false the instant the panel had not re-rendered
+    // yet and silently picked the control belonging to the other card type.
+    const select = this.window
+      .getByTestId('layout-align-items')
+      .or(this.window.getByTestId('grid-align-items'))
+      .first();
 
     await expect(select).toBeVisible();
-    await this.openSelectDropdown(select);
-    await this.selectOptionByText(new RegExp(`^${value}$`, 'i'));
+    await this.selectOptionByText(select, new RegExp(`^${value}$`, 'i'));
   }
 
   async setJustifyContent(
@@ -169,25 +253,22 @@ export class LayoutDSL {
   ): Promise<void> {
     const select = this.window.getByTestId('layout-justify-content');
     await expect(select).toBeVisible();
-    await this.openSelectDropdown(select);
     const label = value
       .split('-')
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(' ');
-    await this.selectOptionByText(new RegExp(`^${label}$`, 'i'));
+    await this.selectOptionByText(select, new RegExp(`^${label}$`, 'i'));
   }
 
   async setJustifyItems(value: 'start' | 'center' | 'end' | 'stretch'): Promise<void> {
     const select = this.window.getByTestId('grid-justify-items');
     await expect(select).toBeVisible();
-    await this.openSelectDropdown(select);
-    await this.selectOptionByText(new RegExp(`^${value}$`, 'i'));
+    await this.selectOptionByText(select, new RegExp(`^${value}$`, 'i'));
   }
 
   async setWrap(mode: 'nowrap' | 'wrap' | 'wrap-reverse'): Promise<void> {
     const select = this.window.getByTestId('layout-wrap');
     await expect(select).toBeVisible();
-    await this.openSelectDropdown(select);
     const label =
       mode === 'nowrap'
         ? 'No Wrap'
@@ -195,7 +276,7 @@ export class LayoutDSL {
             .split('-')
             .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
             .join(' ');
-    await this.selectOptionByText(new RegExp(`^${label}$`, 'i'));
+    await this.selectOptionByText(select, new RegExp(`^${label}$`, 'i'));
   }
 
   async expectGapApplied(

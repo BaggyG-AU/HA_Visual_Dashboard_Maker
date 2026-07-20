@@ -388,6 +388,35 @@ export class YamlEditorDSL {
   }
 
   /**
+   * Read the editor once it reflects `expected`, and return the content.
+   *
+   * PropertiesPanel debounces YAML serialisation (250ms) and the history commit
+   * (800ms) after a form change. Reading straight after the last edit therefore
+   * races that pipeline: the document may still hold the previous value, and if
+   * the commit re-renders the panel while the YAML tab is mounting, Monaco can
+   * be absent entirely for several seconds. Both states are transient, so poll
+   * rather than taking a single sample. Pass the value written by the *last*
+   * edit — each flush serialises the whole form, so its arrival means every
+   * earlier edit is present too.
+   */
+  async waitForEditorContent(
+    expected: string | RegExp,
+    options: { timeout?: number; scopeHint?: YamlEditorScope } = {},
+  ): Promise<string> {
+    const { timeout = 15000, scopeHint = 'auto' } = options;
+    const matches = (value: string) =>
+      typeof expected === 'string' ? value.includes(expected) : expected.test(value);
+
+    await expect
+      .poll(async () => matches(await this.getEditorContent(scopeHint).catch(() => '')), {
+        timeout,
+      })
+      .toBe(true);
+
+    return this.getEditorContent(scopeHint);
+  }
+
+  /**
    * Set Monaco editor content (properties panel or modal)
    */
   async setEditorContent(
