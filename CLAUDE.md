@@ -3,9 +3,11 @@
 Project-specific guidance for Claude Code sessions on **HAVDM** (Home Assistant
 Visual Dashboard Maker — Electron + React + TypeScript desktop app).
 
-- Immutable project rules live in [`ai_rules.md`](ai_rules.md).
+- Immutable project rules live in [`ai_rules.md`](ai_rules.md) — note **§11
+  Persistent Memory Policy** and **§12 Workflow State Reporting**, both MANDATORY.
 - The active refresh roadmap is [`docs/refresh/PROJECT_REFRESH_PLAN_2026-07.md`](docs/refresh/PROJECT_REFRESH_PLAN_2026-07.md).
 - Governance framework: [`docs/governance/`](docs/governance/).
+- MemPalace operational detail: [`docs/governance/MEMPALACE_PROTOCOL.md`](docs/governance/MEMPALACE_PROTOCOL.md).
 
 ---
 
@@ -13,13 +15,19 @@ Visual Dashboard Maker — Electron + React + TypeScript desktop app).
 
 HAVDM has a persistent MemPalace memory registered over MCP (server `mempalace`,
 wing **`havdm`**, palace `~/.mempalace/palace`). When the `mcp__mempalace__*`
-tools are available in the session, **use them actively** — MemPalace is the
-source of truth for dev-cycle context. The local `MEMORY.md` auto-memory is the
-bootstrap-only fallback for when MCP is unavailable.
+tools are available, **use them actively** — per [`ai_rules.md`](ai_rules.md) §11
+MemPalace is authoritative for dev-cycle context, and `MEMORY.md` is a
+bootstrap-only fallback with **no duplication** between the two.
 
 > If the tools are **not** present, MCP hasn't loaded — reload the VS Code window
 > (`Ctrl+Shift+P` → _Developer: Reload Window_) and approve the project MCP
 > server. Config: `.mcp.json` + `mempalace.yaml` at repo root (both gitignored).
+
+> **If reads work but writes are refused**, your server is latched read-only
+> because another Claude Code window claimed the palace writer lease first.
+> Retrying will never succeed — reload the window to restart the server. Do not
+> set `MEMPALACE_MCP_ALLOW_PEER_WRITER`. See
+> [`MEMPALACE_PROTOCOL.md`](docs/governance/MEMPALACE_PROTOCOL.md) §5.1.
 
 ### On session start
 
@@ -41,7 +49,13 @@ bootstrap-only fallback for when MCP is unavailable.
 
 ### During the session — file these automatically, at the moment they crystallise
 
-Don't wait to be asked. Save:
+Don't wait to be asked. An event earns a drawer if it is **Decision-class** (a
+judgment future work must respect), **Transition-class** (a state boundary — phase
+open/close, PR opened or merged, session wrap), or **Investigation-class** (a root
+cause and its fix). The test is not "is this interesting" but **"would the next
+agent make a worse decision without it?"**
+
+Save:
 
 - **`[DECISION]`** — any judgment future work must respect (architecture choices,
   spec approvals/rejections with reasons, instructions that change how we work).
@@ -57,7 +71,7 @@ Don't wait to be asked. Save:
 Use `wing="havdm"` on every `mempalace_add_drawer` call, and start the `content`
 with the archetype tag, e.g. `content="[DECISION] Node baseline → Node 22 LTS …"`.
 
-### Two disciplines
+### Three disciplines
 
 - **Supersede, don't delete.** For `[DECISION]` / `[PATTERN]` / `[INVESTIGATION]`,
   file a new drawer that cites and overrides the old one rather than editing
@@ -66,6 +80,16 @@ with the archetype tag, e.g. `content="[DECISION] Node baseline → Node 22 LTS 
   `mempalace_diary_write` entry** summarising the change — diary entries surface
   immediately via `diary_read` even when semantic ranking misses the new drawer.
   (`[STATE]` bookkeeping via `update_drawer` does not need a diary entry.)
+- **Write drawers fully self-contained.** Expand every reference **every time** it
+  appears — drawer IDs, PR numbers, file paths, prior decisions. Drawers are
+  retrieved one at a time by semantic search, so there is no "first use" and no
+  guarantee a sibling drawer is read alongside. "Superseded by the rgl drawer" is
+  useless six weeks on; "superseded by `drawer_havdm_investigations_2b33744e…`
+  (react-grid-layout v2 composable-API migration)" is not.
+
+Close every significant response with the **Workflow State block** required by
+[`ai_rules.md`](ai_rules.md) §12 — its `MemPalace drawer` field is what makes this
+cadence auditable rather than aspirational.
 
 ### Filing examples
 

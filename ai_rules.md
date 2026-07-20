@@ -307,3 +307,52 @@ Interim Exception:
 
 Reference:
 `docs/features/HACS_CARD_ALIGNMENT_REFACTOR_PLAN.md`
+
+---
+
+# 11) Persistent Memory Policy (MANDATORY)
+
+At session start, call `mempalace_status`.
+
+**If MemPalace responds:** all persistent memory — decisions, investigations, patterns, project state, governance clarifications — goes to MemPalace via `mempalace_add_drawer` / `mempalace_checkpoint`. **Do not write it to local memory files.**
+
+**If MemPalace is unavailable** (tools absent, or the server is read-only — see `docs/governance/MEMPALACE_PROTOCOL.md`): fall back to local memory files, and say so explicitly in the response.
+
+**No duplication between the two stores.** When MemPalace is live, `MEMORY.md` and any other local memory file are bootstrap-only: they exist to orient an agent before MemPalace is reachable. They are not authoritative and must not be treated as current if MemPalace holds the same content.
+
+Agents without MemPalace access satisfy this rule via the fallback path, and surface drawer-candidate notes in their PR body for a MemPalace-enabled agent to file.
+
+Why this rule exists: local memory files cannot be updated mid-session by MCP and silently drift from the palace. Two stores holding the same fact means one of them is wrong and nobody knows which.
+
+Reference: `docs/governance/MEMPALACE_PROTOCOL.md`
+
+---
+
+# 12) Workflow State Reporting (MANDATORY)
+
+Every response that completes a significant action — a slice, a fix, a review, an investigation, a governance change, a PR transition — **must end with a Workflow State block**, verbatim, after all other content.
+
+```
+---
+## Workflow State
+
+| Field | Value |
+|---|---|
+| **Task** | <what was being worked on> |
+| **Status** | In Progress / Complete / Blocked |
+| **Just completed** | <one sentence> |
+| **Next action** | <one sentence; if Blocked, the blocker instead> |
+| **Performed by** | User / Claude / CI |
+| **Reference** | `<path to the relevant doc, spec, or PR>` |
+| **Verification** | <gates run + result, or "none — not a code change"> |
+| **MemPalace drawer** | `<drawer_id>` or `N/A — not a cadence checkpoint` |
+```
+
+Rules:
+
+- All eight fields are **required** — no empty cells.
+- **"Performed by"** names who executes the _next_ action, not who is speaking.
+- **"Verification"** must state what was actually run and what it returned. Never write a gate as passing without having run it.
+- **"MemPalace drawer"** names the drawer filed for this action per the save cadence in `CLAUDE.md`. `N/A — not a cadence checkpoint` is a valid answer; silently omitting the field is not.
+
+Why the block is the enforcement anchor: a save cadence documented only as guidance gets skipped under time pressure. Requiring the drawer ID at response-close makes compliance visible in the transcript — the one place both the user and the next agent reliably look.
