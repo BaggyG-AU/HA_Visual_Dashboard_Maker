@@ -81,7 +81,6 @@ export class GradientEditorDSL {
     } catch {
       // best-effort only
     }
-    // eslint-disable-next-line no-console
     console.log('[gradient preset diagnostics]', body);
   }
 
@@ -570,7 +569,6 @@ export class GradientEditorDSL {
     } catch {
       // best-effort only
     }
-    // eslint-disable-next-line no-console
     console.log('[gradient focus diagnostics]', body);
   }
 

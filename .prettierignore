@@ -1,0 +1,15 @@
+node_modules/
+out/
+dist/
+.vite/
+coverage/
+test-results/
+package-lock.json
+
+# Playwright snapshot fixtures — byte-compared, must not be reformatted.
+**/*-snapshots/
+**/*.snap
+
+# Generated / vendored
+*.min.js
+*.min.css

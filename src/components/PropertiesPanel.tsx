@@ -1158,7 +1158,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     setTimeout(() => {
       isUpdatingFromYaml.current = false;
     }, 0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card, form]);
 
   // Clear timers on unmount

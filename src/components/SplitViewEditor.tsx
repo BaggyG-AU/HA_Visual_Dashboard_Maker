@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, Space, Tooltip, message } from 'antd';
 import { CheckOutlined, RollbackOutlined, SyncOutlined } from '@ant-design/icons';
-// eslint-disable-next-line import/namespace
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 import { GridCanvas } from './GridCanvas';

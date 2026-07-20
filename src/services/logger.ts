@@ -43,7 +43,6 @@ const logAt = (level: LoggingLevel, method: ConsoleMethod, args: unknown[]) => {
   if (weights[level] === 0) return;
   if (weights[level] <= weights[currentLevel]) {
     const safeArgs = args.map(redact);
-    // eslint-disable-next-line no-console
     (console[method] ?? console.log)(...safeArgs);
   }
 };

@@ -767,7 +767,6 @@ export class ColorPickerDSL {
         contentType: 'application/json',
       });
     }
-    // eslint-disable-next-line no-console
     console.log(`[colorPicker diagnostics] ${body}`);
   }
 

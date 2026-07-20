@@ -394,7 +394,10 @@ test.describe('Credentials Service Integration', () => {
       exports: mockElectron,
     } as NodeModule;
     delete require.cache[credentialsModulePath];
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // Deliberate require: the module is re-required after cache invalidation so
+    // it picks up the mocked electron. (@typescript-eslint 8 renamed the rule
+    // suppressed here from no-var-requires to no-require-imports.)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     credentialsService = require('../../src/services/credentialsService').credentialsService;
   };
 

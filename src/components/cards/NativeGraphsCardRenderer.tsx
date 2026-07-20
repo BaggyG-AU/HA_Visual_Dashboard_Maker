@@ -31,7 +31,6 @@ class NativeGraphsErrorBoundary extends React.Component<
       componentStack: errorInfo.componentStack,
     });
     // Keep explicit logging so Playwright traces capture renderer exceptions.
-    // eslint-disable-next-line no-console
     console.error('[NativeGraphsCardRenderer] render error:', {
       message: error.message,
       stack: error.stack,

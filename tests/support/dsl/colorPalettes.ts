@@ -15,7 +15,6 @@ export class ColorPalettesDSL {
     const diagnostics = await this.window.evaluate((tid) => {
       const ids = Array.from(document.querySelectorAll<HTMLElement>('[data-testid]')).map((el) => el.getAttribute('data-testid'));
       const text = (document.querySelector(`[data-testid="${tid}"]`) as HTMLElement | null)?.innerText || '';
-      // eslint-disable-next-line no-console
       console.log('[color-palettes diagnostics]', { ids, containerText: text.slice(0, 300) });
       return { ids, containerText: text.slice(0, 300) };
     }, testId);

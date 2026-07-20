@@ -7,9 +7,7 @@
  * Import this file BEFORE any Monaco editor usage in your app.
  */
 
-// eslint-disable-next-line import/no-unresolved
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-// eslint-disable-next-line import/no-unresolved
 import YamlWorker from 'monaco-yaml/yaml.worker?worker';
 import dashboardSchema from './schemas/ha-dashboard-schema.json';
 

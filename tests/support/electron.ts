@@ -130,7 +130,6 @@ async function findMainWindow(app: ElectronApplication, timeoutMs = 15000): Prom
   }
 
   const { artifactPath, diagnostics } = await captureLaunchDiagnostics(app, start, timeoutMs);
-  // eslint-disable-next-line no-console
   console.error('[electron launch] main window not found', JSON.stringify({
     artifactPath,
     elapsedMs: diagnostics.elapsedMs,
@@ -210,10 +209,8 @@ export async function launch(): Promise<ElectronTestContext> {
           : null
       };
     });
-    // eslint-disable-next-line no-console
     console.log('[electron launch] window info', JSON.stringify(info));
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.log('[electron launch] diagnostics failed', String(err));
   }
 

@@ -13,7 +13,6 @@ export const debugEnabled = isDebugEnabled;
 
 export function debugLog(message: string, ...optionalParams: unknown[]): void {
   if (!isDebugEnabled()) return;
-  // eslint-disable-next-line no-console
   console.log(message, ...optionalParams);
 }
 
@@ -30,7 +29,6 @@ export async function attachDebug(
   await testInfo.attach(safeName, { body, contentType });
 
   if (shouldConsole) {
-    // eslint-disable-next-line no-console
     console.log(`[debug] attached: ${safeName}`);
   }
 }
