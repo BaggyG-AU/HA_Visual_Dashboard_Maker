@@ -144,6 +144,12 @@ baseline is shown to be stable in that worktree too. Matches the known
 - **e2e flakiness**: fix the antd-Select detach in `tests/support/dsl/layout.ts`
   (`selectOptionByText`) so results stop depending on working-copy speed. This is
   the prerequisite for making Playwright a blocking check.
-- Phase 7: the bulk multi-select undo-granularity `test.fixme` in
-  `tests/integration/bulk-operations.spec.ts` is still registered despite a
-  commit claiming it was fixed.
+- Phase 7 bulk-edit `test.fixme` in `tests/integration/bulk-operations.spec.ts`:
+  **this note was wrong on both counts** (corrected Jul 20, 2026). No commit ever
+  claimed a fix (`f17be4d`'s "tie off" meant _documented_), and undo granularity
+  was never broken — bulk edits already record exactly one history entry and one
+  undo already restores every edited card. The real defect is that the properties
+  form keeps a stale value after undo, because antd's `form.setFieldsValue` merges
+  and never clears a key the reverted card no longer has. The test remains skipped:
+  a fix attempt reintroduced React error #185 in the YAML->Form flow and was
+  reverted. See `SKIPPED_TESTS_REGISTER.md`.
