@@ -8,9 +8,9 @@
 
 ## Quick Reference
 
-**Total Features**: 53 features (45 advanced features + 8 existing feature alignment)
-**Timeline**: 22-24 weeks (5.5-6 months)
-**Phases**: 7 dependency-based phases + 1 alignment phase
+**Total Features**: 59 features (51 advanced features + 8 existing feature alignment)
+**Timeline**: 25-28 weeks (6.25-7 months)
+**Phases**: 8 dependency-based phases + 1 alignment phase
 **Current Baseline**: v0.7.5-beta.10 (Phase 5 delivery consolidation)
 **Production Release**: v1.0.0 (All phases complete)
 
@@ -180,6 +180,22 @@ For Phase 5+ implementation and prompt artifacts:
 
 ---
 
+### Phase 8: Bubble Card Popup Alignment (2-3 weeks)
+**Dependencies**: Phase 4 (Popup/Modal Card System), HACS Card Alignment Refactor (R2-R4)
+**Features**: 6
+
+1. Bubble Card Type Alignment - 3-4 days
+2. Hash-Based Trigger System - 2-3 days
+3. Structural Model Conversion (nested ↔ sibling) - 4-5 days
+4. Property Mapping & HAVDM Extensions - 3-4 days
+5. Import Detection & Conversion - 3-4 days
+6. Testing & Documentation - 2-3 days
+
+**Deliverables**: Upstream-aligned popup using Bubble Card (`custom:bubble-card` + `card_type: pop-up`)
+**Release**: TBD (assigned when phase is activated)
+
+---
+
 ### Existing Feature Alignment (2-3 weeks)
 **Dependencies**: Concurrent with phases
 **Features**: 8
@@ -228,7 +244,7 @@ Each phase complete when:
 
 ### v1.0.0 Success (Production-Ready)
 
-- ✅ All 7 phases complete
+- ✅ All 8 phases complete
 - ✅ Existing feature alignment complete
 - ✅ Comprehensive test suite (unit + E2E + visual + accessibility)
 - ✅ Production-ready performance and stability

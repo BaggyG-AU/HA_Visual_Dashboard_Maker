@@ -361,6 +361,110 @@
 
 ---
 
+## Phase 8: Bubble Card Popup Alignment (2-3 weeks)
+
+**Phase Status**: :hourglass: Planned (not yet activated)
+
+**Dependencies**: Phase 4 (Popup/Modal Card System), HACS Card Alignment Refactor (R2-R4 complete)
+**Goal**: Replace HAVDM-only `custom:popup-card` with upstream Bubble Card (`custom:bubble-card` + `card_type: pop-up`) alignment
+
+### Background
+
+Phase 4 delivered a `custom:popup-card` as a HAVDM-only implementation. Per the HACS Card Alignment Rule (`ai_rules.md` §10), all custom card types should map to real upstream HACS cards. Research identified [Bubble Card](https://github.com/Clooos/Bubble-Card) (3.9k GitHub stars, actively maintained) as the community-standard popup solution for Home Assistant.
+
+### Architectural Challenge
+
+Bubble Card popups have a fundamentally different model from HAVDM's current implementation:
+
+| Aspect | HAVDM Current | Bubble Card Upstream |
+|--------|--------------|---------------------|
+| Card type | `custom:popup-card` | `custom:bubble-card` + `card_type: pop-up` |
+| Child cards | Nested in `popup.cards[]` | Sibling cards in same `vertical-stack` |
+| Trigger | Programmatic (action-based) | Hash navigation (`#popup-name`) |
+| Size control | `size: small/medium/large/fullscreen/custom` | `width_desktop`, `margin_top_mobile/desktop` |
+| Close behavior | `close_on_backdrop`, `footer_actions` | `auto_close`, `close_on_click`, `close_by_clicking_outside` |
+
+### Features (6 total)
+
+1. **Bubble Card Type Alignment** - 3-4 days
+   - Change internal type from `custom:popup-card` to `custom:bubble-card` with `card_type: pop-up`
+   - Map HAVDM popup properties to Bubble Card equivalents
+   - Update card registry, type definitions, and normalizer service
+   - Preserve editor UX (HAVDM presents popups as a logical container)
+
+2. **Hash-Based Trigger System** - 2-3 days
+   - Auto-generate `hash` property from popup title (e.g., title "Kitchen" → `hash: '#kitchen'`)
+   - Allow manual hash override in properties panel
+   - Map HAVDM action-based triggers to Bubble Card `navigate` actions on export
+   - Support `trigger_entity` / `trigger_state` for entity-based popup opening
+
+3. **Structural Model Conversion** - 4-5 days
+   - Convert HAVDM nested model (`popup.cards[]`) to Bubble Card sibling model (vertical-stack) on export
+   - Convert Bubble Card vertical-stack popup pattern to HAVDM nested model on import
+   - Detect Bubble Card popup pattern: vertical-stack where first card is `custom:bubble-card` with `card_type: pop-up`
+   - Integrate with `yamlConversionService.ts` (R7)
+
+4. **Property Mapping & HAVDM Extensions** - 3-4 days
+   - Map Bubble Card properties: `auto_close`, `close_on_click`, `close_by_clicking_outside`, `bg_color`, `bg_opacity`, `bg_blur`, `width_desktop`, `margin_top_mobile`, `margin_top_desktop`
+   - Document HAVDM-only properties that will be stripped on export: `size` presets, `footer_actions`, `backdrop_opacity` (fine-grained), `custom_size`
+   - Preserve `show_header` mapping to Bubble Card `show_header`
+
+5. **Import Detection & Conversion** - 3-4 days
+   - Detect Bubble Card popup vertical-stack pattern during YAML import
+   - Extract popup configuration from first card in stack
+   - Convert sibling cards to nested `popup.cards[]` for HAVDM internal model
+   - Handle edge cases: empty popups, popups with separators, nested containers
+
+6. **Testing & Documentation** - 2-3 days
+   - Unit tests for all conversion functions (import, export, legacy migration)
+   - Round-trip YAML verification: `export(import(bubbleCardYAML)) ≈ bubbleCardYAML`
+   - Update HACS alignment documentation
+   - Update R5 prompt file from "HAVDM-only documentation" to "Bubble Card alignment"
+
+### Upstream YAML Reference
+
+```yaml
+# Bubble Card popup — upstream format
+type: vertical-stack
+cards:
+  - type: custom:bubble-card
+    card_type: pop-up
+    hash: '#kitchen'
+    name: Kitchen
+    icon: mdi:fridge
+    entity: light.kitchen
+    show_header: true
+    auto_close: 15000
+    close_by_clicking_outside: true
+    bg_color: var(--primary-background-color)
+    bg_opacity: 0.85
+    bg_blur: 10
+    width_desktop: 600px
+    margin_top_mobile: 18px
+    margin_top_desktop: 74px
+  - type: entities
+    entities:
+      - light.kitchen
+      - sensor.kitchen_temperature
+  - type: custom:bubble-card
+    card_type: button
+    entity: light.kitchen_countertop
+```
+
+### Risk Assessment
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Bubble Card is a multi-feature card (`card_type` sub-types) — not a focused popup card | Medium | Only align the `pop-up` card_type; other Bubble Card features are out of scope |
+| Structural conversion complexity (nested ↔ sibling) | High | Thorough round-trip testing; handle edge cases in conversion service |
+| Trigger model mismatch (programmatic vs hash navigation) | Medium | Document as known limitation; HAVDM editor can support both models internally |
+| Bubble Card API changes in future versions | Low | Pin to current schema; unknown property passthrough for forward compatibility |
+
+**Deliverables**: Upstream-aligned popup card with bidirectional YAML conversion
+**Release**: TBD (to be assigned version when phase is activated)
+
+---
+
 ## Existing Feature Alignment
 
 ### Features Needing Updates (8 total)
@@ -426,10 +530,11 @@
 | Phase 5 | 4-5 weeks | 9 | High |
 | Phase 6 | 2-3 weeks | 5 | High |
 | Phase 7 | 3-4 weeks | 8 | High |
+| Phase 8 | 2-3 weeks | 6 | Medium-High |
 | Alignment | 2-3 weeks | 8 | Medium |
-| **Total** | **20-28 weeks** | **54** | - |
+| **Total** | **22-31 weeks** | **60** | - |
 
-**Realistic Estimate**: 23-25 weeks (5.75-6.25 months) accounting for iterations and unforeseen issues
+**Realistic Estimate**: 25-28 weeks (6.25-7 months) accounting for iterations and unforeseen issues
 
 ---
 
