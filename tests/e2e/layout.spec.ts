@@ -187,7 +187,9 @@ test.describe('Layout Enhancements', () => {
       await layout.setWrap('wrap');
 
       await properties.switchTab('YAML');
-      const yamlText = await yamlEditor.getEditorContent();
+      // `wrap` is the last edit above, so its arrival means the debounced
+      // serialisation has flushed every preceding one.
+      const yamlText = await yamlEditor.waitForEditorContent('wrap: wrap');
 
       expect(yamlText).toContain('type: horizontal-stack');
       expect(yamlText).toContain('gap: 8');

@@ -21,6 +21,13 @@ jobs:
         run: npm ci
       - name: Lint
         run: npm run lint
+      # Prettier was applied across the codebase in the 2026-07 refresh (4e66a49)
+      # and `format:check` has been clean since. Gating it keeps it that way.
+      # Note tests/fixtures/ is deliberately in .prettierignore: those files are
+      # DATA that tests assert on as exact text, so reformatting them would
+      # silently change what the assertions verify while still passing.
+      - name: Format check
+        run: npm run format:check
       # Blocking as of the 2026-07 refresh: the type-debt burndown took
       # `npm run typecheck` from 279 errors to 0, with strictNullChecks on.
       # Keep it at 0 — while it was unenforced, a dependency bump (antd v5 -> v6,
