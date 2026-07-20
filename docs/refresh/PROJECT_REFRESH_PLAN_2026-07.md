@@ -58,7 +58,7 @@ Findings from probing the WSL environment on this newly-cloned machine:
 ### 3.3 Testing (strong approach, no coverage gate)
 
 - DSL-first, two-runner split: **Vitest** (~61 unit specs), **Playwright** `electron-e2e` (61 specs incl. paired `*.visual.spec.ts` visual-regression with committed PNG baselines) + `electron-integration` (13 specs). **39 DSL classes** in `tests/support/dsl/`, one per feature. ~28k test LOC. Good discipline, documented standards (`TESTING_STANDARDS.md`, `PLAYWRIGHT_TESTING.md`).
-- **Gaps:** no coverage tooling/threshold despite an aspirational "95% for new code" bar; **4 active skips** tracked in `SKIPPED_TESTS_REGISTER.md`, including a **`test.fixme` for bulk-edit undo granularity** — the Slice C/D commit _claims_ to have tied this off but the fixme remains. **⚠ Verify whether the undo-granularity gap is actually closed.**
+- **Gaps:** no coverage tooling/threshold despite an aspirational "95% for new code" bar; **4 active skips** tracked in `SKIPPED_TESTS_REGISTER.md`, including a **`test.fixme` on the bulk-edit test**. _(Investigated Jul 20, 2026. The suspicion recorded here was doubly wrong: the Slice C/D commit never claimed a fix — "tie off" meant documented — and undo granularity was never broken. Bulk edits already record one history entry and one undo already restores every edited card. The real defect is a stale properties form after undo; a fix attempt destabilised the panel's YAML feedback cycle and was reverted. See `SKIPPED_TESTS_REGISTER.md`.)_
 
 ### 3.4 CI / tooling (weak gate, drift)
 
