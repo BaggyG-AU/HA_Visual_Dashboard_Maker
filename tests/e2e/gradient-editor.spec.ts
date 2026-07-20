@@ -82,13 +82,16 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
 
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
       expect(value.toLowerCase()).toContain('linear-gradient(120deg, #ff5858 0%, #f09819 100%)');
 
       const updatedYaml = yamlEditor.updateCardStyleBackground(
         value,
-        'radial-gradient(circle at center, #111111 0%, #222222 100%)'
+        'radial-gradient(circle at center, #111111 0%, #222222 100%)',
       );
       await yamlEditor.setEditorContent(updatedYaml, 'properties', testInfo);
 
@@ -96,13 +99,16 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
       const gradientInput = ctx.window.getByTestId('advanced-style-gradient-input');
       await expect(gradientInput).toBeVisible({ timeout: 5000 });
       const gradientValue = await gradientInput.inputValue();
-      // eslint-disable-next-line no-console
       console.log('[gradient] input value after yaml:', gradientValue);
-      await expect.poll(async () => {
-        return ((await gradientInput.inputValue()) || '').includes('radial-gradient');
-      }, { timeout: 8000 }).toBe(true);
+      await expect
+        .poll(
+          async () => {
+            return ((await gradientInput.inputValue()) || '').includes('radial-gradient');
+          },
+          { timeout: 8000 },
+        )
+        .toBe(true);
       const cssOutput = await gradientEditor.getCssOutput();
-      // eslint-disable-next-line no-console
       console.log('[gradient] css output:', cssOutput);
       await gradientEditor.expectType('radial');
     } finally {
@@ -112,7 +118,8 @@ test.describe('Gradient Editor - PropertiesPanel Integration', () => {
 
   test('gradient editor works on multiple card types', async () => {
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, gradientEditor, backgroundCustomizer } = ctx;
+    const { appDSL, dashboard, palette, canvas, properties, gradientEditor, backgroundCustomizer } =
+      ctx;
 
     try {
       await appDSL.waitUntilReady();

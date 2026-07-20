@@ -3,7 +3,8 @@ import { expect, Locator, Page } from '@playwright/test';
 type SpacingPreset = 'none' | 'tight' | 'normal' | 'relaxed' | 'spacious' | 'custom';
 type SpacingMode = 'all' | 'per-side';
 type SpacingSide = 'top' | 'right' | 'bottom' | 'left';
-type SpacingInput = SpacingPreset | number | { top?: number; right?: number; bottom?: number; left?: number };
+type SpacingInput =
+  SpacingPreset | number | { top?: number; right?: number; bottom?: number; left?: number };
 
 const PRESET_TO_VALUE: Record<Exclude<SpacingPreset, 'custom'>, number> = {
   none: 0,
@@ -26,7 +27,9 @@ export class SpacingDSL {
   }
 
   private async waitForAllSelectDropdownsToClose(): Promise<void> {
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+      timeout: 5000,
+    });
   }
 
   private async openSelectDropdown(select: Locator): Promise<void> {
@@ -49,7 +52,9 @@ export class SpacingDSL {
 
   private async selectOptionByText(pattern: RegExp): Promise<void> {
     await expect(this.getVisibleSelectDropdown()).toBeVisible({ timeout: 5000 });
-    const option = this.window.locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: pattern }).first();
+    const option = this.window
+      .locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: pattern })
+      .first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.evaluate((el) => {
       (el as HTMLElement).click();
@@ -61,7 +66,10 @@ export class SpacingDSL {
   private getInputNumberInput(testId: string): Locator {
     const wrapper = this.window.getByTestId(`${testId}-field`);
     const byWrapper = wrapper.locator('input.ant-input-number-input').first();
-    const byDirect = this.window.getByTestId(testId).locator('input.ant-input-number-input').first();
+    const byDirect = this.window
+      .getByTestId(testId)
+      .locator('input.ant-input-number-input')
+      .first();
     return byWrapper.or(byDirect).first();
   }
 
@@ -71,19 +79,30 @@ export class SpacingDSL {
     await input.press('Control+A').catch(() => undefined);
     await input.type(String(value), { delay: 20 });
     await input.blur();
-    await expect.poll(async () => {
-      const raw = await input.inputValue();
-      const parsed = Number(raw);
-      return Number.isFinite(parsed) ? parsed : NaN;
-    }, { timeout: 1200 }).toBe(value);
+    await expect
+      .poll(
+        async () => {
+          const raw = await input.inputValue();
+          const parsed = Number(raw);
+          return Number.isFinite(parsed) ? parsed : NaN;
+        },
+        { timeout: 1200 },
+      )
+      .toBe(value);
   }
 
-  private async setAllSpacing(testIdPrefix: 'spacing-margin' | 'spacing-padding', value: number): Promise<void> {
+  private async setAllSpacing(
+    testIdPrefix: 'spacing-margin' | 'spacing-padding',
+    value: number,
+  ): Promise<void> {
     const input = this.getInputNumberInput(`${testIdPrefix}-all`);
     await this.setInputNumberValue(input, value);
   }
 
-  private async setPreset(testIdPrefix: 'spacing-margin' | 'spacing-padding', preset: SpacingPreset): Promise<void> {
+  private async setPreset(
+    testIdPrefix: 'spacing-margin' | 'spacing-padding',
+    preset: SpacingPreset,
+  ): Promise<void> {
     const select = this.window.getByTestId(`${testIdPrefix}-preset`);
     await expect(select).toBeVisible();
     await this.openSelectDropdown(select);
@@ -187,15 +206,23 @@ export class SpacingDSL {
   }
 
   async expectCardMarginApplied(expected: SpacingInput, cardIndex = 0): Promise<void> {
-    const card = this.getCard(cardIndex).locator('[data-testid="conditional-visibility-wrapper"]').first();
+    const card = this.getCard(cardIndex)
+      .locator('[data-testid="conditional-visibility-wrapper"]')
+      .first();
     const normalizedExpected = this.normalizeExpected(expected);
-    await expect.poll(async () => await card.evaluate((el) => getComputedStyle(el as HTMLElement).margin)).toBe(normalizedExpected);
+    await expect
+      .poll(async () => await card.evaluate((el) => getComputedStyle(el as HTMLElement).margin))
+      .toBe(normalizedExpected);
   }
 
   async expectCardPaddingApplied(expected: SpacingInput, cardIndex = 0): Promise<void> {
-    const card = this.getCard(cardIndex).locator('[data-testid="conditional-visibility-wrapper"]').first();
+    const card = this.getCard(cardIndex)
+      .locator('[data-testid="conditional-visibility-wrapper"]')
+      .first();
     const normalizedExpected = this.normalizeExpected(expected);
-    await expect.poll(async () => await card.evaluate((el) => getComputedStyle(el as HTMLElement).padding)).toBe(normalizedExpected);
+    await expect
+      .poll(async () => await card.evaluate((el) => getComputedStyle(el as HTMLElement).padding))
+      .toBe(normalizedExpected);
   }
 
   async expectSpacingScreenshot(name: string, cardIndex = 0): Promise<void> {

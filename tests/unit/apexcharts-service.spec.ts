@@ -59,7 +59,10 @@ describe('apexchartsService', () => {
       makeCard({
         graph_span: 'xyz',
         update_interval: 'abc',
-        series: [{ entity: '   ' }, { entity: 'sensor.humidity', type: 'invalid-type' }] as unknown as ApexChartsCardConfig['series'],
+        series: [
+          { entity: '   ' },
+          { entity: 'sensor.humidity', type: 'invalid-type' },
+        ] as unknown as ApexChartsCardConfig['series'],
         apex_config: {
           chart: { type: 'radialBar', height: 9999 },
           stroke: { width: 99, curve: 'zigzag' },
@@ -78,8 +81,16 @@ describe('apexchartsService', () => {
 
   it('builds deterministic preview data for a series', () => {
     const normalized = normalizeApexChartsCardConfig(makeCard());
-    const first = buildDeterministicSeriesData(normalized.series[0], normalized.graph_span_seconds, 1_700_000_000_000);
-    const second = buildDeterministicSeriesData(normalized.series[0], normalized.graph_span_seconds, 1_700_000_000_000);
+    const first = buildDeterministicSeriesData(
+      normalized.series[0],
+      normalized.graph_span_seconds,
+      1_700_000_000_000,
+    );
+    const second = buildDeterministicSeriesData(
+      normalized.series[0],
+      normalized.graph_span_seconds,
+      1_700_000_000_000,
+    );
 
     expect(first).toEqual(second);
     expect(first.length).toBeGreaterThan(10);

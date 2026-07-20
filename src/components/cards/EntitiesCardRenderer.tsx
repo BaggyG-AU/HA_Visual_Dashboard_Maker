@@ -28,12 +28,17 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
 }) => {
   const resolveContext = useEntityContextResolver();
   const defaultEntityId = Array.isArray(card.entities)
-    ? (typeof card.entities[0] === 'string' ? card.entities[0] : card.entities[0]?.entity)
+    ? typeof card.entities[0] === 'string'
+      ? card.entities[0]
+      : card.entities[0]?.entity
     : null;
   const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId ?? null) : '';
   const resolvedName = card.name ? resolveContext(card.name, defaultEntityId ?? null) : '';
   const title = (card.title ? resolvedTitle : '') || (card.name ? resolvedName : '') || 'Entities';
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   // Get live entity states (if available)
   const { entities, getEntity, isLoading } = useHAEntities();
@@ -73,12 +78,15 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
       size="small"
       title={
         card.title ? (
-          <div style={{
-            fontSize: '16px',
-            fontWeight: 500,
-            color: '#e1e1e1',
-            padding: '0',
-          }} data-testid="entities-card-title">
+          <div
+            style={{
+              fontSize: '16px',
+              fontWeight: 500,
+              color: '#e1e1e1',
+              padding: '0',
+            }}
+            data-testid="entities-card-title"
+          >
             {title}
           </div>
         ) : undefined
@@ -98,11 +106,11 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
       }}
       styles={{
         body: {
-        padding: '0 16px 12px 16px',
-        paddingTop: card.title ? '0' : '12px',
-        height: card.title ? 'calc(100% - 40px)' : '100%',
-        overflowY: 'auto',
-      },
+          padding: '0 16px 12px 16px',
+          paddingTop: card.title ? '0' : '12px',
+          height: card.title ? 'calc(100% - 40px)' : '100%',
+          overflowY: 'auto',
+        },
       }}
       onClick={onClick}
       hoverable
@@ -110,14 +118,14 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
         {visibleEntities.slice(0, 10).map((entity, idx) => {
           const entityId = getEntityId(entity);
-          const rawNameValue = typeof entity === 'object' && entity !== null && 'name' in entity
-            ? (entity as { name?: unknown }).name
-            : '';
+          const rawNameValue =
+            typeof entity === 'object' && entity !== null && 'name' in entity
+              ? (entity as { name?: unknown }).name
+              : '';
           const rawName = typeof rawNameValue === 'string' ? rawNameValue : '';
-          const entityName =
-            rawName
-              ? resolveContext(rawName, entityId)
-              : entityId.split('.')[1]?.replace(/_/g, ' ');
+          const entityName = rawName
+            ? resolveContext(rawName, entityId)
+            : entityId.split('.')[1]?.replace(/_/g, ' ');
 
           // Get live state from HA
           const entityState = getEntity(entityId);
@@ -129,8 +137,13 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
             stateIcons: card.state_icons,
             entityAttributes: entityState?.attributes,
           });
-          const iconColor = resolved.color
-            || (state === 'on' ? '#52c41a' : state === 'unavailable' || state === 'unknown' ? '#ff5252' : '#9e9e9e');
+          const iconColor =
+            resolved.color ||
+            (state === 'on'
+              ? '#52c41a'
+              : state === 'unavailable' || state === 'unknown'
+                ? '#ff5252'
+                : '#9e9e9e');
 
           // Get unit of measurement from attributes
           const unit = entityState?.attributes?.unit_of_measurement || '';
@@ -146,11 +159,22 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
                 minHeight: '40px',
                 padding: '0 8px',
                 gap: '12px',
-                borderBottom: idx < Math.min(visibleEntities.length, 10) - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                borderBottom:
+                  idx < Math.min(visibleEntities.length, 10) - 1
+                    ? '1px solid rgba(255,255,255,0.05)'
+                    : 'none',
               }}
               data-testid={`entities-card-row-${entityId.replace(/[^a-zA-Z0-9_-]/g, '-')}`}
             >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflow: 'hidden' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                  flex: 1,
+                  overflow: 'hidden',
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <MdiIcon
                     icon={resolved.icon}
@@ -180,12 +204,14 @@ export const EntitiesCardRenderer: React.FC<EntitiesCardRendererProps> = ({
                   />
                 )}
               </div>
-              <Text style={{
-                color: state === 'unavailable' || state === 'unknown' ? '#ff5252' : '#9e9e9e',
-                fontSize: '14px',
-                flexShrink: 0,
-                fontWeight: state === 'on' ? 500 : 400,
-              }}>
+              <Text
+                style={{
+                  color: state === 'unavailable' || state === 'unknown' ? '#ff5252' : '#9e9e9e',
+                  fontSize: '14px',
+                  flexShrink: 0,
+                  fontWeight: state === 'on' ? 500 : 400,
+                }}
+              >
                 {displayValue}
               </Text>
             </div>

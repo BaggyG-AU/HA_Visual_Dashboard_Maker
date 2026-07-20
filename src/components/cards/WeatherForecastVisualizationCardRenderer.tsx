@@ -8,9 +8,8 @@ interface WeatherForecastVisualizationCardRendererProps {
   onClick?: () => void;
 }
 
-export const WeatherForecastVisualizationCardRenderer: React.FC<WeatherForecastVisualizationCardRendererProps> = ({
-  card,
-  isSelected = false,
-  onClick,
-}) => <WeatherForecastVisualizationCard card={card} isSelected={isSelected} onClick={onClick} />;
-
+export const WeatherForecastVisualizationCardRenderer: React.FC<
+  WeatherForecastVisualizationCardRendererProps
+> = ({ card, isSelected = false, onClick }) => (
+  <WeatherForecastVisualizationCard card={card} isSelected={isSelected} onClick={onClick} />
+);

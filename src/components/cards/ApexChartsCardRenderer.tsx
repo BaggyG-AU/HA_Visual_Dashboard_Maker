@@ -76,7 +76,8 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
     if (normalized.series.length === 0) {
       return {
         ok: false,
-        fallback: 'No valid Apex series configured. Add at least one series entity in Form or YAML.',
+        fallback:
+          'No valid Apex series configured. Add at least one series entity in Form or YAML.',
       } as const;
     }
 
@@ -111,7 +112,9 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
         theme: {
           mode: 'dark',
         },
-        colors: normalized.series.map((entry, idx) => entry.color || DEFAULT_COLORS[idx % DEFAULT_COLORS.length]),
+        colors: normalized.series.map(
+          (entry, idx) => entry.color || DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
+        ),
         stroke: {
           ...normalized.apex_config.stroke,
         },

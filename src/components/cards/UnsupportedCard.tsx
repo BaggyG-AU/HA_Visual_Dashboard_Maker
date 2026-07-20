@@ -46,15 +46,15 @@ export const UnsupportedCard: React.FC<UnsupportedCardProps> = ({
       }}
       styles={{
         body: {
-        padding: '12px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        height: 'calc(100% - 40px)', // Account for header
-        overflow: 'hidden',
-      },
+          padding: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          height: 'calc(100% - 40px)', // Account for header
+          overflow: 'hidden',
+        },
       }}
       onClick={onClick}
       hoverable

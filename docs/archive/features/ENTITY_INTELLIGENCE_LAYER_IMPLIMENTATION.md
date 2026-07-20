@@ -17,6 +17,7 @@
 **Business Value**: This phase significantly improves dashboard intelligence by reducing manual configuration, enabling automatic entity remapping for imported dashboards, providing rich context variables for templating, and supporting advanced entity state visualization. These features make dashboards more dynamic, easier to configure, and more powerful for Home Assistant integration.
 
 **Key Principles**:
+
 - **Smart Defaults**: System intelligently determines appropriate actions based on entity domain
 - **Context Awareness**: Entity state, attributes, and metadata available as template variables
 - **Fuzzy Matching**: Intelligent entity remapping suggestions for dashboard imports
@@ -27,15 +28,15 @@
 
 ## Feature Status Overview
 
-| Feature | Priority | Effort | Status |
-|---------|----------|--------|--------|
-| 3.1: Smart Default Actions | High | 4-5 days | ✅ Complete |
-| 3.2: Entity Context Variables | High | 5-6 days | ⏳ Ready to Begin |
-| 3.3: Entity Remapping (Fuzzy Matching) | Medium | 6-7 days | ⏳ Ready to Begin |
-| 3.4: Entity Attribute Display | Medium | 3-4 days | ✅ Complete (2026-02-04) |
-| 3.5: Conditional Entity Visibility | High | 4-5 days | ⏳ Ready to Begin |
-| 3.6: Entity State Icons | Medium | 3-4 days | ✅ Complete (2026-02-05) |
-| 3.7: Multi-entity Support | High | 4-5 days | ✅ Complete (2026-02-05) |
+| Feature                                | Priority | Effort   | Status                   |
+| -------------------------------------- | -------- | -------- | ------------------------ |
+| 3.1: Smart Default Actions             | High     | 4-5 days | ✅ Complete              |
+| 3.2: Entity Context Variables          | High     | 5-6 days | ⏳ Ready to Begin        |
+| 3.3: Entity Remapping (Fuzzy Matching) | Medium   | 6-7 days | ⏳ Ready to Begin        |
+| 3.4: Entity Attribute Display          | Medium   | 3-4 days | ✅ Complete (2026-02-04) |
+| 3.5: Conditional Entity Visibility     | High     | 4-5 days | ⏳ Ready to Begin        |
+| 3.6: Entity State Icons                | Medium   | 3-4 days | ✅ Complete (2026-02-05) |
+| 3.7: Multi-entity Support              | High     | 4-5 days | ✅ Complete (2026-02-05) |
 
 **Total Estimated Effort**: 29-35 days (3-4 weeks with parallel work on independent features)
 
@@ -113,6 +114,7 @@
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [x] Smart default actions work for all common domains (switch, light, sensor, climate, etc.)
 - [x] User-defined actions always take precedence over smart defaults
 - [x] `smart_defaults` setting persists in YAML correctly
@@ -121,27 +123,30 @@
 - [x] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [x] PropertiesPanel shows preview of what action will be used
 - [x] Tooltips explain what smart default action will be applied
 - [ ] Settings page allows customizing default actions per domain (global override)
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Smart defaults for hold_action or double_tap_action (future)
 - [ ] AI-learned action preferences based on user behavior
 - [ ] Domain-specific action customization per dashboard
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Smart defaults conflict with user expectations | Medium | Medium | Clear UI indication, easy override, user testing |
-| Domain detection fails for custom entities | Low | Low | Fallback to `more-info`, allow manual domain specification |
-| Existing dashboards break on upgrade | High | Low | Migration strategy: default to `smart_defaults: false` for existing cards |
-| Performance impact from action resolution | Low | Low | Cache computed actions, optimize lookup |
+| Risk                                           | Impact | Probability | Mitigation                                                                |
+| ---------------------------------------------- | ------ | ----------- | ------------------------------------------------------------------------- |
+| Smart defaults conflict with user expectations | Medium | Medium      | Clear UI indication, easy override, user testing                          |
+| Domain detection fails for custom entities     | Low    | Low         | Fallback to `more-info`, allow manual domain specification                |
+| Existing dashboards break on upgrade           | High   | Low         | Migration strategy: default to `smart_defaults: false` for existing cards |
+| Performance impact from action resolution      | Low    | Low         | Cache computed actions, optimize lookup                                   |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Read before implementation, centralized action resolution logic
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first E2E tests using SmartActionsDSL
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Service in `src/services/smartActions.ts`
@@ -149,7 +154,7 @@ This feature MUST comply with:
 
 ### Delivered Implementation Notes (2026-01-14)
 
-- Scope: Smart default action *resolution + UI + YAML round-trip* for `button` and `custom:button-card` only (as per Feature 3.1 acceptance and current app support).
+- Scope: Smart default action _resolution + UI + YAML round-trip_ for `button` and `custom:button-card` only (as per Feature 3.1 acceptance and current app support).
 - Back-compat:
   - If `smart_defaults` is **missing** and `tap_action` is not explicitly set, legacy behavior is preserved for `button` + `custom:button-card` (toggle).
   - New cards default to `smart_defaults: true` for `button` + `custom:button-card`.
@@ -158,6 +163,7 @@ This feature MUST comply with:
 ### Verification (2026-01-14)
 
 Commands executed in this repo:
+
 - `npm run lint` (0 errors; warnings only)
 - `npm run test:unit` (all unit tests passing)
 - `npx playwright test --project=electron-integration --shard 2/2 --reporter=list --workers=1 --trace=retain-on-failure` (passing)
@@ -248,14 +254,15 @@ Note: Additional full-suite verification was also run by the maintainer and repo
 ### Examples
 
 ```yaml
-title: "Battery: [[entity.attributes.battery]]%"
-name: "[[entity.friendly_name]]: [[entity.state|upper]]"
-content: "Room: [[light.living_room.state]] | [[light.bedroom.state]]"
+title: 'Battery: [[entity.attributes.battery]]%'
+name: '[[entity.friendly_name]]: [[entity.state|upper]]'
+content: 'Room: [[light.living_room.state]] | [[light.bedroom.state]]'
 ```
 
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [x] Context variables work in all text fields (title, content, labels)
 - [x] Basic properties supported: state, friendly_name, entity_id, domain
 - [x] Attribute access works: `[[entity.attributes.X]]`
@@ -265,28 +272,31 @@ content: "Room: [[light.living_room.state]] | [[light.bedroom.state]]"
 - [ ] All unit and E2E tests pass (pending verification)
 
 **Should Have (Nice to Have)**:
+
 - [x] Monaco editor autocomplete for context variables
 - [x] Syntax highlighting for variables
 - [x] PropertiesPanel preview shows resolved values
 - [x] Formatting functions (upper, lower, round, default)
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Full Jinja2 template support (Phase 6)
 - [ ] Complex logic (if/else, loops) (Phase 6)
 - [ ] Cross-entity calculations (Phase 6)
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Performance impact from real-time resolution | Medium | Medium | Debounce updates, cache resolved values, optimize parser |
-| Syntax conflicts with existing YAML | Low | Low | Choose unique delimiter (`[[...]]`), escape handling |
-| Infinite loops with circular references | Low | Low | Detect circular refs, limit recursion depth |
-| Entity state not available at render time | Medium | Low | Graceful fallback, loading state indication |
+| Risk                                         | Impact | Probability | Mitigation                                               |
+| -------------------------------------------- | ------ | ----------- | -------------------------------------------------------- |
+| Performance impact from real-time resolution | Medium | Medium      | Debounce updates, cache resolved values, optimize parser |
+| Syntax conflicts with existing YAML          | Low    | Low         | Choose unique delimiter (`[[...]]`), escape handling     |
+| Infinite loops with circular references      | Low    | Low         | Detect circular refs, limit recursion depth              |
+| Entity state not available at render time    | Medium | Low         | Graceful fallback, loading state indication              |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Read before implementation, centralized template resolution
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first tests using EntityContextDSL
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Service in `src/services/entityContext.ts`
@@ -297,31 +307,32 @@ This feature MUST comply with:
 **Phases 1-2 (Parser + Resolution)**  
 Delivered: template parsing and resolution, entity reference handling, formatting filters, graceful fallback.  
 Files/systems: `src/services/entityContext.ts`, `src/types/entityContext.ts`, `src/hooks/useEntityContext.ts`.  
-Verification: unit tests added (see `tests/unit/entityContext.spec.ts`).  
+Verification: unit tests added (see `tests/unit/entityContext.spec.ts`).
 
 **Phase 3 (Integration)**  
 Delivered: context resolution in card renderers and PropertiesPanel previews; live updates via HA entity context.  
 Files/systems: card renderers under `src/components/cards/**`, `src/components/PropertiesPanel.tsx`, `src/contexts/HAEntityContext.tsx`.  
-Verification: E2E test added (see `tests/e2e/entity-context.spec.ts`).  
+Verification: E2E test added (see `tests/e2e/entity-context.spec.ts`).
 
 **Phase 4 (YAML + Monaco)**  
 Delivered: Monaco autocomplete suggestions and inline token highlighting; missing-entity warnings in PropertiesPanel previews.  
 Files/systems: `src/components/YamlEditor.tsx`, `src/index.css`.  
-Verification: covered by E2E YAML flow in `tests/e2e/entity-context.spec.ts`.  
+Verification: covered by E2E YAML flow in `tests/e2e/entity-context.spec.ts`.
 
 **Phase 5 (Advanced Templates)**  
 Delivered: multi-entity templates and formatting filters (`upper`, `lower`, `round`, `default`).  
 Files/systems: `src/services/entityContext.ts`.  
-Verification: unit coverage in `tests/unit/entityContext.spec.ts`.  
+Verification: unit coverage in `tests/unit/entityContext.spec.ts`.
 
 **Phase 6 (Testing + Docs)**  
 Delivered: EntityContextDSL + E2E test; updated docs and help text for variable usage.  
 Files/systems: `tests/support/dsl/entityContext.ts`, `tests/support/index.ts`, `tests/e2e/entity-context.spec.ts`, this doc section.  
-Verification: see Verification section below.  
+Verification: see Verification section below.
 
 ### Verification (2026-01-14)
 
 Not run by AI in this workspace. Suggested commands:
+
 - `npm run test:unit`
 - `npx playwright test tests/e2e/entity-context.spec.ts --project=electron-e2e --reporter=list --workers=1 --trace=retain-on-failure`
 
@@ -417,6 +428,7 @@ Not run by AI in this workspace. Suggested commands:
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [x] Dashboard import detects missing entities
 - [x] Fuzzy matching provides relevant suggestions (>70% accuracy)
 - [x] Remapping modal allows manual entity selection
@@ -427,12 +439,14 @@ Not run by AI in this workspace. Suggested commands:
 - [x] All unit and E2E tests pass (new tests added; execution pending in this workspace)
 
 **Should Have (Nice to Have)**:
+
 - [ ] Confidence score displayed for each suggestion
 - [ ] Preview of entity state/attributes before mapping
 - [ ] Batch mapping (map multiple similar entities at once)
 - [ ] Export/import mapping configurations
 
 **Won't Have (Out of Scope)**:
+
 - [ ] AI-powered mapping based on entity usage patterns
 - [ ] Cloud-based mapping suggestions from community
 - [ ] Automatic entity discovery from HA API (Phase 7)
@@ -446,16 +460,17 @@ Not run by AI in this workspace. Suggested commands:
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Fuzzy matching accuracy too low | High | Medium | Multiple algorithms, user can override, confidence threshold |
-| Large dashboards have many missing entities (UX) | Medium | Medium | Pagination in modal, batch operations, auto-map option |
-| Entity replacement breaks templates | High | Low | Comprehensive YAML parsing, test with complex dashboards |
-| Saved mappings become stale | Low | Medium | Allow user to clear/edit mappings, show mapping age |
+| Risk                                             | Impact | Probability | Mitigation                                                   |
+| ------------------------------------------------ | ------ | ----------- | ------------------------------------------------------------ |
+| Fuzzy matching accuracy too low                  | High   | Medium      | Multiple algorithms, user can override, confidence threshold |
+| Large dashboards have many missing entities (UX) | Medium | Medium      | Pagination in modal, batch operations, auto-map option       |
+| Entity replacement breaks templates              | High   | Low         | Comprehensive YAML parsing, test with complex dashboards     |
+| Saved mappings become stale                      | Low    | Medium      | Allow user to clear/edit mappings, show mapping age          |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Read before implementation, centralized entity resolution
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first tests using EntityRemappingDSL
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Service in `src/services/entityRemapping.ts`, modal in `src/components/`
@@ -505,17 +520,17 @@ This feature MUST comply with:
   entity: sensor.temperature
   attribute_display:
     - attribute: battery
-      label: "Battery"
+      label: 'Battery'
       format:
         type: number
         precision: 0
-        unit: "%"
+        unit: '%'
     - attribute: temperature
-      label: "Temp"
+      label: 'Temp'
       format:
         type: number
         precision: 1
-        unit: "°C"
+        unit: '°C'
   attribute_display_layout: table
   ```
 - [x] Serialize/deserialize attribute config
@@ -546,6 +561,7 @@ This feature MUST comply with:
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [x] User can select which attributes to display
 - [x] Attributes display in card with proper formatting
 - [x] Numeric formatting (precision, units) works
@@ -556,6 +572,7 @@ This feature MUST comply with:
 - [x] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [x] Drag-and-drop to reorder attributes
 - [x] Attribute grouping (battery, climate, etc.)
 
@@ -568,21 +585,23 @@ This feature MUST comply with:
 - [x] Layout options (inline, stacked, table)
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Custom attribute icons (Phase 6)
 - [ ] Attribute-based styling (Phase 6)
 - [ ] Attribute history charts (Phase 5)
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Attribute names differ across entity types | Low | High | Show all available attributes dynamically, allow custom labels |
-| Formatting options too complex | Medium | Medium | Provide smart defaults, simple UI, advanced mode for power users |
-| Performance with many attributes | Low | Low | Limit max attributes per card, optimize rendering |
+| Risk                                       | Impact | Probability | Mitigation                                                       |
+| ------------------------------------------ | ------ | ----------- | ---------------------------------------------------------------- |
+| Attribute names differ across entity types | Low    | High        | Show all available attributes dynamically, allow custom labels   |
+| Formatting options too complex             | Medium | Medium      | Provide smart defaults, simple UI, advanced mode for power users |
+| Performance with many attributes           | Low    | Low         | Limit max attributes per card, optimize rendering                |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Read before implementation, centralized formatting logic
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first tests using AttributeDisplayDSL
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Formatter in `src/services/attributeFormatter.ts`
@@ -593,25 +612,27 @@ This feature MUST comply with:
 **Phase 1-2 (UI + Formatter)**  
 Delivered: AttributeDisplayControls in PropertiesPanel with multi-select, drag-drop reorder, layout selector, and previews. Formatter service with numeric/boolean/string/timestamp/json support.  
 Files/systems: `src/components/AttributeDisplayControls.tsx`, `src/services/attributeFormatter.ts`, `src/types/attributeDisplay.ts`.  
-Verification: unit tests in `tests/unit/attributeFormatter.spec.ts`.  
+Verification: unit tests in `tests/unit/attributeFormatter.spec.ts`.
 
 **Phase 3 (YAML Storage)**  
 Delivered: `attribute_display` and `attribute_display_layout` schema support and persistence through existing YAML serialization.  
-Files/systems: `src/schemas/ha-dashboard-schema.json`, `src/types/dashboard.ts`.  
+Files/systems: `src/schemas/ha-dashboard-schema.json`, `src/types/dashboard.ts`.
 
 **Phase 4 (Card Rendering + Live Updates)**  
 Delivered: AttributeDisplay component with inline/stacked/table layouts integrated into button, sensor, light, and entities card renderers; updates reactively with HA entity changes.  
-Files/systems: `src/components/AttributeDisplay.tsx`, `src/components/cards/ButtonCardRenderer.tsx`, `src/components/cards/SensorCardRenderer.tsx`, `src/components/cards/LightCardRenderer.tsx`, `src/components/cards/EntitiesCardRenderer.tsx`.  
+Files/systems: `src/components/AttributeDisplay.tsx`, `src/components/cards/ButtonCardRenderer.tsx`, `src/components/cards/SensorCardRenderer.tsx`, `src/components/cards/LightCardRenderer.tsx`, `src/components/cards/EntitiesCardRenderer.tsx`.
 
 **Phase 5 (Testing + Docs)**  
 Delivered: AttributeDisplayDSL and E2E coverage including formatting, layout, reorder, persistence, and real-time updates; documentation updated in this feature doc.  
-Files/systems: `tests/support/dsl/attributeDisplay.ts`, `tests/support/index.ts`, `tests/e2e/attribute-display.spec.ts`.  
+Files/systems: `tests/support/dsl/attributeDisplay.ts`, `tests/support/index.ts`, `tests/e2e/attribute-display.spec.ts`.
 
 ### Verification (2026-02-04)
 
 Not run in this workspace yet. Suggested commands:
+
 - `npm run test:unit`
 - `npx playwright test tests/e2e/attribute-display.spec.ts --project=electron-e2e --reporter=list --workers=1 --trace=retain-on-failure`
+
 ---
 
 ## Feature 3.5: Conditional Entity Visibility
@@ -666,12 +687,12 @@ Not run in this workspace yet. Suggested commands:
   visibility_conditions:
     - condition: state
       entity: input_boolean.show_lights
-      state: "on"
+      state: 'on'
     - condition: or
       conditions:
         - condition: state
           entity: sun.sun
-          state: "below_horizon"
+          state: 'below_horizon'
         - condition: numeric_state
           entity: sensor.lux
           below: 100
@@ -715,6 +736,7 @@ Not run in this workspace yet. Suggested commands:
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [x] All basic condition types work (state equals, in list, attribute comparisons)
 - [x] AND/OR logic works for multiple conditions
 - [x] Conditions evaluate on state/attribute changes
@@ -723,27 +745,30 @@ Not run in this workspace yet. Suggested commands:
 - [x] All unit and E2E tests pass (targeted Feature 3.5 suites executed in this workspace)
 
 **Should Have (Nice to Have)**:
+
 - [x] Visual condition builder (no-code UI)
 - [x] Condition groups for complex logic
 - [x] Fade in/out animations for visibility changes
 - [x] PropertiesPanel preview shows current condition state
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Full visual logic editor (Phase 6)
 - [ ] Time-based and user-based conditions (Phase 6)
 - [ ] Condition templates/presets (Phase 6)
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Complex condition logic confuses users | Medium | Medium | Visual builder, simple defaults, examples in docs |
-| Performance impact from frequent evaluations | Low | Low | Debounce evaluations, cache results, optimize logic |
-| Condition syntax conflicts with HA automations | Low | Low | Match HA condition format where possible, clear docs |
+| Risk                                           | Impact | Probability | Mitigation                                           |
+| ---------------------------------------------- | ------ | ----------- | ---------------------------------------------------- |
+| Complex condition logic confuses users         | Medium | Medium      | Visual builder, simple defaults, examples in docs    |
+| Performance impact from frequent evaluations   | Low    | Low         | Debounce evaluations, cache results, optimize logic  |
+| Condition syntax conflicts with HA automations | Low    | Low         | Match HA condition format where possible, clear docs |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Read before implementation, centralized condition evaluation
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first tests using ConditionalVisibilityDSL
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Service in `src/services/conditionalVisibility.ts`
@@ -778,6 +803,7 @@ Files/systems: `tests/unit/conditionalVisibility.spec.ts`, `tests/support/dsl/co
 ### Verification (2026-02-04)
 
 Executed commands:
+
 - `npm run lint` (passes; existing repository warnings only)
 - `npm run test:unit -- conditionalVisibility` (passes)
 - `npx playwright test tests/e2e/conditional-visibility.spec.ts --project=electron-e2e --reporter=list --workers=1 --trace=retain-on-failure` (passes)
@@ -843,18 +869,18 @@ Executed commands:
   ```yaml
   entity: climate.living_room
   state_icons:
-    "heat":
+    'heat':
       icon: mdi:fire
-      color: "#FF5722"
-    "cool":
+      color: '#FF5722'
+    'cool':
       icon: mdi:snowflake
-      color: "#2196F3"
-    "off":
+      color: '#2196F3'
+    'off':
       icon: mdi:power
-      color: "#9E9E9E"
+      color: '#9E9E9E'
     default:
       icon: mdi:thermostat
-      color: "#607D8B"
+      color: '#607D8B'
   ```
 - [x] Serialize/deserialize icon mappings
 
@@ -895,6 +921,7 @@ Executed commands:
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [x] User can define state-to-icon mappings
 - [x] Icons update in real-time when state changes
 - [x] Domain-specific default icons work
@@ -904,27 +931,30 @@ Executed commands:
 - [x] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [x] Icon picker with search functionality
 - [x] Icon preview in PropertiesPanel
 - [x] Icon animations on state change
 - [x] Batch icon mapping for multiple states
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Custom icon upload (SVG) (future)
 - [ ] Icon animations based on attribute values (Phase 6)
 - [ ] Icon gradients (Phase 6)
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| MDI icon library size impacts bundle | Medium | Low | Tree-shaking, lazy load icons, optimize bundle |
-| Icon picker UX complexity | Low | Medium | Simple search, categorized icons, recent/favorites |
-| State values vary across domains | Low | High | Flexible mapping, show current state in UI, examples |
+| Risk                                 | Impact | Probability | Mitigation                                           |
+| ------------------------------------ | ------ | ----------- | ---------------------------------------------------- |
+| MDI icon library size impacts bundle | Medium | Low         | Tree-shaking, lazy load icons, optimize bundle       |
+| Icon picker UX complexity            | Low    | Medium      | Simple search, categorized icons, recent/favorites   |
+| State values vary across domains     | Low    | High        | Flexible mapping, show current state in UI, examples |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Read before implementation, centralized icon resolution
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first tests using StateIconDSL
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Service in `src/services/stateIcons.ts`
@@ -955,6 +985,7 @@ Files/systems: `tests/unit/state-icons.spec.ts`, `tests/support/dsl/stateIcons.t
 ### Verification (2026-02-05)
 
 Executed in this workspace:
+
 - `npm run test:unit -- state-icons` (pass)
 - `npx playwright test tests/e2e/state-icons.spec.ts --project=electron-e2e --reporter=list --workers=1 --trace=retain-on-failure` (pass)
 
@@ -1037,8 +1068,8 @@ Executed in this workspace:
     - light.living_room
     - light.kitchen
     - light.bedroom
-  multi_entity_mode: batch  # or "individual" or "aggregate"
-  aggregate_function: any_on  # for aggregate mode
+  multi_entity_mode: batch # or "individual" or "aggregate"
+  aggregate_function: any_on # for aggregate mode
   batch_actions:
     - turn_on
     - turn_off
@@ -1072,6 +1103,7 @@ Executed in this workspace:
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [x] User can add multiple entities to single card
 - [x] Aggregate state functions work (all on, any on, count, etc.)
 - [x] Batch actions work (turn all on/off, toggle all)
@@ -1081,27 +1113,30 @@ Executed in this workspace:
 - [x] All unit and E2E tests pass (targeted Feature 3.7 suites)
 
 **Should Have (Nice to Have)**:
+
 - [x] Drag-and-drop to reorder entities
 - [x] Confirmation dialog for batch actions
 - [ ] Custom aggregate function (user-defined formula)
 - [x] Visual indicator of aggregate state (e.g., "3/5 on")
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Entity groups (HA native groups) (future)
 - [ ] Conditional entity inclusion (based on state) (Phase 6)
 - [ ] Cross-entity calculations (Phase 6)
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| UI complexity with many entities | Medium | Medium | Pagination, collapse/expand, limit max entities |
-| Performance with many entities | Medium | Low | Optimize rendering, debounce updates, lazy load |
-| Batch actions fail partially | Medium | Medium | Show partial success/failure, retry logic, error handling |
+| Risk                             | Impact | Probability | Mitigation                                                |
+| -------------------------------- | ------ | ----------- | --------------------------------------------------------- |
+| UI complexity with many entities | Medium | Medium      | Pagination, collapse/expand, limit max entities           |
+| Performance with many entities   | Medium | Low         | Optimize rendering, debounce updates, lazy load           |
+| Batch actions fail partially     | Medium | Medium      | Show partial success/failure, retry logic, error handling |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Read before implementation, centralized multi-entity logic
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first tests using MultiEntityDSL
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Service in `src/services/multiEntity.ts`
@@ -1132,6 +1167,7 @@ Files/systems: `tests/unit/multiEntity.spec.ts`, `tests/support/dsl/multiEntity.
 ### Verification (2026-02-05, finalized)
 
 Executed in this workspace:
+
 - `npm run test:unit -- multiEntity`
 - `npx playwright test tests/e2e/multi-entity.spec.ts --project=electron-e2e --reporter=list --workers=1 --trace=retain-on-failure`
 - Result summary:
@@ -1224,28 +1260,28 @@ Executed in this workspace:
 
 ### Technical Risks
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Entity state not available at render time | High | Medium | Graceful fallback, loading states, retry logic |
-| Fuzzy matching accuracy too low | Medium | Medium | Multiple algorithms, user override, confidence threshold |
-| Complex condition logic performance | Low | Low | Optimize evaluators, cache results, debounce |
-| Template variable parsing conflicts | Low | Low | Unique delimiter syntax, escape handling |
+| Risk                                      | Impact | Probability | Mitigation                                               |
+| ----------------------------------------- | ------ | ----------- | -------------------------------------------------------- |
+| Entity state not available at render time | High   | Medium      | Graceful fallback, loading states, retry logic           |
+| Fuzzy matching accuracy too low           | Medium | Medium      | Multiple algorithms, user override, confidence threshold |
+| Complex condition logic performance       | Low    | Low         | Optimize evaluators, cache results, debounce             |
+| Template variable parsing conflicts       | Low    | Low         | Unique delimiter syntax, escape handling                 |
 
 ### Integration Risks
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| HA API changes break entity access | High | Low | Version compatibility checks, graceful degradation |
-| Entity ID format variations | Medium | Medium | Flexible parsing, validation, user feedback |
-| Attribute names differ across integrations | Low | High | Dynamic attribute discovery, custom labels |
+| Risk                                       | Impact | Probability | Mitigation                                         |
+| ------------------------------------------ | ------ | ----------- | -------------------------------------------------- |
+| HA API changes break entity access         | High   | Low         | Version compatibility checks, graceful degradation |
+| Entity ID format variations                | Medium | Medium      | Flexible parsing, validation, user feedback        |
+| Attribute names differ across integrations | Low    | High        | Dynamic attribute discovery, custom labels         |
 
 ### UX Risks
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Features too complex for users | Medium | Medium | Simple defaults, progressive disclosure, examples |
-| Smart defaults conflict with expectations | Medium | Medium | Clear UI indication, easy override, documentation |
-| Remapping suggestions incorrect | Medium | Medium | Show confidence scores, allow manual override |
+| Risk                                      | Impact | Probability | Mitigation                                        |
+| ----------------------------------------- | ------ | ----------- | ------------------------------------------------- |
+| Features too complex for users            | Medium | Medium      | Simple defaults, progressive disclosure, examples |
+| Smart defaults conflict with expectations | Medium | Medium      | Clear UI indication, easy override, documentation |
+| Remapping suggestions incorrect           | Medium | Medium      | Show confidence scores, allow manual override     |
 
 ---
 

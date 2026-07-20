@@ -1,13 +1,7 @@
 import type { Card } from './dashboard';
 
 export type DashboardActionType =
-  | 'more-info'
-  | 'toggle'
-  | 'call-service'
-  | 'navigate'
-  | 'url'
-  | 'none'
-  | 'popup';
+  'more-info' | 'toggle' | 'call-service' | 'navigate' | 'url' | 'none' | 'popup';
 
 export type PopupSize = 'auto' | 'small' | 'medium' | 'large' | 'fullscreen' | 'custom';
 

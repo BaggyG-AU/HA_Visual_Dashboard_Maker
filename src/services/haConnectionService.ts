@@ -84,14 +84,21 @@ class HAConnectionService {
 
     // Return cached entities if available and not expired
     const now = Date.now();
-    if (!forceRefresh && this.entitiesCache.length > 0 && (now - this.lastFetchTime) < this.cacheDuration) {
+    if (
+      !forceRefresh &&
+      this.entitiesCache.length > 0 &&
+      now - this.lastFetchTime < this.cacheDuration
+    ) {
       logger.debug('Returning cached entities');
       return this.entitiesCache;
     }
 
     try {
       // Use Electron IPC to bypass CORS
-      const result = await window.electronAPI.haFetch(`${this.config.url}/api/states`, this.config.token);
+      const result = await window.electronAPI.haFetch(
+        `${this.config.url}/api/states`,
+        this.config.token,
+      );
 
       if (!result.success) {
         throw new Error(`Failed to fetch entities: ${result.error || `HTTP ${result.status}`}`);
@@ -119,7 +126,7 @@ class HAConnectionService {
     // Group entities by domain
     const domainMap = new Map<string, HAEntity[]>();
 
-    entities.forEach(entity => {
+    entities.forEach((entity) => {
       const domain = entity.entity_id.split('.')[0];
       if (!domainMap.has(domain)) {
         domainMap.set(domain, []);
@@ -140,7 +147,7 @@ class HAConnectionService {
     const entities = await this.fetchEntities(forceRefresh);
     const lowerQuery = query.toLowerCase();
 
-    return entities.filter(entity => {
+    return entities.filter((entity) => {
       // Search in entity_id
       if (entity.entity_id.toLowerCase().includes(lowerQuery)) {
         return true;
@@ -161,7 +168,7 @@ class HAConnectionService {
    */
   async validateEntity(entityId: string, forceRefresh = false): Promise<boolean> {
     const entities = await this.fetchEntities(forceRefresh);
-    return entities.some(entity => entity.entity_id === entityId);
+    return entities.some((entity) => entity.entity_id === entityId);
   }
 
   /**
@@ -169,10 +176,10 @@ class HAConnectionService {
    */
   async validateEntities(entityIds: string[], forceRefresh = false): Promise<Map<string, boolean>> {
     const entities = await this.fetchEntities(forceRefresh);
-    const entitySet = new Set(entities.map(e => e.entity_id));
+    const entitySet = new Set(entities.map((e) => e.entity_id));
 
     const validationMap = new Map<string, boolean>();
-    entityIds.forEach(id => {
+    entityIds.forEach((id) => {
       validationMap.set(id, entitySet.has(id));
     });
 
@@ -184,7 +191,7 @@ class HAConnectionService {
    */
   async getEntity(entityId: string, forceRefresh = false): Promise<HAEntity | null> {
     const entities = await this.fetchEntities(forceRefresh);
-    return entities.find(entity => entity.entity_id === entityId) || null;
+    return entities.find((entity) => entity.entity_id === entityId) || null;
   }
 
   /**
@@ -215,7 +222,10 @@ class HAConnectionService {
     }
 
     try {
-      const result = await window.electronAPI.haFetch(`${this.config.url}/api/config`, this.config.token);
+      const result = await window.electronAPI.haFetch(
+        `${this.config.url}/api/config`,
+        this.config.token,
+      );
 
       if (!result.success) {
         throw new Error(`Failed to fetch config: ${result.error || `HTTP ${result.status}`}`);

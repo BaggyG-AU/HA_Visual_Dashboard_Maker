@@ -1,9 +1,36 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import { Button, Input, InputNumber, Radio, Slider, Space, Typography, Row, Col, Divider, Tag, Tooltip, message } from 'antd';
-import { PlusOutlined, DeleteOutlined, DownloadOutlined, UploadOutlined, SaveOutlined } from '@ant-design/icons';
+import {
+  Button,
+  Input,
+  InputNumber,
+  Radio,
+  Slider,
+  Space,
+  Typography,
+  Row,
+  Col,
+  Divider,
+  Tag,
+  Tooltip,
+  message,
+} from 'antd';
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+  UploadOutlined,
+  SaveOutlined,
+} from '@ant-design/icons';
 import { ColorPickerInput } from './ColorPickerInput';
 import { gradientPresets } from '../data/gradientPresets';
-import { addStop, gradientToCss, isGradientString, parseGradient, removeStop, updateStop } from '../utils/gradientConversions';
+import {
+  addStop,
+  gradientToCss,
+  isGradientString,
+  parseGradient,
+  removeStop,
+  updateStop,
+} from '../utils/gradientConversions';
 import type { GradientDefinition, GradientPreset, GradientType } from '../types/gradient';
 import { useGradientPresets } from '../hooks/useGradientPresets';
 import { adjustAngleForArrow, adjustStopPositionForArrow } from '../utils/gradientKeyboard';
@@ -25,9 +52,12 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
   const [gradient, setGradient] = useState<GradientDefinition>(() => parseGradient(value));
   const [search, setSearch] = useState('');
   const [presetName, setPresetName] = useState('');
-  const [focusedStopId, setFocusedStopId] = useState<string | null>(() => parseGradient(value).stops[0]?.id ?? null);
+  const [focusedStopId, setFocusedStopId] = useState<string | null>(
+    () => parseGradient(value).stops[0]?.id ?? null,
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const { userPresets, savePreset, deletePreset, importPresets, exportPresets, loadError } = useGradientPresets();
+  const { userPresets, savePreset, deletePreset, importPresets, exportPresets, loadError } =
+    useGradientPresets();
   const currentCss = useMemo(() => gradientToCss(gradient), [gradient]);
 
   useEffect(() => {
@@ -48,15 +78,19 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
     }
   }, [gradient.stops, focusedStopId]);
 
-  const emitChange = useCallback((next: GradientDefinition) => {
-    const css = gradientToCss(next);
-    onChange?.(css);
-  }, [onChange]);
+  const emitChange = useCallback(
+    (next: GradientDefinition) => {
+      const css = gradientToCss(next);
+      onChange?.(css);
+    },
+    [onChange],
+  );
 
   const handleTypeChange = (type: GradientType) => {
-    const next: GradientDefinition = type === 'radial'
-      ? { ...gradient, type, angle: 0, shape: 'ellipse', position: 'center' }
-      : { ...gradient, type, angle: gradient.angle || 90 };
+    const next: GradientDefinition =
+      type === 'radial'
+        ? { ...gradient, type, angle: 0, shape: 'ellipse', position: 'center' }
+        : { ...gradient, type, angle: gradient.angle || 90 };
     setGradient(next);
     emitChange(next);
   };
@@ -113,7 +147,13 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
   const handleAngleKeyDown = (event: React.KeyboardEvent) => {
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
     event.preventDefault();
-    handleAngleChange(adjustAngleForArrow(gradient.angle || 0, event.key as 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown', event.shiftKey));
+    handleAngleChange(
+      adjustAngleForArrow(
+        gradient.angle || 0,
+        event.key as 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown',
+        event.shiftKey,
+      ),
+    );
   };
 
   const handleRadialPositionKeyDown = (event: React.KeyboardEvent) => {
@@ -149,7 +189,10 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
       event.preventDefault();
       const stop = gradient.stops.find((item) => item.id === stopId);
       if (!stop) return;
-      handleStopPosition(stopId, adjustStopPositionForArrow(stop.position, event.key, event.shiftKey));
+      handleStopPosition(
+        stopId,
+        adjustStopPositionForArrow(stop.position, event.key, event.shiftKey),
+      );
     }
   };
 
@@ -168,7 +211,10 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
   };
 
   const handleImportClick = async () => {
-    if (typeof window.electronAPI?.openFileDialog === 'function' && typeof window.electronAPI?.readFile === 'function') {
+    if (
+      typeof window.electronAPI?.openFileDialog === 'function' &&
+      typeof window.electronAPI?.readFile === 'function'
+    ) {
       // Electron path: reuse native file dialog + fileService for consistent IPC/error handling.
       try {
         const filePath = await fileService.openFile();
@@ -215,7 +261,10 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
 
   const handleExportPresets = async () => {
     const payload = exportPresets();
-    if (typeof window.electronAPI?.saveFileDialog === 'function' && typeof window.electronAPI?.writeFile === 'function') {
+    if (
+      typeof window.electronAPI?.saveFileDialog === 'function' &&
+      typeof window.electronAPI?.writeFile === 'function'
+    ) {
       // Electron path: save via native dialog for correct user location + permissions.
       try {
         const saved = await fileService.saveFileAs(payload, 'gradient-presets.json');
@@ -246,17 +295,25 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
   const searchQuery = search.trim().toLowerCase();
 
   const filteredPresets = useMemo(
-    () => gradientPresets.filter((preset) =>
-      (!searchQuery || preset.name.toLowerCase().includes(searchQuery) || preset.category.toLowerCase().includes(searchQuery))
-    ),
-    [searchQuery]
+    () =>
+      gradientPresets.filter(
+        (preset) =>
+          !searchQuery ||
+          preset.name.toLowerCase().includes(searchQuery) ||
+          preset.category.toLowerCase().includes(searchQuery),
+      ),
+    [searchQuery],
   );
 
   const filteredUserPresets = useMemo(
-    () => userPresets.filter((preset) =>
-      (!searchQuery || preset.name.toLowerCase().includes(searchQuery) || preset.category.toLowerCase().includes(searchQuery))
-    ),
-    [userPresets, searchQuery]
+    () =>
+      userPresets.filter(
+        (preset) =>
+          !searchQuery ||
+          preset.name.toLowerCase().includes(searchQuery) ||
+          preset.category.toLowerCase().includes(searchQuery),
+      ),
+    [userPresets, searchQuery],
   );
 
   const gradientStops = [...gradient.stops].sort((a, b) => a.position - b.position);
@@ -270,8 +327,12 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
           buttonStyle="solid"
           data-testid={`${testId}-type-toggle`}
         >
-          <Radio.Button value="linear" data-testid={`${testId}-type-linear`}>Linear</Radio.Button>
-          <Radio.Button value="radial" data-testid={`${testId}-type-radial`}>Radial</Radio.Button>
+          <Radio.Button value="linear" data-testid={`${testId}-type-linear`}>
+            Linear
+          </Radio.Button>
+          <Radio.Button value="radial" data-testid={`${testId}-type-radial`}>
+            Radial
+          </Radio.Button>
         </Radio.Group>
         {gradient.type === 'linear' && (
           <Space align="center">
@@ -336,14 +397,32 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
 
       <Divider style={{ borderColor: '#333' }} />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 8,
+        }}
+      >
         <Text style={{ color: '#ddd' }}>Color Stops</Text>
-        <Button icon={<PlusOutlined />} size="small" onClick={handleAddStop} data-testid={`${testId}-add-stop`}>
+        <Button
+          icon={<PlusOutlined />}
+          size="small"
+          onClick={handleAddStop}
+          data-testid={`${testId}-add-stop`}
+        >
           Add stop
         </Button>
       </div>
 
-      <Space direction="vertical" style={{ width: '100%' }} data-testid={`${testId}-stops`} role="listbox" aria-label="Gradient color stops">
+      <Space
+        direction="vertical"
+        style={{ width: '100%' }}
+        data-testid={`${testId}-stops`}
+        role="listbox"
+        aria-label="Gradient color stops"
+      >
         {gradientStops.map((stop) => (
           <Row
             key={stop.id}
@@ -451,7 +530,14 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
       </div>
 
       {filteredUserPresets.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, marginBottom: 16 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
           {filteredUserPresets.map((preset) => (
             <div
               key={preset.id}
@@ -504,7 +590,9 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
           ))}
         </div>
       ) : (
-        <Text style={{ color: '#888', display: 'block', marginBottom: 16 }}>No saved presets yet.</Text>
+        <Text style={{ color: '#888', display: 'block', marginBottom: 16 }}>
+          No saved presets yet.
+        </Text>
       )}
 
       <div style={{ marginBottom: 8 }}>
@@ -526,7 +614,13 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
           color: '#eee',
         }}
       />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+          gap: 12,
+        }}
+      >
         {filteredPresets.map((preset) => (
           <button
             key={preset.id}

@@ -44,18 +44,18 @@ test.describe('Theme Integration', () => {
 
   test('shows theme selector with available themes when connected', async () => {
     const ctx = await launchWithDSL();
-  try {
-    await ctx.appDSL.waitUntilReady();
-    await connectWithMockThemes(ctx);
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await connectWithMockThemes(ctx);
 
-    const selector = ctx.window.getByTestId('theme-selector');
-    await expect(selector).toBeVisible({ timeout: 5000 });
+      const selector = ctx.window.getByTestId('theme-selector');
+      await expect(selector).toBeVisible({ timeout: 5000 });
 
-    const select = ctx.window.getByTestId('theme-select');
-    await select.click();
-    const options = ctx.window.locator('.ant-select-item-option');
-    await expect(options.first()).toBeVisible({ timeout: 5000 });
-    await ctx.window.keyboard.press('Escape');
+      const select = ctx.window.getByTestId('theme-select');
+      await select.click();
+      const options = ctx.window.locator('.ant-select-item-option');
+      await expect(options.first()).toBeVisible({ timeout: 5000 });
+      await ctx.window.keyboard.press('Escape');
 
       const syncBadge = ctx.window.getByTestId('theme-sync-badge');
       await expect(syncBadge).toBeVisible();
@@ -75,12 +75,18 @@ test.describe('Theme Integration', () => {
 
       // Now click on inner tabs (within theme settings)
       // Use .last() to get the nested tabs, not the outer "Appearance" tab
-      await ctx.window.getByRole('tab', { name: /CSS Variables/i }).last().click();
+      await ctx.window
+        .getByRole('tab', { name: /CSS Variables/i })
+        .last()
+        .click();
       // Wait for Monaco editor container to be attached and visible
       await expect(ctx.window.getByTestId('theme-settings-css')).toBeAttached({ timeout: 10000 });
       await expect(ctx.window.getByTestId('theme-settings-css')).toBeVisible({ timeout: 10000 });
 
-      await ctx.window.getByRole('tab', { name: /Theme JSON/i }).last().click();
+      await ctx.window
+        .getByRole('tab', { name: /Theme JSON/i })
+        .last()
+        .click();
       await expect(ctx.window.getByTestId('theme-settings-json')).toBeAttached({ timeout: 10000 });
       await expect(ctx.window.getByTestId('theme-settings-json')).toBeVisible({ timeout: 10000 });
 
@@ -118,15 +124,23 @@ test.describe('Theme Integration', () => {
       await ctx.settings.open();
       await ctx.settings.selectTab('Appearance');
 
-      await ctx.window.getByRole('tab', { name: /Theme Manager/i }).last().click();
+      await ctx.window
+        .getByRole('tab', { name: /Theme Manager/i })
+        .last()
+        .click();
 
       await ctx.window.getByTestId('theme-manager-save-name').fill('snapshot-integration');
       await ctx.window.getByTestId('theme-manager-save').click();
 
       await ctx.window.getByTestId('theme-manager-saved-select').click();
       const options = ctx.window.locator('.ant-select-item-option');
-      await expect(options.filter({ hasText: /^snapshot-integration$/ }).first()).toBeVisible({ timeout: 5000 });
-      await options.filter({ hasText: /^snapshot-integration$/ }).first().click();
+      await expect(options.filter({ hasText: /^snapshot-integration$/ }).first()).toBeVisible({
+        timeout: 5000,
+      });
+      await options
+        .filter({ hasText: /^snapshot-integration$/ })
+        .first()
+        .click();
 
       await ctx.window.getByTestId('theme-manager-load').click();
       await expect(ctx.window.getByTestId('theme-settings-sync')).not.toBeChecked();
@@ -140,7 +154,9 @@ test.describe('Theme Integration', () => {
       await ctx.window.getByTestId('theme-manager-import').click();
 
       await ctx.window.getByTestId('theme-manager-saved-select').click();
-      await expect(options.filter({ hasText: /^snapshot-integration$/ }).first()).toBeVisible({ timeout: 5000 });
+      await expect(options.filter({ hasText: /^snapshot-integration$/ }).first()).toBeVisible({
+        timeout: 5000,
+      });
       await ctx.window.keyboard.press('Escape');
 
       await ctx.settings.close();

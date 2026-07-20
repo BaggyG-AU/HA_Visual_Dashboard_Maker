@@ -26,7 +26,10 @@ export const MarkdownCardRenderer: React.FC<MarkdownCardRendererProps> = ({
   const resolvedContent = useEntityContextValue(card.content ?? '', card.entity ?? null);
   const title = (card.title ? resolvedTitle : '') || 'Markdown';
   const content = card.content ? resolvedContent : '';
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   // Simple markdown preview - strip markdown syntax for preview
   const previewContent = content
@@ -56,10 +59,10 @@ export const MarkdownCardRenderer: React.FC<MarkdownCardRendererProps> = ({
       }}
       styles={{
         body: {
-        padding: '12px',
-        maxHeight: card.title ? 'calc(100% - 46px)' : '100%',
-        overflowY: 'auto',
-      },
+          padding: '12px',
+          maxHeight: card.title ? 'calc(100% - 46px)' : '100%',
+          overflowY: 'auto',
+        },
       }}
       onClick={onClick}
       hoverable

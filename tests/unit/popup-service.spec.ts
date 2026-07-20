@@ -49,10 +49,12 @@ describe('popupService', () => {
   it('provides dimensions for all size modes', () => {
     const small = getPopupModalDimensions(normalizePopupConfig({ size: 'small' }));
     const fullscreen = getPopupModalDimensions(normalizePopupConfig({ size: 'fullscreen' }));
-    const custom = getPopupModalDimensions(normalizePopupConfig({
-      size: 'custom',
-      custom_size: { width: 900, height: 600 },
-    }));
+    const custom = getPopupModalDimensions(
+      normalizePopupConfig({
+        size: 'custom',
+        custom_size: { width: 900, height: 600 },
+      }),
+    );
 
     expect(small.width).toBe(480);
     expect(fullscreen.width).toBeUndefined();

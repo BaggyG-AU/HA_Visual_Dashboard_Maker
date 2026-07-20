@@ -29,7 +29,8 @@ export const GaugeCardProCard: React.FC<GaugeCardProCardProps> = ({
     [card, hasValue, numericValue],
   );
 
-  const title = normalized.header || card.name || entity?.attributes?.friendly_name || 'Gauge Card Pro';
+  const title =
+    normalized.header || card.name || entity?.attributes?.friendly_name || 'Gauge Card Pro';
   const backgroundStyle = getCardBackgroundStyle(
     card.style,
     isSelected ? 'rgba(79, 163, 255, 0.12)' : '#1f1f1f',
@@ -114,8 +115,13 @@ export const GaugeCardProCard: React.FC<GaugeCardProCardProps> = ({
                   padding: '0 12px',
                 }}
               >
-                <Text strong data-testid="gauge-card-pro-value" style={{ color: normalized.activeColor, fontSize: 18 }}>
-                  {normalized.value.toFixed(normalized.valuePrecision)}{normalized.unit ? ` ${normalized.unit}` : ''}
+                <Text
+                  strong
+                  data-testid="gauge-card-pro-value"
+                  style={{ color: normalized.activeColor, fontSize: 18 }}
+                >
+                  {normalized.value.toFixed(normalized.valuePrecision)}
+                  {normalized.unit ? ` ${normalized.unit}` : ''}
                 </Text>
               </div>
             </div>
@@ -123,7 +129,11 @@ export const GaugeCardProCard: React.FC<GaugeCardProCardProps> = ({
 
           <div
             data-testid="gauge-card-pro-segments"
-            style={{ display: 'grid', gap: '4px', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))' }}
+            style={{
+              display: 'grid',
+              gap: '4px',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+            }}
           >
             {normalized.segments.map((segment) => (
               <div

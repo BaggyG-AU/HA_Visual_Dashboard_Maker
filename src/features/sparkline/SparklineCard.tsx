@@ -17,7 +17,14 @@ interface SparklineCardProps {
 
 const toPath = (
   points: SparklinePoint[],
-): { linePath: string; areaPath: string; minX: number; maxX: number; minY: number; maxY: number } => {
+): {
+  linePath: string;
+  areaPath: string;
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+} => {
   if (points.length === 0) {
     return { linePath: '', areaPath: '', minX: 0, maxX: 0, minY: 0, maxY: 0 };
   }
@@ -58,7 +65,8 @@ export const SparklineCard: React.FC<SparklineCardProps> = ({
   const entity = normalized.entity ? getEntity(normalized.entity) : null;
   const currentState = entity?.state;
   const attributes = entity?.attributes ?? {};
-  const unit = typeof attributes.unit_of_measurement === 'string' ? attributes.unit_of_measurement : '';
+  const unit =
+    typeof attributes.unit_of_measurement === 'string' ? attributes.unit_of_measurement : '';
 
   const resolvedName = useEntityContextValue(normalized.name ?? '', normalized.entity ?? null);
   const displayName =
@@ -135,7 +143,14 @@ export const SparklineCard: React.FC<SparklineCardProps> = ({
 
       {normalized.entity && (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10,
+            }}
+          >
             <Space size={8}>
               {normalized.showIcon && <LineChartOutlined style={{ color: normalized.color }} />}
               {normalized.showName && (
@@ -147,7 +162,11 @@ export const SparklineCard: React.FC<SparklineCardProps> = ({
             {normalized.showCurrent && (
               <Text
                 data-testid="sparkline-current-value"
-                style={{ color: normalized.color, fontSize: normalized.compact ? 14 : 16, fontWeight: 600 }}
+                style={{
+                  color: normalized.color,
+                  fontSize: normalized.compact ? 14 : 16,
+                  fontWeight: 600,
+                }}
               >
                 {formatValue(dataset.current)} {unit}
               </Text>
@@ -216,7 +235,8 @@ export const SparklineCard: React.FC<SparklineCardProps> = ({
             style={{ color: '#9f9f9f', fontSize: 11 }}
             aria-label="Sparkline numeric fallback values"
           >
-            Min {formatValue(dataset.min)} • Max {formatValue(dataset.max)} • Current {formatValue(dataset.current)}
+            Min {formatValue(dataset.min)} • Max {formatValue(dataset.max)} • Current{' '}
+            {formatValue(dataset.current)}
             {unit ? ` ${unit}` : ''}
           </Text>
         </>

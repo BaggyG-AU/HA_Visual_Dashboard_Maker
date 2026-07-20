@@ -19,10 +19,13 @@ show_forecast: true
 `;
 
 test.describe('Weather Forecast Visualization', () => {
-  test('renders hourly weather visualization and exposes accessible forecast labels', async ({ page }, testInfo) => {
+  test('renders hourly weather visualization and exposes accessible forecast labels', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, weatherViz, canvas, properties, yamlEditor, window, entityContext } = ctx;
+    const { appDSL, dashboard, weatherViz, canvas, properties, yamlEditor, window, entityContext } =
+      ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -37,16 +40,24 @@ test.describe('Weather Forecast Visualization', () => {
       await properties.switchTab('Form');
 
       await weatherViz.verifyRendered();
-      await expect(window.getByTestId('weather-viz-card').getByTestId('weather-viz-chart')).toHaveAttribute('aria-label', /temperature|precipitation|wind|No forecast data available/i);
-      await expect(window.getByTestId('weather-viz-card').getByTestId('weather-viz-mode')).toContainText(/hourly/i);
+      await expect(
+        window.getByTestId('weather-viz-card').getByTestId('weather-viz-chart'),
+      ).toHaveAttribute('aria-label', /temperature|precipitation|wind|No forecast data available/i);
+      await expect(
+        window.getByTestId('weather-viz-card').getByTestId('weather-viz-mode'),
+      ).toContainText(/hourly/i);
       await weatherViz.expectForecastPointCountAtLeast(1);
-      await expect(window.getByTestId('weather-viz-card').getByTestId('weather-viz-forecast-point').first()).toHaveAttribute('aria-label', /temperature/i);
+      await expect(
+        window.getByTestId('weather-viz-card').getByTestId('weather-viz-forecast-point').first(),
+      ).toHaveAttribute('aria-label', /temperature/i);
     } finally {
       await close(ctx);
     }
   });
 
-  test('updates weather visualization settings from form and persists YAML round-trip', async ({ page }, testInfo) => {
+  test('updates weather visualization settings from form and persists YAML round-trip', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, weatherViz, canvas, properties, yamlEditor, entityContext } = ctx;

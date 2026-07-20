@@ -23,11 +23,11 @@ export type {
 
 // Layout-card view_layout configuration
 export interface ViewLayout {
-  grid_column?: string;    // e.g., "1 / 7" or "span 6"
-  grid_row?: string;       // e.g., "1 / 5" or "span 4"
-  grid_area?: string;      // Named grid area
-  place_self?: string;     // CSS place-self property
-  [key: string]: any;      // Allow any grid-* properties
+  grid_column?: string; // e.g., "1 / 7" or "span 6"
+  grid_row?: string; // e.g., "1 / 5" or "span 4"
+  grid_area?: string; // Named grid area
+  place_self?: string; // CSS place-self property
+  [key: string]: any; // Allow any grid-* properties
 }
 
 // Base card configuration

@@ -90,24 +90,26 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
                 data-testid="new-dashboard-template-option"
               >
                 <div style={{ padding: '20px 0' }}>
-                  <AppstoreAddOutlined style={{ fontSize: 48, color: '#52c41a', marginBottom: 16 }} />
+                  <AppstoreAddOutlined
+                    style={{ fontSize: 48, color: '#52c41a', marginBottom: 16 }}
+                  />
                   <h3 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 600 }}>
                     From Template
                   </h3>
-                  <p style={{ margin: 0, color: '#666', fontSize: 13 }}>
-                    Use a pre-built layout
-                  </p>
+                  <p style={{ margin: 0, color: '#666', fontSize: 13 }}>Use a pre-built layout</p>
                 </div>
               </Card>
             </Tooltip>
           </Col>
 
           <Col xs={24} md={8}>
-            <Tooltip title={
-              isConnected
-                ? "Auto-generate a dashboard based on your entity types (lights, cameras, sensors, etc.). Requires connection to Home Assistant."
-                : "Auto-generate a dashboard based on entity types. Connect to Home Assistant first."
-            }>
+            <Tooltip
+              title={
+                isConnected
+                  ? 'Auto-generate a dashboard based on your entity types (lights, cameras, sensors, etc.). Requires connection to Home Assistant.'
+                  : 'Auto-generate a dashboard based on entity types. Connect to Home Assistant first.'
+              }
+            >
               <Card
                 hoverable={isConnected}
                 onClick={isConnected ? handleEntityTypeClick : undefined}
@@ -128,7 +130,14 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
                     Auto-generate from entities
                   </p>
                   {!isConnected && (
-                    <p style={{ margin: '8px 0 0 0', color: '#ff4d4f', fontSize: 12, fontWeight: 500 }}>
+                    <p
+                      style={{
+                        margin: '8px 0 0 0',
+                        color: '#ff4d4f',
+                        fontSize: 12,
+                        fontWeight: 500,
+                      }}
+                    >
                       Requires HA connection
                     </p>
                   )}
@@ -140,8 +149,8 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
 
         <div style={{ marginTop: 24, padding: 12, background: '#f5f5f5', borderRadius: 4 }}>
           <small style={{ color: '#666' }}>
-            <strong>Tip:</strong> All dashboard types can be edited after creation. You can always add, remove,
-            or modify cards using the card palette and properties panel.
+            <strong>Tip:</strong> All dashboard types can be edited after creation. You can always
+            add, remove, or modify cards using the card palette and properties panel.
           </small>
         </div>
       </Modal>

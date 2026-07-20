@@ -107,7 +107,10 @@ describe('carouselService', () => {
     expect(normalized.start_card).toBe(2);
     expect(normalized.reset_after).toBe(30);
     expect(normalized.slides).toHaveLength(3);
-    expect(normalized.slides[0].cards?.[0]).toMatchObject({ type: 'button', entity: 'light.room_1' });
+    expect(normalized.slides[0].cards?.[0]).toMatchObject({
+      type: 'button',
+      entity: 'light.room_1',
+    });
   });
 
   it('exports internal config to upstream swipe-card schema and strips HAVDM-only slide fields', () => {

@@ -1,6 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Button, Alert, Space, Select, Checkbox, Divider, Popconfirm, Tooltip } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, SaveOutlined } from '@ant-design/icons';
+import {
+  Modal,
+  Form,
+  Input,
+  Button,
+  Alert,
+  Space,
+  Select,
+  Checkbox,
+  Divider,
+  Popconfirm,
+  Tooltip,
+} from 'antd';
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  DeleteOutlined,
+  SaveOutlined,
+} from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 import { logger } from '../services/logger';
 import { HAConnectionStatus } from '../types/homeassistant';
@@ -109,7 +126,7 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           credentialName,
           values.url,
           values.token,
-          selectedCredentialId || undefined
+          selectedCredentialId || undefined,
         );
       }
 
@@ -158,10 +175,16 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
                   setCredentialName('');
                   form.resetFields();
                 }}
-                options={savedCredentials.map(cred => ({
+                options={savedCredentials.map((cred) => ({
                   value: cred.id,
                   label: (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
                       <div>
                         <div>{cred.name}</div>
                         <div style={{ fontSize: '12px', color: '#888' }}>{cred.url}</div>
@@ -218,20 +241,14 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
             { required: true, message: 'Please enter access token' },
             { min: 20, message: 'Token seems too short' },
           ]}
-          help={
-            <span>
-              Create a token in Home Assistant: Profile → Long-Lived Access Tokens
-            </span>
-          }
+          help={<span>Create a token in Home Assistant: Profile → Long-Lived Access Tokens</span>}
         >
           <Input.Password placeholder="Enter your long-lived access token" />
         </Form.Item>
 
         {testResult && (
           <Alert
-            message={
-              testResult.connected ? 'Connection Successful' : 'Connection Failed'
-            }
+            message={testResult.connected ? 'Connection Successful' : 'Connection Failed'}
             description={
               testResult.connected ? (
                 <div>
@@ -242,29 +259,18 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
               ) : (
                 <div>
                   <div>✗ Failed to connect</div>
-                  <div style={{ marginTop: '8px', fontSize: '12px' }}>
-                    {testResult.error}
-                  </div>
+                  <div style={{ marginTop: '8px', fontSize: '12px' }}>{testResult.error}</div>
                 </div>
               )
             }
             type={testResult.connected ? 'success' : 'error'}
-            icon={
-              testResult.connected ? (
-                <CheckCircleOutlined />
-              ) : (
-                <CloseCircleOutlined />
-              )
-            }
+            icon={testResult.connected ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
             style={{ marginBottom: '16px' }}
           />
         )}
 
         <div style={{ marginBottom: '16px' }}>
-          <Checkbox
-            checked={saveCredential}
-            onChange={(e) => setSaveCredential(e.target.checked)}
-          >
+          <Checkbox checked={saveCredential} onChange={(e) => setSaveCredential(e.target.checked)}>
             <Space>
               <SaveOutlined />
               Save this connection
@@ -285,23 +291,21 @@ export const ConnectionDialog: React.FC<ConnectionDialogProps> = ({
           <Button onClick={handleTestConnection} loading={testing}>
             {testing ? 'Testing...' : 'Test Connection'}
           </Button>
-          <Button
-            type="primary"
-            onClick={handleConnect}
-            disabled={!testResult?.connected}
-          >
+          <Button type="primary" onClick={handleConnect} disabled={!testResult?.connected}>
             Connect
           </Button>
         </Space>
       </Form>
 
-      <div style={{
-        marginTop: '24px',
-        padding: '16px',
-        background: '#1f1f1f',
-        border: '1px solid #434343',
-        borderRadius: '4px'
-      }}>
+      <div
+        style={{
+          marginTop: '24px',
+          padding: '16px',
+          background: '#1f1f1f',
+          border: '1px solid #434343',
+          borderRadius: '4px',
+        }}
+      >
         <h4 style={{ marginTop: 0, color: '#fff' }}>How to get a Long-Lived Access Token:</h4>
         <ol style={{ paddingLeft: '20px', margin: 0, color: '#ccc' }}>
           <li>Open your Home Assistant web interface</li>

@@ -40,7 +40,8 @@ describe('entityContext', () => {
   });
 
   it('resolves default entity properties', () => {
-    const template = 'State: [[entity.state]] | [[entity.friendly_name]] | [[entity.domain]] | [[entity.entity_id]]';
+    const template =
+      'State: [[entity.state]] | [[entity.friendly_name]] | [[entity.domain]] | [[entity.entity_id]]';
     const result = resolveEntityContext(template, 'light.living_room', entities);
     expect(result).toBe('State: on | Living Room Light | light | light.living_room');
   });
@@ -70,13 +71,17 @@ describe('entityContext', () => {
   });
 
   it('applies formatting filters', () => {
-    const template = 'State [[entity.state|upper]] temp [[sensor.temperature.state|round(1)]] default [[entity.attributes.none|default("n/a")]]';
+    const template =
+      'State [[entity.state|upper]] temp [[sensor.temperature.state|round(1)]] default [[entity.attributes.none|default("n/a")]]';
     const result = resolveEntityContext(template, 'light.living_room', entities);
     expect(result).toBe('State ON temp 22.6 default n/a');
   });
 
   it('extracts entity references', () => {
-    const refs = extractEntityReferences('[[light.living_room.state]] [[entity.state]]', 'sensor.temperature');
+    const refs = extractEntityReferences(
+      '[[light.living_room.state]] [[entity.state]]',
+      'sensor.temperature',
+    );
     expect(refs.sort()).toEqual(['light.living_room', 'sensor.temperature']);
   });
 });

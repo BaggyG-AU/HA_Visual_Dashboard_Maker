@@ -5,6 +5,7 @@
 This document outlines the technical architecture for a cross-platform desktop application that provides a visual WYSIWYG editor for Home Assistant dashboards with support for popular custom cards.
 
 **Key Architecture Decisions (Based on User Requirements)**:
+
 1. **Offline-First Workflow**: Work on local dashboard copies with explicit "Deploy to Production" action
 2. **Real-Time Bidirectional Sync**: Changes in YAML immediately reflect in visual editor and vice versa
 3. **Full Card Rendering**: Actual card previews with dummy entity data (not simplified mockups)
@@ -13,6 +14,7 @@ This document outlines the technical architecture for a cross-platform desktop a
 6. **Custom Card Priority**: ApexCharts → Bubble → Button → Card-mod → Power-flow-plus → Mushroom/Mini-graph
 
 **Implementation Note (Current vs Target)**:
+
 - The target architecture is **offline-first local workspace + explicit deploy**.
 - The current implementation also supports **in-Home Assistant temporary dashboards** for editing and deployment.
 - A full offline-first workspace model is tracked for a later release (see `havdm.kanban`).
@@ -22,6 +24,7 @@ This document outlines the technical architecture for a cross-platform desktop a
 ### Home Assistant Dashboard System
 
 **Dashboard Modes:**
+
 1. **UI Mode (Storage)**: Default mode where dashboards are stored in Home Assistant's internal storage and edited through the web UI
 2. **YAML Mode**: Dashboards defined in YAML files (ui-lovelace.yaml) with version control capabilities
 3. **Multiple Dashboards**: Support for multiple dashboard configurations with individual YAML files
@@ -31,6 +34,7 @@ This document outlines the technical architecture for a cross-platform desktop a
 ### Home Assistant API Architecture
 
 **Important Discovery**:
+
 - **REST API**: Not receiving new features but still supported. Used for basic CRUD operations.
 - **WebSocket API**: Recommended for new integrations. Provides real-time updates and state streaming.
 - **Lovelace Dashboards via WebSocket**: Home Assistant exposes WebSocket commands for Lovelace dashboard operations (e.g. list/read/write configs and create/delete dashboards). This project uses those commands via a main-process WebSocket client (`src/services/haWebSocketService.ts`) and renderer IPC (`src/preload.ts`, `src/main.ts`).
@@ -41,6 +45,7 @@ This document outlines the technical architecture for a cross-platform desktop a
 ### Supported Custom Cards Research
 
 #### 1. Bubble Card
+
 - **Repository**: https://github.com/Clooos/Bubble-Card
 - **Type**: Minimalist card collection with pop-up touch interface
 - **Features**: Pop-ups, buttons, media players, covers, climate controls, separators
@@ -49,6 +54,7 @@ This document outlines the technical architecture for a cross-platform desktop a
 - **Min HA Version**: 2023.9.0
 
 #### 2. ApexCharts Card
+
 - **Repository**: https://github.com/RomRider/apexcharts-card
 - **Type**: Advanced graphs and charts based on ApexChartsJS
 - **Features**: Highly customizable data visualization with extensive options
@@ -57,6 +63,7 @@ This document outlines the technical architecture for a cross-platform desktop a
 - **Special Considerations**: Requires understanding of data series, time ranges, and chart layouts
 
 #### 3. Button Card
+
 - **Repository**: https://github.com/custom-cards/button-card
 - **Type**: Highly customizable button card
 - **Features**: 6 action types (tap, hold, double-click), extensive templating, custom styling
@@ -65,6 +72,7 @@ This document outlines the technical architecture for a cross-platform desktop a
 - **Special Considerations**: Template support makes visual editing challenging
 
 #### 4. Card-mod
+
 - **Repository**: https://github.com/thomasloven/lovelace-card-mod
 - **Type**: Plugin (not a card) that adds CSS styling to any card
 - **Features**: CSS injection for styling any Lovelace card
@@ -84,6 +92,7 @@ This document outlines the technical architecture for a cross-platform desktop a
 ### Recommended: Electron + React + TypeScript
 
 **Rationale:**
+
 - **Cross-platform**: Single codebase for Windows and Linux
 - **Visual Editor Libraries**: Excellent ecosystem for drag-and-drop and visual editing
 - **Development Speed**: Fastest path to MVP
@@ -91,6 +100,7 @@ This document outlines the technical architecture for a cross-platform desktop a
 - **Future Extensibility**: Easy to add plugins and extensions
 
 **Alternative Considered**: Tauri + React
+
 - **Pros**: Smaller binary, better performance, more secure
 - **Cons**: Smaller ecosystem, more complex setup, newer framework
 - **Recommendation**: Consider for v2.0 after MVP validation
@@ -98,17 +108,20 @@ This document outlines the technical architecture for a cross-platform desktop a
 ### Frontend Stack
 
 #### Core Framework
+
 - **React** with **TypeScript**
 - **Strict type safety** for Home Assistant configuration schemas
 - **Planned Remediation**: Upgrade TypeScript to v5+ in a later release (tracked in `havdm.kanban`).
 
 #### UI Component Library
+
 - **Ant Design v6**
   - Professional components
   - Theme support (light/dark modes)
   - Comprehensive form controls
 
 #### Visual Editor Components
+
 - **React Flow** or **React Grid Layout**
   - Drag-and-drop card positioning
   - Visual canvas for dashboard layout
@@ -120,12 +133,14 @@ This document outlines the technical architecture for a cross-platform desktop a
   - IntelliSense for HA configuration
 
 #### State Management
+
 - **Zustand** or **Redux Toolkit**
   - Application state
   - Dashboard configuration state
   - Undo/redo history
 
 #### CSS Editor (for card-mod)
+
 - **Monaco Editor CSS mode** or **React CSS Editor**
   - Live preview of CSS changes
   - Syntax highlighting
@@ -133,11 +148,13 @@ This document outlines the technical architecture for a cross-platform desktop a
 ### Backend/Integration Layer
 
 #### File System Access
+
 - **Electron IPC** for secure file system operations
 - **YAML Parser**: `js-yaml` library
 - **YAML Schema Validation**: Custom schemas for HA dashboard config
 
 #### Home Assistant Integration
+
 - **HTTP Client**: Renderer uses `window.electronAPI.haFetch` (IPC wrapper over main-process fetch) to bypass CORS (`src/preload.ts`, `src/main.ts`, `src/services/haConnectionService.ts`)
 - **WebSocket Client**: `ws` in the Electron main process (`src/services/haWebSocketService.ts`)
 - **Authentication**: Secure storage of long-lived access tokens
@@ -147,11 +164,13 @@ This document outlines the technical architecture for a cross-platform desktop a
 ### Data Architecture
 
 #### Local Data Storage
+
 - **Electron Store** for application settings and cached data
 - **File System** (via Electron IPC) for YAML import/export and related assets
 - **LocalStorage** (targeted, renderer-only) for small UX state like recent colors (where applicable)
 
 #### Dashboard Configuration Schema
+
 ```typescript
 interface DashboardConfig {
   title: string;
@@ -201,10 +220,12 @@ src/
 **Solution - Offline-First with Explicit Deploy**:
 
 **Current Implementation Note**:
+
 - In addition to local file import/export, the app can create/update a temporary dashboard in Home Assistant for editing and then deploy it to production via Lovelace WebSocket commands.
 - A full offline-first local workspace model (local dashboard cache/workspace as the primary edit target) is tracked for a later release (see `havdm.kanban`).
 
 **Local Workspace (Primary)**:
+
 - All editing happens on local copy of dashboard
 - User explicitly loads dashboard from:
   - YAML file
@@ -214,6 +235,7 @@ src/
 - Visual indicator shows "local" vs "synced with HA"
 
 **Deploy to Production**:
+
 - Explicit "Deploy to Production" button
 - Deployment workflow:
   1. Validate configuration
@@ -226,6 +248,7 @@ src/
   8. Option to rollback if issues detected
 
 **Import/Export**:
+
 - Export to YAML (for YAML mode dashboards)
 - Export to JSON (for storage mode dashboards)
 - Import from both formats
@@ -238,6 +261,7 @@ src/
 **Challenge**: No API to detect installed HACS cards
 
 **Solution**:
+
 - **Auto-detection from HA**: Fetch installed custom cards from HA instance
 - **Manual selection**: User can manually enable/disable card support in editor
 - **Unsupported card handling** (per user requirement):
@@ -252,6 +276,7 @@ src/
 **User Requirement**: Render full card previews with dummy data for entities (not simplified representations)
 
 **Implementation Strategy**:
+
 1. **Card Component Library**: Build React components that mimic actual HA card rendering
 2. **Dummy Data System**: Generate realistic dummy data for entity types:
    - sensor.temperature → "21.5°C"
@@ -262,11 +287,13 @@ src/
 5. **Card-Specific Renderers**: Custom renderer for each supported card type
 
 **Challenges**:
+
 - Maintaining visual parity with actual HA cards
 - Handling card-mod CSS styling in preview
 - ApexCharts rendering without real historical data
 
 **Solution**:
+
 - Start with best-effort visual approximation
 - Iterate based on user feedback
 - Document differences between preview and actual HA rendering
@@ -276,6 +303,7 @@ src/
 **User Requirement**: Validate entities exist and show exclamation icon for missing entities
 
 **Implementation**:
+
 1. **Entity Registry Cache**: Fetch and cache available entities from HA
 2. **Validation Service**:
    - Check each entity_id in dashboard config
@@ -295,6 +323,7 @@ src/
    - Warn on deploy if entities can't be validated
 
 **Validation Triggers**:
+
 - On dashboard load
 - On entity property change
 - On explicit "Validate" button click
@@ -305,6 +334,7 @@ src/
 **User Requirement**: Changes in YAML immediately reflected in visual editor
 
 **Implementation Strategy**:
+
 1. **Single Source of Truth**: Dashboard config object in state
 2. **Bidirectional Watchers**:
    - Visual changes → Update state → Update YAML view
@@ -316,6 +346,7 @@ src/
 5. **Cursor Preservation**: Maintain YAML cursor position on updates
 
 **Technical Approach**:
+
 - Use React state management (Zustand/Redux)
 - YAML parser with validation
 - Monaco Editor change events
@@ -326,6 +357,7 @@ src/
 **User Requirement**: Full undo/redo support
 
 **Implementation**:
+
 - Command pattern for all edit operations
 - History stack in state management
 - Support for complex operations (multi-card moves, property changes)
@@ -336,6 +368,7 @@ src/
 **Challenge**: CSS styling layer on top of other cards
 
 **Solution**:
+
 - Visual CSS editor with live preview
 - Property panel shows both card config and card-mod styles
 - Separate "Styles" tab in property editor
@@ -344,6 +377,7 @@ src/
 ## Data Flow
 
 ### Dashboard Loading Flow (Offline-First)
+
 ```
 User Action: Open Dashboard (from file/HA/new)
   ↓
@@ -365,6 +399,7 @@ User Action: Open Dashboard (from file/HA/new)
 ```
 
 ### Real-Time Edit Flow
+
 ```
 User Action: Edit in Visual Editor OR Edit YAML
   ↓
@@ -384,6 +419,7 @@ User Action: Edit in Visual Editor OR Edit YAML
 ```
 
 ### Deploy to Production Flow
+
 ```
 User Action: Click "Deploy to Production"
   ↓
@@ -410,6 +446,7 @@ User Action: Click "Deploy to Production"
 ```
 
 ### Home Assistant Connection Flow (Future)
+
 ```
 User: Enter HA URL + Token
   ↓
@@ -448,6 +485,7 @@ User: Enter HA URL + Token
 ## MVP Feature Scope
 
 ### Phase 1: Core Editor (MVP)
+
 1. YAML file loading and parsing
 2. Visual grid-based canvas
 3. Standard HA cards (entities, button, picture, markdown)
@@ -458,12 +496,14 @@ User: Enter HA URL + Token
 8. Basic validation
 
 ### Phase 2: Custom Cards
+
 1. Bubble Card support
 2. Button Card support (basic config, no templates)
 3. Card detection from user input
 4. Enhanced property editors
 
 ### Phase 3: Advanced Features
+
 1. ApexCharts Card support
 2. Card-mod CSS styling
 3. Template editor for button-card
@@ -472,6 +512,7 @@ User: Enter HA URL + Token
 6. Dashboard templates
 
 ### Phase 4: HA Integration
+
 1. WebSocket connection to HA
 2. Live entity states in preview
 3. Direct dashboard read/write (if API available)
@@ -481,6 +522,7 @@ User: Enter HA URL + Token
 ## Development Approach
 
 ### Technology Setup
+
 1. **Electron Forge** for project scaffolding and building
 2. **Vite** for fast React development
 3. **TypeScript** strict mode
@@ -488,12 +530,14 @@ User: Enter HA URL + Token
 5. **Vitest** + **React Testing Library** for unit tests; **Playwright** for E2E/integration tests (see `docs/testing/TESTING_STANDARDS.md` and `docs/testing/PLAYWRIGHT_TESTING.md`)
 
 ### Project Initialization
+
 ```bash
 npm create @quick-start/electron electron-app
 # Choose: React + TypeScript + Vite
 ```
 
 ### Build & Distribution
+
 - **Windows**: NSIS installer (.exe)
 - **Linux**: AppImage, .deb, .rpm
 - **Auto-updater**: electron-updater (post-MVP)
@@ -512,6 +556,7 @@ These questions are detailed in `docs/research/REQUIREMENTS_QUESTIONNAIRE.md`, b
 ## Success Criteria
 
 ### MVP Success
+
 - Load a YAML dashboard and display it visually
 - Move cards via drag-and-drop
 - Edit card properties via visual forms
@@ -519,6 +564,7 @@ These questions are detailed in `docs/research/REQUIREMENTS_QUESTIONNAIRE.md`, b
 - Support at least 5 standard HA card types
 
 ### Full Success
+
 - Support all 4 target custom cards (bubble, apexcharts, button, card-mod)
 - Real-time preview with HA connection
 - Template editor
@@ -527,23 +573,27 @@ These questions are detailed in `docs/research/REQUIREMENTS_QUESTIONNAIRE.md`, b
 ## References
 
 ### Home Assistant Documentation
+
 - [Multiple Dashboards](https://www.home-assistant.io/dashboards/dashboards/)
 - [REST API Documentation](https://developers.home-assistant.io/docs/api/rest/)
 - [WebSocket API Documentation](https://developers.home-assistant.io/docs/api/websocket/)
 - [WebSocket API Integration](https://www.home-assistant.io/integrations/websocket_api/)
 
 ### Custom Cards
+
 - [Bubble Card GitHub](https://github.com/Clooos/Bubble-Card)
 - [ApexCharts Card GitHub](https://github.com/RomRider/apexcharts-card)
 - [Button Card GitHub](https://github.com/custom-cards/button-card)
 - [Card-mod GitHub](https://github.com/thomasloven/lovelace-card-mod)
 
 ### Community Resources
+
 - [Bubble Card Community Thread](https://community.home-assistant.io/t/bubble-card-a-minimalist-card-collection-for-home-assistant-with-a-nice-pop-up-touch/609678)
 - [ApexCharts Community Thread](https://community.home-assistant.io/t/apexcharts-card-a-highly-customizable-graph-card/272877)
 - [Card-mod Community Thread](https://community.home-assistant.io/t/card-mod-add-css-styles-to-any-lovelace-card/120744)
 
 ### Tools
+
 - [Card-mod Helper Tool](https://matt8707.github.io/card-mod-helper/)
 
 ---
@@ -553,6 +603,7 @@ These questions are detailed in `docs/research/REQUIREMENTS_QUESTIONNAIRE.md`, b
 Longer-term architecture standards, performance targets, and roadmap items are maintained separately in `docs/architecture/ARCHITECTURE_ROADMAP.md`.
 
 Planned remediation items (post `v0.4.0`):
+
 - Offline-first local workspace model (tracked in `havdm.kanban`)
 - TypeScript upgrade to v5+ (tracked in `havdm.kanban`)
 

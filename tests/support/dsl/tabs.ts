@@ -8,7 +8,9 @@ export class TabsDSL {
   }
 
   private async waitForAllSelectDropdownsToClose(): Promise<void> {
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+      timeout: 5000,
+    });
   }
 
   private async openSelectDropdown(select: Locator): Promise<void> {
@@ -24,7 +26,9 @@ export class TabsDSL {
 
   private async selectOptionByText(pattern: RegExp): Promise<void> {
     await expect(this.getVisibleSelectDropdown()).toBeVisible({ timeout: 5000 });
-    const option = this.window.locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: pattern }).first();
+    const option = this.window
+      .locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: pattern })
+      .first();
     await expect(option).toBeVisible();
     await option.evaluate((el) => {
       (el as HTMLElement).click();
@@ -85,7 +89,9 @@ export class TabsDSL {
     await expect(searchInput).toBeVisible();
     await searchInput.fill('custom:tabbed-card');
 
-    const card = this.window.getByTestId('card-palette').getByTestId('palette-card-custom:tabbed-card');
+    const card = this.window
+      .getByTestId('card-palette')
+      .getByTestId('palette-card-custom:tabbed-card');
     await expect(card).toBeVisible({ timeout: 5000 });
     await card.dblclick();
 
@@ -113,7 +119,9 @@ export class TabsDSL {
   }
 
   async expectTabCount(count: number, cardIndex = 0): Promise<void> {
-    await expect(this.getCard(cardIndex).locator('[data-testid^="tabs-trigger-"]')).toHaveCount(count);
+    await expect(this.getCard(cardIndex).locator('[data-testid^="tabs-trigger-"]')).toHaveCount(
+      count,
+    );
   }
 
   async expectTabTitle(index: number, title: string, cardIndex = 0): Promise<void> {
@@ -121,7 +129,10 @@ export class TabsDSL {
   }
 
   async expectOrientation(orientation: 'horizontal' | 'vertical', cardIndex = 0): Promise<void> {
-    await expect(this.getCard(cardIndex).getByTestId('tabs-tablist')).toHaveAttribute('aria-orientation', orientation);
+    await expect(this.getCard(cardIndex).getByTestId('tabs-tablist')).toHaveAttribute(
+      'aria-orientation',
+      orientation,
+    );
   }
 
   async setTabTitle(index: number, title: string): Promise<void> {
@@ -183,7 +194,9 @@ export class TabsDSL {
     await this.window.keyboard.press(key === 'Space' ? ' ' : key);
   }
 
-  async pressTabKey(key: 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown' | 'Home' | 'End'): Promise<void> {
+  async pressTabKey(
+    key: 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown' | 'Home' | 'End',
+  ): Promise<void> {
     await this.window.keyboard.press(key);
   }
 
@@ -191,11 +204,16 @@ export class TabsDSL {
     const panel = this.getCard(cardIndex).getByTestId('tabs-panel');
     await expect(panel).toBeVisible();
     await panel.scrollIntoViewIfNeeded();
-    await expect.poll(async () => {
-      const box = await panel.boundingBox();
-      if (!box) return false;
-      return box.width > 20 && box.height > 20;
-    }, { timeout: 5000 }).toBe(true);
+    await expect
+      .poll(
+        async () => {
+          const box = await panel.boundingBox();
+          if (!box) return false;
+          return box.width > 20 && box.height > 20;
+        },
+        { timeout: 5000 },
+      )
+      .toBe(true);
     await this.disableAnimations();
     const box = await panel.boundingBox();
     if (!box) {

@@ -13,12 +13,14 @@
 ### 1. Storage Mode vs YAML Mode
 
 **Storage Mode** (default):
+
 - Dashboards created via the UI
 - Stored in `/config/.storage/lovelace.{dashboard_id}` files
 - **NOT accessible via REST API** (this is by design)
 - **Fully accessible via WebSocket API**
 
 **YAML Mode**:
+
 - Dashboards defined in `ui-lovelace.yaml`
 - Accessible via both REST and WebSocket APIs
 - Requires switching modes and losing UI editor features
@@ -69,6 +71,7 @@ The WebSocket API is the **recommended and supported method** for programmatical
 ### Message Format
 
 All messages after authentication must include:
+
 - `type`: Command name
 - `id`: Unique integer for correlating requests/responses
 
@@ -89,6 +92,7 @@ All messages after authentication must include:
 **Command**: `lovelace/dashboards/list`
 
 **Request**:
+
 ```json
 {
   "id": 1,
@@ -97,6 +101,7 @@ All messages after authentication must include:
 ```
 
 **Response**:
+
 ```json
 {
   "id": 1,
@@ -130,6 +135,7 @@ All messages after authentication must include:
 **Command**: `lovelace/config`
 
 **Request**:
+
 ```json
 {
   "id": 2,
@@ -140,12 +146,14 @@ All messages after authentication must include:
 ```
 
 **Parameters**:
+
 - `url_path`: Dashboard identifier
   - `null` = default dashboard (usually "lovelace")
   - String = specific dashboard path (e.g., "dashboard-1")
 - `force`: Boolean to bypass cache and force reload
 
 **Response**:
+
 ```json
 {
   "id": 2,
@@ -175,6 +183,7 @@ All messages after authentication must include:
 **Command**: `lovelace/resources`
 
 **Request**:
+
 ```json
 {
   "id": 3,
@@ -189,6 +198,7 @@ All messages after authentication must include:
 **Command**: `subscribe_events` with `lovelace_updated` event
 
 **Request**:
+
 ```json
 {
   "id": 4,
@@ -198,6 +208,7 @@ All messages after authentication must include:
 ```
 
 **Event Data**:
+
 ```json
 {
   "event": {
@@ -425,26 +436,28 @@ if __name__ == "__main__":
 
 ## WebSocket vs REST API Comparison
 
-| Feature | REST API | WebSocket API |
-|---------|----------|---------------|
-| **Connection Type** | Request-Response (HTTP) | Persistent Bidirectional |
-| **Storage Mode Dashboards** | ❌ Not Accessible (404 error) | ✅ Fully Accessible |
-| **YAML Mode Dashboards** | ✅ Accessible | ✅ Accessible |
-| **Real-time Updates** | ❌ Must poll | ✅ Push notifications |
-| **Authentication** | Bearer token header | Long-lived access token |
-| **Use Case** | Simple one-off requests | Real-time monitoring, dashboards |
-| **Efficiency** | Higher overhead (each request = new connection) | Lower overhead (persistent connection) |
-| **Platform Support** | Universal (HTTP) | Requires WebSocket support |
+| Feature                     | REST API                                        | WebSocket API                          |
+| --------------------------- | ----------------------------------------------- | -------------------------------------- |
+| **Connection Type**         | Request-Response (HTTP)                         | Persistent Bidirectional               |
+| **Storage Mode Dashboards** | ❌ Not Accessible (404 error)                   | ✅ Fully Accessible                    |
+| **YAML Mode Dashboards**    | ✅ Accessible                                   | ✅ Accessible                          |
+| **Real-time Updates**       | ❌ Must poll                                    | ✅ Push notifications                  |
+| **Authentication**          | Bearer token header                             | Long-lived access token                |
+| **Use Case**                | Simple one-off requests                         | Real-time monitoring, dashboards       |
+| **Efficiency**              | Higher overhead (each request = new connection) | Lower overhead (persistent connection) |
+| **Platform Support**        | Universal (HTTP)                                | Requires WebSocket support             |
 
 ### When to Use Each:
 
 **REST API**:
+
 - Simple, one-off requests (e.g., turn on a light)
 - Embedded devices with limited memory
 - Cross-platform compatibility is critical
 - YAML-mode dashboards only
 
 **WebSocket API**:
+
 - Real-time dashboard updates
 - Continuous monitoring
 - **Storage-mode dashboard access (required)**
@@ -489,21 +502,25 @@ if __name__ == "__main__":
 Beyond Lovelace, the WebSocket API provides many other useful commands:
 
 ### Get System State
+
 ```json
-{"id": 1, "type": "get_states"}
+{ "id": 1, "type": "get_states" }
 ```
 
 ### Get Configuration
+
 ```json
-{"id": 2, "type": "get_config"}
+{ "id": 2, "type": "get_config" }
 ```
 
 ### Get Available Services
+
 ```json
-{"id": 3, "type": "get_services"}
+{ "id": 3, "type": "get_services" }
 ```
 
 ### Call a Service
+
 ```json
 {
   "id": 4,
@@ -518,6 +535,7 @@ Beyond Lovelace, the WebSocket API provides many other useful commands:
 ```
 
 ### Subscribe to State Changes
+
 ```json
 {
   "id": 5,
@@ -527,13 +545,15 @@ Beyond Lovelace, the WebSocket API provides many other useful commands:
 ```
 
 ### Ping/Pong (Keepalive)
+
 ```json
-{"id": 6, "type": "ping"}
+{ "id": 6, "type": "ping" }
 ```
 
 Response:
+
 ```json
-{"id": 6, "type": "pong"}
+{ "id": 6, "type": "pong" }
 ```
 
 ---
@@ -541,32 +561,40 @@ Response:
 ## Common Issues and Solutions
 
 ### Issue 1: Connection Refused
+
 **Problem**: Cannot connect to WebSocket
 **Solutions**:
+
 - Verify Home Assistant is running
 - Check the URL (ws:// for HTTP, wss:// for HTTPS)
 - Ensure port 8123 is accessible
 - Check firewall rules
 
 ### Issue 2: Authentication Failed
+
 **Problem**: `auth_invalid` response
 **Solutions**:
+
 - Verify the access token is correct
 - Ensure token hasn't been revoked
 - Create a new long-lived access token
 - Check for extra whitespace in token
 
 ### Issue 3: Command Returns Empty Result
+
 **Problem**: Dashboard config is empty
 **Solutions**:
+
 - Verify the dashboard exists (use `lovelace/dashboards/list` first)
 - Check `url_path` parameter matches dashboard ID
 - Try with `force: true` to bypass cache
 - Ensure you have permission to access the dashboard
 
 ### Issue 4: Connection Drops
+
 **Problem**: WebSocket disconnects unexpectedly
 **Solutions**:
+
 - Implement automatic reconnection logic
 - Use ping/pong for keepalive
 - Check network stability
@@ -577,11 +605,13 @@ Response:
 ## References and Sources
 
 ### Official Documentation
+
 - [Home Assistant WebSocket API Documentation](https://developers.home-assistant.io/docs/api/websocket/)
 - [Home Assistant WebSocket API Integration](https://www.home-assistant.io/integrations/websocket_api/)
 - [Multiple Dashboards Documentation](https://www.home-assistant.io/dashboards/dashboards/)
 
 ### GitHub Issues and Pull Requests
+
 - [Add API on new Lovelace UI storage mode - Issue #19790](https://github.com/home-assistant/core/issues/19790)
 - [Add API on new Lovelace UI storage mode - Issue #2406](https://github.com/home-assistant/frontend/issues/2406)
 - [Support multiple Lovelace dashboards - PR #32134](https://github.com/home-assistant/core/pull/32134/files)
@@ -589,18 +619,21 @@ Response:
 - [Frontend Lovelace TypeScript](https://github.com/home-assistant/frontend/blob/dev/src/data/lovelace.ts)
 
 ### Community Discussions
+
 - [API: Get lovelace dashboard JSON - Feature Request](https://community.home-assistant.io/t/api-get-lovelace-dashboard-json/820818)
 - [Lovelace API Endpoint - Feature Request](https://community.home-assistant.io/t/lovelace-api-endpoint/109228)
 - [Where are the Lovelace dashboard configs stored?](https://community.home-assistant.io/t/where-are-the-lovelace-dashboard-configs-stored/181554)
 - [Python code to access websockets api](https://community.home-assistant.io/t/python-code-to-access-websockets-api/66744)
 
 ### Tutorials and Guides
+
 - [Home Assistant WebSocket API: A Python Guide](https://jonbrobinson.com/blog/home-assistant-websocket-api-a)
 - [Listening to the Home Assistant Websocket API with Python](https://jeroenboumans.medium.com/listening-to-the-home-assistent-websocket-api-with-python-7a074f8c81ea)
 - [Powering home automation with WebSocket APIs](https://medium.com/better-practices/powering-home-automation-with-websocket-apis-8885a7601523)
 - [Home Assistant with WebSocket APIs - Postman Guide](https://quickstarts.postman.com/guide/home-assistant/index.html?index=../..index)
 
 ### Python Libraries
+
 - [HomeAssistant-API on PyPI](https://pypi.org/project/HomeAssistant-API/)
 - [HomeAssistant API Documentation](https://homeassistantapi.readthedocs.io/en/latest/usage.html)
 - [homeassistant-ws (Minimalist client library)](https://github.com/filp/homeassistant-ws)
@@ -613,6 +646,7 @@ Response:
 The Home Assistant WebSocket API is the **official and recommended method** for programmatically retrieving Lovelace dashboard configurations, especially for storage-mode dashboards. While the REST API returns 404 errors for these dashboards, the WebSocket API provides full access with real-time updates and efficient bidirectional communication.
 
 **Key Takeaways**:
+
 1. Use WebSocket API for storage-mode dashboards (REST API won't work)
 2. Commands: `lovelace/dashboards/list` and `lovelace/config`
 3. Requires long-lived access token authentication

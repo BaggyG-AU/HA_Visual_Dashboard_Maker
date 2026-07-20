@@ -16,7 +16,11 @@ interface RendererState {
 }
 
 class NativeGraphsErrorBoundary extends React.Component<
-  React.PropsWithChildren<{ card: NativeGraphCardConfig; onClick?: () => void; isSelected?: boolean }>,
+  React.PropsWithChildren<{
+    card: NativeGraphCardConfig;
+    onClick?: () => void;
+    isSelected?: boolean;
+  }>,
   RendererState
 > {
   state: RendererState = { hasError: false, errorMessage: undefined, componentStack: undefined };
@@ -31,7 +35,6 @@ class NativeGraphsErrorBoundary extends React.Component<
       componentStack: errorInfo.componentStack,
     });
     // Keep explicit logging so Playwright traces capture renderer exceptions.
-    // eslint-disable-next-line no-console
     console.error('[NativeGraphsCardRenderer] render error:', {
       message: error.message,
       stack: error.stack,
@@ -60,9 +63,12 @@ class NativeGraphsErrorBoundary extends React.Component<
             type="warning"
             showIcon
             message="Graph preview unavailable"
-            description={(
+            description={
               <>
-                <div>{this.state.errorMessage || 'Rendering fallback shown because chart preview encountered an error.'}</div>
+                <div>
+                  {this.state.errorMessage ||
+                    'Rendering fallback shown because chart preview encountered an error.'}
+                </div>
                 {this.state.componentStack && (
                   <pre
                     style={{
@@ -77,7 +83,7 @@ class NativeGraphsErrorBoundary extends React.Component<
                   </pre>
                 )}
               </>
-            )}
+            }
           />
         </div>
       </AntCard>

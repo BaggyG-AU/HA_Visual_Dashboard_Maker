@@ -25,12 +25,12 @@ const DEFAULT_CONFIG: Omit<NormalizedPopupConfig, 'cards'> = {
 };
 
 const isPopupSize = (value: unknown): value is PopupSize =>
-  value === 'auto'
-  || value === 'small'
-  || value === 'medium'
-  || value === 'large'
-  || value === 'fullscreen'
-  || value === 'custom';
+  value === 'auto' ||
+  value === 'small' ||
+  value === 'medium' ||
+  value === 'large' ||
+  value === 'fullscreen' ||
+  value === 'custom';
 
 const toFiniteNumber = (value: unknown): number | undefined =>
   typeof value === 'number' && Number.isFinite(value) ? value : undefined;
@@ -60,20 +60,29 @@ const normalizeFooterActions = (input: unknown): PopupFooterAction[] => {
     if (!action || typeof action !== 'object') return [];
     const typed = action as { label?: unknown; action?: unknown; button_type?: unknown };
     if (typeof typed.label !== 'string' || typed.label.trim().length === 0) return [];
-    return [{
-      label: typed.label.trim(),
-      action: typed.action === 'close' ? 'close' : 'none',
-      button_type: typeof typed.button_type === 'string' && allowedButtonTypes.has(typed.button_type)
-        ? typed.button_type as PopupFooterAction['button_type']
-        : 'default',
-    }];
+    return [
+      {
+        label: typed.label.trim(),
+        action: typed.action === 'close' ? 'close' : 'none',
+        button_type:
+          typeof typed.button_type === 'string' && allowedButtonTypes.has(typed.button_type)
+            ? (typed.button_type as PopupFooterAction['button_type'])
+            : 'default',
+      },
+    ];
   });
 };
 
-export const normalizePopupConfig = (input: PopupConfig | undefined, titleFallback?: string): NormalizedPopupConfig => {
-  const title = typeof input?.title === 'string' && input.title.trim().length > 0
-    ? input.title
-    : (typeof titleFallback === 'string' && titleFallback.trim().length > 0 ? titleFallback : DEFAULT_CONFIG.title);
+export const normalizePopupConfig = (
+  input: PopupConfig | undefined,
+  titleFallback?: string,
+): NormalizedPopupConfig => {
+  const title =
+    typeof input?.title === 'string' && input.title.trim().length > 0
+      ? input.title
+      : typeof titleFallback === 'string' && titleFallback.trim().length > 0
+        ? titleFallback
+        : DEFAULT_CONFIG.title;
 
   const size = isPopupSize(input?.size) ? input.size : DEFAULT_CONFIG.size;
   const customSize = size === 'custom' ? normalizeCustomSize(input?.custom_size) : undefined;
@@ -82,15 +91,19 @@ export const normalizePopupConfig = (input: PopupConfig | undefined, titleFallba
     title,
     size,
     custom_size: customSize,
-    close_on_backdrop: typeof input?.close_on_backdrop === 'boolean'
-      ? input.close_on_backdrop
-      : DEFAULT_CONFIG.close_on_backdrop,
+    close_on_backdrop:
+      typeof input?.close_on_backdrop === 'boolean'
+        ? input.close_on_backdrop
+        : DEFAULT_CONFIG.close_on_backdrop,
     backdrop_opacity: normalizeBackdropOpacity(input?.backdrop_opacity),
-    show_header: typeof input?.show_header === 'boolean' ? input.show_header : DEFAULT_CONFIG.show_header,
-    show_footer: typeof input?.show_footer === 'boolean' ? input.show_footer : DEFAULT_CONFIG.show_footer,
-    close_label: typeof input?.close_label === 'string' && input.close_label.trim().length > 0
-      ? input.close_label
-      : DEFAULT_CONFIG.close_label,
+    show_header:
+      typeof input?.show_header === 'boolean' ? input.show_header : DEFAULT_CONFIG.show_header,
+    show_footer:
+      typeof input?.show_footer === 'boolean' ? input.show_footer : DEFAULT_CONFIG.show_footer,
+    close_label:
+      typeof input?.close_label === 'string' && input.close_label.trim().length > 0
+        ? input.close_label
+        : DEFAULT_CONFIG.close_label,
     footer_actions: normalizeFooterActions(input?.footer_actions),
     cards: Array.isArray(input?.cards) ? input.cards : [],
   };
@@ -102,7 +115,9 @@ export const resolvePopupFromCard = (card: Card): NormalizedPopupConfig | null =
   return normalizePopupConfig(typed.popup, typed.title ?? typed.trigger_label);
 };
 
-export const resolvePopupFromAction = (action: Action | undefined): NormalizedPopupConfig | null => {
+export const resolvePopupFromAction = (
+  action: Action | undefined,
+): NormalizedPopupConfig | null => {
   if (!action || action.action !== 'popup') return null;
 
   return normalizePopupConfig(

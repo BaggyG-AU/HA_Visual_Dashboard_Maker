@@ -18,10 +18,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ## Development Phases
 
 ### Phase 0: Foundation ✅ COMPLETE
+
 **Status**: Complete
 **Goal**: Establish project requirements, architecture, and initial structure
 
 **Tasks**:
+
 - [x] Requirements gathering questionnaire
 - [x] Architecture design and documentation
 - [x] Technology stack selection (Electron + React + TypeScript)
@@ -31,12 +33,14 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 - [x] Git repository created and pushed to GitHub
 
 **Deliverables**:
+
 - REQUIREMENTS_QUESTIONNAIRE.md (completed with user answers)
 - ARCHITECTURE.md
 - README.md
 - Git repository: https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker
 
 **Key Decisions Made**:
+
 - Framework: Electron + React + TypeScript
 - Offline-first workflow with explicit deploy
 - Entity validation with visual warnings
@@ -45,10 +49,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 1: Core Application Setup ✅ COMPLETE
+
 **Status**: Complete
 **Goal**: Working Electron application with basic UI
 
 **Tasks**:
+
 1. Initialize Electron Forge project with React + TypeScript
 2. Set up development environment (ESLint, Prettier, TypeScript configs)
 3. Create basic application shell
@@ -60,11 +66,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 6. Configure build pipeline for Windows and Linux
 
 **Deliverables**:
+
 - Runnable Electron application
 - Basic UI framework
 - Build configuration
 
 **Acceptance Criteria**:
+
 - Application launches on Windows and Linux
 - Can open file dialogs
 - Basic menu works
@@ -73,10 +81,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 2: YAML Dashboard Loading (MVP Core) ✅ COMPLETE
+
 **Status**: Complete (YAML parsing/validation covered by integration tests)
 **Goal**: Load and parse Home Assistant YAML dashboards
 
 **Tasks**:
+
 1. Implement YAML parser (js-yaml integration)
 2. Create HA dashboard schema definitions (TypeScript types)
 3. Implement dashboard validation
@@ -86,11 +96,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 7. Error handling for invalid YAML
 
 **Deliverables**:
+
 - YAML loading functionality
 - Dashboard state management
 - Validation system
 
 **Acceptance Criteria**:
+
 - Can open and parse ui-lovelace.yaml files
 - Validates against HA schema
 - Shows clear error messages for invalid files
@@ -99,10 +111,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 3: Visual Editor Canvas ✅ COMPLETE
+
 **Status**: Complete (grid layout + drag/drop implemented)
 **Goal**: Visual representation of dashboard with grid layout
 
 **Tasks**:
+
 1. Implement grid layout system (matching HA's grid)
 2. Render cards as visual placeholders
 3. Implement drag-and-drop functionality (react-grid-layout)
@@ -112,11 +126,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 7. Responsive canvas sizing
 
 **Deliverables**:
+
 - Visual dashboard canvas
 - Drag-and-drop system
 - Grid layout engine
 
 **Acceptance Criteria**:
+
 - Dashboard displays visually with cards in correct positions
 - Can drag cards to reposition them
 - Grid system matches HA behavior
@@ -125,10 +141,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 4: Standard Card Support ✅ COMPLETE
+
 **Status**: Complete (core HA cards implemented with renderers/property editors)
 **Goal**: Support for Home Assistant's built-in card types
 
 **Tasks**:
+
 1. ✅ Implement card type registry
 2. ✅ Create visual renderers for standard cards:
    - Entities card
@@ -143,11 +161,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 5. ✅ Real-time preview updates
 
 **Deliverables**:
+
 - ✅ 22 standard card type implementations
 - ✅ Property editor UI
 - ✅ Card palette/library
 
 **Acceptance Criteria**:
+
 - ✅ Can add standard HA cards from palette
 - ✅ Property editor shows card-specific options
 - ✅ Changes reflect immediately in canvas
@@ -156,12 +176,14 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 4.5: Properties Panel (Completed Out of Order) ✅ COMPLETE
+
 **Status**: Complete (Implemented December 2025)
 **Goal**: Visual property editing for standard card types
 
 **Note**: This was implemented before Phase 5 (YAML Code Editor) to provide immediate value to users who need to edit card properties.
 
 **Tasks**:
+
 1. ✅ Create properties panel UI in right sidebar
 2. ✅ Implement form-based property editing
 3. ✅ Add support for 15+ standard card types:
@@ -174,11 +196,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 5. ✅ Change tracking (dirty state management)
 
 **Deliverables**:
+
 - ✅ Properties panel component
 - ✅ Card-specific property editors for 15+ card types
 - ✅ Form validation
 
 **Acceptance Criteria**:
+
 - ✅ Select card to view/edit properties
 - ✅ Property changes apply immediately
 - ✅ Changes mark dashboard as dirty
@@ -188,10 +212,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 5: YAML Code Editor (In Progress)
+
 **Status**: Monaco YAML modal implemented; split view pending
 **Goal**: Dual view with visual and code editing
 
 **Tasks**:
+
 1. Integrate Monaco Editor
 2. Configure YAML syntax highlighting
 3. Implement YAML schema-based autocomplete
@@ -201,11 +227,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 7. Line highlighting for selected card
 
 **Deliverables**:
+
 - Monaco-based YAML editor/modal
 - Split view functionality (pending)
 - Bidirectional sync (pending)
 
 **Acceptance Criteria**:
+
 - Can edit YAML directly
 - Changes in code reflect in visual view (pending)
 - Changes in visual reflect in code (pending)
@@ -215,10 +243,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 6: Save Functionality (Planned)
+
 **Timeline**: TBD
 **Goal**: Save dashboard changes to YAML files
 
 **Tasks**:
+
 1. Implement YAML serialization
 2. Create backup system (auto-backup before save)
 3. Save dialog with options
@@ -228,11 +258,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 7. User notifications and confirmation
 
 **Deliverables**:
+
 - Save functionality
 - Backup system
 - Change tracking
 
 **Acceptance Criteria**:
+
 - Can save dashboard to YAML file
 - Creates backup of original
 - Preserves YAML formatting where possible
@@ -242,10 +274,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 7: ApexCharts Card Support (Priority #1, Planned)
+
 **Timeline**: TBD
 **Goal**: Data visualization with ApexCharts (User Priority: First)
 
 **Tasks**:
+
 1. Analyze ApexCharts card schema
 2. TypeScript types for ApexCharts
 3. Visual renderer with dummy data preview
@@ -258,10 +292,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 6. Chart preview (mock data)
 
 **Deliverables**:
+
 - ApexCharts card implementation
 - Chart configuration UI
 
 **Acceptance Criteria**:
+
 - Can create ApexCharts cards
 - Configure multiple series
 - Select chart types
@@ -270,10 +306,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 8: Bubble Card Support (Priority #2, Planned)
+
 **Timeline**: TBD
 **Goal**: Full support for Bubble Card custom card (User Priority: Second)
 
 **Tasks**:
+
 1. Analyze Bubble Card configuration schema
 2. Create TypeScript types for Bubble Card
 3. Implement visual renderer for Bubble Card types:
@@ -288,10 +326,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 6. Documentation for Bubble Card features
 
 **Deliverables**:
+
 - Bubble Card implementation
 - Bubble Card-specific UI
 
 **Acceptance Criteria**:
+
 - Can add all Bubble Card types
 - Property editors for all Bubble options
 - Visual preview approximates actual card
@@ -300,10 +340,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 9: Button Card Support (Priority #3, Planned)
+
 **Timeline**: TBD
 **Goal**: Basic Button Card support without templates (User Priority: Third)
 
 **Tasks**:
+
 1. Analyze Button Card schema
 2. TypeScript types for Button Card
 3. Visual renderer for Button Card
@@ -315,10 +357,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 5. Template editor (placeholder for Phase 11)
 
 **Deliverables**:
+
 - Basic Button Card support
 - Action editors
 
 **Acceptance Criteria**:
+
 - Can create Button Cards with basic config
 - Action configuration works
 - Basic styling options available
@@ -327,10 +371,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 10: Card-mod Support (Priority #4, Planned)
+
 **Timeline**: TBD
 **Goal**: CSS styling layer for all cards (User Priority: Fourth)
 
 **Tasks**:
+
 1. Analyze card-mod structure
 2. CSS editor integration (Monaco CSS mode)
 3. Style injection visualization
@@ -340,10 +386,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 7. Common style templates
 
 **Deliverables**:
+
 - Card-mod CSS editor
 - Style templates
 
 **Acceptance Criteria**:
+
 - Can add card_mod to any card
 - CSS editor with syntax highlighting
 - Style changes preview in visual editor
@@ -352,10 +400,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 11: Power Flow Card Plus Support (Priority #5, Planned)
+
 **Timeline**: TBD
 **Goal**: Power flow visualization (User Priority: Sixth)
 
 **Tasks**:
+
 1. Analyze power-flow-card-plus schema
 2. TypeScript types
 3. Visual renderer with dummy energy data
@@ -363,9 +413,11 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 5. Entity mapping for solar/grid/battery
 
 **Deliverables**:
+
 - Power Flow Card Plus implementation
 
 **Acceptance Criteria**:
+
 - Can create power flow cards
 - Configure energy entities
 - Visual preview shows flow diagram
@@ -373,26 +425,31 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 12: Mushroom & Mini-Graph Cards (Priority #6, Planned)
+
 **Timeline**: TBD
 **Goal**: Support for Mushroom cards and mini-graph-card (User Priority: Seventh)
 
 **Tasks**:
+
 1. Mushroom card family support
 2. Mini-graph-card support
 3. Property editors for both
 4. Visual renderers
 
 **Deliverables**:
+
 - Mushroom cards support
 - Mini-graph-card support
 
 ---
 
 ### Phase 13: Home Assistant Connection ✅ PARTIAL
+
 **Status**: WebSocket + entity subscription implemented; connection UI/credential storage planned
 **Goal**: Connect to live HA instance
 
 **Tasks**:
+
 1. Connection settings UI (pending)
 2. HA REST API client (pending)
 3. Authentication with long-lived tokens (pending)
@@ -403,11 +460,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 8. Connection status indicator (pending)
 
 **Deliverables**:
+
 - HA connection system (UI + storage pending)
 - Entity browser (initial version)
 - Credential management (pending)
 
 **Acceptance Criteria**:
+
 - Can connect to HA instance (UI + storage pending)
 - Credentials stored securely
 - Fetches available entities
@@ -416,10 +475,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 14: Deploy to Production Feature (Planned)
+
 **Timeline**: TBD
 **Goal**: Implement offline-first workflow with explicit deploy
 
 **Tasks**:
+
 1. Local dashboard cache/workspace system
 2. "Deploy to Production" button and workflow
 3. Backup creation before deployment
@@ -429,11 +490,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 7. Rollback capability
 
 **Deliverables**:
+
 - Offline workspace system
 - Deploy to production feature
 - Backup and rollback
 
 **Acceptance Criteria**:
+
 - Can work on dashboards offline
 - Explicit user action required to deploy
 - Creates backup before deployment
@@ -443,10 +506,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 15: Entity Validation & Warnings (Planned)
+
 **Timeline**: TBD
 **Goal**: Validate entities exist and show visual warnings
 
 **Tasks**:
+
 1. Entity existence validation against HA instance
 2. Visual warning indicators (exclamation icons) on cards
 3. Entity validation panel/report
@@ -455,11 +520,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 6. Entity suggestions for typos
 
 **Deliverables**:
+
 - Entity validation system
 - Visual warning indicators
 - Validation report UI
 
 **Acceptance Criteria**:
+
 - Missing entities shown with exclamation icon
 - Validation runs on entity changes
 - Clear indication of which entities are missing
@@ -468,10 +535,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 16: Advanced Features (Planned)
+
 **Timeline**: TBD
 **Goal**: Polish and advanced functionality
 
 **Tasks**:
+
 1. Undo/redo system
 2. Multi-select and bulk operations
 3. Copy/paste cards
@@ -483,11 +552,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 9. Settings/preferences panel
 
 **Deliverables**:
+
 - Undo/redo
 - Templates
 - Enhanced UX
 
 **Acceptance Criteria**:
+
 - Undo/redo works for all operations
 - Can save/load templates
 - Keyboard shortcuts documented
@@ -496,10 +567,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 17: Template & Sharing System (Planned)
+
 **Timeline**: TBD
 **Goal**: Dashboard templates and community sharing
 
 **Tasks**:
+
 1. Template export/import system
 2. Template library UI
 3. Community template repository integration
@@ -508,11 +581,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 6. Template version management
 
 **Deliverables**:
+
 - Template system
 - Template library
 - Community integration
 
 **Acceptance Criteria**:
+
 - Can save dashboards as templates
 - Can browse and import templates
 - Templates include metadata
@@ -521,10 +596,12 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ---
 
 ### Phase 18: Beta Release (Planned)
+
 **Timeline**: TBD
 **Goal**: Public beta release
 
 **Tasks**:
+
 1. Comprehensive testing
 2. Bug fixes
 3. Documentation:
@@ -537,11 +614,13 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 7. Feedback collection system
 
 **Deliverables**:
+
 - Beta release build
 - Documentation
 - Feedback mechanism
 
 **Acceptance Criteria**:
+
 - Stable on Windows and Linux
 - All MVP features working
 - Clear documentation
@@ -552,6 +631,7 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ## Success Metrics
 
 ### MVP Success (Phases 1-6)
+
 - Load and display HA dashboard visually with real-time YAML sync
 - Edit card positions and properties
 - Save changes to YAML and JSON
@@ -559,6 +639,7 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 - Offline-first editing workflow
 
 ### Custom Card Success (Phases 7-12)
+
 - ApexCharts (Priority 1)
 - Bubble Card (Priority 2)
 - Button Card (Priority 3)
@@ -568,6 +649,7 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 - Full visual property editors with dummy data previews
 
 ### Integration Success (Phase 13-15)
+
 - Connect to HA instance (local/remote/cloud)
 - Entity browser with validation
 - Entity existence warnings with visual indicators
@@ -575,6 +657,7 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 - Secure credential storage
 
 ### Production Ready (Phases 16-18)
+
 - Professional UX matching HA theme
 - Template system with community sharing
 - Undo/redo functionality
@@ -585,9 +668,11 @@ This document outlines the phased development plan for the HA Visual Dashboard M
 ## Dependencies & Prioritization
 
 ### Critical Path (Must Complete in Order):
+
 Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 (MVP)
 
 ### After MVP - Custom Cards (Can parallelize by priority):
+
 1. Phase 7: ApexCharts (PRIORITY 1)
 2. Phase 8: Bubble Card (PRIORITY 2)
 3. Phase 9: Button Card (PRIORITY 3)
@@ -596,28 +681,34 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 (MVP)
 6. Phase 12: Mushroom & Mini-Graph (PRIORITY 6)
 
 ### After MVP - Integration Features (Sequential):
+
 Phase 13 (HA Connection) → Phase 14 (Deploy to Production) → Phase 15 (Entity Validation)
 
 ### Polish Phase (After core features):
+
 Phase 16 (Advanced Features) → Phase 17 (Templates) → Phase 18 (Beta Release)
 
 ## Risk Management
 
 ### Technical Risks
+
 1. **No Dashboard API**: Mitigated by YAML file approach
 2. **Custom Card Complexity**: Start with simpler cards (Bubble), defer complex ones
 3. **Cross-platform Issues**: Test early and often on both platforms
 
 ### Scope Risks
+
 1. **Feature Creep**: Stick to MVP scope first
 2. **Custom Card Support**: Limit to 4 cards initially
 
 ### User Adoption Risks
+
 1. **HA Compatibility**: Target HA 2025.12+ (per user requirements)
 2. **Learning Curve**: Create tutorials and documentation
 3. **Card Rendering Complexity**: Full card previews with dummy data is complex - may need iterative approach
 
 ### Scope Risks
+
 1. **Offline-First + Deploy**: Complex workflow requiring careful state management
 2. **Entity Validation**: Requires connection to HA, handle gracefully when offline
 3. **Real-time YAML Sync**: Bidirectional sync is technically challenging
@@ -627,6 +718,7 @@ Phase 16 (Advanced Features) → Phase 17 (Templates) → Phase 18 (Beta Release
 ✅ **Phase 0 Complete** - Requirements gathered and documented
 
 ### Immediate Next Actions:
+
 1. **Initialize Electron Project** (Phase 1 start)
    - Set up Electron Forge with React + TypeScript
    - Configure development environment

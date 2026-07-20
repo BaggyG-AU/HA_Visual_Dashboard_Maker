@@ -74,7 +74,10 @@ export const ThermostatCardRenderer: React.FC<ThermostatCardRendererProps> = ({
   };
 
   const statusColor = getStatusColor();
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   return (
     <AntCard
@@ -88,12 +91,12 @@ export const ThermostatCardRenderer: React.FC<ThermostatCardRendererProps> = ({
       }}
       styles={{
         body: {
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        gap: '12px',
-      },
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          gap: '12px',
+        },
       }}
       onClick={onClick}
       hoverable
@@ -107,56 +110,66 @@ export const ThermostatCardRenderer: React.FC<ThermostatCardRendererProps> = ({
       </div>
 
       {/* Current temperature (large display) */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flex: 1,
-        flexDirection: 'column',
-        gap: '8px',
-      }}>
-        <div style={{
-          fontSize: '48px',
-          fontWeight: 'bold',
-          color: statusColor,
-          lineHeight: 1,
-        }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: 1,
+          flexDirection: 'column',
+          gap: '8px',
+        }}
+      >
+        <div
+          style={{
+            fontSize: '48px',
+            fontWeight: 'bold',
+            color: statusColor,
+            lineHeight: 1,
+          }}
+        >
           {entity ? currentTemp.toFixed(1) : '--'}
           <span style={{ fontSize: '24px', marginLeft: '4px' }}>{unit}</span>
         </div>
 
         {/* Status text */}
-        <Text style={{
-          color: statusColor,
-          fontSize: '12px',
-          textTransform: 'capitalize',
-        }}>
+        <Text
+          style={{
+            color: statusColor,
+            fontSize: '12px',
+            textTransform: 'capitalize',
+          }}
+        >
           {getStatusText()}
         </Text>
       </div>
 
       {/* Target temperature control */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '12px',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: '8px',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-      }}>
-        {/* Minus button */}
-        <div style={{
-          width: '32px',
-          height: '32px',
-          borderRadius: '50%',
-          backgroundColor: 'rgba(0, 217, 255, 0.15)',
+      <div
+        style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          border: '1px solid rgba(0, 217, 255, 0.3)',
-          cursor: 'pointer',
-        }}>
+          justifyContent: 'space-between',
+          padding: '12px',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '8px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+        }}
+      >
+        {/* Minus button */}
+        <div
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(0, 217, 255, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid rgba(0, 217, 255, 0.3)',
+            cursor: 'pointer',
+          }}
+        >
           <MinusOutlined style={{ fontSize: '14px', color: '#00d9ff' }} />
         </div>
 
@@ -171,17 +184,19 @@ export const ThermostatCardRenderer: React.FC<ThermostatCardRendererProps> = ({
         </Space>
 
         {/* Plus button */}
-        <div style={{
-          width: '32px',
-          height: '32px',
-          borderRadius: '50%',
-          backgroundColor: 'rgba(0, 217, 255, 0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '1px solid rgba(0, 217, 255, 0.3)',
-          cursor: 'pointer',
-        }}>
+        <div
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(0, 217, 255, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid rgba(0, 217, 255, 0.3)',
+            cursor: 'pointer',
+          }}
+        >
           <PlusOutlined style={{ fontSize: '14px', color: '#00d9ff' }} />
         </div>
       </div>

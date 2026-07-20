@@ -14,13 +14,34 @@ const DEFAULT_SETTINGS: SoundSettings = {
 
 const MAX_POOL_SIZE = 6;
 
-const EFFECTS: Record<SoundEffect, { sequence: Array<{ frequency: number; durationMs: number }>; gain: number }> = {
+const EFFECTS: Record<
+  SoundEffect,
+  { sequence: Array<{ frequency: number; durationMs: number }>; gain: number }
+> = {
   click: { sequence: [{ frequency: 880, durationMs: 60 }], gain: 0.2 },
-  success: { sequence: [{ frequency: 660, durationMs: 120 }, { frequency: 880, durationMs: 120 }], gain: 0.25 },
-  error: { sequence: [{ frequency: 220, durationMs: 120 }, { frequency: 180, durationMs: 120 }], gain: 0.3 },
+  success: {
+    sequence: [
+      { frequency: 660, durationMs: 120 },
+      { frequency: 880, durationMs: 120 },
+    ],
+    gain: 0.25,
+  },
+  error: {
+    sequence: [
+      { frequency: 220, durationMs: 120 },
+      { frequency: 180, durationMs: 120 },
+    ],
+    gain: 0.3,
+  },
   'toggle-on': { sequence: [{ frequency: 520, durationMs: 90 }], gain: 0.25 },
   'toggle-off': { sequence: [{ frequency: 380, durationMs: 90 }], gain: 0.25 },
-  notification: { sequence: [{ frequency: 740, durationMs: 120 }, { frequency: 980, durationMs: 80 }], gain: 0.3 },
+  notification: {
+    sequence: [
+      { frequency: 740, durationMs: 120 },
+      { frequency: 980, durationMs: 80 },
+    ],
+    gain: 0.3,
+  },
 };
 
 let currentSettings: SoundSettings = { ...DEFAULT_SETTINGS };
@@ -46,7 +67,11 @@ const ensureContextRunning = async (ctx: AudioContextLike): Promise<void> => {
   }
 };
 
-const createToneBuffer = (ctx: AudioContextLike, frequency: number, durationMs: number): AudioBufferLike => {
+const createToneBuffer = (
+  ctx: AudioContextLike,
+  frequency: number,
+  durationMs: number,
+): AudioBufferLike => {
   const sampleRate = ctx.sampleRate || 44100;
   const length = Math.max(1, Math.floor(sampleRate * (durationMs / 1000)));
   const buffer = ctx.createBuffer(1, length, sampleRate);
@@ -58,9 +83,15 @@ const createToneBuffer = (ctx: AudioContextLike, frequency: number, durationMs: 
   return buffer;
 };
 
-const createSequenceBuffer = (ctx: AudioContextLike, sequence: Array<{ frequency: number; durationMs: number }>): AudioBufferLike => {
+const createSequenceBuffer = (
+  ctx: AudioContextLike,
+  sequence: Array<{ frequency: number; durationMs: number }>,
+): AudioBufferLike => {
   const sampleRate = ctx.sampleRate || 44100;
-  const totalLength = sequence.reduce((sum, item) => sum + Math.floor(sampleRate * (item.durationMs / 1000)), 0);
+  const totalLength = sequence.reduce(
+    (sum, item) => sum + Math.floor(sampleRate * (item.durationMs / 1000)),
+    0,
+  );
   const buffer = ctx.createBuffer(1, Math.max(1, totalLength), sampleRate);
   const data = buffer.getChannelData(0);
   let offset = 0;
@@ -143,7 +174,10 @@ const cleanupSource = (source: AudioBufferSourceLike) => {
   }
 };
 
-export const playSound = async (effect: SoundEffect, override?: SoundCardConfig): Promise<boolean> => {
+export const playSound = async (
+  effect: SoundEffect,
+  override?: SoundCardConfig,
+): Promise<boolean> => {
   const ctx = getAudioContext();
   if (!ctx) return false;
   const effective = getEffectiveSettings(override);
@@ -176,13 +210,20 @@ export const playSound = async (effect: SoundEffect, override?: SoundCardConfig)
   return true;
 };
 
-export const playSoundForAction = async (action: Action | undefined, override?: SoundCardConfig): Promise<boolean> => {
+export const playSoundForAction = async (
+  action: Action | undefined,
+  override?: SoundCardConfig,
+): Promise<boolean> => {
   if (override?.enabled === false) return false;
   const effect = override?.effect ?? resolveEffectForAction(action);
   if (!effect) return false;
   return playSound(effect, override);
 };
 
-export const previewSoundEffect = async (effect: SoundEffect): Promise<boolean> => playSound(effect);
+export const previewSoundEffect = async (effect: SoundEffect): Promise<boolean> =>
+  playSound(effect);
 
-export const getSoundEffectProfile = (effect: SoundEffect) => ({ ...EFFECTS[effect], sequence: [...EFFECTS[effect].sequence] });
+export const getSoundEffectProfile = (effect: SoundEffect) => ({
+  ...EFFECTS[effect],
+  sequence: [...EFFECTS[effect].sequence],
+});

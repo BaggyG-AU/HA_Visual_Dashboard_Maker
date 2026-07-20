@@ -18,12 +18,14 @@ You are an AI assistant implementing **Feature 4.4: Popup/Modal Card System** fo
 Read these files BEFORE writing any code. They contain immutable rules, architecture patterns, and hard-won lessons from prior regressions:
 
 1. `ai_rules.md` - **highest priority; immutable**. Pay special attention to:
+
 - **Rule 1**: Reuse existing patterns before inventing new ones
 - **Rule 4a**: Shared DSL blast-radius checks when shared helpers change
 - **Rule 5**: One test run -> pause -> diagnose -> ask workflow
 - **Rule 7**: Immutable state updates (React + Zustand)
 - **Rule 8 (8a-8e)**: React Component Stability Rules - Ant Design Integration (**CRITICAL**)
 - **Rule 9**: Git feature workflow
+
 2. `docs/testing/TESTING_STANDARDS.md` - DSL-first testing, testability requirements
 3. `docs/testing/PLAYWRIGHT_TESTING.md` - Troubleshooting and reliable Electron waits
 4. `docs/architecture/ARCHITECTURE.md` - Project structure and integration patterns
@@ -36,22 +38,22 @@ Read these files BEFORE writing any code. They contain immutable rules, architec
 
 Follow the same structure, naming conventions, and integration points used by delivered features:
 
-| Purpose | File |
-|---------|------|
-| Accordion types | `src/features/accordion/types.ts` |
-| Accordion service | `src/features/accordion/accordionService.ts` |
-| Accordion renderer | `src/components/cards/AccordionCardRenderer.tsx` |
-| Swiper service/types | `src/features/carousel/carouselService.ts`, `src/features/carousel/types.ts` |
-| Tabs service/types/panel | `src/services/tabsService.ts`, `src/types/tabs.ts`, `src/features/tabs/TabsPanel.tsx` |
-| Tabs renderer | `src/components/cards/TabsCardRenderer.tsx` |
-| Card registry pattern | `src/services/cardRegistry.ts` |
-| BaseCard dispatch pattern | `src/components/BaseCard.tsx` |
-| Action typing baseline | `src/types/dashboard.ts` |
-| Smart action baseline | `src/services/smartActions.ts` |
+| Purpose                            | File                                                                                                                |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Accordion types                    | `src/features/accordion/types.ts`                                                                                   |
+| Accordion service                  | `src/features/accordion/accordionService.ts`                                                                        |
+| Accordion renderer                 | `src/components/cards/AccordionCardRenderer.tsx`                                                                    |
+| Swiper service/types               | `src/features/carousel/carouselService.ts`, `src/features/carousel/types.ts`                                        |
+| Tabs service/types/panel           | `src/services/tabsService.ts`, `src/types/tabs.ts`, `src/features/tabs/TabsPanel.tsx`                               |
+| Tabs renderer                      | `src/components/cards/TabsCardRenderer.tsx`                                                                         |
+| Card registry pattern              | `src/services/cardRegistry.ts`                                                                                      |
+| BaseCard dispatch pattern          | `src/components/BaseCard.tsx`                                                                                       |
+| Action typing baseline             | `src/types/dashboard.ts`                                                                                            |
+| Smart action baseline              | `src/services/smartActions.ts`                                                                                      |
 | Existing Ant Design Modal patterns | `src/components/ThemeSettingsDialog.tsx`, `src/components/YamlEditorDialog.tsx`, `src/components/EntityBrowser.tsx` |
-| DSL registration | `tests/support/index.ts` |
-| Existing DSL style | `tests/support/dsl/accordion.ts`, `tests/support/dsl/carousel.ts`, `tests/support/dsl/tabs.ts` |
-| Existing layout E2E style | `tests/e2e/accordion.spec.ts`, `tests/e2e/carousel.spec.ts`, `tests/e2e/tabs.spec.ts` |
+| DSL registration                   | `tests/support/index.ts`                                                                                            |
+| Existing DSL style                 | `tests/support/dsl/accordion.ts`, `tests/support/dsl/carousel.ts`, `tests/support/dsl/tabs.ts`                      |
+| Existing layout E2E style          | `tests/e2e/accordion.spec.ts`, `tests/e2e/carousel.spec.ts`, `tests/e2e/tabs.spec.ts`                               |
 
 ---
 
@@ -86,17 +88,17 @@ Follow the same structure, naming conventions, and integration points used by de
 
 ### Code Organization
 
-| Purpose | Path |
-|---------|------|
-| Popup types | `src/features/popup/types.ts` |
-| Popup service/state | `src/features/popup/popupService.ts` |
-| Modal component | `src/features/popup/PopupCardModal.tsx` |
-| Trigger card renderer | `src/components/cards/PopupTriggerCardRenderer.tsx` |
-| Card registry | Add entry in `src/services/cardRegistry.ts` |
-| BaseCard dispatch | Add case in `src/components/BaseCard.tsx` |
-| Action typing update | Extend `Action` in `src/types/dashboard.ts` for `popup` action payload |
-| PropertiesPanel | Add popup controls in `src/components/PropertiesPanel.tsx` |
-| YAML schema | Update `src/schemas/ha-dashboard-schema.json` for popup card + popup action |
+| Purpose               | Path                                                                        |
+| --------------------- | --------------------------------------------------------------------------- |
+| Popup types           | `src/features/popup/types.ts`                                               |
+| Popup service/state   | `src/features/popup/popupService.ts`                                        |
+| Modal component       | `src/features/popup/PopupCardModal.tsx`                                     |
+| Trigger card renderer | `src/components/cards/PopupTriggerCardRenderer.tsx`                         |
+| Card registry         | Add entry in `src/services/cardRegistry.ts`                                 |
+| BaseCard dispatch     | Add case in `src/components/BaseCard.tsx`                                   |
+| Action typing update  | Extend `Action` in `src/types/dashboard.ts` for `popup` action payload      |
+| PropertiesPanel       | Add popup controls in `src/components/PropertiesPanel.tsx`                  |
+| YAML schema           | Update `src/schemas/ha-dashboard-schema.json` for popup card + popup action |
 
 ### YAML Schema
 
@@ -104,11 +106,11 @@ Register as `custom:popup-card` in card registry. Example YAML:
 
 ```yaml
 type: custom:popup-card
-title: "Room Details"
-trigger_label: "View Details"
+title: 'Room Details'
+trigger_label: 'View Details'
 trigger_icon: mdi:information
 popup:
-  title: "Living Room Details"
+  title: 'Living Room Details'
   size: medium
   close_on_backdrop: true
   backdrop_opacity: 0.45
@@ -127,7 +129,7 @@ type: button
 entity: light.living_room
 tap_action:
   action: popup
-  popup_title: "Light Controls"
+  popup_title: 'Light Controls'
   popup_size: small
   popup_close_on_backdrop: true
   popup_cards:
@@ -181,6 +183,7 @@ When adding popup-specific controls to `PropertiesPanel.tsx`, you **MUST** follo
 ## Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [ ] Popup opens with child card content
 - [ ] Close via button, ESC, and backdrop click (when enabled)
 - [ ] Popup trigger works from `tap_action` and `custom:popup-card`
@@ -191,6 +194,7 @@ When adding popup-specific controls to `PropertiesPanel.tsx`, you **MUST** follo
 - [ ] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [ ] Nested popup support (depth <= 3)
 - [ ] Header/footer customization
 - [ ] Multiple popup stack support with deterministic z-index
@@ -198,6 +202,7 @@ When adding popup-specific controls to `PropertiesPanel.tsx`, you **MUST** follo
 - [ ] Popup content layout options (single/stack/grid)
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Runtime drag/resize of popup
 - [ ] Anchor-positioned popovers/tooltips
 - [ ] Persistent popups across dashboard navigation
@@ -210,6 +215,7 @@ When adding popup-specific controls to `PropertiesPanel.tsx`, you **MUST** follo
 ### Unit Tests
 
 Create `tests/unit/popup-service.spec.ts`:
+
 - Popup config parsing/normalization
 - Size normalization + custom size validation
 - Popup stack lifecycle (open/close/top-most behavior)
@@ -219,6 +225,7 @@ Create `tests/unit/popup-service.spec.ts`:
 ### E2E Tests (DSL-first only)
 
 Create `tests/support/dsl/popup.ts` (`PopupDSL`):
+
 - `addPopupCard()`
 - `openPopupFromTriggerCard()`
 - `openPopupFromTapAction(cardIndex?)`
@@ -235,6 +242,7 @@ Create `tests/support/dsl/popup.ts` (`PopupDSL`):
 Register `PopupDSL` in `tests/support/index.ts` (import, interface field, instantiation).
 
 Create `tests/e2e/popup.spec.ts`:
+
 - Add popup card and open/close via trigger
 - Trigger popup via `tap_action` on existing card
 - Size mode changes render correctly
@@ -246,6 +254,7 @@ Create `tests/e2e/popup.spec.ts`:
 - Focus trapping + restoration behavior
 
 Create `tests/e2e/popup.visual.spec.ts`:
+
 - Snapshots for modal open states, size variants, and nested stack
 
 ### Accessibility
@@ -285,18 +294,25 @@ Create `tests/e2e/popup.visual.spec.ts`:
 ## Deliverables
 
 1. **Product Code**
+
 - Popup types, service, modal component, trigger renderer
 - Action type support for popup behavior
 - Card registry entry + BaseCard dispatch
 - PropertiesPanel popup controls
+
 2. **YAML Schema**
+
 - Update `src/schemas/ha-dashboard-schema.json` for popup card and popup action
+
 3. **Tests**
+
 - Unit tests (`tests/unit/popup-service.spec.ts`)
 - PopupDSL + registration
 - E2E tests (`tests/e2e/popup.spec.ts`)
 - Visual tests (`tests/e2e/popup.visual.spec.ts`)
+
 4. **Documentation**
+
 - Update Feature 4.4 checklist in `docs/archive/features/LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
 - Record deferred decisions explicitly
 
@@ -305,6 +321,7 @@ Create `tests/e2e/popup.visual.spec.ts`:
 ## Output Format
 
 Respond with:
+
 1. A concise implementation plan for Feature 4.4
 2. File-by-file change list (planned)
 3. Test plan + commands
@@ -324,6 +341,7 @@ After implementation, run exactly one **Fast Gate** pass and then stop:
 4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
 
 After this single Fast Gate run, provide a summary report that includes:
+
 - Exact commands executed
 - Pass/fail status for each command
 - Any failing tests with artifact paths under `test-results/artifacts/**`

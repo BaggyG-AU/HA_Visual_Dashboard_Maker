@@ -60,7 +60,12 @@ describe('conditionalVisibility service', () => {
           condition: 'and',
           conditions: [
             { condition: 'state_equals', entity: 'light.living_room', value: 'on' },
-            { condition: 'attribute_greater_than', entity: 'light.living_room', attribute: 'battery', value: 70 },
+            {
+              condition: 'attribute_greater_than',
+              entity: 'light.living_room',
+              attribute: 'battery',
+              value: 70,
+            },
           ],
         },
         { condition: 'entity_exists', entity: 'switch.nonexistent' },
@@ -78,7 +83,12 @@ describe('conditionalVisibility service', () => {
   it('evaluates top-level conditions using AND by default', () => {
     const conditions: VisibilityCondition[] = [
       { condition: 'state_equals', entity: 'light.living_room', value: 'on' },
-      { condition: 'attribute_greater_than', entity: 'light.living_room', attribute: 'battery', value: 90 },
+      {
+        condition: 'attribute_greater_than',
+        entity: 'light.living_room',
+        attribute: 'battery',
+        value: 90,
+      },
     ];
 
     expect(evaluateVisibilityConditions(conditions, entityStates)).toBe(false);

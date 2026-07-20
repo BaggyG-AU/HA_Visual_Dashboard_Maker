@@ -10,12 +10,14 @@ First alpha release of HA Visual Dashboard Maker - a visual WYSIWYG editor for H
 ## ✨ Features
 
 ### Dashboard Management
+
 - ✅ Load existing Home Assistant dashboard YAML files
 - ✅ Save modified dashboards back to YAML format
 - ✅ Visual indication of unsaved changes (asterisk in title)
 - ✅ File path display showing current dashboard location
 
 ### Card Palette
+
 - ✅ **22 Standard Home Assistant card types** organized by category:
   - **Layout Cards:** Horizontal Stack, Vertical Stack, Grid, Spacer
   - **Sensor/Display Cards:** Entities, Glance, Sensor, Gauge, History Graph
@@ -28,6 +30,7 @@ First alpha release of HA Visual Dashboard Maker - a visual WYSIWYG editor for H
 - ✅ Badge showing number of cards in each category
 
 ### Grid Canvas
+
 - ✅ Visual grid layout powered by react-grid-layout
 - ✅ **Drag and drop** cards from palette to canvas
 - ✅ **Resize cards** by dragging corners
@@ -38,6 +41,7 @@ First alpha release of HA Visual Dashboard Maker - a visual WYSIWYG editor for H
 - ✅ Special rendering for spacer cards (transparent with dashed border)
 
 ### Application Features
+
 - ✅ Dark theme matching Home Assistant aesthetics
 - ✅ Application menu with keyboard shortcuts:
   - `Ctrl+O` - Open dashboard
@@ -52,40 +56,48 @@ First alpha release of HA Visual Dashboard Maker - a visual WYSIWYG editor for H
 ## 📦 Installation
 
 ### Windows
+
 1. Download `HA Visual Dashboard Maker-0.1.0-alpha.1 Setup.exe`
 2. Run the installer
 3. The application will be installed and a desktop shortcut created
 4. Launch from Start Menu or desktop shortcut
 
 ### File Size
+
 - Installer: ~127 MB (includes Electron runtime and all dependencies)
 
 ## 🚀 Usage
 
 ### Getting Started
+
 1. Launch HA Visual Dashboard Maker
 2. Click "Open Dashboard" or press `Ctrl+O`
 3. Select your Home Assistant dashboard YAML file
 4. The dashboard will load with all views as tabs
 
 ### Adding Cards
+
 **Method 1: Drag and Drop**
+
 1. Browse the card palette on the left
 2. Drag a card type onto the canvas
 3. Card appears at the bottom of the layout
 4. Drag the card to reposition it
 
 **Method 2: Click to Add**
+
 1. Click any card in the palette
 2. Card is added to the current view at the bottom
 
 ### Editing Layout
+
 - **Move Cards:** Click and drag any card to a new position
 - **Resize Cards:** Drag the resize handle in the bottom-right corner
 - **Select Cards:** Click on any card to select it (cyan border)
 - **Switch Views:** Click view tabs at the top of the canvas
 
 ### Saving Changes
+
 - Press `Ctrl+S` to save to the current file
 - Press `Ctrl+Shift+S` to save to a new file
 - Unsaved changes are indicated with an asterisk (*) in the title
@@ -95,6 +107,7 @@ First alpha release of HA Visual Dashboard Maker - a visual WYSIWYG editor for H
 This is an **alpha release** with the following known limitations:
 
 ### Not Yet Implemented
+
 - ✅ **Properties Panel** - **NOW AVAILABLE** for most standard card types:
   - Supported: Entities, Glance, Button, Markdown, Sensor, Gauge, History Graph, Picture, Picture Entity, Picture Glance, Light, Thermostat, Media Control, Weather Forecast, Map
   - Not yet supported: Layout cards (Horizontal Stack, Vertical Stack, Grid) - these require nested card editing
@@ -108,6 +121,7 @@ This is an **alpha release** with the following known limitations:
   - HACS and custom cards planned for Phase 7-12
 
 ### Limitations
+
 - YAML file must be valid Home Assistant dashboard format
 - Layout cards (stacks, grids) require YAML editing for nested cards
 - Some card types may not have accurate preview icons
@@ -130,6 +144,7 @@ This release completes Phases 1-5 of the development roadmap:
 ## 🔮 Coming Soon (Phase 6+)
 
 Future releases will focus on:
+
 - **Card deletion** - Remove cards from the canvas
 - **Undo/Redo** - Comprehensive undo/redo functionality
 - **Entity validation** - Connection to Home Assistant for entity validation

@@ -53,7 +53,13 @@ test.describe('Gauge Alignment', () => {
 
       await gaugePro.verifyGaugeCardProRendered();
 
-      await gaugePro.configureGaugePro({ min: 5, max: 95, unit: 'psi', needle: false, gradient: false });
+      await gaugePro.configureGaugePro({
+        min: 5,
+        max: 95,
+        unit: 'psi',
+        needle: false,
+        gradient: false,
+      });
       await gaugePro.setSegment(0, { from: 5, label: 'Low Band' });
 
       await properties.switchTab('YAML');

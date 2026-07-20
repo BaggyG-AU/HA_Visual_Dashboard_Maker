@@ -33,7 +33,7 @@ const splitFilterChain = (expression: string): string[] => {
     const char = expression[i];
     const prev = i > 0 ? expression[i - 1] : '';
 
-    if (char === '\'' && !inDouble && prev !== '\\') {
+    if (char === "'" && !inDouble && prev !== '\\') {
       inSingle = !inSingle;
     } else if (char === '"' && !inSingle && prev !== '\\') {
       inDouble = !inDouble;
@@ -75,7 +75,10 @@ const parseFilter = (raw: string): EntityContextFilter => {
 
 const parseDefaultArg = (value: string): string => {
   const trimmed = value.trim();
-  if ((trimmed.startsWith('\'') && trimmed.endsWith('\'')) || (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+  if (
+    (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
+    (trimmed.startsWith('"') && trimmed.endsWith('"'))
+  ) {
     return trimmed.slice(1, -1);
   }
   return trimmed;
@@ -108,7 +111,9 @@ const applyFilters = (value: string, filters: EntityContextFilter[]): string => 
   }, value);
 };
 
-const getEntityIdParts = (expression: string): { entityId: string | null; propertyPath: string[] } => {
+const getEntityIdParts = (
+  expression: string,
+): { entityId: string | null; propertyPath: string[] } => {
   const trimmed = expression.trim();
 
   if (trimmed === 'entity_id') {
@@ -144,7 +149,11 @@ const getEntityIdParts = (expression: string): { entityId: string | null; proper
   return { entityId: null, propertyPath: [trimmed] };
 };
 
-const resolvePropertyPath = (entity: EntityState | undefined, entityId: string | null, propertyPath: string[]): string => {
+const resolvePropertyPath = (
+  entity: EntityState | undefined,
+  entityId: string | null,
+  propertyPath: string[],
+): string => {
   if (propertyPath.length === 0) return DEFAULT_EMPTY;
 
   const [first, ...rest] = propertyPath;
@@ -162,7 +171,7 @@ const resolvePropertyPath = (entity: EntityState | undefined, entityId: string |
     const friendly = entity?.attributes?.friendly_name;
     if (friendly) return String(friendly);
     const id = entity?.entity_id ?? entityId;
-    return id ? id.split('.')[1]?.replace(/_/g, ' ') ?? DEFAULT_EMPTY : DEFAULT_EMPTY;
+    return id ? (id.split('.')[1]?.replace(/_/g, ' ') ?? DEFAULT_EMPTY) : DEFAULT_EMPTY;
   }
 
   if (first === 'state') {
@@ -180,7 +189,10 @@ const resolvePropertyPath = (entity: EntityState | undefined, entityId: string |
   if (first === 'attributes') {
     if (!entity?.attributes || rest.length === 0) return DEFAULT_EMPTY;
     const value = rest.reduce<unknown>(
-      (acc, key) => (acc && typeof acc === 'object' && (acc as Record<string, unknown>)[key] !== undefined ? (acc as Record<string, unknown>)[key] : undefined),
+      (acc, key) =>
+        acc && typeof acc === 'object' && (acc as Record<string, unknown>)[key] !== undefined
+          ? (acc as Record<string, unknown>)[key]
+          : undefined,
       entity.attributes as Record<string, unknown>,
     );
     return normalizeToString(value);
@@ -209,7 +221,10 @@ export const parseEntityContextVariables = (template: string): EntityContextVari
   return variables;
 };
 
-export const extractEntityReferences = (template: string, defaultEntityId?: string | null): string[] => {
+export const extractEntityReferences = (
+  template: string,
+  defaultEntityId?: string | null,
+): string[] => {
   const references = new Set<string>();
   const variables = parseEntityContextVariables(template);
 

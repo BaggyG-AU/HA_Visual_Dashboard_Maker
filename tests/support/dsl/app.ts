@@ -46,7 +46,10 @@ export class AppDSL {
       // Check if any are visible
       let hasVisibleModal = false;
       for (let j = 0; j < count; j++) {
-        const isVisible = await modalWraps.nth(j).isVisible().catch(() => false);
+        const isVisible = await modalWraps
+          .nth(j)
+          .isVisible()
+          .catch(() => false);
         if (isVisible) {
           hasVisibleModal = true;
           break;
@@ -61,13 +64,16 @@ export class AppDSL {
       // Press Escape to close visible modals
       await this.window.keyboard.press('Escape');
       await expect
-        .poll(async () => {
-          const visibleCount = await this.window
-            .locator('.ant-modal-wrap:visible')
-            .count()
-            .catch(() => 0);
-          return visibleCount;
-        }, { timeout: 2000 })
+        .poll(
+          async () => {
+            const visibleCount = await this.window
+              .locator('.ant-modal-wrap:visible')
+              .count()
+              .catch(() => 0);
+            return visibleCount;
+          },
+          { timeout: 2000 },
+        )
         .toBe(0);
     }
   }
@@ -104,7 +110,9 @@ export class AppDSL {
    */
   async setConnected(connected: boolean): Promise<void> {
     await this.window.evaluate((isConnected) => {
-      const testWindow = window as Window & { __testThemeApi?: { setConnected: (value: boolean) => void } };
+      const testWindow = window as Window & {
+        __testThemeApi?: { setConnected: (value: boolean) => void };
+      };
       testWindow.__testThemeApi?.setConnected(isConnected);
     }, connected);
   }
@@ -123,7 +131,9 @@ export class AppDSL {
     if (usedStoreHook) return;
 
     const clicked = await this.window.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.ant-layout-header button'));
+      const buttons = Array.from(
+        document.querySelectorAll<HTMLButtonElement>('.ant-layout-header button'),
+      );
       const undoButton = buttons.find((button) => button.querySelector('.anticon-undo'));
       if (!undoButton || undoButton.disabled) {
         return false;
@@ -134,7 +144,12 @@ export class AppDSL {
     if (clicked) return;
 
     await this.window.evaluate(() => {
-      const event = new KeyboardEvent('keydown', { key: 'z', code: 'KeyZ', ctrlKey: true, bubbles: true });
+      const event = new KeyboardEvent('keydown', {
+        key: 'z',
+        code: 'KeyZ',
+        ctrlKey: true,
+        bubbles: true,
+      });
       window.dispatchEvent(event);
       document.dispatchEvent(event);
       (document.activeElement as HTMLElement | null)?.dispatchEvent(event);
@@ -156,7 +171,9 @@ export class AppDSL {
     if (usedStoreHook) return;
 
     const clicked = await this.window.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.ant-layout-header button'));
+      const buttons = Array.from(
+        document.querySelectorAll<HTMLButtonElement>('.ant-layout-header button'),
+      );
       const redoButton = buttons.find((button) => button.querySelector('.anticon-redo'));
       if (!redoButton || redoButton.disabled) {
         return false;
@@ -167,7 +184,12 @@ export class AppDSL {
     if (clicked) return;
 
     await this.window.evaluate(() => {
-      const event = new KeyboardEvent('keydown', { key: 'y', code: 'KeyY', ctrlKey: true, bubbles: true });
+      const event = new KeyboardEvent('keydown', {
+        key: 'y',
+        code: 'KeyY',
+        ctrlKey: true,
+        bubbles: true,
+      });
       window.dispatchEvent(event);
       document.dispatchEvent(event);
       (document.activeElement as HTMLElement | null)?.dispatchEvent(event);
@@ -194,5 +216,4 @@ export class AppDSL {
   async expectCanUndo(expected: boolean): Promise<void> {
     await expect(this.historyDebug).toHaveAttribute('data-can-undo', expected ? '1' : '0');
   }
-
 }

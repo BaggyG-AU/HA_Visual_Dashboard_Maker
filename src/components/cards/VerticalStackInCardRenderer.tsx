@@ -33,7 +33,8 @@ export const VerticalStackInCardRenderer: React.FC<VerticalStackInCardRendererPr
   // Extract configuration
   const cards = (card as any).cards || [];
   const resolveContext = useEntityContextResolver();
-  const defaultEntityId = cards.find((child: any) => typeof child?.entity === 'string')?.entity ?? null;
+  const defaultEntityId =
+    cards.find((child: any) => typeof child?.entity === 'string')?.entity ?? null;
   const titleTemplate = (card as any).title as string | undefined;
   const resolvedTitle = titleTemplate ? resolveContext(titleTemplate, defaultEntityId) : '';
   const title = titleTemplate ? resolvedTitle : undefined;
@@ -101,7 +102,11 @@ export const VerticalStackInCardRenderer: React.FC<VerticalStackInCardRendererPr
         {/* Card Count */}
         <div style={{ marginBottom: '12px' }}>
           <Text style={{ color: '#888', fontSize: '12px' }}>
-            Contains: <Text strong style={{ color: '#fff' }}>{cardCount}</Text> card{cardCount !== 1 ? 's' : ''}
+            Contains:{' '}
+            <Text strong style={{ color: '#fff' }}>
+              {cardCount}
+            </Text>{' '}
+            card{cardCount !== 1 ? 's' : ''}
           </Text>
         </div>
 
@@ -117,7 +122,9 @@ export const VerticalStackInCardRenderer: React.FC<VerticalStackInCardRendererPr
               overflow: 'auto',
             }}
           >
-            <Text style={{ color: '#888', fontSize: '11px', marginBottom: '8px', display: 'block' }}>
+            <Text
+              style={{ color: '#888', fontSize: '11px', marginBottom: '8px', display: 'block' }}
+            >
               Card Types:
             </Text>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -150,7 +157,9 @@ export const VerticalStackInCardRenderer: React.FC<VerticalStackInCardRendererPr
                 </div>
               ))}
               {cardCount > 3 && (
-                <Text style={{ color: '#666', fontSize: '11px', fontStyle: 'italic', marginTop: '4px' }}>
+                <Text
+                  style={{ color: '#666', fontSize: '11px', fontStyle: 'italic', marginTop: '4px' }}
+                >
                   ... and {cardCount - cardTypes.reduce((sum, [, count]) => sum + count, 0)} more
                 </Text>
               )}

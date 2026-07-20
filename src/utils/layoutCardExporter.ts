@@ -10,10 +10,7 @@ import { LayoutItem } from 'react-grid-layout';
 /**
  * Apply view_layout to cards based on current grid positions
  */
-export const applyViewLayoutToCards = (
-  view: View,
-  gridLayout: readonly LayoutItem[]
-): View => {
+export const applyViewLayoutToCards = (view: View, gridLayout: readonly LayoutItem[]): View => {
   const viewLayouts = convertGridLayoutToViewLayout(gridLayout);
 
   const updatedCards: Card[] = (view.cards || []).map((card, index) => {
@@ -45,10 +42,7 @@ export const applyViewLayoutToCards = (
 /**
  * Convert view to layout-card grid format
  */
-export const convertToLayoutCardView = (
-  view: View,
-  gridLayout?: readonly LayoutItem[]
-): View => {
+export const convertToLayoutCardView = (view: View, gridLayout?: readonly LayoutItem[]): View => {
   // If gridLayout provided, apply it to cards
   let updatedView = view;
   if (gridLayout) {
@@ -74,7 +68,7 @@ export const convertToLayoutCardView = (
  */
 export const convertDashboardToLayoutCard = (
   config: DashboardConfig,
-  viewLayouts?: Map<number, readonly LayoutItem[]>
+  viewLayouts?: Map<number, readonly LayoutItem[]>,
 ): DashboardConfig => {
   const updatedViews = config.views.map((view, index) => {
     const gridLayout = viewLayouts?.get(index);
@@ -91,10 +85,11 @@ export const convertDashboardToLayoutCard = (
  * Check if dashboard is using layout-card format
  */
 export const isLayoutCardDashboard = (config: DashboardConfig): boolean => {
-  return config.views.some(view =>
-    view.type === 'custom:layout-card' ||
-    view.layout_type === 'grid' ||
-    (view.cards || []).some(card => card.view_layout)
+  return config.views.some(
+    (view) =>
+      view.type === 'custom:layout-card' ||
+      view.layout_type === 'grid' ||
+      (view.cards || []).some((card) => card.view_layout),
   );
 };
 
@@ -108,13 +103,13 @@ export const getLayoutMode = (view: View): string => {
   if (view.layout_type === 'grid') {
     return 'Grid Layout';
   }
-  if ((view.cards || []).some(card => card.view_layout)) {
+  if ((view.cards || []).some((card) => card.view_layout)) {
     return 'Grid (view_layout)';
   }
   if (view.type === 'masonry') {
     return 'Masonry';
   }
-  if ((view.cards || []).some(card => 'layout' in card && card.layout)) {
+  if ((view.cards || []).some((card) => 'layout' in card && card.layout)) {
     return 'Custom Layout';
   }
   return 'Auto Layout';

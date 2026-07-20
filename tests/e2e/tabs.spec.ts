@@ -59,7 +59,9 @@ test.describe('Tabs Card', () => {
     }
   });
 
-  test('tab position changes support horizontal and vertical orientations', async ({ page }, testInfo) => {
+  test('tab position changes support horizontal and vertical orientations', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, canvas, properties, yamlEditor, tabs } = ctx;
@@ -102,7 +104,10 @@ test.describe('Tabs Card', () => {
       await tabs.addTabsCard(testInfo);
       await canvas.selectCard(0);
       await properties.switchTab('YAML');
-      await yamlEditor.setEditorContent(BASE_YAML.replace('defaultTabIndex: 1', 'defaultTabIndex: 2'), 'properties');
+      await yamlEditor.setEditorContent(
+        BASE_YAML.replace('defaultTabIndex: 1', 'defaultTabIndex: 2'),
+        'properties',
+      );
       await properties.switchTab('Form');
 
       await tabs.expectTabActive(2, 0);
@@ -143,7 +148,9 @@ test.describe('Tabs Card', () => {
     }
   });
 
-  test('keyboard navigation supports arrows Home End and activation keys', async ({ page }, testInfo) => {
+  test('keyboard navigation supports arrows Home End and activation keys', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, canvas, properties, yamlEditor, tabs } = ctx;

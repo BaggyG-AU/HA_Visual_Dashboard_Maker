@@ -10,7 +10,7 @@ import {
   PlayCircleOutlined,
   LockOutlined,
   BellOutlined,
-  DashboardOutlined
+  DashboardOutlined,
 } from '@ant-design/icons';
 import { CustomCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
@@ -123,10 +123,14 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
       default:
         // Use domain-based icons
         switch (domain) {
-          case 'light': return <BulbOutlined />;
-          case 'climate': return <FireOutlined />;
-          case 'weather': return <CloudOutlined />;
-          default: return <DashboardOutlined />;
+          case 'light':
+            return <BulbOutlined />;
+          case 'climate':
+            return <FireOutlined />;
+          case 'weather':
+            return <CloudOutlined />;
+          default:
+            return <DashboardOutlined />;
         }
     }
   };
@@ -162,9 +166,10 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
 
   const stateColor = getStateColor();
   const icon = getIcon();
-  const userIconColor = typeof card.icon_color === 'string' && card.icon_color.trim().length > 0
-    ? card.icon_color
-    : undefined;
+  const userIconColor =
+    typeof card.icon_color === 'string' && card.icon_color.trim().length > 0
+      ? card.icon_color
+      : undefined;
   const useLightColor = card.use_light_color === true;
 
   const getLightEntityColor = () => {
@@ -219,7 +224,10 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
   };
 
   const isHorizontal = layout === 'horizontal';
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   return (
     <AntCard
@@ -233,14 +241,14 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
       }}
       styles={{
         body: {
-        padding: '16px',
-        display: 'flex',
-        flexDirection: isHorizontal ? 'row' : 'column',
-        alignItems: isHorizontal ? 'center' : 'flex-start',
-        justifyContent: 'space-between',
-        height: '100%',
-        gap: isHorizontal ? '16px' : '12px',
-      },
+          padding: '16px',
+          display: 'flex',
+          flexDirection: isHorizontal ? 'row' : 'column',
+          alignItems: isHorizontal ? 'center' : 'flex-start',
+          justifyContent: 'space-between',
+          height: '100%',
+          gap: isHorizontal ? '16px' : '12px',
+        },
       }}
       onClick={onClick}
       hoverable
@@ -260,21 +268,21 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
             border: `2px solid ${accentColor}`,
           }}
         >
-          <div style={{ fontSize: isHorizontal ? '20px' : '24px', color: accentColor }}>
-            {icon}
-          </div>
+          <div style={{ fontSize: isHorizontal ? '20px' : '24px', color: accentColor }}>{icon}</div>
         </div>
       )}
 
       {/* Content */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '4px',
-        minWidth: 0,
-        textAlign: alignText as any, // v4.3.0: Text alignment support
-      }}>
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          minWidth: 0,
+          textAlign: alignText as any, // v4.3.0: Text alignment support
+        }}
+      >
         {/* Name */}
         {!hideName && (
           <Text
@@ -307,19 +315,21 @@ export const MushroomCardRenderer: React.FC<MushroomCardRendererProps> = ({
 
       {/* Mushroom badge indicator */}
       {isSelected && (
-        <div style={{
-          position: 'absolute',
-          top: '4px',
-          right: '4px',
-          padding: '2px 6px',
-          backgroundColor: 'rgba(168, 100, 253, 0.2)',
-          border: '1px solid #a864fd',
-          borderRadius: '4px',
-          fontSize: '9px',
-          color: '#a864fd',
-          fontWeight: 'bold',
-          pointerEvents: 'none',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '4px',
+            right: '4px',
+            padding: '2px 6px',
+            backgroundColor: 'rgba(168, 100, 253, 0.2)',
+            border: '1px solid #a864fd',
+            borderRadius: '4px',
+            fontSize: '9px',
+            color: '#a864fd',
+            fontWeight: 'bold',
+            pointerEvents: 'none',
+          }}
+        >
           MUSHROOM
         </div>
       )}

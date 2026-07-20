@@ -30,23 +30,27 @@ describe('phase6 contract types', () => {
 
   it('supports unified template metadata contracts', () => {
     const metadata: TemplateMetadata = {
-      templates: [{
-        id: 'home-overview',
-        name: 'Home Overview',
-        description: 'Main dashboard',
-        category: 'overview',
-        difficulty: 'beginner',
-        file: 'home-overview.yaml',
-        features: ['overview'],
-        requiredEntities: ['light.kitchen'],
-        tags: ['home'],
-      }],
-      categories: [{
-        id: 'overview',
-        name: 'Overview',
-        description: 'General purpose templates',
-        icon: 'mdi:view-dashboard',
-      }],
+      templates: [
+        {
+          id: 'home-overview',
+          name: 'Home Overview',
+          description: 'Main dashboard',
+          category: 'overview',
+          difficulty: 'beginner',
+          file: 'home-overview.yaml',
+          features: ['overview'],
+          requiredEntities: ['light.kitchen'],
+          tags: ['home'],
+        },
+      ],
+      categories: [
+        {
+          id: 'overview',
+          name: 'Overview',
+          description: 'General purpose templates',
+          icon: 'mdi:view-dashboard',
+        },
+      ],
     };
 
     expect(metadata.templates).toHaveLength(1);

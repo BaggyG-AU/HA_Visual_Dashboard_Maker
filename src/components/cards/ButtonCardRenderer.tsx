@@ -42,13 +42,14 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
   const state = entity?.state || 'unknown';
   const resolvedName = useEntityContextValue(card.name ?? '', card.entity ?? null);
   const displayName =
-    (card.name ? resolvedName : '') ||
-    card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
-    'Button';
+    (card.name ? resolvedName : '') || card.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Button';
   const showName = card.show_name !== false;
   const showState = card.show_state !== false;
   const showIcon = card.show_icon !== false;
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
   const { action: tapAction } = resolveTapAction(card);
   const resolvedIcon = getStateIcon({
     entityId: card.entity,
@@ -147,7 +148,11 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
                   <MdiIcon icon={targetIcon.icon} color={targetIcon.color || '#9e9e9e'} size={16} />
                   <Text style={{ color: '#e6e6e6', fontSize: 12 }}>{entityId}</Text>
                 </Space>
-                <Text type="secondary" style={{ fontSize: 12 }} data-testid={`multi-entity-individual-state-${safeEntityId}`}>
+                <Text
+                  type="secondary"
+                  style={{ fontSize: 12 }}
+                  data-testid={`multi-entity-individual-state-${safeEntityId}`}
+                >
                   {targetState}
                 </Text>
               </div>
@@ -167,10 +172,17 @@ export const ButtonCardRenderer: React.FC<ButtonCardRendererProps> = ({
           }}
           data-testid="multi-entity-aggregate-panel"
         >
-          <Text style={{ color: '#d9d9d9', display: 'block' }} data-testid="multi-entity-aggregate-indicator">
+          <Text
+            style={{ color: '#d9d9d9', display: 'block' }}
+            data-testid="multi-entity-aggregate-indicator"
+          >
             {summarizeAggregateState(entityIds, entities)}
           </Text>
-          <Text type="secondary" style={{ fontSize: 12 }} data-testid="multi-entity-aggregate-value">
+          <Text
+            type="secondary"
+            style={{ fontSize: 12 }}
+            data-testid="multi-entity-aggregate-value"
+          >
             {`Function (${aggregateFunction}): ${aggregateValue === null ? 'N/A' : String(aggregateValue)}`}
           </Text>
         </div>

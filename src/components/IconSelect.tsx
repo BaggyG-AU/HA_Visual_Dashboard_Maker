@@ -97,14 +97,12 @@ export const IconSelect: React.FC<IconSelectProps> = ({
   const filteredIcons = useMemo(() => {
     if (!searchText) return commonIcons;
     const lowerSearch = searchText.toLowerCase();
-    return commonIcons.filter(icon =>
-      icon.toLowerCase().includes(lowerSearch)
-    );
+    return commonIcons.filter((icon) => icon.toLowerCase().includes(lowerSearch));
   }, [searchText, commonIcons]);
 
   // Create options with icon preview
   const options = useMemo(() => {
-    return filteredIcons.map(iconName => {
+    return filteredIcons.map((iconName) => {
       const iconClass = iconName.replace('mdi:', 'mdi-');
 
       return {
@@ -117,7 +115,7 @@ export const IconSelect: React.FC<IconSelectProps> = ({
                 fontSize: '20px',
                 color: '#00d9ff',
                 width: '24px',
-                display: 'inline-block'
+                display: 'inline-block',
               }}
             />
             <Text style={{ fontSize: '13px' }}>{iconName}</Text>
@@ -135,21 +133,23 @@ export const IconSelect: React.FC<IconSelectProps> = ({
     const iconClass = value.replace('mdi:', 'mdi-');
 
     return (
-      <div style={{
-        marginTop: '8px',
-        padding: '12px',
-        background: '#1f1f1f',
-        border: '1px solid #2a2a2a',
-        borderRadius: '4px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px'
-      }}>
+      <div
+        style={{
+          marginTop: '8px',
+          padding: '12px',
+          background: '#1f1f1f',
+          border: '1px solid #2a2a2a',
+          borderRadius: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+        }}
+      >
         <span
           className={`mdi ${iconClass}`}
           style={{
             fontSize: '32px',
-            color: '#00d9ff'
+            color: '#00d9ff',
           }}
         />
         <div>
@@ -195,12 +195,14 @@ export const IconSelect: React.FC<IconSelectProps> = ({
       />
       {renderIconPreview()}
 
-      <div style={{
-        marginTop: '8px',
-        padding: '8px',
-        background: '#1a1a1a',
-        borderRadius: '4px'
-      }}>
+      <div
+        style={{
+          marginTop: '8px',
+          padding: '8px',
+          background: '#1a1a1a',
+          borderRadius: '4px',
+        }}
+      >
         <Text style={{ color: '#666', fontSize: '11px' }}>
           💡 Tip: You can also type custom MDI icon names (e.g., mdi:custom-icon)
         </Text>

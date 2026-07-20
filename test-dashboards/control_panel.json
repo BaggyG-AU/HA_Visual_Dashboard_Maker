@@ -436,13 +436,7 @@
               "features": [
                 {
                   "type": "climate-hvac-modes",
-                  "hvac_modes": [
-                    "cool",
-                    "heat",
-                    "fan_only",
-                    "auto",
-                    "off"
-                  ]
+                  "hvac_modes": ["cool", "heat", "fan_only", "auto", "off"]
                 }
               ]
             },

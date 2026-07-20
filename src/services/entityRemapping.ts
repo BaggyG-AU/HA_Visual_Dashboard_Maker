@@ -69,7 +69,12 @@ export class EntityRemappingService {
             val.forEach((entry) => {
               if (typeof entry === 'string' && ENTITY_ID_PATTERN.test(entry)) {
                 found.add(entry);
-              } else if (typeof entry === 'object' && entry && 'entity' in entry && typeof (entry as any).entity === 'string') {
+              } else if (
+                typeof entry === 'object' &&
+                entry &&
+                'entity' in entry &&
+                typeof (entry as any).entity === 'string'
+              ) {
                 const e = (entry as any).entity as string;
                 if (ENTITY_ID_PATTERN.test(e)) found.add(e);
               }
@@ -99,7 +104,12 @@ export class EntityRemappingService {
       const namePart = normalize(extractName(entity.entity_id));
       const friendly = normalize(String(entity.attributes?.friendly_name ?? ''));
 
-      const domainScore = domain === missingDomain ? 0.5 : domain.startsWith(missingDomain) || missingDomain.startsWith(domain) ? 0.25 : 0;
+      const domainScore =
+        domain === missingDomain
+          ? 0.5
+          : domain.startsWith(missingDomain) || missingDomain.startsWith(domain)
+            ? 0.25
+            : 0;
       const nameScore = similarity(missingName, namePart) * 0.35;
       const friendlyScore = similarity(missingName, friendly) * 0.15;
       const boost = substringBoost(missingName, namePart) + substringBoost(missingName, friendly);

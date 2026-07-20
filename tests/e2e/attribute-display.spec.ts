@@ -27,7 +27,16 @@ test.describe('Entity Attribute Display (Feature 3.4)', () => {
 
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, yamlEditor, entityContext, attributeDisplay } = ctx;
+    const {
+      appDSL,
+      dashboard,
+      palette,
+      canvas,
+      properties,
+      yamlEditor,
+      entityContext,
+      attributeDisplay,
+    } = ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -57,10 +66,17 @@ test.describe('Entity Attribute Display (Feature 3.4)', () => {
 
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value: entityYaml } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value: entityYaml } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       const parsedEntity = (yaml.load(entityYaml) as Record<string, unknown>) || {};
       parsedEntity.entity = 'sensor.environment';
-      const nextEntityYaml = yaml.dump(parsedEntity, { lineWidth: -1, noRefs: true, sortKeys: false });
+      const nextEntityYaml = yaml.dump(parsedEntity, {
+        lineWidth: -1,
+        noRefs: true,
+        sortKeys: false,
+      });
       await yamlEditor.setEditorContent(nextEntityYaml, 'properties', testInfo);
       await properties.switchTab('Form');
 
@@ -76,14 +92,25 @@ test.describe('Entity Attribute Display (Feature 3.4)', () => {
   test.describe('Attribute display workflow', () => {
     test.describe.configure({ timeout: 120000 });
 
-    test('formats, reorders, persists, and updates attribute display', async ({ page }, testInfo) => {
+    test('formats, reorders, persists, and updates attribute display', async ({
+      page,
+    }, testInfo) => {
       // This workflow adds multiple attributes, changes formats, reorders rows, and verifies YAML.
       // On slower environments this can exceed 120s.
       test.setTimeout(180_000);
 
       void page;
       const ctx = await launchWithDSL();
-      const { appDSL, dashboard, palette, canvas, properties, yamlEditor, entityContext, attributeDisplay } = ctx;
+      const {
+        appDSL,
+        dashboard,
+        palette,
+        canvas,
+        properties,
+        yamlEditor,
+        entityContext,
+        attributeDisplay,
+      } = ctx;
 
       try {
         await appDSL.waitUntilReady();
@@ -113,10 +140,17 @@ test.describe('Entity Attribute Display (Feature 3.4)', () => {
 
         await properties.switchTab('YAML');
         await yamlEditor.expectMonacoVisible('properties', testInfo);
-        const { value: entityYaml } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+        const { value: entityYaml } = await yamlEditor.getEditorContentWithDiagnostics(
+          testInfo,
+          'properties',
+        );
         const parsedEntity = (yaml.load(entityYaml) as Record<string, unknown>) || {};
         parsedEntity.entity = 'sensor.environment';
-        const nextEntityYaml = yaml.dump(parsedEntity, { lineWidth: -1, noRefs: true, sortKeys: false });
+        const nextEntityYaml = yaml.dump(parsedEntity, {
+          lineWidth: -1,
+          noRefs: true,
+          sortKeys: false,
+        });
         await yamlEditor.setEditorContent(nextEntityYaml, 'properties', testInfo);
         await properties.switchTab('Form');
 
@@ -139,12 +173,19 @@ test.describe('Entity Attribute Display (Feature 3.4)', () => {
         await attributeDisplay.expectLayoutVisible('table');
         await attributeDisplay.expectLayoutScreenshot('table', 'attribute-display-table.png');
 
-        await entityContext.patchEntity('sensor.environment', { attributes: { battery: 55.2 } }, testInfo);
+        await entityContext.patchEntity(
+          'sensor.environment',
+          { attributes: { battery: 55.2 } },
+          testInfo,
+        );
         await attributeDisplay.expectRenderedAttribute('battery', '55 %');
 
         await properties.switchTab('YAML');
         await yamlEditor.expectMonacoVisible('properties', testInfo);
-        const { value: buttonYaml } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+        const { value: buttonYaml } = await yamlEditor.getEditorContentWithDiagnostics(
+          testInfo,
+          'properties',
+        );
         const parsed = (yaml.load(buttonYaml) as Record<string, unknown>) || {};
         expect(parsed.attribute_display_layout).toBe('table');
         const attributeDisplayConfig = parsed.attribute_display as Array<Record<string, unknown>>;

@@ -16,6 +16,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 **Phase 2 Goal**: Rich visual enhancements using foundation components
 
 **Features in Phase 2**:
+
 1. 🚧 Gradient Editor (core + presets + PropertiesPanel integration delivered; tests in progress)
 2. ⏳ Favorite Colors Manager
 3. ⏳ Icon Color Customization
@@ -24,6 +25,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 6. ⏳ UI Sounds System
 
 **Dependencies from Phase 1**:
+
 - ✅ Color Picker Component (react-colorful)
 - ⏳ Animation CSS Framework
 - ⏳ Typography/Google Fonts System
@@ -40,6 +42,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 ### Implementation Checklist
 
 #### Phase 1: Core Gradient Component (Days 1-2)
+
 - [x] Create `src/components/GradientEditor.tsx`
 - [x] Create `src/types/gradient.ts` for TypeScript types
 - [x] Create `src/utils/gradientConversions.ts` for gradient utilities
@@ -61,6 +64,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] Style with Ant Design theme compatibility
 
 #### Phase 2: Preset Gradients Library (Day 2)
+
 - [x] Create `src/data/gradientPresets.ts`
 - [x] Implement preset categories:
   - [x] Material Design gradients
@@ -78,6 +82,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
   - [x] Import/export preset collections
 
 #### Phase 3: PropertiesPanel Integration (Day 3)
+
 - [x] Create `GradientPickerInput` wrapper component:
   - [x] Gradient preview swatch
   - [x] Click to open popover/modal
@@ -92,6 +97,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] Ensure popover positioning works in scrollable panel (rendered to body + z-index)
 
 #### Phase 4: YAML Persistence (Day 3-4)
+
 - [x] Test gradient format serialization:
   - [x] Linear: `linear-gradient(90deg, #FF0000 0%, #0000FF 100%)`
   - [x] Radial: `radial-gradient(circle at center, #FF0000 0%, #0000FF 100%)`
@@ -107,6 +113,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
   - [x] CSS variable gradients (future)
 
 #### Phase 5: Unit Tests (Day 4)
+
 - [x] Create `tests/unit/GradientEditor.spec.tsx`
 - [x] Add conversion coverage in `tests/unit/gradient-conversions.spec.ts`
 - [x] Test gradient parsing (linear/radial, invalid fallback)
@@ -118,6 +125,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
   - [x] Import/export presets
 
 #### Phase 6: E2E Tests (Day 5)
+
 - [x] Create `tests/e2e/gradient-editor.spec.ts`
 - [x] Create `tests/support/dsl/gradientEditor.ts` DSL helper
 - [x] Test gradient editor interactions:
@@ -138,6 +146,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] Test with multiple card types
 
 #### Phase 7: Documentation (Day 5)
+
 - [x] Update README with gradient editor overview
 - [x] Document gradient CSS format
 - [x] Add examples to user guide
@@ -148,6 +157,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [x] GradientEditor component renders with linear/radial modes
 - [x] Color stops can be added, removed, repositioned
 - [x] Preset gradients library available
@@ -162,25 +172,27 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] Documentation complete
 
 **Should Have (Nice to Have)**:
+
 - [ ] Visual regression tests verified
 - [ ] Performance benchmarks acceptable
 - [ ] Export gradient as PNG/SVG
 - [ ] Gradient animation support
 
 **Won't Have (Future)**:
+
 - CSS variable gradients (e.g., `var(--primary-color)`) - Phase 7
 - Mesh gradients - Future
 - Animated gradient transitions - Future
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Complex gradient CSS parsing | Medium | Medium | Use proven CSS parser library or regex patterns |
-| Performance with many color stops | Low | Low | Limit to 10 color stops, optimize re-renders |
-| Gradient preview accuracy | Medium | Low | Use CSS-based preview, match browser rendering |
-| YAML format conflicts | Medium | Low | Test gradient syntax with HA dashboard |
-| Preset library size | Low | Low | Start with 20-30 presets, add more over time |
+| Risk                              | Impact | Probability | Mitigation                                      |
+| --------------------------------- | ------ | ----------- | ----------------------------------------------- |
+| Complex gradient CSS parsing      | Medium | Medium      | Use proven CSS parser library or regex patterns |
+| Performance with many color stops | Low    | Low         | Limit to 10 color stops, optimize re-renders    |
+| Gradient preview accuracy         | Medium | Low         | Use CSS-based preview, match browser rendering  |
+| YAML format conflicts             | Medium | Low         | Test gradient syntax with HA dashboard          |
+| Preset library size               | Low    | Low         | Start with 20-30 presets, add more over time    |
 
 ---
 
@@ -194,6 +206,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 ### Implementation Checklist
 
 #### Phase 1: Color Palette Data Model (Day 1)
+
 - [x] Create `src/types/colorPalette.ts`
 - [x] Define palette structure:
   - [x] Palette ID, name, description
@@ -211,6 +224,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] Persist palettes to localStorage
 
 #### Phase 2: Palette Manager UI (Day 1-2)
+
 - [x] Create `src/components/ColorPaletteManager.tsx`
 - [x] Implement UI features:
   - [x] List of palettes (dropdown)
@@ -230,6 +244,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
   - [x] Export as CSS variables (clipboard)
 
 #### Phase 3: Color Picker Integration (Day 2)
+
 - [x] Extend `ColorPickerInput` to show favorite palettes
 - [x] Add "Favorites" tab/section to color picker popover
 - [x] Display current palette colors as swatches
@@ -239,6 +254,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] Palette selector dropdown in color picker
 
 #### Phase 4: Testing & Documentation (Day 3)
+
 - [x] Create `tests/unit/useColorPalettes.spec.ts`
 - [x] Test palette operations
 - [x] Test import/export functionality
@@ -250,6 +266,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 ### Acceptance Criteria
 
 **Must Have**:
+
 - [x] Create, rename, delete color palettes
 - [x] Add/remove colors from palettes
 - [x] Persist palettes to localStorage
@@ -260,6 +277,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] E2E tests pass (95%+)
 
 **Should Have**:
+
 - [x] Drag-and-drop reorder colors (via up/down controls)
 - [x] Duplicate palette feature
 - [x] Export as CSS variables (clipboard)
@@ -277,6 +295,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 ### Implementation Checklist
 
 #### Phase 1: Icon Color Logic (Day 1)
+
 - [x] Extend card type definitions to support icon color
 - [x] Implement icon color override logic:
   - [x] Static color (fixed color regardless of state)
@@ -288,6 +307,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
   - [x] Fallback to default icon color
 
 #### Phase 2: PropertiesPanel Integration (Day 1-2)
+
 - [x] Add "Icon Color" section to PropertiesPanel
 - [x] Color mode selector:
   - [x] Default (use entity default)
@@ -300,12 +320,14 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] Live preview icon color changes
 
 #### Phase 3: Gradient Icon Support (Day 2)
+
 - [x] Extend icon rendering to support CSS gradients
 - [x] Integrate with Gradient Editor for icon gradients
 - [x] SVG gradient fill implementation
 - [x] Fallback for bitmap icons (solid color only)
 
 #### Phase 4: Testing & Documentation (Day 3)
+
 - [x] Create `tests/unit/iconColorResolver.spec.ts`
 - [x] Test state-based color resolution
 - [x] Test attribute-based color resolution
@@ -316,6 +338,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 ### Acceptance Criteria
 
 **Must Have**:
+
 - [x] Fixed icon color customization
 - [x] State-based icon colors
 - [x] PropertiesPanel integration
@@ -325,6 +348,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] E2E tests pass (95%+)
 
 **Should Have**:
+
 - [x] Attribute-based icon colors
 - [x] Gradient icon support
 - [ ] Icon color animation on state change
@@ -341,6 +365,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 ### Implementation Checklist
 
 #### Phase 1: Background Options (Day 1)
+
 - [x] Create `src/components/BackgroundCustomizer.tsx`
 - [x] Implement background types:
   - [x] None (transparent)
@@ -355,6 +380,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
   - [x] Blur amount
 
 #### Phase 2: Advanced Effects (Day 2)
+
 - [x] Backdrop blur (frosted glass effect)
 - [x] Background opacity slider (0-100%)
 - [x] Background blend modes (normal, multiply, screen, overlay)
@@ -362,6 +388,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] Background size controls (cover, contain, custom)
 
 #### Phase 3: PropertiesPanel Integration (Day 2-3)
+
 - [x] Add "Background" section to Advanced Styling Tab
 - [x] Background type selector dropdown
 - [x] Conditional UI based on background type:
@@ -371,6 +398,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] Live preview background changes on canvas
 
 #### Phase 4: Testing & Documentation (Day 4)
+
 - [x] Create `tests/unit/BackgroundCustomizer.spec.tsx`
 - [x] Test background CSS generation
 - [x] Create `tests/e2e/card-background.spec.ts`
@@ -383,6 +411,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 ### Acceptance Criteria
 
 **Must Have**:
+
 - [x] Solid color backgrounds
 - [x] Gradient backgrounds
 - [x] Image backgrounds
@@ -394,6 +423,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] E2E tests pass (95%+)
 
 **Should Have**:
+
 - [x] Backdrop blur effect
 - [x] Blend modes
 - [x] Overlay tint
@@ -411,6 +441,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 ### Implementation Checklist
 
 #### Phase 1: Haptic API Wrapper (Day 1)
+
 - [x] Create `src/services/hapticService.ts`
 - [x] Implement browser Vibration API wrapper
 - [x] Define haptic patterns:
@@ -424,12 +455,14 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] User preferences (enable/disable, intensity)
 
 #### Phase 2: Card Integration (Day 1-2)
+
 - [x] Add haptic feedback to button cards
 - [x] Trigger on tap_action
 - [x] Configurable haptic pattern per card
 - [x] Default haptic based on action type (toggle vs navigate)
 
 #### Phase 3: Settings & Testing (Day 2-3)
+
 - [x] Add "Haptic Feedback" to Settings dialog
 - [x] Global enable/disable toggle
 - [x] Intensity slider (0-100%)
@@ -441,6 +474,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 ### Acceptance Criteria
 
 **Must Have**:
+
 - [x] Vibration API wrapper
 - [x] Basic haptic patterns (light, medium, heavy)
 - [x] Button card integration
@@ -449,6 +483,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] E2E tests pass (95%+)
 
 **Should Have**:
+
 - [ ] Custom haptic patterns
 - [x] Intensity control
 - [x] Per-card haptic configuration
@@ -465,6 +500,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 ### Implementation Checklist
 
 #### Phase 1: Sound Service (Day 1)
+
 - [x] Create `src/services/soundService.ts`
 - [x] Implement Web Audio API wrapper
 - [x] Preload sound effects:
@@ -478,12 +514,14 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] Sound pool management (limit concurrent sounds)
 
 #### Phase 2: Sound Integration (Day 1-2)
+
 - [x] Add sound effects to card interactions
 - [x] Trigger on tap_action
 - [x] Default sound based on action type
 - [x] Configurable sound per card
 
 #### Phase 3: Settings & Testing (Day 2-3)
+
 - [x] Add "UI Sounds" to Settings dialog
 - [x] Global enable/disable toggle
 - [x] Volume slider (0-100%)
@@ -495,6 +533,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 ### Acceptance Criteria
 
 **Must Have**:
+
 - [x] Web Audio API wrapper
 - [x] Basic sound effects (click, success, error)
 - [x] Button card integration
@@ -503,6 +542,7 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 - [x] E2E tests pass (95%+)
 
 **Should Have**:
+
 - [ ] Custom sound effects
 - [ ] Sound library browser
 - [x] Per-card sound configuration
@@ -516,17 +556,20 @@ This document tracks the implementation of Phase 2 (UI Enhancement Layer) featur
 **Completion**: 0/6 features (0%)
 
 **Dependencies from Phase 1**:
+
 - ✅ Color Picker Component (complete)
 - ⏳ Animation CSS Framework (in progress)
 - ⏳ Typography/Google Fonts System (planned)
 
 **Next Steps**:
+
 1. Complete Phase 1 (Foundation Layer)
 2. Begin Feature 2.1 (Gradient Editor)
 3. Update this document daily with progress
 4. Move to Feature 2.2 when Feature 2.1 is complete
 
 **Notes**:
+
 - This document should be updated daily with progress
 - Each feature should have detailed implementation notes added before starting
 - Blockers should be documented immediately

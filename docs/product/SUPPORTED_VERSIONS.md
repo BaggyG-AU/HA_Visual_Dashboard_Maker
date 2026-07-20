@@ -16,6 +16,7 @@ This document lists all versions of components, integrations, and dependencies c
 ## Home Assistant Core & APIs
 
 ### Home Assistant Core
+
 - **Minimum Supported Version**: 2023.1+
 - **Tested Version**: 2024.x
 - **Target Version**: 2026.1
@@ -23,6 +24,7 @@ This document lists all versions of components, integrations, and dependencies c
 - **Connection Method**: Long-lived access token
 
 ### Home Assistant WebSocket API
+
 - **Protocol Version**: Auto-negotiated
 - **Commands Used**:
   - `lovelace/dashboards/list`
@@ -33,6 +35,7 @@ This document lists all versions of components, integrations, and dependencies c
 - **Authentication**: Token-based (auth_required → auth → auth_ok)
 
 ### home-assistant-js-websocket
+
 - **NPM Package**: `home-assistant-js-websocket`
 - **Current Version**: `^9.6.0`
 - **Source**: https://www.npmjs.com/package/home-assistant-js-websocket
@@ -43,34 +46,36 @@ This document lists all versions of components, integrations, and dependencies c
 ## Standard Home Assistant Cards (Built-in)
 
 ### Fully Implemented (14/22)
-| Card Type | Status | Renderer | Notes |
-|-----------|--------|----------|-------|
-| `alarm-panel` | ✅ Implemented | AlarmPanelCardRenderer.tsx | 247 lines |
-| `button` | ✅ Implemented | ButtonCardRenderer.tsx | 92 lines |
-| `entities` | ✅ Implemented | EntitiesCardRenderer.tsx | 182 lines |
-| `gauge` | ✅ Implemented | GaugeCardRenderer.tsx | 186 lines |
-| `glance` | ✅ Implemented | GlanceCardRenderer.tsx | 118 lines |
-| `history-graph` | ✅ Implemented | HistoryGraphCardRenderer.tsx | 215 lines |
-| `light` | ✅ Implemented | LightCardRenderer.tsx | 200 lines |
-| `markdown` | ✅ Implemented | MarkdownCardRenderer.tsx | 81 lines |
-| `media-control` | ✅ Implemented | MediaPlayerCardRenderer.tsx | 346 lines |
-| `plant-status` | ✅ Implemented | PlantStatusCardRenderer.tsx | 323 lines |
-| `sensor` | ✅ Implemented | SensorCardRenderer.tsx | 178 lines |
-| `thermostat` | ✅ Implemented | ThermostatCardRenderer.tsx | 193 lines |
-| `weather-forecast` | ✅ Implemented | WeatherForecastCardRenderer.tsx | 240 lines |
-| `spacer` | ✅ Implemented | Layout element | Part of layout system |
+
+| Card Type          | Status         | Renderer                        | Notes                 |
+| ------------------ | -------------- | ------------------------------- | --------------------- |
+| `alarm-panel`      | ✅ Implemented | AlarmPanelCardRenderer.tsx      | 247 lines             |
+| `button`           | ✅ Implemented | ButtonCardRenderer.tsx          | 92 lines              |
+| `entities`         | ✅ Implemented | EntitiesCardRenderer.tsx        | 182 lines             |
+| `gauge`            | ✅ Implemented | GaugeCardRenderer.tsx           | 186 lines             |
+| `glance`           | ✅ Implemented | GlanceCardRenderer.tsx          | 118 lines             |
+| `history-graph`    | ✅ Implemented | HistoryGraphCardRenderer.tsx    | 215 lines             |
+| `light`            | ✅ Implemented | LightCardRenderer.tsx           | 200 lines             |
+| `markdown`         | ✅ Implemented | MarkdownCardRenderer.tsx        | 81 lines              |
+| `media-control`    | ✅ Implemented | MediaPlayerCardRenderer.tsx     | 346 lines             |
+| `plant-status`     | ✅ Implemented | PlantStatusCardRenderer.tsx     | 323 lines             |
+| `sensor`           | ✅ Implemented | SensorCardRenderer.tsx          | 178 lines             |
+| `thermostat`       | ✅ Implemented | ThermostatCardRenderer.tsx      | 193 lines             |
+| `weather-forecast` | ✅ Implemented | WeatherForecastCardRenderer.tsx | 240 lines             |
+| `spacer`           | ✅ Implemented | Layout element                  | Part of layout system |
 
 ### Placeholder/Partial (8/22)
-| Card Type | Status | Notes |
-|-----------|--------|-------|
-| `conditional` | ⚠️ Placeholder | Contains UnsupportedCard reference |
-| `grid` | ⚠️ Placeholder | Layout card |
-| `horizontal-stack` | ⚠️ Placeholder | Layout card |
-| `vertical-stack` | ⚠️ Placeholder | Layout card |
-| `map` | ⚠️ Placeholder | Location display |
-| `picture` | ⚠️ Placeholder | Image display |
-| `picture-entity` | ⚠️ Placeholder | Image with entity |
-| `picture-glance` | ⚠️ Placeholder | Multi-entity image |
+
+| Card Type          | Status         | Notes                              |
+| ------------------ | -------------- | ---------------------------------- |
+| `conditional`      | ⚠️ Placeholder | Contains UnsupportedCard reference |
+| `grid`             | ⚠️ Placeholder | Layout card                        |
+| `horizontal-stack` | ⚠️ Placeholder | Layout card                        |
+| `vertical-stack`   | ⚠️ Placeholder | Layout card                        |
+| `map`              | ⚠️ Placeholder | Location display                   |
+| `picture`          | ⚠️ Placeholder | Image display                      |
+| `picture-entity`   | ⚠️ Placeholder | Image with entity                  |
+| `picture-glance`   | ⚠️ Placeholder | Multi-entity image                 |
 
 ---
 
@@ -79,6 +84,7 @@ This document lists all versions of components, integrations, and dependencies c
 ### Fully Implemented (6 renderers, 19+ card types)
 
 #### 1. ApexCharts Card
+
 - **Card Type**: `custom:apexcharts-card`
 - **Renderer**: ApexChartsCardRenderer.tsx (246 lines)
 - **Version Supported**: **v2.2.3** (compatible, no updates needed)
@@ -88,6 +94,7 @@ This document lists all versions of components, integrations, and dependencies c
 - **Status**: ✅ Chart rendering too complex for preview - uses placeholder. Real charts render in HA.
 
 #### 2. Bubble Card
+
 - **Card Type**: `custom:bubble-card`
 - **Renderer**: BubbleCardRenderer.tsx (533 lines)
 - **Version Supported**: **v3.1.0** (updated January 12, 2026)
@@ -106,6 +113,7 @@ This document lists all versions of components, integrations, and dependencies c
   - ✅ Sub-button-only card type (`card_type: 'sub_button'`)
 
 #### 3. Better Thermostat UI Card
+
 - **Card Type**: `custom:better-thermostat-ui-card`
 - **Renderer**: BetterThermostatCardRenderer.tsx (220 lines)
 - **Version Supported**: **v2.2.1** (compatible, no updates needed)
@@ -115,6 +123,7 @@ This document lists all versions of components, integrations, and dependencies c
 - **Status**: ✅ v2.2.1 is bug fixes only - renderer fully compatible
 
 #### 4. Mini Graph Card
+
 - **Card Type**: `custom:mini-graph-card`
 - **Renderer**: MiniGraphCardRenderer.tsx (211 lines)
 - **Version Supported**: **v0.13.0** (updated January 12, 2026)
@@ -125,6 +134,7 @@ This document lists all versions of components, integrations, and dependencies c
   - ✅ icon_image support (image URL instead of icon)
 
 #### 5. Mushroom Cards (14 variants)
+
 - **Card Types**: `custom:mushroom-*`
 - **Renderer**: MushroomCardRenderer.tsx (318 lines, handles all variants)
 - **Version Supported**: **v5.0.9** (updated January 12, 2026)
@@ -141,6 +151,7 @@ This document lists all versions of components, integrations, and dependencies c
   - ✅ align_text property (v4.3.0) for text alignment
 
 #### 6. Power Flow Card
+
 - **Card Type**: `custom:power-flow-card`
 - **Renderer**: PowerFlowCardRenderer.tsx (420 lines)
 - **Version Supported**: **v2.6.2** (updated January 12, 2026)
@@ -155,6 +166,7 @@ This document lists all versions of components, integrations, and dependencies c
 ### Missing Renderers (38 card types)
 
 **Priority 1 (Tier 1 - High Usage)**:
+
 - ❌ `custom:card-mod` - CSS styling layer (CRITICAL)
 - ❌ `custom:auto-entities` - Auto-populate entities
 - ❌ `custom:vertical-stack-in-card` - Stack in bordered container
@@ -163,6 +175,7 @@ This document lists all versions of components, integrations, and dependencies c
 - ❌ `custom:button-card` - Advanced button (distinct from standard)
 
 **Priority 2 (Tier 2 - Medium Usage)**:
+
 - ❌ `custom:fold-entity-row` - Collapsible rows
 - ❌ `custom:slider-entity-row` - Slider controls
 - ❌ `custom:battery-state-card` - Battery tracking
@@ -170,6 +183,7 @@ This document lists all versions of components, integrations, and dependencies c
 - ❌ `custom:decluttering-card` - Reusable templates
 
 **Priority 3 (Surveillance/Camera)**:
+
 - ❌ `custom:webrtc-camera` - Low-latency streaming
 - ❌ `custom:surveillance-card` - Multi-camera view
 - ❌ `custom:frigate-card` - Frigate NVR integration
@@ -182,6 +196,7 @@ This document lists all versions of components, integrations, and dependencies c
 ### Core Framework
 
 #### React
+
 - **Package**: `react`
 - **Current Version**: `^19.2.3`
 - **Release Date**: December 2024
@@ -189,6 +204,7 @@ This document lists all versions of components, integrations, and dependencies c
 - **Notes**: React 19 with Server Components, Suspense improvements
 
 #### React DOM
+
 - **Package**: `react-dom`
 - **Current Version**: `^19.2.3`
 - **Source**: https://www.npmjs.com/package/react-dom
@@ -198,6 +214,7 @@ This document lists all versions of components, integrations, and dependencies c
 ### UI Components & Layout
 
 #### Ant Design
+
 - **Package**: `antd`
 - **Current Version**: `^6.1.0`
 - **Release Date**: 2024
@@ -206,6 +223,7 @@ This document lists all versions of components, integrations, and dependencies c
 - **Notes**: v6.x with new theme system
 
 #### React Grid Layout
+
 - **Package**: `react-grid-layout`
 - **Current Version**: `^2.0.0`
 - **Source**: https://www.npmjs.com/package/react-grid-layout
@@ -213,6 +231,7 @@ This document lists all versions of components, integrations, and dependencies c
 - **Notes**: Drag-and-drop grid system for dashboard layout
 
 #### Allotment
+
 - **Package**: `allotment`
 - **Current Version**: `^1.20.5`
 - **Source**: https://www.npmjs.com/package/allotment
@@ -223,6 +242,7 @@ This document lists all versions of components, integrations, and dependencies c
 ### Editor & Code
 
 #### Monaco Editor
+
 - **Package**: `monaco-editor`
 - **Current Version**: `^0.55.1`
 - **Source**: https://www.npmjs.com/package/monaco-editor
@@ -230,12 +250,14 @@ This document lists all versions of components, integrations, and dependencies c
 - **Notes**: VS Code editor component
 
 #### @monaco-editor/react
+
 - **Package**: `@monaco-editor/react`
 - **Current Version**: `^4.7.0`
 - **Source**: https://www.npmjs.com/package/@monaco-editor/react
 - **Notes**: React wrapper for Monaco
 
 #### monaco-yaml
+
 - **Package**: `monaco-yaml`
 - **Current Version**: `^5.4.0`
 - **Source**: https://www.npmjs.com/package/monaco-yaml
@@ -247,6 +269,7 @@ This document lists all versions of components, integrations, and dependencies c
 ### Color & Visualization
 
 #### react-colorful
+
 - **Package**: `react-colorful`
 - **Current Version**: `^5.6.1`
 - **Source**: https://www.npmjs.com/package/react-colorful
@@ -254,6 +277,7 @@ This document lists all versions of components, integrations, and dependencies c
 - **Notes**: Color picker component
 
 #### ApexCharts
+
 - **Package**: `apexcharts`
 - **Current Version**: `^5.3.6`
 - **Source**: https://www.npmjs.com/package/apexcharts
@@ -261,6 +285,7 @@ This document lists all versions of components, integrations, and dependencies c
 - **Notes**: Chart library
 
 #### react-apexcharts
+
 - **Package**: `react-apexcharts`
 - **Current Version**: `^1.9.0`
 - **Source**: https://www.npmjs.com/package/react-apexcharts
@@ -271,6 +296,7 @@ This document lists all versions of components, integrations, and dependencies c
 ### State Management
 
 #### Zustand
+
 - **Package**: `zustand`
 - **Current Version**: `^5.0.9`
 - **Source**: https://www.npmjs.com/package/zustand
@@ -281,6 +307,7 @@ This document lists all versions of components, integrations, and dependencies c
 ### Electron & Desktop
 
 #### Electron
+
 - **Package**: `electron`
 - **Current Version**: `39.2.7`
 - **Release Date**: December 2024
@@ -289,12 +316,14 @@ This document lists all versions of components, integrations, and dependencies c
 - **Notes**: Chromium 130, Node.js 20.18.0, V8 13.0
 
 #### Electron Forge
+
 - **Package**: `@electron-forge/*`
 - **Current Version**: `^7.10.2`
 - **Source**: https://www.electronforge.io/
 - **Notes**: Build and packaging toolchain
 
 #### electron-store
+
 - **Package**: `electron-store`
 - **Current Version**: `^10.0.0`
 - **Source**: https://www.npmjs.com/package/electron-store
@@ -305,6 +334,7 @@ This document lists all versions of components, integrations, and dependencies c
 ### Material Design
 
 #### @material/web
+
 - **Package**: `@material/web`
 - **Current Version**: `^2.4.1`
 - **Source**: https://www.npmjs.com/package/@material/web
@@ -315,17 +345,20 @@ This document lists all versions of components, integrations, and dependencies c
 ### Development Dependencies
 
 #### TypeScript
+
 - **Package**: `typescript`
 - **Current Version**: `^5.7.3`
 - **Source**: https://www.npmjs.com/package/typescript
 
 #### Playwright
+
 - **Package**: `@playwright/test`
 - **Current Version**: `^1.57.0`
 - **Source**: https://www.npmjs.com/package/@playwright/test
 - **Notes**: E2E testing framework
 
 #### Vite
+
 - **Package**: `vite`
 - **Current Version**: `^5.4.11`
 - **Source**: https://www.npmjs.com/package/vite
@@ -336,7 +369,9 @@ This document lists all versions of components, integrations, and dependencies c
 ## Integration Support
 
 ### Home Assistant Domains (Entity Types)
+
 The application supports entity selection and smart defaults for:
+
 - `switch` (toggle)
 - `light` (toggle)
 - `binary_sensor` (more-info)
@@ -352,11 +387,13 @@ The application supports entity selection and smart defaults for:
 - `vacuum` (call-service start/return_to_base)
 
 ### Theme System
+
 - **Integration**: Home Assistant theme API
 - **Support**: Apply HA themes to dashboard preview
 - **Feature Status**: Phase 2 Complete (v0.4.x)
 
 ### Dashboard Deployment
+
 - **Method**: WebSocket API upload to Home Assistant
 - **Format**: Lovelace YAML configuration
 - **Target Dashboards**: New or existing dashboard paths
@@ -366,12 +403,14 @@ The application supports entity selection and smart defaults for:
 ## Summary Statistics
 
 ### Card Support
+
 - **Standard HA Cards**: 14/22 fully implemented (64%)
 - **Custom HACS Cards**: 6 renderers (19+ card types)
 - **Total Card Types Supported**: 33+
 - **Missing High-Priority Cards**: 6 (Tier 1)
 
 ### Dependencies
+
 - **Total NPM Packages**: 150+ (including dev dependencies)
 - **Key Dependencies Tracked**: 15
 - **Electron Version**: 39.2.7 (latest stable)
@@ -379,6 +418,7 @@ The application supports entity selection and smart defaults for:
 - **Node.js Version**: 20.18.0 (via Electron)
 
 ### Home Assistant Compatibility
+
 - **Minimum HA Version**: 2023.1+
 - **WebSocket API**: Fully supported
 - **REST API**: Limited use (token validation)
@@ -388,11 +428,11 @@ The application supports entity selection and smart defaults for:
 
 ## Version Control
 
-| Document Version | Date | Changes |
-|-----------------|------|---------|
-| 1.0 | 2026-01-12 | Initial baseline from v0.4.3-beta.1 |
-| 1.1 | 2026-01-12 | Updated Bubble Card to v3.1.0 with all features implemented |
-| 1.2 | 2026-01-12 | Phase 4.2 complete: Updated Mushroom v5.0.9, Mini Graph v0.13.0, Power Flow v2.6.2, Better Thermostat v2.2.1, ApexCharts v2.2.3 |
+| Document Version | Date       | Changes                                                                                                                         |
+| ---------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 1.0              | 2026-01-12 | Initial baseline from v0.4.3-beta.1                                                                                             |
+| 1.1              | 2026-01-12 | Updated Bubble Card to v3.1.0 with all features implemented                                                                     |
+| 1.2              | 2026-01-12 | Phase 4.2 complete: Updated Mushroom v5.0.9, Mini Graph v0.13.0, Power Flow v2.6.2, Better Thermostat v2.2.1, ApexCharts v2.2.3 |
 
 ---
 

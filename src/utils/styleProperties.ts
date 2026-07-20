@@ -14,7 +14,7 @@ export const extractStyleProperty = (styleValue: string | undefined, property: s
 export const upsertStyleProperty = (
   styleValue: string | undefined,
   property: string,
-  value: string | undefined
+  value: string | undefined,
 ): string => {
   const trimmed = styleValue?.trim() ?? '';
   if (!value || !value.trim()) {
@@ -46,7 +46,7 @@ export const removeStyleProperty = (styleValue: string | undefined, property: st
 
 export const upsertStyleProperties = (
   styleValue: string | undefined,
-  properties: Record<string, string | undefined>
+  properties: Record<string, string | undefined>,
 ): string => {
   let next = styleValue ?? '';
   Object.entries(properties).forEach(([property, value]) => {
@@ -55,11 +55,13 @@ export const upsertStyleProperties = (
   return next.trim();
 };
 
-export const removeStyleProperties = (styleValue: string | undefined, properties: string[]): string => {
+export const removeStyleProperties = (
+  styleValue: string | undefined,
+  properties: string[],
+): string => {
   let next = styleValue ?? '';
   properties.forEach((property) => {
     next = removeStyleProperty(next, property);
   });
   return next.trim();
 };
-

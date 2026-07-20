@@ -15,7 +15,8 @@ const DEFAULT_MAX_ITEMS = 50;
 const DEFAULT_TRUNCATE_LENGTH = 72;
 const PRESENT_WINDOW_MS = 5 * 60 * 1000;
 
-const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
 
 const toFiniteNumber = (value: unknown, fallback: number): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -70,11 +71,13 @@ const pickText = (event: Record<string, unknown>, key: string): string | undefin
 };
 
 const pickTimestamp = (event: Record<string, unknown>): number | null => {
-  return toTimestamp(event.timestamp)
-    ?? toTimestamp(event.time)
-    ?? toTimestamp(event.date)
-    ?? toTimestamp(event.created)
-    ?? toTimestamp(event.updated);
+  return (
+    toTimestamp(event.timestamp) ??
+    toTimestamp(event.time) ??
+    toTimestamp(event.date) ??
+    toTimestamp(event.created) ??
+    toTimestamp(event.updated)
+  );
 };
 
 const normalizeEventConfig = (
@@ -85,17 +88,22 @@ const normalizeEventConfig = (
   const timestamp = toTimestamp(event.timestamp);
   if (timestamp === null) return null;
 
-  const title = typeof event.title === 'string' && event.title.trim().length > 0
-    ? event.title.trim()
-    : `Event ${index + 1}`;
+  const title =
+    typeof event.title === 'string' && event.title.trim().length > 0
+      ? event.title.trim()
+      : `Event ${index + 1}`;
 
   return {
-    id: typeof event.id === 'string' && event.id.trim().length > 0 ? event.id.trim() : `event-${index}`,
+    id:
+      typeof event.id === 'string' && event.id.trim().length > 0
+        ? event.id.trim()
+        : `event-${index}`,
     timestamp,
     title,
-    description: typeof event.description === 'string' && event.description.trim().length > 0
-      ? event.description.trim()
-      : undefined,
+    description:
+      typeof event.description === 'string' && event.description.trim().length > 0
+        ? event.description.trim()
+        : undefined,
     phase: toPhase(timestamp, selectedTimestamp),
   };
 };
@@ -117,10 +125,11 @@ const normalizeEventsFromAttributes = (
       const timestamp = pickTimestamp(record);
       if (timestamp === null) return null;
 
-      const title = pickText(record, 'title')
-        ?? pickText(record, 'message')
-        ?? pickText(record, 'name')
-        ?? `Event ${index + 1}`;
+      const title =
+        pickText(record, 'title') ??
+        pickText(record, 'message') ??
+        pickText(record, 'name') ??
+        `Event ${index + 1}`;
 
       return {
         id: pickText(record, 'id') ?? `attr-${index}`,
@@ -146,17 +155,18 @@ const createSyntheticEvents = (
 
   return Array.from({ length: count }, (_, index) => {
     const jitter = Math.floor((seededNoise(seed + index * 19) - 0.5) * step * 0.4);
-    const timestamp = start + (index * step) + jitter;
+    const timestamp = start + index * step + jitter;
     const phase = toPhase(timestamp, selectedTimestamp);
 
     return {
       id: `synthetic-${index}`,
       timestamp,
-      title: phase === 'past'
-        ? `Completed step ${index + 1}`
-        : phase === 'present'
-          ? `Current checkpoint`
-          : `Planned step ${index + 1}`,
+      title:
+        phase === 'past'
+          ? `Completed step ${index + 1}`
+          : phase === 'present'
+            ? `Current checkpoint`
+            : `Planned step ${index + 1}`,
       description: entity
         ? `Source: ${entity}`
         : 'Synthetic preview data for timeline layout testing',
@@ -174,21 +184,35 @@ export const normalizeTimelineCard = (
   return {
     type: 'logbook',
     title: typeof card.title === 'string' ? card.title : undefined,
-    entity: typeof card.entity === 'string' && card.entity.trim().length > 0 ? card.entity.trim() : undefined,
-    hoursToShow: clamp(Math.floor(toFiniteNumber(card.hours_to_show, DEFAULT_HOURS_TO_SHOW)), 1, 168),
+    entity:
+      typeof card.entity === 'string' && card.entity.trim().length > 0
+        ? card.entity.trim()
+        : undefined,
+    hoursToShow: clamp(
+      Math.floor(toFiniteNumber(card.hours_to_show, DEFAULT_HOURS_TO_SHOW)),
+      1,
+      168,
+    ),
     maxItems: clamp(Math.floor(toFiniteNumber(card.max_items, DEFAULT_MAX_ITEMS)), 1, 200),
     orientation: normalizeOrientation(card.orientation),
     showNowMarker: typeof card.show_now_marker === 'boolean' ? card.show_now_marker : true,
     groupBy: normalizeGroupBy(card.group_by),
     enableScrubber: typeof card.enable_scrubber === 'boolean' ? card.enable_scrubber : true,
     itemDensity: normalizeDensity(card.item_density),
-    truncateLength: clamp(Math.floor(toFiniteNumber(card.truncate_length, DEFAULT_TRUNCATE_LENGTH)), 24, 160),
+    truncateLength: clamp(
+      Math.floor(toFiniteNumber(card.truncate_length, DEFAULT_TRUNCATE_LENGTH)),
+      24,
+      160,
+    ),
     selectedTimestamp,
     nowTimestamp,
   };
 };
 
-export const truncateTimelineText = (value: string | undefined, maxLength: number): string | undefined => {
+export const truncateTimelineText = (
+  value: string | undefined,
+  maxLength: number,
+): string | undefined => {
   if (!value) return undefined;
   if (value.length <= maxLength) return value;
   return `${value.slice(0, Math.max(0, maxLength)).trimEnd()}...`;
@@ -203,15 +227,23 @@ export const resolveTimelineEvents = (
 
   const fromCard = Array.isArray(card.events)
     ? card.events
-      .map((event, index) => normalizeEventConfig(event, index, normalized.selectedTimestamp))
-      .filter((event): event is TimelineEvent => Boolean(event))
+        .map((event, index) => normalizeEventConfig(event, index, normalized.selectedTimestamp))
+        .filter((event): event is TimelineEvent => Boolean(event))
     : [];
 
-  const fromEntity = normalizeEventsFromAttributes(entityState?.attributes, normalized.selectedTimestamp);
-  const fallback = createSyntheticEvents(normalized.entity, normalized.selectedTimestamp, normalized.hoursToShow);
+  const fromEntity = normalizeEventsFromAttributes(
+    entityState?.attributes,
+    normalized.selectedTimestamp,
+  );
+  const fallback = createSyntheticEvents(
+    normalized.entity,
+    normalized.selectedTimestamp,
+    normalized.hoursToShow,
+  );
 
-  const sorted = (fromCard.length > 0 ? fromCard : fromEntity.length > 0 ? fromEntity : fallback)
-    .sort((a, b) => a.timestamp - b.timestamp);
+  const sorted = (
+    fromCard.length > 0 ? fromCard : fromEntity.length > 0 ? fromEntity : fallback
+  ).sort((a, b) => a.timestamp - b.timestamp);
 
   return sorted.slice(-normalized.maxItems);
 };
@@ -224,22 +256,24 @@ export const groupTimelineEvents = (
     return [{ key: 'all', label: 'All events', events }];
   }
 
-  const formatter = groupBy === 'day'
-    ? new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
-    : new Intl.DateTimeFormat(undefined, {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-    });
+  const formatter =
+    groupBy === 'day'
+      ? new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+      : new Intl.DateTimeFormat(undefined, {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+        });
 
   const buckets = new Map<string, TimelineEventGroup>();
 
   events.forEach((event) => {
     const keyDate = new Date(event.timestamp);
-    const key = groupBy === 'day'
-      ? `${keyDate.getUTCFullYear()}-${keyDate.getUTCMonth()}-${keyDate.getUTCDate()}`
-      : `${keyDate.getUTCFullYear()}-${keyDate.getUTCMonth()}-${keyDate.getUTCDate()}-${keyDate.getUTCHours()}`;
+    const key =
+      groupBy === 'day'
+        ? `${keyDate.getUTCFullYear()}-${keyDate.getUTCMonth()}-${keyDate.getUTCDate()}`
+        : `${keyDate.getUTCFullYear()}-${keyDate.getUTCMonth()}-${keyDate.getUTCDate()}-${keyDate.getUTCHours()}`;
 
     const group = buckets.get(key);
     if (group) {

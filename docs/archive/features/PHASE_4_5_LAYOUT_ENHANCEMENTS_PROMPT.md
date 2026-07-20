@@ -36,20 +36,20 @@ Read these files BEFORE writing any code. They contain immutable rules, architec
 
 Follow the same structure, naming conventions, and integration points used by delivered layout features:
 
-| Purpose | File |
-|---------|------|
-| Vertical stack renderer baseline | `src/components/cards/VerticalStackCardRenderer.tsx` |
-| Horizontal stack renderer baseline | `src/components/cards/HorizontalStackCardRenderer.tsx` |
-| Grid renderer baseline | `src/components/cards/GridCardRenderer.tsx` |
-| Tabs renderer (container controls patterns) | `src/components/cards/TabsCardRenderer.tsx` |
-| Popup renderer (PropertiesPanel integration patterns) | `src/components/cards/PopupTriggerCardRenderer.tsx` |
-| Card registry pattern | `src/services/cardRegistry.ts` |
-| BaseCard dispatch pattern | `src/components/BaseCard.tsx` |
-| Dashboard/shared types | `src/types/dashboard.ts` |
-| PropertiesPanel integration reference | `src/components/PropertiesPanel.tsx` |
-| DSL registration | `tests/support/index.ts` |
-| Existing layout DSL style | `tests/support/dsl/carousel.ts`, `tests/support/dsl/accordion.ts`, `tests/support/dsl/tabs.ts` |
-| Existing layout E2E style | `tests/e2e/carousel.spec.ts`, `tests/e2e/accordion.spec.ts`, `tests/e2e/tabs.spec.ts`, `tests/e2e/popup.spec.ts` |
+| Purpose                                               | File                                                                                                             |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Vertical stack renderer baseline                      | `src/components/cards/VerticalStackCardRenderer.tsx`                                                             |
+| Horizontal stack renderer baseline                    | `src/components/cards/HorizontalStackCardRenderer.tsx`                                                           |
+| Grid renderer baseline                                | `src/components/cards/GridCardRenderer.tsx`                                                                      |
+| Tabs renderer (container controls patterns)           | `src/components/cards/TabsCardRenderer.tsx`                                                                      |
+| Popup renderer (PropertiesPanel integration patterns) | `src/components/cards/PopupTriggerCardRenderer.tsx`                                                              |
+| Card registry pattern                                 | `src/services/cardRegistry.ts`                                                                                   |
+| BaseCard dispatch pattern                             | `src/components/BaseCard.tsx`                                                                                    |
+| Dashboard/shared types                                | `src/types/dashboard.ts`                                                                                         |
+| PropertiesPanel integration reference                 | `src/components/PropertiesPanel.tsx`                                                                             |
+| DSL registration                                      | `tests/support/index.ts`                                                                                         |
+| Existing layout DSL style                             | `tests/support/dsl/carousel.ts`, `tests/support/dsl/accordion.ts`, `tests/support/dsl/tabs.ts`                   |
+| Existing layout E2E style                             | `tests/e2e/carousel.spec.ts`, `tests/e2e/accordion.spec.ts`, `tests/e2e/tabs.spec.ts`, `tests/e2e/popup.spec.ts` |
 
 ---
 
@@ -84,19 +84,19 @@ Follow the same structure, naming conventions, and integration points used by de
 
 ### Code Organization
 
-| Purpose | Path |
-|---------|------|
-| Layout types/extensions | `src/types/dashboard.ts` |
-| Vertical stack enhancements | `src/components/cards/VerticalStackCardRenderer.tsx` |
+| Purpose                       | Path                                                   |
+| ----------------------------- | ------------------------------------------------------ |
+| Layout types/extensions       | `src/types/dashboard.ts`                               |
+| Vertical stack enhancements   | `src/components/cards/VerticalStackCardRenderer.tsx`   |
 | Horizontal stack enhancements | `src/components/cards/HorizontalStackCardRenderer.tsx` |
-| Grid enhancements | `src/components/cards/GridCardRenderer.tsx` |
-| PropertiesPanel controls | `src/components/PropertiesPanel.tsx` |
-| YAML schema updates | `src/schemas/ha-dashboard-schema.json` |
-| Layout DSL helper | `tests/support/dsl/layout.ts` |
-| DSL registration | `tests/support/index.ts` |
-| Unit tests | `tests/unit/layout-config.spec.ts` |
-| E2E tests | `tests/e2e/layout.spec.ts` |
-| Visual tests | `tests/e2e/layout.visual.spec.ts` |
+| Grid enhancements             | `src/components/cards/GridCardRenderer.tsx`            |
+| PropertiesPanel controls      | `src/components/PropertiesPanel.tsx`                   |
+| YAML schema updates           | `src/schemas/ha-dashboard-schema.json`                 |
+| Layout DSL helper             | `tests/support/dsl/layout.ts`                          |
+| DSL registration              | `tests/support/index.ts`                               |
+| Unit tests                    | `tests/unit/layout-config.spec.ts`                     |
+| E2E tests                     | `tests/e2e/layout.spec.ts`                             |
+| Visual tests                  | `tests/e2e/layout.visual.spec.ts`                      |
 
 ### YAML Schema
 
@@ -169,6 +169,7 @@ When adding layout-specific controls to `PropertiesPanel.tsx`, you **MUST** foll
 ## Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [ ] Gap/spacing controls work for `vertical-stack`, `horizontal-stack`, and `grid`
 - [ ] Gap presets work (`none`, `tight`, `normal`, `relaxed`, `custom`)
 - [ ] Alignment options render correctly for all enhanced layout cards
@@ -179,12 +180,14 @@ When adding layout-specific controls to `PropertiesPanel.tsx`, you **MUST** foll
 - [ ] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [ ] Visual alignment selector controls in PropertiesPanel
 - [ ] Independent row/column gap for grid with intuitive UI
 - [ ] Numeric guardrails/clamping for extreme gap values
 - [ ] Clear helper text in PropertiesPanel for wrap behavior
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Responsive breakpoint-based layout switching
 - [ ] Advanced CSS Grid template-areas editor
 - [ ] Per-breakpoint alignment/gap overrides
@@ -197,6 +200,7 @@ When adding layout-specific controls to `PropertiesPanel.tsx`, you **MUST** foll
 ### Unit Tests
 
 Create `tests/unit/layout-config.spec.ts`:
+
 - Gap preset normalization (`none`, `tight`, `normal`, `relaxed`, `custom`)
 - Numeric gap parsing + bounds/clamping behavior
 - Alignment value validation/default fallback
@@ -206,6 +210,7 @@ Create `tests/unit/layout-config.spec.ts`:
 ### E2E Tests (DSL-first only)
 
 Create `tests/support/dsl/layout.ts` (`LayoutDSL`):
+
 - `addVerticalStackCard()`
 - `addHorizontalStackCard()`
 - `addGridCard()`
@@ -223,6 +228,7 @@ Create `tests/support/dsl/layout.ts` (`LayoutDSL`):
 Register `LayoutDSL` in `tests/support/index.ts` (import, interface field, instantiation).
 
 Create `tests/e2e/layout.spec.ts`:
+
 - Vertical stack gap + alignment changes
 - Horizontal stack gap + alignment + justify + wrap changes
 - Grid row/column gap + alignment changes
@@ -231,6 +237,7 @@ Create `tests/e2e/layout.spec.ts`:
 - PropertiesPanel controls update live preview
 
 Create `tests/e2e/layout.visual.spec.ts`:
+
 - Snapshots for gap presets, alignment variants, and horizontal wrap states
 
 ### Accessibility
@@ -283,6 +290,7 @@ Create `tests/e2e/layout.visual.spec.ts`:
 ## Output Format
 
 Respond with:
+
 1. A concise implementation plan for Feature 4.5
 2. File-by-file change list (planned)
 3. Test plan + commands
@@ -302,6 +310,7 @@ After implementation, run exactly one **Fast Gate** pass and then stop:
 4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
 
 After this single Fast Gate run, provide a summary report that includes:
+
 - Exact commands executed
 - Pass/fail status for each command
 - Any failing tests with artifact paths under `test-results/artifacts/**`

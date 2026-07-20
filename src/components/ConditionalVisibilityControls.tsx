@@ -1,7 +1,11 @@
 import React, { useMemo } from 'react';
 import { Alert, Button, Divider, Input, Select, Space, Tag, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined, ApartmentOutlined } from '@ant-design/icons';
-import type { VisibilityCondition, VisibilityConditionRule, VisibilityConditionType } from '../types/dashboard';
+import type {
+  VisibilityCondition,
+  VisibilityConditionRule,
+  VisibilityConditionType,
+} from '../types/dashboard';
 import { evaluateVisibilityConditions } from '../services/conditionalVisibility';
 import { useHAEntities } from '../contexts/HAEntityContext';
 
@@ -54,7 +58,9 @@ const createDefaultGroup = (entityId?: string): VisibilityCondition => ({
   conditions: [createDefaultRule(entityId)],
 });
 
-const isGroup = (condition: VisibilityCondition): condition is Extract<VisibilityCondition, { condition: 'and' | 'or' }> => {
+const isGroup = (
+  condition: VisibilityCondition,
+): condition is Extract<VisibilityCondition, { condition: 'and' | 'or' }> => {
   return condition.condition === 'and' || condition.condition === 'or';
 };
 
@@ -147,7 +153,9 @@ export const ConditionalVisibilityControls: React.FC<ConditionalVisibilityContro
   const currentEvaluation = evaluateVisibilityConditions(value, entities);
   const referencedEntities = useMemo(() => collectEntitiesFromConditions(value), [value]);
   const firstReferencedEntity = referencedEntities[0];
-  const firstReferencedState = firstReferencedEntity ? entities[firstReferencedEntity]?.state ?? null : null;
+  const firstReferencedState = firstReferencedEntity
+    ? (entities[firstReferencedEntity]?.state ?? null)
+    : null;
 
   const handleRuleTypeChange = (path: number[], nextType: VisibilityConditionType) => {
     onChange?.(
@@ -159,10 +167,20 @@ export const ConditionalVisibilityControls: React.FC<ConditionalVisibilityContro
         };
 
         if (nextType === 'state_in' || nextType === 'state_not_in') {
-          return { ...nextBase, values: Array.isArray(existing.values) && existing.values.length > 0 ? existing.values : ['on'] };
+          return {
+            ...nextBase,
+            values:
+              Array.isArray(existing.values) && existing.values.length > 0
+                ? existing.values
+                : ['on'],
+          };
         }
 
-        if (nextType === 'attribute_equals' || nextType === 'attribute_greater_than' || nextType === 'attribute_less_than') {
+        if (
+          nextType === 'attribute_equals' ||
+          nextType === 'attribute_greater_than' ||
+          nextType === 'attribute_less_than'
+        ) {
           return {
             ...nextBase,
             attribute: existing.attribute || 'battery',
@@ -179,7 +197,11 @@ export const ConditionalVisibilityControls: React.FC<ConditionalVisibilityContro
     );
   };
 
-  const renderCondition = (condition: VisibilityCondition, path: number[], nested = false): React.ReactNode => {
+  const renderCondition = (
+    condition: VisibilityCondition,
+    path: number[],
+    nested = false,
+  ): React.ReactNode => {
     const testSuffix = testIdForPath(path);
 
     if (isGroup(condition)) {
@@ -238,7 +260,9 @@ export const ConditionalVisibilityControls: React.FC<ConditionalVisibilityContro
             <Button
               size="small"
               icon={<PlusOutlined />}
-              onClick={() => onChange?.(appendToPath(value, path, createDefaultRule(fallbackEntityId)))}
+              onClick={() =>
+                onChange?.(appendToPath(value, path, createDefaultRule(fallbackEntityId)))
+              }
               data-testid={`visibility-add-condition-${testSuffix}`}
             >
               Add Condition
@@ -246,7 +270,9 @@ export const ConditionalVisibilityControls: React.FC<ConditionalVisibilityContro
             <Button
               size="small"
               icon={<ApartmentOutlined />}
-              onClick={() => onChange?.(appendToPath(value, path, createDefaultGroup(fallbackEntityId)))}
+              onClick={() =>
+                onChange?.(appendToPath(value, path, createDefaultGroup(fallbackEntityId)))
+              }
               data-testid={`visibility-add-group-${testSuffix}`}
             >
               Add Group
@@ -258,7 +284,10 @@ export const ConditionalVisibilityControls: React.FC<ConditionalVisibilityContro
 
     const rule = condition;
     const isListCondition = rule.condition === 'state_in' || rule.condition === 'state_not_in';
-    const isAttributeCondition = rule.condition === 'attribute_equals' || rule.condition === 'attribute_greater_than' || rule.condition === 'attribute_less_than';
+    const isAttributeCondition =
+      rule.condition === 'attribute_equals' ||
+      rule.condition === 'attribute_greater_than' ||
+      rule.condition === 'attribute_less_than';
     const requiresValue = rule.condition !== 'entity_exists';
 
     return (
@@ -358,12 +387,17 @@ export const ConditionalVisibilityControls: React.FC<ConditionalVisibilityContro
   return (
     <div data-testid="conditional-visibility-controls">
       <Divider />
-      <Text strong style={{ color: 'white' }}>Conditional Visibility</Text>
+      <Text strong style={{ color: 'white' }}>
+        Conditional Visibility
+      </Text>
       <Text style={{ display: 'block', color: '#888', fontSize: '12px', marginTop: '4px' }}>
         Configure when this card or entity should be visible.
       </Text>
 
-      <div style={{ marginTop: '10px', marginBottom: '10px' }} data-testid="conditional-visibility-preview">
+      <div
+        style={{ marginTop: '10px', marginBottom: '10px' }}
+        data-testid="conditional-visibility-preview"
+      >
         <Tag color={currentEvaluation ? 'success' : 'error'}>
           Current state: {currentEvaluation ? 'Visible' : 'Hidden'}
         </Tag>
@@ -373,7 +407,9 @@ export const ConditionalVisibilityControls: React.FC<ConditionalVisibilityContro
         data-current-evaluation={currentEvaluation ? 'true' : 'false'}
         data-entity-count={String(Object.keys(entities).length)}
         data-first-entity={firstReferencedEntity ?? 'none'}
-        data-first-entity-state={firstReferencedState === null ? 'null' : String(firstReferencedState)}
+        data-first-entity-state={
+          firstReferencedState === null ? 'null' : String(firstReferencedState)
+        }
         style={{ display: 'none' }}
       />
 

@@ -24,6 +24,7 @@ This document outlines the strategic plan for HAVDM's advanced features while ma
 Features are grouped into dependency-based phases:
 
 ### **Phase 1: Visual Design Enhancement** (High ROI)
+
 - Advanced Color Picker (HEX/RGB/HSL/CSS vars + transparency slider)
 - Favorite Colors Manager
 - Gradient Editor with presets
@@ -32,29 +33,34 @@ Features are grouped into dependency-based phases:
 - Shadow Effects and Border Controls
 
 ### **Phase 2: Entity & Action Intelligence** (Medium ROI)
+
 - Entity Remapping System with fuzzy matching
 - Smart Default Actions (context-aware per entity type)
 - Universal Action System (tap/hold/double-tap)
 - Entity Context Variables (auto-access to state/name/attributes)
 
 ### **Phase 3: Advanced Layout Modules** (High ROI)
+
 - Slider/Carousel (Swiper.js integration)
 - Accordion Module
 - Tabs Module
 - Popup/Modal support
 
 ### **Phase 4: Data Visualization** (Medium ROI)
+
 - Native Graphs Module (eliminate ApexCharts dependency)
 - Advanced Gauge Module (11 styles, gradients)
 - Bar Module (progress bars with animations)
 - Advanced Slider Control (11 styles)
 
 ### **Phase 5: Template & Logic Enhancement** (Low-Medium ROI)
+
 - Unified Template System (JSON response format)
 - Visual Logic Editor (AND/OR conditions)
 - Lenient Validation pattern
 
 ### **Phase 6: Import/Export Ecosystem** (Low ROI, Future Growth)
+
 - Preset Marketplace concept (community sharing)
 - Entity Mapping Wizard on import
 - Cloud Sync (optional Pro feature)
@@ -74,12 +80,14 @@ Please answer the following questions to guide implementation planning. Your ans
 **Options for key features**:
 
 **Color Picker**:
+
 - [ ] `react-colorful` (2KB, modern, no dependencies) - **RECOMMENDED**
 - [ ] `react-color` (popular, larger bundle)
 - [ ] Custom implementation (full control, more work)
 - [ ] Other: _______________
 
 **Animation System**:
+
 - [ ] CSS-only with `@keyframes` (no dependencies, stored in YAML as class names)
 - [ ] Framer Motion (powerful, 40KB)
 - [ ] React Spring (physics-based, 30KB)
@@ -87,12 +95,14 @@ Please answer the following questions to guide implementation planning. Your ans
 - [ ] Other: _______________
 
 **Carousel/Slider**:
+
 - [ ] Swiper.js (like Ultra-Card, 40KB, feature-rich) - **RECOMMENDED**
 - [ ] React Slick (20KB, simpler)
 - [ ] Embla Carousel (lightweight, modern)
 - [ ] Other: _______________
 
 **Charts (Native Graphs Module)**:
+
 - [ ] Chart.js (54KB, popular, canvas-based)
 - [ ] Recharts (React-friendly, SVG-based, larger bundle) - **RECOMMENDED** (React-native)
 - [ ] Victory (flexible, composable, 50KB)
@@ -100,12 +110,14 @@ Please answer the following questions to guide implementation planning. Your ans
 - [ ] Other: _______________
 
 **Google Fonts Integration**:
+
 - [ ] Load via Google Fonts CDN (requires internet)
 - [ ] Bundle subset of fonts locally (offline support)
 - [ ] Both (CDN with local fallback) - **RECOMMENDED**
 - [ ] Skip Google Fonts integration for now
 
 **Your Answers**:
+
 ```
 Color Picker:
 Animation System:
@@ -129,6 +141,7 @@ Google Fonts:
 - [ ] **Hybrid** - Combination approach (specify priorities): _______________
 
 **Your Answer**:
+
 ```
 Bundling Strategy:
 Reason:
@@ -141,24 +154,28 @@ Reason:
 **Question**: How should new features integrate with the existing `PropertiesPanel.tsx` and card editors?
 
 **PropertiesPanel Integration**:
+
 - [ ] **Replace existing inputs** - Advanced color picker replaces all basic color inputs
 - [ ] **Enhanced option** - Show "Advanced" button next to basic inputs (expands to full color picker)
 - [ ] **Mixed approach** - Basic inputs for simple cards, advanced for custom cards
 - [ ] Other: _______________
 
 **Animation System Integration**:
+
 - [ ] **Card-level properties** - Animations stored in card YAML (e.g., `animation: pulse`)
 - [ ] **Visual-only effects** - Animations are canvas preview only, not saved to YAML
 - [ ] **Optional property** - Add "Animation" section to PropertiesPanel for applicable cards
 - [ ] Other: _______________
 
 **Gradient Editor Integration**:
+
 - [ ] **Inline with color picker** - Gradients are color input variant (toggle solid/gradient)
 - [ ] **Separate property field** - New "Background Gradient" field in forms
 - [ ] **Advanced styling tab** - Group with shadows, borders in dedicated styling section
 - [ ] Other: _______________
 
 **Your Answers**:
+
 ```
 PropertiesPanel Integration:
 Animation Integration:
@@ -179,12 +196,14 @@ Gradient Integration:
 - [ ] Other: _______________
 
 **Mapping Interaction**:
+
 - [ ] **Interactive wizard** - Modal dialog with entity mapping UI (user confirms each mapping)
 - [ ] **Automatic with override** - Auto-map similar entities, show summary with edit option
 - [ ] **Both** - Auto-map with "Review Mappings" dialog
 - [ ] Other: _______________
 
 **Your Answers**:
+
 ```
 Entity Remapping Scope:
 Mapping Interaction:
@@ -197,17 +216,20 @@ Mapping Interaction:
 **Question**: Should smart default actions be automatic, or configurable per card?
 
 **Behavior**:
+
 - [ ] **Automatic only** - System determines action based on entity domain (user can override in YAML)
 - [ ] **Configurable** - PropertiesPanel checkbox "Use Smart Defaults" (on by default)
 - [ ] **Opt-in** - User must enable smart defaults per card
 - [ ] Other: _______________
 
 **Precedence**:
+
 - [ ] **User actions override** - If user defines tap action, smart defaults don't apply
 - [ ] **User must explicitly disable** - Smart defaults apply unless user sets action to "none"
 - [ ] Other: _______________
 
 **Your Answers**:
+
 ```
 Smart Defaults Behavior:
 Action Precedence:
@@ -220,6 +242,7 @@ Action Precedence:
 **Question**: Ultra-Card has a Pro tier ($4.99/month). How should we handle premium features?
 
 **Approach**:
+
 - [ ] **All features free** - No Pro distinction, all features available to everyone
 - [ ] **Flag for future monetization** - Implement all features, mark certain as "Pro-ready" in code comments
 - [ ] **Pro mode toggle** - Create testing toggle in settings (doesn't enforce payment, just tests UI)
@@ -227,6 +250,7 @@ Action Precedence:
 - [ ] Other: _______________
 
 **If flagging for future monetization, which features**:
+
 - [ ] Cloud Sync
 - [ ] Advanced Weather/Calendar modules
 - [ ] Video Background
@@ -236,6 +260,7 @@ Action Precedence:
 - [ ] Other: _______________
 
 **Your Answer**:
+
 ```
 Pro Features Approach:
 Specific Pro Features (if applicable):
@@ -248,24 +273,28 @@ Specific Pro Features (if applicable):
 **Question**: What level of test coverage is expected for new features?
 
 **E2E Test Coverage**:
+
 - [ ] **Critical paths only** - Core feature functionality (e.g., color picker opens, saves, closes)
 - [ ] **Comprehensive** - All feature interactions (color formats, gradients, presets, edge cases)
 - [ ] **Progressive** - Critical paths in Phase 1-3, comprehensive in later phases
 - [ ] Other: _______________
 
 **Visual Regression Tests**:
+
 - [ ] **Required for visual features** - Animations, gradients, charts must have visual tests
 - [ ] **Optional** - Visual tests only for critical UI changes
 - [ ] **Skip for now** - Focus on functional tests only
 - [ ] Other: _______________
 
 **Performance Benchmarks**:
+
 - [ ] **Required for performance-critical features** - Animation frame rates, carousel smoothness, chart render times
 - [ ] **Optional** - Only if performance issues reported
 - [ ] **Skip** - Trust library implementations
 - [ ] Other: _______________
 
 **Your Answers**:
+
 ```
 E2E Coverage:
 Visual Regression:
@@ -279,6 +308,7 @@ Performance Benchmarks:
 **Question**: What documentation should accompany each feature?
 
 **For each feature, include**:
+
 - [ ] **User-facing help text/tooltips** - In-app help describing feature usage
 - [ ] **Developer documentation** - Technical implementation docs in `/docs`
 - [ ] **Migration guides** - How existing dashboards are affected
@@ -287,11 +317,13 @@ Performance Benchmarks:
 - [ ] **Minimal** - Code comments only
 
 **Documentation Detail Level**:
+
 - [ ] **Brief** - Short descriptions, key usage examples
 - [ ] **Moderate** - Detailed usage, common patterns, troubleshooting - **RECOMMENDED**
 - [ ] **Comprehensive** - Full API reference, all edge cases, visual examples
 
 **Your Answers**:
+
 ```
 Documentation Scope:
 Detail Level:
@@ -304,24 +336,28 @@ Detail Level:
 **Question**: How should new features handle existing dashboards?
 
 **Feature Availability**:
+
 - [ ] **Opt-in** - User must explicitly enable new features (e.g., "Use Advanced Color Picker")
 - [ ] **Automatically available** - New features immediately available for all cards
 - [ ] **Progressive enhancement** - Available for new cards, existing cards unchanged until edited
 - [ ] Other: _______________
 
 **Data Migration**:
+
 - [ ] **Auto-migrate** - Old color values (`#FF0000`) auto-upgrade to new format with transparency
 - [ ] **Preserve old format** - Keep existing values as-is, new features only for new properties
 - [ ] **Migration prompt** - Ask user to migrate dashboard to new format
 - [ ] Other: _______________
 
 **Version Compatibility**:
+
 - [ ] **Graceful degradation** - Dashboards with new features show fallbacks in older app versions
 - [ ] **Version checking** - Warn when opening dashboards created with newer features
 - [ ] **No backward compatibility** - Require latest version for new features
 - [ ] Other: _______________
 
 **Your Answers**:
+
 ```
 Feature Availability:
 Data Migration:
@@ -335,18 +371,21 @@ Version Compatibility:
 **Question**: How should I structure development phases?
 
 **Phase Size**:
+
 - [ ] **Small phases** (2-3 features each, 1-2 week sprints) - Faster iteration, frequent releases
 - [ ] **Medium phases** (5-7 features, 2-4 week sprints) - Balanced delivery - **RECOMMENDED**
 - [ ] **Large phases** (10+ features, 4-6 week sprints) - Complete feature sets
 - [ ] Other: _______________
 
 **Release Strategy**:
+
 - [ ] **Phase-based releases** - Release after each phase completion
 - [ ] **Feature flags** - Merge all phases, enable features progressively
 - [ ] **Beta releases** - Release each phase as beta, stabilize before next phase
 - [ ] Other: _______________
 
 **Your Answers**:
+
 ```
 Phase Size:
 Release Strategy:
@@ -359,6 +398,7 @@ Release Strategy:
 **Question**: What format should the `havdm.kanban` file use?
 
 **File Format**:
+
 - [ ] **Markdown checklist** - Simple `.md` file with task lists
 - [ ] **JSON** - Structured JSON for programmatic parsing
 - [ ] **CSV** - Spreadsheet-compatible format
@@ -367,11 +407,13 @@ Release Strategy:
 - [ ] Other: _______________
 
 **Card Content**:
+
 - [ ] **Full user story** - Complete story text in card description
 - [ ] **Summary + link** - Brief summary in card, link to full story in `/docs/features`
 - [ ] Other: _______________
 
 **Card Metadata** (include in cards):
+
 - [ ] **Story points/effort** - Estimated complexity (T-shirt sizes: S/M/L or points: 1/2/3/5/8)
 - [ ] **Assignee fields** - Even if TBD
 - [ ] **Labels/tags** - E.g., `ui`, `backend`, `integration`, `testing`
@@ -381,6 +423,7 @@ Release Strategy:
 - [ ] **Minimal** - Title and description only
 
 **Your Answers**:
+
 ```
 File Format:
 Card Content:
@@ -401,6 +444,7 @@ Card Metadata:
 - [ ] Other: _______________
 
 **Your Answer**:
+
 ```
 Code Organization:
 ```
@@ -412,12 +456,14 @@ Code Organization:
 **Question**: Should new features match existing UI patterns or introduce new paradigms?
 
 **UI Consistency**:
+
 - [ ] **Match existing** - Use current Ant Design component style and patterns
 - [ ] **Enhance existing** - Improve on current patterns while maintaining familiarity
 - [ ] **Introduce new** - Modern UI patterns if they significantly improve UX
 - [ ] Other: _______________
 
 **Your Answer**:
+
 ```
 UI Consistency:
 ```
@@ -434,6 +480,7 @@ UI Consistency:
 - [ ] Other: _______________
 
 **Your Answer**:
+
 ```
 Accessibility Level:
 ```
@@ -450,6 +497,7 @@ Accessibility Level:
 - [ ] Other: _______________
 
 **Your Answer**:
+
 ```
 i18n Approach:
 ```
@@ -480,6 +528,7 @@ Once you've answered these questions:
 ### ANSWERS
 
 #### 1. Technology Stack
+
 - Color Picker:
 - Animation System:
 - Carousel/Slider:
@@ -487,48 +536,58 @@ Once you've answered these questions:
 - Google Fonts:
 
 #### 2. Phase Bundling
+
 - Strategy:
 - Reason:
 
 #### 3. Integration Approach
+
 - PropertiesPanel:
 - Animations:
 - Gradients:
 
 #### 4. Scope Boundaries
+
 - Entity Remapping Scope:
 - Mapping Interaction:
 - Smart Defaults Behavior:
 - Action Precedence:
 
 #### 5. Premium Features
+
 - Approach:
 - Specific Pro Features:
 
 #### 6. Testing
+
 - E2E Coverage:
 - Visual Regression:
 - Performance Benchmarks:
 
 #### 7. Documentation
+
 - Scope:
 - Detail Level:
 
 #### 8. Backward Compatibility
+
 - Feature Availability:
 - Data Migration:
 - Version Compatibility:
 
 #### 9. Phase Timeline
+
 - Phase Size:
 - Release Strategy:
 
 #### 10. Kanban Format
+
 - File Format:
 - Card Content:
 - Card Metadata:
 
 #### Additional
+
 - Code Organization:
 - UI Consistency:
 - Accessibility:
@@ -551,6 +610,7 @@ Once you've answered these questions:
 ### ANSWERS
 
 #### 1. Technology Stack
+
 - Color Picker: react-colorful
 - Animation System: Custom CSS animation library
 - Carousel/Slider: Swiper.js
@@ -558,48 +618,58 @@ Once you've answered these questions:
 - Google Fonts: Both (CDN with local fallback)
 
 #### 2. Phase Bundling
+
 - Strategy: Dependencies priority
 - Reason: Not creating tech debt and using a "right the first time" approach
 
 #### 3. Integration Approach
+
 - PropertiesPanel: Enhanced Option
 - Animations: Optional Property
 - Gradients: Advanced Styling tab
 
 #### 4. Scope Boundaries
+
 - Entity Remapping Scope: User-triggered
 - Mapping Interaction: Automatic with Override
 - Smart Defaults Behavior: Configurable
 - Action Precedence: User actions override
 
 #### 5. Premium Features
+
 - Approach: All free
 - Specific Pro Features: N/A
 
 #### 6. Testing
+
 - E2E Coverage: Comprehensive
 - Visual Regression: Required for visual features
 - Performance Benchmarks: Required for performance-critical features
 
 #### 7. Documentation
+
 - Scope: User-facing help text/tooltips, Developer documentation, Feature documentation
 - Detail Level: Moderate
 
 #### 8. Backward Compatibility
+
 - Feature Availability: Progressive enhancement
 - Data Migration: Auto-map
 - Version Compatibility: Graceful degradation
 
 #### 9. Phase Timeline
+
 - Phase Size: Medium phases (5-7 features, 2-4 week sprints)
 - Release Strategy: Phase-based releases
 
 #### 10. Kanban Format
+
 - File Format: Github Projects format
 - Card Content: Full user story
 - Card Metadata: Labels/tags, Dependencies
 
 #### Additional
+
 - Code Organization: Hybrid (simple components in existing structure, complex features in dedicated folders)
 - UI Consistency: Introduce new (with Ant Design consistency)
 - Accessibility: WCAG 2.1 AA compliance
@@ -608,6 +678,7 @@ Once you've answered these questions:
 ### ADDITIONAL NOTES
 
 **User Requirements**:
+
 - Create stories for bringing existing features in line with these answers where applicable
 - Update architecture and test standards (and any other applicable document) as appropriate
 - Include statement of compliance to ai_rules.md, testing standards, architecture, etc. as part of requirements statement

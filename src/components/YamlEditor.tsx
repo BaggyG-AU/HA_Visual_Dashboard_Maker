@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Alert, Space, Button, Tooltip } from 'antd';
-import { FormatPainterOutlined, AlignLeftOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import {
+  FormatPainterOutlined,
+  AlignLeftOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+} from '@ant-design/icons';
 import * as monaco from 'monaco-editor';
 import { configureYamlSchema } from '../monaco-setup';
 import { yamlService } from '../services/yamlService';
@@ -59,12 +64,16 @@ export interface YamlEditorProps {
 
 const detectTestEnv = (): boolean => {
   const importMetaEnvHolder =
-    typeof import.meta !== 'undefined' ? (import.meta as unknown as { env?: Record<string, string | undefined> }) : undefined;
+    typeof import.meta !== 'undefined'
+      ? (import.meta as unknown as { env?: Record<string, string | undefined> })
+      : undefined;
   const importMetaEnv: Record<string, string | undefined> = importMetaEnvHolder?.env ?? {};
 
   return (
     (typeof process !== 'undefined' &&
-      (process.env.NODE_ENV === 'test' || process.env.E2E === '1' || process.env.PLAYWRIGHT_TEST === '1')) ||
+      (process.env.NODE_ENV === 'test' ||
+        process.env.E2E === '1' ||
+        process.env.PLAYWRIGHT_TEST === '1')) ||
     (typeof navigator !== 'undefined' && /Playwright/i.test(navigator.userAgent)) ||
     (() => {
       const testWindow = getTestWindow();
@@ -146,9 +155,9 @@ const registerEntityContextCompletions = () => {
           documentation: 'Round to 1 decimal',
         },
         {
-          label: '[[entity.state|default(\'Unknown\')]]',
+          label: "[[entity.state|default('Unknown')]]",
           kind: monaco.languages.CompletionItemKind.Function,
-          insertText: '[[entity.state|default(\'Unknown\')]]',
+          insertText: "[[entity.state|default('Unknown')]]",
           documentation: 'Fallback value when empty',
         },
       ];
@@ -251,7 +260,10 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
         });
       }
 
-      contextDecorationsRef.current = editor.deltaDecorations(contextDecorationsRef.current, decorations);
+      contextDecorationsRef.current = editor.deltaDecorations(
+        contextDecorationsRef.current,
+        decorations,
+      );
     };
 
     applyContextDecorations();
@@ -325,42 +337,45 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
   }, [value]);
 
   // Validate YAML
-  const validateYaml = useCallback((yaml: string) => {
-    const bypassValidation = shouldBypassValidation(isTestEnv);
+  const validateYaml = useCallback(
+    (yaml: string) => {
+      const bypassValidation = shouldBypassValidation(isTestEnv);
 
-    try {
-      const syntax = yamlService.validateYAMLSyntax(yaml);
-      if (!syntax.valid) {
-        setValidationError(syntax.error ?? 'Invalid YAML syntax');
+      try {
+        const syntax = yamlService.validateYAMLSyntax(yaml);
+        if (!syntax.valid) {
+          setValidationError(syntax.error ?? 'Invalid YAML syntax');
+          setIsValid(false);
+          onValidationChange?.(false, syntax.error ?? 'Invalid YAML syntax');
+          return;
+        }
+
+        if (bypassValidation) {
+          setValidationError(null);
+          setIsValid(true);
+          onValidationChange?.(true, null);
+          return;
+        }
+
+        const result = yamlService.parseDashboard(yaml);
+        if (!result.success) {
+          setValidationError(result.error ?? 'Invalid dashboard structure');
+          setIsValid(false);
+          onValidationChange?.(false, result.error ?? 'Invalid dashboard structure');
+        } else {
+          setValidationError(null);
+          setIsValid(true);
+          onValidationChange?.(true, null);
+        }
+      } catch (error) {
+        const errMsg = (error as Error).message;
+        setValidationError(errMsg);
         setIsValid(false);
-        onValidationChange?.(false, syntax.error ?? 'Invalid YAML syntax');
-        return;
+        onValidationChange?.(false, errMsg);
       }
-
-      if (bypassValidation) {
-        setValidationError(null);
-        setIsValid(true);
-        onValidationChange?.(true, null);
-        return;
-      }
-
-      const result = yamlService.parseDashboard(yaml);
-      if (!result.success) {
-        setValidationError(result.error ?? 'Invalid dashboard structure');
-        setIsValid(false);
-        onValidationChange?.(false, result.error ?? 'Invalid dashboard structure');
-      } else {
-        setValidationError(null);
-        setIsValid(true);
-        onValidationChange?.(true, null);
-      }
-    } catch (error) {
-      const errMsg = (error as Error).message;
-      setValidationError(errMsg);
-      setIsValid(false);
-      onValidationChange?.(false, errMsg);
-    }
-  }, [onValidationChange]);
+    },
+    [onValidationChange],
+  );
 
   // Jump to card in YAML
   useEffect(() => {
@@ -404,7 +419,9 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
       if (targetLine > 0) {
         // Jump to line and highlight
         editor.revealLineInCenter(targetLine);
-        editor.setSelection(new monaco.Selection(targetLine, 1, targetLine, lines[targetLine - 1].length + 1));
+        editor.setSelection(
+          new monaco.Selection(targetLine, 1, targetLine, lines[targetLine - 1].length + 1),
+        );
         editor.focus();
       }
     } catch (error) {

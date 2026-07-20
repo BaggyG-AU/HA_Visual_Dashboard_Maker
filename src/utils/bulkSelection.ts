@@ -65,8 +65,9 @@ export const resolveSelectionState = ({
     const anchor = previous.anchorCardIndex ?? previous.selectedCardIndex ?? clickedCardIndex;
     const start = Math.min(anchor, clickedCardIndex);
     const end = Math.max(anchor, clickedCardIndex);
-    const range = Array.from({ length: end - start + 1 }, (_, offset) => start + offset)
-      .filter((index) => isValidIndex(index, cardCount));
+    const range = Array.from({ length: end - start + 1 }, (_, offset) => start + offset).filter(
+      (index) => isValidIndex(index, cardCount),
+    );
 
     return {
       selectedCardIndex: resolvePrimaryCardIndex(range, clickedCardIndex),
@@ -77,9 +78,14 @@ export const resolveSelectionState = ({
 
   if (mode === 'toggle') {
     const exists = current.includes(clickedCardIndex);
-    const next = exists ? current.filter((index) => index !== clickedCardIndex) : [...current, clickedCardIndex];
+    const next = exists
+      ? current.filter((index) => index !== clickedCardIndex)
+      : [...current, clickedCardIndex];
     const normalized = normalizeCardIndices(next, cardCount);
-    const selectedCardIndex = resolvePrimaryCardIndex(normalized, exists ? previous.selectedCardIndex : clickedCardIndex);
+    const selectedCardIndex = resolvePrimaryCardIndex(
+      normalized,
+      exists ? previous.selectedCardIndex : clickedCardIndex,
+    );
 
     return {
       selectedCardIndex,

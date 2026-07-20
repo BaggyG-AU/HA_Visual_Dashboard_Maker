@@ -67,7 +67,7 @@ rings:
   - entity: sensor.daily_energy_progress
     min: 0
     max: 100
-    color: "#4fa3ff"
+    color: '#4fa3ff'
   - entity: sensor.monthly_energy_progress
     min: 0
     max: 100
@@ -75,9 +75,9 @@ rings:
       type: linear
       angle: 90
       stops:
-        - color: "#6ccf7f"
+        - color: '#6ccf7f'
           position: 0
-        - color: "#2ca58d"
+        - color: '#2ca58d'
           position: 100
 ```
 
@@ -110,6 +110,7 @@ After implementation, run exactly one **Fast Gate** pass and then stop:
 4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
 
 After this single Fast Gate run, provide a summary report that includes:
+
 - Exact commands executed
 - Pass/fail status for each command
 - Any failing tests with artifact paths under `test-results/artifacts/**`

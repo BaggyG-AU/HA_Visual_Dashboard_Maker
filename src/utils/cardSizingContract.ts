@@ -18,12 +18,12 @@
 
 export interface CardSizeConstraints {
   // Grid dimensions (12-column grid, matching HA Sections view)
-  w: number;           // Default width in grid columns
-  h: number;           // Default height in grid rows (1 row = 56px in HA sections grid)
-  minW?: number;       // Minimum width
-  maxW?: number;       // Maximum width
-  minH?: number;       // Minimum height
-  maxH?: number;       // Maximum height
+  w: number; // Default width in grid columns
+  h: number; // Default height in grid rows (1 row = 56px in HA sections grid)
+  minW?: number; // Minimum width
+  maxW?: number; // Maximum width
+  minH?: number; // Minimum height
+  maxH?: number; // Maximum height
 }
 
 /**
@@ -53,12 +53,12 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
   }
 
   // Default constraints
-  let width = 6;      // Half width by default
-  let height = 4;     // Default height (4 rows × 50px = 200px)
-  let minW = 3;       // Minimum 3 columns
-  let maxW = 12;      // Maximum 12 columns (full width)
-  let minH = 2;       // Minimum 2 rows
-  let maxH = 20;      // Maximum 20 rows
+  let width = 6; // Half width by default
+  let height = 4; // Default height (4 rows × 50px = 200px)
+  let minW = 3; // Minimum 3 columns
+  let maxW = 12; // Maximum 12 columns (full width)
+  let minH = 2; // Minimum 2 rows
+  let maxH = 20; // Maximum 20 rows
 
   switch (cardType) {
     case 'entities': {
@@ -70,8 +70,8 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       // Actual HA measurements (smaller than initially thought):
       // Header ~40px, each entity ~40px, gaps 0px (overlapping borders), padding minimal
       const headerPx = hasTitle ? 40 : 0;
-      const paddingPx = 24;  // Tighter padding
-      const entityRowPx = entityCount * 40;  // Entities are more compact
+      const paddingPx = 24; // Tighter padding
+      const entityRowPx = entityCount * 40; // Entities are more compact
       const totalPx = headerPx + paddingPx + entityRowPx;
 
       // Convert to grid rows (56px each)
@@ -130,7 +130,7 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       const hasHeader = card.header?.show !== false;
 
       // HA renders charts more compactly - reduce the configured height
-      const apexTotalPx = (hasHeader ? 40 : 0) + 24 + (apexHeight * 0.7);
+      const apexTotalPx = (hasHeader ? 40 : 0) + 24 + apexHeight * 0.7;
 
       // Convert to grid rows (56px each)
       height = Math.max(4, Math.ceil(apexTotalPx / 56));
@@ -165,8 +165,8 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
     case 'custom:power-flow-card-plus':
     case 'custom:power-flow-card': {
       // Power flow cards are compact in HA - around 280px total
-      const powerFlowTotalPx = 40 + 24 + 216;  // Header + padding + compact diagram
-      height = Math.ceil(powerFlowTotalPx / 56);  // ≈ 5 rows
+      const powerFlowTotalPx = 40 + 24 + 216; // Header + padding + compact diagram
+      height = Math.ceil(powerFlowTotalPx / 56); // ≈ 5 rows
       width = 6;
       minW = 4;
       maxW = 12;
@@ -217,7 +217,11 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
     }
 
     case 'custom:swipe-card': {
-      const slideCount = Array.isArray(card.slides) ? card.slides.length : Array.isArray(card.cards) ? card.cards.length : 0;
+      const slideCount = Array.isArray(card.slides)
+        ? card.slides.length
+        : Array.isArray(card.cards)
+          ? card.cards.length
+          : 0;
       height = Math.max(4, Math.min(12, 4 + Math.floor(slideCount / 3)));
       width = 12;
       minW = 6;
@@ -463,7 +467,9 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
  * Places cards in columns trying to balance heights
  * Uses constraint-based sizing instead of fixed dimensions
  */
-export const generateMasonryLayout = (cards: any[]): Array<{
+export const generateMasonryLayout = (
+  cards: any[],
+): Array<{
   i: string;
   x: number;
   y: number;

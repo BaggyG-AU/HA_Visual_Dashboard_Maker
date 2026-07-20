@@ -38,10 +38,13 @@ export const GradientPickerInput: React.FC<GradientPickerInputProps> = ({
     return false;
   });
 
-  const setOpen = useCallback((next: boolean) => {
-    popoverStateCache.set(testId, { open: next, timestamp: Date.now() });
-    setOpenRaw(next);
-  }, [testId]);
+  const setOpen = useCallback(
+    (next: boolean) => {
+      popoverStateCache.set(testId, { open: next, timestamp: Date.now() });
+      setOpenRaw(next);
+    },
+    [testId],
+  );
   const [localValue, setLocalValue] = useState<string | undefined>(value);
   const gradient: GradientDefinition = useMemo(() => parseGradient(localValue), [localValue]);
   const css = useMemo(() => gradientToCss(gradient), [gradient]);
@@ -50,15 +53,21 @@ export const GradientPickerInput: React.FC<GradientPickerInputProps> = ({
     setLocalValue(value);
   }, [value]);
 
-  const handleChange = useCallback((cssValue: string) => {
-    setLocalValue(cssValue);
-    onChange?.(cssValue);
-  }, [onChange]);
+  const handleChange = useCallback(
+    (cssValue: string) => {
+      setLocalValue(cssValue);
+      onChange?.(cssValue);
+    },
+    [onChange],
+  );
 
-  const handlePopoverChange = useCallback((next: boolean) => {
-    if (disabled || readOnly) return;
-    setOpen(next);
-  }, [disabled, readOnly, setOpen]);
+  const handlePopoverChange = useCallback(
+    (next: boolean) => {
+      if (disabled || readOnly) return;
+      setOpen(next);
+    },
+    [disabled, readOnly, setOpen],
+  );
 
   // Allow keyboard users to dismiss the popover with Escape
   useEffect(() => {
@@ -98,13 +107,9 @@ export const GradientPickerInput: React.FC<GradientPickerInputProps> = ({
 
   const editorContent = useMemo(
     () => (
-      <GradientEditor
-        value={localValue}
-        onChange={handleChange}
-        data-testid={`${testId}-editor`}
-      />
+      <GradientEditor value={localValue} onChange={handleChange} data-testid={`${testId}-editor`} />
     ),
-    [localValue, handleChange, testId]
+    [localValue, handleChange, testId],
   );
 
   return (

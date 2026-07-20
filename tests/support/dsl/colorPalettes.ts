@@ -13,14 +13,19 @@ export class ColorPalettesDSL {
       return;
     }
     const diagnostics = await this.window.evaluate((tid) => {
-      const ids = Array.from(document.querySelectorAll<HTMLElement>('[data-testid]')).map((el) => el.getAttribute('data-testid'));
-      const text = (document.querySelector(`[data-testid="${tid}"]`) as HTMLElement | null)?.innerText || '';
-      // eslint-disable-next-line no-console
+      const ids = Array.from(document.querySelectorAll<HTMLElement>('[data-testid]')).map((el) =>
+        el.getAttribute('data-testid'),
+      );
+      const text =
+        (document.querySelector(`[data-testid="${tid}"]`) as HTMLElement | null)?.innerText || '';
       console.log('[color-palettes diagnostics]', { ids, containerText: text.slice(0, 300) });
       return { ids, containerText: text.slice(0, 300) };
     }, testId);
     if (testInfo?.attach) {
-      await testInfo.attach('color-palettes-dom.json', { body: Buffer.from(JSON.stringify(diagnostics, null, 2)), contentType: 'application/json' });
+      await testInfo.attach('color-palettes-dom.json', {
+        body: Buffer.from(JSON.stringify(diagnostics, null, 2)),
+        contentType: 'application/json',
+      });
     }
     await expect(tab).toBeVisible();
     await tab.click();
@@ -92,16 +97,25 @@ export class ColorPalettesDSL {
     await expect(swatches).toHaveCount(count);
   }
 
-  async attachDiagnostics(testInfo: TestInfo | undefined, testId: string, label: string): Promise<void> {
+  async attachDiagnostics(
+    testInfo: TestInfo | undefined,
+    testId: string,
+    label: string,
+  ): Promise<void> {
     if (!testInfo?.attach) return;
     const payload = await this.window.evaluate((tid) => {
-      const palettes = Array.from(document.querySelectorAll<HTMLElement>(`[data-testid^="${tid}-favorite-"]`)).map((el) => ({
+      const palettes = Array.from(
+        document.querySelectorAll<HTMLElement>(`[data-testid^="${tid}-favorite-"]`),
+      ).map((el) => ({
         testId: el.dataset.testid,
         color: el.style.background,
       }));
       return { palettes };
     }, testId);
-    await testInfo.attach(label, { body: Buffer.from(JSON.stringify(payload, null, 2)), contentType: 'application/json' });
+    await testInfo.attach(label, {
+      body: Buffer.from(JSON.stringify(payload, null, 2)),
+      contentType: 'application/json',
+    });
   }
 }
 

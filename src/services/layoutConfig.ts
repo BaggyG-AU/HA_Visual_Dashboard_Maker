@@ -8,12 +8,7 @@ export const MAX_LAYOUT_GAP = 64;
 export type LayoutGapPreset = 'none' | 'tight' | 'normal' | 'relaxed' | 'custom';
 export type LayoutAlignItems = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
 export type LayoutJustifyContent =
-  | 'start'
-  | 'center'
-  | 'end'
-  | 'space-between'
-  | 'space-around'
-  | 'space-evenly';
+  'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly';
 export type LayoutJustifyItems = 'start' | 'center' | 'end' | 'stretch';
 export type LayoutWrap = 'nowrap' | 'wrap' | 'wrap-reverse';
 
@@ -49,13 +44,22 @@ export const clampLayoutGap = (
 };
 
 export const normalizeGapPreset = (value: unknown): LayoutGapPreset => {
-  if (value === 'none' || value === 'tight' || value === 'normal' || value === 'relaxed' || value === 'custom') {
+  if (
+    value === 'none' ||
+    value === 'tight' ||
+    value === 'normal' ||
+    value === 'relaxed' ||
+    value === 'custom'
+  ) {
     return value;
   }
   return 'normal';
 };
 
-export const resolveGapPreset = (value: unknown, fallback = DEFAULT_LAYOUT_GAP): LayoutGapPreset => {
+export const resolveGapPreset = (
+  value: unknown,
+  fallback = DEFAULT_LAYOUT_GAP,
+): LayoutGapPreset => {
   const normalized = clampLayoutGap(value, fallback);
   if (normalized === GAP_PRESET_VALUES.none) return 'none';
   if (normalized === GAP_PRESET_VALUES.tight) return 'tight';
@@ -88,8 +92,17 @@ const JUSTIFY_ITEMS_TO_CSS: Record<LayoutJustifyItems, CSSProperties['justifyIte
   stretch: 'stretch',
 };
 
-export const normalizeAlignItems = (value: unknown, fallback: LayoutAlignItems = 'stretch'): LayoutAlignItems => {
-  if (value === 'start' || value === 'center' || value === 'end' || value === 'stretch' || value === 'baseline') {
+export const normalizeAlignItems = (
+  value: unknown,
+  fallback: LayoutAlignItems = 'stretch',
+): LayoutAlignItems => {
+  if (
+    value === 'start' ||
+    value === 'center' ||
+    value === 'end' ||
+    value === 'stretch' ||
+    value === 'baseline'
+  ) {
     return value;
   }
   return fallback;
@@ -100,19 +113,22 @@ export const normalizeJustifyContent = (
   fallback: LayoutJustifyContent = 'start',
 ): LayoutJustifyContent => {
   if (
-    value === 'start'
-    || value === 'center'
-    || value === 'end'
-    || value === 'space-between'
-    || value === 'space-around'
-    || value === 'space-evenly'
+    value === 'start' ||
+    value === 'center' ||
+    value === 'end' ||
+    value === 'space-between' ||
+    value === 'space-around' ||
+    value === 'space-evenly'
   ) {
     return value;
   }
   return fallback;
 };
 
-export const normalizeJustifyItems = (value: unknown, fallback: LayoutJustifyItems = 'stretch'): LayoutJustifyItems => {
+export const normalizeJustifyItems = (
+  value: unknown,
+  fallback: LayoutJustifyItems = 'stretch',
+): LayoutJustifyItems => {
   if (value === 'start' || value === 'center' || value === 'end' || value === 'stretch') {
     return value;
   }
@@ -126,9 +142,12 @@ export const normalizeWrapMode = (value: unknown, fallback: LayoutWrap = 'nowrap
   return fallback;
 };
 
-export const toAlignItemsCss = (value: LayoutAlignItems): CSSProperties['alignItems'] => ALIGN_ITEMS_TO_CSS[value];
-export const toJustifyContentCss = (value: LayoutJustifyContent): CSSProperties['justifyContent'] => JUSTIFY_CONTENT_TO_CSS[value];
-export const toJustifyItemsCss = (value: LayoutJustifyItems): CSSProperties['justifyItems'] => JUSTIFY_ITEMS_TO_CSS[value];
+export const toAlignItemsCss = (value: LayoutAlignItems): CSSProperties['alignItems'] =>
+  ALIGN_ITEMS_TO_CSS[value];
+export const toJustifyContentCss = (value: LayoutJustifyContent): CSSProperties['justifyContent'] =>
+  JUSTIFY_CONTENT_TO_CSS[value];
+export const toJustifyItemsCss = (value: LayoutJustifyItems): CSSProperties['justifyItems'] =>
+  JUSTIFY_ITEMS_TO_CSS[value];
 
 export interface NormalizedVerticalStackLayout {
   gap: number;
@@ -154,7 +173,9 @@ export interface NormalizedGridLayout {
   justifyItemsValue: LayoutJustifyItems;
 }
 
-export const normalizeVerticalStackLayout = (card: VerticalStackCard): NormalizedVerticalStackLayout => {
+export const normalizeVerticalStackLayout = (
+  card: VerticalStackCard,
+): NormalizedVerticalStackLayout => {
   const normalizedAlignItems = normalizeAlignItems(card.align_items, 'stretch');
   const alignItemsValue = normalizedAlignItems === 'baseline' ? 'stretch' : normalizedAlignItems;
   return {
@@ -164,7 +185,9 @@ export const normalizeVerticalStackLayout = (card: VerticalStackCard): Normalize
   };
 };
 
-export const normalizeHorizontalStackLayout = (card: HorizontalStackCard): NormalizedHorizontalStackLayout => {
+export const normalizeHorizontalStackLayout = (
+  card: HorizontalStackCard,
+): NormalizedHorizontalStackLayout => {
   const alignItemsValue = normalizeAlignItems(card.align_items, 'stretch');
   const justifyContentValue = normalizeJustifyContent(card.justify_content, 'start');
   return {

@@ -59,7 +59,9 @@ test.describe('Layout Enhancements', () => {
     }
   });
 
-  test('horizontal stack applies gap, alignment, justify, and wrap updates', async ({ page }, testInfo) => {
+  test('horizontal stack applies gap, alignment, justify, and wrap updates', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, canvas, properties, yamlEditor, layout } = ctx;
@@ -79,10 +81,14 @@ test.describe('Layout Enhancements', () => {
 
       await layout.setAlignItems('stretch');
       await layout.setJustifyContent('space-between');
-      await layout.expectAlignmentApplied('horizontal-stack', {
-        alignItems: 'stretch',
-        justifyContent: 'space-between',
-      }, 0);
+      await layout.expectAlignmentApplied(
+        'horizontal-stack',
+        {
+          alignItems: 'stretch',
+          justifyContent: 'space-between',
+        },
+        0,
+      );
 
       await layout.setWrap('wrap');
       await layout.expectWrapApplied('wrap', 0);
@@ -91,7 +97,9 @@ test.describe('Layout Enhancements', () => {
     }
   });
 
-  test('grid applies independent row and column gaps with alignment controls', async ({ page }, testInfo) => {
+  test('grid applies independent row and column gaps with alignment controls', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, canvas, properties, yamlEditor, layout } = ctx;
@@ -113,16 +121,22 @@ test.describe('Layout Enhancements', () => {
 
       await layout.setAlignItems('stretch');
       await layout.setJustifyItems('center');
-      await layout.expectAlignmentApplied('grid', {
-        alignItems: 'stretch',
-        justifyItems: 'center',
-      }, 0);
+      await layout.expectAlignmentApplied(
+        'grid',
+        {
+          alignItems: 'stretch',
+          justifyItems: 'center',
+        },
+        0,
+      );
     } finally {
       await close(ctx);
     }
   });
 
-  test('backward compatibility keeps defaults when layout properties are omitted', async ({ page }, testInfo) => {
+  test('backward compatibility keeps defaults when layout properties are omitted', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, canvas, properties, yamlEditor, layout } = ctx;
@@ -139,10 +153,14 @@ test.describe('Layout Enhancements', () => {
 
       await layout.expectGapApplied('horizontal-stack', 12, 0);
       await layout.expectWrapApplied('nowrap', 0);
-      await layout.expectAlignmentApplied('horizontal-stack', {
-        alignItems: 'stretch',
-        justifyContent: 'flex-start',
-      }, 0);
+      await layout.expectAlignmentApplied(
+        'horizontal-stack',
+        {
+          alignItems: 'stretch',
+          justifyContent: 'flex-start',
+        },
+        0,
+      );
     } finally {
       await close(ctx);
     }

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { parsePresetCollection, PresetService, PRESET_KIND, PRESET_SCHEMA_VERSION } from '../../src/services/presetService';
+import {
+  parsePresetCollection,
+  PresetService,
+  PRESET_KIND,
+  PRESET_SCHEMA_VERSION,
+} from '../../src/services/presetService';
 
 const validPresetYaml = `title: Sample\nviews:\n  - title: Home\n    path: home\n    cards:\n      - type: button\n        entity: light.sample\n`;
 
@@ -33,14 +38,16 @@ describe('presetService', () => {
 
   it('returns deterministic errors for invalid payloads', () => {
     const malformed = parsePresetCollection('{nope');
-    const wrongSchema = parsePresetCollection(JSON.stringify({ kind: 'invalid', version: 999, presets: [] }));
+    const wrongSchema = parsePresetCollection(
+      JSON.stringify({ kind: 'invalid', version: 999, presets: [] }),
+    );
 
     expect(malformed.errors).toContain('Preset collection must be valid JSON.');
     expect(wrongSchema.errors).toEqual(
       expect.arrayContaining([
         `Preset collection kind must be ${PRESET_KIND}.`,
         `Preset collection version must be ${PRESET_SCHEMA_VERSION}.`,
-      ])
+      ]),
     );
   });
 
@@ -64,6 +71,8 @@ describe('presetService', () => {
     expect(imported).not.toBeNull();
     expect(imported?.title).toBe('Sample Preset');
     expect(imported?.config.views[0]?.cards).toHaveLength(1);
-    expect((imported?.config.views[0]?.cards?.[0] as { entity?: string }).entity).toBe('light.sample');
+    expect((imported?.config.views[0]?.cards?.[0] as { entity?: string }).entity).toBe(
+      'light.sample',
+    );
   });
 });

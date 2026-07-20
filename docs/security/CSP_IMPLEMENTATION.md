@@ -10,9 +10,11 @@ Implemented Content Security Policy headers to enhance security in production bu
 ## Implementation Details
 
 ### Location
+
 [src/main.ts:564-586](src/main.ts#L564)
 
 ### Strategy
+
 - **Development Mode**: CSP is **disabled** to allow Vite's Hot Module Replacement (HMR) which requires `unsafe-eval`
 - **Production Mode**: Strict CSP is **enforced** when app is packaged
 
@@ -32,23 +34,29 @@ Implemented Content Security Policy headers to enhance security in production bu
 ## Directive Explanations
 
 ### `default-src 'self'`
+
 **Why**: Sets the default policy - only load resources from the app's origin
 **Security**: Prevents loading resources from external domains unless explicitly allowed
 
 ### `script-src 'self'`
+
 **Why**: Only execute JavaScript from the app bundle
 **Security**: Prevents XSS attacks by blocking inline scripts and external script sources
 **No `unsafe-eval`**: Production build doesn't need dynamic code evaluation
 
 ### `style-src 'self' 'unsafe-inline'`
+
 **Why**: Ant Design generates inline styles dynamically
 **Security Trade-off**:
+
 - ✅ Required for Ant Design's theming system
 - ⚠️ Allows inline `<style>` tags
 - ✅ Still blocks external stylesheets
 
 ### `img-src 'self' data: https:`
+
 **Why**:
+
 - `self` - App's bundled images
 - `data:` - Base64-encoded images (used by some cards)
 - `https:` - External images from Home Assistant entities (e.g., camera feeds, person avatars)
@@ -56,12 +64,16 @@ Implemented Content Security Policy headers to enhance security in production bu
 **Security**: Blocks `http:` images, requires HTTPS for external sources
 
 ### `font-src 'self' data:`
+
 **Why**:
+
 - `self` - Bundled fonts (Ant Design icons)
 - `data:` - Base64-encoded fonts
 
 ### `connect-src 'self' ws: wss: http: https:`
+
 **Why**: Home Assistant WebSocket connections
+
 - `ws:` / `wss:` - WebSocket protocols for HA connection
 - `http:` / `https:` - REST API calls to Home Assistant
 - `self` - App's own API calls
@@ -69,22 +81,27 @@ Implemented Content Security Policy headers to enhance security in production bu
 **Security Note**: This is permissive to allow connection to any Home Assistant instance (local or remote)
 
 **Future Improvement**: Could be restricted if user's HA URL is known:
+
 ```javascript
-`connect-src 'self' ws://${haHost} wss://${haHost} http://${haHost} https://${haHost}`
+`connect-src 'self' ws://${haHost} wss://${haHost} http://${haHost} https://${haHost}`;
 ```
 
 ### `worker-src 'self' blob:`
+
 **Why**: Monaco Editor uses Web Workers for syntax highlighting and language services
+
 - `self` - Worker scripts from app bundle
 - `blob:` - Dynamically created workers (Monaco requirement)
 
 ### `child-src 'self' blob:`
+
 **Why**: Legacy directive for worker support (some browsers)
 **Note**: Modern browsers use `worker-src`, but `child-src` provides fallback
 
 ## Development vs Production
 
 ### Development (`npm start`)
+
 ```javascript
 if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
   // CSP is NOT set
@@ -93,12 +110,14 @@ if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
 ```
 
 **Console Warning**:
+
 ```
 Electron Security Warning (Insecure Content-Security-Policy)
 This warning will not show up once the app is packaged.
 ```
 
 ### Production (`npm run make`)
+
 ```javascript
 if (!MAIN_WINDOW_VITE_DEV_SERVER_URL) {
   // CSP is enforced via webRequest.onHeadersReceived
@@ -110,6 +129,7 @@ if (!MAIN_WINDOW_VITE_DEV_SERVER_URL) {
 ## Testing CSP
 
 ### Test Production Build
+
 ```bash
 npm run package
 # or
@@ -117,6 +137,7 @@ npm run make
 ```
 
 ### Verify CSP in DevTools
+
 1. Open packaged app
 2. Open DevTools (if enabled)
 3. Go to Console
@@ -126,6 +147,7 @@ npm run make
 ### Expected Behavior
 
 #### ✅ Should Work:
+
 - Ant Design components with inline styles
 - Monaco Editor with web workers
 - Home Assistant WebSocket connections
@@ -133,6 +155,7 @@ npm run make
 - App's bundled resources
 
 #### ❌ Should Be Blocked:
+
 - External JavaScript files
 - Inline `<script>` tags
 - `eval()` and `Function()` calls
@@ -148,11 +171,13 @@ npm run make
 ## Known Limitations
 
 ### `style-src 'unsafe-inline'`
+
 - **Why Needed**: Ant Design's dynamic theming
 - **Risk**: Allows inline styles (low risk)
 - **Mitigation**: Still blocks external stylesheets
 
 ### `connect-src` Wildcards
+
 - **Why Needed**: Users connect to any HA instance
 - **Risk**: App can connect to any server
 - **Mitigation**: Connection requires user-provided credentials
@@ -161,6 +186,7 @@ npm run make
 ## Future Enhancements
 
 ### 1. Dynamic CSP Based on HA URL
+
 ```javascript
 const haUrl = settingsService.getHAUrl();
 if (haUrl) {
@@ -170,22 +196,28 @@ if (haUrl) {
 ```
 
 ### 2. Nonce-based Styles (Replace `unsafe-inline`)
+
 ```javascript
 const nonce = crypto.randomBytes(16).toString('base64');
-"style-src 'self' 'nonce-${nonce}'"
+("style-src 'self' 'nonce-${nonce}'");
 ```
+
 Then inject nonce into Ant Design's config.
 
 ### 3. Report-Only Mode
+
 ```javascript
 'Content-Security-Policy-Report-Only': [...]
 ```
+
 Test CSP without breaking functionality.
 
 ### 4. CSP Reporting Endpoint
+
 ```javascript
-"report-uri /csp-report"
+'report-uri /csp-report';
 ```
+
 Log CSP violations for debugging.
 
 ## References
@@ -197,6 +229,7 @@ Log CSP violations for debugging.
 ## Changelog
 
 **v0.1.1-beta.1+** (December 27, 2024)
+
 - ✅ Initial CSP implementation
 - ✅ Development mode exempt (Vite HMR compatibility)
 - ✅ Production mode enforced
@@ -205,6 +238,7 @@ Log CSP violations for debugging.
 - ✅ Bundled @mdi/font locally for CSP compliance
 
 **Material Design Icons Migration**:
+
 - **Before**: Loaded from `cdn.jsdelivr.net` (blocked by CSP)
 - **After**: Bundled locally via `@mdi/font` npm package
 - **Files Changed**:

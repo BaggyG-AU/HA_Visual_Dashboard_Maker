@@ -30,7 +30,10 @@ describe('useColorPalettes', () => {
     act(() => {
       const paletteId = result.current.createPalette('Limited').id;
       for (let i = 0; i < 25; i++) {
-        result.current.addColor(paletteId, `#${(i % 16).toString(16)}00${(i % 16).toString(16)}0${(i % 16).toString(16)}0`);
+        result.current.addColor(
+          paletteId,
+          `#${(i % 16).toString(16)}00${(i % 16).toString(16)}0${(i % 16).toString(16)}0`,
+        );
       }
       result.current.addColor(paletteId, '#FF00FF');
       result.current.addColor(paletteId, '#ff00ff'); // duplicate

@@ -16,13 +16,13 @@
 
 ## Technology Stack Summary
 
-| Component | Technology | Rationale |
-|-----------|-----------|-----------|
-| Color Picker | react-colorful (2KB) | Modern, lightweight, accessible |
-| Animations | Custom CSS library | Maximum flexibility, YAML storage |
-| Carousel/Slider | Swiper.js v12+ | Feature-rich, battle-tested |
-| Charts | Recharts | React-native, composable, SVG |
-| Fonts | Google Fonts (CDN + cache) | Best of both worlds |
+| Component       | Technology                 | Rationale                         |
+| --------------- | -------------------------- | --------------------------------- |
+| Color Picker    | react-colorful (2KB)       | Modern, lightweight, accessible   |
+| Animations      | Custom CSS library         | Maximum flexibility, YAML storage |
+| Carousel/Slider | Swiper.js v12+             | Feature-rich, battle-tested       |
+| Charts          | Recharts                   | React-native, composable, SVG     |
+| Fonts           | Google Fonts (CDN + cache) | Best of both worlds               |
 
 ---
 
@@ -376,13 +376,13 @@ Phase 4 delivered a `custom:popup-card` as a HAVDM-only implementation. Per the 
 
 Bubble Card popups have a fundamentally different model from HAVDM's current implementation:
 
-| Aspect | HAVDM Current | Bubble Card Upstream |
-|--------|--------------|---------------------|
-| Card type | `custom:popup-card` | `custom:bubble-card` + `card_type: pop-up` |
-| Child cards | Nested in `popup.cards[]` | Sibling cards in same `vertical-stack` |
-| Trigger | Programmatic (action-based) | Hash navigation (`#popup-name`) |
-| Size control | `size: small/medium/large/fullscreen/custom` | `width_desktop`, `margin_top_mobile/desktop` |
-| Close behavior | `close_on_backdrop`, `footer_actions` | `auto_close`, `close_on_click`, `close_by_clicking_outside` |
+| Aspect         | HAVDM Current                                | Bubble Card Upstream                                        |
+| -------------- | -------------------------------------------- | ----------------------------------------------------------- |
+| Card type      | `custom:popup-card`                          | `custom:bubble-card` + `card_type: pop-up`                  |
+| Child cards    | Nested in `popup.cards[]`                    | Sibling cards in same `vertical-stack`                      |
+| Trigger        | Programmatic (action-based)                  | Hash navigation (`#popup-name`)                             |
+| Size control   | `size: small/medium/large/fullscreen/custom` | `width_desktop`, `margin_top_mobile/desktop`                |
+| Close behavior | `close_on_backdrop`, `footer_actions`        | `auto_close`, `close_on_click`, `close_by_clicking_outside` |
 
 ### Features (6 total)
 
@@ -453,12 +453,12 @@ cards:
 
 ### Risk Assessment
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
+| Risk                                                                                   | Impact | Mitigation                                                                     |
+| -------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------ |
 | Bubble Card is a multi-feature card (`card_type` sub-types) — not a focused popup card | Medium | Only align the `pop-up` card_type; other Bubble Card features are out of scope |
-| Structural conversion complexity (nested ↔ sibling) | High | Thorough round-trip testing; handle edge cases in conversion service |
-| Trigger model mismatch (programmatic vs hash navigation) | Medium | Document as known limitation; HAVDM editor can support both models internally |
-| Bubble Card API changes in future versions | Low | Pin to current schema; unknown property passthrough for forward compatibility |
+| Structural conversion complexity (nested ↔ sibling)                                    | High   | Thorough round-trip testing; handle edge cases in conversion service           |
+| Trigger model mismatch (programmatic vs hash navigation)                               | Medium | Document as known limitation; HAVDM editor can support both models internally  |
+| Bubble Card API changes in future versions                                             | Low    | Pin to current schema; unknown property passthrough for forward compatibility  |
 
 **Deliverables**: Upstream-aligned popup card with bidirectional YAML conversion
 **Release**: TBD (to be assigned version when phase is activated)
@@ -521,18 +521,18 @@ cards:
 
 ## Development Timeline Estimate
 
-| Phase | Duration | Features | Complexity |
-|-------|----------|----------|------------|
-| Phase 1 | 2-3 weeks | 5 | Medium |
-| Phase 2 | 2-3 weeks | 6 | Medium |
-| Phase 3 | 3-4 weeks | 7 | High |
-| Phase 4 | 2-3 weeks | 6 | Medium |
-| Phase 5 | 4-5 weeks | 9 | High |
-| Phase 6 | 2-3 weeks | 5 | High |
-| Phase 7 | 3-4 weeks | 8 | High |
-| Phase 8 | 2-3 weeks | 6 | Medium-High |
-| Alignment | 2-3 weeks | 8 | Medium |
-| **Total** | **22-31 weeks** | **60** | - |
+| Phase     | Duration        | Features | Complexity  |
+| --------- | --------------- | -------- | ----------- |
+| Phase 1   | 2-3 weeks       | 5        | Medium      |
+| Phase 2   | 2-3 weeks       | 6        | Medium      |
+| Phase 3   | 3-4 weeks       | 7        | High        |
+| Phase 4   | 2-3 weeks       | 6        | Medium      |
+| Phase 5   | 4-5 weeks       | 9        | High        |
+| Phase 6   | 2-3 weeks       | 5        | High        |
+| Phase 7   | 3-4 weeks       | 8        | High        |
+| Phase 8   | 2-3 weeks       | 6        | Medium-High |
+| Alignment | 2-3 weeks       | 8        | Medium      |
+| **Total** | **22-31 weeks** | **60**   | -           |
 
 **Realistic Estimate**: 25-28 weeks (6.25-7 months) accounting for iterations and unforeseen issues
 
@@ -563,6 +563,7 @@ cards:
 ### Per-Phase Success
 
 Each phase is considered complete when:
+
 - ✅ All features implemented with full functionality
 - ✅ All unit tests passing (95%+ coverage for new code)
 - ✅ All E2E tests passing (comprehensive scenarios)
@@ -590,29 +591,29 @@ Each phase is considered complete when:
 
 ### Technical Risks
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Swiper.js integration complexity | High | Medium | Prototype early, fallback to simpler carousel |
-| Recharts performance with large datasets | Medium | Medium | Implement data throttling, virtual scrolling |
-| Google Fonts offline support | Medium | Low | Pre-cache top 20 fonts, graceful degradation |
-| Entity remapping fuzzy matching accuracy | Medium | Medium | Multiple algorithms, user override option |
-| Visual logic editor UX complexity | High | Medium | Iterative design, user testing, fallback to YAML |
+| Risk                                     | Impact | Probability | Mitigation                                       |
+| ---------------------------------------- | ------ | ----------- | ------------------------------------------------ |
+| Swiper.js integration complexity         | High   | Medium      | Prototype early, fallback to simpler carousel    |
+| Recharts performance with large datasets | Medium | Medium      | Implement data throttling, virtual scrolling     |
+| Google Fonts offline support             | Medium | Low         | Pre-cache top 20 fonts, graceful degradation     |
+| Entity remapping fuzzy matching accuracy | Medium | Medium      | Multiple algorithms, user override option        |
+| Visual logic editor UX complexity        | High   | Medium      | Iterative design, user testing, fallback to YAML |
 
 ### Scope Risks
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Feature creep | High | High | Strict adherence to phase plan, defer to future |
-| Over-engineering | Medium | Medium | MVP approach per feature, iterate based on usage |
-| Timeline slippage | Medium | Medium | Buffer time in estimates, regular progress reviews |
+| Risk              | Impact | Probability | Mitigation                                         |
+| ----------------- | ------ | ----------- | -------------------------------------------------- |
+| Feature creep     | High   | High        | Strict adherence to phase plan, defer to future    |
+| Over-engineering  | Medium | Medium      | MVP approach per feature, iterate based on usage   |
+| Timeline slippage | Medium | Medium      | Buffer time in estimates, regular progress reviews |
 
 ### Dependency Risks
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Breaking changes in dependencies | Medium | Low | Lock dependency versions, test before upgrading |
-| Abandoned dependencies | High | Low | Choose well-maintained libraries, have fallback plan |
-| Home Assistant API changes | Medium | Medium | Version compatibility checks, graceful degradation |
+| Risk                             | Impact | Probability | Mitigation                                           |
+| -------------------------------- | ------ | ----------- | ---------------------------------------------------- |
+| Breaking changes in dependencies | Medium | Low         | Lock dependency versions, test before upgrading      |
+| Abandoned dependencies           | High   | Low         | Choose well-maintained libraries, have fallback plan |
+| Home Assistant API changes       | Medium | Medium      | Version compatibility checks, graceful degradation   |
 
 ---
 

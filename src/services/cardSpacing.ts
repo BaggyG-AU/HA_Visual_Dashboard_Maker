@@ -22,7 +22,14 @@ export const SPACING_PRESET_VALUES: Record<Exclude<SpacingPreset, 'custom'>, num
   spacious: 24,
 };
 
-const PRESET_SET = new Set<SpacingPreset>(['none', 'tight', 'normal', 'relaxed', 'spacious', 'custom']);
+const PRESET_SET = new Set<SpacingPreset>([
+  'none',
+  'tight',
+  'normal',
+  'relaxed',
+  'spacious',
+  'custom',
+]);
 const SPACING_SIDES: SpacingSide[] = ['top', 'right', 'bottom', 'left'];
 
 const asFiniteNumber = (value: unknown): number | undefined => {
@@ -94,7 +101,10 @@ const parseCssShorthand = (value: string): SpacingSides | null => {
   return { top: safe[0], right: safe[1], bottom: safe[2], left: safe[3] };
 };
 
-const normalizeSides = (value: SpacingSideObject, fallback = DEFAULT_CARD_SPACING): SpacingSides => {
+const normalizeSides = (
+  value: SpacingSideObject,
+  fallback = DEFAULT_CARD_SPACING,
+): SpacingSides => {
   return {
     top: clampCardSpacing(value.top, fallback),
     right: clampCardSpacing(value.right, fallback),
@@ -141,11 +151,12 @@ export const normalizeSpacingValue = (
 
     const shorthand = parseCssShorthand(value);
     if (shorthand) {
-      const mode: SpacingMode = shorthand.top === shorthand.right
-        && shorthand.top === shorthand.bottom
-        && shorthand.top === shorthand.left
-        ? 'all'
-        : 'per-side';
+      const mode: SpacingMode =
+        shorthand.top === shorthand.right &&
+        shorthand.top === shorthand.bottom &&
+        shorthand.top === shorthand.left
+          ? 'all'
+          : 'per-side';
       return {
         ...shorthand,
         mode,
@@ -173,9 +184,10 @@ export const resolveSpacingPreset = (value: unknown): SpacingPreset => {
   }
 
   const normalized = normalizeSpacingValue(value, DEFAULT_CARD_SPACING);
-  const allSame = normalized.top === normalized.right
-    && normalized.top === normalized.bottom
-    && normalized.top === normalized.left;
+  const allSame =
+    normalized.top === normalized.right &&
+    normalized.top === normalized.bottom &&
+    normalized.top === normalized.left;
 
   if (!allSame) {
     return 'custom';
@@ -190,7 +202,10 @@ export const resolveSpacingPreset = (value: unknown): SpacingPreset => {
   return 'custom';
 };
 
-export const spacingValueToFormValue = (mode: SpacingMode, spacing: NormalizedSpacing): CardSpacingValue => {
+export const spacingValueToFormValue = (
+  mode: SpacingMode,
+  spacing: NormalizedSpacing,
+): CardSpacingValue => {
   if (mode === 'all') {
     return spacing.top;
   }

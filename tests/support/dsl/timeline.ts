@@ -35,7 +35,10 @@ export class TimelineDSL {
 
   async configure(config: TimelineFormConfig): Promise<void> {
     if (config.orientation) {
-      await this.selectByTestId('timeline-orientation', config.orientation === 'horizontal' ? 'Horizontal' : 'Vertical');
+      await this.selectByTestId(
+        'timeline-orientation',
+        config.orientation === 'horizontal' ? 'Horizontal' : 'Vertical',
+      );
     }
     if (config.groupBy) {
       const label = config.groupBy === 'none' ? 'None' : config.groupBy === 'hour' ? 'Hour' : 'Day';
@@ -51,7 +54,10 @@ export class TimelineDSL {
       await this.fillInputNumber('timeline-max-items', config.maxItems);
     }
     if (config.itemDensity) {
-      await this.selectByTestId('timeline-item-density', config.itemDensity === 'compact' ? 'Compact' : 'Comfortable');
+      await this.selectByTestId(
+        'timeline-item-density',
+        config.itemDensity === 'compact' ? 'Compact' : 'Comfortable',
+      );
     }
     if (typeof config.truncateLength === 'number') {
       await this.fillInputNumber('timeline-truncate-length', config.truncateLength);
@@ -59,7 +65,10 @@ export class TimelineDSL {
   }
 
   async moveScrubberTo(index: number): Promise<void> {
-    const scrubber = this.window.getByTestId('timeline-scrubber').locator('[role="slider"]').first();
+    const scrubber = this.window
+      .getByTestId('timeline-scrubber')
+      .locator('[role="slider"]')
+      .first();
     await expect(scrubber).toBeVisible();
     await scrubber.focus();
 
@@ -118,12 +127,16 @@ export class TimelineDSL {
     const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
 
-    const option = dropdown.locator('.ant-select-item-option', {
-      hasText: new RegExp(`^${label}$`, 'i'),
-    }).first();
+    const option = dropdown
+      .locator('.ant-select-item-option', {
+        hasText: new RegExp(`^${label}$`, 'i'),
+      })
+      .first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click();
 
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+      timeout: 5000,
+    });
   }
 }

@@ -69,9 +69,11 @@ export class DashboardDSL {
     await this.selectDashboardKind(kind);
 
     // Wait for dialog to close before checking canvas
-    await expect(dialog).toBeHidden({ timeout: 10000 }).catch(() => {
-      // If the root stays "hidden" while content disappears, tolerate and continue
-    });
+    await expect(dialog)
+      .toBeHidden({ timeout: 10000 })
+      .catch(() => {
+        // If the root stays "hidden" while content disappears, tolerate and continue
+      });
 
     // Wait for the canvas/empty-state to render (CI-safe)
     await this.waitForCanvasOrEmpty();

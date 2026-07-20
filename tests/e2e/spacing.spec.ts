@@ -7,7 +7,9 @@ name: "Living Room"
 `;
 
 test.describe('Card Spacing Controls', () => {
-  test('sets card margin from PropertiesPanel and applies live preview', async ({ page }, testInfo) => {
+  test('sets card margin from PropertiesPanel and applies live preview', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, yamlEditor, spacing } = ctx;
@@ -29,7 +31,9 @@ test.describe('Card Spacing Controls', () => {
     }
   });
 
-  test('sets card padding from PropertiesPanel and applies live preview', async ({ page }, testInfo) => {
+  test('sets card padding from PropertiesPanel and applies live preview', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, yamlEditor, spacing } = ctx;
@@ -51,7 +55,9 @@ test.describe('Card Spacing Controls', () => {
     }
   });
 
-  test('toggles all-sides and per-side modes for margin and padding', async ({ page }, testInfo) => {
+  test('toggles all-sides and per-side modes for margin and padding', async ({
+    page,
+  }, testInfo) => {
     test.setTimeout(120000);
     void page;
     const ctx = await launchWithDSL();

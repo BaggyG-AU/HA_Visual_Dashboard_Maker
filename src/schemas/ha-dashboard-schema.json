@@ -48,13 +48,7 @@
         "type": {
           "type": "string",
           "description": "View layout type",
-          "enum": [
-            "masonry",
-            "sidebar",
-            "panel",
-            "sections",
-            "custom:grid-layout"
-          ],
+          "enum": ["masonry", "sidebar", "panel", "sections", "custom:grid-layout"],
           "default": "masonry"
         },
         "theme": {
@@ -389,9 +383,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "icon"
-                  ],
+                  "required": ["icon"],
                   "additionalProperties": false
                 }
               ]
@@ -553,7 +545,16 @@
         },
         "aggregate_function": {
           "type": "string",
-          "enum": ["all_on", "any_on", "all_off", "any_off", "count_on", "average_state", "min_state", "max_state"],
+          "enum": [
+            "all_on",
+            "any_on",
+            "all_off",
+            "any_off",
+            "count_on",
+            "average_state",
+            "min_state",
+            "max_state"
+          ],
           "description": "HAVDM: Aggregate function used in aggregate mode"
         },
         "batch_actions": {
@@ -787,10 +788,7 @@
           "description": "Swiper transition effect"
         },
         "slides_per_view": {
-          "oneOf": [
-            { "type": "number" },
-            { "type": "string", "enum": ["auto"] }
-          ],
+          "oneOf": [{ "type": "number" }, { "type": "string", "enum": ["auto"] }],
           "description": "Slides per view"
         },
         "chart_type": {
@@ -883,16 +881,10 @@
           "type": "object",
           "properties": {
             "min": {
-              "oneOf": [
-                { "type": "number" },
-                { "type": "string", "enum": ["auto"] }
-              ]
+              "oneOf": [{ "type": "number" }, { "type": "string", "enum": ["auto"] }]
             },
             "max": {
-              "oneOf": [
-                { "type": "number" },
-                { "type": "string", "enum": ["auto"] }
-              ]
+              "oneOf": [{ "type": "number" }, { "type": "string", "enum": ["auto"] }]
             }
           },
           "additionalProperties": true
@@ -1024,10 +1016,7 @@
                 "description": "Tab icon (MDI)"
               },
               "badge": {
-                "oneOf": [
-                  { "type": "string" },
-                  { "type": "number" }
-                ],
+                "oneOf": [{ "type": "string" }, { "type": "number" }],
                 "description": "Optional static badge text/number"
               },
               "count": {
@@ -1404,20 +1393,12 @@
               "type": "string"
             },
             "value": {
-              "oneOf": [
-                { "type": "string" },
-                { "type": "number" },
-                { "type": "boolean" }
-              ]
+              "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }]
             },
             "values": {
               "type": "array",
               "items": {
-                "oneOf": [
-                  { "type": "string" },
-                  { "type": "number" },
-                  { "type": "boolean" }
-                ]
+                "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }]
               }
             }
           },

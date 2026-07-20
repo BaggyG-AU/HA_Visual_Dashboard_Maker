@@ -10,6 +10,7 @@ description: Implement reliable Playwright end-to-end tests for Electron + React
 The user will ALWAYS run tests themselves and provide you with the results.
 
 **FORBIDDEN Commands:**
+
 - ❌ `npm run test`
 - ❌ `npm run test:e2e`
 - ❌ `npm test`
@@ -17,6 +18,7 @@ The user will ALWAYS run tests themselves and provide you with the results.
 - ❌ Any command that executes tests
 
 **Your Role:**
+
 - ✅ Write test files
 - ✅ Refactor test files
 - ✅ Analyze test results provided by the user
@@ -24,6 +26,7 @@ The user will ALWAYS run tests themselves and provide you with the results.
 - ❌ NEVER execute test commands yourself
 
 **If you need test results:**
+
 1. Tell the user which command to run
 2. Wait for them to provide the output
 3. Analyze the results they give you
@@ -64,9 +67,7 @@ You are implementing Playwright-based automated tests for an Electron desktop ap
      - `page.on('requestfailed')`
    - Tests must surface CSP, worker, and asset-loading failures
 
-
-
-Playwright locator best practices + testId configuration exist; use them. (See official docs.) 
+Playwright locator best practices + testId configuration exist; use them. (See official docs.)
 
 ---
 
@@ -91,13 +92,19 @@ Most failures are brittle setup. Create a reusable fixture (e.g. `e2e/fixtures/e
 
 - launches the app
 - selects the correct window (splash-safe)
-- waits for *app ready* (not just DOM loaded)
+- waits for _app ready_ (not just DOM loaded)
 - provides a clean profile for each run (or at least each worker)
 
 ### Golden fixture template (adapt paths to your repo)
 
 ```ts
-import { _electron as electron, ElectronApplication, Page, test as base, expect } from '@playwright/test';
+import {
+  _electron as electron,
+  ElectronApplication,
+  Page,
+  test as base,
+  expect,
+} from '@playwright/test';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
@@ -159,3 +166,4 @@ export const test = base.extend<TestFixtures>({
     await use(page);
   },
 });
+```

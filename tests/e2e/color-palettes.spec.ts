@@ -3,10 +3,21 @@ import { launchWithDSL, close } from '../support';
 import { debugLog } from '../support/helpers/debug';
 
 test.describe('Color Palettes - Favorites integration', () => {
-  test('user can create palette, add current color, apply favorite, and persist to YAML', async ({ page }, testInfo) => {
+  test('user can create palette, add current color, apply favorite, and persist to YAML', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, colorPicker, colorPalettes, yamlEditor } = ctx;
+    const {
+      appDSL,
+      dashboard,
+      palette,
+      canvas,
+      properties,
+      colorPicker,
+      colorPalettes,
+      yamlEditor,
+    } = ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -36,7 +47,10 @@ test.describe('Color Palettes - Favorites integration', () => {
       // YAML should contain the color
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
       expect(value.toLowerCase()).toContain('#112233');
     } finally {

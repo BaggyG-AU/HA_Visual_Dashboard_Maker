@@ -16,7 +16,9 @@ show:
 `;
 
 test.describe('Sparkline Mini-graphs', () => {
-  test('renders sparkline from YAML with accessibility and numeric fallback labels', async ({ page }) => {
+  test('renders sparkline from YAML with accessibility and numeric fallback labels', async ({
+    page,
+  }) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, sparkline, canvas, properties, yamlEditor, window } = ctx;

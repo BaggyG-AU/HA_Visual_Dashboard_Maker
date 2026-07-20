@@ -90,11 +90,12 @@ export const useEditorModeStore = create<EditorModeState>((set, get) => ({
     };
   },
 
-  clearPending: () => set({
-    pendingYaml: null,
-    validationError: null,
-    syncStatus: 'synced',
-  }),
+  clearPending: () =>
+    set({
+      pendingYaml: null,
+      validationError: null,
+      syncStatus: 'synced',
+    }),
 
   reset: () => set(initialState),
 }));

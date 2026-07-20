@@ -11,17 +11,9 @@ interface ThemeSelectorProps {
  * Theme Selector Component
  * Allows users to select and preview HA themes
  */
-export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
-  onRefreshThemes,
-}) => {
-  const {
-    currentThemeName,
-    availableThemes,
-    darkMode,
-    syncWithHA,
-    setTheme,
-    toggleDarkMode,
-  } = useThemeStore();
+export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ onRefreshThemes }) => {
+  const { currentThemeName, availableThemes, darkMode, syncWithHA, setTheme, toggleDarkMode } =
+    useThemeStore();
 
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -34,7 +26,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
     }
   };
 
-  const themeOptions = Object.keys(availableThemes).map(name => ({
+  const themeOptions = Object.keys(availableThemes).map((name) => ({
     label: name,
     value: name,
   }));
@@ -53,7 +45,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
           placeholder="Select theme"
           suffixIcon={<BgColorsOutlined />}
           disabled={!hasThemes}
-          popupRender={menu => (
+          popupRender={(menu) => (
             <>
               {menu}
               <div style={{ padding: '8px', borderTop: '1px solid #434343' }}>
@@ -73,7 +65,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
         />
       </Tooltip>
 
-      <Tooltip title={darkMode ? "Switch to light mode" : "Switch to dark mode"}>
+      <Tooltip title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
         <Switch
           data-testid="theme-dark-toggle"
           checked={darkMode}

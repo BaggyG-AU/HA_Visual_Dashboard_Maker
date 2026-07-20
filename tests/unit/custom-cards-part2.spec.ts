@@ -117,7 +117,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
 
         it('should be categorized as custom', () => {
           const customCards = cardRegistry.getCustomCards();
-          expect(customCards.some(c => c.type === type)).toBe(true);
+          expect(customCards.some((c) => c.type === type)).toBe(true);
         });
       });
     });
@@ -146,7 +146,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
   describe('Custom Cards Collection', () => {
     it('should include all newly implemented cards in custom cards list', () => {
       const customCards = cardRegistry.getCustomCards();
-      const customCardTypes = customCards.map(c => c.type);
+      const customCardTypes = customCards.map((c) => c.type);
 
       const expectedCards = [
         'custom:card-mod',
@@ -159,7 +159,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
         'custom:webrtc-camera',
       ];
 
-      expectedCards.forEach(type => {
+      expectedCards.forEach((type) => {
         expect(customCardTypes).toContain(type);
       });
     });
@@ -178,7 +178,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
         'custom:webrtc-camera',
       ];
 
-      const foundCards = customCards.filter(c => newCards.includes(c.type));
+      const foundCards = customCards.filter((c) => newCards.includes(c.type));
       expect(foundCards.length).toBeGreaterThanOrEqual(8);
     });
   });
@@ -186,7 +186,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
   describe('Card Source Filtering', () => {
     it('should return all new cards when filtering by HACS source', () => {
       const hacsCards = cardRegistry.getBySource('hacs');
-      const hacsTypes = hacsCards.map(c => c.type);
+      const hacsTypes = hacsCards.map((c) => c.type);
 
       const expectedHacsCards = [
         'custom:card-mod',
@@ -199,7 +199,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
         'custom:webrtc-camera',
       ];
 
-      expectedHacsCards.forEach(type => {
+      expectedHacsCards.forEach((type) => {
         expect(hacsTypes).toContain(type);
       });
     });
@@ -208,7 +208,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
   describe('Card Category Filtering', () => {
     it('should return all new cards when filtering by custom category', () => {
       const customCategoryCards = cardRegistry.getByCategory('custom');
-      const customTypes = customCategoryCards.map(c => c.type);
+      const customTypes = customCategoryCards.map((c) => c.type);
 
       const expectedCustomCards = [
         'custom:card-mod',
@@ -221,7 +221,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
         'custom:webrtc-camera',
       ];
 
-      expectedCustomCards.forEach(type => {
+      expectedCustomCards.forEach((type) => {
         expect(customTypes).toContain(type);
       });
     });

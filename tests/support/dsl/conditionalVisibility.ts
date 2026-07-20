@@ -86,7 +86,9 @@ export class ConditionalVisibilityDSL {
         await typeOption.click();
       } else {
         // Fallback for flaky portal rendering: use keyboard selection in active combobox
-        const activeInput = this.window.locator('.ant-select-dropdown:visible input[role="combobox"]').last();
+        const activeInput = this.window
+          .locator('.ant-select-dropdown:visible input[role="combobox"]')
+          .last();
         if (await activeInput.isVisible({ timeout: 1000 }).catch(() => false)) {
           await activeInput.fill(normalizedType);
           await this.window.keyboard.press('Enter');
@@ -99,7 +101,9 @@ export class ConditionalVisibilityDSL {
     await this.selectAntOption(entityField, config.entity);
 
     if (config.attribute !== undefined) {
-      await this.window.getByTestId(`visibility-condition-attribute-${path}`).fill(config.attribute);
+      await this.window
+        .getByTestId(`visibility-condition-attribute-${path}`)
+        .fill(config.attribute);
     }
 
     if (config.value !== undefined) {
@@ -122,7 +126,9 @@ export class ConditionalVisibilityDSL {
   }
 
   async expectPreviewState(state: 'Visible' | 'Hidden'): Promise<void> {
-    await expect(this.window.getByTestId('conditional-visibility-preview')).toContainText(`Current state: ${state}`);
+    await expect(this.window.getByTestId('conditional-visibility-preview')).toContainText(
+      `Current state: ${state}`,
+    );
   }
 
   async expectCardVisible(index = 0): Promise<void> {

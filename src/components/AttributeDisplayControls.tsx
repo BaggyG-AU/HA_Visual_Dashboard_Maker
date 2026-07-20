@@ -1,6 +1,10 @@
 import React, { useMemo, useCallback } from 'react';
 import { Alert, Divider, Input, InputNumber, Select, Typography } from 'antd';
-import type { AttributeDisplayItem, AttributeDisplayLayout, AttributeFormatType } from '../types/attributeDisplay';
+import type {
+  AttributeDisplayItem,
+  AttributeDisplayLayout,
+  AttributeFormatType,
+} from '../types/attributeDisplay';
 import { detectFormatType, formatAttributeValue } from '../services/attributeFormatter';
 import { useHAEntities } from '../contexts/HAEntityContext';
 
@@ -15,7 +19,10 @@ interface AttributeDisplayControlsProps {
 }
 
 const COMMON_GROUPS: Array<{ label: string; keys: string[] }> = [
-  { label: 'Battery & Power', keys: ['battery', 'battery_level', 'power', 'energy', 'voltage', 'current'] },
+  {
+    label: 'Battery & Power',
+    keys: ['battery', 'battery_level', 'power', 'energy', 'voltage', 'current'],
+  },
   { label: 'Climate', keys: ['temperature', 'current_temperature', 'humidity', 'pressure'] },
   { label: 'Device', keys: ['friendly_name', 'device_class', 'unit_of_measurement', 'icon'] },
   { label: 'Status', keys: ['last_changed', 'last_updated', 'state', 'availability'] },
@@ -58,58 +65,60 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
     }));
   }, [attributeOptions]);
 
-  const handleSelectChange = useCallback((selected: string[]) => {
-    const existingMap = new Map(value.map((item) => [item.attribute, item]));
-    const next = selected.map((attribute) => {
-      const existing = existingMap.get(attribute);
-      if (existing) return existing;
-      const rawValue = attributes[attribute];
-      const type = detectFormatType(rawValue);
-      return {
-        attribute,
-        format: { type },
-      } as AttributeDisplayItem;
-    });
-    onChange?.(next);
-  }, [attributes, onChange, value]);
+  const handleSelectChange = useCallback(
+    (selected: string[]) => {
+      const existingMap = new Map(value.map((item) => [item.attribute, item]));
+      const next = selected.map((attribute) => {
+        const existing = existingMap.get(attribute);
+        if (existing) return existing;
+        const rawValue = attributes[attribute];
+        const type = detectFormatType(rawValue);
+        return {
+          attribute,
+          format: { type },
+        } as AttributeDisplayItem;
+      });
+      onChange?.(next);
+    },
+    [attributes, onChange, value],
+  );
 
-  const updateItem = useCallback((index: number, nextItem: AttributeDisplayItem) => {
-    const next = [...value];
-    next[index] = nextItem;
-    onChange?.(next);
-  }, [onChange, value]);
+  const updateItem = useCallback(
+    (index: number, nextItem: AttributeDisplayItem) => {
+      const next = [...value];
+      next[index] = nextItem;
+      onChange?.(next);
+    },
+    [onChange, value],
+  );
 
-  const removeItem = useCallback((index: number) => {
-    const next = value.filter((_, idx) => idx !== index);
-    onChange?.(next);
-  }, [onChange, value]);
+  const removeItem = useCallback(
+    (index: number) => {
+      const next = value.filter((_, idx) => idx !== index);
+      onChange?.(next);
+    },
+    [onChange, value],
+  );
 
-  const reorderItems = useCallback((from: number, to: number) => {
-    if (from === to || from < 0 || to < 0 || from >= value.length || to >= value.length) return;
-    const next = [...value];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    onChange?.(next);
-  }, [onChange, value]);
+  const reorderItems = useCallback(
+    (from: number, to: number) => {
+      if (from === to || from < 0 || to < 0 || from >= value.length || to >= value.length) return;
+      const next = [...value];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      onChange?.(next);
+    },
+    [onChange, value],
+  );
 
   if (!entityId) {
     return (
-      <Alert
-        type="info"
-        showIcon
-        message="Select an entity to configure attribute display."
-      />
+      <Alert type="info" showIcon message="Select an entity to configure attribute display." />
     );
   }
 
   if (isLoading && !entity) {
-    return (
-      <Alert
-        type="info"
-        showIcon
-        message="Loading entity attributes..."
-      />
-    );
+    return <Alert type="info" showIcon message="Loading entity attributes..." />;
   }
 
   if (!entity) {
@@ -125,7 +134,9 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
   return (
     <div data-testid="attribute-display-controls">
       <Divider />
-      <Text strong style={{ color: 'white' }}>Attribute Display</Text>
+      <Text strong style={{ color: 'white' }}>
+        Attribute Display
+      </Text>
 
       <div style={{ marginTop: '8px' }}>
         <Text style={{ color: '#888', fontSize: '12px' }}>Select attributes to display</Text>
@@ -188,8 +199,17 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
               }}
               data-testid={`attribute-display-item-${testId}`}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                <Text strong style={{ color: '#e6e6e6' }}>{item.attribute}</Text>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <Text strong style={{ color: '#e6e6e6' }}>
+                  {item.attribute}
+                </Text>
                 <div>
                   <Text
                     style={{ color: '#666', cursor: 'grab', fontSize: '12px', marginRight: '12px' }}
@@ -253,12 +273,20 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
                     <InputNumber
                       min={0}
                       max={6}
-                      value={typeof item.format?.precision === 'number' ? item.format.precision : null}
+                      value={
+                        typeof item.format?.precision === 'number' ? item.format.precision : null
+                      }
                       placeholder="Auto"
-                      onChange={(next) => updateItem(index, {
-                        ...item,
-                        format: { ...item.format, precision: typeof next === 'number' ? next : 0, type: 'number' },
-                      })}
+                      onChange={(next) =>
+                        updateItem(index, {
+                          ...item,
+                          format: {
+                            ...item.format,
+                            precision: typeof next === 'number' ? next : 0,
+                            type: 'number',
+                          },
+                        })
+                      }
                       style={{ width: '100%' }}
                       data-testid={`attribute-display-format-precision-${testId}`}
                     />
@@ -268,10 +296,12 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
                     <Input
                       value={item.format?.unit ?? ''}
                       placeholder="e.g. %"
-                      onChange={(event) => updateItem(index, {
-                        ...item,
-                        format: { ...item.format, unit: event.target.value, type: 'number' },
-                      })}
+                      onChange={(event) =>
+                        updateItem(index, {
+                          ...item,
+                          format: { ...item.format, unit: event.target.value, type: 'number' },
+                        })
+                      }
                       data-testid={`attribute-display-format-unit-${testId}`}
                     />
                   </div>
@@ -285,10 +315,16 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
                     <Input
                       value={item.format?.trueLabel ?? ''}
                       placeholder="On"
-                      onChange={(event) => updateItem(index, {
-                        ...item,
-                        format: { ...item.format, trueLabel: event.target.value, type: 'boolean' },
-                      })}
+                      onChange={(event) =>
+                        updateItem(index, {
+                          ...item,
+                          format: {
+                            ...item.format,
+                            trueLabel: event.target.value,
+                            type: 'boolean',
+                          },
+                        })
+                      }
                       data-testid={`attribute-display-format-trueLabel-${testId}`}
                     />
                   </div>
@@ -297,10 +333,16 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
                     <Input
                       value={item.format?.falseLabel ?? ''}
                       placeholder="Off"
-                      onChange={(event) => updateItem(index, {
-                        ...item,
-                        format: { ...item.format, falseLabel: event.target.value, type: 'boolean' },
-                      })}
+                      onChange={(event) =>
+                        updateItem(index, {
+                          ...item,
+                          format: {
+                            ...item.format,
+                            falseLabel: event.target.value,
+                            type: 'boolean',
+                          },
+                        })
+                      }
                       data-testid={`attribute-display-format-falseLabel-${testId}`}
                     />
                   </div>
@@ -314,10 +356,16 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
                     min={5}
                     max={120}
                     value={item.format?.maxLength ?? 32}
-                    onChange={(next) => updateItem(index, {
-                      ...item,
-                      format: { ...item.format, maxLength: typeof next === 'number' ? next : 32, type: 'string' },
-                    })}
+                    onChange={(next) =>
+                      updateItem(index, {
+                        ...item,
+                        format: {
+                          ...item.format,
+                          maxLength: typeof next === 'number' ? next : 32,
+                          type: 'string',
+                        },
+                      })
+                    }
                     style={{ width: '100%' }}
                     data-testid={`attribute-display-format-maxLength-${testId}`}
                   />
@@ -329,10 +377,12 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
                   <Text style={{ color: '#888', fontSize: '11px' }}>Mode</Text>
                   <Select
                     value={item.format?.timestampMode ?? 'relative'}
-                    onChange={(next) => updateItem(index, {
-                      ...item,
-                      format: { ...item.format, timestampMode: next, type: 'timestamp' },
-                    })}
+                    onChange={(next) =>
+                      updateItem(index, {
+                        ...item,
+                        format: { ...item.format, timestampMode: next, type: 'timestamp' },
+                      })
+                    }
                     options={[
                       { value: 'relative', label: 'Relative' },
                       { value: 'absolute', label: 'Absolute' },
@@ -345,8 +395,18 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
 
               <div style={{ marginTop: '10px' }}>
                 <Text style={{ color: '#888', fontSize: '11px' }}>Preview</Text>
-                <div style={{ marginTop: '4px', padding: '6px 8px', background: '#0d0d0d', borderRadius: '6px' }}>
-                  <Text style={{ color: '#b7eb8f', fontSize: '12px' }} data-testid={`attribute-display-preview-${testId}`}>
+                <div
+                  style={{
+                    marginTop: '4px',
+                    padding: '6px 8px',
+                    background: '#0d0d0d',
+                    borderRadius: '6px',
+                  }}
+                >
+                  <Text
+                    style={{ color: '#b7eb8f', fontSize: '12px' }}
+                    data-testid={`attribute-display-preview-${testId}`}
+                  >
                     {preview || 'N/A'}
                   </Text>
                 </div>

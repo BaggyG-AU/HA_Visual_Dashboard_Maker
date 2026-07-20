@@ -1,4 +1,5 @@
-# Testing Standards – Playwright Helper DSL  
+# Testing Standards – Playwright Helper DSL
+
 Electron + React + TypeScript
 
 Last Updated: 2025-12-29
@@ -10,6 +11,7 @@ Last Updated: 2025-12-29
 These standards ensure automated tests remain stable, readable, and resilient as the application evolves.
 
 They are designed to support:
+
 - A shared Playwright DSL (Domain-Specific Language)
 - Multiple AI coding agents (Claude, Codex, etc.)
 - UI workflows that may change over time
@@ -21,6 +23,7 @@ Tests must fail only when behavior is broken — not when UI flows evolve.
 ## SCOPE (IMPORTANT)
 
 This repo has multiple automated test layers:
+
 - **Unit**: `vitest` (pure logic)
 - **Playwright E2E**: `electron-e2e` (end-to-end user workflows; DSL-first)
 - **Playwright Integration**: `electron-integration` (broader app/service workflows; may use fixtures/helpers)
@@ -36,10 +39,12 @@ Not every rule in this document applies equally to every layer. When a rule is E
 All **E2E** Playwright tests MUST use helper methods from the DSL.
 
 Do NOT:
+
 - Call Playwright APIs directly in test specs
 - Use raw selectors or timing logic in tests
 
 Do:
+
 - Use DashboardDSL, CardDSL, EntityBrowserDSL, etc.
 
 ---
@@ -57,6 +62,7 @@ tests/support/
 ### 3. Direct Playwright API Calls in Specs
 
 **E2E:** Specs MUST NOT contain:
+
 - Raw selectors
 - Timing logic
 - Conditional UI handling
@@ -65,6 +71,7 @@ tests/support/
 All of this belongs in the DSL layer.
 
 **Integration:** Prefer helpers/fixtures to encapsulate selectors/waits. If direct calls are used, they must be:
+
 - State-based (no arbitrary sleeps)
 - Scoped and stable (prefer `data-testid`, role, and well-scoped locators)
 - Centralized when reused (move to helpers/fixtures/DSL rather than duplicating)
@@ -76,11 +83,13 @@ All of this belongs in the DSL layer.
 Tests should read like a human description of user intent.
 
 Good:
+
 - Create dashboard
 - Add card
 - Select card
 
 Bad:
+
 - Click element X
 - Wait 500 ms
 - Query DOM directly
@@ -88,6 +97,7 @@ Bad:
 ---
 
 ### Naming Hygiene
+
 - Avoid special characters in test titles that require escaping (for example `+`, `*`, `$`, `?`, `|`). Prefer plain words (e.g., use “and” instead of “+”) so grep filters and Playwright `-g` patterns stay simple and portable.
 
 ---
@@ -105,11 +115,13 @@ Using fixed delays (`waitForTimeout`) or sleep-based synchronization to make tes
 All waits must be state-based and implemented in the DSL.
 
 **Exception — `test.setTimeout()` for legitimately long tests**: When a test performs many sequential UI operations that accumulate significant wall-clock time (e.g., Electron launch + multiple YAML round-trips + Ant Design dropdown interactions on WSL2), `test.setTimeout()` may be used to set a realistic per-test timeout. This is NOT a synchronization mechanism — it simply prevents a correct, running test from being killed prematurely. Requirements:
+
 - The root cause of slowness must be understood and documented in a comment
 - The timeout must reflect measured execution time with reasonable headroom (not an arbitrary large number)
 - The test must NOT use `waitForTimeout` for synchronization anywhere in its call chain
 
 Guardrail check:
+
 - Run `npm run test:e2e:guardrails` to block raw sleeps and non-unified launch helpers in E2E specs.
 
 ---
@@ -117,6 +129,7 @@ Guardrail check:
 ### 7. Failures Must Be Actionable
 
 When a test fails, it must be immediately clear:
+
 - Which workflow broke
 - At what abstraction level
 - Why the user experience is incorrect
@@ -150,10 +163,12 @@ If a feature introduces any new UI step between two previously adjacent user act
 4. Preserve backward compatibility where possible
 
 Violations include:
+
 - Updating dozens of specs to accommodate a new UI layer
 - Adding workarounds in test files
 
 Correct behavior:
+
 - One DSL update restores all downstream tests
 
 ---
@@ -163,6 +178,7 @@ Correct behavior:
 High-level DSL methods must handle optional or evolving UI steps.
 
 They must:
+
 - Detect intermediate UI states
 - Act only if the step is present
 - Proceed cleanly if the step is absent
@@ -176,6 +192,7 @@ This prevents UX evolution from breaking the test suite.
 If many tests fail at the same DSL line, this indicates a broken abstraction, not broken tests.
 
 Mandatory response:
+
 1. Stop editing test specs
 2. Identify the shared DSL failure
 3. Fix the DSL
@@ -193,6 +210,7 @@ AI agent execution/reporting policy (including “one test run then pause/diagno
 AI agents cannot open Playwright trace viewers, but CAN unzip and analyze `trace.zip` files and other artifacts.
 
 Debugging must be based on:
+
 - Playwright traces
 - Screenshots
 - DOM snapshots
@@ -207,6 +225,7 @@ Agents must not guess or claim tests were run.
 When an AI agent is running tests and resolving errors, it MUST adhere to a **maximum of three (3) test/resolve cycles** before pausing for user input.
 
 **Definition of a Cycle**: One cycle consists of:
+
 1. Running tests (full suite or targeted)
 2. Analyzing failures
 3. Implementing a fix
@@ -232,18 +251,21 @@ When an AI agent is running tests and resolving errors, it MUST adhere to a **ma
    - Any external dependencies or environmental factors
 
 **Rationale**: This prevents AI agents from:
+
 - Spinning endlessly on difficult issues
 - Making progressively worse changes trying to "fix" symptoms
 - Wasting context and compute on diminishing returns
 - Missing opportunities for human insight on complex problems
 
 **User Decision Point**: After receiving the summary, the user can:
+
 - Provide guidance and allow the AI to continue
 - Take over debugging manually
 - Skip/defer the failing test with documentation
 - Escalate to a different debugging approach
 
 **Example Summary Format**:
+
 ```
 ## Test Resolution Summary (3 cycles exhausted)
 
@@ -281,6 +303,7 @@ non-deterministic in test environment.
 For implementation prompts or feature-delivery tasks, AI agents must run **exactly one Fast Gate pass** and then pause for explicit user approval before continuing with any additional fixes or test runs.
 
 Required sequence:
+
 1. Run one Fast Gate pass using the commands in the Regression Gate Matrix.
 2. Stop and provide a summary report with:
    - Exact commands executed
@@ -290,6 +313,7 @@ Required sequence:
 3. Ask for user approval to proceed.
 
 Prohibited behavior before approval:
+
 - Running a second test pass
 - Entering autonomous fix/retest loops
 - Continuing to additional gates (medium/slow) unless explicitly requested
@@ -317,16 +341,17 @@ If any answer is “no”, the feature is not test-complete.
 
 tests  
 └── support  
-    ├── dsl  
-    │   ├── dashboard.ts  
-    │   ├── cards.ts  
-    │   ├── entityBrowser.ts  
-    │   └── index.ts  
-    ├── fixtures  
-    ├── mocks  
-    └── helpers  
+├── dsl  
+│ ├── dashboard.ts  
+│ ├── cards.ts  
+│ ├── entityBrowser.ts  
+│ └── index.ts  
+├── fixtures  
+├── mocks  
+└── helpers
 
 The DSL layer encapsulates:
+
 - Selectors
 - Timing logic
 - Conditional UI flows
@@ -338,6 +363,7 @@ The DSL layer encapsulates:
 ## INTEGRATION TEST STRUCTURE (REFERENCE)
 
 Integration specs commonly use:
+
 - Fixtures: `tests/fixtures/**`
 - Helpers: `tests/helpers/**`
 
@@ -350,6 +376,7 @@ Prefer DSL reuse for UI workflows when it improves consistency, but integration 
 Use `ColorPickerDSL` for all color picker interactions; do not write selectors in specs.
 
 Common flows:
+
 - Closed state: assert the main input (`data-testid="<field>"`) is visible and has the right value.
 - Open state: open via swatch (`<field>-swatch`) and assert the picker container (`<field>-picker`) is visible.
 - Selection: type into the picker input (`<field>-picker-input`) and confirm with `Enter`.
@@ -367,6 +394,7 @@ Common flows:
 ### Visual Regression Snapshots
 
 If you add `toHaveScreenshot` expectations:
+
 - Use stable names without escape-required characters.
 - Disable animations and caret in screenshot options.
 - Capture the smallest meaningful region (input control or popover container) to reduce flake.
@@ -375,6 +403,7 @@ If you add `toHaveScreenshot` expectations:
 
 Avoid brittle tab-order assumptions when portals are involved (Ant Design popovers are rendered in a portal).
 Instead:
+
 - Focus a known starting element (e.g. swatch)
 - Assert that expected controls are keyboard-reachable within a small bounded number of `Tab` presses via DSL helpers
 
@@ -389,23 +418,25 @@ All skipped tests are tracked in `docs/testing/SKIPPED_TESTS_REGISTER.md`. Keep 
 Failures we’ve seen: Monaco models not exposed to Playwright, multiple YAML containers (modal + properties) causing strict-mode locator conflicts, and virtualized `.view-lines` scraping returning incomplete content.
 
 Correct approach (must follow):
-1) Read YAML from the authoritative Monaco model:
+
+1. Read YAML from the authoritative Monaco model:
    - Prefer explicit test handles: `window.__monacoModel` / `window.__monacoEditor`.
    - Otherwise, pick the editor whose `getContainerDomNode()` is inside the visible Properties Panel `[data-testid="yaml-editor-container"]` and has a non-zero bounding box.
    - Only as last resort, scrape `.view-lines` (log that you fell back).
-2) Readiness: consider Monaco “ready” if any of these are true:
+2. Readiness: consider Monaco “ready” if any of these are true:
    - `window.__monacoModel?.getValue`
    - `window.__monacoEditor?.getModel?.()`
    - `window.monaco?.editor?.getModels()?.length > 0`
-3) Diagnostics (required on failure, recommended on success):
+3. Diagnostics (required on failure, recommended on success):
    - Collect and attach JSON diagnostics: presence of explicit handles, editor/model counts and URIs, chosen editor path, container visibility/bounding box, scope hint (“properties” vs “modal”).
    - Stdout logging is optional and must be gated (use `PW_DEBUG=1` / `E2E_DEBUG=1`) unless you are logging during an error path (e.g., immediately before throwing).
-4) Scoping:
+4. Scoping:
    - Use locators scoped to the Properties Panel (`[data-testid="properties-panel"] [data-testid="yaml-editor-container"]`) to avoid strict-mode conflicts with modal YAML editors.
-5) No timing hacks:
+5. No timing hacks:
    - Do not add arbitrary `waitForTimeout`. Use `waitForFunction` with the readiness predicate above and modest timeouts (≤10s).
 
 Reference implementation:
+
 - See `tests/support/dsl/yamlEditor.ts` (Monaco-ready predicate, diagnostics, content selection) and the now-unskipped tests in `tests/e2e/color-picker.spec.ts` and `tests/e2e/gradient-editor.spec.ts`.
 
 ---
@@ -415,20 +446,22 @@ Reference implementation:
 Debug logging is allowed, but must be **structured**, **gated**, and **attached** so it doesn’t become noise or brittle test logic.
 
 Rules (mandatory):
-1) **No raw DOM debug logic in specs**
+
+1. **No raw DOM debug logic in specs**
    - Specs must not `evaluate()` the page to query arbitrary DOM for debugging (e.g., dumping `[data-testid]`).
    - If you need runtime diagnostics, add a DSL method or helper that collects and attaches diagnostics.
-2) **Prefer attachments over stdout**
+2. **Prefer attachments over stdout**
    - Use `testInfo.attach(...)` for all debug data (JSON/text). This keeps evidence with the failure in the HTML report.
    - Printing to stdout is optional and must not be the only record of diagnostics.
-3) **Gate console output**
+3. **Gate console output**
    - Unconditional `console.log` in specs is forbidden.
    - If stdout output is needed, gate it behind an env var (`PW_DEBUG=1` or `E2E_DEBUG=1`) and keep it minimal (one-line summaries).
-4) **Keep debug output small and safe**
+4. **Keep debug output small and safe**
    - Attach only what’s necessary (IDs present, state summaries, selected mode, etc.).
    - Do not attach full DOM dumps unless a standard explicitly requires it (e.g., Monaco diagnostics).
 
 Reference helper:
+
 - `tests/support/helpers/debug.ts` (`attachDebugJson`, `debugLog`, gated stdout via `PW_DEBUG=1` / `E2E_DEBUG=1`)
 
 ## ADDING OR MODIFYING DSL METHODS
@@ -483,13 +516,13 @@ All new advanced features (Phases 1-7) must meet enhanced testing standards to e
 
 ### Testing Matrix for New Features
 
-| Feature Type | Unit Tests | E2E Tests | Visual Regression | Performance | Accessibility |
-|-------------|-----------|-----------|-------------------|-------------|---------------|
-| **Visual Components** (Color Picker, Gradients) | Required (95%+) | Required (DSL) | Required | Optional | Required |
-| **Services/Utilities** (Font Service, Smart Actions) | Required (95%+) | Optional | N/A | Optional | N/A |
-| **Complex Features** (Entity Remapping, Logic Editor) | Required (95%+) | Required (DSL) | Required | Required | Required |
-| **Layout Components** (Carousel, Accordion) | Required (95%+) | Required (DSL) | Required | Required | Required |
-| **Visualizations** (Graphs, Gauges) | Required (95%+) | Required (DSL) | Required | Required | Required |
+| Feature Type                                          | Unit Tests      | E2E Tests      | Visual Regression | Performance | Accessibility |
+| ----------------------------------------------------- | --------------- | -------------- | ----------------- | ----------- | ------------- |
+| **Visual Components** (Color Picker, Gradients)       | Required (95%+) | Required (DSL) | Required          | Optional    | Required      |
+| **Services/Utilities** (Font Service, Smart Actions)  | Required (95%+) | Optional       | N/A               | Optional    | N/A           |
+| **Complex Features** (Entity Remapping, Logic Editor) | Required (95%+) | Required (DSL) | Required          | Required    | Required      |
+| **Layout Components** (Carousel, Accordion)           | Required (95%+) | Required (DSL) | Required          | Required    | Required      |
+| **Visualizations** (Graphs, Gauges)                   | Required (95%+) | Required (DSL) | Required          | Required    | Required      |
 
 ---
 
@@ -553,17 +586,22 @@ For features with visual components (Phases 1, 2, 4, 5):
 4. **Tools**: Playwright's built-in screenshot comparison
 
 **Example Test**:
+
 ```typescript
 test('Color Picker visual appearance', async () => {
   await dsl.cards.selectCard(0);
   await dsl.colorPicker.openColorPicker();
 
   // Baseline screenshot
-  await expect(page.locator('[data-testid="color-picker"]')).toHaveScreenshot('color-picker-default.png');
+  await expect(page.locator('[data-testid="color-picker"]')).toHaveScreenshot(
+    'color-picker-default.png',
+  );
 
   // With color selected
   await dsl.colorPicker.selectColor('#FF5733');
-  await expect(page.locator('[data-testid="color-picker"]')).toHaveScreenshot('color-picker-selected.png');
+  await expect(page.locator('[data-testid="color-picker"]')).toHaveScreenshot(
+    'color-picker-selected.png',
+  );
 });
 ```
 
@@ -588,6 +626,7 @@ For performance-critical features (animations, graphs, carousels):
    - Swiper.js carousel load < 300ms
 
 **Example Performance Test**:
+
 ```typescript
 test('Animation maintains 60fps', async () => {
   await dsl.cards.selectCard(0);
@@ -610,7 +649,7 @@ test('Animation maintains 60fps', async () => {
 
     requestAnimationFrame(measureFrame);
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       setTimeout(() => {
         const avgFrameTime = frames.reduce((a, b) => a + b) / frames.length;
         resolve({ avgFrameTime, fps: 1000 / avgFrameTime });
@@ -649,6 +688,7 @@ All new features MUST pass accessibility tests:
    - Alternative visual feedback provided
 
 **Example Accessibility Test**:
+
 ```typescript
 test('Color Picker keyboard navigation', async () => {
   await dsl.cards.selectCard(0);
@@ -663,7 +703,9 @@ test('Color Picker keyboard navigation', async () => {
   await page.keyboard.press('ArrowRight');
 
   // Verify ARIA label updated
-  const ariaLabel = await page.locator('[data-testid="color-picker-hue"]').getAttribute('aria-label');
+  const ariaLabel = await page
+    .locator('[data-testid="color-picker-hue"]')
+    .getAttribute('aria-label');
   expect(ariaLabel).toContain('Hue');
 
   // Enter to confirm
@@ -692,12 +734,12 @@ test('Animations respect prefers-reduced-motion', async () => {
 
 ### Test Coverage Requirements
 
-| Code Type | Coverage Target | Enforcement |
-|-----------|----------------|-------------|
-| **Services/Utilities** | 95%+ | CI blocks merge if below |
-| **Components** | 90%+ | CI blocks merge if below |
-| **Features** | 90%+ | CI blocks merge if below |
-| **Integration/E2E** | All critical paths | Manual review required |
+| Code Type              | Coverage Target    | Enforcement              |
+| ---------------------- | ------------------ | ------------------------ |
+| **Services/Utilities** | 95%+               | CI blocks merge if below |
+| **Components**         | 90%+               | CI blocks merge if below |
+| **Features**           | 90%+               | CI blocks merge if below |
+| **Integration/E2E**    | All critical paths | Manual review required   |
 
 ---
 
@@ -718,6 +760,7 @@ A feature is NOT complete until:
 ### CI/CD Integration
 
 All tests run automatically on:
+
 - Every PR commit
 - Before merge to main
 - Nightly builds (full regression suite)
@@ -727,11 +770,11 @@ All tests run automatically on:
 Use this matrix to decide which test gate to run and to standardize AI-agent execution.  
 If the user asks for a gate by name (`fast gate`, `medium gate`, `slow gate`), run the commands exactly as listed.
 
-| Gate | Purpose | Typical Trigger | Required Commands |
-|------|---------|------------------|-------------------|
-| **Fast Gate** | PR-speed confidence on changed behavior | Every feature/fix commit before handoff | `npm run lint`<br>`npm run test:unit`<br>`npm run test:e2e -- <targeted-specs-or-folder> --project=electron-e2e --workers=1 --trace=retain-on-failure` (targeted only)<br>`npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if impacted) |
-| **Medium Gate** | Pre-merge/domain confidence | Before merge to main, or when blast radius crosses feature boundary | `./tools/checks`<br>`npm run test:e2e -- <affected-domain-globs> --project=electron-e2e --workers=1 --trace=retain-on-failure`<br>`npm run test:integration -- <affected-domain-globs> --project=electron-integration --workers=1 --trace=retain-on-failure` |
-| **Slow Gate** | Full regression confidence | Nightly, release candidate, phase completion, or high-risk shared change | `./tools/checks`<br>`npm test -- --workers=1 --trace=retain-on-failure` |
+| Gate            | Purpose                                 | Typical Trigger                                                          | Required Commands                                                                                                                                                                                                                                                                                                          |
+| --------------- | --------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fast Gate**   | PR-speed confidence on changed behavior | Every feature/fix commit before handoff                                  | `npm run lint`<br>`npm run test:unit`<br>`npm run test:e2e -- <targeted-specs-or-folder> --project=electron-e2e --workers=1 --trace=retain-on-failure` (targeted only)<br>`npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if impacted) |
+| **Medium Gate** | Pre-merge/domain confidence             | Before merge to main, or when blast radius crosses feature boundary      | `./tools/checks`<br>`npm run test:e2e -- <affected-domain-globs> --project=electron-e2e --workers=1 --trace=retain-on-failure`<br>`npm run test:integration -- <affected-domain-globs> --project=electron-integration --workers=1 --trace=retain-on-failure`                                                               |
+| **Slow Gate**   | Full regression confidence              | Nightly, release candidate, phase completion, or high-risk shared change | `./tools/checks`<br>`npm test -- --workers=1 --trace=retain-on-failure`                                                                                                                                                                                                                                                    |
 
 #### Trigger Rules
 
@@ -749,11 +792,13 @@ If the user asks for a gate by name (`fast gate`, `medium gate`, `slow gate`), r
 #### Command Request Shortcuts (for user prompts)
 
 When asked:
+
 - “Run **fast gate**” → execute Fast Gate commands.
 - “Run **medium gate**” → execute Medium Gate commands.
 - “Run **slow gate**” or “Run **full regression**” → execute Slow Gate commands.
 
 **CI Pipeline**:
+
 1. Lint (ESLint + Prettier)
 2. Unit tests (Jest + Vitest)
 3. E2E tests (Playwright, headed mode for debugging on failure)
@@ -762,6 +807,7 @@ When asked:
 6. Accessibility tests (axe-core + manual keyboard tests)
 
 **Failure Policy**:
+
 - Any test failure blocks merge
 - Performance failures require manual review (may proceed with justification)
 - Visual regression failures require baseline update approval
@@ -775,6 +821,7 @@ When asked:
 **Issue**: Monaco editor instances in PropertiesPanel must be exposed to global scope for E2E tests to read content.
 
 **Pattern** (from YamlEditor.tsx):
+
 ```typescript
 // After creating Monaco editor
 if (typeof window !== 'undefined') {
@@ -792,6 +839,7 @@ if (typeof window !== 'undefined') {
 **Applied to**: YamlEditor.tsx, PropertiesPanel.tsx (lines 177-181, 215-219, 234-238)
 
 **DSL Access** (YamlEditorDSL.getEditorContent()):
+
 ```typescript
 async getEditorContent(): Promise<string> {
   return await this.window.evaluate(() => {
@@ -802,6 +850,7 @@ async getEditorContent(): Promise<string> {
 ```
 
 **Using expect.poll() for Monaco Content**:
+
 ```typescript
 // Wait for Monaco model to initialize before reading
 await expect
@@ -876,11 +925,13 @@ See `tests/support/dsl/conditionalVisibility.ts` for the reference implementatio
 ### Nested Component Test ID Strategy
 
 **Pattern**: ColorPickerInput wraps ColorPicker in Ant Design Popover, creating nested structure:
+
 - ColorPickerInput has testId: `button-card-color-input`
 - Popover contains ColorPicker with testId: `button-card-color-input-picker`
 - ColorPicker elements have `-picker` suffix: `button-card-color-input-picker-input`
 
 **DSL Implementation**:
+
 ```typescript
 getColorInput(testId = 'color-picker'): Locator {
   // For ColorPickerInput wrappers, the picker is at ${testId}-picker
@@ -892,6 +943,7 @@ getColorInput(testId = 'color-picker'): Locator {
 ### Input Commit Behavior
 
 **Pattern**: Form inputs should NOT commit on every keystroke - only on Enter/blur:
+
 ```typescript
 const handleInputChange = useCallback(
   (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -899,7 +951,7 @@ const handleInputChange = useCallback(
     setInputValue(newValue); // Update local state only
     // Don't call onChange here - wait for Enter or blur
   },
-  [disabled]
+  [disabled],
 );
 ```
 
@@ -908,6 +960,7 @@ const handleInputChange = useCallback(
 ### Invalid Input Handling
 
 **Pattern**: Revert to last valid value on blur if input is invalid:
+
 ```typescript
 const handleInputBlur = useCallback(() => {
   if (format === 'hex') {
@@ -928,12 +981,13 @@ const handleInputBlur = useCallback(() => {
 
 Tests that have been skipped after extensive debugging efforts. These represent known limitations or complex issues requiring future investigation.
 
-| Test File | Test Name | Date Skipped | Reason | Reference |
-|-----------|-----------|--------------|---------|-----------|
-| `tests/e2e/color-picker.spec.ts` | "should update YAML when color is changed" | Jan 6, 2026 | Monaco editor model not detected by test despite global window references. Visual UI confirms YAML updates correctly. Multiple debugging attempts failed. | FOUNDATION_LAYER_IMPLEMENTATION.md |
-| `tests/e2e/gradient-editor.spec.ts` | "gradient editor applies preset and persists to yaml" | Jan 7, 2026 | Playwright cannot reliably target the Properties Panel YAML editor when portals/duplicate YAML containers exist; manual runs show YAML updates correctly. Pending improved YAML editor detection. | UI_ENHANCEMENT_LAYER_IMPLEMENTATION.md |
+| Test File                           | Test Name                                             | Date Skipped | Reason                                                                                                                                                                                            | Reference                              |
+| ----------------------------------- | ----------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `tests/e2e/color-picker.spec.ts`    | "should update YAML when color is changed"            | Jan 6, 2026  | Monaco editor model not detected by test despite global window references. Visual UI confirms YAML updates correctly. Multiple debugging attempts failed.                                         | FOUNDATION_LAYER_IMPLEMENTATION.md     |
+| `tests/e2e/gradient-editor.spec.ts` | "gradient editor applies preset and persists to yaml" | Jan 7, 2026  | Playwright cannot reliably target the Properties Panel YAML editor when portals/duplicate YAML containers exist; manual runs show YAML updates correctly. Pending improved YAML editor detection. | UI_ENHANCEMENT_LAYER_IMPLEMENTATION.md |
 
 **Policy**: Skipped tests MUST:
+
 1. Include detailed comment explaining why test was skipped
 2. Reference documentation with investigation details
 3. Be reviewed quarterly for potential fixes
@@ -948,6 +1002,7 @@ These are mandatory for Playwright E2E and shared DSL code.
 ### 13. Single E2E Harness Contract
 
 E2E specs must use one launcher/readiness path:
+
 - `launchWithDSL()` and `close(ctx)` from `tests/support/electron.ts`
 
 Do not mix launcher contracts in E2E specs. If an exception is required, document it inline with rationale and removal condition.
@@ -955,6 +1010,7 @@ Do not mix launcher contracts in E2E specs. If an exception is required, documen
 ### 14. No Sleep-Based Synchronization
 
 For E2E and DSL layers:
+
 - `waitForTimeout(...)` is forbidden as synchronization logic.
 - Use state-based waits only (visibility, enabled, selected, attached, value/state convergence).
 - Use `expect.poll(...)` for async persistence and eventual consistency checks.
@@ -962,6 +1018,7 @@ For E2E and DSL layers:
 ### 15. DSL Readiness Contract Requirement
 
 Every DSL method that changes UI state must validate readiness before returning:
+
 - expected control/tab/panel is active
 - dependent content is mounted and interactive
 - failure includes actionable state snapshot details
@@ -969,6 +1026,7 @@ Every DSL method that changes UI state must validate readiness before returning:
 ### 16. Visual Assertion Stability Rules
 
 Before `toHaveScreenshot`:
+
 1. Ensure deterministic viewport and scale.
 2. Disable animations/caret where applicable.
 3. Assert target UI state has converged.
@@ -978,12 +1036,14 @@ Snapshot baselines may be updated only after confirming behavior correctness fro
 ### 17. Performance Assertion Stability Rules
 
 Performance checks must avoid single-sample thresholds when host noise is significant.
+
 - Prefer sampled windows and aggregate criteria.
 - Keep thresholds tied to documented environment assumptions.
 
 ### 18. Flake Fix Verification Gate
 
 Any flake fix must pass:
+
 1. One targeted run with traces on failure
 2. 5x targeted stability loop
 3. One full-suite regression pass
@@ -1011,6 +1071,7 @@ When modifying a shared DSL method (any method in `tests/support/dsl/**` called 
 For any change in `tests/support/dsl/**`, compatibility must be explicitly validated against all consumers.
 
 Minimum required evidence:
+
 1. **Consumer map**: grep output showing all spec files that call each changed method.
 2. **Contract delta**: whether signature/default behavior changed (`none` is a valid explicit answer).
 3. **Consumer verification run**:
@@ -1052,7 +1113,7 @@ DSL methods that open Ant Design Popovers must follow this contract:
 
 ```typescript
 // BAD — fallback clicks wrapper div, which doesn't trigger popover
-const input = this.window.getByTestId(inputTestId);  // wrapper <div>
+const input = this.window.getByTestId(inputTestId); // wrapper <div>
 await input.click({ force: true });
 
 // GOOD — fallback re-clicks the actual trigger (swatch)
@@ -1068,10 +1129,13 @@ try {
   await this.expectVisible(testId);
 } catch {
   await this.window.keyboard.press('Escape');
-  await this.window.waitForFunction(
-    () => document.querySelectorAll('.ant-popover:not(.ant-popover-hidden)').length === 0,
-    null, { timeout: 2000 }
-  ).catch(() => undefined);
+  await this.window
+    .waitForFunction(
+      () => document.querySelectorAll('.ant-popover:not(.ant-popover-hidden)').length === 0,
+      null,
+      { timeout: 2000 },
+    )
+    .catch(() => undefined);
   const retrySwatch = this.getColorSwatch(testId);
   await retrySwatch.scrollIntoViewIfNeeded();
   await retrySwatch.click({ force: true });
@@ -1121,7 +1185,7 @@ const box = await icon.boundingBox();
 const clip = {
   x: Math.floor(box!.x),
   y: Math.floor(box!.y),
-  width: Math.ceil(box!.width) + 1,  // +1 to absorb rounding
+  width: Math.ceil(box!.width) + 1, // +1 to absorb rounding
   height: Math.ceil(box!.height) + 1,
 };
 await expect(page).toHaveScreenshot('icon.png', { clip });
@@ -1132,6 +1196,7 @@ await expect(page).toHaveScreenshot('icon.png', { clip });
 For known subpixel drift in small decorative elements (e.g., pagination dots, focus rings), a small `maxDiffPixels` allowance is permitted ONLY in DSL methods, not in spec files.
 
 Requirements:
+
 - The drift must be understood and documented with a rationale comment.
 - The value must be minimal (typically < 20 pixels).
 - Prefer `maxDiffPixelRatio` for large screenshots and `maxDiffPixels` for small, bounded elements.
@@ -1167,12 +1232,14 @@ Multiple DSL files implement their own Ant Design Select handling (attributeDisp
 **Rule**: New DSL methods that interact with Ant Design `<Select>` components MUST use a shared utility. The canonical helper is `selectAntOption()` in `tests/support/dsl/conditionalVisibility.ts`. When a shared module is extracted, all existing DSLs must be migrated to it.
 
 The shared pattern must:
+
 1. Click the Select field to open the dropdown.
 2. Try `waitFor({ state: 'visible' })` on the desired option in the dropdown portal (fast path).
 3. If not found, fall back to `pressSequentially()` on the combobox input inside the Select field.
 4. Press Enter to confirm.
 
 Do NOT:
+
 - Use `keyboard.type()` for Select search input.
 - Use `isVisible()` to detect dropdown options (returns false immediately for non-DOM elements).
 - Duplicate this logic across multiple DSL files.

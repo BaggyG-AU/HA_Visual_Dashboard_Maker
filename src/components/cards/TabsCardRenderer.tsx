@@ -48,33 +48,37 @@ export const TabsCardRenderer: React.FC<TabsCardRendererProps> = ({
       <TabsPanel card={card} onCardClick={onClick} />
 
       {isSelected && (
-        <div style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          padding: '4px 8px',
-          backgroundColor: 'rgba(0, 217, 255, 0.2)',
-          border: '1px solid #00d9ff',
-          borderRadius: '4px',
-          fontSize: '10px',
-          color: '#00d9ff',
-          fontWeight: 700,
-          pointerEvents: 'none',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            padding: '4px 8px',
+            backgroundColor: 'rgba(0, 217, 255, 0.2)',
+            border: '1px solid #00d9ff',
+            borderRadius: '4px',
+            fontSize: '10px',
+            color: '#00d9ff',
+            fontWeight: 700,
+            pointerEvents: 'none',
+          }}
+        >
           <AppstoreOutlined style={{ marginRight: '4px' }} />
           TABS
         </div>
       )}
 
       {normalized.tabs.length === 0 && (
-        <div style={{
-          position: 'absolute',
-          bottom: '8px',
-          left: '8px',
-          padding: '4px 8px',
-          backgroundColor: 'rgba(0, 0, 0, 0.35)',
-          borderRadius: '4px',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '8px',
+            left: '8px',
+            padding: '4px 8px',
+            backgroundColor: 'rgba(0, 0, 0, 0.35)',
+            borderRadius: '4px',
+          }}
+        >
           <Text type="secondary" style={{ fontSize: '11px' }}>
             Add tabs in Properties Panel
           </Text>

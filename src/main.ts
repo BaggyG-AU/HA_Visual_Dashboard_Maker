@@ -43,8 +43,8 @@ ipcMain.handle('dialog:openFile', async () => {
     filters: [
       { name: 'YAML Files', extensions: ['yaml', 'yml'] },
       { name: 'JSON Files', extensions: ['json'] },
-      { name: 'All Files', extensions: ['*'] }
-    ]
+      { name: 'All Files', extensions: ['*'] },
+    ],
   });
 
   if (result.canceled) {
@@ -61,8 +61,8 @@ ipcMain.handle('dialog:saveFile', async (event, defaultPath?: string) => {
     filters: [
       { name: 'YAML Files', extensions: ['yaml', 'yml'] },
       { name: 'JSON Files', extensions: ['json'] },
-      { name: 'All Files', extensions: ['*'] }
-    ]
+      { name: 'All Files', extensions: ['*'] },
+    ],
   });
 
   if (result.canceled) {
@@ -121,7 +121,10 @@ ipcMain.handle('fs:createBackup', async (event, filePath: string) => {
     try {
       await fs.mkdir(backupDir, { recursive: true });
     } catch (error) {
-      return { success: false, error: `Failed to create backup directory: ${(error as Error).message}` };
+      return {
+        success: false,
+        error: `Failed to create backup directory: ${(error as Error).message}`,
+      };
     }
 
     // Create backup filename with timestamp
@@ -136,8 +139,8 @@ ipcMain.handle('fs:createBackup', async (event, filePath: string) => {
     // Keep only last 5 backups - get all backup files for this file
     const files = await fs.readdir(backupDir);
     const backupFiles = files
-      .filter(f => f.startsWith(filename) && f.endsWith('.backup'))
-      .map(f => ({
+      .filter((f) => f.startsWith(filename) && f.endsWith('.backup'))
+      .map((f) => ({
         name: f,
         path: path.join(backupDir, f),
       }));
@@ -239,11 +242,14 @@ ipcMain.handle('settings:getHaptics', async () => {
   };
 });
 
-ipcMain.handle('settings:setHaptics', async (_event, settings: { enabled: boolean; intensity: number }) => {
-  settingsService.setHapticsEnabled(settings.enabled);
-  settingsService.setHapticsIntensity(settings.intensity);
-  return { success: true };
-});
+ipcMain.handle(
+  'settings:setHaptics',
+  async (_event, settings: { enabled: boolean; intensity: number }) => {
+    settingsService.setHapticsEnabled(settings.enabled);
+    settingsService.setHapticsIntensity(settings.intensity);
+    return { success: true };
+  },
+);
 
 ipcMain.handle('settings:getSounds', async () => {
   return {
@@ -252,11 +258,14 @@ ipcMain.handle('settings:getSounds', async () => {
   };
 });
 
-ipcMain.handle('settings:setSounds', async (_event, settings: { enabled: boolean; volume: number }) => {
-  settingsService.setSoundsEnabled(settings.enabled);
-  settingsService.setSoundsVolume(settings.volume);
-  return { success: true };
-});
+ipcMain.handle(
+  'settings:setSounds',
+  async (_event, settings: { enabled: boolean; volume: number }) => {
+    settingsService.setSoundsEnabled(settings.enabled);
+    settingsService.setSoundsVolume(settings.volume);
+    return { success: true };
+  },
+);
 
 ipcMain.handle('settings:resetUIState', async () => {
   settingsService.resetUIState();
@@ -354,7 +363,7 @@ ipcMain.handle('ha:fetch', async (event, url: string, token: string) => {
     const targetUrl = normalizeHAUrl(url);
     const response = await fetch(targetUrl, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
@@ -432,14 +441,17 @@ ipcMain.handle('ha:ws:listDashboards', async () => {
 });
 
 // Create dashboard resource
-ipcMain.handle('ha:ws:createDashboard', async (_event, urlPath: string, title: string, icon?: string) => {
-  try {
-    await haWebSocketService.createDashboardResource(urlPath, title, icon);
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
-});
+ipcMain.handle(
+  'ha:ws:createDashboard',
+  async (_event, urlPath: string, title: string, icon?: string) => {
+    try {
+      await haWebSocketService.createDashboardResource(urlPath, title, icon);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  },
+);
 
 // Save dashboard config
 ipcMain.handle('ha:ws:saveDashboardConfig', async (_event, urlPath: string | null, config: any) => {
@@ -519,17 +531,20 @@ ipcMain.handle('ha:ws:updateTempDashboard', async (event, tempPath: string, conf
 });
 
 // Deploy temporary dashboard
-ipcMain.handle('ha:ws:deployDashboard', async (event, tempPath: string, productionPath: string | null) => {
-  try {
-    const result = await haWebSocketService.deployDashboard(tempPath, productionPath);
-    return result;
-  } catch (error) {
-    return {
-      success: false,
-      error: (error as Error).message,
-    };
-  }
-});
+ipcMain.handle(
+  'ha:ws:deployDashboard',
+  async (event, tempPath: string, productionPath: string | null) => {
+    try {
+      const result = await haWebSocketService.deployDashboard(tempPath, productionPath);
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        error: (error as Error).message,
+      };
+    }
+  },
+);
 
 // Delete temporary dashboard
 ipcMain.handle('ha:ws:deleteTempDashboard', async (event, tempPath: string) => {
@@ -633,17 +648,20 @@ if (process.env.NODE_ENV === 'test') {
 }
 
 // Credentials API handlers
-ipcMain.handle('credentials:save', async (event, name: string, url: string, token: string, id?: string) => {
-  try {
-    const credential = credentialsService.saveCredential(name, url, token, id);
-    return { success: true, credential };
-  } catch (error) {
-    return {
-      success: false,
-      error: (error as Error).message,
-    };
-  }
-});
+ipcMain.handle(
+  'credentials:save',
+  async (event, name: string, url: string, token: string, id?: string) => {
+    try {
+      const credential = credentialsService.saveCredential(name, url, token, id);
+      return { success: true, credential };
+    } catch (error) {
+      return {
+        success: false,
+        error: (error as Error).message,
+      };
+    }
+  },
+);
 
 ipcMain.handle('credentials:getAll', async () => {
   try {
@@ -753,7 +771,7 @@ const createWindow = () => {
       y: bounds.y,
       width: bounds.width,
       height: bounds.height,
-      isMaximized: mainWindow.isMaximized()
+      isMaximized: mainWindow.isMaximized(),
     });
   };
 
@@ -793,9 +811,9 @@ const createWindow = () => {
               "connect-src 'self' ws: wss: http: https:", // Allow WebSocket and HTTP(S) connections for Home Assistant
               "worker-src 'self' blob:", // Monaco Editor workers
               "child-src 'self' blob:", // Monaco Editor workers
-            ].join('; ')
-          ]
-        }
+            ].join('; '),
+          ],
+        },
       });
     });
   }
@@ -806,9 +824,7 @@ const createWindow = () => {
   if (shouldUseDevServer) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
-    );
+    mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
   // Open DevTools only during development to keep production startup fast.

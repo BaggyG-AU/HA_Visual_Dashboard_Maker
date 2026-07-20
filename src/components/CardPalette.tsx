@@ -16,7 +16,10 @@ interface CardPaletteProps {
 }
 
 // Map category to icon and label
-const categoryConfig: Record<CardCategory, { icon: React.ReactNode; label: string; color: string }> = {
+const categoryConfig: Record<
+  CardCategory,
+  { icon: React.ReactNode; label: string; color: string }
+> = {
   layout: {
     icon: <AppstoreOutlined />,
     label: 'Layout',
@@ -56,33 +59,36 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
 
   // Get all cards and group by category
   const allCards = cardRegistry.getAll();
-  const cardsByCategory = allCards.reduce((acc, card) => {
-    if (!acc[card.category]) {
-      acc[card.category] = [];
-    }
-    acc[card.category].push(card);
-    return acc;
-  }, {} as Record<CardCategory, CardTypeMetadata[]>);
+  const cardsByCategory = allCards.reduce(
+    (acc, card) => {
+      if (!acc[card.category]) {
+        acc[card.category] = [];
+      }
+      acc[card.category].push(card);
+      return acc;
+    },
+    {} as Record<CardCategory, CardTypeMetadata[]>,
+  );
 
   // Filter cards by search term
   const filteredCardsByCategory = Object.entries(cardsByCategory).reduce(
     (acc, [category, cards]) => {
       const filtered = cards.filter(
-        card =>
+        (card) =>
           card.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           card.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          card.description.toLowerCase().includes(searchTerm.toLowerCase())
+          card.description.toLowerCase().includes(searchTerm.toLowerCase()),
       );
       if (filtered.length > 0) {
         acc[category as CardCategory] = filtered;
       }
       return acc;
     },
-    {} as Record<CardCategory, CardTypeMetadata[]>
+    {} as Record<CardCategory, CardTypeMetadata[]>,
   );
   const filteredCategoryKeys = useMemo(
     () => Object.keys(filteredCardsByCategory),
-    [filteredCardsByCategory]
+    [filteredCardsByCategory],
   );
 
   const areKeysEqual = (a: string[], b: string[]) =>
@@ -120,7 +126,10 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
   };
 
   return (
-    <div data-testid="card-palette" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div
+      data-testid="card-palette"
+      style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+    >
       <div style={{ padding: '16px', paddingBottom: '12px' }}>
         <h3 style={{ color: 'white', marginBottom: '12px', marginTop: 0 }}>Card Palette</h3>
         <Input
@@ -128,15 +137,23 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
           placeholder="Search cards..."
           prefix={<SearchOutlined style={{ color: '#666' }} />}
           value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value)}
           style={{ marginBottom: '12px' }}
         />
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', paddingLeft: '16px', paddingRight: '16px', paddingBottom: '16px' }}>
+      <div
+        style={{
+          flex: 1,
+          overflow: 'auto',
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          paddingBottom: '16px',
+        }}
+      >
         <Collapse
           activeKey={activeKeys}
-          onChange={keys => setActiveKeys(keys as string[])}
+          onChange={(keys) => setActiveKeys(keys as string[])}
           ghost
           style={{ background: 'transparent' }}
           items={Object.entries(filteredCardsByCategory).map(([category, cards]) => {
@@ -162,12 +179,12 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
               },
               children: (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {cards.map(card => (
+                  {cards.map((card) => (
                     <Tooltip key={card.type} title={card.description} placement="right">
                       <div
                         data-testid={`palette-card-${card.type}`}
                         draggable
-                        onDragStart={e => handleDragStart(e, card.type)}
+                        onDragStart={(e) => handleDragStart(e, card.type)}
                         onDoubleClick={() => handleCardClick(card.type)}
                         style={{
                           padding: '12px',
@@ -177,11 +194,11 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
                           border: '1px solid #434343',
                           transition: 'all 0.2s ease',
                         }}
-                        onMouseEnter={e => {
+                        onMouseEnter={(e) => {
                           e.currentTarget.style.background = '#2a2a2a';
                           e.currentTarget.style.borderColor = config.color;
                         }}
-                        onMouseLeave={e => {
+                        onMouseLeave={(e) => {
                           e.currentTarget.style.background = '#1f1f1f';
                           e.currentTarget.style.borderColor = '#434343';
                         }}
@@ -216,7 +233,10 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
                             />
                           )}
                           {card.type === 'custom:popup-card' && (
-                            <Tooltip title="HAVDM-only - not available as a standalone HACS card" placement="top">
+                            <Tooltip
+                              title="HAVDM-only - not available as a standalone HACS card"
+                              placement="top"
+                            >
                               <Badge
                                 count="HAVDM-only"
                                 style={{

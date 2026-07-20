@@ -3,7 +3,9 @@ import * as yaml from 'js-yaml';
 import { launchWithDSL, close } from '../support';
 
 test.describe('Smart Default Actions (Feature 3.1)', () => {
-  test('computes smart defaults per domain and persists smart_defaults to YAML', async ({ page }, testInfo) => {
+  test('computes smart defaults per domain and persists smart_defaults to YAML', async ({
+    page,
+  }, testInfo) => {
     test.setTimeout(120000);
     void page;
     const ctx = await launchWithDSL();
@@ -34,7 +36,10 @@ test.describe('Smart Default Actions (Feature 3.1)', () => {
 
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value: baseYaml } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value: baseYaml } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       const yamlState = (yaml.load(baseYaml) as Record<string, unknown>) || {};
 
       for (const { entity, expected } of domainCases) {
@@ -45,7 +50,11 @@ test.describe('Smart Default Actions (Feature 3.1)', () => {
 
         await properties.switchTab('Form');
         await smartActions.expectPreviewContains('custom-button-card', expected, testInfo);
-        await smartActions.expectPreviewContains('custom-button-card', /\(smart default\)/i, testInfo);
+        await smartActions.expectPreviewContains(
+          'custom-button-card',
+          /\(smart default\)/i,
+          testInfo,
+        );
         await properties.switchTab('YAML');
       }
 
@@ -55,7 +64,10 @@ test.describe('Smart Default Actions (Feature 3.1)', () => {
 
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value: yamlAfterToggle } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value: yamlAfterToggle } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       expect(yamlAfterToggle.toLowerCase()).toContain('smart_defaults');
 
       // User-defined tap_action should take precedence.

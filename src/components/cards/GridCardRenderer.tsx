@@ -33,7 +33,10 @@ export const GridCardRenderer: React.FC<GridCardRendererProps> = ({
   const defaultEntityId =
     childCards.find((child) => typeof (child as any)?.entity === 'string')?.entity ?? null;
   const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId) : '';
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
   const layout = useMemo(() => normalizeGridLayout(card), [card]);
 
   // If no child cards, show placeholder
@@ -49,16 +52,16 @@ export const GridCardRenderer: React.FC<GridCardRendererProps> = ({
           transition: 'all 0.3s ease',
         }}
         styles={{
-        body: {
-          padding: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          gap: '8px',
-        },
-      }}
+          body: {
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            gap: '8px',
+          },
+        }}
         onClick={onClick}
         hoverable
       >
@@ -100,17 +103,18 @@ export const GridCardRenderer: React.FC<GridCardRendererProps> = ({
       hoverable
     >
       {/* Grid layout container */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${columns}, 1fr)`,
-        rowGap: `${layout.rowGap}px`,
-        columnGap: `${layout.columnGap}px`,
-        alignItems: layout.alignItems,
-        justifyItems: layout.justifyItems,
-        height: '100%',
-        gridAutoRows: square ? '1fr' : 'auto',
-      }}
-      data-testid="grid-layout-container"
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${columns}, 1fr)`,
+          rowGap: `${layout.rowGap}px`,
+          columnGap: `${layout.columnGap}px`,
+          alignItems: layout.alignItems,
+          justifyItems: layout.justifyItems,
+          height: '100%',
+          gridAutoRows: square ? '1fr' : 'auto',
+        }}
+        data-testid="grid-layout-container"
       >
         {childCards.map((childCard, index) => (
           <div
@@ -133,19 +137,21 @@ export const GridCardRenderer: React.FC<GridCardRendererProps> = ({
 
       {/* Grid indicator overlay when selected */}
       {isSelected && (
-        <div style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          padding: '4px 8px',
-          backgroundColor: 'rgba(0, 217, 255, 0.2)',
-          border: '1px solid #00d9ff',
-          borderRadius: '4px',
-          fontSize: '10px',
-          color: '#00d9ff',
-          fontWeight: 'bold',
-          pointerEvents: 'none',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            padding: '4px 8px',
+            backgroundColor: 'rgba(0, 217, 255, 0.2)',
+            border: '1px solid #00d9ff',
+            borderRadius: '4px',
+            fontSize: '10px',
+            color: '#00d9ff',
+            fontWeight: 'bold',
+            pointerEvents: 'none',
+          }}
+        >
           <AppstoreOutlined style={{ marginRight: '4px' }} />
           GRID ({columns} cols)
         </div>

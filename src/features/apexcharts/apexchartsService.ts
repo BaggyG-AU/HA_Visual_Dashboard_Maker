@@ -17,9 +17,14 @@ const DEFAULT_CURVE: NormalizedApexChartsCardConfig['apex_config']['stroke']['cu
 
 const CHART_MODES: ApexChartMode[] = ['line', 'area', 'bar'];
 const SERIES_MODES: ApexSeriesMode[] = ['line', 'area', 'column', 'bar'];
-const CURVE_MODES: NormalizedApexChartsCardConfig['apex_config']['stroke']['curve'][] = ['smooth', 'straight', 'stepline'];
+const CURVE_MODES: NormalizedApexChartsCardConfig['apex_config']['stroke']['curve'][] = [
+  'smooth',
+  'straight',
+  'stepline',
+];
 
-const toEntityLabel = (entity: string): string => entity.split('.')[1]?.replace(/_/g, ' ') || entity;
+const toEntityLabel = (entity: string): string =>
+  entity.split('.')[1]?.replace(/_/g, ' ') || entity;
 
 const parseDurationToSeconds = (value: string | undefined, fallbackSeconds: number): number => {
   if (!value || typeof value !== 'string') {
@@ -59,12 +64,16 @@ const asSeriesMode = (value: unknown): ApexSeriesMode | undefined => {
   return SERIES_MODES.includes(lowered as ApexSeriesMode) ? (lowered as ApexSeriesMode) : undefined;
 };
 
-const asCurveMode = (value: unknown): NormalizedApexChartsCardConfig['apex_config']['stroke']['curve'] | null => {
+const asCurveMode = (
+  value: unknown,
+): NormalizedApexChartsCardConfig['apex_config']['stroke']['curve'] | null => {
   if (typeof value !== 'string') {
     return null;
   }
   const lowered = value.toLowerCase();
-  return CURVE_MODES.includes(lowered as typeof DEFAULT_CURVE) ? (lowered as typeof DEFAULT_CURVE) : null;
+  return CURVE_MODES.includes(lowered as typeof DEFAULT_CURVE)
+    ? (lowered as typeof DEFAULT_CURVE)
+    : null;
 };
 
 const normalizeSeries = (
@@ -90,28 +99,47 @@ const normalizeSeries = (
       const entity = entry.entity.trim();
       const parsedType = asSeriesMode(entry.type);
       if (entry.type && !parsedType) {
-        warnings.push(`Series ${index + 1} uses unsupported type "${entry.type}"; preserving YAML but using card-level type in preview.`);
+        warnings.push(
+          `Series ${index + 1} uses unsupported type "${entry.type}"; preserving YAML but using card-level type in preview.`,
+        );
       }
 
       return {
         ...entry,
         entity,
-        name: (typeof entry.name === 'string' && entry.name.trim()) || toEntityLabel(entity) || `Series ${index + 1}`,
+        name:
+          (typeof entry.name === 'string' && entry.name.trim()) ||
+          toEntityLabel(entity) ||
+          `Series ${index + 1}`,
         type: parsedType,
       };
     });
 };
 
-export const normalizeApexChartsCardConfig = (card: ApexChartsCardConfig): NormalizedApexChartsCardConfig => {
+export const normalizeApexChartsCardConfig = (
+  card: ApexChartsCardConfig,
+): NormalizedApexChartsCardConfig => {
   const warnings: string[] = [];
   const graphSpanSeconds = parseDurationToSeconds(card.graph_span, 24 * 60 * 60);
   const updateIntervalSeconds = parseDurationToSeconds(card.update_interval, 30);
 
-  if (card.graph_span && graphSpanSeconds === 24 * 60 * 60 && card.graph_span !== DEFAULT_GRAPH_SPAN) {
-    warnings.push(`Unsupported graph_span "${card.graph_span}"; using ${DEFAULT_GRAPH_SPAN} in preview.`);
+  if (
+    card.graph_span &&
+    graphSpanSeconds === 24 * 60 * 60 &&
+    card.graph_span !== DEFAULT_GRAPH_SPAN
+  ) {
+    warnings.push(
+      `Unsupported graph_span "${card.graph_span}"; using ${DEFAULT_GRAPH_SPAN} in preview.`,
+    );
   }
-  if (card.update_interval && updateIntervalSeconds === 30 && card.update_interval !== DEFAULT_UPDATE_INTERVAL) {
-    warnings.push(`Unsupported update_interval "${card.update_interval}"; using ${DEFAULT_UPDATE_INTERVAL} in preview.`);
+  if (
+    card.update_interval &&
+    updateIntervalSeconds === 30 &&
+    card.update_interval !== DEFAULT_UPDATE_INTERVAL
+  ) {
+    warnings.push(
+      `Unsupported update_interval "${card.update_interval}"; using ${DEFAULT_UPDATE_INTERVAL} in preview.`,
+    );
   }
 
   const normalizedSeries = normalizeSeries(card.series, warnings);
@@ -120,7 +148,9 @@ export const normalizeApexChartsCardConfig = (card: ApexChartsCardConfig): Norma
   const firstSeriesType = asChartMode(normalizedSeries[0]?.type);
   const chartType = configChartType || firstSeriesType || 'line';
   if (card.apex_config?.chart?.type && !configChartType) {
-    warnings.push(`Unsupported apex_config.chart.type "${card.apex_config.chart.type}"; using "${chartType}" in preview.`);
+    warnings.push(
+      `Unsupported apex_config.chart.type "${card.apex_config.chart.type}"; using "${chartType}" in preview.`,
+    );
   }
 
   const inputHeight = Number(card.apex_config?.chart?.height);

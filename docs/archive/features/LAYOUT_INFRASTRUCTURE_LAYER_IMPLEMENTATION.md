@@ -7,6 +7,7 @@
 **Planned Start**: 2026-02-10
 
 **Versioning Convention**:
+
 - `v0.7.<phase>-beta.<feature>`
 - Example (current): `v0.7.4-beta.5` = Phase 4 post-Feature 4.4 stabilization build
 - Completed features keep their original shipped version in historical notes
@@ -22,6 +23,7 @@
 **Business Value**: This phase significantly expands the layout options available to dashboard designers. Carousels allow space-efficient cycling through multiple views, accordions and tabs organize dense content into manageable sections, popup/modal cards enable drill-down interactions, and spacing controls give pixel-level precision for professional dashboard layouts. These features are essential for creating polished, organized, and space-efficient dashboards.
 
 **Key Principles**:
+
 - **Container-First Architecture**: New layout modules act as containers that hold existing card types
 - **Swiper.js Foundation**: Carousel/slider functionality powered by Swiper.js v12+ (battle-tested, feature-rich)
 - **Progressive Enhancement**: Existing stack cards enhanced with spacing/alignment controls, no breaking changes
@@ -33,14 +35,14 @@
 
 ## Feature Status Overview
 
-| Feature | Priority | Effort | Status |
-|---------|----------|--------|--------|
-| 4.1: Swiper.js Integration | High | 5-6 days | :white_check_mark: Complete (v0.7.4-beta.2 baseline) |
-| 4.2: Accordion Card Module | Medium | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.2) |
-| 4.3: Tabs Card Module | Medium | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.3) |
-| 4.4: Popup/Modal Card System | High | 5-6 days | :white_check_mark: Complete (v0.7.4-beta.5 baseline; HACS follow-ups deferred) |
-| 4.5: Horizontal/Vertical Layout Enhancements | Medium | 2-3 days | :white_check_mark: Complete (implementation/tests complete; docs follow-ups open) |
-| 4.6: Card Spacing Controls | Medium | 2-3 days | :white_check_mark: Complete (v0.7.4-beta.R) |
+| Feature                                      | Priority | Effort   | Status                                                                            |
+| -------------------------------------------- | -------- | -------- | --------------------------------------------------------------------------------- |
+| 4.1: Swiper.js Integration                   | High     | 5-6 days | :white_check_mark: Complete (v0.7.4-beta.2 baseline)                              |
+| 4.2: Accordion Card Module                   | Medium   | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.2)                                       |
+| 4.3: Tabs Card Module                        | Medium   | 3-4 days | :white_check_mark: Complete (v0.7.4-beta.3)                                       |
+| 4.4: Popup/Modal Card System                 | High     | 5-6 days | :white_check_mark: Complete (v0.7.4-beta.5 baseline; HACS follow-ups deferred)    |
+| 4.5: Horizontal/Vertical Layout Enhancements | Medium   | 2-3 days | :white_check_mark: Complete (implementation/tests complete; docs follow-ups open) |
+| 4.6: Card Spacing Controls                   | Medium   | 2-3 days | :white_check_mark: Complete (v0.7.4-beta.R)                                       |
 
 **Total Estimated Effort**: 20-26 days (2-3 weeks with parallel work on independent features)
 
@@ -143,7 +145,7 @@ The detailed per-item checklist below is retained as a historical planning artif
         - sensor.temperature
         - sensor.humidity
     - type: markdown
-      content: "Welcome Home"
+      content: 'Welcome Home'
   ```
 - [ ] Behavior notes (v0.7.4-beta.2):
   - [ ] Autoplay and loop are suppressed while the carousel card is selected in the visual editor.
@@ -191,6 +193,7 @@ The detailed per-item checklist below is retained as a historical planning artif
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [ ] Swiper.js carousel renders with navigation and pagination
 - [ ] Child cards render correctly within slides
 - [ ] Touch/mouse swipe navigation works
@@ -201,6 +204,7 @@ The detailed per-item checklist below is retained as a historical planning artif
 - [ ] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [ ] Multiple transition effects (fade, cube, coverflow, flip)
 - [ ] Per-slide background customization
 - [ ] Slides per view configuration (show multiple cards)
@@ -208,6 +212,7 @@ The detailed per-item checklist below is retained as a historical planning artif
 - [ ] Loop mode (infinite scrolling)
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Nested carousels (carousel within carousel)
 - [ ] Virtual slides (lazy rendering for 100+ slides)
 - [ ] Parallax effects between slides
@@ -215,17 +220,18 @@ The detailed per-item checklist below is retained as a historical planning artif
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Swiper.js v12 React API differs from documentation | Medium | Medium | Prototype early, verify API in test environment |
-| Swiper CSS conflicts with Ant Design styles | Medium | Medium | Scope Swiper CSS, use CSS modules or namespace |
-| Touch events conflict with drag-and-drop in editor | High | Medium | Disable swipe in edit mode, enable only in preview |
-| Bundle size increase from Swiper.js (~40KB) | Low | Low | Tree-shake unused modules, lazy load Swiper |
-| Carousel performance with complex child cards | Medium | Low | Limit visible slides, use CSS `will-change`, lazy render off-screen slides |
+| Risk                                               | Impact | Probability | Mitigation                                                                 |
+| -------------------------------------------------- | ------ | ----------- | -------------------------------------------------------------------------- |
+| Swiper.js v12 React API differs from documentation | Medium | Medium      | Prototype early, verify API in test environment                            |
+| Swiper CSS conflicts with Ant Design styles        | Medium | Medium      | Scope Swiper CSS, use CSS modules or namespace                             |
+| Touch events conflict with drag-and-drop in editor | High   | Medium      | Disable swipe in edit mode, enable only in preview                         |
+| Bundle size increase from Swiper.js (~40KB)        | Low    | Low         | Tree-shake unused modules, lazy load Swiper                                |
+| Carousel performance with complex child cards      | Medium | Low         | Limit visible slides, use CSS `will-change`, lazy render off-screen slides |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - :white_check_mark: [ai_rules.md](../../ai_rules.md) - Read before implementation, reuse existing card rendering patterns
 - :white_check_mark: [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first E2E tests using CarouselDSL
 - :white_check_mark: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Feature folder `src/features/carousel/`, renderer in `src/components/cards/`
@@ -338,7 +344,7 @@ This feature MUST comply with:
   expand_mode: single
   style: bordered
   sections:
-    - title: "Lights"
+    - title: 'Lights'
       icon: mdi:lightbulb
       default_expanded: true
       cards:
@@ -346,12 +352,12 @@ This feature MUST comply with:
           entity: light.living_room
         - type: button
           entity: light.kitchen
-    - title: "Climate"
+    - title: 'Climate'
       icon: mdi:thermometer
       cards:
         - type: thermostat
           entity: climate.living_room
-    - title: "Security"
+    - title: 'Security'
       icon: mdi:shield
       cards:
         - type: alarm-panel
@@ -406,6 +412,7 @@ This feature MUST comply with:
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [ ] Accordion renders with collapsible sections
 - [ ] Click header to expand/collapse works
 - [ ] Single-expand and multi-expand modes work
@@ -416,6 +423,7 @@ This feature MUST comply with:
 - [ ] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [ ] Nested accordion support (up to 3 levels)
 - [ ] Custom header icons and content
 - [ ] Multiple style modes (bordered, borderless, ghost)
@@ -423,22 +431,24 @@ This feature MUST comply with:
 - [ ] Default expanded sections configuration
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Drag-and-drop to reorder sections at runtime (editor-only)
 - [ ] Animated section reordering
 - [ ] Accordion within carousel slides (complex nesting)
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Expand/collapse animation jank with heavy content | Medium | Medium | Use CSS transitions on max-height, minimize reflows |
-| Nested accordion depth causes layout issues | Low | Low | Limit nesting to 3 levels, test deep nesting |
-| Content overflow in collapsed state visible briefly | Low | Medium | Use overflow:hidden with proper timing on transitions |
-| Accessibility compliance for nested accordions | Medium | Medium | Follow WAI-ARIA accordion pattern, test with screen readers |
+| Risk                                                | Impact | Probability | Mitigation                                                  |
+| --------------------------------------------------- | ------ | ----------- | ----------------------------------------------------------- |
+| Expand/collapse animation jank with heavy content   | Medium | Medium      | Use CSS transitions on max-height, minimize reflows         |
+| Nested accordion depth causes layout issues         | Low    | Low         | Limit nesting to 3 levels, test deep nesting                |
+| Content overflow in collapsed state visible briefly | Low    | Medium      | Use overflow:hidden with proper timing on transitions       |
+| Accessibility compliance for nested accordions      | Medium | Medium      | Follow WAI-ARIA accordion pattern, test with screen readers |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - :white_check_mark: [ai_rules.md](../../ai_rules.md) - Read before implementation, reuse BaseCard rendering pattern
 - :white_check_mark: [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first E2E tests using AccordionDSL
 - :white_check_mark: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Renderer in `src/components/cards/`, service in `src/services/`
@@ -544,19 +554,19 @@ This feature MUST comply with:
   default_tab: 0
   animation: fade
   tabs:
-    - title: "Lights"
+    - title: 'Lights'
       icon: mdi:lightbulb
       cards:
         - type: button
           entity: light.living_room
         - type: button
           entity: light.kitchen
-    - title: "Climate"
+    - title: 'Climate'
       icon: mdi:thermometer
       cards:
         - type: thermostat
           entity: climate.living_room
-    - title: "Media"
+    - title: 'Media'
       icon: mdi:play-circle
       cards:
         - type: media-control
@@ -599,6 +609,7 @@ This feature MUST comply with:
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [ ] Tabs render with clickable tab headers
 - [ ] Tab switching shows correct content panel
 - [ ] Horizontal and vertical tab orientations work
@@ -609,6 +620,7 @@ This feature MUST comply with:
 - [ ] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [ ] Tab icons with MDI icon picker
 - [ ] Tab switch animations (fade, slide)
 - [ ] Tab position options (top, bottom, left, right)
@@ -616,6 +628,7 @@ This feature MUST comply with:
 - [ ] Lazy tab content rendering
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Draggable tabs (user-reorderable at runtime)
 - [ ] Closable tabs at runtime (only in editor)
 - [ ] Tab overflow/scroll for many tabs
@@ -623,16 +636,17 @@ This feature MUST comply with:
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Tab content height inconsistency across panels | Medium | Medium | Use consistent min-height or auto-height with smooth transitions |
-| Vertical tabs layout breaks on narrow panels | Medium | Medium | Responsive breakpoint: fall back to horizontal on narrow widths |
-| Tab state lost on dashboard reload | Low | Low | Store active tab in card config or use default_tab |
-| Many tabs overflow tab bar | Medium | Medium | Add scroll behavior or "more" dropdown for overflow tabs |
+| Risk                                           | Impact | Probability | Mitigation                                                       |
+| ---------------------------------------------- | ------ | ----------- | ---------------------------------------------------------------- |
+| Tab content height inconsistency across panels | Medium | Medium      | Use consistent min-height or auto-height with smooth transitions |
+| Vertical tabs layout breaks on narrow panels   | Medium | Medium      | Responsive breakpoint: fall back to horizontal on narrow widths  |
+| Tab state lost on dashboard reload             | Low    | Low         | Store active tab in card config or use default_tab               |
+| Many tabs overflow tab bar                     | Medium | Medium      | Add scroll behavior or "more" dropdown for overflow tabs         |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - :white_check_mark: [ai_rules.md](../../ai_rules.md) - Read before implementation, reuse BaseCard rendering pattern
 - :white_check_mark: [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first E2E tests using TabsDSL
 - :white_check_mark: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Renderer in `src/components/cards/`, service in `src/services/`
@@ -769,11 +783,11 @@ HACS alignment refinements remain tracked as deferred follow-up work and are non
 - [ ] Example YAML (standalone popup trigger card):
   ```yaml
   type: custom:popup-card
-  title: "Room Details"
-  trigger_label: "View Details"
+  title: 'Room Details'
+  trigger_label: 'View Details'
   trigger_icon: mdi:information
   popup:
-    title: "Living Room Details"
+    title: 'Living Room Details'
     size: medium
     close_on_backdrop: true
     cards:
@@ -783,7 +797,7 @@ HACS alignment refinements remain tracked as deferred follow-up work and are non
           - sensor.humidity
           - light.living_room
       - type: markdown
-        content: "Last updated: [[sensor.temperature.last_changed]]"
+        content: 'Last updated: [[sensor.temperature.last_changed]]'
   ```
 - [ ] Example YAML (popup via tap_action on any card):
   ```yaml
@@ -791,7 +805,7 @@ HACS alignment refinements remain tracked as deferred follow-up work and are non
   entity: light.living_room
   tap_action:
     action: popup
-    popup_title: "Light Controls"
+    popup_title: 'Light Controls'
     popup_size: small
     popup_cards:
       - type: light
@@ -840,6 +854,7 @@ HACS alignment refinements remain tracked as deferred follow-up work and are non
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [ ] Popup modal opens with child card content
 - [ ] Close via button, backdrop click, and ESC key
 - [ ] Popup triggered from tap_action on any card
@@ -850,6 +865,7 @@ HACS alignment refinements remain tracked as deferred follow-up work and are non
 - [ ] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [ ] Nested popup support (popup within popup)
 - [ ] Standalone popup trigger card type
 - [ ] Popup header/footer customization
@@ -857,6 +873,7 @@ HACS alignment refinements remain tracked as deferred follow-up work and are non
 - [ ] Multiple simultaneous popups with stacked z-index
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Popup positioning (always centered, no anchor-based positioning)
 - [ ] Popup drag/resize at runtime
 - [ ] Popup persistence across navigation
@@ -864,17 +881,18 @@ HACS alignment refinements remain tracked as deferred follow-up work and are non
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Focus trapping conflicts with Ant Design modals | High | Medium | Use Ant Design Modal's built-in focus management, test thoroughly |
-| Nested popups create z-index conflicts | Medium | Medium | Manage z-index stack explicitly, limit nesting depth |
-| Popup content larger than viewport | Medium | Low | Add scrollable content area, responsive sizing |
-| Popup interaction conflicts with editor mode | Medium | Medium | Disable popup triggers in edit mode, show preview overlay |
-| Memory leaks from unclosed popup references | Low | Low | Proper cleanup on unmount, weakref for popup stack |
+| Risk                                            | Impact | Probability | Mitigation                                                        |
+| ----------------------------------------------- | ------ | ----------- | ----------------------------------------------------------------- |
+| Focus trapping conflicts with Ant Design modals | High   | Medium      | Use Ant Design Modal's built-in focus management, test thoroughly |
+| Nested popups create z-index conflicts          | Medium | Medium      | Manage z-index stack explicitly, limit nesting depth              |
+| Popup content larger than viewport              | Medium | Low         | Add scrollable content area, responsive sizing                    |
+| Popup interaction conflicts with editor mode    | Medium | Medium      | Disable popup triggers in edit mode, show preview overlay         |
+| Memory leaks from unclosed popup references     | Low    | Low         | Proper cleanup on unmount, weakref for popup stack                |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - :white_check_mark: [ai_rules.md](../../ai_rules.md) - Read before implementation, reuse Ant Design Modal patterns
 - :white_check_mark: [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first E2E tests using PopupDSL
 - :white_check_mark: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Feature folder `src/features/popup/`, renderer in `src/components/cards/`
@@ -982,6 +1000,7 @@ This feature MUST comply with:
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [ ] Gap/spacing control works for vertical-stack, horizontal-stack, and grid cards
 - [ ] Gap presets work (none, tight, normal, relaxed, custom)
 - [ ] Alignment options work (start, center, end, stretch)
@@ -991,27 +1010,30 @@ This feature MUST comply with:
 - [ ] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [ ] Wrap behavior for horizontal stack
 - [ ] Justify content options (space-between, space-around, space-evenly)
 - [ ] Visual alignment preview buttons in PropertiesPanel
 - [ ] Independent row/column gap for grid cards
 
 **Won't Have (Out of Scope)**:
+
 - [ ] CSS Grid template areas (complex grid layouts)
 - [ ] Responsive breakpoints for layout switching
 - [ ] Auto-sizing based on content
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Existing dashboard layouts shift with new defaults | High | Low | Default values match current behavior exactly |
-| Gap values conflict with card margin/padding | Medium | Medium | Document interaction between gap and spacing controls |
-| Wrap behavior creates unexpected layouts | Low | Medium | Provide visual preview, document wrap behavior |
+| Risk                                               | Impact | Probability | Mitigation                                            |
+| -------------------------------------------------- | ------ | ----------- | ----------------------------------------------------- |
+| Existing dashboard layouts shift with new defaults | High   | Low         | Default values match current behavior exactly         |
+| Gap values conflict with card margin/padding       | Medium | Medium      | Document interaction between gap and spacing controls |
+| Wrap behavior creates unexpected layouts           | Low    | Medium      | Provide visual preview, document wrap behavior        |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - :white_check_mark: [ai_rules.md](../../ai_rules.md) - Read before implementation, enhance existing renderers (no new files unless necessary)
 - :white_check_mark: [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first E2E tests using LayoutDSL
 - :white_check_mark: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Enhance existing stack card renderers in `src/components/cards/`
@@ -1116,6 +1138,7 @@ This feature MUST comply with:
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [x] Margin controls work (all-sides and per-side)
 - [x] Padding controls work (all-sides and per-side)
 - [x] Spacing presets work (none, tight, normal, relaxed, spacious)
@@ -1126,12 +1149,14 @@ This feature MUST comply with:
 - [ ] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [ ] Visual box model diagram in PropertiesPanel
 - [ ] Toggle between all-sides and per-side modes
 - [ ] CSS shorthand format support in YAML
 - [ ] Spacing preview in canvas
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Responsive spacing (different spacing at different viewport sizes)
 - [ ] Global spacing settings (per-card only for now)
 - [ ] Negative margins (may cause layout issues)
@@ -1139,15 +1164,16 @@ This feature MUST comply with:
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Spacing conflicts with stack card gap | Medium | Medium | Document interaction, spacing = per-card, gap = between cards |
-| Large spacing values cause overflow | Low | Low | Clamp values to reasonable range (0-64px), show preview |
-| Spacing breaks card selection/drag in editor | Medium | Medium | Apply spacing to visual wrapper, not interactive layer |
+| Risk                                         | Impact | Probability | Mitigation                                                    |
+| -------------------------------------------- | ------ | ----------- | ------------------------------------------------------------- |
+| Spacing conflicts with stack card gap        | Medium | Medium      | Document interaction, spacing = per-card, gap = between cards |
+| Large spacing values cause overflow          | Low    | Low         | Clamp values to reasonable range (0-64px), show preview       |
+| Spacing breaks card selection/drag in editor | Medium | Medium      | Apply spacing to visual wrapper, not interactive layer        |
 
 ### Compliance
 
 This feature MUST comply with:
+
 - :white_check_mark: [ai_rules.md](../../ai_rules.md) - Read before implementation, enhance BaseCard (no duplicate spacing logic)
 - :white_check_mark: [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first E2E tests using SpacingDSL
 - :white_check_mark: [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Service in `src/services/cardSpacing.ts`, controls in `src/components/`
@@ -1211,30 +1237,30 @@ This feature MUST comply with:
 
 ### Technical Risks
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Swiper.js v12 breaking changes or API differences | High | Medium | Prototype early, pin version, verify React wrapper |
-| Bundle size increase from Swiper.js (~40KB gzipped) | Medium | Low | Tree-shake, lazy load, code-split carousel module |
-| CSS conflicts between Swiper and Ant Design | Medium | Medium | Scope CSS with CSS modules or BEM namespacing |
-| Complex nested layouts (carousel > accordion > tabs) | High | Low | Limit nesting depth, test edge cases, document constraints |
-| Animation performance with many concurrent transitions | Medium | Medium | Use CSS transforms (GPU), limit concurrent animations, test on low-end hardware |
+| Risk                                                   | Impact | Probability | Mitigation                                                                      |
+| ------------------------------------------------------ | ------ | ----------- | ------------------------------------------------------------------------------- |
+| Swiper.js v12 breaking changes or API differences      | High   | Medium      | Prototype early, pin version, verify React wrapper                              |
+| Bundle size increase from Swiper.js (~40KB gzipped)    | Medium | Low         | Tree-shake, lazy load, code-split carousel module                               |
+| CSS conflicts between Swiper and Ant Design            | Medium | Medium      | Scope CSS with CSS modules or BEM namespacing                                   |
+| Complex nested layouts (carousel > accordion > tabs)   | High   | Low         | Limit nesting depth, test edge cases, document constraints                      |
+| Animation performance with many concurrent transitions | Medium | Medium      | Use CSS transforms (GPU), limit concurrent animations, test on low-end hardware |
 
 ### Integration Risks
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| New card types break existing card rendering pipeline | High | Low | Use same BaseCard pattern, thorough regression testing |
-| PropertiesPanel complexity increases significantly | Medium | Medium | Lazy load property controls, use accordion sections |
-| YAML schema changes break existing dashboards | High | Low | Additive-only schema changes, backward compatible defaults |
-| Drag-and-drop in editor conflicts with swipe/touch events | Medium | High | Disable swipe in edit mode, use mode-based event handling |
+| Risk                                                      | Impact | Probability | Mitigation                                                 |
+| --------------------------------------------------------- | ------ | ----------- | ---------------------------------------------------------- |
+| New card types break existing card rendering pipeline     | High   | Low         | Use same BaseCard pattern, thorough regression testing     |
+| PropertiesPanel complexity increases significantly        | Medium | Medium      | Lazy load property controls, use accordion sections        |
+| YAML schema changes break existing dashboards             | High   | Low         | Additive-only schema changes, backward compatible defaults |
+| Drag-and-drop in editor conflicts with swipe/touch events | Medium | High        | Disable swipe in edit mode, use mode-based event handling  |
 
 ### UX Risks
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Too many layout options overwhelm users | Medium | Medium | Progressive disclosure, sensible defaults, guided setup |
-| Inconsistent behavior across layout modules | Medium | Low | Shared layout service, consistent configuration patterns |
-| Popup/modal cards confuse users in editor | Medium | Medium | Clear visual indicators, edit-mode popup preview |
+| Risk                                        | Impact | Probability | Mitigation                                               |
+| ------------------------------------------- | ------ | ----------- | -------------------------------------------------------- |
+| Too many layout options overwhelm users     | Medium | Medium      | Progressive disclosure, sensible defaults, guided setup  |
+| Inconsistent behavior across layout modules | Medium | Low         | Shared layout service, consistent configuration patterns |
+| Popup/modal cards confuse users in editor   | Medium | Medium      | Clear visual indicators, edit-mode popup preview         |
 
 ---
 

@@ -18,7 +18,10 @@ test.describe('Card Rendering', () => {
     const ctx = await launchWithDSL();
     try {
       // Mock HA entities to keep UI in "connected" state
-      await mockHAEntities(ctx.window, ctx.app, { entities: createMockEntities(4), isConnected: true });
+      await mockHAEntities(ctx.window, ctx.app, {
+        entities: createMockEntities(4),
+        isConnected: true,
+      });
 
       await ctx.appDSL.waitUntilReady();
       await ctx.dashboard.createNew();
@@ -39,7 +42,10 @@ test.describe('Card Rendering', () => {
   test('should render glance card with mock entities', async () => {
     const ctx = await launchWithDSL();
     try {
-      await mockHAEntities(ctx.window, ctx.app, { entities: createMockEntities(4), isConnected: true });
+      await mockHAEntities(ctx.window, ctx.app, {
+        entities: createMockEntities(4),
+        isConnected: true,
+      });
 
       await ctx.appDSL.waitUntilReady();
       await ctx.dashboard.createNew();

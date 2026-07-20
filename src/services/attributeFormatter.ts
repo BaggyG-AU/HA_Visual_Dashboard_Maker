@@ -1,4 +1,8 @@
-import type { AttributeFormatConfig, AttributeFormatType, AttributeTimestampMode } from '../types/attributeDisplay';
+import type {
+  AttributeFormatConfig,
+  AttributeFormatType,
+  AttributeTimestampMode,
+} from '../types/attributeDisplay';
 
 const DEFAULT_MAX_LENGTH = 32;
 
@@ -65,10 +69,20 @@ const formatBoolean = (value: unknown, config?: AttributeFormatConfig): string =
   }
   if (typeof value === 'string') {
     const normalized = value.toLowerCase();
-    if (normalized === 'true' || normalized === 'on' || normalized === 'yes' || normalized === '1') {
+    if (
+      normalized === 'true' ||
+      normalized === 'on' ||
+      normalized === 'yes' ||
+      normalized === '1'
+    ) {
       return trueLabel;
     }
-    if (normalized === 'false' || normalized === 'off' || normalized === 'no' || normalized === '0') {
+    if (
+      normalized === 'false' ||
+      normalized === 'off' ||
+      normalized === 'no' ||
+      normalized === '0'
+    ) {
       return falseLabel;
     }
   }

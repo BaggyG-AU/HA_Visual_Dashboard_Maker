@@ -16,7 +16,10 @@ import { useEntityContextValue } from '../../hooks/useEntityContext';
 const { Text } = Typography;
 
 // Inject scrolling text keyframes animation once
-if (typeof document !== 'undefined' && !document.getElementById('bubble-card-scrolling-text-keyframes')) {
+if (
+  typeof document !== 'undefined' &&
+  !document.getElementById('bubble-card-scrolling-text-keyframes')
+) {
   const style = document.createElement('style');
   style.id = 'bubble-card-scrolling-text-keyframes';
   style.textContent = `
@@ -42,13 +45,13 @@ interface SubButton {
   show_name?: boolean;
   show_icon?: boolean;
   show_state?: boolean;
-  show_entity_picture?: boolean;  // v3.1.0: Use entity picture instead of icon
-  scrolling_text?: boolean;       // v3.1.0: Enable text scrolling for long labels
+  show_entity_picture?: boolean; // v3.1.0: Use entity picture instead of icon
+  scrolling_text?: boolean; // v3.1.0: Enable text scrolling for long labels
   tap_action?: any;
   type?: 'button' | 'slider' | 'select';
   icon_position?: 'top' | 'bottom' | 'left' | 'right';
   position?: 'default' | 'footer';
-  width?: string;  // CSS width value (e.g., '100px', '50%')
+  width?: string; // CSS width value (e.g., '100px', '50%')
   height?: string; // CSS height value
   slider_config?: {
     always_visible?: boolean;
@@ -156,7 +159,11 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
   const renderSubButton = (subButton: SubButton, index: number) => {
     const subEntity = subButton.entity ? getEntity(subButton.entity) : null;
     const subState = subEntity?.state || 'unknown';
-    const subName = subButton.name || subEntity?.attributes?.friendly_name || subButton.entity?.split('.')[1]?.replace(/_/g, ' ') || 'Sub-button';
+    const subName =
+      subButton.name ||
+      subEntity?.attributes?.friendly_name ||
+      subButton.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+      'Sub-button';
     const showSubIcon = subButton.show_icon !== false;
     const showSubName = subButton.show_name !== false;
     const showSubState = subButton.show_state !== false;
@@ -282,11 +289,15 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
     // Helper to determine layout direction based on icon position
     const getLayoutDirection = (): 'row' | 'column' | 'row-reverse' | 'column-reverse' => {
       switch (iconPosition) {
-        case 'top': return 'column';
-        case 'bottom': return 'column-reverse';
-        case 'right': return 'row-reverse';
+        case 'top':
+          return 'column';
+        case 'bottom':
+          return 'column-reverse';
+        case 'right':
+          return 'row-reverse';
         case 'left':
-        default: return 'row';
+        default:
+          return 'row';
       }
     };
 
@@ -310,14 +321,17 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
           style={{
             ...baseContainerStyle,
             flexDirection: getLayoutDirection(),
-            alignItems: iconPosition === 'top' || iconPosition === 'bottom' ? 'center' : 'flex-start',
+            alignItems:
+              iconPosition === 'top' || iconPosition === 'bottom' ? 'center' : 'flex-start',
           }}
         >
           {/* Icon */}
           {renderIcon()}
 
           {/* Content wrapper */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+          <div
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}
+          >
             {/* Header with name and value */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {showSubName && (
@@ -375,14 +389,17 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
           style={{
             ...baseContainerStyle,
             flexDirection: getLayoutDirection(),
-            alignItems: iconPosition === 'top' || iconPosition === 'bottom' ? 'center' : 'flex-start',
+            alignItems:
+              iconPosition === 'top' || iconPosition === 'bottom' ? 'center' : 'flex-start',
           }}
         >
           {/* Icon */}
           {renderIcon()}
 
           {/* Content wrapper */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+          <div
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}
+          >
             {showSubName && (
               <Text
                 style={{
@@ -401,7 +418,7 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
               size="small"
               style={{ width: '100%' }}
               dropdownStyle={{ backgroundColor: '#2a2a2a' }}
-              options={selectOptions.map(opt => ({ label: opt, value: opt }))}
+              options={selectOptions.map((opt) => ({ label: opt, value: opt }))}
             />
           </div>
         </div>
@@ -433,10 +450,12 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
                 overflow: 'hidden',
                 textOverflow: scrollingText ? 'clip' : 'ellipsis',
                 whiteSpace: 'nowrap',
-                ...(scrollingText && subName.length > 20 ? {
-                  animation: 'scroll-text 10s linear infinite',
-                  display: 'inline-block',
-                } : {}),
+                ...(scrollingText && subName.length > 20
+                  ? {
+                      animation: 'scroll-text 10s linear infinite',
+                      display: 'inline-block',
+                    }
+                  : {}),
               }}
             >
               {subName}
@@ -473,12 +492,15 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
         }}
         onClick={onClick}
       >
-        <div style={{
-          width: '100%',
-          height: '2px',
-          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
-          borderRadius: '1px',
-        }} />
+        <div
+          style={{
+            width: '100%',
+            height: '2px',
+            background:
+              'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
+            borderRadius: '1px',
+          }}
+        />
         {card.name && (
           <Text
             style={{
@@ -493,12 +515,15 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
             {resolvedName}
           </Text>
         )}
-        <div style={{
-          width: '100%',
-          height: '2px',
-          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
-          borderRadius: '1px',
-        }} />
+        <div
+          style={{
+            width: '100%',
+            height: '2px',
+            background:
+              'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
+            borderRadius: '1px',
+          }}
+        />
       </div>
     );
   }
@@ -529,19 +554,21 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
           </Text>
         )}
         {isSelected && (
-          <div style={{
-            position: 'absolute',
-            top: '4px',
-            right: '8px',
-            padding: '2px 8px',
-            backgroundColor: 'rgba(102, 187, 255, 0.2)',
-            border: '1px solid #66bbff',
-            borderRadius: '12px',
-            fontSize: '9px',
-            color: '#66bbff',
-            fontWeight: 'bold',
-            pointerEvents: 'none',
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              top: '4px',
+              right: '8px',
+              padding: '2px 8px',
+              backgroundColor: 'rgba(102, 187, 255, 0.2)',
+              border: '1px solid #66bbff',
+              borderRadius: '12px',
+              fontSize: '9px',
+              color: '#66bbff',
+              fontWeight: 'bold',
+              pointerEvents: 'none',
+            }}
+          >
             SUB-BUTTONS
           </div>
         )}
@@ -561,29 +588,33 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
           ...backgroundStyle,
         }}
         styles={{
-        body: {
-          padding: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          gap: '8px',
-        },
-      }}
+          body: {
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            gap: '8px',
+          },
+        }}
         onClick={onClick}
         hoverable
       >
-        <div style={{
-          fontSize: '32px',
-          color: '#00d9ff',
-        }}>
+        <div
+          style={{
+            fontSize: '32px',
+            color: '#00d9ff',
+          }}
+        >
           {icon}
         </div>
         <Text strong style={{ color: '#e6e6e6', fontSize: '14px', textAlign: 'center' }}>
           {displayName}
         </Text>
-        <Tag color="cyan" style={{ fontSize: '10px' }}>POP-UP</Tag>
+        <Tag color="cyan" style={{ fontSize: '10px' }}>
+          POP-UP
+        </Tag>
       </AntCard>
     );
   }
@@ -607,11 +638,13 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
       onClick={onClick}
     >
       {/* Main card content */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+        }}
+      >
         {/* Icon bubble */}
         {showIcon && (
           <div
@@ -627,20 +660,20 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
               flexShrink: 0,
             }}
           >
-            <div style={{ fontSize: '24px', color: stateColor }}>
-              {icon}
-            </div>
+            <div style={{ fontSize: '24px', color: stateColor }}>{icon}</div>
           </div>
         )}
 
         {/* Content */}
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '4px',
-          minWidth: 0,
-        }}>
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            minWidth: 0,
+          }}
+        >
           {showName && (
             <Text
               strong
@@ -680,32 +713,36 @@ export const BubbleCardRenderer: React.FC<BubbleCardRendererProps> = ({
 
       {/* Sub-buttons (v3.1.0+) */}
       {subButtons.length > 0 && (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '6px',
-          paddingTop: '8px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            paddingTop: '8px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          }}
+        >
           {subButtons.map((subBtn, idx) => renderSubButton(subBtn, idx))}
         </div>
       )}
 
       {/* Bubble badge */}
       {isSelected && (
-        <div style={{
-          position: 'absolute',
-          top: '4px',
-          right: '8px',
-          padding: '2px 8px',
-          backgroundColor: 'rgba(102, 187, 255, 0.2)',
-          border: '1px solid #66bbff',
-          borderRadius: '12px', // Bubble style
-          fontSize: '9px',
-          color: '#66bbff',
-          fontWeight: 'bold',
-          pointerEvents: 'none',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '4px',
+            right: '8px',
+            padding: '2px 8px',
+            backgroundColor: 'rgba(102, 187, 255, 0.2)',
+            border: '1px solid #66bbff',
+            borderRadius: '12px', // Bubble style
+            fontSize: '9px',
+            color: '#66bbff',
+            fontWeight: 'bold',
+            pointerEvents: 'none',
+          }}
+        >
           BUBBLE
         </div>
       )}

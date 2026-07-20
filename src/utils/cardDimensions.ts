@@ -11,7 +11,10 @@
  * This file used 30px per row which didn't match HA's actual rendering
  */
 
-import { getCardSizeConstraints, generateMasonryLayout as generateMasonryLayoutNew } from './cardSizingContract';
+import {
+  getCardSizeConstraints,
+  generateMasonryLayout as generateMasonryLayoutNew,
+} from './cardSizingContract';
 
 interface CardDimensions {
   w: number; // width in grid columns (out of 12)
@@ -32,6 +35,8 @@ export const calculateCardDimensions = (card: any): CardDimensions => {
 /**
  * @deprecated Use generateMasonryLayout from cardSizingContract.ts instead
  */
-export const generateMasonryLayout = (cards: any[]): Array<{ i: string; x: number; y: number; w: number; h: number }> => {
+export const generateMasonryLayout = (
+  cards: any[],
+): Array<{ i: string; x: number; y: number; w: number; h: number }> => {
   return generateMasonryLayoutNew(cards);
 };

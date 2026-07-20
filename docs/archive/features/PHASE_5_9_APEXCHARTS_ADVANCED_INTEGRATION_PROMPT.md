@@ -71,14 +71,14 @@ Before implementation, complete this gate and include results in your response:
 
 ## Implementation Targets
 
-| Purpose | Path |
-|---------|------|
-| Apex config types/normalization | `src/features/apexcharts/` (new) |
-| Apex renderer hardening | `src/components/cards/ApexChartsCardRenderer.tsx` |
-| Registry defaults/metadata | `src/services/cardRegistry.ts` |
-| Properties controls | `src/components/PropertiesPanel.tsx` |
-| YAML schema updates | `src/schemas/ha-dashboard-schema.json` |
-| E2E DSL extensions | `tests/support/dsl/` |
+| Purpose                         | Path                                              |
+| ------------------------------- | ------------------------------------------------- |
+| Apex config types/normalization | `src/features/apexcharts/` (new)                  |
+| Apex renderer hardening         | `src/components/cards/ApexChartsCardRenderer.tsx` |
+| Registry defaults/metadata      | `src/services/cardRegistry.ts`                    |
+| Properties controls             | `src/components/PropertiesPanel.tsx`              |
+| YAML schema updates             | `src/schemas/ha-dashboard-schema.json`            |
+| E2E DSL extensions              | `tests/support/dsl/`                              |
 
 ### YAML Example
 
@@ -134,6 +134,7 @@ After implementation, run exactly one **Fast Gate** pass and then stop:
 4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
 
 After this single Fast Gate run, provide a summary report that includes:
+
 - Exact commands executed
 - Pass/fail status for each command
 - Any failing tests with artifact paths under `test-results/artifacts/**`

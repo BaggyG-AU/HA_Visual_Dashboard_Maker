@@ -24,7 +24,9 @@ events:
 `;
 
 test.describe('Timeline Card', () => {
-  test('renders grouped timeline with now marker and accessible event semantics', async ({ page }) => {
+  test('renders grouped timeline with now marker and accessible event semantics', async ({
+    page,
+  }) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, timeline, canvas, properties, yamlEditor, window } = ctx;
@@ -42,8 +44,14 @@ test.describe('Timeline Card', () => {
       await timeline.verifyRendered();
       await timeline.expectEventCountAtLeast(3);
       await expect(window.getByTestId('timeline-now-marker')).toBeVisible();
-      await expect(window.getByTestId('timeline-events')).toHaveAttribute('aria-label', /Selected time/i);
-      await expect(window.getByTestId('timeline-event').first()).toHaveAttribute('aria-label', /past|present|future/i);
+      await expect(window.getByTestId('timeline-events')).toHaveAttribute(
+        'aria-label',
+        /Selected time/i,
+      );
+      await expect(window.getByTestId('timeline-event').first()).toHaveAttribute(
+        'aria-label',
+        /past|present|future/i,
+      );
     } finally {
       await close(ctx);
     }

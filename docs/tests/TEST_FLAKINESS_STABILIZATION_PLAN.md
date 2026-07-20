@@ -10,6 +10,7 @@ Tripwire: “The fastest correct fix is already in the repository.”
 Recent full-suite runs showed timeout-heavy failures across unrelated specs. This pattern indicates suite-level instability (readiness, synchronization, and environment-sensitive assertions), not one feature regression.
 
 This plan aligns with:
+
 - `ai_rules.md`
 - `docs/testing/TESTING_STANDARDS.md`
 - `docs/testing/PLAYWRIGHT_TESTING.md`
@@ -49,6 +50,7 @@ This plan aligns with:
 3. Keep traces retained on failure for every verification run.
 
 Exit criteria:
+
 - Every active failure mapped to one owner abstraction (DSL/helper/spec/product).
 
 ## Phase 1: Harness Unification
@@ -58,6 +60,7 @@ Exit criteria:
 3. Remove duplicate readiness branches after migration.
 
 Exit criteria:
+
 - No E2E spec launches Electron via non-DSL path unless explicitly documented exception.
 
 ## Phase 2: Remove Sleep-Based Synchronization
@@ -70,6 +73,7 @@ Exit criteria:
 3. Keep waits scoped to behavior, not timing.
 
 Exit criteria:
+
 - `tests/e2e/**` contains zero raw `waitForTimeout(...)`.
 
 ## Phase 3: Harden Shared DSL Contracts (High-Reuse Hotspots)
@@ -81,6 +85,7 @@ Exit criteria:
 5. `ColorPickerDSL`: robust localStorage + recents synchronization (`expect.poll` only).
 
 Exit criteria:
+
 - A single DSL-level fix addresses all tests in each affected workflow family.
 
 ## Phase 4: Visual and Perf Stability
@@ -94,6 +99,7 @@ Exit criteria:
 4. For perf checks, sample over a window and gate on stable metrics (avoid single-point FPS noise).
 
 Exit criteria:
+
 - Visual/perf failures correspond to real UI regressions, not host jitter.
 
 ## Phase 5: Guardrails and Regression Prevention
@@ -106,27 +112,37 @@ Exit criteria:
 3. Add a required 5x targeted stability loop for changed flaky workflows before full-run signoff.
 
 Exit criteria:
+
 - New test code cannot reintroduce known flake patterns unnoticed.
 
 ## Verification Matrix
 
 1. Targeted fix verification:
+
 ```bash
 npx playwright test <spec-or-grep> --project=electron-e2e --workers=1 --trace=retain-on-failure
 ```
+
 2. Targeted stability loop (Linux/macOS):
+
 ```bash
 for i in 1 2 3 4 5; do npx playwright test <spec-or-grep> --project=electron-e2e --workers=1 --trace=retain-on-failure || break; done
 ```
+
 3. Targeted stability loop (PowerShell):
+
 ```powershell
 1..5 | ForEach-Object { npx playwright test <spec-or-grep> --project=electron-e2e --workers=1 --trace=retain-on-failure; if ($LASTEXITCODE -ne 0) { break } }
 ```
+
 4. Full regression pass:
+
 ```bash
 npx playwright test --project=electron-e2e --workers=1 --trace=retain-on-failure
 ```
+
 5. Trace review:
+
 ```bash
 npx playwright show-trace test-results/artifacts/<failure-dir>/trace.zip
 ```

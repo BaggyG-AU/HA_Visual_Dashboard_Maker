@@ -58,7 +58,9 @@ export const EntityTypeDashboardWizard: React.FC<EntityTypeDashboardWizardProps>
         setAvailableCategories(categories);
 
         if (categories.length === 0) {
-          setError('No entity categories available. Make sure you have entities in your Home Assistant instance.');
+          setError(
+            'No entity categories available. Make sure you have entities in your Home Assistant instance.',
+          );
         }
       } else {
         setError('Failed to load entities. Try refreshing the entity cache.');
@@ -89,7 +91,10 @@ export const EntityTypeDashboardWizard: React.FC<EntityTypeDashboardWizardProps>
     if (!selectedCategory) return;
 
     try {
-      const dashboardConfig = dashboardGeneratorService.generateDashboard(selectedCategory, entities);
+      const dashboardConfig = dashboardGeneratorService.generateDashboard(
+        selectedCategory,
+        entities,
+      );
 
       if (!dashboardConfig) {
         setError('Failed to generate dashboard. No entities found for this category.');
@@ -155,8 +160,8 @@ export const EntityTypeDashboardWizard: React.FC<EntityTypeDashboardWizardProps>
     >
       <div style={{ marginBottom: 16 }}>
         <p>
-          Select an entity category to automatically generate a dashboard pre-configured with relevant cards
-          for that category.
+          Select an entity category to automatically generate a dashboard pre-configured with
+          relevant cards for that category.
         </p>
         {!isConnected && (
           <Alert
@@ -197,10 +202,7 @@ export const EntityTypeDashboardWizard: React.FC<EntityTypeDashboardWizardProps>
           <p style={{ marginTop: 16, color: '#888' }}>Loading entity categories...</p>
         </div>
       ) : availableCategories.length === 0 && !error ? (
-        <Empty
-          description="No entity categories available"
-          data-testid="entity-type-wizard-empty"
-        >
+        <Empty description="No entity categories available" data-testid="entity-type-wizard-empty">
           <Button type="primary" icon={<ReloadOutlined />} onClick={handleRetry}>
             Refresh
           </Button>
@@ -226,11 +228,21 @@ export const EntityTypeDashboardWizard: React.FC<EntityTypeDashboardWizardProps>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                     <div style={{ fontSize: 32 }}>{category.icon}</div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
                         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
                           {category.name}
                         </h3>
-                        <Badge count={entityCount} showZero style={{ backgroundColor: '#52c41a' }} />
+                        <Badge
+                          count={entityCount}
+                          showZero
+                          style={{ backgroundColor: '#52c41a' }}
+                        />
                       </div>
                       <p style={{ margin: '8px 0', color: '#666', fontSize: 13 }}>
                         {category.description}
@@ -250,8 +262,8 @@ export const EntityTypeDashboardWizard: React.FC<EntityTypeDashboardWizardProps>
       {availableCategories.length > 0 && (
         <div style={{ marginTop: 16, padding: 12, background: '#f5f5f5', borderRadius: 4 }}>
           <small style={{ color: '#666' }}>
-            <strong>Note:</strong> Generated dashboards include up to 6 entities per category, sorted
-            alphabetically. You can edit, add, or remove cards after creation.
+            <strong>Note:</strong> Generated dashboards include up to 6 entities per category,
+            sorted alphabetically. You can edit, add, or remove cards after creation.
           </small>
         </div>
       )}

@@ -28,20 +28,29 @@ export const MapCardRenderer: React.FC<MapCardRendererProps> = ({
 
   // Extract map properties
   const entities = card.entities || [];
-  const defaultEntityId = entities.length > 0 ? (typeof entities[0] === 'string' ? entities[0] : entities[0].entity) : null;
+  const defaultEntityId =
+    entities.length > 0
+      ? typeof entities[0] === 'string'
+        ? entities[0]
+        : entities[0].entity
+      : null;
   const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId ?? null) : '';
   const title = (card.title ? resolvedTitle : '') || 'Map';
   const defaultZoom = card.default_zoom || 15;
   const darkMode = card.dark_mode !== false;
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   // Get entity data for device trackers
-  const trackerData = entities.map(entityConfig => {
+  const trackerData = entities.map((entityConfig) => {
     const entityId = typeof entityConfig === 'string' ? entityConfig : entityConfig.entity;
     const entity = getEntity(entityId);
     const attributes = entity?.attributes || {};
 
-    const nameTemplate = typeof entityConfig === 'object' && entityConfig.name ? entityConfig.name : '';
+    const nameTemplate =
+      typeof entityConfig === 'object' && entityConfig.name ? entityConfig.name : '';
     const name = nameTemplate
       ? resolveContext(nameTemplate, entityId)
       : attributes.friendly_name || entityId.split('.')[1]?.replace(/_/g, ' ') || entityId;
@@ -73,7 +82,7 @@ export const MapCardRenderer: React.FC<MapCardRendererProps> = ({
 
   // Filter trackers with valid coordinates
   const validTrackers = trackerData.filter(
-    tracker => tracker.latitude !== undefined && tracker.longitude !== undefined
+    (tracker) => tracker.latitude !== undefined && tracker.longitude !== undefined,
   );
 
   return (
@@ -88,22 +97,24 @@ export const MapCardRenderer: React.FC<MapCardRendererProps> = ({
       }}
       styles={{
         body: {
-        padding: '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        gap: '12px',
-      },
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          gap: '12px',
+        },
       }}
       onClick={onClick}
       hoverable
     >
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <Text strong style={{ color: '#e6e6e6', fontSize: '14px' }}>
           {title}
         </Text>
@@ -116,28 +127,32 @@ export const MapCardRenderer: React.FC<MapCardRendererProps> = ({
       </div>
 
       {/* Map visualization area */}
-      <div style={{
-        flex: 1,
-        position: 'relative',
-        backgroundColor: darkMode ? '#1a1a1a' : '#e5e3df',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        minHeight: '200px',
-        backgroundImage: darkMode
-          ? 'linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a), linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a)'
-          : 'linear-gradient(45deg, #e5e3df 25%, transparent 25%, transparent 75%, #e5e3df 75%, #e5e3df), linear-gradient(45deg, #e5e3df 25%, transparent 25%, transparent 75%, #e5e3df 75%, #e5e3df)',
-        backgroundSize: '20px 20px',
-        backgroundPosition: '0 0, 10px 10px',
-      }}>
+      <div
+        style={{
+          flex: 1,
+          position: 'relative',
+          backgroundColor: darkMode ? '#1a1a1a' : '#e5e3df',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          minHeight: '200px',
+          backgroundImage: darkMode
+            ? 'linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a), linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a)'
+            : 'linear-gradient(45deg, #e5e3df 25%, transparent 25%, transparent 75%, #e5e3df 75%, #e5e3df), linear-gradient(45deg, #e5e3df 25%, transparent 25%, transparent 75%, #e5e3df 75%, #e5e3df)',
+          backgroundSize: '20px 20px',
+          backgroundPosition: '0 0, 10px 10px',
+        }}
+      >
         {/* Map placeholder with grid pattern */}
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          textAlign: 'center',
-          color: darkMode ? '#666' : '#999',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            color: darkMode ? '#666' : '#999',
+          }}
+        >
           <EnvironmentOutlined style={{ fontSize: '48px', marginBottom: '8px' }} />
           <Text type="secondary" style={{ display: 'block', fontSize: '12px' }}>
             Map Preview
@@ -209,12 +224,14 @@ export const MapCardRenderer: React.FC<MapCardRendererProps> = ({
 
       {/* Tracker list/legend */}
       {validTrackers.length > 0 && (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          marginTop: 'auto',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            marginTop: 'auto',
+          }}
+        >
           {validTrackers.map((tracker) => (
             <div
               key={tracker.entityId}
@@ -230,9 +247,7 @@ export const MapCardRenderer: React.FC<MapCardRendererProps> = ({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <EnvironmentOutlined style={{ fontSize: '14px', color: tracker.color }} />
-                <Text style={{ fontSize: '12px', color: '#e6e6e6' }}>
-                  {tracker.name}
-                </Text>
+                <Text style={{ fontSize: '12px', color: '#e6e6e6' }}>{tracker.name}</Text>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                 <Text
@@ -257,11 +272,13 @@ export const MapCardRenderer: React.FC<MapCardRendererProps> = ({
 
       {/* No entities warning */}
       {entities.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '20px',
-          color: '#666',
-        }}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '20px',
+            color: '#666',
+          }}
+        >
           <EnvironmentOutlined style={{ fontSize: '32px', marginBottom: '8px' }} />
           <Text type="secondary" style={{ display: 'block', fontSize: '12px' }}>
             No device trackers configured
@@ -271,11 +288,13 @@ export const MapCardRenderer: React.FC<MapCardRendererProps> = ({
 
       {/* No valid coordinates warning */}
       {entities.length > 0 && validTrackers.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '20px',
-          color: '#666',
-        }}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '20px',
+            color: '#666',
+          }}
+        >
           <EnvironmentOutlined style={{ fontSize: '32px', marginBottom: '8px' }} />
           <Text type="secondary" style={{ display: 'block', fontSize: '12px' }}>
             No location data available

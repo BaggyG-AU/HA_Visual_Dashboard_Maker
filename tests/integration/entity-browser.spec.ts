@@ -98,7 +98,10 @@ test.describe('Entity Browser', () => {
           const count = await entityRows.count();
 
           if (count > 0) {
-            const firstEntity = await entityRows.first().locator('span[style*="monospace"]').textContent();
+            const firstEntity = await entityRows
+              .first()
+              .locator('span[style*="monospace"]')
+              .textContent();
             expect(firstEntity).toContain(`${domain}.`);
           }
         }

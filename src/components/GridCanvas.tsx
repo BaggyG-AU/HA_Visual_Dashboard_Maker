@@ -52,7 +52,10 @@ interface GridCanvasProps {
   view: View;
   selectedCardIndex: number | null;
   selectedCardIndices?: number[];
-  onCardSelect: (cardIndex: number | null, options?: { mode?: 'replace' | 'toggle' | 'range' }) => void;
+  onCardSelect: (
+    cardIndex: number | null,
+    options?: { mode?: 'replace' | 'toggle' | 'range' },
+  ) => void;
   onLayoutChange: (layout: Layout) => void;
   onCardDrop?: (cardType: string, x: number, y: number) => void;
   onCardCut?: () => void;
@@ -75,7 +78,7 @@ const generateLayout = (view: View, cards: Card[]): Layout => {
   }
 
   // Mode 2: Check if cards have internal layout property
-  const hasExistingLayout = cards.some(card => 'layout' in card && card.layout);
+  const hasExistingLayout = cards.some((card) => 'layout' in card && card.layout);
 
   if (hasExistingLayout) {
     // Use existing layout information with constraints
@@ -254,7 +257,10 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
       >
         {cards.map((card, index) => (
           <div key={`card-${index}`} style={{ overflow: 'hidden' }}>
-            <div data-testid="canvas-card" style={{ height: '100%', width: '100%', position: 'relative' }}>
+            <div
+              data-testid="canvas-card"
+              style={{ height: '100%', width: '100%', position: 'relative' }}
+            >
               {(() => {
                 const backgroundStyle = getBackgroundLayerStyle((card as { style?: string }).style);
                 if (!backgroundStyle) return null;
@@ -296,41 +302,41 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
                     pendingSelectionModeRef.current = null;
                   }}
                 >
-                <CardContextMenu
-                  onCut={() => {
-                    if (!selectedCardSet.has(index)) {
-                      onCardSelect(index, { mode: 'replace' });
-                    }
-                    onCardCut?.();
-                  }}
-                  onCopy={() => {
-                    if (!selectedCardSet.has(index)) {
-                      onCardSelect(index, { mode: 'replace' });
-                    }
-                    onCardCopy?.();
-                  }}
-                  onPaste={() => {
-                    if (!selectedCardSet.has(index)) {
-                      onCardSelect(index, { mode: 'replace' });
-                    }
-                    onCardPaste?.();
-                  }}
-                  onDelete={() => {
-                    if (!selectedCardSet.has(index)) {
-                      onCardSelect(index, { mode: 'replace' });
-                    }
-                    onCardDelete?.();
-                  }}
-                  canPaste={canPaste ?? false}
-                >
-                  <BaseCard
-                    card={card}
-                    isSelected={selectedCardSet.has(index)}
-                    onClick={(event) => {
-                      onCardSelect(index, { mode: consumeSelectionMode(index, event) });
+                  <CardContextMenu
+                    onCut={() => {
+                      if (!selectedCardSet.has(index)) {
+                        onCardSelect(index, { mode: 'replace' });
+                      }
+                      onCardCut?.();
                     }}
-                  />
-                </CardContextMenu>
+                    onCopy={() => {
+                      if (!selectedCardSet.has(index)) {
+                        onCardSelect(index, { mode: 'replace' });
+                      }
+                      onCardCopy?.();
+                    }}
+                    onPaste={() => {
+                      if (!selectedCardSet.has(index)) {
+                        onCardSelect(index, { mode: 'replace' });
+                      }
+                      onCardPaste?.();
+                    }}
+                    onDelete={() => {
+                      if (!selectedCardSet.has(index)) {
+                        onCardSelect(index, { mode: 'replace' });
+                      }
+                      onCardDelete?.();
+                    }}
+                    canPaste={canPaste ?? false}
+                  >
+                    <BaseCard
+                      card={card}
+                      isSelected={selectedCardSet.has(index)}
+                      onClick={(event) => {
+                        onCardSelect(index, { mode: consumeSelectionMode(index, event) });
+                      }}
+                    />
+                  </CardContextMenu>
                 </div>
               </div>
             </div>

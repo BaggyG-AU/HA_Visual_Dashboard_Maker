@@ -1,7 +1,11 @@
 import type { CSSProperties } from 'react';
 import { formatRgba, parseColor, rgbaToHex } from './colorConversions';
 import { gradientToCss, isGradientString, parseGradient } from './gradientConversions';
-import { extractStyleProperty, removeStyleProperties, upsertStyleProperties } from './styleProperties';
+import {
+  extractStyleProperty,
+  removeStyleProperties,
+  upsertStyleProperties,
+} from './styleProperties';
 
 export type BackgroundType = 'none' | 'solid' | 'gradient' | 'image' | 'blur';
 
@@ -98,7 +102,9 @@ const parseOpacityFromGradient = (gradient: string): number => {
   return parseOpacityFromColor(firstStop.color);
 };
 
-const extractOverlayFromBackgroundImage = (backgroundImage: string): { color: string; opacity: number } => {
+const extractOverlayFromBackgroundImage = (
+  backgroundImage: string,
+): { color: string; opacity: number } => {
   const gradientMatch = backgroundImage.match(/linear-gradient\(([^)]+)\)/i);
   if (!gradientMatch) {
     return { color: DEFAULT_BACKGROUND_CONFIG.overlayColor, opacity: 0 };
@@ -127,8 +133,11 @@ export const parseBackgroundConfig = (styleValue?: string): BackgroundConfig => 
   const backdropFilter = extractStyleProperty(styleValue, 'backdrop-filter');
   const filter = extractStyleProperty(styleValue, 'filter');
 
-  const hasImage = /url\(/i.test(backgroundImage)
-    || Boolean(backgroundPosition || backgroundSize || backgroundRepeat || backgroundBlendMode || filter);
+  const hasImage =
+    /url\(/i.test(backgroundImage) ||
+    Boolean(
+      backgroundPosition || backgroundSize || backgroundRepeat || backgroundBlendMode || filter,
+    );
   const hasGradient = isGradientString(background);
   const hasSolid = Boolean(background) && !hasGradient;
   const hasBlur = /blur\(/i.test(backdropFilter);
@@ -145,44 +154,65 @@ export const parseBackgroundConfig = (styleValue?: string): BackgroundConfig => 
   }
 
   const overlayFromImage = hasImage ? extractOverlayFromBackgroundImage(backgroundImage) : null;
-  const blurOverlayColor = hasBlur && backgroundColor ? normalizeOpaqueColor(backgroundColor) : null;
+  const blurOverlayColor =
+    hasBlur && backgroundColor ? normalizeOpaqueColor(backgroundColor) : null;
 
-  const imageOpacity = backgroundColor ? Math.max(0, 100 - parseOpacityFromColor(backgroundColor)) : 100;
+  const imageOpacity = backgroundColor
+    ? Math.max(0, 100 - parseOpacityFromColor(backgroundColor))
+    : 100;
   const blurMatch = filter.match(/blur\((\d+(?:\.\d+)?)px\)/i);
   const imageBlur = blurMatch ? Number(blurMatch[1]) : 0;
   const backdropBlurMatch = backdropFilter.match(/blur\((\d+(?:\.\d+)?)px\)/i);
 
   const sizeValue = backgroundSize || DEFAULT_BACKGROUND_CONFIG.imageSize;
-  const sizeType: BackgroundImageSize = sizeValue === 'cover' || sizeValue === 'contain' || sizeValue === 'auto'
-    ? sizeValue
-    : 'custom';
+  const sizeType: BackgroundImageSize =
+    sizeValue === 'cover' || sizeValue === 'contain' || sizeValue === 'auto' ? sizeValue : 'custom';
 
-  const gradientOpacity = hasGradient ? parseOpacityFromGradient(background) : DEFAULT_BACKGROUND_CONFIG.backgroundOpacity;
-  const solidOpacity = hasSolid ? parseOpacityFromColor(background) : DEFAULT_BACKGROUND_CONFIG.backgroundOpacity;
-  const blurOpacity = backgroundColor ? parseOpacityFromColor(backgroundColor) : DEFAULT_BACKGROUND_CONFIG.backgroundOpacity;
+  const gradientOpacity = hasGradient
+    ? parseOpacityFromGradient(background)
+    : DEFAULT_BACKGROUND_CONFIG.backgroundOpacity;
+  const solidOpacity = hasSolid
+    ? parseOpacityFromColor(background)
+    : DEFAULT_BACKGROUND_CONFIG.backgroundOpacity;
+  const blurOpacity = backgroundColor
+    ? parseOpacityFromColor(backgroundColor)
+    : DEFAULT_BACKGROUND_CONFIG.backgroundOpacity;
 
   return {
     type,
     solidColor: hasSolid ? normalizeOpaqueColor(background) : DEFAULT_BACKGROUND_CONFIG.solidColor,
     gradient: hasGradient ? background : DEFAULT_BACKGROUND_CONFIG.gradient,
-    backgroundOpacity: hasGradient ? gradientOpacity : hasSolid ? solidOpacity : hasBlur ? blurOpacity : DEFAULT_BACKGROUND_CONFIG.backgroundOpacity,
+    backgroundOpacity: hasGradient
+      ? gradientOpacity
+      : hasSolid
+        ? solidOpacity
+        : hasBlur
+          ? blurOpacity
+          : DEFAULT_BACKGROUND_CONFIG.backgroundOpacity,
     imageUrl: hasImage ? extractImageUrl(backgroundImage) : DEFAULT_BACKGROUND_CONFIG.imageUrl,
-    imagePosition: (backgroundPosition as BackgroundImagePosition) || DEFAULT_BACKGROUND_CONFIG.imagePosition,
+    imagePosition:
+      (backgroundPosition as BackgroundImagePosition) || DEFAULT_BACKGROUND_CONFIG.imagePosition,
     imageSize: sizeType,
     imageSizeCustom: sizeType === 'custom' ? sizeValue : DEFAULT_BACKGROUND_CONFIG.imageSizeCustom,
-    imageRepeat: (backgroundRepeat as BackgroundImageRepeat) || DEFAULT_BACKGROUND_CONFIG.imageRepeat,
+    imageRepeat:
+      (backgroundRepeat as BackgroundImageRepeat) || DEFAULT_BACKGROUND_CONFIG.imageRepeat,
     imageOpacity,
     imageBlur,
     blendMode: (backgroundBlendMode as BackgroundBlendMode) || DEFAULT_BACKGROUND_CONFIG.blendMode,
     overlayColor: overlayFromImage?.color
       ? normalizeOpaqueColor(overlayFromImage.color)
-      : blurOverlayColor ?? DEFAULT_BACKGROUND_CONFIG.overlayColor,
+      : (blurOverlayColor ?? DEFAULT_BACKGROUND_CONFIG.overlayColor),
     overlayOpacity: overlayFromImage?.opacity ?? DEFAULT_BACKGROUND_CONFIG.overlayOpacity,
-    blurAmount: backdropBlurMatch ? Number(backdropBlurMatch[1]) : DEFAULT_BACKGROUND_CONFIG.blurAmount,
+    blurAmount: backdropBlurMatch
+      ? Number(backdropBlurMatch[1])
+      : DEFAULT_BACKGROUND_CONFIG.blurAmount,
   };
 };
 
-export const applyBackgroundConfigToStyle = (styleValue: string | undefined, config: BackgroundConfig): string => {
+export const applyBackgroundConfigToStyle = (
+  styleValue: string | undefined,
+  config: BackgroundConfig,
+): string => {
   const properties: Record<string, string | undefined> = {};
   const removed = [
     'background',
@@ -229,10 +259,12 @@ export const applyBackgroundConfigToStyle = (styleValue: string | undefined, con
 
     properties['background-image'] = layers.length > 0 ? layers.join(', ') : undefined;
     properties['background-position'] = config.imagePosition;
-    properties['background-size'] = config.imageSize === 'custom' ? config.imageSizeCustom : config.imageSize;
+    properties['background-size'] =
+      config.imageSize === 'custom' ? config.imageSizeCustom : config.imageSize;
     properties['background-repeat'] = config.imageRepeat;
     properties['background-blend-mode'] = config.blendMode;
-    properties['background-color'] = imageOpacity < 100 ? applyOpacityToColor('#000000', 100 - imageOpacity) : undefined;
+    properties['background-color'] =
+      imageOpacity < 100 ? applyOpacityToColor('#000000', 100 - imageOpacity) : undefined;
     properties.filter = config.imageBlur > 0 ? `blur(${config.imageBlur}px)` : undefined;
   }
 
@@ -248,7 +280,7 @@ export const applyBackgroundConfigToStyle = (styleValue: string | undefined, con
 
 export const getCardBackgroundStyle = (
   styleValue: string | undefined,
-  fallbackBackground: string
+  fallbackBackground: string,
 ): CSSProperties => {
   const background = extractStyleProperty(styleValue, 'background');
   const backgroundImage = extractStyleProperty(styleValue, 'background-image');
@@ -270,7 +302,7 @@ export const getCardBackgroundStyle = (
     backgroundRepeat ||
     backgroundBlendMode ||
     backdropFilter ||
-    filter
+    filter,
   );
 
   if (!hasCustom) {
@@ -315,7 +347,7 @@ export const getBackgroundLayerStyle = (styleValue: string | undefined): CSSProp
     backgroundRepeat ||
     backgroundBlendMode ||
     backdropFilter ||
-    filter
+    filter,
   );
 
   if (!hasCustom) return null;

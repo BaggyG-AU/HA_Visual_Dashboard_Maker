@@ -3,7 +3,11 @@ import { resolveIconColor } from '../../src/utils/iconColorResolver';
 
 describe('iconColorResolver', () => {
   it('uses custom color when mode is custom', () => {
-    const result = resolveIconColor({ mode: 'custom', customColor: '#112233', defaultColor: '#000' });
+    const result = resolveIconColor({
+      mode: 'custom',
+      customColor: '#112233',
+      defaultColor: '#000',
+    });
     expect(result).toBe('#112233');
   });
 

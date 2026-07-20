@@ -157,7 +157,10 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
 
   const gradientIcon = isGradientString(iconColor) ? renderGradientIcon(iconColor) : null;
   const iconGlyph = (
-    <span data-testid="custom-button-card-icon-glyph" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+    <span
+      data-testid="custom-button-card-icon-glyph"
+      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+    >
       {gradientIcon || iconComponent}
     </span>
   );
@@ -207,20 +210,29 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
       >
         {multiEntityEnabled && (
           <div style={{ marginBottom: '8px' }} data-testid="custom-button-multi-entity-mode">
-            <Text type="secondary" style={{ fontSize: '11px' }}>Mode: {multiEntityMode}</Text>
+            <Text type="secondary" style={{ fontSize: '11px' }}>
+              Mode: {multiEntityMode}
+            </Text>
           </div>
         )}
 
         {multiEntityEnabled && multiEntityMode === 'aggregate' && (
           <div
-            style={{ marginBottom: '10px', padding: '8px', background: '#141414', border: '1px solid #2f2f2f', borderRadius: '6px' }}
+            style={{
+              marginBottom: '10px',
+              padding: '8px',
+              background: '#141414',
+              border: '1px solid #2f2f2f',
+              borderRadius: '6px',
+            }}
             data-testid="custom-button-multi-entity-aggregate"
           >
             <Text style={{ color: '#e6e6e6', fontSize: '12px', display: 'block' }}>
               {summarizeAggregateState(entityIds, entities)}
             </Text>
             <Text type="secondary" style={{ fontSize: '11px' }}>
-              Function ({aggregateFunction}): {String(evaluateAggregateFunction(aggregateFunction, entityIds, entities))}
+              Function ({aggregateFunction}):{' '}
+              {String(evaluateAggregateFunction(aggregateFunction, entityIds, entities))}
             </Text>
           </div>
         )}
@@ -233,11 +245,18 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
               return (
                 <div
                   key={entityId}
-                  style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #2c2c2c', padding: '4px 0' }}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid #2c2c2c',
+                    padding: '4px 0',
+                  }}
                   data-testid={`custom-button-multi-entity-item-${safeEntityId}`}
                 >
                   <Text style={{ color: '#d9d9d9', fontSize: '12px' }}>{entityId}</Text>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>{targetState}</Text>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    {targetState}
+                  </Text>
                 </div>
               );
             })}
@@ -245,7 +264,11 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
         )}
 
         {multiEntityEnabled && multiEntityMode === 'batch' && (
-          <Space wrap style={{ marginBottom: '10px' }} data-testid="custom-button-multi-entity-batch">
+          <Space
+            wrap
+            style={{ marginBottom: '10px' }}
+            data-testid="custom-button-multi-entity-batch"
+          >
             {batchActions.map((action) => {
               const destructive = isDestructiveBatchAction(action);
               const actionPill = (
@@ -263,7 +286,13 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
                       runBatchAction(action);
                     }
                   }}
-                  style={{ border: '1px solid #3a3a3a', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', color: '#d9d9d9' }}
+                  style={{
+                    border: '1px solid #3a3a3a',
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    color: '#d9d9d9',
+                  }}
                   data-testid={`custom-button-multi-entity-action-${action}`}
                 >
                   {action.replace('_', ' ')}
@@ -322,17 +351,17 @@ export const CustomButtonCardRenderer: React.FC<CustomButtonCardRendererProps> =
 
           {/* Name */}
           {showName && (
-            <Text strong style={{ color: '#fff', fontSize: '13px', textAlign: 'center' }} data-testid="custom-button-card-name">
+            <Text
+              strong
+              style={{ color: '#fff', fontSize: '13px', textAlign: 'center' }}
+              data-testid="custom-button-card-name"
+            >
               {name}
             </Text>
           )}
 
           {/* State */}
-          {showState && entity && (
-            <Text style={{ color: '#888', fontSize: '11px' }}>
-              {state}
-            </Text>
-          )}
+          {showState && entity && <Text style={{ color: '#888', fontSize: '11px' }}>{state}</Text>}
         </div>
 
         {/* Template Indicator */}

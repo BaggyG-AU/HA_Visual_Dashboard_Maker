@@ -45,7 +45,10 @@ const usePrefersReducedMotion = () => {
   return prefersReducedMotion;
 };
 
-const positionToOrientation: Record<'top' | 'bottom' | 'left' | 'right', 'horizontal' | 'vertical'> = {
+const positionToOrientation: Record<
+  'top' | 'bottom' | 'left' | 'right',
+  'horizontal' | 'vertical'
+> = {
   top: 'horizontal',
   bottom: 'horizontal',
   left: 'vertical',
@@ -83,71 +86,83 @@ export const TabsPanel: React.FC<TabsPanelProps> = ({ card, onCardClick }) => {
     }
   }, []);
 
-  const getNextFocusIndex = useCallback((index: number, direction: KeyboardDirection) => {
-    const total = config.tabs.length;
-    if (total <= 0) return 0;
-    if (direction === 'first') return 0;
-    if (direction === 'last') return total - 1;
-    if (direction === 'next') return index === total - 1 ? 0 : index + 1;
-    return index === 0 ? total - 1 : index - 1;
-  }, [config.tabs.length]);
+  const getNextFocusIndex = useCallback(
+    (index: number, direction: KeyboardDirection) => {
+      const total = config.tabs.length;
+      if (total <= 0) return 0;
+      if (direction === 'first') return 0;
+      if (direction === 'last') return total - 1;
+      if (direction === 'next') return index === total - 1 ? 0 : index + 1;
+      return index === 0 ? total - 1 : index - 1;
+    },
+    [config.tabs.length],
+  );
 
-  const activateTab = useCallback((requestedIndex: number) => {
-    setActiveTabIndex((current) => getNextActiveTabIndex(current, requestedIndex, config.tabs.length));
-  }, [config.tabs.length]);
+  const activateTab = useCallback(
+    (requestedIndex: number) => {
+      setActiveTabIndex((current) =>
+        getNextActiveTabIndex(current, requestedIndex, config.tabs.length),
+      );
+    },
+    [config.tabs.length],
+  );
 
-  const handleTabKeyDown = useCallback((event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const key = event.key;
+  const handleTabKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+      const key = event.key;
 
-    if (key === 'Home') {
-      event.preventDefault();
-      moveFocus(getNextFocusIndex(index, 'first'));
-      return;
-    }
+      if (key === 'Home') {
+        event.preventDefault();
+        moveFocus(getNextFocusIndex(index, 'first'));
+        return;
+      }
 
-    if (key === 'End') {
-      event.preventDefault();
-      moveFocus(getNextFocusIndex(index, 'last'));
-      return;
-    }
+      if (key === 'End') {
+        event.preventDefault();
+        moveFocus(getNextFocusIndex(index, 'last'));
+        return;
+      }
 
-    if (key === 'Enter' || key === ' ') {
-      event.preventDefault();
-      activateTab(index);
-      return;
-    }
+      if (key === 'Enter' || key === ' ') {
+        event.preventDefault();
+        activateTab(index);
+        return;
+      }
 
-    if (!tablistIsVertical && key === 'ArrowRight') {
-      event.preventDefault();
-      moveFocus(getNextFocusIndex(index, 'next'));
-      return;
-    }
+      if (!tablistIsVertical && key === 'ArrowRight') {
+        event.preventDefault();
+        moveFocus(getNextFocusIndex(index, 'next'));
+        return;
+      }
 
-    if (!tablistIsVertical && key === 'ArrowLeft') {
-      event.preventDefault();
-      moveFocus(getNextFocusIndex(index, 'prev'));
-      return;
-    }
+      if (!tablistIsVertical && key === 'ArrowLeft') {
+        event.preventDefault();
+        moveFocus(getNextFocusIndex(index, 'prev'));
+        return;
+      }
 
-    if (tablistIsVertical && key === 'ArrowDown') {
-      event.preventDefault();
-      moveFocus(getNextFocusIndex(index, 'next'));
-      return;
-    }
+      if (tablistIsVertical && key === 'ArrowDown') {
+        event.preventDefault();
+        moveFocus(getNextFocusIndex(index, 'next'));
+        return;
+      }
 
-    if (tablistIsVertical && key === 'ArrowUp') {
-      event.preventDefault();
-      moveFocus(getNextFocusIndex(index, 'prev'));
-    }
-  }, [activateTab, getNextFocusIndex, moveFocus, tablistIsVertical]);
+      if (tablistIsVertical && key === 'ArrowUp') {
+        event.preventDefault();
+        moveFocus(getNextFocusIndex(index, 'prev'));
+      }
+    },
+    [activateTab, getNextFocusIndex, moveFocus, tablistIsVertical],
+  );
 
-  const tabListFlexDirection = config.tab_position === 'bottom'
-    ? 'column-reverse'
-    : config.tab_position === 'right'
-      ? 'row-reverse'
-      : config.tab_position === 'left'
-        ? 'row'
-        : 'column';
+  const tabListFlexDirection =
+    config.tab_position === 'bottom'
+      ? 'column-reverse'
+      : config.tab_position === 'right'
+        ? 'row-reverse'
+        : config.tab_position === 'left'
+          ? 'row'
+          : 'column';
 
   return (
     <div
@@ -208,13 +223,23 @@ export const TabsPanel: React.FC<TabsPanelProps> = ({ card, onCardClick }) => {
                 borderRadius: '8px',
                 background: selected ? 'rgba(0, 217, 255, 0.12)' : '#191919',
                 color: selected ? '#d4f9ff' : '#d9d9d9',
-                padding: config.tab_size === 'large' ? '10px 12px' : config.tab_size === 'small' ? '6px 10px' : '8px 11px',
+                padding:
+                  config.tab_size === 'large'
+                    ? '10px 12px'
+                    : config.tab_size === 'small'
+                      ? '6px 10px'
+                      : '8px 11px',
                 cursor: 'pointer',
                 textAlign: 'left',
                 fontSize: sizeToFontSize[config.tab_size],
               }}
             >
-              <MdiIcon icon={tab.icon} size={16} color={selected ? '#9fefff' : '#b0b0b0'} testId={`tabs-icon-${index}`} />
+              <MdiIcon
+                icon={tab.icon}
+                size={16}
+                color={selected ? '#9fefff' : '#b0b0b0'}
+                testId={`tabs-icon-${index}`}
+              />
               <span>{tab.title}</span>
               {typeof tab.count === 'number' && (
                 <span
@@ -277,24 +302,27 @@ export const TabsPanel: React.FC<TabsPanelProps> = ({ card, onCardClick }) => {
                   : config.animation === 'slide'
                     ? 'translateX(8px)'
                     : 'translateX(0)',
-                transition: prefersReducedMotion || config.animation === 'none'
-                  ? 'none'
-                  : config.animation === 'fade'
-                    ? 'opacity 220ms ease'
-                    : 'opacity 220ms ease, transform 220ms ease',
+                transition:
+                  prefersReducedMotion || config.animation === 'none'
+                    ? 'none'
+                    : config.animation === 'fade'
+                      ? 'opacity 220ms ease'
+                      : 'opacity 220ms ease, transform 220ms ease',
               }}
             >
-              {tab.cards.length > 0 ? tab.cards.map((childCard, childIndex) => (
-                <div key={`tabs-panel-${index}-card-${childIndex}`} style={{ minHeight: 0 }}>
-                  <BaseCard
-                    card={childCard}
-                    isSelected={false}
-                    onClick={(event) => {
-                      event?.stopPropagation();
-                    }}
-                  />
-                </div>
-              )) : (
+              {tab.cards.length > 0 ? (
+                tab.cards.map((childCard, childIndex) => (
+                  <div key={`tabs-panel-${index}-card-${childIndex}`} style={{ minHeight: 0 }}>
+                    <BaseCard
+                      card={childCard}
+                      isSelected={false}
+                      onClick={(event) => {
+                        event?.stopPropagation();
+                      }}
+                    />
+                  </div>
+                ))
+              ) : (
                 <div
                   style={{
                     minHeight: '40px',
@@ -306,7 +334,9 @@ export const TabsPanel: React.FC<TabsPanelProps> = ({ card, onCardClick }) => {
                     color: '#7f7f7f',
                   }}
                 >
-                  <Text type="secondary" style={{ fontSize: '12px' }}>(No cards)</Text>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    (No cards)
+                  </Text>
                 </div>
               )}
             </div>

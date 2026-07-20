@@ -1,6 +1,11 @@
 import React from 'react';
 import { Card as AntCard, Typography, Space, Tag } from 'antd';
-import { FireOutlined, CloudOutlined, PoweroffOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import {
+  FireOutlined,
+  CloudOutlined,
+  PoweroffOutlined,
+  ThunderboltOutlined,
+} from '@ant-design/icons';
 import { CustomCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useHAEntities } from '../../contexts/HAEntityContext';
@@ -38,7 +43,12 @@ export const BetterThermostatCardRenderer: React.FC<BetterThermostatCardRenderer
   const currentTemp = attributes.current_temperature || 0;
   const targetTemp = attributes.temperature || 0;
   const hvacMode = state;
-  const hvacModes: string[] = (attributes.hvac_modes as string[] | undefined) || ['heat', 'cool', 'auto', 'off'];
+  const hvacModes: string[] = (attributes.hvac_modes as string[] | undefined) || [
+    'heat',
+    'cool',
+    'auto',
+    'off',
+  ];
   const unit = attributes.unit_of_measurement || '°C';
 
   // Better Thermostat specific attributes
@@ -109,12 +119,12 @@ export const BetterThermostatCardRenderer: React.FC<BetterThermostatCardRenderer
       }}
       styles={{
         body: {
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        gap: '16px',
-      },
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          gap: '16px',
+        },
       }}
       onClick={onClick}
       hoverable
@@ -126,32 +136,43 @@ export const BetterThermostatCardRenderer: React.FC<BetterThermostatCardRenderer
         </Text>
         <Space size={4}>
           {ecoMode && (
-            <Tag color="green" style={{ margin: 0, fontSize: '10px' }}>ECO</Tag>
+            <Tag color="green" style={{ margin: 0, fontSize: '10px' }}>
+              ECO
+            </Tag>
           )}
           {windowOpen && (
-            <Tag color="orange" style={{ margin: 0, fontSize: '10px' }}>WINDOW</Tag>
+            <Tag color="orange" style={{ margin: 0, fontSize: '10px' }}>
+              WINDOW
+            </Tag>
           )}
         </Space>
       </div>
 
       {/* Temperature display */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '16px',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+        }}
+      >
         {/* Current temperature */}
         <div style={{ flex: 1, textAlign: 'center' }}>
-          <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginBottom: '4px' }}>
+          <Text
+            type="secondary"
+            style={{ fontSize: '11px', display: 'block', marginBottom: '4px' }}
+          >
             Current
           </Text>
-          <div style={{
-            fontSize: '32px',
-            fontWeight: 'bold',
-            color: currentColor,
-            lineHeight: 1,
-          }}>
+          <div
+            style={{
+              fontSize: '32px',
+              fontWeight: 'bold',
+              color: currentColor,
+              lineHeight: 1,
+            }}
+          >
             {entity ? currentTemp.toFixed(1) : '--'}
             <span style={{ fontSize: '16px', marginLeft: '2px' }}>{unit}</span>
           </div>
@@ -159,15 +180,20 @@ export const BetterThermostatCardRenderer: React.FC<BetterThermostatCardRenderer
 
         {/* Target temperature */}
         <div style={{ flex: 1, textAlign: 'center' }}>
-          <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginBottom: '4px' }}>
+          <Text
+            type="secondary"
+            style={{ fontSize: '11px', display: 'block', marginBottom: '4px' }}
+          >
             Target
           </Text>
-          <div style={{
-            fontSize: '32px',
-            fontWeight: 'bold',
-            color: '#e6e6e6',
-            lineHeight: 1,
-          }}>
+          <div
+            style={{
+              fontSize: '32px',
+              fontWeight: 'bold',
+              color: '#e6e6e6',
+              lineHeight: 1,
+            }}
+          >
             {entity ? targetTemp.toFixed(1) : '--'}
             <span style={{ fontSize: '16px', marginLeft: '2px' }}>{unit}</span>
           </div>
@@ -175,11 +201,13 @@ export const BetterThermostatCardRenderer: React.FC<BetterThermostatCardRenderer
       </div>
 
       {/* HVAC Mode buttons */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))',
-        gap: '8px',
-      }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))',
+          gap: '8px',
+        }}
+      >
         {hvacModes.map((mode) => {
           const isActive = hvacMode === mode;
           const modeColor = getModeColor(mode);

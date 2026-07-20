@@ -78,19 +78,24 @@ const resolveTabIcon = (tab: TabbedCardTab | Record<string, unknown>): string =>
   return DEFAULT_TAB_ICON;
 };
 
-const normalizeTab = (tab: NonNullable<TabsCardConfig['tabs']>[number], index: number): NormalizedTabConfig => {
+const normalizeTab = (
+  tab: NonNullable<TabsCardConfig['tabs']>[number],
+  index: number,
+): NormalizedTabConfig => {
   const cards = resolveTabCards((tab ?? {}) as TabbedCardTab | Record<string, unknown>);
   const badgeRaw = tab?.badge ?? (tab as { badge?: unknown })?.badge;
-  const badge = typeof badgeRaw === 'string'
-    ? badgeRaw
-    : typeof badgeRaw === 'number'
-      ? String(badgeRaw)
-      : undefined;
+  const badge =
+    typeof badgeRaw === 'string'
+      ? badgeRaw
+      : typeof badgeRaw === 'number'
+        ? String(badgeRaw)
+        : undefined;
 
   const countRaw = tab?.count ?? (tab as { count?: unknown })?.count;
-  const count = typeof countRaw === 'number' && Number.isFinite(countRaw)
-    ? Math.max(0, Math.floor(countRaw))
-    : undefined;
+  const count =
+    typeof countRaw === 'number' && Number.isFinite(countRaw)
+      ? Math.max(0, Math.floor(countRaw))
+      : undefined;
 
   return {
     title: resolveTabTitle((tab ?? {}) as TabbedCardTab | Record<string, unknown>, index),
@@ -132,9 +137,10 @@ const pickDefaultTab = (card: TabsCardConfig): number | undefined => {
 };
 
 export const normalizeTabsConfig = (card: TabsCardConfig): NormalizedTabsCardConfig => {
-  const tabs = Array.isArray(card.tabs) && card.tabs.length > 0
-    ? card.tabs.map((tab, index) => normalizeTab(tab, index))
-    : [normalizeTab({}, 0)];
+  const tabs =
+    Array.isArray(card.tabs) && card.tabs.length > 0
+      ? card.tabs.map((tab, index) => normalizeTab(tab, index))
+      : [normalizeTab({}, 0)];
 
   return {
     tab_position: pickHavdmTabPosition(card) ?? DEFAULT_CONFIG.tab_position,

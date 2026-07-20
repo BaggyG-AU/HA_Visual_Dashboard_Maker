@@ -63,7 +63,10 @@ export const PlantStatusCardRenderer: React.FC<PlantStatusCardRendererProps> = (
   };
 
   const health = getPlantHealth();
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   // Check if value is in acceptable range
   const isInRange = (value: number, min: number, max: number) => {
@@ -89,25 +92,25 @@ export const PlantStatusCardRenderer: React.FC<PlantStatusCardRendererProps> = (
       }}
       styles={{
         body: {
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        gap: '16px',
-      },
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          gap: '16px',
+        },
       }}
       onClick={onClick}
       hoverable
     >
       {/* Header with plant info */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-      }}>
-        <div style={{ fontSize: '48px', lineHeight: 1 }}>
-          {health.emoji}
-        </div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+        }}
+      >
+        <div style={{ fontSize: '48px', lineHeight: 1 }}>{health.emoji}</div>
         <div style={{ flex: 1 }}>
           <Text strong style={{ color: '#e6e6e6', fontSize: '16px', display: 'block' }}>
             {displayName}
@@ -121,13 +124,15 @@ export const PlantStatusCardRenderer: React.FC<PlantStatusCardRendererProps> = (
       </div>
 
       {/* Health status */}
-      <div style={{
-        padding: '12px',
-        backgroundColor: `${health.color}11`,
-        border: `2px solid ${health.color}`,
-        borderRadius: '8px',
-        textAlign: 'center',
-      }}>
+      <div
+        style={{
+          padding: '12px',
+          backgroundColor: `${health.color}11`,
+          border: `2px solid ${health.color}`,
+          borderRadius: '8px',
+          textAlign: 'center',
+        }}
+      >
         <Text
           strong
           style={{
@@ -142,23 +147,25 @@ export const PlantStatusCardRenderer: React.FC<PlantStatusCardRendererProps> = (
       </div>
 
       {/* Sensor metrics */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        flex: 1,
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          flex: 1,
+        }}
+      >
         {/* Moisture */}
         {moisture > 0 && (
           <div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: '4px',
-            }}>
-              <Text style={{ fontSize: '12px', color: '#999' }}>
-                💧 Moisture
-              </Text>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '4px',
+              }}
+            >
+              <Text style={{ fontSize: '12px', color: '#999' }}>💧 Moisture</Text>
               <Text
                 style={{
                   fontSize: '12px',
@@ -182,14 +189,14 @@ export const PlantStatusCardRenderer: React.FC<PlantStatusCardRendererProps> = (
         {/* Temperature */}
         {temperature > 0 && (
           <div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: '4px',
-            }}>
-              <Text style={{ fontSize: '12px', color: '#999' }}>
-                🌡️ Temperature
-              </Text>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '4px',
+              }}
+            >
+              <Text style={{ fontSize: '12px', color: '#999' }}>🌡️ Temperature</Text>
               <Text
                 style={{
                   fontSize: '12px',
@@ -213,14 +220,14 @@ export const PlantStatusCardRenderer: React.FC<PlantStatusCardRendererProps> = (
         {/* Conductivity (soil nutrients) */}
         {conductivity > 0 && (
           <div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: '4px',
-            }}>
-              <Text style={{ fontSize: '12px', color: '#999' }}>
-                🧪 Conductivity
-              </Text>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '4px',
+              }}
+            >
+              <Text style={{ fontSize: '12px', color: '#999' }}>🧪 Conductivity</Text>
               <Text
                 style={{
                   fontSize: '12px',
@@ -244,14 +251,14 @@ export const PlantStatusCardRenderer: React.FC<PlantStatusCardRendererProps> = (
         {/* Brightness (light) */}
         {brightness > 0 && (
           <div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: '4px',
-            }}>
-              <Text style={{ fontSize: '12px', color: '#999' }}>
-                ☀️ Brightness
-              </Text>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: '4px',
+              }}
+            >
+              <Text style={{ fontSize: '12px', color: '#999' }}>☀️ Brightness</Text>
               <Text
                 style={{
                   fontSize: '12px',
@@ -275,18 +282,18 @@ export const PlantStatusCardRenderer: React.FC<PlantStatusCardRendererProps> = (
 
       {/* Battery level (if available) */}
       {battery > 0 && (
-        <div style={{
-          padding: '8px',
-          backgroundColor: 'rgba(255, 255, 255, 0.02)',
-          borderRadius: '6px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          marginTop: 'auto',
-        }}>
-          <Text style={{ fontSize: '12px', color: '#999' }}>
-            🔋 Battery
-          </Text>
+        <div
+          style={{
+            padding: '8px',
+            backgroundColor: 'rgba(255, 255, 255, 0.02)',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: 'auto',
+          }}
+        >
+          <Text style={{ fontSize: '12px', color: '#999' }}>🔋 Battery</Text>
           <Progress
             percent={battery}
             size="small"
@@ -294,19 +301,19 @@ export const PlantStatusCardRenderer: React.FC<PlantStatusCardRendererProps> = (
             trailColor="rgba(255, 255, 255, 0.1)"
             style={{ flex: 1 }}
           />
-          <Text style={{ fontSize: '12px', color: '#999' }}>
-            {battery}%
-          </Text>
+          <Text style={{ fontSize: '12px', color: '#999' }}>{battery}%</Text>
         </div>
       )}
 
       {/* No entity warning */}
       {!entity && card.entity && (
-        <div style={{
-          textAlign: 'center',
-          padding: '20px',
-          color: '#666',
-        }}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '20px',
+            color: '#666',
+          }}
+        >
           <ExperimentOutlined style={{ fontSize: '32px', marginBottom: '8px' }} />
           <Text type="secondary" style={{ display: 'block', fontSize: '12px' }}>
             {card.entity}
@@ -316,11 +323,13 @@ export const PlantStatusCardRenderer: React.FC<PlantStatusCardRendererProps> = (
 
       {/* No sensors warning */}
       {entity && moisture === 0 && temperature === 0 && conductivity === 0 && brightness === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '20px',
-          color: '#666',
-        }}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '20px',
+            color: '#666',
+          }}
+        >
           <Text type="secondary" style={{ fontSize: '12px' }}>
             No sensor data available
           </Text>

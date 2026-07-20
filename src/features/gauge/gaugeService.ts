@@ -9,7 +9,8 @@ const DEFAULT_MIN = 0;
 const DEFAULT_MAX = 100;
 const DEFAULT_COLOR = '#4fa3ff';
 
-const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
 
 const toFiniteNumber = (value: unknown, fallback: number): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -54,8 +55,10 @@ const normalizeSegment = (
 
   return {
     from,
-    color: typeof segment.color === 'string' && segment.color.trim() ? segment.color : fallbackColor,
-    label: typeof segment.label === 'string' && segment.label.trim() ? segment.label.trim() : undefined,
+    color:
+      typeof segment.color === 'string' && segment.color.trim() ? segment.color : fallbackColor,
+    label:
+      typeof segment.label === 'string' && segment.label.trim() ? segment.label.trim() : undefined,
   };
 };
 
@@ -79,10 +82,7 @@ export const normalizeGaugeSegments = (
     .sort((a, b) => a.from - b.from);
 };
 
-const resolveSegmentColor = (
-  normalizedSegments: GaugeCardProSegment[],
-  value: number,
-): string => {
+const resolveSegmentColor = (normalizedSegments: GaugeCardProSegment[], value: number): string => {
   let color = normalizedSegments[0]?.color || DEFAULT_COLOR;
   normalizedSegments.forEach((segment) => {
     if (value >= segment.from) {
@@ -104,9 +104,14 @@ export const normalizeGaugeCardProConfig = (
   const percentage = ((value - min) / (max - min)) * 100;
 
   const segments = normalizeGaugeSegments(card.segments, min, max);
-  const activeColor = card.gradient && segments.length >= 2
-    ? interpolateHexColor(segments[0].color, segments[segments.length - 1].color, percentage / 100)
-    : resolveSegmentColor(segments, value);
+  const activeColor =
+    card.gradient && segments.length >= 2
+      ? interpolateHexColor(
+          segments[0].color,
+          segments[segments.length - 1].color,
+          percentage / 100,
+        )
+      : resolveSegmentColor(segments, value);
 
   const normalizedSegments: NormalizedGaugeCardProSegment[] = segments.map((segment, index) => {
     const next = segments[index + 1];

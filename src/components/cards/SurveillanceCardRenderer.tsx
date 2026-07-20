@@ -71,8 +71,10 @@ export const SurveillanceCardRenderer: React.FC<SurveillanceCardRendererProps> =
   const description = getDescription();
 
   // Get camera entity or first camera from array
-  const cameraEntity = entity || (cameras.length > 0 ? getEntity(cameras[0].entity || cameras[0]) : null);
-  const cameraName = cameraEntity?.attributes?.friendly_name || card.entity || cameras[0]?.name || 'Camera';
+  const cameraEntity =
+    entity || (cameras.length > 0 ? getEntity(cameras[0].entity || cameras[0]) : null);
+  const cameraName =
+    cameraEntity?.attributes?.friendly_name || card.entity || cameras[0]?.name || 'Camera';
 
   return (
     <div
@@ -132,7 +134,10 @@ export const SurveillanceCardRenderer: React.FC<SurveillanceCardRendererProps> =
           />
 
           {/* Camera Name */}
-          <Text strong style={{ color: '#fff', fontSize: '13px', marginBottom: '4px', textAlign: 'center' }}>
+          <Text
+            strong
+            style={{ color: '#fff', fontSize: '13px', marginBottom: '4px', textAlign: 'center' }}
+          >
             {cameraName}
           </Text>
 
@@ -147,16 +152,15 @@ export const SurveillanceCardRenderer: React.FC<SurveillanceCardRendererProps> =
                 animation: 'pulse 2s infinite',
               }}
             />
-            <Text style={{ color: '#52c41a', fontSize: '11px' }}>
-              LIVE PREVIEW (in HA)
-            </Text>
+            <Text style={{ color: '#52c41a', fontSize: '11px' }}>LIVE PREVIEW (in HA)</Text>
           </div>
 
           {/* WebRTC URL indicator */}
           {url && (
             <div style={{ marginTop: '8px' }}>
               <Text code style={{ fontSize: '10px', color: '#666' }}>
-                {url.substring(0, 30)}{url.length > 30 ? '...' : ''}
+                {url.substring(0, 30)}
+                {url.length > 30 ? '...' : ''}
               </Text>
             </div>
           )}
@@ -164,9 +168,7 @@ export const SurveillanceCardRenderer: React.FC<SurveillanceCardRendererProps> =
 
         {/* Description */}
         <div style={{ marginTop: '12px' }}>
-          <Text style={{ color: '#888', fontSize: '11px' }}>
-            {description}
-          </Text>
+          <Text style={{ color: '#888', fontSize: '11px' }}>{description}</Text>
         </div>
 
         {/* Footer Note */}

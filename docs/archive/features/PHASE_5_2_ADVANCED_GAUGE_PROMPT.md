@@ -66,15 +66,15 @@ Before implementation, complete this gate and include results in your response:
 
 ## Implementation Targets
 
-| Purpose | Path |
-|---------|------|
-| Types | `src/features/gauge/types.ts` |
-| Service | `src/features/gauge/gaugeService.ts` |
-| Component | `src/features/gauge/GaugeCardProCard.tsx` |
-| Renderer | `src/components/cards/GaugeCardProCardRenderer.tsx` |
+| Purpose             | Path                                                          |
+| ------------------- | ------------------------------------------------------------- |
+| Types               | `src/features/gauge/types.ts`                                 |
+| Service             | `src/features/gauge/gaugeService.ts`                          |
+| Component           | `src/features/gauge/GaugeCardProCard.tsx`                     |
+| Renderer            | `src/components/cards/GaugeCardProCardRenderer.tsx`           |
 | Registry + BaseCard | `src/services/cardRegistry.ts`, `src/components/BaseCard.tsx` |
-| PropertiesPanel | `src/components/PropertiesPanel.tsx` |
-| Schema | `src/schemas/ha-dashboard-schema.json` |
+| PropertiesPanel     | `src/components/PropertiesPanel.tsx`                          |
+| Schema              | `src/schemas/ha-dashboard-schema.json`                        |
 
 ### YAML Example
 
@@ -88,16 +88,16 @@ needle: true
 gradient: true
 segments:
   - from: 0
-    color: "#ff6b6b"
-    label: "Low"
+    color: '#ff6b6b'
+    label: 'Low'
   - from: 30
-    color: "#ffd166"
-    label: "Medium"
+    color: '#ffd166'
+    label: 'Medium'
   - from: 70
-    color: "#6ccf7f"
-    label: "High"
+    color: '#6ccf7f'
+    label: 'High'
 value_texts:
-  primary_unit: "%"
+  primary_unit: '%'
 ```
 
 ---
@@ -129,6 +129,7 @@ After implementation, run exactly one **Fast Gate** pass and then stop:
 4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
 
 After this single Fast Gate run, provide a summary report that includes:
+
 - Exact commands executed
 - Pass/fail status for each command
 - Any failing tests with artifact paths under `test-results/artifacts/**`

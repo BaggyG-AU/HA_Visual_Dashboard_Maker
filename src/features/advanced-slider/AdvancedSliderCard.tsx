@@ -19,7 +19,7 @@ interface AdvancedSliderCardProps {
   onClick?: () => void;
 }
 
-const toSliderValue = (next: number | number[]): number => Array.isArray(next) ? next[0] : next;
+const toSliderValue = (next: number | number[]): number => (Array.isArray(next) ? next[0] : next);
 
 export const AdvancedSliderCard: React.FC<AdvancedSliderCardProps> = ({
   card,
@@ -47,52 +47,72 @@ export const AdvancedSliderCard: React.FC<AdvancedSliderCardProps> = ({
     lastFeedbackValueRef.current = normalized.value;
   }, [normalized.value]);
 
-  const emitFeedback = useCallback((value: number) => {
-    if (value === lastFeedbackValueRef.current) return;
-    lastFeedbackValueRef.current = value;
+  const emitFeedback = useCallback(
+    (value: number) => {
+      if (value === lastFeedbackValueRef.current) return;
+      lastFeedbackValueRef.current = value;
 
-    if (card.haptic?.enabled) {
-      const pattern = card.haptic.pattern || 'light';
-      triggerHapticPattern(pattern, card.haptic);
-    }
+      if (card.haptic?.enabled) {
+        const pattern = card.haptic.pattern || 'light';
+        triggerHapticPattern(pattern, card.haptic);
+      }
 
-    if (card.sound?.enabled) {
-      const effect = card.sound.effect || 'click';
-      void playSound(effect, card.sound);
-    }
-  }, [card.haptic, card.sound]);
+      if (card.sound?.enabled) {
+        const effect = card.sound.effect || 'click';
+        void playSound(effect, card.sound);
+      }
+    },
+    [card.haptic, card.sound],
+  );
 
-  const applyUpdate = useCallback((nextRaw: number, isRelease: boolean) => {
-    const snapped = snapSliderValue(
-      nextRaw,
-      normalized.min,
-      normalized.max,
-      normalized.step,
-      normalized.precision,
-    );
+  const applyUpdate = useCallback(
+    (nextRaw: number, isRelease: boolean) => {
+      const snapped = snapSliderValue(
+        nextRaw,
+        normalized.min,
+        normalized.max,
+        normalized.step,
+        normalized.precision,
+      );
 
-    const resolved = resolveSliderUpdate(
+      const resolved = resolveSliderUpdate(
+        committedValue,
+        snapped,
+        normalized.commitOnRelease,
+        isRelease,
+      );
+
+      setDraftValue(resolved.draftValue);
+
+      if (resolved.shouldCommit) {
+        setCommittedValue(resolved.committedValue);
+        emitFeedback(resolved.committedValue);
+      }
+    },
+    [
       committedValue,
-      snapped,
+      emitFeedback,
       normalized.commitOnRelease,
-      isRelease,
-    );
+      normalized.max,
+      normalized.min,
+      normalized.precision,
+      normalized.step,
+    ],
+  );
 
-    setDraftValue(resolved.draftValue);
+  const handleSliderChange = useCallback(
+    (next: number | number[]) => {
+      applyUpdate(toSliderValue(next), false);
+    },
+    [applyUpdate],
+  );
 
-    if (resolved.shouldCommit) {
-      setCommittedValue(resolved.committedValue);
-      emitFeedback(resolved.committedValue);
-    }
-  }, [committedValue, emitFeedback, normalized.commitOnRelease, normalized.max, normalized.min, normalized.precision, normalized.step]);
-
-  const handleSliderChange = useCallback((next: number | number[]) => {
-    applyUpdate(toSliderValue(next), false);
-  }, [applyUpdate]);
-
-  const handleSliderChangeComplete = useCallback((next: number | number[]) => {
-    applyUpdate(toSliderValue(next), true);
-  }, [applyUpdate]);
+  const handleSliderChangeComplete = useCallback(
+    (next: number | number[]) => {
+      applyUpdate(toSliderValue(next), true);
+    },
+    [applyUpdate],
+  );
 
   const backgroundStyle = getCardBackgroundStyle(
     card.style,
@@ -104,9 +124,7 @@ export const AdvancedSliderCard: React.FC<AdvancedSliderCardProps> = ({
   const marks = useMemo(() => {
     return normalized.markers.reduce<Record<number, React.ReactNode>>((acc, marker) => {
       acc[marker.value] = (
-        <span style={{ color: marker.color || '#9f9f9f', fontSize: 10 }}>
-          {marker.label}
-        </span>
+        <span style={{ color: marker.color || '#9f9f9f', fontSize: 10 }}>{marker.label}</span>
       );
       return acc;
     }, {});
@@ -144,7 +162,8 @@ export const AdvancedSliderCard: React.FC<AdvancedSliderCardProps> = ({
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '120px' }}>
         <Text type="secondary" data-testid="advanced-slider-meta">
-          {normalized.orientation} | range {normalized.min}..{normalized.max} | step {normalized.step}
+          {normalized.orientation} | range {normalized.min}..{normalized.max} | step{' '}
+          {normalized.step}
         </Text>
         {normalized.showValue && (
           <Text strong style={{ color: activeColor }} data-testid="advanced-slider-value">
@@ -161,7 +180,11 @@ export const AdvancedSliderCard: React.FC<AdvancedSliderCardProps> = ({
       {normalized.unavailable && !card.entity ? (
         <Empty
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description={<span data-testid="advanced-slider-empty">Set an entity to enable runtime value binding</span>}
+          description={
+            <span data-testid="advanced-slider-empty">
+              Set an entity to enable runtime value binding
+            </span>
+          }
           style={{ margin: 'auto 0' }}
         />
       ) : (

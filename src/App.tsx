@@ -1,6 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ConfigProvider, Layout, theme, Button, Space, message, Modal, Alert, Tabs, Badge, Tooltip, Segmented } from 'antd';
-import { FolderOpenOutlined, SaveOutlined, ApiOutlined, CloudUploadOutlined, AppstoreOutlined, DownloadOutlined, EyeOutlined, FileAddOutlined, CodeOutlined, UndoOutlined, RedoOutlined, DatabaseOutlined, SplitCellsOutlined, AppstoreAddOutlined, SettingOutlined, SwapOutlined } from '@ant-design/icons';
+import {
+  ConfigProvider,
+  Layout,
+  theme,
+  Button,
+  Space,
+  message,
+  Modal,
+  Alert,
+  Tabs,
+  Badge,
+  Tooltip,
+  Segmented,
+} from 'antd';
+import {
+  FolderOpenOutlined,
+  SaveOutlined,
+  ApiOutlined,
+  CloudUploadOutlined,
+  AppstoreOutlined,
+  DownloadOutlined,
+  EyeOutlined,
+  FileAddOutlined,
+  CodeOutlined,
+  UndoOutlined,
+  RedoOutlined,
+  DatabaseOutlined,
+  SplitCellsOutlined,
+  AppstoreAddOutlined,
+  SettingOutlined,
+  SwapOutlined,
+} from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
@@ -74,7 +104,11 @@ interface RemapWatcherProps {
   onMissingDetected: (missing: string[]) => void;
 }
 
-const RemapWatcher: React.FC<RemapWatcherProps> = ({ config, onAvailableEntities, onMissingDetected }) => {
+const RemapWatcher: React.FC<RemapWatcherProps> = ({
+  config,
+  onAvailableEntities,
+  onMissingDetected,
+}) => {
   const { entities } = useHAEntities();
 
   useEffect(() => {
@@ -90,11 +124,17 @@ const RemapWatcher: React.FC<RemapWatcherProps> = ({ config, onAvailableEntities
 };
 
 const isTestEnv = (): boolean => {
-  if (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1')) {
+  if (
+    typeof process !== 'undefined' &&
+    (process.env.NODE_ENV === 'test' || process.env.E2E === '1')
+  ) {
     return true;
   }
   if (typeof window !== 'undefined') {
-    const testWindow = window as Window & { E2E?: string | boolean; PLAYWRIGHT_TEST?: string | boolean };
+    const testWindow = window as Window & {
+      E2E?: string | boolean;
+      PLAYWRIGHT_TEST?: string | boolean;
+    };
     return Boolean(testWindow.E2E || testWindow.PLAYWRIGHT_TEST);
   }
   return false;
@@ -107,9 +147,13 @@ const App: React.FC = () => {
   const [dashboardBrowserVisible, setDashboardBrowserVisible] = useState<boolean>(false);
   const [yamlEditorVisible, setYamlEditorVisible] = useState<boolean>(false);
   const [entityBrowserVisible, setEntityBrowserVisible] = useState<boolean>(false);
-  const [entityInsertCallback, setEntityInsertCallback] = useState<((entityId: string) => void) | null>(null);
+  const [entityInsertCallback, setEntityInsertCallback] = useState<
+    ((entityId: string) => void) | null
+  >(null);
   const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
-  const [settingsTab, setSettingsTab] = useState<'appearance' | 'connection' | 'diagnostics'>('appearance');
+  const [settingsTab, setSettingsTab] = useState<'appearance' | 'connection' | 'diagnostics'>(
+    'appearance',
+  );
   const [verboseUIDebug, setVerboseUIDebug] = useState<boolean>(false);
   const [newDashboardDialogVisible, setNewDashboardDialogVisible] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -166,29 +210,23 @@ const App: React.FC = () => {
     redo,
     isBatching,
     canUndo,
-    canRedo
+    canRedo,
   } = useDashboardStore();
 
   // Theme store
-  const {
-    currentTheme,
-    darkMode,
-    setAvailableThemes
-  } = useThemeStore();
+  const { currentTheme, darkMode, setAvailableThemes } = useThemeStore();
 
   // Editor mode store
-  const {
-    mode: editorMode,
-    setMode: setEditorMode,
-  } = useEditorModeStore();
+  const { mode: editorMode, setMode: setEditorMode } = useEditorModeStore();
 
   // Expose remap debug state in test environments
   useEffect(() => {
     if (!isTestEnv() || typeof window === 'undefined') return;
     const testWindow = window as Window & { __remapDebug?: unknown };
-    const existing = (testWindow.__remapDebug && typeof testWindow.__remapDebug === 'object')
-      ? (testWindow.__remapDebug as Record<string, unknown>)
-      : {};
+    const existing =
+      testWindow.__remapDebug && typeof testWindow.__remapDebug === 'object'
+        ? (testWindow.__remapDebug as Record<string, unknown>)
+        : {};
     testWindow.__remapDebug = { ...existing, ...buildRemapDebugState() };
     return () => {
       delete testWindow.__remapDebug;
@@ -202,11 +240,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const container = canvasContainerRef.current;
     if (container && currentTheme) {
-      themeService.applyThemeToElement(
-        container,
-        currentTheme,
-        darkMode
-      );
+      themeService.applyThemeToElement(container, currentTheme, darkMode);
     }
 
     return () => {
@@ -252,10 +286,7 @@ const App: React.FC = () => {
             default_theme: themesData?.default_theme ?? themeName ?? 'default',
             default_dark_theme: themesData?.default_dark_theme ?? null,
             themes: (themesData?.themes ?? {}) as unknown as Record<string, Theme>,
-            darkMode:
-              typeof themesData?.darkMode === 'boolean'
-                ? themesData.darkMode
-            : true,
+            darkMode: typeof themesData?.darkMode === 'boolean' ? themesData.darkMode : true,
             theme: themeName ?? 'default',
           });
         },
@@ -399,7 +430,10 @@ const App: React.FC = () => {
     const referenced = entityRemappingService.extractEntityIds(config);
     const missing = entityRemappingService.detectMissing(referenced, availableEntities);
     setMissingEntities(missing);
-    logRemapDebug('triggerMissingEntityScan', { referencedCount: referenced.length, missingCount: missing.length });
+    logRemapDebug('triggerMissingEntityScan', {
+      referencedCount: referenced.length,
+      missingCount: missing.length,
+    });
     setRemapModalVisible(true);
     setAutoRemapPending(false);
   };
@@ -411,7 +445,10 @@ const App: React.FC = () => {
     }
     const referenced = entityRemappingService.extractEntityIds(config);
     const missing = entityRemappingService.detectMissing(referenced, availableEntities);
-    logRemapDebug('handleManualRemapOpen', { referencedCount: referenced.length, missingCount: missing.length });
+    logRemapDebug('handleManualRemapOpen', {
+      referencedCount: referenced.length,
+      missingCount: missing.length,
+    });
     setMissingEntities(missing);
     setRemapModalVisible(true);
     setAutoRemapPending(false);
@@ -422,18 +459,31 @@ const App: React.FC = () => {
       title: 'About HA Visual Dashboard Maker',
       content: (
         <div>
-          <p><strong>Version:</strong> 0.1.0</p>
-          <p><strong>Author:</strong> BaggyG-AU</p>
-          <p>A visual WYSIWYG editor for Home Assistant dashboards with support for custom cards.</p>
+          <p>
+            <strong>Version:</strong> 0.1.0
+          </p>
+          <p>
+            <strong>Author:</strong> BaggyG-AU
+          </p>
+          <p>
+            A visual WYSIWYG editor for Home Assistant dashboards with support for custom cards.
+          </p>
           <p style={{ marginTop: '16px' }}>
-            <a href="https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker"
-               onClick={(e) => { e.preventDefault(); window.electronAPI.openExternal?.('https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker'); }}>
+            <a
+              href="https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker"
+              onClick={(e) => {
+                e.preventDefault();
+                window.electronAPI.openExternal?.(
+                  'https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker',
+                );
+              }}
+            >
               View on GitHub
             </a>
           </p>
         </div>
       ),
-      okText: 'Close'
+      okText: 'Close',
     });
   };
 
@@ -449,7 +499,12 @@ const App: React.FC = () => {
       return;
     }
 
-    selectCardWithMode(selectedViewIndex, cardIndex, options?.mode ?? 'replace', currentCards.length);
+    selectCardWithMode(
+      selectedViewIndex,
+      cardIndex,
+      options?.mode ?? 'replace',
+      currentCards.length,
+    );
   };
 
   const handleLayoutChange = (layout: GridLayoutType) => {
@@ -493,7 +548,12 @@ const App: React.FC = () => {
         const next = layout.find((item) => item.i === `card-${index}`);
         const current = card.layout;
         if (!next || !current) return true;
-        return current.x !== next.x || current.y !== next.y || current.w !== next.w || current.h !== next.h;
+        return (
+          current.x !== next.x ||
+          current.y !== next.y ||
+          current.w !== next.w ||
+          current.h !== next.h
+        );
       });
     })();
 
@@ -514,8 +574,11 @@ const App: React.FC = () => {
           const viewLayout = viewLayouts[index];
           if (viewLayout) {
             // Remove internal layout property and add view_layout
-          const { layout: _layout, ...cardWithoutLayout } = card as unknown as Record<string, unknown> & { layout?: unknown };
-          void _layout;
+            const { layout: _layout, ...cardWithoutLayout } = card as unknown as Record<
+              string,
+              unknown
+            > & { layout?: unknown };
+            void _layout;
             return {
               ...(cardWithoutLayout as Record<string, unknown>),
               view_layout: {
@@ -546,7 +609,7 @@ const App: React.FC = () => {
       }
 
       const updatedViews = config.views.map((view, i) =>
-        i === selectedViewIndex ? { ...view, cards: updatedCards } : view
+        i === selectedViewIndex ? { ...view, cards: updatedCards } : view,
       );
       // During a batch (e.g., card property editing), use applyBatchedConfig to
       // avoid pushing intermediate states to the undo stack and prematurely
@@ -610,7 +673,7 @@ const App: React.FC = () => {
     const currentView = config.views[selectedViewIndex];
     const updatedCards = [...(currentView.cards || []), newCard];
     const updatedViews = config.views.map((view, i) =>
-      i === selectedViewIndex ? { ...view, cards: updatedCards } : view
+      i === selectedViewIndex ? { ...view, cards: updatedCards } : view,
     );
 
     // Set flag to ignore the next layout change event (ref for synchronous update)
@@ -635,10 +698,14 @@ const App: React.FC = () => {
     const currentView = config.views[selectedViewIndex];
     if (currentView.cards && currentView.cards[selectedCardIndex]) {
       const targetIndices = resolveSelectedIndices(currentView.cards.length);
-      const { cards: updatedCards } = applyBulkCardUpdate(currentView.cards, targetIndices, updatedCard);
+      const { cards: updatedCards } = applyBulkCardUpdate(
+        currentView.cards,
+        targetIndices,
+        updatedCard,
+      );
 
       const updatedViews = config.views.map((view, i) =>
-        i === selectedViewIndex ? { ...view, cards: updatedCards } : view
+        i === selectedViewIndex ? { ...view, cards: updatedCards } : view,
       );
       applyBatchedConfig({ ...config, views: updatedViews });
     }
@@ -651,10 +718,14 @@ const App: React.FC = () => {
 
     if (currentView.cards && currentView.cards[selectedCardIndex]) {
       const targetIndices = resolveSelectedIndices(currentView.cards.length);
-      const { cards: updatedCards, updatedCount } = applyBulkCardUpdate(currentView.cards, targetIndices, updatedCard);
+      const { cards: updatedCards, updatedCount } = applyBulkCardUpdate(
+        currentView.cards,
+        targetIndices,
+        updatedCard,
+      );
 
       const updatedViews = config.views.map((view, i) =>
-        i === selectedViewIndex ? { ...view, cards: updatedCards } : view
+        i === selectedViewIndex ? { ...view, cards: updatedCards } : view,
       );
       applyBatchedConfig({ ...config, views: updatedViews });
       endBatchUpdate();
@@ -709,7 +780,11 @@ const App: React.FC = () => {
       sourceCardIndices: selectedIndices,
     });
 
-    message.info(cardsToCut.length > 1 ? `${cardsToCut.length} cards cut to clipboard` : 'Card cut to clipboard');
+    message.info(
+      cardsToCut.length > 1
+        ? `${cardsToCut.length} cards cut to clipboard`
+        : 'Card cut to clipboard',
+    );
   };
 
   const handleCardCopy = () => {
@@ -741,7 +816,11 @@ const App: React.FC = () => {
       sourceCardIndices: selectedIndices,
     });
 
-    message.info(cardsToCopy.length > 1 ? `${cardsToCopy.length} cards copied to clipboard` : 'Card copied to clipboard');
+    message.info(
+      cardsToCopy.length > 1
+        ? `${cardsToCopy.length} cards copied to clipboard`
+        : 'Card copied to clipboard',
+    );
   };
 
   const handleCardPaste = () => {
@@ -781,7 +860,11 @@ const App: React.FC = () => {
     });
 
     // If it was a cut operation, remove source cards
-    if (clipboard.isCut && clipboard.sourceViewIndex !== null && clipboard.sourceCardIndices.length > 0) {
+    if (
+      clipboard.isCut &&
+      clipboard.sourceViewIndex !== null &&
+      clipboard.sourceCardIndices.length > 0
+    ) {
       updatedViews = updatedViews.map((view, i) => {
         if (i === clipboard.sourceViewIndex && view.cards) {
           return { ...view, cards: removeCardsByIndices(view.cards, clipboard.sourceCardIndices) };
@@ -797,14 +880,23 @@ const App: React.FC = () => {
       setClipboard({ cards: null, isCut: false, sourceViewIndex: null, sourceCardIndices: [] });
       message.success(pastedCards.length > 1 ? `${pastedCards.length} cards moved` : 'Card moved');
     } else {
-      message.success(pastedCards.length > 1 ? `${pastedCards.length} cards pasted` : 'Card pasted');
+      message.success(
+        pastedCards.length > 1 ? `${pastedCards.length} cards pasted` : 'Card pasted',
+      );
     }
 
     // Select newly pasted cards
     const pastedViewCards = updatedViews[selectedViewIndex].cards || [];
     const startIndex = pastedViewCards.length - pastedCards.length;
-    const nextSelection = Array.from({ length: pastedCards.length }, (_, offset) => startIndex + offset);
-    setSelectedCards(selectedViewIndex, nextSelection, nextSelection[nextSelection.length - 1] ?? null);
+    const nextSelection = Array.from(
+      { length: pastedCards.length },
+      (_, offset) => startIndex + offset,
+    );
+    setSelectedCards(
+      selectedViewIndex,
+      nextSelection,
+      nextSelection[nextSelection.length - 1] ?? null,
+    );
   };
 
   const handleCardDelete = () => {
@@ -828,7 +920,7 @@ const App: React.FC = () => {
     // Remove the card immutably
     const updatedCards = removeCardsByIndices(currentView.cards, selectedIndices);
     const updatedViews = config.views.map((view, i) =>
-      i === selectedViewIndex ? { ...view, cards: updatedCards } : view
+      i === selectedViewIndex ? { ...view, cards: updatedCards } : view,
     );
 
     updateConfig({ ...config, views: updatedViews });
@@ -836,7 +928,9 @@ const App: React.FC = () => {
     // Deselect card
     setSelectedCards(selectedViewIndex, [], null);
 
-    message.success(selectedIndices.length > 1 ? `${selectedIndices.length} cards deleted` : 'Card deleted');
+    message.success(
+      selectedIndices.length > 1 ? `${selectedIndices.length} cards deleted` : 'Card deleted',
+    );
   };
 
   const handleOpenConnectionDialog = () => {
@@ -996,7 +1090,11 @@ const App: React.FC = () => {
     setDashboardBrowserVisible(false);
   };
 
-  const handleDashboardDownload = (dashboardYaml: string, dashboardTitle: string, dashboardId: string) => {
+  const handleDashboardDownload = (
+    dashboardYaml: string,
+    dashboardTitle: string,
+    dashboardId: string,
+  ) => {
     // Load the downloaded dashboard into the editor
     loadDashboard(dashboardYaml, `${dashboardTitle} (${dashboardId})`);
     const parsed = yamlService.parseDashboard(dashboardYaml);
@@ -1017,7 +1115,8 @@ const App: React.FC = () => {
     if (isDirty && config) {
       Modal.confirm({
         title: 'Unsaved Changes',
-        content: 'You have unsaved changes. Do you want to create a new dashboard anyway? Your current changes will be lost.',
+        content:
+          'You have unsaved changes. Do you want to create a new dashboard anyway? Your current changes will be lost.',
         okText: 'Create New',
         cancelText: 'Cancel',
         okButtonProps: { danger: true },
@@ -1063,7 +1162,7 @@ const App: React.FC = () => {
 
     // Parse to get card count for success message
     const result = yamlService.parseDashboard(dashboardYaml);
-    const cardCount = result.success && result.data?.views[0]?.cards?.length || 0;
+    const cardCount = (result.success && result.data?.views[0]?.cards?.length) || 0;
 
     message.success({
       content: `${title} created successfully! ${cardCount} cards added.`,
@@ -1121,7 +1220,10 @@ const App: React.FC = () => {
 
       message.success({ content: 'Live preview mode activated!', key: 'livepreview', duration: 2 });
     } catch (error) {
-      message.error({ content: `Failed to create temp dashboard: ${(error as Error).message}`, key: 'livepreview' });
+      message.error({
+        content: `Failed to create temp dashboard: ${(error as Error).message}`,
+        key: 'livepreview',
+      });
     }
   };
 
@@ -1348,7 +1450,8 @@ const App: React.FC = () => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Only handle keyboard shortcuts when a card is selected and not in an input field
       const target = event.target as HTMLElement;
-      const isInputField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      const isInputField =
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
       if (isInputField) {
         return;
@@ -1369,7 +1472,10 @@ const App: React.FC = () => {
         }
       }
       // Ctrl+Y or Ctrl+Shift+Z: Redo
-      else if ((event.ctrlKey && event.key === 'y') || (event.ctrlKey && event.shiftKey && event.key === 'z')) {
+      else if (
+        (event.ctrlKey && event.key === 'y') ||
+        (event.ctrlKey && event.shiftKey && event.key === 'z')
+      ) {
         event.preventDefault();
         if (canRedo()) {
           ignoreNextLayoutChangeRef.current = true;
@@ -1404,7 +1510,18 @@ const App: React.FC = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedViewIndex, selectedCardIndex, selectedCardIndices, clipboard, config, handleSave, undo, redo, canUndo, canRedo]);
+  }, [
+    selectedViewIndex,
+    selectedCardIndex,
+    selectedCardIndices,
+    clipboard,
+    config,
+    handleSave,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  ]);
 
   return (
     <ConfigProvider
@@ -1413,469 +1530,498 @@ const App: React.FC = () => {
       }}
     >
       <HAEntityProvider enabled={isConnected}>
-      <RemapWatcher
-        config={config}
-        onAvailableEntities={(entities) => setAvailableEntities(entities)}
-        onMissingDetected={(missing) => {
-          setMissingEntities(missing);
-          if (missing.length > 0 && autoRemapPending) {
-            setRemapModalVisible(true);
-            setAutoRemapPending(false);
-          }
-        }}
-      />
-      <Layout
-        data-testid="app-shell"
-        className="app-container"
-        style={{ height: '100vh' }}
-      >
-        <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>
-              HA Visual Dashboard Maker
+        <RemapWatcher
+          config={config}
+          onAvailableEntities={(entities) => setAvailableEntities(entities)}
+          onMissingDetected={(missing) => {
+            setMissingEntities(missing);
+            if (missing.length > 0 && autoRemapPending) {
+              setRemapModalVisible(true);
+              setAutoRemapPending(false);
+            }
+          }}
+        />
+        <Layout data-testid="app-shell" className="app-container" style={{ height: '100vh' }}>
+          <Header
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0 24px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>
+                HA Visual Dashboard Maker
+              </div>
+              <Space>
+                <Tooltip title="Undo last action (Ctrl+Z)">
+                  <Button
+                    size="small"
+                    icon={<UndoOutlined />}
+                    onClick={() => {
+                      ignoreNextLayoutChangeRef.current = true;
+                      undo();
+                      message.info('Undo');
+                    }}
+                    disabled={!canUndo()}
+                  />
+                </Tooltip>
+                <Tooltip title="Redo last undone action (Ctrl+Y)">
+                  <Button
+                    size="small"
+                    icon={<RedoOutlined />}
+                    onClick={() => {
+                      ignoreNextLayoutChangeRef.current = true;
+                      redo();
+                      message.info('Redo');
+                    }}
+                    disabled={!canRedo()}
+                  />
+                </Tooltip>
+                <Tooltip title="Browse and search Home Assistant entities">
+                  <Button
+                    size="small"
+                    icon={<DatabaseOutlined />}
+                    onClick={() => setEntityBrowserVisible(true)}
+                  >
+                    Entities
+                  </Button>
+                </Tooltip>
+              </Space>
             </div>
             <Space>
-              <Tooltip title="Undo last action (Ctrl+Z)">
-                <Button
-                  size="small"
-                  icon={<UndoOutlined />}
-                  onClick={() => {
-                    ignoreNextLayoutChangeRef.current = true;
-                    undo();
-                    message.info('Undo');
-                  }}
-                  disabled={!canUndo()}
-                />
-              </Tooltip>
-              <Tooltip title="Redo last undone action (Ctrl+Y)">
-                <Button
-                  size="small"
-                  icon={<RedoOutlined />}
-                  onClick={() => {
-                    ignoreNextLayoutChangeRef.current = true;
-                    redo();
-                    message.info('Redo');
-                  }}
-                  disabled={!canRedo()}
-                />
-              </Tooltip>
-              <Tooltip title="Browse and search Home Assistant entities">
-                <Button
-                  size="small"
-                  icon={<DatabaseOutlined />}
-                  onClick={() => setEntityBrowserVisible(true)}
-                >
-                  Entities
+              {isConnected && <ThemeSelector onRefreshThemes={fetchThemes} />}
+              <Badge
+                status={isConnected ? 'success' : 'default'}
+                text={isConnected ? 'Connected' : 'Not Connected'}
+                style={{ color: '#888' }}
+              />
+              {isConnected ? (
+                <Button size="small" onClick={handleDisconnect}>
+                  Disconnect
                 </Button>
+              ) : (
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={<ApiOutlined />}
+                  onClick={handleOpenConnectionDialog}
+                >
+                  Connect to HA
+                </Button>
+              )}
+              <Tooltip title="Settings">
+                <Button
+                  size="small"
+                  icon={<SettingOutlined />}
+                  aria-label="Settings"
+                  onClick={() => {
+                    setSettingsTab('appearance');
+                    setSettingsVisible(true);
+                  }}
+                />
               </Tooltip>
             </Space>
-          </div>
-          <Space>
-            {isConnected && (
-              <ThemeSelector
-                onRefreshThemes={fetchThemes}
-              />
-            )}
-            <Badge status={isConnected ? 'success' : 'default'} text={isConnected ? 'Connected' : 'Not Connected'} style={{ color: '#888' }} />
-            {isConnected ? (
-              <Button size="small" onClick={handleDisconnect}>
-                Disconnect
-              </Button>
-            ) : (
-              <Button type="primary" size="small" icon={<ApiOutlined />} onClick={handleOpenConnectionDialog}>
-                Connect to HA
-              </Button>
-            )}
-            <Tooltip title="Settings">
-              <Button
-                size="small"
-                icon={<SettingOutlined />}
-                aria-label="Settings"
-                onClick={() => {
-                  setSettingsTab('appearance');
-                  setSettingsVisible(true);
+          </Header>
+          <Layout>
+            <Sider width={280} theme="dark" style={{ height: '100vh', overflow: 'hidden' }}>
+              <CardPalette onCardAdd={handleCardAdd} />
+            </Sider>
+            <Layout style={{ padding: '24px' }}>
+              <Content
+                ref={canvasContainerRef}
+                style={{
+                  padding: 24,
+                  margin: 0,
+                  minHeight: 280,
+                  background: '#141414',
+                  borderRadius: 8,
+                  color: 'white',
                 }}
-              />
-            </Tooltip>
-          </Space>
-        </Header>
-        <Layout>
-          <Sider width={280} theme="dark" style={{ height: '100vh', overflow: 'hidden' }}>
-            <CardPalette onCardAdd={handleCardAdd} />
-          </Sider>
-          <Layout style={{ padding: '24px' }}>
-            <Content
-              ref={canvasContainerRef}
-              style={{
-                padding: 24,
-                margin: 0,
-                minHeight: 280,
-                background: '#141414',
-                borderRadius: 8,
-                color: 'white',
-              }}
-            >
-              {error && (
-                <Alert
-                  message="Error Loading Dashboard"
-                  description={error}
-                  type="error"
-                  closable
-                  style={{ marginBottom: '16px' }}
-                />
-              )}
+              >
+                {error && (
+                  <Alert
+                    message="Error Loading Dashboard"
+                    description={error}
+                    type="error"
+                    closable
+                    style={{ marginBottom: '16px' }}
+                  />
+                )}
 
-              {!config && !error && (
-                <>
-                  <h1 style={{ color: '#00d9ff' }}>Welcome to HA Visual Dashboard Maker</h1>
-                  <p>Phase 4: Standard Card Support - In Progress</p>
+                {!config && !error && (
+                  <>
+                    <h1 style={{ color: '#00d9ff' }}>Welcome to HA Visual Dashboard Maker</h1>
+                    <p>Phase 4: Standard Card Support - In Progress</p>
 
-                  <div style={{ marginTop: '24px' }}>
-                    <Space size="large">
-                      <Tooltip title="Create a new blank dashboard from scratch">
-                        <Button
-                          type="primary"
-                          size="large"
-                          icon={<FileAddOutlined />}
-                          onClick={handleNewDashboard}
+                    <div style={{ marginTop: '24px' }}>
+                      <Space size="large">
+                        <Tooltip title="Create a new blank dashboard from scratch">
+                          <Button
+                            type="primary"
+                            size="large"
+                            icon={<FileAddOutlined />}
+                            onClick={handleNewDashboard}
+                          >
+                            New Dashboard
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Open an existing dashboard YAML file from your computer">
+                          <Button
+                            size="large"
+                            icon={<FolderOpenOutlined />}
+                            onClick={handleOpenFile}
+                          >
+                            Open Local File
+                          </Button>
+                        </Tooltip>
+                        <Tooltip
+                          title={
+                            isConnected
+                              ? 'Browse and download dashboards from Home Assistant'
+                              : 'Connect to Home Assistant to browse dashboards'
+                          }
                         >
-                          New Dashboard
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Open an existing dashboard YAML file from your computer">
-                        <Button
-                          size="large"
-                          icon={<FolderOpenOutlined />}
-                          onClick={handleOpenFile}
-                        >
-                          Open Local File
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title={isConnected ? "Browse and download dashboards from Home Assistant" : "Connect to Home Assistant to browse dashboards"}>
-                        <Button
-                          size="large"
-                          icon={<AppstoreOutlined />}
-                          onClick={handleOpenDashboardBrowser}
-                          disabled={!isConnected}
-                        >
-                          Browse HA Dashboards
-                        </Button>
-                      </Tooltip>
-                    </Space>
-                  </div>
-
-                  <div style={{ marginTop: '32px', color: '#888', fontSize: '14px' }}>
-                    <p>Create a new blank dashboard, open a local YAML file, or browse dashboards from your Home Assistant instance.</p>
-                    <p style={{ marginTop: '8px' }}>Supported file types: .yaml, .yml</p>
-                  </div>
-                </>
-              )}
-
-              {config && (
-                <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <div>
-                      <h2 style={{ color: '#00d9ff', margin: 0 }}>
-                        {config.title || 'Dashboard'}
-                        {isDirty && <span style={{ color: '#ff9800', marginLeft: '8px' }}>*</span>}
-                      </h2>
-                      <p style={{ color: '#888', fontSize: '12px', margin: '4px 0 0 0' }}>
-                        {filePath}
-                      </p>
+                          <Button
+                            size="large"
+                            icon={<AppstoreOutlined />}
+                            onClick={handleOpenDashboardBrowser}
+                            disabled={!isConnected}
+                          >
+                            Browse HA Dashboards
+                          </Button>
+                        </Tooltip>
+                      </Space>
                     </div>
-                    <Space wrap>
-                      <Tooltip title="Create a new blank dashboard">
-                        <Button
-                          icon={<FileAddOutlined />}
-                          onClick={handleNewDashboard}
-                        >
-                          New
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Open an existing dashboard YAML file from your computer">
-                        <Button
-                          icon={<FolderOpenOutlined />}
-                          onClick={handleOpenFile}
-                        >
-                          Open
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Download a dashboard from your Home Assistant instance">
-                        <Button
-                          icon={<DownloadOutlined />}
-                          onClick={handleOpenDashboardBrowser}
-                          disabled={!isConnected}
-                        >
-                          Download
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Edit dashboard YAML directly with syntax highlighting">
-                        <Button
-                          icon={<CodeOutlined />}
-                          onClick={handleOpenYamlEditor}
-                        >
-                          Edit YAML
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Toggle between Visual, Code, and Split view modes">
-                        <Segmented
-                          size="middle"
-                          value={editorMode}
-                          onChange={(value) => setEditorMode(value as EditorMode)}
-                          options={[
-                            { label: 'Visual', value: 'visual', icon: <AppstoreAddOutlined /> },
-                            { label: 'Split', value: 'split', icon: <SplitCellsOutlined /> },
-                          ]}
-                        />
-                      </Tooltip>
-                      <Tooltip title="Save dashboard to local YAML file">
-                        <Button
-                          type="primary"
-                          icon={<SaveOutlined />}
-                          onClick={handleSave}
-                          disabled={!isDirty}
-                        >
-                          Save
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Deploy dashboard to your Home Assistant instance">
-                        <Button
-                          icon={<CloudUploadOutlined />}
-                          onClick={handleOpenDeployDialog}
-                          disabled={!isConnected}
-                        >
-                          Deploy
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Remap missing entities">
-                        <Button
-                          icon={<SwapOutlined />}
-                          onClick={handleManualRemapOpen}
-                          data-testid="remap-open-manual"
-                        >
-                          Remap
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Preview dashboard live in Home Assistant with drag-and-drop editing">
-                        <Button
-                          type={livePreviewMode ? 'primary' : 'default'}
-                          icon={<EyeOutlined />}
-                          onClick={handleEnterLivePreview}
-                          disabled={!isConnected || livePreviewMode}
-                        >
-                          Live Preview
-                        </Button>
-                      </Tooltip>
-                    </Space>
-                  </div>
 
-                  <div style={{ height: 'calc(100vh - 250px)' }}>
-                    {livePreviewMode && selectedViewIndex !== null ? (
-                      <HADashboardIframe
-                        view={config.views[selectedViewIndex]}
-                        haUrl={haUrl}
-                        tempDashboardPath={tempDashboardPath}
-                        onLayoutChange={handleLayoutChange}
-                        onDeploy={handleDeployFromLivePreview}
-                        onClose={handleExitLivePreview}
-                      />
-                    ) : editorMode === 'split' ? (
-                      <SplitViewEditor
-                        selectedViewIndex={selectedViewIndex}
-                        selectedCardIndex={selectedCardIndex}
-                        selectedCardIndices={selectedCardIndices}
-                        onCardSelect={handleCardSelect}
-                        onLayoutChange={handleLayoutChange}
-                        onCardDrop={handleCardDrop}
-                        onCardCut={handleCardCut}
-                        onCardCopy={handleCardCopy}
-                        onCardPaste={handleCardPaste}
-                        onCardDelete={handleCardDelete}
-                        canPaste={clipboard.cards !== null}
-                      />
-                    ) : (
-                    <Tabs
-                      activeKey={selectedViewIndex?.toString() || '0'}
-                      onChange={(key) => setSelectedView(parseInt(key))}
-                      items={config.views.map((view, index) => ({
-                        key: index.toString(),
-                        label: view.title || view.path || `View ${index + 1}`,
-                        children: (
-                          <div style={{ height: 'calc(100vh - 310px)' }}>
-                            <GridCanvas
-                              view={view}
-                              selectedCardIndex={selectedCardIndex}
-                              selectedCardIndices={selectedCardIndices}
-                              onCardSelect={handleCardSelect}
-                              onLayoutChange={handleLayoutChange}
-                              onCardDrop={handleCardDrop}
-                              onCardCut={handleCardCut}
-                              onCardCopy={handleCardCopy}
-                              onCardPaste={handleCardPaste}
-                              onCardDelete={handleCardDelete}
-                              canPaste={clipboard.cards !== null}
-                            />
-                          </div>
-                        ),
-                      }))}
-                      style={{ height: '100%' }}
-                    />
-                    )}
-                  </div>
-                </>
-              )}
-            </Content>
+                    <div style={{ marginTop: '32px', color: '#888', fontSize: '14px' }}>
+                      <p>
+                        Create a new blank dashboard, open a local YAML file, or browse dashboards
+                        from your Home Assistant instance.
+                      </p>
+                      <p style={{ marginTop: '8px' }}>Supported file types: .yaml, .yml</p>
+                    </div>
+                  </>
+                )}
+
+                {config && (
+                  <>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '16px',
+                      }}
+                    >
+                      <div>
+                        <h2 style={{ color: '#00d9ff', margin: 0 }}>
+                          {config.title || 'Dashboard'}
+                          {isDirty && (
+                            <span style={{ color: '#ff9800', marginLeft: '8px' }}>*</span>
+                          )}
+                        </h2>
+                        <p style={{ color: '#888', fontSize: '12px', margin: '4px 0 0 0' }}>
+                          {filePath}
+                        </p>
+                      </div>
+                      <Space wrap>
+                        <Tooltip title="Create a new blank dashboard">
+                          <Button icon={<FileAddOutlined />} onClick={handleNewDashboard}>
+                            New
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Open an existing dashboard YAML file from your computer">
+                          <Button icon={<FolderOpenOutlined />} onClick={handleOpenFile}>
+                            Open
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Download a dashboard from your Home Assistant instance">
+                          <Button
+                            icon={<DownloadOutlined />}
+                            onClick={handleOpenDashboardBrowser}
+                            disabled={!isConnected}
+                          >
+                            Download
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Edit dashboard YAML directly with syntax highlighting">
+                          <Button icon={<CodeOutlined />} onClick={handleOpenYamlEditor}>
+                            Edit YAML
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Toggle between Visual, Code, and Split view modes">
+                          <Segmented
+                            size="middle"
+                            value={editorMode}
+                            onChange={(value) => setEditorMode(value as EditorMode)}
+                            options={[
+                              { label: 'Visual', value: 'visual', icon: <AppstoreAddOutlined /> },
+                              { label: 'Split', value: 'split', icon: <SplitCellsOutlined /> },
+                            ]}
+                          />
+                        </Tooltip>
+                        <Tooltip title="Save dashboard to local YAML file">
+                          <Button
+                            type="primary"
+                            icon={<SaveOutlined />}
+                            onClick={handleSave}
+                            disabled={!isDirty}
+                          >
+                            Save
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Deploy dashboard to your Home Assistant instance">
+                          <Button
+                            icon={<CloudUploadOutlined />}
+                            onClick={handleOpenDeployDialog}
+                            disabled={!isConnected}
+                          >
+                            Deploy
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Remap missing entities">
+                          <Button
+                            icon={<SwapOutlined />}
+                            onClick={handleManualRemapOpen}
+                            data-testid="remap-open-manual"
+                          >
+                            Remap
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Preview dashboard live in Home Assistant with drag-and-drop editing">
+                          <Button
+                            type={livePreviewMode ? 'primary' : 'default'}
+                            icon={<EyeOutlined />}
+                            onClick={handleEnterLivePreview}
+                            disabled={!isConnected || livePreviewMode}
+                          >
+                            Live Preview
+                          </Button>
+                        </Tooltip>
+                      </Space>
+                    </div>
+
+                    <div style={{ height: 'calc(100vh - 250px)' }}>
+                      {livePreviewMode && selectedViewIndex !== null ? (
+                        <HADashboardIframe
+                          view={config.views[selectedViewIndex]}
+                          haUrl={haUrl}
+                          tempDashboardPath={tempDashboardPath}
+                          onLayoutChange={handleLayoutChange}
+                          onDeploy={handleDeployFromLivePreview}
+                          onClose={handleExitLivePreview}
+                        />
+                      ) : editorMode === 'split' ? (
+                        <SplitViewEditor
+                          selectedViewIndex={selectedViewIndex}
+                          selectedCardIndex={selectedCardIndex}
+                          selectedCardIndices={selectedCardIndices}
+                          onCardSelect={handleCardSelect}
+                          onLayoutChange={handleLayoutChange}
+                          onCardDrop={handleCardDrop}
+                          onCardCut={handleCardCut}
+                          onCardCopy={handleCardCopy}
+                          onCardPaste={handleCardPaste}
+                          onCardDelete={handleCardDelete}
+                          canPaste={clipboard.cards !== null}
+                        />
+                      ) : (
+                        <Tabs
+                          activeKey={selectedViewIndex?.toString() || '0'}
+                          onChange={(key) => setSelectedView(parseInt(key))}
+                          items={config.views.map((view, index) => ({
+                            key: index.toString(),
+                            label: view.title || view.path || `View ${index + 1}`,
+                            children: (
+                              <div style={{ height: 'calc(100vh - 310px)' }}>
+                                <GridCanvas
+                                  view={view}
+                                  selectedCardIndex={selectedCardIndex}
+                                  selectedCardIndices={selectedCardIndices}
+                                  onCardSelect={handleCardSelect}
+                                  onLayoutChange={handleLayoutChange}
+                                  onCardDrop={handleCardDrop}
+                                  onCardCut={handleCardCut}
+                                  onCardCopy={handleCardCopy}
+                                  onCardPaste={handleCardPaste}
+                                  onCardDelete={handleCardDelete}
+                                  canPaste={clipboard.cards !== null}
+                                />
+                              </div>
+                            ),
+                          }))}
+                          style={{ height: '100%' }}
+                        />
+                      )}
+                    </div>
+                  </>
+                )}
+              </Content>
+            </Layout>
+            <Sider
+              width={450}
+              theme="dark"
+              style={{ overflow: 'auto', height: 'calc(100vh - 64px)' }}
+            >
+              <PropertiesPanel
+                card={
+                  config && selectedViewIndex !== null && selectedCardIndex !== null
+                    ? config.views[selectedViewIndex]?.cards?.[selectedCardIndex] || null
+                    : null
+                }
+                cardIndex={selectedCardIndex}
+                historyNavigationVersion={historyNavigationVersion}
+                onChange={handleCardUpdate}
+                onCommit={handleCardCommit}
+                onCancel={handlePropertiesCancel}
+                onOpenEntityBrowser={handleOpenEntityBrowser}
+              />
+              {isConnected && <ThemePreviewPanel />}
+            </Sider>
           </Layout>
-          <Sider width={450} theme="dark" style={{ overflow: 'auto', height: 'calc(100vh - 64px)' }}>
-            <PropertiesPanel
-              card={
-                config && selectedViewIndex !== null && selectedCardIndex !== null
-                  ? config.views[selectedViewIndex]?.cards?.[selectedCardIndex] || null
-                  : null
-              }
-              cardIndex={selectedCardIndex}
-              historyNavigationVersion={historyNavigationVersion}
-              onChange={handleCardUpdate}
-              onCommit={handleCardCommit}
-              onCancel={handlePropertiesCancel}
-              onOpenEntityBrowser={handleOpenEntityBrowser}
-            />
-            {isConnected && <ThemePreviewPanel />}
-          </Sider>
         </Layout>
-      </Layout>
-      <SettingsDialog
-        visible={settingsVisible}
-        onClose={() => setSettingsVisible(false)}
-        activeTab={settingsTab}
-        onTabChange={setSettingsTab}
-        onVerboseChange={setVerboseUIDebug}
-        onConnect={handleConnect}
-      />
-      <DeployDialog
-        visible={deployDialogVisible}
-        onClose={handleCloseDeployDialog}
-        dashboardYaml={config ? yamlService.serializeForHA(config) : ''}
-        dashboardTitle={config?.title}
-      />
-      <DashboardBrowser
-        visible={dashboardBrowserVisible}
-        onClose={handleCloseDashboardBrowser}
-        onDashboardDownload={handleDashboardDownload}
-      />
-      <YamlEditorDialog
-        visible={yamlEditorVisible}
-        dashboardYaml={config ? yamlService.serializeDashboard(config) : ''}
-        onClose={handleCloseYamlEditor}
-        onApply={handleApplyYamlChanges}
-        onOpenEntityBrowser={handleOpenEntityBrowser}
-      />
-      <EntityBrowser
-        visible={entityBrowserVisible}
-        onClose={() => {
-          setEntityBrowserVisible(false);
-          setEntityInsertCallback(null);
-        }}
-        onSelect={handleEntitySelected}
-        isConnected={isConnected}
-        onRefresh={fetchAndCacheEntities}
-      />
-      <NewDashboardDialog
-        visible={newDashboardDialogVisible}
-        onClose={() => setNewDashboardDialogVisible(false)}
-        onCreateBlank={createNewDashboard}
-        onCreateFromTemplate={handleCreateFromTemplate}
-        onCreateFromEntityType={handleCreateFromEntityType}
-        isConnected={isConnected}
-      />
-      <EntityRemappingModal
-        visible={remapModalVisible}
-        missingEntities={missingEntities}
-        availableEntities={availableEntities}
-        dashboardConfig={config}
-        onClose={() => {
-          setRemapModalVisible(false);
-        }}
-        onApply={(updatedConfig, mappings) => {
-          if (isTestEnv() && typeof window !== 'undefined') {
-            const testWindow = window as Window & { __remapDebug?: Record<string, unknown> };
-            const existing = (testWindow.__remapDebug && typeof testWindow.__remapDebug === 'object')
-              ? (testWindow.__remapDebug as Record<string, unknown>)
-              : {};
-            testWindow.__remapDebug = { ...existing, remapOnApplyInvoked: true };
-          }
-          setRemapModalVisible(false);
-          updateConfig(updatedConfig);
-          if (selectedViewIndex !== null && selectedCardIndex !== null) {
-            const viewIndex = selectedViewIndex;
-            const cardIndex = selectedCardIndex;
-            setSelectedCard(viewIndex, null);
-            setTimeout(() => setSelectedCard(viewIndex, cardIndex), 0);
-          }
-          message.success(`Mapped ${mappings.length} entit${mappings.length === 1 ? 'y' : 'ies'}`);
-        }}
-      />
-      {verboseUIDebug && (
-        <div
-          data-testid="verbose-ui-overlay"
-          style={{
-            position: 'fixed',
-            bottom: 8,
-            right: 8,
-            zIndex: 2000,
-            background: '#1f1f1f',
-            color: '#fff',
-            padding: '8px 12px',
-            border: '1px solid #434343',
-            borderRadius: 4,
-            fontSize: 12,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+        <SettingsDialog
+          visible={settingsVisible}
+          onClose={() => setSettingsVisible(false)}
+          activeTab={settingsTab}
+          onTabChange={setSettingsTab}
+          onVerboseChange={setVerboseUIDebug}
+          onConnect={handleConnect}
+        />
+        <DeployDialog
+          visible={deployDialogVisible}
+          onClose={handleCloseDeployDialog}
+          dashboardYaml={config ? yamlService.serializeForHA(config) : ''}
+          dashboardTitle={config?.title}
+        />
+        <DashboardBrowser
+          visible={dashboardBrowserVisible}
+          onClose={handleCloseDashboardBrowser}
+          onDashboardDownload={handleDashboardDownload}
+        />
+        <YamlEditorDialog
+          visible={yamlEditorVisible}
+          dashboardYaml={config ? yamlService.serializeDashboard(config) : ''}
+          onClose={handleCloseYamlEditor}
+          onApply={handleApplyYamlChanges}
+          onOpenEntityBrowser={handleOpenEntityBrowser}
+        />
+        <EntityBrowser
+          visible={entityBrowserVisible}
+          onClose={() => {
+            setEntityBrowserVisible(false);
+            setEntityInsertCallback(null);
           }}
-        >
-          <div><strong>Verbose UI Debug</strong></div>
-          <div>Status: {isConnected ? 'Connected' : 'Offline'}</div>
-          <div>File: {filePath || 'Untitled'}</div>
-        </div>
-      )}
-      {isTestEnv() && (
-        <div
-          data-testid="remap-debug-state"
-          data-visible={remapModalVisible ? '1' : '0'}
-          data-missing-count={missingEntities.length}
-          data-available-count={availableEntities.length}
-          data-auto-remap-pending={autoRemapPending ? '1' : '0'}
-          style={{ display: 'none' }}
+          onSelect={handleEntitySelected}
+          isConnected={isConnected}
+          onRefresh={fetchAndCacheEntities}
         />
-      )}
-      {isTestEnv() && (
-        <div
-          data-testid="selection-debug-state"
-          data-selected-view={selectedViewIndex === null ? 'null' : String(selectedViewIndex)}
-          data-selected-card={selectedCardIndex === null ? 'null' : String(selectedCardIndex)}
-          data-selected-cards={selectedCardIndices.join(',')}
-          data-selected-cards-count={String(selectedCardIndices.length)}
-          data-selected-card-type={
-            selectedViewIndex !== null && selectedCardIndex !== null
-              ? (config?.views?.[selectedViewIndex]?.cards?.[selectedCardIndex]?.type ?? 'unknown')
-              : 'none'
-          }
-          data-selected-card-count={
-            selectedViewIndex !== null ? String(config?.views?.[selectedViewIndex]?.cards?.length ?? 0) : '0'
-          }
-          style={{ display: 'none' }}
+        <NewDashboardDialog
+          visible={newDashboardDialogVisible}
+          onClose={() => setNewDashboardDialogVisible(false)}
+          onCreateBlank={createNewDashboard}
+          onCreateFromTemplate={handleCreateFromTemplate}
+          onCreateFromEntityType={handleCreateFromEntityType}
+          isConnected={isConnected}
         />
-      )}
-      {isTestEnv() && (
-        <div
-          data-testid="history-debug-state"
-          data-past-length={String(past.length)}
-          data-future-length={String(future.length)}
-          data-can-undo={canUndo() ? '1' : '0'}
-          data-can-redo={canRedo() ? '1' : '0'}
-          style={{ display: 'none' }}
+        <EntityRemappingModal
+          visible={remapModalVisible}
+          missingEntities={missingEntities}
+          availableEntities={availableEntities}
+          dashboardConfig={config}
+          onClose={() => {
+            setRemapModalVisible(false);
+          }}
+          onApply={(updatedConfig, mappings) => {
+            if (isTestEnv() && typeof window !== 'undefined') {
+              const testWindow = window as Window & { __remapDebug?: Record<string, unknown> };
+              const existing =
+                testWindow.__remapDebug && typeof testWindow.__remapDebug === 'object'
+                  ? (testWindow.__remapDebug as Record<string, unknown>)
+                  : {};
+              testWindow.__remapDebug = { ...existing, remapOnApplyInvoked: true };
+            }
+            setRemapModalVisible(false);
+            updateConfig(updatedConfig);
+            if (selectedViewIndex !== null && selectedCardIndex !== null) {
+              const viewIndex = selectedViewIndex;
+              const cardIndex = selectedCardIndex;
+              setSelectedCard(viewIndex, null);
+              setTimeout(() => setSelectedCard(viewIndex, cardIndex), 0);
+            }
+            message.success(
+              `Mapped ${mappings.length} entit${mappings.length === 1 ? 'y' : 'ies'}`,
+            );
+          }}
         />
-      )}
-      <PopupHost />
+        {verboseUIDebug && (
+          <div
+            data-testid="verbose-ui-overlay"
+            style={{
+              position: 'fixed',
+              bottom: 8,
+              right: 8,
+              zIndex: 2000,
+              background: '#1f1f1f',
+              color: '#fff',
+              padding: '8px 12px',
+              border: '1px solid #434343',
+              borderRadius: 4,
+              fontSize: 12,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+            }}
+          >
+            <div>
+              <strong>Verbose UI Debug</strong>
+            </div>
+            <div>Status: {isConnected ? 'Connected' : 'Offline'}</div>
+            <div>File: {filePath || 'Untitled'}</div>
+          </div>
+        )}
+        {isTestEnv() && (
+          <div
+            data-testid="remap-debug-state"
+            data-visible={remapModalVisible ? '1' : '0'}
+            data-missing-count={missingEntities.length}
+            data-available-count={availableEntities.length}
+            data-auto-remap-pending={autoRemapPending ? '1' : '0'}
+            style={{ display: 'none' }}
+          />
+        )}
+        {isTestEnv() && (
+          <div
+            data-testid="selection-debug-state"
+            data-selected-view={selectedViewIndex === null ? 'null' : String(selectedViewIndex)}
+            data-selected-card={selectedCardIndex === null ? 'null' : String(selectedCardIndex)}
+            data-selected-cards={selectedCardIndices.join(',')}
+            data-selected-cards-count={String(selectedCardIndices.length)}
+            data-selected-card-type={
+              selectedViewIndex !== null && selectedCardIndex !== null
+                ? (config?.views?.[selectedViewIndex]?.cards?.[selectedCardIndex]?.type ??
+                  'unknown')
+                : 'none'
+            }
+            data-selected-card-count={
+              selectedViewIndex !== null
+                ? String(config?.views?.[selectedViewIndex]?.cards?.length ?? 0)
+                : '0'
+            }
+            style={{ display: 'none' }}
+          />
+        )}
+        {isTestEnv() && (
+          <div
+            data-testid="history-debug-state"
+            data-past-length={String(past.length)}
+            data-future-length={String(future.length)}
+            data-can-undo={canUndo() ? '1' : '0'}
+            data-can-redo={canRedo() ? '1' : '0'}
+            style={{ display: 'none' }}
+          />
+        )}
+        <PopupHost />
       </HAEntityProvider>
     </ConfigProvider>
   );

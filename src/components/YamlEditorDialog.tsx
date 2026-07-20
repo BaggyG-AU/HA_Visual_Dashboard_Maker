@@ -29,12 +29,16 @@ const shouldBypassValidation = (isTestEnv: boolean): boolean => {
 
 const detectTestEnv = (): boolean => {
   const importMetaEnvHolder =
-    typeof import.meta !== 'undefined' ? (import.meta as unknown as { env?: Record<string, string | undefined> }) : undefined;
+    typeof import.meta !== 'undefined'
+      ? (import.meta as unknown as { env?: Record<string, string | undefined> })
+      : undefined;
   const importMetaEnv: Record<string, string | undefined> = importMetaEnvHolder?.env ?? {};
 
   return (
     (typeof process !== 'undefined' &&
-      (process.env.NODE_ENV === 'test' || process.env.E2E === '1' || process.env.PLAYWRIGHT_TEST === '1')) ||
+      (process.env.NODE_ENV === 'test' ||
+        process.env.E2E === '1' ||
+        process.env.PLAYWRIGHT_TEST === '1')) ||
     (typeof navigator !== 'undefined' && /Playwright/i.test(navigator.userAgent)) ||
     (() => {
       const testWindow = getTestWindow();
@@ -112,7 +116,9 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
     const runValidation = () => {
       const testWindow = getTestWindow();
       const modelValue =
-        testWindow?.__monacoModel?.getValue?.() ?? monacoEditorRef.current?.getValue() ?? yamlContent;
+        testWindow?.__monacoModel?.getValue?.() ??
+        monacoEditorRef.current?.getValue() ??
+        yamlContent;
 
       // Sync local state to reflect external edits
       setYamlContent(modelValue);
@@ -219,7 +225,7 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
     if (!selection) return;
     const id = { major: 1, minor: 1 };
     const op = { identifier: id, range: selection, text: entityId, forceMoveMarkers: true };
-    editor.executeEdits("insert-entity", [op]);
+    editor.executeEdits('insert-entity', [op]);
     editor.focus();
 
     message.success(`Inserted entity: ${entityId}`);
@@ -262,7 +268,10 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
         width={1000}
         style={{ top: 20 }}
         footer={[
-          <Tooltip key="insertEntity-tooltip" title="Open entity browser and insert selected entity ID at cursor position">
+          <Tooltip
+            key="insertEntity-tooltip"
+            title="Open entity browser and insert selected entity ID at cursor position"
+          >
             <Button
               key="insertEntity"
               data-testid="yaml-insert-entity-button"

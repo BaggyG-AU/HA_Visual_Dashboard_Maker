@@ -247,8 +247,8 @@ describe('yaml conversion service', () => {
     });
 
     expect((exported as Record<string, unknown>).tab_position).toBeUndefined();
-    expect(((exported.tabs as Array<Record<string, unknown>>)[0]).badge).toBeUndefined();
-    expect(((exported.tabs as Array<Record<string, unknown>>)[0]).count).toBeUndefined();
+    expect((exported.tabs as Array<Record<string, unknown>>)[0].badge).toBeUndefined();
+    expect((exported.tabs as Array<Record<string, unknown>>)[0].count).toBeUndefined();
   });
 
   it('migrates legacy card types including accordion multi-sections', () => {
@@ -327,22 +327,29 @@ describe('yaml conversion service', () => {
     };
 
     const imported = importDashboard(dashboard);
-    const importedSwipe = ((imported.views as Array<Record<string, unknown>>)[0].cards as Array<Record<string, unknown>>)[0]
-      .cards as Array<Record<string, unknown>>;
+    const importedSwipe = (
+      (imported.views as Array<Record<string, unknown>>)[0].cards as Array<Record<string, unknown>>
+    )[0].cards as Array<Record<string, unknown>>;
     expect((importedSwipe[0] as Record<string, unknown>).slides).toBeTruthy();
 
     const exported = exportDashboard(imported);
-    const exportedVertical = (((exported.views as Array<Record<string, unknown>>)[0].cards as Array<Record<string, unknown>>)[0]
-      .cards as Array<Record<string, unknown>>);
+    const exportedVertical = (
+      (exported.views as Array<Record<string, unknown>>)[0].cards as Array<Record<string, unknown>>
+    )[0].cards as Array<Record<string, unknown>>;
     const exportedSwipe = exportedVertical[0];
     const exportedConditional = exportedVertical[1];
     const exportedTabbed = exportedConditional.card as Record<string, unknown>;
-    const exportedPopup = ((exportedTabbed.tabs as Array<Record<string, unknown>>)[0].card as Record<string, unknown>);
+    const exportedPopup = (exportedTabbed.tabs as Array<Record<string, unknown>>)[0].card as Record<
+      string,
+      unknown
+    >;
 
     expect(exportedSwipe.type).toBe('custom:swipe-card');
     expect((exportedSwipe.parameters as Record<string, unknown>).slidesPerView).toBe(1);
     expect(exportedTabbed.options).toEqual({ defaultTabIndex: 0 });
-    expect(exportedPopup.popup).toMatchObject({ cards: [{ type: 'markdown', content: 'Popup child' }] });
+    expect(exportedPopup.popup).toMatchObject({
+      cards: [{ type: 'markdown', content: 'Popup child' }],
+    });
   });
 
   it('preserves unknown properties and handles empty/missing/null edge cases', () => {

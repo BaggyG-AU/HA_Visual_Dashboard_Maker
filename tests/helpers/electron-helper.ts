@@ -21,10 +21,7 @@ export interface ElectronTestApp {
  * Ensures localStorage/sessionStorage/IndexedDB don't leak between tests
  */
 function createTempUserDataDir(): string {
-  const dir = path.join(
-    os.tmpdir(),
-    `pw-electron-test-${crypto.randomBytes(8).toString('hex')}`
-  );
+  const dir = path.join(os.tmpdir(), `pw-electron-test-${crypto.randomBytes(8).toString('hex')}`);
   fs.mkdirSync(dir, { recursive: true });
   console.log('[HELPER] Created isolated user data dir:', dir);
   return dir;
@@ -69,7 +66,9 @@ export async function launchElectronApp(): Promise<ElectronTestApp> {
   const isMainWindow = (page: Page) => {
     const url = page.url();
     if (url.startsWith('devtools://')) return false;
-    return url.includes('main_window/index.html') || url.includes('index.html') || url === 'about:blank';
+    return (
+      url.includes('main_window/index.html') || url.includes('index.html') || url === 'about:blank'
+    );
   };
 
   let window = app.windows().find(isMainWindow);
@@ -97,7 +96,10 @@ export async function launchElectronApp(): Promise<ElectronTestApp> {
 /**
  * Close the Electron application and cleanup temp storage
  */
-export async function closeElectronApp(app: ElectronApplication, userDataDir?: string): Promise<void> {
+export async function closeElectronApp(
+  app: ElectronApplication,
+  userDataDir?: string,
+): Promise<void> {
   await app.close();
 
   // Clean up temp user data directory
@@ -118,10 +120,7 @@ export async function closeElectronApp(app: ElectronApplication, userDataDir?: s
  */
 export async function waitForReactHydration(window: Page, timeout = 10000): Promise<void> {
   try {
-    await window.waitForFunction(
-      () => (window as any).__REACT_HYDRATED__ === true,
-      { timeout }
-    );
+    await window.waitForFunction(() => (window as any).__REACT_HYDRATED__ === true, { timeout });
     console.log('[TEST] React hydration confirmed');
   } catch (error) {
     // Hydration signal might not be present - use minimal fallback
@@ -159,11 +158,7 @@ export async function waitForAppReady(window: Page, timeout = 10000): Promise<vo
 /**
  * Take a screenshot with a descriptive name
  */
-export async function takeScreenshot(
-  window: Page,
-  name: string,
-  fullPage = false
-): Promise<void> {
+export async function takeScreenshot(window: Page, name: string, fullPage = false): Promise<void> {
   const screenshotPath = path.join(__dirname, '../../test-results/screenshots', `${name}.png`);
   await window.screenshot({
     path: screenshotPath,
@@ -189,10 +184,7 @@ export async function pressShortcut(window: Page, shortcut: string): Promise<voi
 /**
  * Wait for file dialog and handle it
  */
-export async function handleFileDialog(
-  app: ElectronApplication,
-  filePath: string
-): Promise<void> {
+export async function handleFileDialog(app: ElectronApplication, filePath: string): Promise<void> {
   // This is a placeholder - Electron file dialogs need special handling
   // You'll need to mock the dialog or use IPC to bypass it in tests
   console.log(`Would select file: ${filePath}`);
@@ -410,7 +402,9 @@ export async function createNewDashboard(window: Page): Promise<boolean> {
     const gridLayout = await window.locator('.react-grid-layout').count();
     const emptyMessage = await window.locator('text="No cards in this view"').count();
     const canvasExists = gridLayout > 0 || emptyMessage > 0;
-    console.log(`Dashboard created: ${canvasExists} (grid: ${gridLayout}, empty msg: ${emptyMessage})`);
+    console.log(
+      `Dashboard created: ${canvasExists} (grid: ${gridLayout}, empty msg: ${emptyMessage})`,
+    );
 
     return canvasExists;
   } catch (error) {

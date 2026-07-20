@@ -19,7 +19,8 @@ const MAX_RINGS = 4;
 const MIN_RING_THICKNESS = 4;
 const MAX_RING_THICKNESS = 32;
 
-const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
 
 const toFiniteNumber = (value: unknown, fallback: number): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -49,19 +50,20 @@ const normalizeGradient = (gradient: unknown): NormalizedProgressRingGradient | 
   const rawStops = (gradient as { stops?: unknown }).stops;
   const stops = Array.isArray(rawStops)
     ? rawStops
-      .map((stop: unknown) => {
-        if (!stop || typeof stop !== 'object') return null;
-        const color = typeof (stop as { color?: unknown }).color === 'string'
-          ? (stop as { color: string }).color.trim()
-          : '';
-        if (!color) return null;
-        return {
-          color,
-          position: clamp(toFiniteNumber((stop as { position?: unknown }).position, 0), 0, 100),
-        };
-      })
-      .filter((stop): stop is { color: string; position: number } => Boolean(stop))
-      .sort((a, b) => a.position - b.position)
+        .map((stop: unknown) => {
+          if (!stop || typeof stop !== 'object') return null;
+          const color =
+            typeof (stop as { color?: unknown }).color === 'string'
+              ? (stop as { color: string }).color.trim()
+              : '';
+          if (!color) return null;
+          return {
+            color,
+            position: clamp(toFiniteNumber((stop as { position?: unknown }).position, 0), 0, 100),
+          };
+        })
+        .filter((stop): stop is { color: string; position: number } => Boolean(stop))
+        .sort((a, b) => a.position - b.position)
     : [];
 
   if (stops.length < 2) return undefined;
@@ -79,9 +81,10 @@ const normalizeThresholds = (thresholds: unknown): Array<{ value: number; color:
   return thresholds
     .map((threshold) => {
       if (!threshold || typeof threshold !== 'object') return null;
-      const color = typeof (threshold as { color?: unknown }).color === 'string'
-        ? (threshold as { color: string }).color.trim()
-        : '';
+      const color =
+        typeof (threshold as { color?: unknown }).color === 'string'
+          ? (threshold as { color: string }).color.trim()
+          : '';
       if (!color) return null;
       return {
         value: toFiniteNumber((threshold as { value?: unknown }).value, 0),
@@ -101,20 +104,27 @@ const normalizeRing = (
   fallbackThickness: number,
 ): NormalizedProgressRingConfig | null => {
   if (!ring || typeof ring !== 'object') return null;
-  const entity = typeof (ring as { entity?: unknown }).entity === 'string'
-    ? (ring as { entity: string }).entity.trim()
-    : '';
+  const entity =
+    typeof (ring as { entity?: unknown }).entity === 'string'
+      ? (ring as { entity: string }).entity.trim()
+      : '';
   if (!entity) return null;
 
-  const { min, max } = normalizeRange((ring as { min?: unknown }).min, (ring as { max?: unknown }).max);
+  const { min, max } = normalizeRange(
+    (ring as { min?: unknown }).min,
+    (ring as { max?: unknown }).max,
+  );
 
-  const rawColor = typeof (ring as { color?: unknown }).color === 'string'
-    ? (ring as { color: string }).color.trim()
-    : '';
+  const rawColor =
+    typeof (ring as { color?: unknown }).color === 'string'
+      ? (ring as { color: string }).color.trim()
+      : '';
 
-  const label = typeof (ring as { label?: unknown }).label === 'string' && (ring as { label: string }).label.trim().length > 0
-    ? (ring as { label: string }).label.trim()
-    : `Ring ${index + 1}`;
+  const label =
+    typeof (ring as { label?: unknown }).label === 'string' &&
+    (ring as { label: string }).label.trim().length > 0
+      ? (ring as { label: string }).label.trim()
+      : `Ring ${index + 1}`;
 
   return {
     entity,
@@ -135,7 +145,11 @@ const normalizeRing = (
 export const normalizeProgressRingCard = (
   card: ProgressRingCardConfig,
 ): NormalizedProgressRingCardConfig => {
-  const cardThickness = clamp(toFiniteNumber(card.thickness, DEFAULT_THICKNESS), MIN_RING_THICKNESS, MAX_RING_THICKNESS);
+  const cardThickness = clamp(
+    toFiniteNumber(card.thickness, DEFAULT_THICKNESS),
+    MIN_RING_THICKNESS,
+    MAX_RING_THICKNESS,
+  );
 
   const ringsSource = Array.isArray(card.rings) ? card.rings : [];
   const rings = ringsSource
@@ -150,15 +164,24 @@ export const normalizeProgressRingCard = (
     startAngle: clamp(toFiniteNumber(card.start_angle, DEFAULT_START_ANGLE), -360, 360),
     direction: normalizeDirection(card.direction),
     animate: typeof card.animate === 'boolean' ? card.animate : true,
-    animationDurationMs: clamp(toFiniteNumber(card.animation_duration_ms, DEFAULT_DURATION_MS), 0, 5000),
-    animationEasing: card.animation_easing === 'linear'
-      || card.animation_easing === 'ease-in'
-      || card.animation_easing === 'ease-out'
-      || card.animation_easing === 'ease-in-out'
-      ? card.animation_easing
-      : 'ease',
+    animationDurationMs: clamp(
+      toFiniteNumber(card.animation_duration_ms, DEFAULT_DURATION_MS),
+      0,
+      5000,
+    ),
+    animationEasing:
+      card.animation_easing === 'linear' ||
+      card.animation_easing === 'ease-in' ||
+      card.animation_easing === 'ease-out' ||
+      card.animation_easing === 'ease-in-out'
+        ? card.animation_easing
+        : 'ease',
     showLabels: typeof card.show_labels === 'boolean' ? card.show_labels : true,
-    labelPrecision: clamp(Math.floor(toFiniteNumber(card.label_precision, DEFAULT_PRECISION)), 0, 3),
+    labelPrecision: clamp(
+      Math.floor(toFiniteNumber(card.label_precision, DEFAULT_PRECISION)),
+      0,
+      3,
+    ),
   };
 };
 
@@ -194,10 +217,7 @@ export const resolveProgressRingRuntime = (
   });
 };
 
-export const resolveRingStroke = (
-  ring: RingRuntimeState,
-  gradientId: string,
-): string => {
+export const resolveRingStroke = (ring: RingRuntimeState, gradientId: string): string => {
   if (ring.gradient) return `url(#${gradientId})`;
 
   if (ring.thresholds.length > 0) {
@@ -220,8 +240,8 @@ export const buildRingGeometry = (
   return rings
     .map((ring) => {
       const thickness = clamp(ring.thickness, MIN_RING_THICKNESS, MAX_RING_THICKNESS);
-      const radius = currentOuterRadius - (thickness / 2);
-      currentOuterRadius = radius - (thickness / 2) - gap;
+      const radius = currentOuterRadius - thickness / 2;
+      currentOuterRadius = radius - thickness / 2 - gap;
       return {
         radius,
         circumference: Math.max(0, 2 * Math.PI * radius),
@@ -237,6 +257,6 @@ export const ringDashOffset = (
   direction: ProgressRingDirection,
 ): number => {
   const progress = clamp(percent, 0, 100) / 100;
-  const offset = circumference - (progress * circumference);
+  const offset = circumference - progress * circumference;
   return direction === 'counter-clockwise' ? -offset : offset;
 };

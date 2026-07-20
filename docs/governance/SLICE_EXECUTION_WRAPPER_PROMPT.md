@@ -19,16 +19,16 @@ Before writing/modifying tests, quote the relevant TESTING_STANDARDS.md section(
 
 - Run relevant tests.
 - If any failures occur:
-  1) List failures.
-  2) Diagnose root cause.
-  3) Propose resolution.
-  4) Pause and ask before proceeding.
+  1. List failures.
+  2. Diagnose root cause.
+  3. Propose resolution.
+  4. Pause and ask before proceeding.
 - Do NOT auto-fix after failures without user confirmation.
 
 Stop Immediately If:
 
 - Unexpected E2E failures occur.
-- >2 unrelated tests fail.
+- > 2 unrelated tests fail.
 - YAML output changes unexpectedly.
 - Monaco instances desync.
 - IPC errors appear.
@@ -36,6 +36,7 @@ Stop Immediately If:
 - You feel compelled to rewrite a subsystem.
 
 If Stop Condition triggers:
+
 - Halt.
 - Re-run regression.
 - Analyze diff.
@@ -45,5 +46,3 @@ If Stop Condition triggers:
 Stop after one test run if failures occur.
 
 Now execute the slice below.
-
-

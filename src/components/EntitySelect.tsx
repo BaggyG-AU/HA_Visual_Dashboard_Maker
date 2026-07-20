@@ -12,7 +12,7 @@ interface EntitySelectProps {
   onChange?: (value: string) => void;
   placeholder?: string;
   allowClear?: boolean;
-  filterDomains?: string[];  // e.g., ['light', 'switch']
+  filterDomains?: string[]; // e.g., ['light', 'switch']
   'data-testid'?: string;
 }
 
@@ -69,7 +69,7 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
       return;
     }
 
-    const entity = entities.find(e => e.entity_id === value);
+    const entity = entities.find((e) => e.entity_id === value);
     setSelectedEntity(entity || null);
   }, [value, entities]);
 
@@ -79,7 +79,7 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
       return entities;
     }
 
-    return entities.filter(entity => {
+    return entities.filter((entity) => {
       const domain = entity.entity_id.split('.')[0];
       return filterDomains.includes(domain);
     });
@@ -87,7 +87,7 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
 
   // Create options for the select component
   const options = useMemo(() => {
-    return filteredEntities.map(entity => {
+    return filteredEntities.map((entity) => {
       const domain = entity.entity_id.split('.')[0];
       const friendlyName = entity.attributes.friendly_name || entity.entity_id;
 
@@ -121,7 +121,9 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
     // Entity is being validated
     if (loading) {
       return (
-        <div style={{ marginTop: '8px', padding: '8px', background: '#1f1f1f', borderRadius: '4px' }}>
+        <div
+          style={{ marginTop: '8px', padding: '8px', background: '#1f1f1f', borderRadius: '4px' }}
+        >
           <Text style={{ color: '#888', fontSize: '12px' }}>Loading entities...</Text>
         </div>
       );
@@ -151,17 +153,21 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
       const friendlyName = selectedEntity.attributes.friendly_name || selectedEntity.entity_id;
 
       return (
-        <div style={{
-          marginTop: '8px',
-          padding: '12px',
-          background: '#1f1f1f',
-          border: '1px solid #2a2a2a',
-          borderRadius: '4px'
-        }}>
+        <div
+          style={{
+            marginTop: '8px',
+            padding: '12px',
+            background: '#1f1f1f',
+            border: '1px solid #2a2a2a',
+            borderRadius: '4px',
+          }}
+        >
           <Space orientation="vertical" size="small" style={{ width: '100%' }}>
             <Space>
               <CheckCircleOutlined style={{ color: '#52c41a' }} />
-              <Text strong style={{ color: '#52c41a', fontSize: '12px' }}>Valid Entity</Text>
+              <Text strong style={{ color: '#52c41a', fontSize: '12px' }}>
+                Valid Entity
+              </Text>
             </Space>
 
             <div>
@@ -173,13 +179,17 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
             <div>
               <Text style={{ color: '#888', fontSize: '11px' }}>Domain:</Text>
               <br />
-              <Tag color="blue" style={{ fontSize: '10px' }}>{domain}</Tag>
+              <Tag color="blue" style={{ fontSize: '10px' }}>
+                {domain}
+              </Tag>
             </div>
 
             <div>
               <Text style={{ color: '#888', fontSize: '11px' }}>Current State:</Text>
               <br />
-              <Tag color="green" style={{ fontSize: '11px' }}>{selectedEntity.state}</Tag>
+              <Tag color="green" style={{ fontSize: '11px' }}>
+                {selectedEntity.state}
+              </Tag>
             </div>
 
             {selectedEntity.attributes.unit_of_measurement && (
@@ -211,12 +221,12 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
       <div>
         <Select
           value={value}
-        onChange={handleChange}
-        placeholder={placeholder}
-        allowClear={allowClear}
-        style={{ width: '100%' }}
-        data-testid={dataTestId}
-      />
+          onChange={handleChange}
+          placeholder={placeholder}
+          allowClear={allowClear}
+          style={{ width: '100%' }}
+          data-testid={dataTestId}
+        />
         <Alert
           message="Not Connected"
           description="Connect to Home Assistant to enable entity autocomplete and validation."
@@ -235,12 +245,12 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
       <div>
         <Select
           value={value}
-        onChange={handleChange}
-        placeholder={placeholder}
-        allowClear={allowClear}
-        style={{ width: '100%' }}
-        data-testid={dataTestId}
-      />
+          onChange={handleChange}
+          placeholder={placeholder}
+          allowClear={allowClear}
+          style={{ width: '100%' }}
+          data-testid={dataTestId}
+        />
         <Alert
           message="Failed to Load Entities"
           description={error}

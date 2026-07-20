@@ -16,19 +16,33 @@ export class IconColorDSL {
         .filter(Boolean);
 
       const iconColorTestIds = testIds.filter((id) => id.includes('icon-color'));
-      const modeExists = Boolean(document.querySelector('[data-testid="button-card-icon-color-mode"]'));
-      const propertiesPanelExists = Boolean(document.querySelector('[data-testid="properties-panel"]'));
+      const modeExists = Boolean(
+        document.querySelector('[data-testid="button-card-icon-color-mode"]'),
+      );
+      const propertiesPanelExists = Boolean(
+        document.querySelector('[data-testid="properties-panel"]'),
+      );
       const listboxes = Array.from(document.querySelectorAll<HTMLElement>('[role="listbox"]'));
       const visibleListboxes = listboxes.filter((el) => {
         const rect = el.getBoundingClientRect();
         const style = window.getComputedStyle(el);
-        return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+        return (
+          rect.width > 0 &&
+          rect.height > 0 &&
+          style.visibility !== 'hidden' &&
+          style.display !== 'none'
+        );
       });
       const dropdowns = Array.from(document.querySelectorAll<HTMLElement>('.ant-select-dropdown'));
       const visibleDropdowns = dropdowns.filter((el) => {
         const rect = el.getBoundingClientRect();
         const style = window.getComputedStyle(el);
-        return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+        return (
+          rect.width > 0 &&
+          rect.height > 0 &&
+          style.visibility !== 'hidden' &&
+          style.display !== 'none'
+        );
       });
 
       return {
@@ -47,7 +61,7 @@ export class IconColorDSL {
 
   async selectMode(
     mode: 'Default' | 'Custom' | 'State-based' | 'Attribute-based',
-    testInfo?: TestInfo
+    testInfo?: TestInfo,
   ): Promise<void> {
     // Flow-defensive: Icon color mode is in Advanced Options tab (moved in tab refactor)
     // Auto-switch to Advanced Options if needed
@@ -94,7 +108,9 @@ export class IconColorDSL {
       await expect(dropdown).toBeVisible({ timeout: 5000 });
 
       // Select the option by class name (Ant Design v6 uses .ant-select-item-option)
-      const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${escaped}$`, 'i') });
+      const option = dropdown.locator('.ant-select-item-option', {
+        hasText: new RegExp(`^${escaped}$`, 'i'),
+      });
       await expect(option).toBeVisible({ timeout: 5000 });
       await option.click();
 

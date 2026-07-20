@@ -20,32 +20,32 @@ Rename `custom:swiper-card` to `custom:swipe-card` and restructure the YAML conf
 
 ### Top-Level Properties
 
-| Property | Type | Default | Required | Description |
-|----------|------|---------|----------|-------------|
-| `type` | `string` | — | Yes | Must be `custom:swipe-card` |
-| `cards` | `Card[]` | — | Yes | Array of child card configs. Each card = one slide. |
-| `parameters` | `object` | `{}` | No | Swiper.js parameters passed through directly. camelCase keys. |
-| `start_card` | `number` | `1` | No | 1-indexed card to show first. |
-| `reset_after` | `number` | — | No | Seconds of inactivity before resetting to `start_card`. |
+| Property      | Type     | Default | Required | Description                                                   |
+| ------------- | -------- | ------- | -------- | ------------------------------------------------------------- |
+| `type`        | `string` | —       | Yes      | Must be `custom:swipe-card`                                   |
+| `cards`       | `Card[]` | —       | Yes      | Array of child card configs. Each card = one slide.           |
+| `parameters`  | `object` | `{}`    | No       | Swiper.js parameters passed through directly. camelCase keys. |
+| `start_card`  | `number` | `1`     | No       | 1-indexed card to show first.                                 |
+| `reset_after` | `number` | —       | No       | Seconds of inactivity before resetting to `start_card`.       |
 
 ### Common `parameters` Keys (camelCase, Swiper.js native)
 
 ```yaml
 parameters:
   pagination:
-    type: bullets          # 'bullets' | 'fraction' | 'progressbar' | 'custom'
+    type: bullets # 'bullets' | 'fraction' | 'progressbar' | 'custom'
     clickable: true
   navigation: true
   autoplay:
     delay: 5000
     disableOnInteraction: true
     stopOnLastSlide: false
-  effect: slide            # 'slide' | 'fade' | 'cube' | 'coverflow' | 'flip'
+  effect: slide # 'slide' | 'fade' | 'cube' | 'coverflow' | 'flip'
   speed: 300
-  slidesPerView: 1         # number or 'auto'
+  slidesPerView: 1 # number or 'auto'
   spaceBetween: 16
   centeredSlides: false
-  direction: horizontal    # 'horizontal' | 'vertical'
+  direction: horizontal # 'horizontal' | 'vertical'
   loop: true
   freeMode: false
   keyboard:
@@ -59,6 +59,7 @@ parameters:
 ### Upstream YAML Examples
 
 **Minimal:**
+
 ```yaml
 type: custom:swipe-card
 cards:
@@ -69,6 +70,7 @@ cards:
 ```
 
 **Full-featured:**
+
 ```yaml
 type: custom:swipe-card
 start_card: 1
@@ -100,6 +102,7 @@ cards:
 ### Type string: `custom:swiper-card` (note the extra 'r')
 
 ### Config uses snake_case flat properties (NOT inside `parameters`):
+
 ```yaml
 type: custom:swiper-card
 pagination:
@@ -123,6 +126,7 @@ cards:
 ```
 
 ### HAVDM-Only Features (NOT in upstream, keep internally, strip on export):
+
 - `slides[]` array with per-slide config (background, alignment, autoplay_delay, skip_navigation)
 - `autoplay.enabled` (upstream uses presence/absence of autoplay object)
 - `autoplay.pause_on_interaction` (upstream: `disableOnInteraction`)
@@ -133,9 +137,11 @@ cards:
 ## Files to Modify
 
 ### 1. Type Definitions
+
 **File**: `src/features/carousel/types.ts`
 
 **Changes:**
+
 - Rename `SwiperCardConfig.type` from `'custom:swiper-card'` to `'custom:swipe-card'`
 - Add new interface `UpstreamSwipeCardConfig` for the upstream YAML format:
   ```typescript
@@ -151,9 +157,11 @@ cards:
 - Add conversion type aliases/helpers
 
 ### 2. Service Layer
+
 **File**: `src/features/carousel/carouselService.ts`
 
 **Changes:**
+
 - Add `parseUpstreamSwipeCard(yaml: UpstreamSwipeCardConfig): SwiperCardConfig` function:
   - Maps `parameters.slidesPerView` → `slides_per_view`
   - Maps `parameters.spaceBetween` → `space_between`
@@ -169,22 +177,28 @@ cards:
   - Converts `slides[]` back to flat `cards[]` (one card per slide)
 
 ### 3. Component
+
 **File**: `src/features/carousel/SwiperCarousel.tsx`
 
 **Changes:**
+
 - No structural changes needed (component uses NormalizedCarouselConfig internally)
 - Update any hardcoded `'custom:swiper-card'` string references
 
 ### 4. Card Renderer
+
 **File**: `src/components/cards/SwiperCardRenderer.tsx`
 
 **Changes:**
+
 - Update type string reference from `'custom:swiper-card'` to `'custom:swipe-card'`
 
 ### 5. Card Registry
+
 **File**: `src/services/cardRegistry.ts` (line ~305)
 
 **Changes:**
+
 ```typescript
 // BEFORE:
 type: 'custom:swiper-card',
@@ -195,12 +209,15 @@ type: 'custom:swipe-card',
 name: 'Swipe Card',
 source: 'hacs',  // was 'custom'
 ```
+
 - Update `defaultProps` to use upstream format (with `parameters`)
 
 ### 6. BaseCard
+
 **File**: `src/components/BaseCard.tsx` (line ~254)
 
 **Changes:**
+
 ```typescript
 // BEFORE:
 case 'custom:swiper-card':
@@ -210,43 +227,55 @@ case 'custom:swipe-card':
 ```
 
 ### 7. PropertiesPanel
+
 **File**: `src/components/PropertiesPanel.tsx`
 
 **Changes:**
+
 - Replace all occurrences of `'custom:swiper-card'` with `'custom:swipe-card'`
 - Lines: ~584, ~998, ~2635, ~4194
 - PropertiesPanel internal form handling stays the same (it works with normalized config)
 
 ### 8. JSON Schema
+
 **File**: `src/schemas/ha-dashboard-schema.json` (line ~189)
 
 **Changes:**
+
 - Replace `"custom:swiper-card"` with `"custom:swipe-card"` in the type enum
 - Update any property definitions in the schema
 
 ### 9. Card Sizing Contract
+
 **File**: `src/utils/cardSizingContract.ts` (line ~199)
 
 **Changes:**
+
 - Replace `'custom:swiper-card'` with `'custom:swipe-card'`
 
 ### 10. Unit Tests
+
 **File**: `tests/unit/carousel-service.spec.ts`
 
 **Changes:**
+
 - Replace all `'custom:swiper-card'` with `'custom:swipe-card'`
 - Add new test cases for `parseUpstreamSwipeCard()` and `toUpstreamSwipeCard()` round-trip
 - Test that camelCase parameters map correctly to/from snake_case
 
 ### 11. E2E Tests
+
 **Files:**
+
 - `tests/e2e/carousel.spec.ts` — Update BASE_YAML and all type string refs
 - `tests/e2e/carousel.visual.spec.ts` — Update BASE_YAML and all type string refs
 
 ### 12. DSL
+
 **File**: `tests/support/dsl/carousel.ts`
 
 **Changes:**
+
 - Update any palette search strings from `'custom:swiper-card'` to `'custom:swipe-card'`
 
 ---
@@ -270,6 +299,7 @@ Full regression and CI testing are handled separately and are not part of this p
 Add these test cases to verify upstream compatibility:
 
 ### Import Test (upstream YAML → HAVDM):
+
 ```yaml
 # Input (upstream format):
 type: custom:swipe-card
@@ -297,6 +327,7 @@ cards:
 ```
 
 Expected internal normalized config:
+
 - `slides_per_view`: 2
 - `space_between`: 20
 - `centered_slides`: true
@@ -309,4 +340,5 @@ Expected internal normalized config:
 - 3 slides, each with 1 card
 
 ### Export Test (HAVDM → upstream YAML):
+
 Internal config should serialize back to the upstream format above (minus any HAVDM-only properties).

@@ -26,7 +26,10 @@ export const extractStyleBackground = (styleValue?: string): string => {
   return match ? match[2].trim() : '';
 };
 
-export const upsertStyleBackground = (styleValue: string | undefined, background: string): string => {
+export const upsertStyleBackground = (
+  styleValue: string | undefined,
+  background: string,
+): string => {
   if (!styleValue || !styleValue.trim()) {
     return `background: ${background};`;
   }

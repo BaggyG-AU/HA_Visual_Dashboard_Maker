@@ -66,7 +66,10 @@ export const PictureEntityCardRenderer: React.FC<PictureEntityCardRendererProps>
   };
 
   const stateColor = getStateColor();
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   return (
     <AntCard
@@ -81,25 +84,27 @@ export const PictureEntityCardRenderer: React.FC<PictureEntityCardRendererProps>
       }}
       styles={{
         body: {
-        padding: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        overflow: 'hidden',
-        position: 'relative',
-      },
+          padding: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          overflow: 'hidden',
+          position: 'relative',
+        },
       }}
       onClick={onClick}
       hoverable
     >
       {/* Background image */}
       {hasImage ? (
-        <div style={{
-          width: '100%',
-          height: '100%',
-          position: 'relative',
-          overflow: 'hidden',
-        }}>
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
           <img
             src={card.image}
             alt={displayName}
@@ -117,34 +122,38 @@ export const PictureEntityCardRenderer: React.FC<PictureEntityCardRendererProps>
             }}
           />
           {/* Error placeholder */}
-          <div style={{
-            display: 'none',
-            width: '100%',
-            height: '100%',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            color: '#666',
-            flexDirection: 'column',
-            gap: '8px',
-          }}>
+          <div
+            style={{
+              display: 'none',
+              width: '100%',
+              height: '100%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: '#666',
+              flexDirection: 'column',
+              gap: '8px',
+            }}
+          >
             <PictureOutlined style={{ fontSize: '48px' }} />
             <div style={{ fontSize: '12px' }}>Image not found</div>
           </div>
         </div>
       ) : (
         // No image placeholder - show camera icon if camera is configured
-        <div style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          color: hasCameraImage ? '#1890ff' : '#666',
-          flexDirection: 'column',
-          gap: '8px',
-        }}>
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            color: hasCameraImage ? '#1890ff' : '#666',
+            flexDirection: 'column',
+            gap: '8px',
+          }}
+        >
           {hasCameraImage ? (
             <>
               <VideoCameraOutlined style={{ fontSize: '48px' }} />
@@ -166,17 +175,20 @@ export const PictureEntityCardRenderer: React.FC<PictureEntityCardRendererProps>
 
       {/* Overlay with name and state */}
       {(showName || showState) && (
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 60%, transparent 100%)',
-          padding: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '4px',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background:
+              'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 60%, transparent 100%)',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+          }}
+        >
           {showName && (
             <Text strong style={{ color: '#fff', fontSize: '16px' }}>
               {displayName}
@@ -210,16 +222,18 @@ export const PictureEntityCardRenderer: React.FC<PictureEntityCardRendererProps>
 
       {/* No entity warning (top corner) */}
       {!entity && card.entity && (
-        <div style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          backgroundColor: 'rgba(244, 67, 54, 0.9)',
-          color: '#fff',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          fontSize: '10px',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            backgroundColor: 'rgba(244, 67, 54, 0.9)',
+            color: '#fff',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '10px',
+          }}
+        >
           Entity not found
         </div>
       )}

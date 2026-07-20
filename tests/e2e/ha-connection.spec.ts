@@ -17,11 +17,24 @@ test.describe('Home Assistant Connection', () => {
       await ctx.appDSL.waitUntilReady();
 
       // Look for connection-related UI elements (use separate locators)
-      const connectButton = await window.locator('text=Connect to Home Assistant').or(window.locator('text=Connect')).count();
-      const connectionText = await window.locator('text=Connection').or(window.locator('text=Not Connected')).count();
-      const settingsButton = await window.locator('text=Settings').or(window.locator('[aria-label*="Settings"]')).count();
+      const connectButton = await window
+        .locator('text=Connect to Home Assistant')
+        .or(window.locator('text=Connect'))
+        .count();
+      const connectionText = await window
+        .locator('text=Connection')
+        .or(window.locator('text=Not Connected'))
+        .count();
+      const settingsButton = await window
+        .locator('text=Settings')
+        .or(window.locator('[aria-label*="Settings"]'))
+        .count();
 
-      console.log('Connection UI elements found:', { connectButton, connectionText, settingsButton });
+      console.log('Connection UI elements found:', {
+        connectButton,
+        connectionText,
+        settingsButton,
+      });
 
       // Should have at least one connection-related UI element
       const totalConnectionUI = connectButton + connectionText + settingsButton;

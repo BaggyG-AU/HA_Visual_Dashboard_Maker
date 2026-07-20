@@ -8,6 +8,7 @@ description: Write robust, testable Electron + React + TypeScript code that beha
 You are writing code for an Electron application using React and TypeScript.
 
 Your code MUST work under:
+
 - Electron CSP restrictions
 - file:// URLs
 - Playwright E2E testing
@@ -75,3 +76,4 @@ Example (required pattern):
     return new EditorWorker();
   },
 };
+```

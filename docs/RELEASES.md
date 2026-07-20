@@ -3,6 +3,7 @@
 Repo versioning follows the `package.json` version and annotated git tags. Current package version: `0.7.5-beta.10`; next tag should match the version bump (e.g., `v0.7.5-beta.10` or higher).
 
 ## Current Progress Snapshot
+
 - Phase 4 (Layout Infrastructure Layer): complete (v0.7.4) as of 2026-02-14.
 - Phase 5 (Advanced Visualization Layer): delivered and consolidated in v0.7.5-beta.10.
 - Detailed implementation status and verification guidance are tracked in:
@@ -11,6 +12,7 @@ Repo versioning follows the `package.json` version and annotated git tags. Curre
   - `docs/releases/RELEASE_NOTES_v0.7.5-beta.10.md`
 
 ## Preconditions
+
 - All tests green:
   - `npx playwright test --project=electron-integration --workers=1 --trace=retain-on-failure`
   - `npx playwright test --project=electron-e2e --workers=1 --trace=retain-on-failure`
@@ -28,6 +30,7 @@ git push --tags
 ```
 
 ## Release notes (template)
+
 - Summary of major features/fixes since last release
 - Testing status (integration + e2e)
 - Known issues or follow-up work

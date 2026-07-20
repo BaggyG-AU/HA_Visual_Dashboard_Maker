@@ -17,43 +17,46 @@ export async function mockHAWebSocket(
     isConnected?: boolean;
     themes?: any;
     entities?: any[];
-  }
+  },
 ) {
   const isConnected = options?.isConnected ?? true;
   const themes = options?.themes ?? mockThemes;
   const entities = options?.entities ?? [];
 
   // Mock the IPC handlers in the MAIN process instead of trying to override contextBridge
-  await app.evaluate(({ ipcMain }, mockData) => {
-    console.log('[MOCK MAIN] Installing IPC handler mocks');
+  await app.evaluate(
+    ({ ipcMain }, mockData) => {
+      console.log('[MOCK MAIN] Installing IPC handler mocks');
 
-    // Override the IPC handlers with mocked responses
-    ipcMain.removeHandler('ha:ws:isConnected');
-    ipcMain.handle('ha:ws:isConnected', () => {
-      console.log('[MOCK MAIN] ha:ws:isConnected called, returning:', mockData.isConnected);
-      return { connected: mockData.isConnected };
-    });
+      // Override the IPC handlers with mocked responses
+      ipcMain.removeHandler('ha:ws:isConnected');
+      ipcMain.handle('ha:ws:isConnected', () => {
+        console.log('[MOCK MAIN] ha:ws:isConnected called, returning:', mockData.isConnected);
+        return { connected: mockData.isConnected };
+      });
 
-    ipcMain.removeHandler('ha:ws:connect');
-    ipcMain.handle('ha:ws:connect', () => {
-      console.log('[MOCK MAIN] ha:ws:connect called');
-      return { success: mockData.isConnected };
-    });
+      ipcMain.removeHandler('ha:ws:connect');
+      ipcMain.handle('ha:ws:connect', () => {
+        console.log('[MOCK MAIN] ha:ws:connect called');
+        return { success: mockData.isConnected };
+      });
 
-    ipcMain.removeHandler('ha:ws:getThemes');
-    ipcMain.handle('ha:ws:getThemes', () => {
-      console.log('[MOCK MAIN] ha:ws:getThemes called, returning themes');
-      return { success: true, themes: mockData.themes };
-    });
+      ipcMain.removeHandler('ha:ws:getThemes');
+      ipcMain.handle('ha:ws:getThemes', () => {
+        console.log('[MOCK MAIN] ha:ws:getThemes called, returning themes');
+        return { success: true, themes: mockData.themes };
+      });
 
-    ipcMain.removeHandler('ha:ws:fetchEntities');
-    ipcMain.handle('ha:ws:fetchEntities', () => {
-      console.log('[MOCK MAIN] ha:ws:fetchEntities called');
-      return { success: true, entities: mockData.entities };
-    });
+      ipcMain.removeHandler('ha:ws:fetchEntities');
+      ipcMain.handle('ha:ws:fetchEntities', () => {
+        console.log('[MOCK MAIN] ha:ws:fetchEntities called');
+        return { success: true, entities: mockData.entities };
+      });
 
-    console.log('[MOCK MAIN] IPC handlers mocked successfully');
-  }, { isConnected, themes, entities });
+      console.log('[MOCK MAIN] IPC handlers mocked successfully');
+    },
+    { isConnected, themes, entities },
+  );
 
   // Store mock data in renderer for localStorage-based settings
   await page.evaluate(() => {
@@ -73,7 +76,7 @@ export async function simulateHAConnection(
     token?: string;
     themes?: any;
     clickConnectButton?: boolean;
-  }
+  },
 ) {
   const url = options?.url ?? 'http://homeassistant.local:8123';
   const token = options?.token ?? 'mock-token-12345';
@@ -110,16 +113,19 @@ export async function simulateHAConnection(
     }
   } else {
     // Just inject connection state directly
-    await page.evaluate(async (connectionData) => {
-      // Simulate successful connection
-      if ((window as any).electronAPI) {
-        const result = await (window as any).electronAPI.haWsConnect(
-          connectionData.url,
-          connectionData.token
-        );
-        console.log('[MOCK] Connection result:', result);
-      }
-    }, { url, token });
+    await page.evaluate(
+      async (connectionData) => {
+        // Simulate successful connection
+        if ((window as any).electronAPI) {
+          const result = await (window as any).electronAPI.haWsConnect(
+            connectionData.url,
+            connectionData.token,
+          );
+          console.log('[MOCK] Connection result:', result);
+        }
+      },
+      { url, token },
+    );
   }
 
   // Wait for the app to process the connection and fetch themes
@@ -213,61 +219,72 @@ export async function mockHAEntities(
   options?: {
     entities?: any[];
     isConnected?: boolean;
-  }
+  },
 ) {
   const entities = options?.entities ?? [];
   const isConnected = options?.isConnected ?? true;
 
-  await app.evaluate(({ ipcMain }, mockData) => {
-    console.log('[MOCK MAIN] Installing entity IPC handler mocks');
+  await app.evaluate(
+    ({ ipcMain }, mockData) => {
+      console.log('[MOCK MAIN] Installing entity IPC handler mocks');
 
-    // Mock connection status
-    ipcMain.removeHandler('ha:ws:isConnected');
-    ipcMain.handle('ha:ws:isConnected', () => {
-      console.log('[MOCK MAIN] ha:ws:isConnected called, returning:', mockData.isConnected);
-      return { connected: mockData.isConnected };
-    });
+      // Mock connection status
+      ipcMain.removeHandler('ha:ws:isConnected');
+      ipcMain.handle('ha:ws:isConnected', () => {
+        console.log('[MOCK MAIN] ha:ws:isConnected called, returning:', mockData.isConnected);
+        return { connected: mockData.isConnected };
+      });
 
-    // Mock entity fetching
-    ipcMain.removeHandler('ha:ws:fetchEntities');
-    ipcMain.handle('ha:ws:fetchEntities', () => {
-      console.log('[MOCK MAIN] ha:ws:fetchEntities called, returning', mockData.entities.length, 'entities');
-      return { success: true, entities: mockData.entities };
-    });
+      // Mock entity fetching
+      ipcMain.removeHandler('ha:ws:fetchEntities');
+      ipcMain.handle('ha:ws:fetchEntities', () => {
+        console.log(
+          '[MOCK MAIN] ha:ws:fetchEntities called, returning',
+          mockData.entities.length,
+          'entities',
+        );
+        return { success: true, entities: mockData.entities };
+      });
 
-    // Mock cached entities retrieval
-    ipcMain.removeHandler('entities:getCached');
-    ipcMain.handle('entities:getCached', () => {
-      console.log('[MOCK MAIN] entities:getCached called, returning cached entities');
-      return { success: true, entities: mockData.entities };
-    });
+      // Mock cached entities retrieval
+      ipcMain.removeHandler('entities:getCached');
+      ipcMain.handle('entities:getCached', () => {
+        console.log('[MOCK MAIN] entities:getCached called, returning cached entities');
+        return { success: true, entities: mockData.entities };
+      });
 
-    // Mock entity caching
-    ipcMain.removeHandler('entities:cache');
-    ipcMain.handle('entities:cache', (event, entitiesToCache) => {
-      console.log('[MOCK MAIN] entities:cache called with', entitiesToCache.length, 'entities');
-      mockData.entities = entitiesToCache;
-      return { success: true };
-    });
+      // Mock entity caching
+      ipcMain.removeHandler('entities:cache');
+      ipcMain.handle('entities:cache', (event, entitiesToCache) => {
+        console.log('[MOCK MAIN] entities:cache called with', entitiesToCache.length, 'entities');
+        mockData.entities = entitiesToCache;
+        return { success: true };
+      });
 
-    // Mock cache seeding (for tests)
-    ipcMain.removeHandler('test:seedEntityCache');
-    ipcMain.handle('test:seedEntityCache', (event, testEntities) => {
-      console.log('[MOCK MAIN] test:seedEntityCache called with', testEntities.length, 'entities');
-      mockData.entities = testEntities;
-      return { success: true };
-    });
+      // Mock cache seeding (for tests)
+      ipcMain.removeHandler('test:seedEntityCache');
+      ipcMain.handle('test:seedEntityCache', (event, testEntities) => {
+        console.log(
+          '[MOCK MAIN] test:seedEntityCache called with',
+          testEntities.length,
+          'entities',
+        );
+        mockData.entities = testEntities;
+        return { success: true };
+      });
 
-    // Mock cache clearing (for tests)
-    ipcMain.removeHandler('test:clearEntityCache');
-    ipcMain.handle('test:clearEntityCache', () => {
-      console.log('[MOCK MAIN] test:clearEntityCache called');
-      mockData.entities = [];
-      return { success: true };
-    });
+      // Mock cache clearing (for tests)
+      ipcMain.removeHandler('test:clearEntityCache');
+      ipcMain.handle('test:clearEntityCache', () => {
+        console.log('[MOCK MAIN] test:clearEntityCache called');
+        mockData.entities = [];
+        return { success: true };
+      });
 
-    console.log('[MOCK MAIN] Entity IPC handlers mocked successfully');
-  }, { entities, isConnected });
+      console.log('[MOCK MAIN] Entity IPC handlers mocked successfully');
+    },
+    { entities, isConnected },
+  );
 }
 
 /**
@@ -333,13 +350,16 @@ export function createMockEntities(count = 4): any[] {
 export async function stubIpcFailure(
   app: import('@playwright/test').ElectronApplication,
   channel: string,
-  message: string
+  message: string,
 ) {
-  await app.evaluate(({ ipcMain }, data) => {
-    ipcMain.removeHandler(data.channel);
-    ipcMain.handle(data.channel, () => {
-      throw new Error(data.message);
-    });
-    console.log(`[MOCK MAIN] Stubbed IPC failure for ${data.channel}: ${data.message}`);
-  }, { channel, message });
+  await app.evaluate(
+    ({ ipcMain }, data) => {
+      ipcMain.removeHandler(data.channel);
+      ipcMain.handle(data.channel, () => {
+        throw new Error(data.message);
+      });
+      console.log(`[MOCK MAIN] Stubbed IPC failure for ${data.channel}: ${data.message}`);
+    },
+    { channel, message },
+  );
 }

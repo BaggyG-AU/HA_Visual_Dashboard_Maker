@@ -12,7 +12,7 @@
 }
 
 .react-resizable-handle::after {
-  content: "";
+  content: '';
   position: absolute;
   bottom: 3px;
   right: 3px;

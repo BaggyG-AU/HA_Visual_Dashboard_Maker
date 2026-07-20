@@ -9,6 +9,7 @@ A cross-platform desktop application for visually designing Home Assistant dashb
 - **Planning docs**: see `/docs/index.md` for architecture, plan, testing, releases, and research.
 
 ### 📋 Key Documents
+
 - [Docs index](docs/index.md) — entry point to all documentation
 - [Project plan](docs/product/PROJECT_PLAN.md) — phased roadmap with current status
 - [Architecture](docs/architecture/ARCHITECTURE.md) — technical design and decisions
@@ -19,6 +20,7 @@ A cross-platform desktop application for visually designing Home Assistant dashb
 ## Vision
 
 Create a professional WYSIWYG editor for Home Assistant dashboards that:
+
 - Connects to Home Assistant instances to read and write dashboard configurations
 - Provides intuitive drag-and-drop visual editing
 - Supports popular custom cards (bubble-card, apexcharts-card, button-card, card-mod)
@@ -28,6 +30,7 @@ Create a professional WYSIWYG editor for Home Assistant dashboards that:
 ## Planned Features
 
 ### Core Features (MVP)
+
 - Load and parse Home Assistant dashboard YAML files
 - Visual canvas with drag-and-drop card positioning
 - Property editors for standard HA cards
@@ -36,12 +39,14 @@ Create a professional WYSIWYG editor for Home Assistant dashboards that:
 - Basic validation and error checking
 
 ### Custom Card Support
+
 - Bubble Card: Minimalist card collection with pop-up interfaces
 - ApexCharts Card: Advanced data visualization and graphs
 - Button Card: Highly customizable button cards
 - Card-mod: CSS styling layer for all cards
 
 ### Advanced Features (Future)
+
 - Direct Home Assistant connection via WebSocket API
 - Live entity state preview
 - Entity browser and autocomplete
@@ -86,10 +91,12 @@ HA_Visual_Dashboard_Maker/
 ### Development Setup
 
 Launch commands:
+
 - Standard: `npm start`
 - WSL (to avoid sandbox/GPU issues): `npm run start:wsl`
 
 Key tests (cannot be run in the AI sandbox; run locally):
+
 - Integration: `npx playwright test --project=electron-integration --workers=1 --trace=retain-on-failure`
 - E2E smoke: `npx playwright test --project=electron-e2e --workers=1 --trace=retain-on-failure`
 
@@ -102,6 +109,7 @@ Key tests (cannot be run in the AI sandbox; run locally):
 - Accessibility: ARIA labels on controls, focus ring on selected stop, and screen-reader-friendly list semantics for stops.
 
 Docs:
+
 - User guide: `docs/product/GRADIENT_EDITOR_USER_GUIDE.md`
 - Component API: `docs/features/GRADIENT_EDITOR_COMPONENT_API.md`
 - Testing patterns: `docs/testing/TESTING_STANDARDS.md#gradient-editor-testing-patterns`
@@ -116,6 +124,7 @@ Popover-based color input used across Properties Panel (card color, icon color) 
 - Accessibility: keyboard-operable (swatch is focusable) and labeled controls
 
 Docs:
+
 - User guide: `docs/product/COLOR_PICKER_USER_GUIDE.md`
 - Component API: `docs/features/COLOR_PICKER_COMPONENT_API.md`
 - Keyboard shortcuts: `docs/product/KEYBOARD_SHORTCUTS.md`

@@ -14,6 +14,7 @@
 ## Objective
 
 After all refactor phases (R2–R7) are complete, run a comprehensive regression test suite to verify:
+
 1. No existing functionality was broken by the card type renames and restructuring
 2. All YAML round-trips produce correct output
 3. No stale references to old card type strings remain in the codebase
@@ -28,9 +29,11 @@ After all refactor phases (R2–R7) are complete, run a comprehensive regression
 ### Level 1: Static Analysis
 
 **1a. Lint**
+
 ```bash
 npm run lint
 ```
+
 Expected: 0 errors. Warnings are acceptable if they match the pre-refactor baseline (~145 warnings).
 
 **1b. Stale Reference Search**
@@ -49,6 +52,7 @@ grep -r "custom:tabs-card" src/ tests/ --include="*.ts" --include="*.tsx" --incl
 ```
 
 **Expected results:**
+
 - `custom:swiper-card`: Only in `yamlConversionService.ts` (legacy migration) and test fixtures for migration
 - `custom:accordion-card`: Only in `yamlConversionService.ts` (legacy migration) and test fixtures for migration
 - `custom:tabs-card`: Only in `yamlConversionService.ts` (legacy migration) and test fixtures for migration
@@ -63,6 +67,7 @@ npm run test:unit
 Run the full unit test suite, not just targeted tests. All tests must pass.
 
 Key unit test files to verify:
+
 - `tests/unit/carousel-service.spec.ts` — swipe-card normalization
 - `tests/unit/accordion-service.spec.ts` — expander-card normalization
 - `tests/unit/tabs-service.spec.ts` — tabbed-card normalization
@@ -94,6 +99,7 @@ npm run test:e2e
 ```
 
 Run the complete E2E suite to catch cross-feature regressions. Pay attention to:
+
 - Card palette tests (card types must appear with new names)
 - Dashboard save/load tests (YAML must round-trip correctly)
 - Properties panel tests (form fields must bind to new property names)
@@ -116,6 +122,7 @@ Create test fixture files for regression testing:
 ### Upstream Format Fixtures
 
 **File**: `tests/fixtures/upstream-swipe-card.yaml`
+
 ```yaml
 type: custom:swipe-card
 start_card: 2
@@ -142,6 +149,7 @@ cards:
 ```
 
 **File**: `tests/fixtures/upstream-expander-card.yaml`
+
 ```yaml
 type: custom:expander-card
 title: Living Room Controls
@@ -161,6 +169,7 @@ cards:
 ```
 
 **File**: `tests/fixtures/upstream-tabbed-card.yaml`
+
 ```yaml
 type: custom:tabbed-card
 options:
@@ -192,6 +201,7 @@ tabs:
 ### Legacy HAVDM Format Fixtures (for migration testing)
 
 **File**: `tests/fixtures/legacy-swiper-card.yaml`
+
 ```yaml
 type: custom:swiper-card
 pagination:
@@ -215,6 +225,7 @@ cards:
 ```
 
 **File**: `tests/fixtures/legacy-accordion-card.yaml`
+
 ```yaml
 type: custom:accordion-card
 expand_mode: single
@@ -236,6 +247,7 @@ sections:
 ```
 
 **File**: `tests/fixtures/legacy-tabs-card.yaml`
+
 ```yaml
 type: custom:tabs-card
 tab_position: top
@@ -246,7 +258,7 @@ lazy_render: true
 tabs:
   - title: Lights
     icon: mdi:lightbulb
-    badge: "3"
+    badge: '3'
     count: 5
     cards:
       - type: button
@@ -260,21 +272,21 @@ tabs:
 
 ## Success Criteria
 
-| Check | Expected | Status |
-|-------|----------|--------|
-| `npm run lint` | 0 errors | |
-| Stale `custom:swiper-card` refs | Only in migration code | |
-| Stale `custom:accordion-card` refs | Only in migration code | |
-| Stale `custom:tabs-card` refs | Only in migration code | |
-| `npm run test:unit` | All pass | |
-| Carousel E2E | All pass | |
-| Accordion E2E | All pass | |
-| Tabs E2E | All pass | |
-| Popup E2E | All pass | |
-| `npm run test:e2e` (full) | All pass | |
-| `npm run test:integration` | All pass | |
-| Upstream YAML import → export round-trip | Lossless for all card types | |
-| Legacy YAML migration | Correct conversion for all card types | |
+| Check                                    | Expected                              | Status |
+| ---------------------------------------- | ------------------------------------- | ------ |
+| `npm run lint`                           | 0 errors                              |        |
+| Stale `custom:swiper-card` refs          | Only in migration code                |        |
+| Stale `custom:accordion-card` refs       | Only in migration code                |        |
+| Stale `custom:tabs-card` refs            | Only in migration code                |        |
+| `npm run test:unit`                      | All pass                              |        |
+| Carousel E2E                             | All pass                              |        |
+| Accordion E2E                            | All pass                              |        |
+| Tabs E2E                                 | All pass                              |        |
+| Popup E2E                                | All pass                              |        |
+| `npm run test:e2e` (full)                | All pass                              |        |
+| `npm run test:integration`               | All pass                              |        |
+| Upstream YAML import → export round-trip | Lossless for all card types           |        |
+| Legacy YAML migration                    | Correct conversion for all card types |        |
 
 ---
 

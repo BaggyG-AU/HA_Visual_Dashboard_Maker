@@ -31,7 +31,10 @@ export const VerticalStackCardRenderer: React.FC<VerticalStackCardRendererProps>
   const defaultEntityId =
     childCards.find((child) => typeof (child as any)?.entity === 'string')?.entity ?? null;
   const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId) : '';
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
   const layout = useMemo(() => normalizeVerticalStackLayout(card), [card]);
 
   // If no child cards, show placeholder
@@ -47,16 +50,16 @@ export const VerticalStackCardRenderer: React.FC<VerticalStackCardRendererProps>
           transition: 'all 0.3s ease',
         }}
         styles={{
-        body: {
-          padding: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          gap: '8px',
-        },
-      }}
+          body: {
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            gap: '8px',
+          },
+        }}
         onClick={onClick}
         hoverable
       >
@@ -98,14 +101,15 @@ export const VerticalStackCardRenderer: React.FC<VerticalStackCardRendererProps>
       hoverable
     >
       {/* Vertical layout container */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: `${layout.gap}px`,
-        alignItems: layout.alignItems,
-        height: '100%',
-      }}
-      data-testid="vertical-stack-container"
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: `${layout.gap}px`,
+          alignItems: layout.alignItems,
+          height: '100%',
+        }}
+        data-testid="vertical-stack-container"
       >
         {childCards.map((childCard, index) => (
           <div
@@ -129,19 +133,21 @@ export const VerticalStackCardRenderer: React.FC<VerticalStackCardRendererProps>
 
       {/* Stack indicator overlay when selected */}
       {isSelected && (
-        <div style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          padding: '4px 8px',
-          backgroundColor: 'rgba(0, 217, 255, 0.2)',
-          border: '1px solid #00d9ff',
-          borderRadius: '4px',
-          fontSize: '10px',
-          color: '#00d9ff',
-          fontWeight: 'bold',
-          pointerEvents: 'none',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            padding: '4px 8px',
+            backgroundColor: 'rgba(0, 217, 255, 0.2)',
+            border: '1px solid #00d9ff',
+            borderRadius: '4px',
+            fontSize: '10px',
+            color: '#00d9ff',
+            fontWeight: 'bold',
+            pointerEvents: 'none',
+          }}
+        >
           <BorderVerticleOutlined style={{ marginRight: '4px' }} />
           VERTICAL STACK
         </div>

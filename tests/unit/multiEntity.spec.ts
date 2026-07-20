@@ -55,15 +55,17 @@ const states: EntityStates = {
 
 describe('multiEntity service', () => {
   it('normalizes and resolves entity ids from card config', () => {
-    expect(normalizeEntityIdList(['light.a', { entity: 'switch.b' }, { not_entity: true } as unknown as string])).toEqual([
-      'light.a',
-      'switch.b',
-    ]);
+    expect(
+      normalizeEntityIdList([
+        'light.a',
+        { entity: 'switch.b' },
+        { not_entity: true } as unknown as string,
+      ]),
+    ).toEqual(['light.a', 'switch.b']);
 
-    expect(resolveMultiEntityIds({ entity: 'light.a', entities: ['light.a', 'switch.b'] as unknown[] })).toEqual([
-      'light.a',
-      'switch.b',
-    ]);
+    expect(
+      resolveMultiEntityIds({ entity: 'light.a', entities: ['light.a', 'switch.b'] as unknown[] }),
+    ).toEqual(['light.a', 'switch.b']);
     expect(resolveMultiEntityIds({ entity: 'light.a', entities: undefined })).toEqual(['light.a']);
   });
 
@@ -121,7 +123,11 @@ describe('multiEntity service', () => {
       { entityId: 'switch.b', service: 'switch.turn_on', serviceData: { entity_id: 'switch.b' } },
     ]);
 
-    const customService = executeBatchAction({ type: 'call_service', service: 'homeassistant.toggle' }, ids, states);
+    const customService = executeBatchAction(
+      { type: 'call_service', service: 'homeassistant.toggle' },
+      ids,
+      states,
+    );
     expect(customService.operations[0].service).toBe('homeassistant.toggle');
     expect(customService.operations[1].service).toBe('homeassistant.toggle');
   });

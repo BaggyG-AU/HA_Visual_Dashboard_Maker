@@ -38,10 +38,12 @@ export class HapticsDSL {
 
   async expectVibrationCalls(count: number, testInfo?: TestInfo): Promise<void> {
     try {
-      await expect.poll(async () => {
-        const calls = await this.getVibrationCalls();
-        return calls.length;
-      }).toBe(count);
+      await expect
+        .poll(async () => {
+          const calls = await this.getVibrationCalls();
+          return calls.length;
+        })
+        .toBe(count);
     } catch (error) {
       if (testInfo) {
         const calls = await this.getVibrationCalls().catch(() => []);

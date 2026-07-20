@@ -63,7 +63,10 @@ export const LightCardRenderer: React.FC<LightCardRendererProps> = ({
   };
 
   const lightColor = getLightColor();
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
   const resolvedIcon = getStateIcon({
     entityId: card.entity,
     state,
@@ -84,22 +87,24 @@ export const LightCardRenderer: React.FC<LightCardRendererProps> = ({
       }}
       styles={{
         body: {
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        gap: '16px',
-      },
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          gap: '16px',
+        },
       }}
       onClick={onClick}
       hoverable
     >
       {/* Header with icon and state */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <Text strong style={{ color: '#e6e6e6', fontSize: '14px' }}>
           {displayName}
         </Text>
@@ -130,18 +135,22 @@ export const LightCardRenderer: React.FC<LightCardRendererProps> = ({
       </div>
 
       {/* State and brightness */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        flex: 1,
-      }}>
-        {/* State */}
-        <div style={{
+      <div
+        style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
+          flexDirection: 'column',
+          gap: '8px',
+          flex: 1,
+        }}
+      >
+        {/* State */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           <Text
             style={{
               color: isOn ? lightColor : '#666',
@@ -181,12 +190,14 @@ export const LightCardRenderer: React.FC<LightCardRendererProps> = ({
 
         {/* Color indicator */}
         {isOn && (attributes.rgb_color || attributes.hs_color) && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginTop: 'auto',
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginTop: 'auto',
+            }}
+          >
             <div
               style={{
                 width: '24px',

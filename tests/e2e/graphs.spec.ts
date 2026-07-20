@@ -45,7 +45,9 @@ test.describe('Native Graphs', () => {
     }
   });
 
-  test('updates chart mode and refresh settings from form and persists to yaml', async ({ page }) => {
+  test('updates chart mode and refresh settings from form and persists to yaml', async ({
+    page,
+  }) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, graphs, canvas, properties, yamlEditor } = ctx;
@@ -60,7 +62,12 @@ test.describe('Native Graphs', () => {
       await yamlEditor.setEditorContent(BASE_YAML, 'properties');
       await properties.switchTab('Form');
 
-      await graphs.configureGraph({ chartType: 'area', timeRange: '7d', refreshInterval: '1m', zoomPan: true });
+      await graphs.configureGraph({
+        chartType: 'area',
+        timeRange: '7d',
+        refreshInterval: '1m',
+        zoomPan: true,
+      });
       await graphs.verifyGraphRendered();
 
       await properties.switchTab('YAML');

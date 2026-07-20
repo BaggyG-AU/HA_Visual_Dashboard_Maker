@@ -115,14 +115,24 @@ describe('dashboard store bulk selection state', () => {
     const state = useDashboardStore.getState();
     state.beginBatchUpdate();
 
-    const view = (baseConfig.views[0] as DashboardConfig['views'][number]);
+    const view = baseConfig.views[0] as DashboardConfig['views'][number];
     state.applyBatchedConfig({
       ...baseConfig,
-      views: [{ ...view, cards: [...(view.cards ?? []), { type: 'button', name: 'New' }] } as DashboardConfig['views'][number]],
+      views: [
+        {
+          ...view,
+          cards: [...(view.cards ?? []), { type: 'button', name: 'New' }],
+        } as DashboardConfig['views'][number],
+      ],
     });
     state.applyBatchedConfig({
       ...baseConfig,
-      views: [{ ...view, cards: [...(view.cards ?? []), { type: 'button', name: 'Newer' }] } as DashboardConfig['views'][number]],
+      views: [
+        {
+          ...view,
+          cards: [...(view.cards ?? []), { type: 'button', name: 'Newer' }],
+        } as DashboardConfig['views'][number],
+      ],
     });
     state.endBatchUpdate();
 

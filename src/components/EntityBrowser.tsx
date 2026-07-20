@@ -101,9 +101,7 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
 
   // Filter entities based on search and active tab
   const filteredEntities = useMemo(() => {
-    const entitiesToFilter = activeTab === 'all'
-      ? entities
-      : entitiesByDomain[activeTab] || [];
+    const entitiesToFilter = activeTab === 'all' ? entities : entitiesByDomain[activeTab] || [];
 
     if (!searchTerm) return entitiesToFilter;
 
@@ -234,19 +232,14 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
           allowClear
         />
 
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={tabItems}
-          size="small"
-        />
+        <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} size="small" />
 
         {filteredEntities.length === 0 ? (
           <Empty
             description={
               entities.length === 0
-                ? "No entities cached. Connect to Home Assistant and click Refresh."
-                : "No entities match your search."
+                ? 'No entities cached. Connect to Home Assistant and click Refresh.'
+                : 'No entities match your search.'
             }
           />
         ) : (

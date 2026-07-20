@@ -15,7 +15,7 @@ Dependencies were upgraded during the Node 22 reinstall (**antd v5 → v6.1.4**,
 **ApexCharts v4**, **react-grid-layout v2**, **monaco-yaml v5**) but the call
 sites were never migrated — and `npm run typecheck` was **not in blocking CI**.
 
-Every API drift therefore became a *silently-ignored prop* rather than a compile
+Every API drift therefore became a _silently-ignored prop_ rather than a compile
 error. None of these produced a crash, a console error, or a failing test; they
 just quietly stopped doing anything.
 
@@ -23,20 +23,20 @@ just quietly stopped doing anything.
 
 ## Confirmed latent bugs found and fixed
 
-| # | Where | What was actually broken |
-|---|---|---|
-| 1 | `services/templateService.ts` | `electronAPI.readFile` returns a `{success, content?, error?}` envelope; both call sites treated it as a raw string. `JSON.parse(<object>)` threw every time, so `loadMetadata()` always fell into its catch and returned **empty metadata — the template library silently listed nothing**. `loadTemplate()` returned the envelope instead of YAML. `getTemplatePath` was exposed by the preload bridge but missing from the `ElectronAPI` interface. |
-| 2 | `cards/ApexChartsCardRenderer.tsx` | The trailing `...normalized.apex_config` spread sat *after* the composed `chart` and `stroke` blocks and overwrote both wholesale — the preview guardrails (transparent background, hidden toolbar, disabled animations) were discarded on every chart. |
-| 3 | `cards/MushroomCardRenderer.tsx` | `card.layout` collides: upstream Mushroom's `layout` is a **string** option, HAVDM's `BaseCard.layout` is the react-grid-layout **position object**. `layout === 'horizontal'` could never be true — horizontal Mushroom cards always rendered vertically. |
-| 4 | `EntityRemappingModal.tsx` | `justify="space-between"` was passed to antd `Space`, which has never supported it in any antd version. Two header rows were never justified. |
-| 5 | `cards/GaugeCardRenderer.tsx` | `paddingX: '8px'` is not a CSS property — the min/max range row never had its intended horizontal padding. |
-| 6 | `cards/ApexChartsCardRenderer.tsx` | ApexCharts v4 renamed legend marker `width`/`height` → `size`; the 8px markers were being dropped. |
-| 7 | `SplitViewEditor.tsx` | `onLayoutChange` was a stale `(layout: unknown[]) => void` placeholder matching neither its `GridCanvas` consumer nor `App`'s handler. |
-| 8 | `utils/layoutCardExporter.ts` | react-grid-layout v2 made `Layout` the whole (readonly) array rather than one item, so three `Layout[]` params were arrays-of-arrays and every `item.x/.y/.w/.h` read was untyped. |
-| 9 | `features/carousel/SwiperCarousel.tsx` | Autoplay options were read via `?.` off a `CarouselAutoplayConfig \| false` union — `?.` does not narrow away `false`. |
-| 10 | `store/dashboardStore.ts` | `loadDashboard` was typed `filePath: string` while three call sites pass `null` and the store's own initial state is `null`. |
-| 11 | `PropertiesPanel.tsx` | `handleInsertEntity` used `editor.getSelection()` with **no null fallback** (a null selection is not a valid monaco edit range). `YamlEditorDialog` had a fallback; `PropertiesPanel` did not. |
-| 12 | `GridCanvas.tsx`, `HADashboardIframe.tsx` | react-grid-layout v2 reads grid geometry **only** from `gridConfig`; the v1 flat props both files passed were silently ignored, so the canvas had been rendering on the library's defaults (`rowHeight: 150`) instead of the app's configured `56`. See the section below. |
+| #   | Where                                     | What was actually broken                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `services/templateService.ts`             | `electronAPI.readFile` returns a `{success, content?, error?}` envelope; both call sites treated it as a raw string. `JSON.parse(<object>)` threw every time, so `loadMetadata()` always fell into its catch and returned **empty metadata — the template library silently listed nothing**. `loadTemplate()` returned the envelope instead of YAML. `getTemplatePath` was exposed by the preload bridge but missing from the `ElectronAPI` interface. |
+| 2   | `cards/ApexChartsCardRenderer.tsx`        | The trailing `...normalized.apex_config` spread sat _after_ the composed `chart` and `stroke` blocks and overwrote both wholesale — the preview guardrails (transparent background, hidden toolbar, disabled animations) were discarded on every chart.                                                                                                                                                                                                |
+| 3   | `cards/MushroomCardRenderer.tsx`          | `card.layout` collides: upstream Mushroom's `layout` is a **string** option, HAVDM's `BaseCard.layout` is the react-grid-layout **position object**. `layout === 'horizontal'` could never be true — horizontal Mushroom cards always rendered vertically.                                                                                                                                                                                             |
+| 4   | `EntityRemappingModal.tsx`                | `justify="space-between"` was passed to antd `Space`, which has never supported it in any antd version. Two header rows were never justified.                                                                                                                                                                                                                                                                                                          |
+| 5   | `cards/GaugeCardRenderer.tsx`             | `paddingX: '8px'` is not a CSS property — the min/max range row never had its intended horizontal padding.                                                                                                                                                                                                                                                                                                                                             |
+| 6   | `cards/ApexChartsCardRenderer.tsx`        | ApexCharts v4 renamed legend marker `width`/`height` → `size`; the 8px markers were being dropped.                                                                                                                                                                                                                                                                                                                                                     |
+| 7   | `SplitViewEditor.tsx`                     | `onLayoutChange` was a stale `(layout: unknown[]) => void` placeholder matching neither its `GridCanvas` consumer nor `App`'s handler.                                                                                                                                                                                                                                                                                                                 |
+| 8   | `utils/layoutCardExporter.ts`             | react-grid-layout v2 made `Layout` the whole (readonly) array rather than one item, so three `Layout[]` params were arrays-of-arrays and every `item.x/.y/.w/.h` read was untyped.                                                                                                                                                                                                                                                                     |
+| 9   | `features/carousel/SwiperCarousel.tsx`    | Autoplay options were read via `?.` off a `CarouselAutoplayConfig \| false` union — `?.` does not narrow away `false`.                                                                                                                                                                                                                                                                                                                                 |
+| 10  | `store/dashboardStore.ts`                 | `loadDashboard` was typed `filePath: string` while three call sites pass `null` and the store's own initial state is `null`.                                                                                                                                                                                                                                                                                                                           |
+| 11  | `PropertiesPanel.tsx`                     | `handleInsertEntity` used `editor.getSelection()` with **no null fallback** (a null selection is not a valid monaco edit range). `YamlEditorDialog` had a fallback; `PropertiesPanel` did not.                                                                                                                                                                                                                                                         |
+| 12  | `GridCanvas.tsx`, `HADashboardIframe.tsx` | react-grid-layout v2 reads grid geometry **only** from `gridConfig`; the v1 flat props both files passed were silently ignored, so the canvas had been rendering on the library's defaults (`rowHeight: 150`) instead of the app's configured `56`. See the section below.                                                                                                                                                                             |
 
 ---
 
@@ -81,14 +81,14 @@ being dropped.
 
 The arithmetic confirms it, predicting every observed dimension exactly:
 
-| Geometry in effect | colWidth | width (w=6) | height (h=4) |
-|---|---|---|---|
-| `main` — rgl defaults ignored config | 89.17 | **585** | 630 → clamped **440** |
-| branch — config actually honoured | 85.33 | **592** | **272** |
+| Geometry in effect                   | colWidth | width (w=6) | height (h=4)          |
+| ------------------------------------ | -------- | ----------- | --------------------- |
+| `main` — rgl defaults ignored config | 89.17    | **585**     | 630 → clamped **440** |
+| branch — config actually honoured    | 85.33    | **592**     | **272**               |
 
 The 440px ceiling in the screenshot helper (`min(max(260, h), 440)`) is what hid
 the 630px blow-up. The branch had swapped to the `react-grid-layout/legacy` shim,
-which *does* honour `rowHeight: 56` — so cards suddenly rendered at 272px, content
+which _does_ honour `rowHeight: 56` — so cards suddenly rendered at 272px, content
 overflowed, and the fixed-size icon circles squashed into ellipses. That is what
 the 3 "stale snapshot" failures actually were.
 
@@ -112,7 +112,7 @@ Full canvas suite at `ee7b927`: **19/19 e2e green** across
 Both wrong calls came from the same mistake: **bisecting across working copies on
 different filesystems.** `layout.spec.ts:62` and several `dashboard-operations`
 tests fail in the WSL-mounted checkout and pass consistently in a `/tmp` worktree
-at *identical* commits — the antd Select option detaches between `toBeVisible()`
+at _identical_ commits — the antd Select option detaches between `toBeVisible()`
 and `.evaluate()`, and the flake rate tracks machine speed. Comparing a `/tmp`
 worktree against the WSL checkout therefore measured the filesystem, not the code,
 and produced a confident but fabricated culprit.

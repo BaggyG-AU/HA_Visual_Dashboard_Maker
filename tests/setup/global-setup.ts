@@ -61,7 +61,6 @@ async function globalSetup(): Promise<void> {
   // Playwright E2E/integration runs the packaged renderer (not the Vite dev server) while in test mode.
   // Ensure `.vite/**` build outputs are current so UI changes are reflected in the runtime DOM.
   // Use Electron Forge as the single source of truth for producing these artifacts.
-  // eslint-disable-next-line no-console
   console.log('[playwright globalSetup] Rebuilding Electron renderer via `npm run package`...');
 
   execSync('npm run package', {
@@ -74,4 +73,3 @@ async function globalSetup(): Promise<void> {
 }
 
 export default globalSetup;
-

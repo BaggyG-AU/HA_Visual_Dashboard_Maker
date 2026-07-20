@@ -22,6 +22,7 @@ This phase has no code restructuring — it's a documentation and UI labeling ta
 ## Changes Required
 
 ### 1. Card Registry
+
 **File**: `src/services/cardRegistry.ts` (line ~363)
 
 Update the metadata to clearly mark this as HAVDM-only:
@@ -49,9 +50,11 @@ Update the metadata to clearly mark this as HAVDM-only:
 ```
 
 ### 2. Card Palette UI
+
 If there is a palette/picker component that shows card categories, ensure `custom:popup-card` appears with a visual indicator (e.g., a badge or tooltip) that says "HAVDM-only — not available as a standalone HACS card".
 
 ### 3. YAML Export Warning
+
 When exporting a dashboard that contains `custom:popup-card`, add a comment in the YAML output:
 
 ```yaml
@@ -68,9 +71,11 @@ popup:
 ```
 
 ### 4. Documentation
+
 **File**: `docs/features/HACS_CARD_ALIGNMENT_REFACTOR_PLAN.md`
 
 Update the popup section to document the final decision:
+
 - Keep as HAVDM-only
 - No upstream HACS equivalent
 - Export includes warning comment

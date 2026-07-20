@@ -3,7 +3,14 @@
  * Provides live entity states to all card renderers
  */
 
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+  useCallback,
+} from 'react';
 import { EntityState, EntityStates, haWebSocketService } from '../services/haWebSocketService';
 import { logger } from '../services/logger';
 
@@ -27,7 +34,10 @@ type TestEntityApi = {
 };
 
 const isTestEnv = () => {
-  if (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1')) {
+  if (
+    typeof process !== 'undefined' &&
+    (process.env.NODE_ENV === 'test' || process.env.E2E === '1')
+  ) {
     return true;
   }
   if (typeof window !== 'undefined') {
@@ -42,18 +52,21 @@ export function HAEntityProvider({ children, enabled = true }: HAEntityProviderP
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const normalizeEntities = useCallback((payload: EntityStates | Array<EntityState>): EntityStates => {
-    if (Array.isArray(payload)) {
-      return payload.reduce<EntityStates>((acc, entity) => {
-        const entityId = entity?.entity_id;
-        if (entityId) {
-          acc[entityId] = entity;
-        }
-        return acc;
-      }, {});
-    }
-    return payload;
-  }, []);
+  const normalizeEntities = useCallback(
+    (payload: EntityStates | Array<EntityState>): EntityStates => {
+      if (Array.isArray(payload)) {
+        return payload.reduce<EntityStates>((acc, entity) => {
+          const entityId = entity?.entity_id;
+          if (entityId) {
+            acc[entityId] = entity;
+          }
+          return acc;
+        }, {});
+      }
+      return payload;
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!enabled) {

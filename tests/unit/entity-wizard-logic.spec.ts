@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateWizardState, countEntitiesByDomain } from '../../src/services/entityTypeWizardLogic';
+import {
+  evaluateWizardState,
+  countEntitiesByDomain,
+} from '../../src/services/entityTypeWizardLogic';
 import { sampleEntities } from './fixtures/entities';
 
 describe('entity type wizard logic helpers', () => {
@@ -49,7 +52,16 @@ describe('entity type wizard logic helpers', () => {
       isConnected: true,
       loading: false,
       entities: sampleEntities,
-      categories: [{ id: 'lights', name: 'Lights', description: '', icon: '', requiredDomains: ['light'], helpText: '' }],
+      categories: [
+        {
+          id: 'lights',
+          name: 'Lights',
+          description: '',
+          icon: '',
+          requiredDomains: ['light'],
+          helpText: '',
+        },
+      ],
     });
     expect(state).toBe('ready');
   });
@@ -61,4 +73,3 @@ describe('entity type wizard logic helpers', () => {
     expect(counts.sensor).toBeGreaterThanOrEqual(4);
   });
 });
-

@@ -9,7 +9,9 @@ import {
 } from '../../src/features/weather-viz/weatherVizService';
 import type { WeatherForecastVisualizationCardConfig } from '../../src/features/weather-viz/types';
 
-const makeCard = (overrides: Partial<WeatherForecastVisualizationCardConfig> = {}): WeatherForecastVisualizationCardConfig => ({
+const makeCard = (
+  overrides: Partial<WeatherForecastVisualizationCardConfig> = {},
+): WeatherForecastVisualizationCardConfig => ({
   type: 'weather-forecast',
   entity: 'weather.home',
   ...overrides,
@@ -17,13 +19,15 @@ const makeCard = (overrides: Partial<WeatherForecastVisualizationCardConfig> = {
 
 describe('weatherVizService', () => {
   it('normalizes mode and default metrics', () => {
-    const normalized = normalizeWeatherVizConfig(makeCard({
-      mode: 'hourly',
-      metrics: ['temperature', 'wind_speed'],
-      days: 10,
-      icon_animation: 'pulse',
-      unit_system: 'imperial',
-    }));
+    const normalized = normalizeWeatherVizConfig(
+      makeCard({
+        mode: 'hourly',
+        metrics: ['temperature', 'wind_speed'],
+        days: 10,
+        icon_animation: 'pulse',
+        unit_system: 'imperial',
+      }),
+    );
 
     expect(normalized.mode).toBe('hourly');
     expect(normalized.metrics).toEqual(['temperature', 'wind_speed']);
@@ -68,8 +72,20 @@ describe('weatherVizService', () => {
   it('builds summary metrics and locale date labels', () => {
     const points = normalizeForecastPayload(
       [
-        { datetime: '2026-02-15T00:00:00Z', temperature: 10, precipitation: 1.2, wind_speed: 7, condition: 'rainy' },
-        { datetime: '2026-02-16T00:00:00Z', temperature: 20, precipitation: 0.4, wind_speed: 13, condition: 'cloudy' },
+        {
+          datetime: '2026-02-15T00:00:00Z',
+          temperature: 10,
+          precipitation: 1.2,
+          wind_speed: 7,
+          condition: 'rainy',
+        },
+        {
+          datetime: '2026-02-16T00:00:00Z',
+          temperature: 20,
+          precipitation: 0.4,
+          wind_speed: 13,
+          condition: 'cloudy',
+        },
       ],
       'daily',
       2,
@@ -86,4 +102,3 @@ describe('weatherVizService', () => {
     expect(label.length).toBeGreaterThan(0);
   });
 });
-

@@ -108,7 +108,9 @@ test.describe('Carousel (Swiper)', () => {
       await canvas.deselectCard();
 
       const initialIndex = await carousel.getActiveSlideIndex(0);
-      await expect.poll(async () => await carousel.getActiveSlideIndex(0), { timeout: 4000 }).not.toBe(initialIndex);
+      await expect
+        .poll(async () => await carousel.getActiveSlideIndex(0), { timeout: 4000 })
+        .not.toBe(initialIndex);
     } finally {
       await close(ctx);
     }

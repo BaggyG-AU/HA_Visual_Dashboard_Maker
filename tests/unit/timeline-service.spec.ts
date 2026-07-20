@@ -18,15 +18,18 @@ const makeCard = (overrides: Partial<TimelineCardConfig> = {}): TimelineCardConf
 
 describe('timelineService', () => {
   it('normalizes timeline options and clamps numeric fields', () => {
-    const normalized = normalizeTimelineCard(makeCard({
-      hours_to_show: 0,
-      max_items: 999,
-      orientation: 'horizontal',
-      group_by: 'hour',
-      item_density: 'compact',
-      truncate_length: 4,
-      selected_timestamp: '2026-02-14T09:30:00.000Z',
-    }), BASE_NOW);
+    const normalized = normalizeTimelineCard(
+      makeCard({
+        hours_to_show: 0,
+        max_items: 999,
+        orientation: 'horizontal',
+        group_by: 'hour',
+        item_density: 'compact',
+        truncate_length: 4,
+        selected_timestamp: '2026-02-14T09:30:00.000Z',
+      }),
+      BASE_NOW,
+    );
 
     expect(normalized.hoursToShow).toBe(1);
     expect(normalized.maxItems).toBe(200);
@@ -38,14 +41,18 @@ describe('timelineService', () => {
   });
 
   it('prefers explicit card events and sorts chronologically', () => {
-    const events = resolveTimelineEvents(makeCard({
-      selected_timestamp: '2026-02-14T12:00:00.000Z',
-      events: [
-        { timestamp: '2026-02-14T14:00:00.000Z', title: 'Future event' },
-        { timestamp: '2026-02-14T10:00:00.000Z', title: 'Past event' },
-        { timestamp: '2026-02-14T12:03:00.000Z', title: 'Present event' },
-      ],
-    }), null, BASE_NOW);
+    const events = resolveTimelineEvents(
+      makeCard({
+        selected_timestamp: '2026-02-14T12:00:00.000Z',
+        events: [
+          { timestamp: '2026-02-14T14:00:00.000Z', title: 'Future event' },
+          { timestamp: '2026-02-14T10:00:00.000Z', title: 'Past event' },
+          { timestamp: '2026-02-14T12:03:00.000Z', title: 'Present event' },
+        ],
+      }),
+      null,
+      BASE_NOW,
+    );
 
     expect(events).toHaveLength(3);
     expect(events[0].title).toBe('Past event');
@@ -54,18 +61,22 @@ describe('timelineService', () => {
   });
 
   it('reads timeline entries from entity attributes and truncates to max_items', () => {
-    const events = resolveTimelineEvents(makeCard({
-      selected_timestamp: '2026-02-14T12:00:00.000Z',
-      max_items: 2,
-    }), {
-      attributes: {
-        events: [
-          { timestamp: '2026-02-14T07:00:00.000Z', title: 'One' },
-          { timestamp: '2026-02-14T08:00:00.000Z', title: 'Two' },
-          { timestamp: '2026-02-14T09:00:00.000Z', title: 'Three' },
-        ],
+    const events = resolveTimelineEvents(
+      makeCard({
+        selected_timestamp: '2026-02-14T12:00:00.000Z',
+        max_items: 2,
+      }),
+      {
+        attributes: {
+          events: [
+            { timestamp: '2026-02-14T07:00:00.000Z', title: 'One' },
+            { timestamp: '2026-02-14T08:00:00.000Z', title: 'Two' },
+            { timestamp: '2026-02-14T09:00:00.000Z', title: 'Three' },
+          ],
+        },
       },
-    }, BASE_NOW);
+      BASE_NOW,
+    );
 
     expect(events).toHaveLength(2);
     expect(events[0].title).toBe('Two');
@@ -73,14 +84,18 @@ describe('timelineService', () => {
   });
 
   it('groups events by day and finds nearest scrubber index', () => {
-    const events = resolveTimelineEvents(makeCard({
-      selected_timestamp: '2026-02-14T12:00:00.000Z',
-      events: [
-        { timestamp: '2026-02-13T23:55:00.000Z', title: 'Late previous day' },
-        { timestamp: '2026-02-14T10:00:00.000Z', title: 'Morning' },
-        { timestamp: '2026-02-14T17:00:00.000Z', title: 'Evening' },
-      ],
-    }), null, BASE_NOW);
+    const events = resolveTimelineEvents(
+      makeCard({
+        selected_timestamp: '2026-02-14T12:00:00.000Z',
+        events: [
+          { timestamp: '2026-02-13T23:55:00.000Z', title: 'Late previous day' },
+          { timestamp: '2026-02-14T10:00:00.000Z', title: 'Morning' },
+          { timestamp: '2026-02-14T17:00:00.000Z', title: 'Evening' },
+        ],
+      }),
+      null,
+      BASE_NOW,
+    );
 
     const groups = groupTimelineEvents(events, 'day');
 

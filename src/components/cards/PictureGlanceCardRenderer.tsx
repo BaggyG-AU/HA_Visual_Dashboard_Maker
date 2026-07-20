@@ -29,32 +29,44 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
 
   // Extract card properties
   const entities = card.entities || [];
-  const visibleEntities = entities.filter((entityConfig) => evaluateEntityVisibility(entityConfig, entityStates));
-  const defaultEntityId = visibleEntities.length > 0 ? (typeof visibleEntities[0] === 'string' ? visibleEntities[0] : visibleEntities[0].entity) : null;
+  const visibleEntities = entities.filter((entityConfig) =>
+    evaluateEntityVisibility(entityConfig, entityStates),
+  );
+  const defaultEntityId =
+    visibleEntities.length > 0
+      ? typeof visibleEntities[0] === 'string'
+        ? visibleEntities[0]
+        : visibleEntities[0].entity
+      : null;
   const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId ?? null) : '';
   const title = card.title ? resolvedTitle : undefined;
   const showState = card.show_state !== false;
   const hasImage = card.image && card.image.length > 0;
   const hasCameraImage = card.camera_image && card.camera_image.length > 0;
   const cameraView = card.camera_view || 'auto';
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   // Get entity data
-  const entityData = visibleEntities.map(entityConfig => {
+  const entityData = visibleEntities.map((entityConfig) => {
     const entityId = typeof entityConfig === 'string' ? entityConfig : entityConfig.entity;
     const entity = getEntity(entityId);
     const attributes = entity?.attributes || {};
 
-    const nameTemplate = typeof entityConfig === 'object' && (entityConfig as EntityConfig).name
-      ? (entityConfig as EntityConfig).name
-      : '';
+    const nameTemplate =
+      typeof entityConfig === 'object' && (entityConfig as EntityConfig).name
+        ? (entityConfig as EntityConfig).name
+        : '';
     const name = nameTemplate
       ? resolveContext(nameTemplate, entityId)
       : attributes.friendly_name || entityId.split('.')[1]?.replace(/_/g, ' ') || entityId;
 
-    const icon = typeof entityConfig === 'object' && (entityConfig as EntityConfig).icon
-      ? (entityConfig as EntityConfig).icon
-      : attributes.icon || getDefaultIcon(entityId);
+    const icon =
+      typeof entityConfig === 'object' && (entityConfig as EntityConfig).icon
+        ? (entityConfig as EntityConfig).icon
+        : attributes.icon || getDefaultIcon(entityId);
 
     return {
       entityId,
@@ -92,11 +104,11 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
       // Simple mdi icon mapping to emoji
       const iconName = icon.replace('mdi:', '');
       const iconMap: Record<string, string> = {
-        'lightbulb': '💡',
-        'power': '🔌',
-        'lock': '🔒',
-        'thermometer': '🌡️',
-        'fan': '💨',
+        lightbulb: '💡',
+        power: '🔌',
+        lock: '🔒',
+        thermometer: '🌡️',
+        fan: '💨',
         'window-closed': '🪟',
         'window-open': '🪟',
         'door-closed': '🚪',
@@ -120,25 +132,27 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
       }}
       styles={{
         body: {
-        padding: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        overflow: 'hidden',
-        position: 'relative',
-      },
+          padding: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          overflow: 'hidden',
+          position: 'relative',
+        },
       }}
       onClick={onClick}
       hoverable
     >
       {/* Background image */}
       {hasImage ? (
-        <div style={{
-          width: '100%',
-          flex: 1,
-          position: 'relative',
-          overflow: 'hidden',
-        }}>
+        <div
+          style={{
+            width: '100%',
+            flex: 1,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
           <img
             src={card.image}
             alt={title || 'Picture glance'}
@@ -156,34 +170,38 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
             }}
           />
           {/* Error placeholder */}
-          <div style={{
-            display: 'none',
-            width: '100%',
-            height: '100%',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            color: '#666',
-            flexDirection: 'column',
-            gap: '8px',
-          }}>
+          <div
+            style={{
+              display: 'none',
+              width: '100%',
+              height: '100%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: '#666',
+              flexDirection: 'column',
+              gap: '8px',
+            }}
+          >
             <PictureOutlined style={{ fontSize: '48px' }} />
             <div style={{ fontSize: '12px' }}>Image not found</div>
           </div>
         </div>
       ) : (
         // No image placeholder - show camera icon if camera is configured
-        <div style={{
-          width: '100%',
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          color: hasCameraImage ? '#1890ff' : '#666',
-          flexDirection: 'column',
-          gap: '8px',
-        }}>
+        <div
+          style={{
+            width: '100%',
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            color: hasCameraImage ? '#1890ff' : '#666',
+            flexDirection: 'column',
+            gap: '8px',
+          }}
+        >
           {hasCameraImage ? (
             <>
               <VideoCameraOutlined style={{ fontSize: '48px' }} />
@@ -205,14 +223,17 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
 
       {/* Title overlay (top) */}
       {title && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 70%, transparent 100%)',
-          padding: '12px 16px',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            background:
+              'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 70%, transparent 100%)',
+            padding: '12px 16px',
+          }}
+        >
           <Text strong style={{ color: '#fff', fontSize: '16px' }}>
             {title}
           </Text>
@@ -221,18 +242,21 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
 
       {/* Entity icons overlay (bottom) */}
       {visibleEntities.length > 0 && (
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 70%, transparent 100%)',
-          padding: '12px',
-          display: 'flex',
-          gap: '8px',
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background:
+              'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 70%, transparent 100%)',
+            padding: '12px',
+            display: 'flex',
+            gap: '8px',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
           {entityData.map((entity) => (
             <div
               key={entity.entityId}
@@ -250,7 +274,9 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
                   width: '40px',
                   height: '40px',
                   borderRadius: '50%',
-                  backgroundColor: entity.isOn ? 'rgba(255, 193, 7, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+                  backgroundColor: entity.isOn
+                    ? 'rgba(255, 193, 7, 0.2)'
+                    : 'rgba(255, 255, 255, 0.1)',
                   border: entity.isOn ? '2px solid #ffc107' : '2px solid rgba(255, 255, 255, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
@@ -282,17 +308,19 @@ export const PictureGlanceCardRenderer: React.FC<PictureGlanceCardRendererProps>
 
       {/* No entities warning */}
       {entities.length === 0 && (
-        <div style={{
-          position: 'absolute',
-          bottom: '12px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: 'rgba(255, 152, 0, 0.9)',
-          color: '#fff',
-          padding: '6px 12px',
-          borderRadius: '4px',
-          fontSize: '11px',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '12px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'rgba(255, 152, 0, 0.9)',
+            color: '#fff',
+            padding: '6px 12px',
+            borderRadius: '4px',
+            fontSize: '11px',
+          }}
+        >
           No entities configured
         </div>
       )}

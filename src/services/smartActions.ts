@@ -105,9 +105,10 @@ export const resolveCardAction = (card: Card, trigger: ActionTrigger): ResolvedA
   }
 
   // Legacy behavior preservation is tap-only.
-  const isLegacyTap = trigger === 'tap'
-    && card.smart_defaults === undefined
-    && (card.type === 'button' || card.type === 'custom:button-card');
+  const isLegacyTap =
+    trigger === 'tap' &&
+    card.smart_defaults === undefined &&
+    (card.type === 'button' || card.type === 'custom:button-card');
   if (isLegacyTap) {
     return { action: { action: 'toggle' }, source: 'legacy' };
   }

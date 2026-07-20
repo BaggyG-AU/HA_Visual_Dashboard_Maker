@@ -23,13 +23,15 @@ describe('sparklineService', () => {
   });
 
   it('normalizes sparkline options from mini-graph card shape', () => {
-    const normalized = normalizeSparklineCard(makeCard({
-      hours_to_show: 168,
-      line_width: 3,
-      points_per_hour: 2,
-      height: 64,
-      show: { fill: true, extrema: true, state: false },
-    }));
+    const normalized = normalizeSparklineCard(
+      makeCard({
+        hours_to_show: 168,
+        line_width: 3,
+        points_per_hour: 2,
+        height: 64,
+        show: { fill: true, extrema: true, state: false },
+      }),
+    );
 
     expect(normalized.rangePreset).toBe('7d');
     expect(normalized.style).toBe('area');
@@ -56,10 +58,12 @@ describe('sparklineService', () => {
   });
 
   it('builds deterministic sparkline dataset with marker indexes', () => {
-    const normalized = normalizeSparklineCard(makeCard({
-      hours_to_show: 24,
-      points_per_hour: 4,
-    }));
+    const normalized = normalizeSparklineCard(
+      makeCard({
+        hours_to_show: 24,
+        points_per_hour: 4,
+      }),
+    );
 
     const dataset = buildSparklineDataset(normalized, '22.5', 1_700_000_000_000, 40);
 

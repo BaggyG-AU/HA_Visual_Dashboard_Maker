@@ -55,6 +55,7 @@ Blueprint is:
 - Immutable once execution begins
 
 If blueprint must change:
+
 - Create amendment file:
   docs/governance/phases/<phase-name-slug>-amendment-01.md
 
@@ -107,7 +108,7 @@ Each slice must:
 Immediately halt if:
 
 - Unexpected E2E failures
-- >2 unrelated test failures
+- > 2 unrelated test failures
 - YAML output drift
 - Monaco desync
 - IPC errors
@@ -164,9 +165,9 @@ docs/governance/phases/<phase-name-slug>-medium-gate.md
 For each phase, the repo should contain:
 
 docs/governance/phases/
-    <phase-name>-blueprint.md
-    <phase-name>-medium-gate.md
-    <phase-name>-amendment-01.md (if needed)
+<phase-name>-blueprint.md
+<phase-name>-medium-gate.md
+<phase-name>-amendment-01.md (if needed)
 
 These are internal governance artifacts.
 They are not product documentation.
@@ -197,4 +198,3 @@ This workflow ensures:
 - Historical auditability
 
 This is a controlled AI-assisted engineering system.
-

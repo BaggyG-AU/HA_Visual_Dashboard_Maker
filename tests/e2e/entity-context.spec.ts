@@ -38,7 +38,9 @@ const TEST_ENTITIES = [
 ];
 
 test.describe('Entity Context Variables (Feature 3.2)', () => {
-  test('resolves context variables in text fields and updates on state changes', async ({ page }, testInfo) => {
+  test('resolves context variables in text fields and updates on state changes', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, yamlEditor, entityContext } = ctx;
@@ -59,7 +61,10 @@ test.describe('Entity Context Variables (Feature 3.2)', () => {
 
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value: buttonYaml } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value: buttonYaml } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       const parsedButton = (yaml.load(buttonYaml) as Record<string, unknown>) || {};
       parsedButton.entity = 'light.living_room';
       parsedButton.name = '[[entity.friendly_name]]: [[entity.state|upper]]';
@@ -74,7 +79,9 @@ test.describe('Entity Context Variables (Feature 3.2)', () => {
       await entityContext.expectPreviewValue('name', 'Living Room Light: OFF', testInfo);
       await entityContext.expectButtonCardName('Living Room Light: OFF');
 
-      await properties.setCardName('Battery [[entity.attributes.battery|round(0)]]% ([[entity.attributes.missing|default("n/a")]])');
+      await properties.setCardName(
+        'Battery [[entity.attributes.battery|round(0)]]% ([[entity.attributes.missing|default("n/a")]])',
+      );
       await entityContext.expectPreviewValue('name', 'Battery 97% (n/a)', testInfo);
       await entityContext.expectButtonCardName('Battery 97% (n/a)');
 
@@ -85,7 +92,10 @@ test.describe('Entity Context Variables (Feature 3.2)', () => {
 
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value: yamlBefore } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value: yamlBefore } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       const parsed = (yaml.load(yamlBefore) as Record<string, unknown>) || {};
       parsed.content = 'Room: [[light.living_room.state]] | [[light.bedroom.state]]';
       parsed.title = 'Status';

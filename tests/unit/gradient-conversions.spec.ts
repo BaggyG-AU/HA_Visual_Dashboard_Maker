@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { defaultGradient, gradientToCss, parseGradient, addStop, removeStop } from '../../src/utils/gradientConversions';
+import {
+  defaultGradient,
+  gradientToCss,
+  parseGradient,
+  addStop,
+  removeStop,
+} from '../../src/utils/gradientConversions';
 
 describe('gradientConversions', () => {
   it('generates linear gradient css', () => {
@@ -60,7 +66,9 @@ describe('gradientConversions', () => {
   });
 
   it('parses css variable stops', () => {
-    const gradient = parseGradient('linear-gradient(90deg, var(--primary) 20%, var(--secondary) 80%)');
+    const gradient = parseGradient(
+      'linear-gradient(90deg, var(--primary) 20%, var(--secondary) 80%)',
+    );
     expect(gradient.stops[0].color).toBe('var(--primary)');
     expect(gradient.stops[0].position).toBe(20);
     expect(gradient.stops[1].color).toBe('var(--secondary)');

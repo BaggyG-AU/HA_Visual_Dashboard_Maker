@@ -1,7 +1,8 @@
 import { Page, expect, type TestInfo } from '@playwright/test';
 import { attachDebugJson } from '../helpers/debug';
 
-export type BackgroundTypeLabel = 'None (transparent)' | 'Solid color' | 'Gradient' | 'Image' | 'Frosted glass';
+export type BackgroundTypeLabel =
+  'None (transparent)' | 'Solid color' | 'Gradient' | 'Image' | 'Frosted glass';
 
 export class BackgroundCustomizerDSL {
   constructor(private window: Page) {}
@@ -13,14 +14,20 @@ export class BackgroundCustomizerDSL {
   private async resolveVisibleDropdown() {
     const dropdown = this.window.locator('.ant-select-dropdown');
     await expect
-      .poll(async () => {
-        const count = await dropdown.count();
-        for (let i = count - 1; i >= 0; i -= 1) {
-          const visible = await dropdown.nth(i).isVisible().catch(() => false);
-          if (visible) return i;
-        }
-        return -1;
-      }, { timeout: 3000 })
+      .poll(
+        async () => {
+          const count = await dropdown.count();
+          for (let i = count - 1; i >= 0; i -= 1) {
+            const visible = await dropdown
+              .nth(i)
+              .isVisible()
+              .catch(() => false);
+            if (visible) return i;
+          }
+          return -1;
+        },
+        { timeout: 3000 },
+      )
       .toBeGreaterThanOrEqual(0)
       .catch(() => undefined);
 
@@ -51,14 +58,20 @@ export class BackgroundCustomizerDSL {
 
     const dropdown = this.window.locator(`.ant-select-dropdown.${popupClass}`);
     await expect
-      .poll(async () => {
-        const count = await dropdown.count();
-        for (let i = 0; i < count; i += 1) {
-          const visible = await dropdown.nth(i).isVisible().catch(() => false);
-          if (visible) return i;
-        }
-        return -1;
-      }, { timeout: 3000 })
+      .poll(
+        async () => {
+          const count = await dropdown.count();
+          for (let i = 0; i < count; i += 1) {
+            const visible = await dropdown
+              .nth(i)
+              .isVisible()
+              .catch(() => false);
+            if (visible) return i;
+          }
+          return -1;
+        },
+        { timeout: 3000 },
+      )
       .toBeGreaterThanOrEqual(0)
       .catch(() => undefined);
 
@@ -80,19 +93,24 @@ export class BackgroundCustomizerDSL {
     }
   }
 
-  private async selectByKeyboard(select: ReturnType<BackgroundCustomizerDSL['getTypeSelect']>, value: string): Promise<void> {
+  private async selectByKeyboard(
+    select: ReturnType<BackgroundCustomizerDSL['getTypeSelect']>,
+    value: string,
+  ): Promise<void> {
     await select.click({ force: true });
 
     const input = select.locator('input[role="combobox"]').first();
     const maxSteps = 24;
     for (let i = 0; i < maxSteps; i += 1) {
-      const activeText = await input.evaluate((el) => {
-        const inputEl = el as HTMLInputElement;
-        const activeId = inputEl.getAttribute('aria-activedescendant');
-        if (!activeId) return '';
-        const active = document.getElementById(activeId) as HTMLElement | null;
-        return active?.innerText?.trim() || '';
-      }).catch(() => '');
+      const activeText = await input
+        .evaluate((el) => {
+          const inputEl = el as HTMLInputElement;
+          const activeId = inputEl.getAttribute('aria-activedescendant');
+          if (!activeId) return '';
+          const active = document.getElementById(activeId) as HTMLElement | null;
+          return active?.innerText?.trim() || '';
+        })
+        .catch(() => '');
       if (new RegExp(`^${value}$`, 'i').test(activeText)) {
         await this.window.keyboard.press('Enter');
         return;
@@ -103,34 +121,45 @@ export class BackgroundCustomizerDSL {
     await this.window.keyboard.press('Enter');
   }
 
-  private async selectFromOwnedList(select: ReturnType<BackgroundCustomizerDSL['getTypeSelect']>, value: string): Promise<boolean> {
-    return await select.evaluate((node, label) => {
-      const root = node as HTMLElement;
-      const input = root.querySelector('input[role="combobox"]') as HTMLInputElement | null;
-      const listId = input?.getAttribute('aria-controls');
-      if (!listId) return false;
-      const list = document.getElementById(listId);
-      if (!list) return false;
-      const options = Array.from(list.querySelectorAll<HTMLElement>('[role="option"]'));
-      const target = options.find((opt) => (opt.textContent || '').trim().toLowerCase() === label.toLowerCase());
-      if (!target) return false;
-      target.click();
-      return true;
-    }, value).catch(() => false);
+  private async selectFromOwnedList(
+    select: ReturnType<BackgroundCustomizerDSL['getTypeSelect']>,
+    value: string,
+  ): Promise<boolean> {
+    return await select
+      .evaluate((node, label) => {
+        const root = node as HTMLElement;
+        const input = root.querySelector('input[role="combobox"]') as HTMLInputElement | null;
+        const listId = input?.getAttribute('aria-controls');
+        if (!listId) return false;
+        const list = document.getElementById(listId);
+        if (!list) return false;
+        const options = Array.from(list.querySelectorAll<HTMLElement>('[role="option"]'));
+        const target = options.find(
+          (opt) => (opt.textContent || '').trim().toLowerCase() === label.toLowerCase(),
+        );
+        if (!target) return false;
+        target.click();
+        return true;
+      }, value)
+      .catch(() => false);
   }
 
   private async collectSelectDiagnostics(testId: string): Promise<Record<string, unknown>> {
     return await this.window.evaluate((tid) => {
       const select = document.querySelector(`[data-testid="${tid}"]`) as HTMLElement | null;
-      const options = Array.from(document.querySelectorAll<HTMLElement>('[role="option"]')).map((el) => ({
-        text: (el.textContent || '').trim(),
-        visible: (() => {
-          const r = el.getBoundingClientRect();
-          return r.width > 0 && r.height > 0;
-        })(),
-        selected: el.getAttribute('aria-selected'),
-      }));
-      const dropdowns = Array.from(document.querySelectorAll<HTMLElement>('.ant-select-dropdown')).map((el) => {
+      const options = Array.from(document.querySelectorAll<HTMLElement>('[role="option"]')).map(
+        (el) => ({
+          text: (el.textContent || '').trim(),
+          visible: (() => {
+            const r = el.getBoundingClientRect();
+            return r.width > 0 && r.height > 0;
+          })(),
+          selected: el.getAttribute('aria-selected'),
+        }),
+      );
+      const dropdowns = Array.from(
+        document.querySelectorAll<HTMLElement>('.ant-select-dropdown'),
+      ).map((el) => {
         const r = el.getBoundingClientRect();
         return {
           className: el.className,
@@ -142,12 +171,14 @@ export class BackgroundCustomizerDSL {
         selectText: select?.innerText || '',
         options,
         dropdowns,
-        activeElement: active ? {
-          tag: active.tagName,
-          className: active.className,
-          role: active.getAttribute('role'),
-          testId: active.getAttribute('data-testid'),
-        } : null,
+        activeElement: active
+          ? {
+              tag: active.tagName,
+              className: active.className,
+              role: active.getAttribute('role'),
+              testId: active.getAttribute('data-testid'),
+            }
+          : null,
       };
     }, testId);
   }
@@ -156,17 +187,20 @@ export class BackgroundCustomizerDSL {
     testId: string,
     label: string,
     testInfo?: TestInfo,
-    diagnosticsLabel = 'background-select-diagnostics.json'
+    diagnosticsLabel = 'background-select-diagnostics.json',
   ): Promise<void> {
     const select = this.window.getByTestId(testId);
     await expect(select).toBeVisible();
     const selectOnce = async () => {
       await select.click({ force: true });
 
-      const dropdown = await this.resolveScopedDropdown(testId) ?? await this.resolveVisibleDropdown();
+      const dropdown =
+        (await this.resolveScopedDropdown(testId)) ?? (await this.resolveVisibleDropdown());
       if (dropdown) {
         await expect(dropdown).toBeVisible({ timeout: 5000 });
-        const option = dropdown.getByRole('option', { name: new RegExp(`^${label}$`, 'i') }).first();
+        const option = dropdown
+          .getByRole('option', { name: new RegExp(`^${label}$`, 'i') })
+          .first();
         const found = await option
           .waitFor({ state: 'visible', timeout: 2000 })
           .then(() => true)
@@ -226,10 +260,14 @@ export class BackgroundCustomizerDSL {
     }
 
     try {
-      const dropdown = await this.resolveScopedDropdown('advanced-style-background-type') ?? await this.resolveVisibleDropdown();
+      const dropdown =
+        (await this.resolveScopedDropdown('advanced-style-background-type')) ??
+        (await this.resolveVisibleDropdown());
       if (dropdown) {
         await expect(dropdown).toBeVisible({ timeout: 5000 });
-        const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${type}$`, 'i') });
+        const option = dropdown.locator('.ant-select-item-option', {
+          hasText: new RegExp(`^${type}$`, 'i'),
+        });
         await expect(option).toBeVisible({ timeout: 5000 });
         await option.click();
         await expect(dropdown).not.toBeVisible({ timeout: 5000 });
@@ -237,7 +275,9 @@ export class BackgroundCustomizerDSL {
       }
 
       await this.selectByKeyboard(select, type);
-      const fallbackOption = this.window.getByRole('option', { name: new RegExp(`^${type}$`, 'i') }).first();
+      const fallbackOption = this.window
+        .getByRole('option', { name: new RegExp(`^${type}$`, 'i') })
+        .first();
       if (await fallbackOption.isVisible().catch(() => false)) {
         await fallbackOption.click();
       }
@@ -246,7 +286,9 @@ export class BackgroundCustomizerDSL {
     } catch (error) {
       if (testInfo) {
         const diagnostics = await this.window.evaluate(() => {
-          const options = Array.from(document.querySelectorAll<HTMLElement>('.ant-select-item-option'))
+          const options = Array.from(
+            document.querySelectorAll<HTMLElement>('.ant-select-item-option'),
+          )
             .map((el) => ({
               text: (el.textContent || '').trim(),
               visible: (() => {
@@ -257,8 +299,12 @@ export class BackgroundCustomizerDSL {
             }))
             .filter(Boolean);
           const active = document.activeElement as HTMLElement | null;
-          const select = document.querySelector('[data-testid="advanced-style-background-type"]') as HTMLElement | null;
-          const dropdowns = Array.from(document.querySelectorAll<HTMLElement>('.ant-select-dropdown')).map((el) => {
+          const select = document.querySelector(
+            '[data-testid="advanced-style-background-type"]',
+          ) as HTMLElement | null;
+          const dropdowns = Array.from(
+            document.querySelectorAll<HTMLElement>('.ant-select-dropdown'),
+          ).map((el) => {
             const r = el.getBoundingClientRect();
             return {
               classes: el.className,
@@ -268,12 +314,14 @@ export class BackgroundCustomizerDSL {
           });
           return {
             options,
-            activeElement: active ? {
-              tag: active.tagName,
-              className: active.className,
-              role: active.getAttribute('role'),
-              testId: active.getAttribute('data-testid'),
-            } : null,
+            activeElement: active
+              ? {
+                  tag: active.tagName,
+                  className: active.className,
+                  role: active.getAttribute('role'),
+                  testId: active.getAttribute('data-testid'),
+                }
+              : null,
             selectText: select?.innerText || '',
             dropdowns,
           };
@@ -291,15 +339,30 @@ export class BackgroundCustomizerDSL {
   }
 
   async setImagePosition(label: string, testInfo?: TestInfo): Promise<void> {
-    await this.selectDropdownValue('background-image-position-select', label, testInfo, 'background-image-position-select-diagnostics.json');
+    await this.selectDropdownValue(
+      'background-image-position-select',
+      label,
+      testInfo,
+      'background-image-position-select-diagnostics.json',
+    );
   }
 
   async setImageSize(label: string, testInfo?: TestInfo): Promise<void> {
-    await this.selectDropdownValue('background-image-size-select', label, testInfo, 'background-image-size-select-diagnostics.json');
+    await this.selectDropdownValue(
+      'background-image-size-select',
+      label,
+      testInfo,
+      'background-image-size-select-diagnostics.json',
+    );
   }
 
   async setImageRepeat(label: string, testInfo?: TestInfo): Promise<void> {
-    await this.selectDropdownValue('background-image-repeat-select', label, testInfo, 'background-image-repeat-select-diagnostics.json');
+    await this.selectDropdownValue(
+      'background-image-repeat-select',
+      label,
+      testInfo,
+      'background-image-repeat-select-diagnostics.json',
+    );
   }
 
   async setNumericInput(testId: string, value: number): Promise<void> {
@@ -308,7 +371,6 @@ export class BackgroundCustomizerDSL {
     await input.fill(String(value));
     await input.blur();
   }
-
 }
 
 export default BackgroundCustomizerDSL;

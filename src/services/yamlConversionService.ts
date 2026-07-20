@@ -110,10 +110,7 @@ const asCardRecord = (value: unknown): Record<string, unknown> | null => {
 const toNumber = (value: unknown): number | undefined =>
   typeof value === 'number' && !Number.isNaN(value) ? value : undefined;
 
-const omitKeys = (
-  source: Record<string, unknown>,
-  keys: Set<string>,
-): Record<string, unknown> => {
+const omitKeys = (source: Record<string, unknown>, keys: Set<string>): Record<string, unknown> => {
   const result: Record<string, unknown> = {};
   Object.entries(source).forEach(([key, value]) => {
     if (!keys.has(key)) {
@@ -183,7 +180,8 @@ const importSwipeCard = (inputCard: Record<string, unknown>): Record<string, unk
       (mapped.autoplay as Record<string, unknown>).delay = autoplay.delay;
     }
     if (typeof autoplay.disableOnInteraction === 'boolean') {
-      (mapped.autoplay as Record<string, unknown>).pause_on_interaction = autoplay.disableOnInteraction;
+      (mapped.autoplay as Record<string, unknown>).pause_on_interaction =
+        autoplay.disableOnInteraction;
     }
     if (typeof autoplay.stopOnLastSlide === 'boolean') {
       (mapped.autoplay as Record<string, unknown>).stop_on_last_slide = autoplay.stopOnLastSlide;
@@ -203,7 +201,10 @@ const exportSwipeCard = (inputCard: Record<string, unknown>): Record<string, unk
   const autoplay = inputCard.autoplay;
   if (autoplay !== false && isRecord(autoplay) && autoplay.enabled !== false) {
     const upstreamAutoplayBase = isRecord(existingParameters.autoplay)
-      ? omitKeys(existingParameters.autoplay, new Set(['delay', 'disableOnInteraction', 'stopOnLastSlide']))
+      ? omitKeys(
+          existingParameters.autoplay,
+          new Set(['delay', 'disableOnInteraction', 'stopOnLastSlide']),
+        )
       : {};
 
     parameters.autoplay = {
@@ -239,10 +240,12 @@ const exportSwipeCard = (inputCard: Record<string, unknown>): Record<string, unk
   if (typeof inputCard.slides_per_view === 'number' || inputCard.slides_per_view === 'auto') {
     parameters.slidesPerView = inputCard.slides_per_view;
   }
-  if (typeof inputCard.space_between === 'number') parameters.spaceBetween = inputCard.space_between;
+  if (typeof inputCard.space_between === 'number')
+    parameters.spaceBetween = inputCard.space_between;
   if (typeof inputCard.loop === 'boolean') parameters.loop = inputCard.loop;
   if (typeof inputCard.direction === 'string') parameters.direction = inputCard.direction;
-  if (typeof inputCard.centered_slides === 'boolean') parameters.centeredSlides = inputCard.centered_slides;
+  if (typeof inputCard.centered_slides === 'boolean')
+    parameters.centeredSlides = inputCard.centered_slides;
   if (typeof inputCard.free_mode === 'boolean') parameters.freeMode = inputCard.free_mode;
   if (typeof inputCard.speed === 'number') parameters.speed = inputCard.speed;
 
@@ -274,7 +277,8 @@ const exportExpanderCard = (inputCard: Record<string, unknown>): Record<string, 
   const passthrough = omitKeys(inputCard, EXPANDER_KNOWN_KEYS);
 
   const titleCard = inputCard.titleCard ?? inputCard['title-card'];
-  const titleCardButtonOverlay = inputCard.titleCardButtonOverlay ?? inputCard['title-card-button-overlay'];
+  const titleCardButtonOverlay =
+    inputCard.titleCardButtonOverlay ?? inputCard['title-card-button-overlay'];
   const expandedIcon = inputCard.expandedIcon ?? inputCard['expanded-icon'];
   const collapsedIcon = inputCard.collapsedIcon ?? inputCard['collapsed-icon'];
   const overlayMargin = inputCard.overlayMargin ?? inputCard['overlay-margin'];
@@ -346,36 +350,39 @@ const importTabbedCard = (inputCard: Record<string, unknown>): Record<string, un
   const globalAttributes = isRecord(inputCard.attributes) ? inputCard.attributes : undefined;
   const tabs = Array.isArray(inputCard.tabs)
     ? inputCard.tabs.map((tab, index) => {
-      const tabRecord = isRecord(tab) ? tab : {};
-      const attributes = mergeAttributes(
-        globalAttributes,
-        isRecord(tabRecord.attributes) ? tabRecord.attributes : undefined,
-      );
-      const tabTitle = tabLabelFromAttributes(attributes, `Tab ${index + 1}`);
-      const tabIcon = tabIconFromAttributes(attributes);
+        const tabRecord = isRecord(tab) ? tab : {};
+        const attributes = mergeAttributes(
+          globalAttributes,
+          isRecord(tabRecord.attributes) ? tabRecord.attributes : undefined,
+        );
+        const tabTitle = tabLabelFromAttributes(attributes, `Tab ${index + 1}`);
+        const tabIcon = tabIconFromAttributes(attributes);
 
-      const cards = Array.isArray(tabRecord.cards)
-        ? tabRecord.cards.filter(isRecord)
-        : isRecord(tabRecord.card)
-          ? [tabRecord.card]
-          : [];
+        const cards = Array.isArray(tabRecord.cards)
+          ? tabRecord.cards.filter(isRecord)
+          : isRecord(tabRecord.card)
+            ? [tabRecord.card]
+            : [];
 
-      return {
-        ...tabRecord,
-        ...(attributes ? { attributes } : {}),
-        title: typeof tabRecord.title === 'string' ? tabRecord.title : tabTitle,
-        ...(typeof tabRecord.icon === 'string' ? {} : tabIcon ? { icon: tabIcon } : {}),
-        cards,
-      };
-    })
+        return {
+          ...tabRecord,
+          ...(attributes ? { attributes } : {}),
+          title: typeof tabRecord.title === 'string' ? tabRecord.title : tabTitle,
+          ...(typeof tabRecord.icon === 'string' ? {} : tabIcon ? { icon: tabIcon } : {}),
+          cards,
+        };
+      })
     : [];
 
-  const defaultTabFromOptions = isRecord(inputCard.options) ? inputCard.options.defaultTabIndex : undefined;
+  const defaultTabFromOptions = isRecord(inputCard.options)
+    ? inputCard.options.defaultTabIndex
+    : undefined;
 
   return {
     ...inputCard,
     type: 'custom:tabbed-card',
-    default_tab: typeof defaultTabFromOptions === 'number' ? defaultTabFromOptions : inputCard.default_tab,
+    default_tab:
+      typeof defaultTabFromOptions === 'number' ? defaultTabFromOptions : inputCard.default_tab,
     tabs,
     ...(isRecord(inputCard.styles) ? { _havdm_styles: inputCard.styles } : {}),
   };
@@ -385,7 +392,9 @@ const importCalendarCard = (inputCard: Record<string, unknown>): Record<string, 
   const mapped: Record<string, unknown> = { ...inputCard };
 
   if (Array.isArray(inputCard.entities)) {
-    mapped.calendar_entities = inputCard.entities.filter((entity): entity is string => typeof entity === 'string');
+    mapped.calendar_entities = inputCard.entities.filter(
+      (entity): entity is string => typeof entity === 'string',
+    );
   }
 
   if (typeof inputCard.initial_view === 'string' && typeof inputCard.view !== 'string') {
@@ -410,27 +419,27 @@ const exportTabbedCard = (inputCard: Record<string, unknown>): Record<string, un
   const passthrough = omitKeys(inputCard, TABBED_KNOWN_KEYS);
   const tabs = Array.isArray(inputCard.tabs)
     ? inputCard.tabs.map((tab) => {
-      const tabRecord = isRecord(tab) ? tab : {};
-      const tabPassthrough = omitKeys(tabRecord, TAB_HAVDM_ONLY_KEYS);
-      const attributes: Record<string, unknown> = isRecord(tabRecord.attributes)
-        ? { ...tabRecord.attributes }
-        : {};
+        const tabRecord = isRecord(tab) ? tab : {};
+        const tabPassthrough = omitKeys(tabRecord, TAB_HAVDM_ONLY_KEYS);
+        const attributes: Record<string, unknown> = isRecord(tabRecord.attributes)
+          ? { ...tabRecord.attributes }
+          : {};
 
-      if (typeof tabRecord.title === 'string' && tabRecord.title.trim().length > 0) {
-        attributes.label = tabRecord.title;
-      }
-      if (typeof tabRecord.icon === 'string' && tabRecord.icon.trim().length > 0) {
-        attributes.icon = tabRecord.icon;
-      }
+        if (typeof tabRecord.title === 'string' && tabRecord.title.trim().length > 0) {
+          attributes.label = tabRecord.title;
+        }
+        if (typeof tabRecord.icon === 'string' && tabRecord.icon.trim().length > 0) {
+          attributes.icon = tabRecord.icon;
+        }
 
-      const upstreamCard = tabCardsToUpstreamCard(tabRecord.cards);
+        const upstreamCard = tabCardsToUpstreamCard(tabRecord.cards);
 
-      return {
-        ...tabPassthrough,
-        ...(Object.keys(attributes).length > 0 ? { attributes } : {}),
-        ...(upstreamCard ? { card: upstreamCard } : {}),
-      };
-    })
+        return {
+          ...tabPassthrough,
+          ...(Object.keys(attributes).length > 0 ? { attributes } : {}),
+          ...(upstreamCard ? { card: upstreamCard } : {}),
+        };
+      })
     : [];
 
   const cardStyles = isRecord(inputCard._havdm_styles)
@@ -446,11 +455,12 @@ const exportTabbedCard = (inputCard: Record<string, unknown>): Record<string, un
     type: 'custom:tabbed-card',
     tabs,
     options: {
-      defaultTabIndex: typeof inputCard.default_tab === 'number'
-        ? inputCard.default_tab
-        : isRecord(inputCard.options) && typeof inputCard.options.defaultTabIndex === 'number'
-          ? inputCard.options.defaultTabIndex
-          : 0,
+      defaultTabIndex:
+        typeof inputCard.default_tab === 'number'
+          ? inputCard.default_tab
+          : isRecord(inputCard.options) && typeof inputCard.options.defaultTabIndex === 'number'
+            ? inputCard.options.defaultTabIndex
+            : 0,
     },
     ...(cardStyles ? { styles: cardStyles } : {}),
     ...(isRecord(inputCard.attributes) ? { attributes: inputCard.attributes } : {}),
@@ -460,14 +470,24 @@ const exportTabbedCard = (inputCard: Record<string, unknown>): Record<string, un
 const exportCalendarCard = (inputCard: Record<string, unknown>): Record<string, unknown> => {
   const passthrough = omitKeys(inputCard, CALENDAR_HAVDM_ONLY_KEYS);
   const calendarEntities = Array.isArray(inputCard.calendar_entities)
-    ? inputCard.calendar_entities.filter((entity): entity is string => typeof entity === 'string' && entity.trim().length > 0)
+    ? inputCard.calendar_entities.filter(
+        (entity): entity is string => typeof entity === 'string' && entity.trim().length > 0,
+      )
     : [];
 
   return {
     ...passthrough,
     type: 'calendar',
-    ...(calendarEntities.length > 0 ? { entities: calendarEntities } : Array.isArray(inputCard.entities) ? { entities: inputCard.entities } : {}),
-    ...(typeof inputCard.view === 'string' ? { initial_view: initialViewFromView(inputCard.view) } : typeof inputCard.initial_view === 'string' ? { initial_view: inputCard.initial_view } : {}),
+    ...(calendarEntities.length > 0
+      ? { entities: calendarEntities }
+      : Array.isArray(inputCard.entities)
+        ? { entities: inputCard.entities }
+        : {}),
+    ...(typeof inputCard.view === 'string'
+      ? { initial_view: initialViewFromView(inputCard.view) }
+      : typeof inputCard.initial_view === 'string'
+        ? { initial_view: inputCard.initial_view }
+        : {}),
   };
 };
 
@@ -479,9 +499,8 @@ const migrateLegacyAccordion = (inputCard: Record<string, unknown>): Record<stri
       return {
         type: 'custom:expander-card',
         title: typeof section.title === 'string' ? section.title : '',
-        expanded: typeof section.default_expanded === 'boolean'
-          ? section.default_expanded
-          : index === 0,
+        expanded:
+          typeof section.default_expanded === 'boolean' ? section.default_expanded : index === 0,
         cards: Array.isArray(section.cards) ? section.cards.filter(isRecord) : [],
       };
     })
@@ -510,12 +529,12 @@ const processCardRecursively = (
   const processedType = processed.type;
 
   if (
-    processedType === 'vertical-stack'
-    || processedType === 'horizontal-stack'
-    || processedType === 'grid'
-    || processedType === 'custom:swipe-card'
-    || processedType === 'custom:expander-card'
-    || processedType === 'conditional'
+    processedType === 'vertical-stack' ||
+    processedType === 'horizontal-stack' ||
+    processedType === 'grid' ||
+    processedType === 'custom:swipe-card' ||
+    processedType === 'custom:expander-card' ||
+    processedType === 'conditional'
   ) {
     const cards = processCardsArray(processed.cards);
     if (cards) {
@@ -595,7 +614,9 @@ export function importCard(card: Record<string, unknown>): Record<string, unknow
   }
 
   if (migrated.type === 'custom:tabbed-card') {
-    return importTabbedCard(migrated as unknown as TabsCardConfig as unknown as Record<string, unknown>);
+    return importTabbedCard(
+      migrated as unknown as TabsCardConfig as unknown as Record<string, unknown>,
+    );
   }
 
   if (migrated.type === 'calendar') {

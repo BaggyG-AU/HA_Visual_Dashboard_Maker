@@ -103,7 +103,9 @@ export class ApexChartsDSL {
     await expect(field).toBeVisible();
     await field.click();
 
-    const option = this.window.locator('.ant-select-item-option-content', { hasText: entityId }).first();
+    const option = this.window
+      .locator('.ant-select-item-option-content', { hasText: entityId })
+      .first();
     const visible = await option
       .waitFor({ state: 'visible', timeout: 2000 })
       .then(() => true)
@@ -166,6 +168,8 @@ export class ApexChartsDSL {
       await option.click();
     }
 
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+      timeout: 5000,
+    });
   }
 }

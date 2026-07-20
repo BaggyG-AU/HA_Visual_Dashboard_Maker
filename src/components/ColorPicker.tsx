@@ -111,7 +111,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
       setInputValue(newValue);
       onChange?.(newValue);
     },
-    [format, disabled, onChange]
+    [format, disabled, onChange],
   );
 
   /**
@@ -126,7 +126,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
       setInputValue(newValue);
       // Don't call onChange here - wait for Enter or blur
     },
-    [disabled]
+    [disabled],
   );
 
   /**
@@ -200,7 +200,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
       onChange?.(color);
       addRecentColor(color);
     },
-    [disabled, onChange, addRecentColor]
+    [disabled, onChange, addRecentColor],
   );
 
   /**
@@ -215,7 +215,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         setInputValue(value);
       }
     },
-    [value, handleInputBlur]
+    [value, handleInputBlur],
   );
 
   const handleFavoriteSelect = useCallback(
@@ -225,9 +225,8 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
       onChange?.(color);
       addRecentColor(color);
     },
-    [disabled, onChange, addRecentColor]
+    [disabled, onChange, addRecentColor],
   );
-
 
   return (
     <div
@@ -336,8 +335,8 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         />
       )}
 
-      {tabKey === 'recent' && (
-        showRecentColors ? (
+      {tabKey === 'recent' &&
+        (showRecentColors ? (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
               <Text style={{ color: '#888', fontSize: '12px' }}>Recent Colors</Text>
@@ -354,7 +353,9 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 Clear
               </Button>
             </div>
-            {recentColors.length === 0 && <Text style={{ color: '#888' }}>No recent colors yet.</Text>}
+            {recentColors.length === 0 && (
+              <Text style={{ color: '#888' }}>No recent colors yet.</Text>
+            )}
             {recentColors.length > 0 && (
               <div
                 style={{
@@ -396,8 +397,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
           </div>
         ) : (
           <Text style={{ color: '#888' }}>Recent colors disabled.</Text>
-        )
-      )}
+        ))}
     </div>
   );
 };

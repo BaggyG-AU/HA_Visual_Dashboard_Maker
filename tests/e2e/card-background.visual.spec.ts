@@ -9,7 +9,16 @@ test.describe('Card Background Customization - Visual and Performance', () => {
     test.slow();
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, backgroundCustomizer, colorPicker, gradientEditor } = ctx;
+    const {
+      appDSL,
+      dashboard,
+      palette,
+      canvas,
+      properties,
+      backgroundCustomizer,
+      colorPicker,
+      gradientEditor,
+    } = ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -62,7 +71,8 @@ test.describe('Card Background Customization - Visual and Performance', () => {
   test('background changes maintain target frame rate', async ({ page }) => {
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, backgroundCustomizer, gradientEditor } = ctx;
+    const { appDSL, dashboard, palette, canvas, properties, backgroundCustomizer, gradientEditor } =
+      ctx;
 
     try {
       await appDSL.waitUntilReady();

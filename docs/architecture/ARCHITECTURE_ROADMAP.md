@@ -15,12 +15,12 @@ This document contains **planned / aspirational** architecture guidance, code or
 
 **Decision Matrix**:
 
-| Feature Type | Criteria | Location | Example |
-|-------------|----------|----------|---------|
-| **Single Component** | 1 file, reusable, no complex state | `src/components/` | ColorPicker, FontSelector, GradientEditor |
-| **Simple Service** | 1-2 files, utility functions | `src/services/` | smartActionService, fontService, animationService |
-| **Complex Feature** | 3+ files, internal state, sub-components | `src/features/[name]/` | Entity Remapping, Carousel, Graphs |
-| **Global Styles** | CSS/theming | `src/styles/` | animations.css |
+| Feature Type         | Criteria                                 | Location               | Example                                           |
+| -------------------- | ---------------------------------------- | ---------------------- | ------------------------------------------------- |
+| **Single Component** | 1 file, reusable, no complex state       | `src/components/`      | ColorPicker, FontSelector, GradientEditor         |
+| **Simple Service**   | 1-2 files, utility functions             | `src/services/`        | smartActionService, fontService, animationService |
+| **Complex Feature**  | 3+ files, internal state, sub-components | `src/features/[name]/` | Entity Remapping, Carousel, Graphs                |
+| **Global Styles**    | CSS/theming                              | `src/styles/`          | animations.css                                    |
 
 ### Updated Directory Structure
 
@@ -133,6 +133,7 @@ src/
 ### When to Use Feature Folders
 
 Create a feature folder when:
+
 1. **3+ related files** are needed for the feature
 2. **Complex internal state** that doesn't belong in global store
 3. **Sub-components** specific to the feature
@@ -140,6 +141,7 @@ Create a feature folder when:
 5. **Feature-specific services/utilities**
 
 Examples:
+
 - ✅ Entity Remapping (dialog + matcher + service + types)
 - ✅ Visual Logic Editor (multiple builders + flow diagram + service)
 - ✅ Carousel (Swiper integration + config + presets)
@@ -149,6 +151,7 @@ Examples:
 ### Co-location Benefits
 
 Feature folders enable:
+
 - **Easier refactoring** (all related code in one place)
 - **Better testability** (tests co-located with implementation)
 - **Clear boundaries** (feature doesn't leak into global state)
@@ -157,6 +160,7 @@ Feature folders enable:
 ### Migration Path for Existing Code
 
 **Do NOT** migrate existing code to feature folders unless:
+
 1. Actively working on that feature
 2. Feature meets criteria for folder (3+ files, complexity)
 3. Migration improves maintainability
@@ -169,13 +173,13 @@ Feature folders enable:
 
 ### Technology Choices
 
-| Component | Selected Technology | Location | Rationale |
-|-----------|-------------------|----------|-----------|
-| **Color Picker** | react-colorful | `src/components/ColorPicker.tsx` | 2KB, modern, accessible |
-| **Animations** | Custom CSS library | `src/styles/animations.css` + `src/services/animationService.ts` | Maximum flexibility, YAML storage |
-| **Carousel/Slider** | Swiper.js v12+ | `src/features/carousel/` | Feature-rich, battle-tested |
-| **Charts** | Recharts | `src/features/graphs/` | React-native, composable, SVG |
-| **Fonts** | Google Fonts (CDN + cache) | `src/services/fontService.ts` + `src/assets/fonts/` | Best of both: speed online, works offline |
+| Component           | Selected Technology        | Location                                                         | Rationale                                 |
+| ------------------- | -------------------------- | ---------------------------------------------------------------- | ----------------------------------------- |
+| **Color Picker**    | react-colorful             | `src/components/ColorPicker.tsx`                                 | 2KB, modern, accessible                   |
+| **Animations**      | Custom CSS library         | `src/styles/animations.css` + `src/services/animationService.ts` | Maximum flexibility, YAML storage         |
+| **Carousel/Slider** | Swiper.js v12+             | `src/features/carousel/`                                         | Feature-rich, battle-tested               |
+| **Charts**          | Recharts                   | `src/features/graphs/`                                           | React-native, composable, SVG             |
+| **Fonts**           | Google Fonts (CDN + cache) | `src/services/fontService.ts` + `src/assets/fonts/`              | Best of both: speed online, works offline |
 
 ### Quality Standards for New Features
 

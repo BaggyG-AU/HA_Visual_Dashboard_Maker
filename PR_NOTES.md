@@ -3,11 +3,13 @@
 ## Update (2026-01-14): Feature 3.1 — Smart Default Actions (Phases 1–5) ✅
 
 ### Summary
+
 - Adds **Smart Default Actions** resolution for `button` and `custom:button-card` with YAML persistence (`smart_defaults`) and a PropertiesPanel toggle + preview.
 - Preserves existing dashboards via **legacy behavior** when `smart_defaults` is absent (no breaking changes).
 - Stabilizes Playwright flows around Settings logging dropdown + Color Picker popovers (portal/z-index + DSL waits).
 
 ### Key Changes
+
 - Core logic: `src/services/smartActions.ts` + schema/type support (`src/types/dashboard.ts`, `src/schemas/ha-dashboard-schema.json`).
 - Defaults + runtime: `src/services/cardRegistry.ts`, `src/components/cards/ButtonCardRenderer.tsx`, `src/components/cards/CustomButtonCardRenderer.tsx`.
 - PropertiesPanel UI: `src/components/PropertiesPanel.tsx` (“Use Smart Defaults” + action preview).
@@ -18,6 +20,7 @@
 - Docs/kanban closeout: `docs/features/ENTITY_INTELLIGENCE_LAYER_IMPLIMENTATION.md`, `havdm.kanban`
 
 ### Verification
+
 - `npm run lint` ✅ (0 errors; warnings only)
 - `npm run test:unit` ✅
 - Playwright integration ✅
@@ -32,11 +35,13 @@
 Comprehensive update of all NPM dependencies and custom card renderers to their latest stable versions as of January 2026. All updates are **backward compatible** with **zero breaking changes**.
 
 ## Branch
+
 - **Source**: `chore/supported-versions-update`
 - **Target**: `main`
 - **Commits**: 18 total
 
 ## Testing
+
 ✅ **307/307 unit tests passing** throughout all phases
 ✅ **0 errors** (296 pre-existing warnings unchanged)
 ✅ **Full backward compatibility** verified
@@ -48,12 +53,14 @@ Comprehensive update of all NPM dependencies and custom card renderers to their 
 **TypeScript**: `~4.5.4` → `^5.9.3`
 
 ### Impact
+
 - Major version jump (4 → 5)
 - Improved type checking and inference
 - Better React 19 compatibility
 - New syntax features available
 
 ### Changes
+
 - Updated package.json typescript version
 - All existing code compatible with TS 5.9.3
 - No code changes required
@@ -65,13 +72,17 @@ Comprehensive update of all NPM dependencies and custom card renderers to their 
 ## Phase 2: UI Component Libraries (COMPLETED)
 
 ### Ant Design
+
 **Version**: `^6.1.0` → `^6.1.4`
+
 - Bug fixes and minor improvements
 - Full React 19 compatibility confirmed
 - No API changes
 
 ### React Grid Layout
+
 **Version**: `^2.0.0` → `^2.2.2`
+
 - Improved drag/drop behavior
 - React 19 compatibility
 - Bug fixes for edge cases
@@ -83,6 +94,7 @@ Comprehensive update of all NPM dependencies and custom card renderers to their 
 ## Phase 3: Editor Packages (COMPLETED)
 
 All editor packages verified as current:
+
 - ✅ **Monaco Editor**: `^0.55.1` (latest)
 - ✅ **@monaco-editor/react**: `^4.7.0` (latest)
 - ✅ **monaco-yaml**: `^5.4.0` (latest)
@@ -98,11 +110,13 @@ All editor packages verified as current:
 **HIGH PRIORITY** - Significant new features
 
 ### Implementation Summary
+
 - **4 feature commits** + 1 documentation commit
 - **Lines Changed**: 277 → 533 (+256 lines)
 - **Features**: 10 major features implemented
 
 ### Commits
+
 1. `04f1ab7` - Basic sub-button support
 2. `05349c2` - Slider and select types
 3. `674ca78` - Layout and styling options
@@ -112,11 +126,13 @@ All editor packages verified as current:
 ### Features Implemented
 
 #### 1. Sub-Button System ✅
+
 - Array of interactive buttons within a card
 - Entity state display
 - Full configuration support
 
 #### 2. Sub-Button Types ✅
+
 - **Button**: Default interactive button
 - **Slider**: Brightness/temperature/position controls
   - Horizontal/vertical orientation
@@ -126,20 +142,24 @@ All editor packages verified as current:
   - Custom options or entity attribute options
 
 #### 3. Layout Control ✅
+
 - **Icon Positioning**: top | bottom | left | right
 - **Footer Placement**: Default or footer positioning
 - **Custom Sizing**: Width and height properties
 
 #### 4. Visual Features ✅
+
 - **Entity Pictures**: Circular avatar display
 - **Timer Countdown**: Auto-format timer entities (HH:MM:SS)
 - **Text Scrolling**: Animated scroll for long labels
 
 #### 5. New Card Type ✅
+
 - **sub_button**: Sub-buttons only, no main content
 - Perfect for custom button panels
 
 ### Configuration Example
+
 ```yaml
 type: custom:bubble-card
 card_type: button
@@ -167,6 +187,7 @@ sub_button:
 **COMPREHENSIVE UPDATE** - All optional features implemented
 
 ### Commits
+
 - `cb09d6f` - Feature implementation
 - `1c03fb7` - Documentation updates
 
@@ -177,6 +198,7 @@ sub_button:
 **Priority**: MEDIUM (gas/water support)
 
 #### Features Implemented
+
 - **Gas Entity Support** (v2.6.0)
   - FireOutlined icon
   - Flow display in m³/h
@@ -191,6 +213,7 @@ sub_button:
   - Link to detailed dashboard
 
 #### Configuration Example
+
 ```yaml
 type: custom:power-flow-card
 entities:
@@ -214,6 +237,7 @@ dashboard_link: /lovelace/energy
 **Priority**: LOW (additive features)
 
 #### Features Implemented
+
 - **mushroom-empty-card** (v4.4.0)
   - Spacing/layout card
   - Transparent with dashed border when selected
@@ -224,6 +248,7 @@ dashboard_link: /lovelace/energy
   - Values: left | center | right | justify
 
 #### Configuration Example
+
 ```yaml
 # Empty spacer card
 type: custom:mushroom-empty-card
@@ -238,6 +263,7 @@ align_text: center
 **Lines Changed**: 257 → 318 (+61)
 
 #### Breaking Changes NOT Affecting Us
+
 - v5.0.5: Template card redesign (runtime behavior only)
 - v5.0.9: Color temperature Kelvin format (not displayed in preview)
 - v4.3.0: Light brightness minimum (control logic, not visual)
@@ -251,12 +277,14 @@ align_text: center
 **Priority**: LOW (optional feature)
 
 #### Features Implemented
+
 - **icon_image** (v0.12.0)
   - Image URL to replace default icon
   - 16px square rendering
   - object-fit: contain
 
 #### Configuration Example
+
 ```yaml
 type: custom:mini-graph-card
 entities:
@@ -267,6 +295,7 @@ icon_image: /local/icons/thermometer.png
 **Lines Changed**: 199 → 211 (+12)
 
 #### Features NOT Implemented (not needed for preview)
+
 - Loader component (data loading state)
 - show_legend_state option (legend not rendered)
 - Nested attribute access (data parsing)
@@ -280,6 +309,7 @@ icon_image: /local/icons/thermometer.png
 #### Decision: No Updates Needed
 
 **Rationale**:
+
 - Our renderer uses a placeholder/mockup, not the actual ApexCharts library
 - Real charts render correctly in Home Assistant
 - Implementing v2.2.0+ features would require:
@@ -301,6 +331,7 @@ icon_image: /local/icons/thermometer.png
 #### Decision: Fully Compatible
 
 **v2.2.0-v2.2.1 Changes** (bug fixes only):
+
 - Translations and localization
 - Button debounce (runtime logic)
 - HVAC action icon fixes (already correct)
@@ -315,6 +346,7 @@ icon_image: /local/icons/thermometer.png
 ## Phase 5: Other Dependencies (COMPLETED)
 
 All other dependencies verified as current:
+
 - ✅ **Electron**: `39.2.7` (latest stable)
 - ✅ **React/React-DOM**: `^19.2.3` (latest)
 - ✅ **home-assistant-js-websocket**: `^9.6.0` (latest)
@@ -354,18 +386,22 @@ All other dependencies verified as current:
 ## Files Changed Summary
 
 ### NPM Dependencies
+
 - `package.json` - Version updates
 
 ### Renderers Updated (3 files)
+
 - `src/components/cards/BubbleCardRenderer.tsx` - 277 → 533 lines
 - `src/components/cards/PowerFlowCardRenderer.tsx` - 333 → 420 lines
 - `src/components/cards/MushroomCardRenderer.tsx` - 257 → 318 lines
 - `src/components/cards/MiniGraphCardRenderer.tsx` - 199 → 211 lines
 
 ### Configuration
+
 - `src/services/cardRegistry.ts` - Updated Bubble Card description
 
 ### Documentation (7 files)
+
 - `docs/product/SUPPORTED_VERSIONS.md`
 - `docs/product/VERSION_COMPARISON.md`
 - `docs/research/BUBBLE_CARD_V3_1_RESEARCH.md` (new)
@@ -380,6 +416,7 @@ All other dependencies verified as current:
 **NONE** ✅
 
 All updates are backward compatible:
+
 - Existing configurations work unchanged
 - All new features are optional
 - Default behaviors maintained
@@ -390,6 +427,7 @@ All updates are backward compatible:
 ## Testing Coverage
 
 ### Unit Tests
+
 - ✅ **307/307 tests passing** throughout all phases
 - ✅ **0 errors** (296 warnings pre-existing, unchanged)
 - ✅ Full TypeScript type coverage
@@ -397,6 +435,7 @@ All updates are backward compatible:
 - ✅ Backward compatibility verified
 
 ### Manual Testing Required
+
 - ⚠️ **Live Home Assistant 2026.1 instance testing deferred**
 - Should test with actual HA instance to verify:
   - Bubble Card sub-buttons in real cards
@@ -479,6 +518,7 @@ acdfa48 feat: add entity pictures and timer countdown to Bubble Card
 ## Reviewers
 
 Please verify:
+
 - [ ] All tests passing
 - [ ] Documentation is clear and complete
 - [ ] No breaking changes introduced

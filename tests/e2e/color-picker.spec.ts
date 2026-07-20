@@ -10,8 +10,10 @@ import { launchWithDSL, close } from '../support';
 import { debugLog } from '../support/helpers/debug';
 
 test.describe('Color Picker - PropertiesPanel Integration', () => {
-test.skip('visual regression and accessibility in scrollable PropertiesPanel (skipped: Electron focus inactive in PW)', async ({ page }, testInfo) => {
-  void page;
+  test.skip('visual regression and accessibility in scrollable PropertiesPanel (skipped: Electron focus inactive in PW)', async ({
+    page,
+  }, testInfo) => {
+    void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, palette, canvas, properties, colorPicker, window } = ctx;
 
@@ -74,8 +76,16 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       await colorPicker.ensureWindowActive();
       await colorPicker.focusSwatch('button-card-color-input');
       await colorPicker.tabUntilFocused(window.getByTestId('button-card-color-input'), 2, testInfo);
-      await colorPicker.tabUntilFocused(colorPicker.getFormatToggle('button-card-color-input'), 3, testInfo);
-      await colorPicker.tabUntilFocused(colorPicker.getColorInput('button-card-color-input'), 3, testInfo);
+      await colorPicker.tabUntilFocused(
+        colorPicker.getFormatToggle('button-card-color-input'),
+        3,
+        testInfo,
+      );
+      await colorPicker.tabUntilFocused(
+        colorPicker.getColorInput('button-card-color-input'),
+        3,
+        testInfo,
+      );
 
       // Contrast of swatch border vs dark panel background
       await colorPicker.expectSwatchContrast('button-card-color-input', 'properties-panel');
@@ -547,7 +557,10 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       // Switch to YAML tab and verify via Monaco model value (authoritative)
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible();
-      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
       await expect(value.toLowerCase()).toContain('#ff0000');
       await expect(value.toLowerCase()).toContain('color');
@@ -557,10 +570,22 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
   });
 
   // Skipped due to intermittent Monaco/YAML visibility issues in properties panel (tracked in Phase 3)
-  test('button card color + icon color should update preview and YAML', async ({ page }, testInfo) => {
+  test('button card color + icon color should update preview and YAML', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, colorPicker, iconColor, yamlEditor, window } = ctx;
+    const {
+      appDSL,
+      dashboard,
+      palette,
+      canvas,
+      properties,
+      colorPicker,
+      iconColor,
+      yamlEditor,
+      window,
+    } = ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -595,7 +620,10 @@ test.skip('visual regression and accessibility in scrollable PropertiesPanel (sk
       // YAML tab should include both values
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible();
-      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
       expect(value.toLowerCase()).toContain("color: '#336699'");
       expect(value.toLowerCase()).toContain("icon_color: '#ff8800'");

@@ -21,4 +21,3 @@ When a Color Picker popover is open in the Properties Panel:
 - `Tab` / `Shift+Tab` — Move focus through controls
 - `Enter` — Confirm a typed color value in the color input (commits validation)
 - `Escape` — Dismiss the popover
-

@@ -45,7 +45,12 @@ export class GaugeProDSL {
     }
   }
 
-  async configureBuiltInGauge(config: { min?: number; max?: number; unit?: string; needle?: boolean }): Promise<void> {
+  async configureBuiltInGauge(config: {
+    min?: number;
+    max?: number;
+    unit?: string;
+    needle?: boolean;
+  }): Promise<void> {
     if (typeof config.min === 'number') {
       await this.fillInputByTestId('ha-gauge-min', config.min);
     }

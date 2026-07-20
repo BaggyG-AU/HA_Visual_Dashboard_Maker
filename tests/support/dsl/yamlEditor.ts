@@ -115,18 +115,24 @@ export class YamlEditorDSL {
     // Wait for Monaco readiness scoped appropriately, then assert visibility on the chosen container.
     await this.waitForMonacoReady(scope);
 
-    const modalContainer = this.window.getByTestId('yaml-editor-content').getByTestId('yaml-editor-container');
+    const modalContainer = this.window
+      .getByTestId('yaml-editor-content')
+      .getByTestId('yaml-editor-container');
     let containerLocator = modalContainer;
 
     if (scope !== 'modal') {
       // Prefer any visible YAML container to avoid brittle scoping to properties panel.
-      const visibleContainer = this.window.locator('[data-testid="yaml-editor-container"]:visible').first();
-      containerLocator = (await visibleContainer.isVisible({ timeout: 2000 }).catch(() => false)) ? visibleContainer : modalContainer;
+      const visibleContainer = this.window
+        .locator('[data-testid="yaml-editor-container"]:visible')
+        .first();
+      containerLocator = (await visibleContainer.isVisible({ timeout: 2000 }).catch(() => false))
+        ? visibleContainer
+        : modalContainer;
     }
 
     await expect(containerLocator).toBeVisible({ timeout: 8000 });
     await expect(
-      containerLocator.locator('.monaco-editor').or(containerLocator.locator('textarea')).first()
+      containerLocator.locator('.monaco-editor').or(containerLocator.locator('textarea')).first(),
     ).toBeVisible({ timeout: 8000 });
   }
 
@@ -167,9 +173,15 @@ export class YamlEditorDSL {
 
   // Wait for Monaco readiness using explicit handles OR any Monaco models
   private async resolveEditorContainer(scopeHint: YamlEditorScope): Promise<Locator> {
-    const modalContainer = this.window.getByTestId('yaml-editor-content').getByTestId('yaml-editor-container');
-    const propertiesContainer = this.window.getByTestId('properties-panel').getByTestId('yaml-editor-container');
-    const anyVisibleContainer = this.window.locator('[data-testid="yaml-editor-container"]:visible').first();
+    const modalContainer = this.window
+      .getByTestId('yaml-editor-content')
+      .getByTestId('yaml-editor-container');
+    const propertiesContainer = this.window
+      .getByTestId('properties-panel')
+      .getByTestId('yaml-editor-container');
+    const anyVisibleContainer = this.window
+      .locator('[data-testid="yaml-editor-container"]:visible')
+      .first();
 
     if (scopeHint === 'modal') return modalContainer;
     if (scopeHint === 'properties') return propertiesContainer;
@@ -209,7 +221,7 @@ export class YamlEditorDSL {
     }
 
     const monacoEditor = editorContainer.locator('.monaco-editor');
-    const hasMonaco = await monacoEditor.count() > 0;
+    const hasMonaco = (await monacoEditor.count()) > 0;
     if (hasMonaco) {
       await expect(async () => {
         const box = await monacoEditor.boundingBox();
@@ -230,18 +242,22 @@ export class YamlEditorDSL {
           return hasExplicitModel || hasExplicitEditor || hasMonacoModels;
         },
         null,
-        { timeout: 8000 }
+        { timeout: 8000 },
       );
     } catch (err) {
       const diag = await this.collectMonacoDiagnostics(scopeHint).catch(() => ({}));
-      throw new Error(`Monaco not ready (scope=${scopeHint}). Diagnostics: ${JSON.stringify(diag)}`);
+      throw new Error(
+        `Monaco not ready (scope=${scopeHint}). Diagnostics: ${JSON.stringify(diag)}`,
+      );
     }
   }
 
   /**
    * Collect Monaco diagnostics (JSON-safe)
    */
-  async collectMonacoDiagnostics(scopeHint: YamlEditorScope = 'auto'): Promise<Record<string, unknown>> {
+  async collectMonacoDiagnostics(
+    scopeHint: YamlEditorScope = 'auto',
+  ): Promise<Record<string, unknown>> {
     return await this.window.evaluate((hint: string) => {
       const diag: Record<string, unknown> = {};
       const testWindow = window as unknown as YamlTestWindow;
@@ -251,10 +267,14 @@ export class YamlEditorDSL {
       diag.containers = {
         modalExists: Boolean(modalContent),
         modalVisible: modalContent ? (modalContent as HTMLElement).offsetParent !== null : false,
-        modalContainerCount: modalContent ? modalContent.querySelectorAll('[data-testid="yaml-editor-container"]').length : 0,
+        modalContainerCount: modalContent
+          ? modalContent.querySelectorAll('[data-testid="yaml-editor-container"]').length
+          : 0,
         propsExists: Boolean(propsPanel),
         propsVisible: propsPanel ? (propsPanel as HTMLElement).offsetParent !== null : false,
-        propsContainerCount: propsPanel ? propsPanel.querySelectorAll('[data-testid="yaml-editor-container"]').length : 0,
+        propsContainerCount: propsPanel
+          ? propsPanel.querySelectorAll('[data-testid="yaml-editor-container"]').length
+          : 0,
       };
 
       // Prefer explicit handles set by the app in test mode
@@ -301,7 +321,9 @@ export class YamlEditorDSL {
       // 1) Explicit handles first (only if inside YAML container)
       const explicit = explicitModel || explicitEditor?.getModel?.();
       const explicitContainer = explicitEditor?.getContainerDomNode?.();
-      const explicitInsideYaml = explicitContainer?.closest?.('[data-testid="yaml-editor-container"]');
+      const explicitInsideYaml = explicitContainer?.closest?.(
+        '[data-testid="yaml-editor-container"]',
+      );
       if (explicit?.getValue && explicitInsideYaml) {
         diag.path = 'usedExplicitHandles';
         diag.explicitModelUri = explicitEditor?.getModel?.()?.uri?.toString?.();
@@ -331,9 +353,7 @@ export class YamlEditorDSL {
 
       // 4) Last resort: DOM view-lines text (virtualized; least reliable)
       diag.path = 'fellBackToDom';
-      const text = Array.from(
-        document.querySelectorAll('.monaco-editor .view-lines')
-      )
+      const text = Array.from(document.querySelectorAll('.monaco-editor .view-lines'))
         .filter((el) => {
           const box = el.getBoundingClientRect();
           return box.width > 0 && box.height > 0;
@@ -347,10 +367,16 @@ export class YamlEditorDSL {
   /**
    * Get Monaco editor content with diagnostics
    */
-  async getEditorContentWithDiagnostics(testInfo?: TestInfo, scopeHint: YamlEditorScope = 'auto'): Promise<{ value: string; diagnostics: Record<string, unknown> }> {
+  async getEditorContentWithDiagnostics(
+    testInfo?: TestInfo,
+    scopeHint: YamlEditorScope = 'auto',
+  ): Promise<{ value: string; diagnostics: Record<string, unknown> }> {
     void testInfo;
     await this.waitForMonacoReady(scopeHint);
-    return (await this.collectMonacoDiagnostics(scopeHint)) as { value: string; diagnostics: Record<string, unknown> };
+    return (await this.collectMonacoDiagnostics(scopeHint)) as {
+      value: string;
+      diagnostics: Record<string, unknown>;
+    };
   }
 
   /**
@@ -364,7 +390,11 @@ export class YamlEditorDSL {
   /**
    * Set Monaco editor content (properties panel or modal)
    */
-  async setEditorContent(value: string, scopeHint: YamlEditorScope = 'auto', testInfo?: TestInfo): Promise<void> {
+  async setEditorContent(
+    value: string,
+    scopeHint: YamlEditorScope = 'auto',
+    testInfo?: TestInfo,
+  ): Promise<void> {
     void testInfo;
     await this.waitForMonacoReady(scopeHint);
     try {
@@ -381,7 +411,9 @@ export class YamlEditorDSL {
     } catch (error) {
       const diag = await this.collectMonacoDiagnostics(scopeHint).catch(() => ({}));
       const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to set YAML editor content (${scopeHint}): ${message}. Diagnostics: ${JSON.stringify(diag)}`);
+      throw new Error(
+        `Failed to set YAML editor content (${scopeHint}): ${message}. Diagnostics: ${JSON.stringify(diag)}`,
+      );
     }
   }
 
@@ -403,47 +435,46 @@ export class YamlEditorDSL {
    * Returns true if any model or visible rendered YAML contains the pattern.
    */
   async anyYamlContains(pattern: RegExp): Promise<boolean> {
-    return await this.window.evaluate((input: { pat: string; flags: string }) => {
-      const re = new RegExp(input.pat, input.flags);
-      const testWindow = window as unknown as YamlTestWindow;
-      const monaco = testWindow.monaco;
+    return await this.window.evaluate(
+      (input: { pat: string; flags: string }) => {
+        const re = new RegExp(input.pat, input.flags);
+        const testWindow = window as unknown as YamlTestWindow;
+        const monaco = testWindow.monaco;
 
-      // 1) Check all Monaco models (covers multiple editors/models)
-      if (monaco?.editor) {
-        const models = monaco.editor.getModels?.() || [];
-        if (models.some((m) => re.test(m.getValue?.() || ''))) return true;
-      }
+        // 1) Check all Monaco models (covers multiple editors/models)
+        if (monaco?.editor) {
+          const models = monaco.editor.getModels?.() || [];
+          if (models.some((m) => re.test(m.getValue?.() || ''))) return true;
+        }
 
-      // 2) Check rendered view lines inside visible YAML editors
-      const viewText = Array.from(
-        document.querySelectorAll(
-          '[data-testid="yaml-editor-container"]:not([hidden]) .view-lines'
+        // 2) Check rendered view lines inside visible YAML editors
+        const viewText = Array.from(
+          document.querySelectorAll(
+            '[data-testid="yaml-editor-container"]:not([hidden]) .view-lines',
+          ),
         )
-      )
-        .map((n) => n.textContent || '')
-        .join('\n');
-      if (re.test(viewText)) return true;
+          .map((n) => n.textContent || '')
+          .join('\n');
+        if (re.test(viewText)) return true;
 
-      // 3) Fallback: raw textContent of visible YAML containers
-      const nodes = Array.from(
-        document.querySelectorAll(
-          '[data-testid="yaml-editor-container"]:not([hidden])'
-        )
-      );
-      if (nodes.some((n) => re.test(n.textContent || ''))) return true;
+        // 3) Fallback: raw textContent of visible YAML containers
+        const nodes = Array.from(
+          document.querySelectorAll('[data-testid="yaml-editor-container"]:not([hidden])'),
+        );
+        if (nodes.some((n) => re.test(n.textContent || ''))) return true;
 
-      // 4) Ultimate fallback: any visible monaco editor view-lines anywhere (properties panel, modals, etc.)
-      const globalViewText = Array.from(
-        document.querySelectorAll('.monaco-editor .view-lines')
-      )
-        .filter((el) => {
-          const box = el.getBoundingClientRect();
-          return box.width > 0 && box.height > 0;
-        })
-        .map((n) => n.textContent || '')
-        .join('\n');
-      return re.test(globalViewText);
-    }, { pat: pattern.source, flags: pattern.flags });
+        // 4) Ultimate fallback: any visible monaco editor view-lines anywhere (properties panel, modals, etc.)
+        const globalViewText = Array.from(document.querySelectorAll('.monaco-editor .view-lines'))
+          .filter((el) => {
+            const box = el.getBoundingClientRect();
+            return box.width > 0 && box.height > 0;
+          })
+          .map((n) => n.textContent || '')
+          .join('\n');
+        return re.test(globalViewText);
+      },
+      { pat: pattern.source, flags: pattern.flags },
+    );
   }
 
   /**
@@ -508,19 +539,17 @@ views:
       () =>
         Boolean(
           (window as unknown as YamlTestWindow).__monacoModel ||
-            (window as unknown as YamlTestWindow).__monacoEditor?.getModel?.() ||
-            (window as unknown as YamlTestWindow).monaco?.editor?.getModels?.()?.[0]
+          (window as unknown as YamlTestWindow).__monacoEditor?.getModel?.() ||
+          (window as unknown as YamlTestWindow).monaco?.editor?.getModels?.()?.[0],
         ),
       null,
-      { timeout: 10000 }
+      { timeout: 10000 },
     );
 
     // Set invalid YAML directly via the Monaco model and force validation
     await this.window.evaluate(() => {
       const testWindow = window as unknown as YamlTestWindow;
-      const model =
-        testWindow.__monacoModel ||
-        testWindow.monaco?.editor?.getModels?.()?.[0];
+      const model = testWindow.__monacoModel || testWindow.monaco?.editor?.getModels?.()?.[0];
       if (model?.setValue) {
         model.setValue('title: Invalid Dashboard');
       }

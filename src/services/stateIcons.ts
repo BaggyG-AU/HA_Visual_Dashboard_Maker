@@ -151,7 +151,9 @@ const normalizeState = (state?: string): string => {
   return state.trim().toLowerCase();
 };
 
-const normalizeMappingEntry = (entry: string | StateIconConfig | undefined): StateIconConfig | undefined => {
+const normalizeMappingEntry = (
+  entry: string | StateIconConfig | undefined,
+): StateIconConfig | undefined => {
   if (!entry) return undefined;
   if (typeof entry === 'string') {
     const value = entry.trim();
@@ -164,12 +166,16 @@ const normalizeMappingEntry = (entry: string | StateIconConfig | undefined): Sta
 
   return {
     icon: entry.icon.trim(),
-    color: typeof entry.color === 'string' && entry.color.trim().length > 0 ? entry.color : undefined,
+    color:
+      typeof entry.color === 'string' && entry.color.trim().length > 0 ? entry.color : undefined,
     size: typeof entry.size === 'number' ? entry.size : undefined,
   };
 };
 
-const resolveUserStateIcon = (stateIcons: StateIconsMap | undefined, stateKey: string): StateIconConfig | undefined => {
+const resolveUserStateIcon = (
+  stateIcons: StateIconsMap | undefined,
+  stateKey: string,
+): StateIconConfig | undefined => {
   if (!stateIcons) return undefined;
   const direct = normalizeMappingEntry(stateIcons[stateKey]);
   if (direct) return direct;
@@ -191,9 +197,10 @@ const resolveDomainStateIcon = (
   if (!domain) return undefined;
 
   if (domain === 'binary_sensor') {
-    const deviceClass = typeof entityAttributes?.device_class === 'string'
-      ? entityAttributes.device_class.toLowerCase()
-      : undefined;
+    const deviceClass =
+      typeof entityAttributes?.device_class === 'string'
+        ? entityAttributes.device_class.toLowerCase()
+        : undefined;
     if (deviceClass && BINARY_SENSOR_DEVICE_CLASS_DEFAULTS[deviceClass]) {
       const classMap = BINARY_SENSOR_DEVICE_CLASS_DEFAULTS[deviceClass];
       return normalizeMappingEntry(classMap[stateKey] ?? classMap.default);
@@ -237,7 +244,9 @@ export const stateIconDefaults = {
   binarySensorDeviceClass: BINARY_SENSOR_DEVICE_CLASS_DEFAULTS,
 };
 
-export const normalizeStateIconMapping = (stateIcons?: StateIconsMap): Record<string, StateIconConfig> => {
+export const normalizeStateIconMapping = (
+  stateIcons?: StateIconsMap,
+): Record<string, StateIconConfig> => {
   if (!stateIcons) return {};
   const normalized: Record<string, StateIconConfig> = {};
 

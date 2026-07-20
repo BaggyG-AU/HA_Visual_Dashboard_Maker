@@ -21,7 +21,8 @@ function sanitizeSavedThemeRecord(value: unknown): SavedThemeRecord | null {
 
   const name = typeof value.name === 'string' ? value.name.trim() : '';
   const theme = isThemeLike(value.theme) ? value.theme : null;
-  const createdAt = typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString();
+  const createdAt =
+    typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString();
   const updatedAt = typeof value.updatedAt === 'string' ? value.updatedAt : createdAt;
 
   if (!name || !theme) {
@@ -39,13 +40,17 @@ function sanitizeSavedThemeRecord(value: unknown): SavedThemeRecord | null {
 function sanitizeViewOverrides(value: unknown): Record<string, ThemeViewOverride> {
   if (!isObjectLike(value)) return {};
 
-  return Object.entries(value).reduce<Record<string, ThemeViewOverride>>((acc, [viewKey, rawOverride]) => {
-    if (!isObjectLike(rawOverride)) return acc;
-    const themeName = typeof rawOverride.themeName === 'string' ? rawOverride.themeName.trim() : '';
-    if (!themeName) return acc;
-    acc[viewKey] = { themeName };
-    return acc;
-  }, {});
+  return Object.entries(value).reduce<Record<string, ThemeViewOverride>>(
+    (acc, [viewKey, rawOverride]) => {
+      if (!isObjectLike(rawOverride)) return acc;
+      const themeName =
+        typeof rawOverride.themeName === 'string' ? rawOverride.themeName.trim() : '';
+      if (!themeName) return acc;
+      acc[viewKey] = { themeName };
+      return acc;
+    },
+    {},
+  );
 }
 
 export function normalizePersistedThemeManagerState(raw: unknown): ThemeManagerPersistedState {
@@ -79,9 +84,7 @@ export function normalizeThemeManagerExportPayload(raw: unknown): ThemeManagerEx
     throw new Error(`Unsupported theme export version: ${String(raw.version)}`);
   }
 
-  const exportedAt = typeof raw.exportedAt === 'string'
-    ? raw.exportedAt
-    : new Date().toISOString();
+  const exportedAt = typeof raw.exportedAt === 'string' ? raw.exportedAt : new Date().toISOString();
 
   const savedThemesRaw = Array.isArray(raw.savedThemes) ? raw.savedThemes : [];
   const savedThemes = savedThemesRaw

@@ -18,22 +18,27 @@
 ## ✨ Features / Changes
 
 ### Feature 4.1: Carousel Foundation
+
 - Integrated Swiper v12 foundation for carousel layout infrastructure.
 - Added renderer and DSL/test coverage patterns used by later layout features.
 
 ### Feature 4.2: Accordion Card Module
+
 - Added Accordion container card with card registry and BaseCard integration.
 - Added regression guardrails and DSL coverage for accordion flows.
 
 ### Feature 4.3: Tabs Card Module
+
 - Added Tabs container card with tab switching, orientation, defaults, and YAML persistence support.
 - Added E2E and visual coverage for tabs behavior and accessibility workflows.
 
 ### Feature 4.4: Popup/Modal Card System
+
 - Added popup trigger card workflow integrated with PropertiesPanel and YAML serialization.
 - Added E2E and visual tests for modal open/close behavior, keyboard handling, and focus restoration.
 
 ### Feature 4.5: Horizontal/Vertical Layout Enhancements
+
 - Enhanced existing HA layout cards (no new card type) with configurable layout controls:
   - `vertical-stack`: `gap`, `align_items`
   - `horizontal-stack`: `gap`, `align_items`, `justify_content`, `wrap`
@@ -44,6 +49,7 @@
 - Added deferred-note tracking for future `align_content` enhancement (explicitly out of current MVP scope).
 
 ### Stability / Regression Hardening
+
 - Fixed systemic PropertiesPanel Tabs remount behavior that previously caused broad E2E instability.
 - Hardened shared `ColorPickerDSL.closePopover()` behavior using flow-defensive close retries (`Escape` + conditional outside click fallback) to resolve popover dismissal flake in visual flows.
 
@@ -61,6 +67,7 @@
   - Applied DSL hardening fix and re-ran full affected consumer set (`closePopover` consumers): `25 passed`, `2 skipped`, `0 failed`.
 
 Testing standards compliance:
+
 - ✅ DSL-first E2E approach maintained
 - ✅ Shared DSL blast-radius verification completed after DSL change
 - ✅ State-based waits used; no arbitrary sleeps introduced
@@ -88,18 +95,20 @@ Testing standards compliance:
 
 ## 📦 Upgrade Instructions
 
-1) Pull latest changes:
+1. Pull latest changes:
+
    ```bash
    git checkout feature/layout-infrastructure-layer
    git pull
    ```
 
-2) Install dependencies:
+2. Install dependencies:
+
    ```bash
    npm install
    ```
 
-3) Recommended validation:
+3. Recommended validation:
    ```bash
    npm run lint
    npm run test:unit -- layout-config
