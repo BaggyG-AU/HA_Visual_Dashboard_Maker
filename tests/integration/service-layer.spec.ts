@@ -392,7 +392,7 @@ test.describe('Credentials Service Integration', () => {
       filename: electronModulePath,
       loaded: true,
       exports: mockElectron,
-    };
+    } as NodeModule;
     delete require.cache[credentialsModulePath];
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     credentialsService = require('../../src/services/credentialsService').credentialsService;
@@ -436,7 +436,7 @@ test.describe('Credentials Service Integration', () => {
 
     const all = credentialsService.getAllCredentials();
     expect(all.length).toBe(2);
-    expect(all.every(c => !(c as any).encryptedToken)).toBe(true);
+    expect(all.every((c: { id: string }) => !(c as any).encryptedToken)).toBe(true);
   });
 
   test('should track last used credential', async () => {
@@ -459,7 +459,7 @@ test.describe('Credentials Service Integration', () => {
     expect(credentialsService.getCredential(saved.id)).toBeNull();
 
     const all = credentialsService.getAllCredentials();
-    expect(all.find(c => c.id === saved.id)).toBeUndefined();
+    expect(all.find((c: { id: string }) => c.id === saved.id)).toBeUndefined();
   });
 });
 
@@ -498,7 +498,7 @@ test.describe('Card Sizing Contract Integration', () => {
       { type: 'markdown', content: 'Hello', view_layout: {} },
     ] as any[];
 
-    const layout = generateMasonryLayout(cards, 12, 2);
+    const layout = generateMasonryLayout(cards);
     expect(layout.length).toBe(3);
     expect(layout.every(item => item.w > 0 && item.h > 0)).toBe(true);
 
@@ -530,7 +530,7 @@ test.describe('Layout Card Parser Integration', () => {
       },
     } as any;
 
-    const pos = parseViewLayout(card, 0, gridConfig);
+    const pos = parseViewLayout(card, 0);
     expect(pos).toEqual({ x: 0, y: 0, w: 6, h: 2 });
   });
 

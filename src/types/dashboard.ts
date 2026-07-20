@@ -33,6 +33,7 @@ export interface ViewLayout {
 // Base card configuration
 export interface BaseCard extends Phase6CardContracts {
   type: string;
+  title?: string;
   entity?: string;
   entities?: any[]; // Can be string[] or (string | EntityConfig)[]
   name?: string;
@@ -56,6 +57,18 @@ export interface BaseCard extends Phase6CardContracts {
   view_layout?: ViewLayout; // Layout-card positioning
   card_margin?: CardSpacingValue;
   card_padding?: CardSpacingValue;
+  // react-grid-layout canvas position/size (assigned by the generator/store).
+  // All optional — some call sites supply only a subset (e.g. sizing constraints).
+  layout?: {
+    x?: number;
+    y?: number;
+    w?: number;
+    h?: number;
+    minW?: number;
+    minH?: number;
+    maxW?: number;
+    maxH?: number;
+  };
 }
 
 // Spacer card for layout purposes (internal use only, not exported to YAML)

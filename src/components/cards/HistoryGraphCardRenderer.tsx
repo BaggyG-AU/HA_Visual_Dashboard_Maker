@@ -69,9 +69,11 @@ export const HistoryGraphCardRenderer: React.FC<HistoryGraphCardRendererProps> =
   }
 
   // Generate simple mock historical data for visualization
-  const generateHistoryData = (entityData: typeof entityData[0]) => {
+  // The parameter shadowed the outer `entityData` array, making its own type
+  // annotation self-referential; renamed so it resolves to the array's element type.
+  const generateHistoryData = (datum: (typeof entityData)[number]) => {
     const points: { x: number; y: number }[] = [];
-    const numericState = parseFloat(entityData.state);
+    const numericState = parseFloat(datum.state);
 
     if (isNaN(numericState)) return '';
 

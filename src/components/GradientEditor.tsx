@@ -168,7 +168,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
   };
 
   const handleImportClick = async () => {
-    if (window.electronAPI?.openFileDialog && window.electronAPI?.readFile) {
+    if (typeof window.electronAPI?.openFileDialog === 'function' && typeof window.electronAPI?.readFile === 'function') {
       // Electron path: reuse native file dialog + fileService for consistent IPC/error handling.
       try {
         const filePath = await fileService.openFile();
@@ -215,7 +215,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
 
   const handleExportPresets = async () => {
     const payload = exportPresets();
-    if (window.electronAPI?.saveFileDialog && window.electronAPI?.writeFile) {
+    if (typeof window.electronAPI?.saveFileDialog === 'function' && typeof window.electronAPI?.writeFile === 'function') {
       // Electron path: save via native dialog for correct user location + permissions.
       try {
         const saved = await fileService.saveFileAs(payload, 'gradient-presets.json');
@@ -276,15 +276,18 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
         {gradient.type === 'linear' && (
           <Space align="center">
             <Text style={{ color: '#ddd' }}>Angle</Text>
-            <Slider
-              value={gradient.angle}
-              onChange={handleAngleChange}
-              onKeyDown={handleAngleKeyDown}
-              min={0}
-              max={360}
-              style={{ width: 160 }}
-              data-testid={`${testId}-angle-slider`}
-            />
+            {/* antd v6 Slider no longer forwards arbitrary DOM handlers; keydown is
+                captured on a wrapper so it still bubbles up from the slider handle. */}
+            <span onKeyDown={handleAngleKeyDown} style={{ display: 'inline-flex' }}>
+              <Slider
+                value={gradient.angle}
+                onChange={handleAngleChange}
+                min={0}
+                max={360}
+                style={{ width: 160 }}
+                data-testid={`${testId}-angle-slider`}
+              />
+            </span>
             <div data-testid={`${testId}-angle-input`} style={{ display: 'inline-flex' }}>
               <InputNumber
                 value={gradient.angle}
@@ -367,7 +370,7 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
                 value={stop.position}
                 min={0}
                 max={100}
-                onChange={(val) => handleStopPosition(stop.id, Number(val))}
+                onChange={(val: number) => handleStopPosition(stop.id, Number(val))}
                 tooltip={{ formatter: (val) => `${val}%` }}
                 data-testid={`${testId}-stop-position-${stop.id}`}
                 aria-label={`Color stop ${stop.id} position`}
@@ -589,19 +592,22 @@ interface SelectPositionProps {
 }
 
 const SelectPosition: React.FC<SelectPositionProps> = ({ value, onChange, onKeyDown, testId }) => (
-  <Radio.Group
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    data-testid={`${testId}-position-toggle`}
-    onKeyDown={onKeyDown}
-    aria-label="Gradient position"
-  >
-    <Radio.Button value="center">Center</Radio.Button>
-    <Radio.Button value="top">Top</Radio.Button>
-    <Radio.Button value="bottom">Bottom</Radio.Button>
-    <Radio.Button value="left">Left</Radio.Button>
-    <Radio.Button value="right">Right</Radio.Button>
-  </Radio.Group>
+  // antd v6 Radio.Group no longer forwards arbitrary DOM handlers; keydown is
+  // captured on a wrapper so it still bubbles up from the radio buttons.
+  <span onKeyDown={onKeyDown} style={{ display: 'inline-flex' }}>
+    <Radio.Group
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      data-testid={`${testId}-position-toggle`}
+      aria-label="Gradient position"
+    >
+      <Radio.Button value="center">Center</Radio.Button>
+      <Radio.Button value="top">Top</Radio.Button>
+      <Radio.Button value="bottom">Bottom</Radio.Button>
+      <Radio.Button value="left">Left</Radio.Button>
+      <Radio.Button value="right">Right</Radio.Button>
+    </Radio.Group>
+  </span>
 );
 
 export default GradientEditor;

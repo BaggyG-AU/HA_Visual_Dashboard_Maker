@@ -79,7 +79,7 @@ export interface ThemeMode {
 }
 
 export interface Theme {
-  [key: string]: string | ThemeMode;
+  [key: string]: string | ThemeMode | undefined;
   modes?: ThemeMode;
 }
 

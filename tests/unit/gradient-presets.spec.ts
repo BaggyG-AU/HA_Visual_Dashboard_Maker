@@ -31,7 +31,7 @@ describe('gradientPresetStorage', () => {
     const raw = {
       kind: 'havdm-gradient-presets',
       version: 2,
-      presets: [],
+      presets: [] as unknown[],
     };
     const result = parsePresetCollection(raw);
     expect(result.errors.length).toBeGreaterThan(0);

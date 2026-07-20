@@ -10,12 +10,15 @@ import type {
   BackgroundImageRepeat,
   BackgroundImageSize,
 } from '../utils/backgroundStyle';
+import { DEFAULT_BACKGROUND_CONFIG } from '../utils/backgroundStyle';
 
 const { Text } = Typography;
 
 interface BackgroundCustomizerProps {
-  value: BackgroundConfig;
-  onChange: (next: BackgroundConfig) => void;
+  // Optional because antd `Form.Item` supplies both by cloning the child at
+  // runtime, so the JSX call site can't pass them (see PropertiesPanel).
+  value?: BackgroundConfig;
+  onChange?: (next: BackgroundConfig) => void;
 }
 
 const TYPE_OPTIONS: Array<{ value: BackgroundType; label: string }> = [
@@ -78,11 +81,14 @@ const composeImageSizeCustom = (width: string, height: string): string => {
   return `${normalizedWidth} ${normalizedHeight}`;
 };
 
-export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ value, onChange }) => {
+export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({
+  value = DEFAULT_BACKGROUND_CONFIG,
+  onChange,
+}) => {
   const [openSelect, setOpenSelect] = React.useState<string | null>(null);
 
   const update = (patch: Partial<BackgroundConfig>) => {
-    onChange({ ...value, ...patch });
+    onChange?.({ ...value, ...patch });
   };
 
   const closeSelect = () => setOpenSelect(null);
@@ -100,7 +106,7 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ valu
           min={0}
           max={100}
           value={opacityValue}
-          onChange={(val) => onUpdate(typeof val === 'number' ? clamp(val) : opacityValue)}
+          onChange={(val: number) => onUpdate(typeof val === 'number' ? clamp(val) : opacityValue)}
           data-testid={testId}
         />
         <InputNumber
@@ -273,7 +279,7 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ valu
                 min={0}
                 max={30}
                 value={value.imageBlur}
-                onChange={(val) => update({ imageBlur: typeof val === 'number' ? val : value.imageBlur })}
+                onChange={(val: number) => update({ imageBlur: typeof val === 'number' ? val : value.imageBlur })}
                 data-testid="background-image-blur-slider"
               />
               <InputNumber
@@ -332,7 +338,7 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({ valu
                 min={0}
                 max={30}
                 value={value.blurAmount}
-                onChange={(val) => update({ blurAmount: typeof val === 'number' ? val : value.blurAmount })}
+                onChange={(val: number) => update({ blurAmount: typeof val === 'number' ? val : value.blurAmount })}
                 data-testid="background-blur-slider"
               />
               <InputNumber

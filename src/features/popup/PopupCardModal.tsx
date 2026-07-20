@@ -84,7 +84,7 @@ export const PopupCardModal: React.FC<PopupCardModalProps> = ({
         mask: {
           backgroundColor: `rgba(0, 0, 0, ${item.config.backdrop_opacity})`,
         },
-        content: isFullscreen
+        container: isFullscreen
           ? { height: '100vh', borderRadius: 0, paddingBottom: 0 }
           : undefined,
         body: {

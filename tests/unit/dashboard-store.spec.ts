@@ -74,7 +74,7 @@ describe('dashboard store model utilities', () => {
 
     state.redo();
     state = useDashboardStore.getState();
-    expect(state.config?.views[0].cards.length).toBe(1);
+    expect(state.config?.views[0]?.cards?.length).toBe(1);
   });
 
   it('batches rapid edits into a single history entry', () => {

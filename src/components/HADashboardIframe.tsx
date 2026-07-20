@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Space, message, Modal, Tooltip } from 'antd';
 import { EditOutlined, DeploymentUnitOutlined, CloseOutlined } from '@ant-design/icons';
-import GridLayout, { Layout } from 'react-grid-layout';
+import GridLayout, { getCompactor } from 'react-grid-layout';
+import type { Layout } from 'react-grid-layout';
 import { View } from '../types/dashboard';
 import { generateMasonryLayout, getCardSizeConstraints } from '../utils/cardSizingContract';
 import { isLayoutCardGrid, convertLayoutCardToGridLayout } from '../utils/layoutCardParser';
@@ -9,11 +10,14 @@ import { logger } from '../services/logger';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
+// See GridCanvas: must go through getCompactor(), not the bare compactor export.
+const HA_COMPACTOR = getCompactor('vertical', false, false);
+
 interface HADashboardIframeProps {
   view: View;
   haUrl: string;
   tempDashboardPath: string | null;
-  onLayoutChange: (layout: Layout[]) => void;
+  onLayoutChange: (layout: Layout) => void;
   onDeploy: () => void;
   onClose: () => void;
 }
@@ -33,7 +37,7 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
   onClose,
 }) => {
   const [editMode, setEditMode] = useState(true);
-  const [layout, setLayout] = useState<Layout[]>([]);
+  const [layout, setLayout] = useState<Layout>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Generate layout from cards
@@ -98,7 +102,7 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
     ? `${haUrl}/${tempDashboardPath}?kiosk`
     : `${haUrl}/lovelace/0?kiosk`;
 
-  const handleLayoutChange = async (newLayout: Layout[]) => {
+  const handleLayoutChange = async (newLayout: Layout) => {
     setLayout(newLayout);
     onLayoutChange(newLayout);
 
@@ -303,19 +307,15 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
           <GridLayout
             className="layout"
             layout={layout}
-            cols={12}
-            rowHeight={56}
             width={1200}
+            // Must match GridCanvas's GRID_CONFIG — this overlay sits on top of
+            // the same canvas geometry. See the note there before changing these.
+            gridConfig={{ cols: 12, rowHeight: 150, margin: [10, 10], containerPadding: null }}
             onDragStop={handleLayoutChange}
             onResizeStop={handleLayoutChange}
-            isDraggable={editMode}
-            isResizable={editMode}
-            compactType="vertical"
-            preventCollision={false}
-            allowOverlap={false}
-            useCSSTransforms={true}
-            margin={[16, 16]}
-            containerPadding={[0, 0]}
+            dragConfig={{ enabled: editMode, threshold: 0 }}
+            resizeConfig={{ enabled: editMode }}
+            compactor={HA_COMPACTOR}
             style={{
               minHeight: '100%',
             }}

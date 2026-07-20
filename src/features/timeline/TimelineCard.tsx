@@ -123,7 +123,7 @@ export const TimelineCard: React.FC<TimelineCardProps> = ({
                 min={0}
                 max={events.length - 1}
                 value={selectedIndex}
-                onChange={(next) => {
+                onChange={(next: number | number[]) => {
                   const index = typeof next === 'number' ? next : next[0] ?? 0;
                   const event = events[index];
                   if (event) {

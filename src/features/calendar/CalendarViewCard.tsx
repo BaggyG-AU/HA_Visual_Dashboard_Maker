@@ -102,7 +102,7 @@ export const CalendarViewCard: React.FC<CalendarViewCardProps> = ({
     onClick?.();
   };
 
-  const onGridKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number): void => {
+  const onGridKeyDown = (event: React.KeyboardEvent<HTMLElement>, index: number): void => {
     let targetIndex = index;
 
     if (event.key === 'ArrowRight') {

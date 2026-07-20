@@ -166,7 +166,7 @@ class YAMLService {
       theme: config.theme
     };
 
-    return exportDashboard(sanitized as unknown as Record<string, unknown>) as DashboardConfig;
+    return exportDashboard(sanitized as unknown as Record<string, unknown>) as unknown as DashboardConfig;
   }
 
   /**

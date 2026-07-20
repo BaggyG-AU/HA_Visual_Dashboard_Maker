@@ -43,7 +43,7 @@ export async function seedEntityCache(window: Page, customEntities?: Array<Recor
   const testEntities = customEntities || defaultEntities;
 
   await window.evaluate(async (entities) => {
-    const testWindow = window as Window & {
+    const testWindow = window as unknown as Window & {
       electronAPI: { testSeedEntityCache: (payload: Array<Record<string, unknown>>) => Promise<{ success: boolean }> };
     };
     const result = await testWindow.electronAPI.testSeedEntityCache(entities as Array<Record<string, unknown>>);
@@ -58,7 +58,7 @@ export async function seedEntityCache(window: Page, customEntities?: Array<Recor
  */
 export async function clearEntityCache(window: Page): Promise<void> {
   await window.evaluate(async () => {
-    const testWindow = window as Window & {
+    const testWindow = window as unknown as Window & {
       electronAPI: { testClearEntityCache: () => Promise<{ success: boolean }> };
     };
     const result = await testWindow.electronAPI.testClearEntityCache();

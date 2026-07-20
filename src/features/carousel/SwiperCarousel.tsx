@@ -10,7 +10,7 @@ import 'swiper/css/effect-coverflow';
 import 'swiper/css/effect-flip';
 import { Typography } from 'antd';
 import type { Swiper as SwiperInstance } from 'swiper/types';
-import type { CarouselAlignment, CarouselSlideConfig, SwiperCardConfig } from './types';
+import type { CarouselAlignment, CarouselAutoplayConfig, CarouselSlideConfig, SwiperCardConfig } from './types';
 import { normalizeSwiperConfig, ensureSlideBackground } from './carouselService';
 import { getCardBackgroundStyle, applyBackgroundConfigToStyle } from '../../utils/backgroundStyle';
 import { BaseCard } from '../../components/BaseCard';
@@ -81,9 +81,12 @@ export const SwiperCarousel: React.FC<SwiperCarouselProps> = ({
   // would be a new object on every render (even if values are identical), which causes
   // the autoplay useEffect to fire repeatedly — each call to start() resets Swiper's
   // internal setTimeout, so the delay never completes and slides never advance.
+  // normalizeSwiperConfig yields `CarouselAutoplayConfig | false`, where `false`
+  // means autoplay is off; read the options through an empty-object fallback.
+  const autoplayOptions: CarouselAutoplayConfig = config.autoplay || {};
   const autoplayEnabled = Boolean(config.autoplay && config.autoplay.enabled !== false) && !prefersReducedMotion;
-  const autoplayDelay = config.autoplay?.delay ?? 5000;
-  const autoplayStopOnLast = Boolean(config.autoplay?.stop_on_last_slide);
+  const autoplayDelay = autoplayOptions.delay ?? 5000;
+  const autoplayStopOnLast = Boolean(autoplayOptions.stop_on_last_slide);
 
   const autoplayConfig = useMemo(() => {
     if (!autoplayEnabled) return false as const;
@@ -98,7 +101,7 @@ export const SwiperCarousel: React.FC<SwiperCarouselProps> = ({
   const effect = prefersReducedMotion ? 'slide' : config.effect;
   const loop = config.loop && !prefersReducedMotion && !isEditing;
   const transitionSpeed = prefersReducedMotion ? 0 : 300;
-  const shouldPauseOnInteraction = Boolean(config.autoplay?.pause_on_interaction);
+  const shouldPauseOnInteraction = Boolean(autoplayOptions.pause_on_interaction);
 
   // swiperKey only includes options that REQUIRE a full Swiper re-mount (structural
   // changes).  Autoplay and isEditing are handled dynamically via useEffect to avoid

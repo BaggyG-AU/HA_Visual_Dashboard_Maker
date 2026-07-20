@@ -82,8 +82,15 @@ const registerEntityContextCompletions = () => {
 
   monaco.languages.registerCompletionItemProvider('yaml', {
     triggerCharacters: ['[', '{'],
-    provideCompletionItems: () => {
-      const suggestions: monaco.languages.CompletionItem[] = [
+    provideCompletionItems: (model, position) => {
+      const word = model.getWordUntilPosition(position);
+      const range = {
+        startLineNumber: position.lineNumber,
+        endLineNumber: position.lineNumber,
+        startColumn: word.startColumn,
+        endColumn: word.endColumn,
+      };
+      const suggestions: Omit<monaco.languages.CompletionItem, 'range'>[] = [
         {
           label: '[[entity.state]]',
           kind: monaco.languages.CompletionItemKind.Variable,
@@ -146,7 +153,7 @@ const registerEntityContextCompletions = () => {
         },
       ];
 
-      return { suggestions };
+      return { suggestions: suggestions.map((s) => ({ ...s, range })) };
     },
   });
 

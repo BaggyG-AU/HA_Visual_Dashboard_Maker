@@ -14,6 +14,7 @@ type MonacoModelLike = {
   setValue?: (value: string) => void;
   getLineCount?: () => number;
   getLineMaxColumn?: (lineNumber: number) => number;
+  uri?: { toString?: () => string };
 };
 
 type MonacoEditorLike = {
@@ -70,11 +71,11 @@ export class YamlEditorDSL {
       const editor = testWindow.__monacoEditor || testWindow.monaco?.editor?.getEditors?.()?.[0];
       const model = editor?.getModel?.();
 
-      if (editor && model) {
+      if (editor && model?.getLineCount && model.getLineMaxColumn) {
         const lastLine = model.getLineCount();
         const lastColumn = model.getLineMaxColumn(lastLine);
-        editor.setPosition({ lineNumber: lastLine, column: lastColumn });
-        editor.focus();
+        editor.setPosition?.({ lineNumber: lastLine, column: lastColumn });
+        editor.focus?.();
       }
     });
   }

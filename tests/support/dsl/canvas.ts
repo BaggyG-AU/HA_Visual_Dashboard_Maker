@@ -155,7 +155,7 @@ export class CanvasDSL {
   async expectBackgroundLayerScreenshot(
     index: number,
     name: string,
-    options: ScreenshotOptions = { animations: 'disabled', caret: 'hide' },
+    options: ScreenshotOptions & { maxDiffPixels?: number; maxDiffPixelRatio?: number; threshold?: number } = { animations: 'disabled', caret: 'hide' },
   ): Promise<void> {
     const layer = this.getBackgroundLayerVisual(index);
     await expect(layer).toBeVisible();

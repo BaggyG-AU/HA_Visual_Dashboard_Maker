@@ -23,9 +23,12 @@ class TemplateService {
     try {
       // Use Electron IPC to read template metadata file
       const metadataPath = await window.electronAPI.getTemplatePath('templates.json');
-      const content = await window.electronAPI.readFile(metadataPath);
+      const result = await window.electronAPI.readFile(metadataPath);
+      if (!result.success || result.content === undefined) {
+        throw new Error(result.error ?? 'readFile returned no content');
+      }
 
-      this.metadata = JSON.parse(content) as TemplateMetadata;
+      this.metadata = JSON.parse(result.content) as TemplateMetadata;
       return this.metadata;
     } catch (error) {
       logger.error('Failed to load template metadata', error);
@@ -103,8 +106,11 @@ class TemplateService {
 
     try {
       const templatePath = await window.electronAPI.getTemplatePath(template.file);
-      const content = await window.electronAPI.readFile(templatePath);
-      return content;
+      const result = await window.electronAPI.readFile(templatePath);
+      if (!result.success || result.content === undefined) {
+        throw new Error(result.error ?? 'readFile returned no content');
+      }
+      return result.content;
     } catch (error) {
       throw new Error(`Failed to load template '${id}': ${(error as Error).message}`);
     }

@@ -12,7 +12,7 @@ interface NativeGraphsCardRendererProps {
 interface RendererState {
   hasError: boolean;
   errorMessage?: string;
-  componentStack?: string;
+  componentStack?: string | null;
 }
 
 class NativeGraphsErrorBoundary extends React.Component<

@@ -69,9 +69,9 @@ describe('cardRegistry', () => {
     expect(meta).toBeTruthy();
 
     // Basic invariants (avoid brittle asserts like exact name)
-    expect(meta.type).toBe('button');
-    expect(typeof meta.name).toBe('string');
-    expect(typeof meta.category).toBe('string');
+    expect(meta?.type).toBe('button');
+    expect(typeof meta?.name).toBe('string');
+    expect(typeof meta?.category).toBe('string');
   });
 
   it('should filter by category when getByCategory() is available', () => {
@@ -85,7 +85,7 @@ describe('cardRegistry', () => {
     expect(all.length).toBeGreaterThan(0);
 
     for (const category of categoriesToTry) {
-      const filtered = reg.getByCategory?.(category) ?? [];
+      const filtered = reg.getByCategory?.(category as CardCategory) ?? [];
       expect(Array.isArray(filtered)).toBe(true);
 
       // If any cards exist for this category, they must all match the category.
@@ -103,7 +103,7 @@ describe('cardRegistry', () => {
     const sourcesToTry = ['builtin', 'hacs', 'custom', 'discovered'];
 
     for (const source of sourcesToTry) {
-      const filtered = reg.getBySource?.(source) ?? [];
+      const filtered = reg.getBySource?.(source as CardSource) ?? [];
       expect(Array.isArray(filtered)).toBe(true);
 
       // If any exist, verify they match.
@@ -137,6 +137,8 @@ describe('cardRegistry', () => {
       name: 'Test Card',
       category: 'custom',
       source: 'custom',
+      icon: 'ApiOutlined',
+      isCustom: true,
       description: 'A test-only custom card',
       defaultProps: { foo: 'bar' },
       requiredProps: ['foo'],
@@ -144,9 +146,9 @@ describe('cardRegistry', () => {
 
     const meta = reg.get?.(customType);
     expect(meta).toBeTruthy();
-    expect(meta.type).toBe(customType);
-    expect(meta.category).toBe('custom');
-    if (meta.source != null) {
+    expect(meta?.type).toBe(customType);
+    expect(meta?.category).toBe('custom');
+    if (meta?.source != null) {
       expect(meta.source).toBe('custom');
     }
   });
@@ -164,6 +166,9 @@ describe('cardRegistry', () => {
       type: customType,
       name: 'Test Card 2',
       category: 'custom',
+      icon: 'ApiOutlined',
+      description: 'A second test-only custom card',
+      isCustom: true,
       source: 'custom',
     });
 

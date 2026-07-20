@@ -143,7 +143,7 @@ test.describe.skip('Dashboard Generator Service (covered by unit tests)', () => 
     expect(dashboard?.title).toBe('Surveillance Dashboard');
     expect(dashboard?.views[0].cards).toHaveLength(2);
     expect(dashboard?.views[0].cards?.[0].type).toBe('picture-entity');
-    expect(dashboard?.views[0].cards?.[0].camera_view).toBe('live');
+    expect((dashboard?.views[0].cards?.[0] as { camera_view?: string })?.camera_view).toBe('live');
   });
 
   test('should generate power dashboard with sensor cards', () => {
@@ -152,7 +152,7 @@ test.describe.skip('Dashboard Generator Service (covered by unit tests)', () => 
     expect(dashboard).not.toBeNull();
     expect(dashboard?.title).toBe('Power Management Dashboard');
     expect(dashboard?.views[0].cards?.[0].type).toBe('sensor');
-    expect(dashboard?.views[0].cards?.[0].graph).toBe('line');
+    expect((dashboard?.views[0].cards?.[0] as { graph?: string })?.graph).toBe('line');
   });
 
   test('should generate climate dashboard with thermostat cards', () => {
@@ -175,11 +175,12 @@ test.describe.skip('Dashboard Generator Service (covered by unit tests)', () => 
   test('should assign grid layout positions to cards', () => {
     const dashboard = dashboardGeneratorService.generateDashboard('lights', mockEntities);
 
-    expect(dashboard?.views[0].cards?.[0].layout).toBeDefined();
-    expect(dashboard?.views[0].cards?.[0].layout.x).toBeGreaterThanOrEqual(0);
-    expect(dashboard?.views[0].cards?.[0].layout.y).toBeGreaterThanOrEqual(0);
-    expect(dashboard?.views[0].cards?.[0].layout.w).toBeGreaterThan(0);
-    expect(dashboard?.views[0].cards?.[0].layout.h).toBeGreaterThan(0);
+    const layout = dashboard?.views[0]?.cards?.[0]?.layout;
+    expect(layout).toBeDefined();
+    expect(layout?.x).toBeGreaterThanOrEqual(0);
+    expect(layout?.y).toBeGreaterThanOrEqual(0);
+    expect(layout?.w).toBeGreaterThan(0);
+    expect(layout?.h).toBeGreaterThan(0);
   });
 
   test('should get correct entity count for category', () => {

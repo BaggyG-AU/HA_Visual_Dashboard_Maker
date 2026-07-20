@@ -127,6 +127,7 @@ export interface ElectronAPI {
   writeFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
   fileExists: (filePath: string) => Promise<{ exists: boolean }>;
   createBackup: (filePath: string) => Promise<{ success: boolean; backupPath?: string; message?: string; error?: string }>;
+  getTemplatePath: (filename: string) => Promise<string>;
   openExternal: (url: string) => Promise<void>;
   getTheme: () => Promise<{ theme: 'light' | 'dark' }>;
   setTheme: (theme: 'light' | 'dark') => Promise<{ success: boolean }>;

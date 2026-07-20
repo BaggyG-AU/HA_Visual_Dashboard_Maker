@@ -130,7 +130,7 @@ const normalizeEventsFromAttributes = (
         phase: toPhase(timestamp, selectedTimestamp),
       } satisfies TimelineEvent;
     })
-    .filter((event): event is TimelineEvent => Boolean(event));
+    .filter((event): event is NonNullable<typeof event> => event !== null);
 };
 
 const createSyntheticEvents = (

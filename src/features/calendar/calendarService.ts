@@ -130,7 +130,7 @@ const normalizeEntityEvents = (
         sourceEntity: entityId,
       } satisfies CalendarEvent;
     })
-    .filter((event): event is CalendarEvent => Boolean(event));
+    .filter((event): event is NonNullable<typeof event> => event !== null);
 };
 
 const createSyntheticEvents = (date: string): CalendarEvent[] => {

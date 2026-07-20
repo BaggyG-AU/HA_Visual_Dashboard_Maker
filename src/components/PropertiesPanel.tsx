@@ -41,6 +41,7 @@ import {
   toUpstreamTabbedCard,
 } from '../services/tabsService';
 import { DEFAULT_POPUP_TRIGGER_ICON, normalizePopupConfig } from '../features/popup/popupService';
+import type { PopupConfig } from '../features/popup/types';
 import {
   parseUpstreamSwipeCard,
   toUpstreamSwipeCardFromConfig,
@@ -829,13 +830,16 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         trigger_icon?: unknown;
         popup?: PopupConfigValues;
       };
-      if (typeof typed.trigger_label !== 'string' || typed.trigger_label.trim().length === 0) {
-        typed.trigger_label = 'Open Popup';
-      }
+      const triggerLabel = typeof typed.trigger_label === 'string' && typed.trigger_label.trim().length > 0
+        ? typed.trigger_label
+        : 'Open Popup';
+      typed.trigger_label = triggerLabel;
       if (typeof typed.trigger_icon !== 'string' || typed.trigger_icon.trim().length === 0) {
         typed.trigger_icon = DEFAULT_POPUP_TRIGGER_ICON;
       }
-      const popup = normalizePopupConfig(typed.popup, typed.trigger_label);
+      // PopupConfigValues is the partially-filled *form* shape (every field
+      // optional); normalizePopupConfig validates and defaults each one.
+      const popup = normalizePopupConfig(typed.popup as unknown as PopupConfig, triggerLabel);
       typed.popup = {
         ...popup,
         footer_actions: popup.footer_actions,
@@ -1307,7 +1311,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     const editor = monacoEditorRef.current;
     if (!editor) return;
 
-    const selection = editor.getSelection();
+    const selection = editor.getSelection() ?? editor.getModel()?.getFullModelRange();
+    if (!selection) return;
     const id = { major: 1, minor: 1 };
     const op = { identifier: id, range: selection, text: entityId, forceMoveMarkers: true };
     editor.executeEdits("insert-entity", [op]);
@@ -3907,7 +3912,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           name={[field.name, 'color']}
                         >
                           <ColorPickerInput
-                            testId={`gauge-pro-segment-${index}-color`}
+                            data-testid={`gauge-pro-segment-${index}-color`}
                             value={form.getFieldValue(['segments', field.name, 'color']) as string | undefined}
                             onChange={(nextColor) => {
                               form.setFieldValue(['segments', field.name, 'color'], nextColor);
@@ -4082,7 +4087,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           name={[field.name, 'color']}
                         >
                           <ColorPickerInput
-                            testId={`advanced-slider-zone-${index}-color`}
+                            data-testid={`advanced-slider-zone-${index}-color`}
                             value={form.getFieldValue(['zones', field.name, 'color']) as string | undefined}
                             onChange={(nextColor) => {
                               form.setFieldValue(['zones', field.name, 'color'], nextColor);
@@ -4250,7 +4255,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           name={[field.name, 'color']}
                         >
                           <ColorPickerInput
-                            testId={`progress-ring-${index}-color`}
+                            data-testid={`progress-ring-${index}-color`}
                             value={form.getFieldValue(['rings', field.name, 'color']) as string | undefined}
                             onChange={(nextColor) => {
                               form.setFieldValue(['rings', field.name, 'color'], nextColor);
@@ -4300,7 +4305,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                     name={[stopField.name, 'color']}
                                   >
                                     <ColorPickerInput
-                                      testId={`progress-ring-${index}-gradient-stop-${stopIndex}-color`}
+                                      data-testid={`progress-ring-${index}-gradient-stop-${stopIndex}-color`}
                                       value={form.getFieldValue(['rings', field.name, 'gradient', 'stops', stopField.name, 'color']) as string | undefined}
                                       onChange={(nextColor) => {
                                         form.setFieldValue(['rings', field.name, 'gradient', 'stops', stopField.name, 'color'], nextColor);
@@ -4357,7 +4362,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                     name={[thresholdField.name, 'color']}
                                   >
                                     <ColorPickerInput
-                                      testId={`progress-ring-${index}-threshold-${thresholdIndex}-color`}
+                                      data-testid={`progress-ring-${index}-threshold-${thresholdIndex}-color`}
                                       value={form.getFieldValue(['rings', field.name, 'thresholds', thresholdField.name, 'color']) as string | undefined}
                                       onChange={(nextColor) => {
                                         form.setFieldValue(['rings', field.name, 'thresholds', thresholdField.name, 'color'], nextColor);

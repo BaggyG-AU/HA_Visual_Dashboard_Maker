@@ -186,7 +186,7 @@ const resolvePropertyPath = (entity: EntityState | undefined, entityId: string |
     return normalizeToString(value);
   }
 
-  const directValue = (entity as Record<string, unknown> | undefined)?.[first];
+  const directValue = (entity as unknown as Record<string, unknown> | undefined)?.[first];
   if (directValue !== undefined) {
     return normalizeToString(directValue);
   }

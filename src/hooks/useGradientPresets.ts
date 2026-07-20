@@ -69,7 +69,7 @@ export const useGradientPresets = (options: UseGradientPresetsOptions = {}): Use
         id: createPresetId(),
         name: trimmedName,
         css: trimmedCss,
-        category: 'Custom',
+        category: 'Custom' as const,
         createdAt: Date.now(),
       };
       next = [...userPresets, savedPreset];
@@ -93,7 +93,7 @@ export const useGradientPresets = (options: UseGradientPresetsOptions = {}): Use
 
       const incoming = parsed.presets.map((preset) => ({
         ...preset,
-        category: 'Custom',
+        category: 'Custom' as const,
         createdAt: preset.createdAt ?? Date.now(),
       }));
       const merged = mergePresets(userPresets, incoming);

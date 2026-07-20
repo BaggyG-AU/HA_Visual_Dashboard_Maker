@@ -1,6 +1,6 @@
-import { View, DashboardConfig } from '../types/dashboard';
+import { Card, View, DashboardConfig } from '../types/dashboard';
 import { convertGridLayoutToViewLayout } from './layoutCardParser';
-import { Layout } from 'react-grid-layout';
+import { LayoutItem } from 'react-grid-layout';
 
 /**
  * Export dashboard in layout-card format
@@ -12,11 +12,11 @@ import { Layout } from 'react-grid-layout';
  */
 export const applyViewLayoutToCards = (
   view: View,
-  gridLayout: Layout[]
+  gridLayout: readonly LayoutItem[]
 ): View => {
   const viewLayouts = convertGridLayoutToViewLayout(gridLayout);
 
-  const updatedCards = (view.cards || []).map((card, index) => {
+  const updatedCards: Card[] = (view.cards || []).map((card, index) => {
     const viewLayout = viewLayouts[index];
 
     if (!viewLayout) return card;
@@ -25,14 +25,15 @@ export const applyViewLayoutToCards = (
     const cardWithoutLayout = { ...(card as Record<string, unknown>) };
     delete cardWithoutLayout.layout;
 
-    // Add view_layout
+    // Add view_layout. The spread widens to Record<string, unknown> (losing the
+    // discriminating `type`), so the Card shape is re-asserted here.
     return {
       ...cardWithoutLayout,
       view_layout: {
         grid_column: viewLayout.grid_column,
         grid_row: viewLayout.grid_row,
       },
-    };
+    } as unknown as Card;
   });
 
   return {
@@ -46,7 +47,7 @@ export const applyViewLayoutToCards = (
  */
 export const convertToLayoutCardView = (
   view: View,
-  gridLayout?: Layout[]
+  gridLayout?: readonly LayoutItem[]
 ): View => {
   // If gridLayout provided, apply it to cards
   let updatedView = view;
@@ -73,7 +74,7 @@ export const convertToLayoutCardView = (
  */
 export const convertDashboardToLayoutCard = (
   config: DashboardConfig,
-  viewLayouts?: Map<number, Layout[]>
+  viewLayouts?: Map<number, readonly LayoutItem[]>
 ): DashboardConfig => {
   const updatedViews = config.views.map((view, index) => {
     const gridLayout = viewLayouts?.get(index);

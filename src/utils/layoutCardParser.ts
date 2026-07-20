@@ -1,5 +1,5 @@
 import { Card, View } from '../types/dashboard';
-import { Layout } from 'react-grid-layout';
+import { LayoutItem } from 'react-grid-layout';
 import { getCardSizeConstraints } from './cardSizingContract';
 
 /**
@@ -195,7 +195,7 @@ export const parseLayoutCardConfig = (view: View): GridConfig => {
 /**
  * Convert layout-card grid to react-grid-layout
  */
-export const convertLayoutCardToGridLayout = (view: View): Layout[] => {
+export const convertLayoutCardToGridLayout = (view: View): LayoutItem[] => {
   const cards = view.cards || [];
   parseLayoutCardConfig(view);
 
@@ -216,7 +216,7 @@ export const convertLayoutCardToGridLayout = (view: View): Layout[] => {
  * Convert react-grid-layout back to layout-card view_layout
  */
 export const convertGridLayoutToViewLayout = (
-  layout: Layout[]
+  layout: readonly LayoutItem[]
 ): Array<{ grid_column: string; grid_row: string }> => {
   return layout.map(item => {
     // Convert to CSS Grid 1-indexed positions

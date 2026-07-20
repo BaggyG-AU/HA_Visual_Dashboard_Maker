@@ -82,7 +82,6 @@ class SettingsService {
 
   constructor() {
     this.store = new Store<AppSettings>({
-      projectName: 'ha-visual-dashboard-maker',
       schema: schema as any,
       defaults: {
         windowState: {

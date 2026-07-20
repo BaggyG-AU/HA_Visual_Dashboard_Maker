@@ -75,6 +75,7 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
   const computedChart = useMemo(() => {
     if (normalized.series.length === 0) {
       return {
+        ok: false,
         fallback: 'No valid Apex series configured. Add at least one series entity in Form or YAML.',
       } as const;
     }
@@ -85,10 +86,19 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
         data: buildDeterministicSeriesData(entry, normalized.graph_span_seconds),
       }));
 
+      // `chart` and `stroke` are composed explicitly below (each already folds in
+      // the user's apex_config values), so they are held out of the passthrough
+      // spread — otherwise that trailing spread overwrote both blocks wholesale
+      // and the preview guardrails (transparent background, hidden toolbar,
+      // disabled animations) were silently discarded.
+      const { chart: _chart, stroke: _stroke, ...apexPassthrough } = normalized.apex_config;
+      void _chart;
+      void _stroke;
+
       const options: ApexOptions = {
         chart: {
-          type: normalized.apex_config.chart.type,
-          height: chartHeight,
+          // `type` and `height` come from the spread below — normalizeApexChartsCardConfig
+          // already resolves both onto apex_config.chart.
           background: 'transparent',
           toolbar: {
             show: false,
@@ -103,8 +113,6 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
         },
         colors: normalized.series.map((entry, idx) => entry.color || DEFAULT_COLORS[idx % DEFAULT_COLORS.length]),
         stroke: {
-          width: normalized.apex_config.stroke.width,
-          curve: normalized.apex_config.stroke.curve,
           ...normalized.apex_config.stroke,
         },
         xaxis: {
@@ -157,23 +165,25 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
             colors: '#e6e6e6',
           },
           markers: {
-            width: 8,
-            height: 8,
+            // ApexCharts v4 replaced legend marker `width`/`height` with `size`.
+            size: 8,
           },
         },
         dataLabels: {
           enabled: false,
         },
-        ...normalized.apex_config,
+        ...apexPassthrough,
       };
 
       return {
+        ok: true,
         series,
         options,
       } as const;
     } catch (error) {
       const reason = error instanceof Error ? error.message : 'Unknown ApexCharts preview error';
       return {
+        ok: false,
         fallback: `ApexCharts preview unavailable: ${reason}`,
       } as const;
     }
@@ -234,7 +244,7 @@ export const ApexChartsCardRenderer: React.FC<ApexChartsCardRendererProps> = ({
       )}
 
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        {'fallback' in computedChart ? (
+        {!computedChart.ok ? (
           buildFallback(computedChart.fallback)
         ) : (
           <div data-testid="apexcharts-chart">

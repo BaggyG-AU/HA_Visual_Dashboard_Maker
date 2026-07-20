@@ -9,7 +9,7 @@ interface HistoryState {
 }
 
 interface DashboardActions {
-  loadDashboard: (yamlContent: string, filePath: string) => void;
+  loadDashboard: (yamlContent: string, filePath: string | null) => void;
   updateConfig: (config: DashboardConfig) => void;
   beginBatchUpdate: () => void;
   applyBatchedConfig: (config: DashboardConfig) => void;
@@ -62,7 +62,7 @@ const initialState: DashboardState & HistoryState & SelectionState = {
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
   ...initialState,
 
-  loadDashboard: (yamlContent: string, filePath: string) => {
+  loadDashboard: (yamlContent: string, filePath: string | null) => {
     set({ isLoading: true, error: null });
 
     const result = yamlService.parseDashboard(yamlContent);
