@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ConfigProvider,
   Layout,
@@ -212,6 +212,32 @@ const App: React.FC = () => {
     canUndo,
     canRedo,
   } = useDashboardStore();
+
+  // RemapWatcher callbacks MUST be reference-stable.
+  //
+  // They are dependencies of RemapWatcher's effect, and that effect calls
+  // onAvailableEntities(Object.values(entities)) — a fresh array every time, so
+  // setAvailableEntities can never bail out. Inline arrows here therefore made
+  // the effect re-run on every App render and re-render App forever. The loop is
+  // silent until a subtree with layout effects mounts (the properties panel's
+  // antd Select), at which point the updates become synchronously nested, React
+  // throws error #185 ("Maximum update depth exceeded") and unmounts the root —
+  // leaving a blank white window. Read pending state via a ref to keep identity
+  // stable, matching the stable-closure idiom used in PropertiesPanel.
+  const autoRemapPendingRef = useRef(autoRemapPending);
+  autoRemapPendingRef.current = autoRemapPending;
+
+  const handleAvailableEntities = useCallback((entities: EntityState[]) => {
+    setAvailableEntities(entities);
+  }, []);
+
+  const handleMissingDetected = useCallback((missing: string[]) => {
+    setMissingEntities(missing);
+    if (missing.length > 0 && autoRemapPendingRef.current) {
+      setRemapModalVisible(true);
+      setAutoRemapPending(false);
+    }
+  }, []);
 
   // Theme store
   const { currentTheme, darkMode, setAvailableThemes } = useThemeStore();
@@ -1532,14 +1558,8 @@ const App: React.FC = () => {
       <HAEntityProvider enabled={isConnected}>
         <RemapWatcher
           config={config}
-          onAvailableEntities={(entities) => setAvailableEntities(entities)}
-          onMissingDetected={(missing) => {
-            setMissingEntities(missing);
-            if (missing.length > 0 && autoRemapPending) {
-              setRemapModalVisible(true);
-              setAutoRemapPending(false);
-            }
-          }}
+          onAvailableEntities={handleAvailableEntities}
+          onMissingDetected={handleMissingDetected}
         />
         <Layout data-testid="app-shell" className="app-container" style={{ height: '100vh' }}>
           <Header
