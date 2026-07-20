@@ -9,6 +9,7 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import * as yaml from 'js-yaml';
 import { cardRegistry } from '../../src/services/cardRegistry';
 import { fileService } from '../../src/services/fileService';
@@ -398,16 +399,37 @@ test.describe('Template Service Integration', () => {
 test.describe('Credentials Service Integration', () => {
   const electronModulePath = require.resolve('electron');
   const credentialsModulePath = require.resolve('../../src/services/credentialsService');
+  // electron-store destructures `app`/`ipcMain` from `electron` at module load,
+  // so it has to be evicted alongside credentialsService for the mock to apply.
+  let electronStoreModulePath: string | null = null;
+  try {
+    electronStoreModulePath = require.resolve('electron-store');
+  } catch {
+    electronStoreModulePath = null;
+  }
   let originalElectronCache: any;
+  let storeCwd: string | null = null;
 
   const installSafeStorageMock = () => {
     originalElectronCache = require.cache[electronModulePath];
+    // Real files are written, so point userData at a throwaway directory rather
+    // than the developer's actual profile.
+    storeCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'havdm-credentials-test-'));
     const mockElectron = {
       safeStorage: {
         isEncryptionAvailable: () => true,
         encryptString: (text: string) => Buffer.from(`enc:${text}`),
         decryptString: (buf: Buffer) => buf.toString().replace(/^enc:/, ''),
       },
+      // electron-store needs both of these to resolve its default cwd; without
+      // them Conf falls through and throws "Please specify the 'projectName'
+      // option".
+      app: {
+        getPath: () => storeCwd as string,
+        getVersion: () => '0.0.0-test',
+        getName: () => 'ha-visual-dashboard-maker',
+      },
+      ipcMain: { on: () => undefined },
     };
     require.cache[electronModulePath] = {
       id: electronModulePath,
@@ -416,6 +438,7 @@ test.describe('Credentials Service Integration', () => {
       exports: mockElectron,
     } as NodeModule;
     delete require.cache[credentialsModulePath];
+    if (electronStoreModulePath) delete require.cache[electronStoreModulePath];
     // Deliberate require: the module is re-required after cache invalidation so
     // it picks up the mocked electron. (@typescript-eslint 8 renamed the rule
     // suppressed here from no-var-requires to no-require-imports.)
@@ -426,10 +449,15 @@ test.describe('Credentials Service Integration', () => {
   const resetCredentials = () => {
     credentialsService?.clearAllCredentials?.();
     delete require.cache[credentialsModulePath];
+    if (electronStoreModulePath) delete require.cache[electronStoreModulePath];
     if (originalElectronCache) {
       require.cache[electronModulePath] = originalElectronCache;
     } else {
       delete require.cache[electronModulePath];
+    }
+    if (storeCwd) {
+      fs.rmSync(storeCwd, { recursive: true, force: true });
+      storeCwd = null;
     }
   };
 
