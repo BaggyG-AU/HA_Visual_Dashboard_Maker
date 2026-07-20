@@ -37,44 +37,44 @@ const schema = {
       y: { type: 'number' },
       width: { type: 'number', default: 1400 },
       height: { type: 'number', default: 900 },
-      isMaximized: { type: 'boolean', default: false }
-    }
+      isMaximized: { type: 'boolean', default: false },
+    },
   },
   theme: {
     type: 'string',
     enum: ['light', 'dark'],
-    default: 'dark'
+    default: 'dark',
   },
   recentFiles: {
     type: 'array',
     items: { type: 'string' },
-    default: []
+    default: [],
   },
   loggingLevel: {
     type: 'string',
     enum: ['off', 'error', 'warn', 'info', 'debug', 'trace'],
-    default: 'info'
+    default: 'info',
   },
   verboseUIDebug: {
     type: 'boolean',
-    default: false
+    default: false,
   },
   hapticsEnabled: {
     type: 'boolean',
-    default: false
+    default: false,
   },
   hapticsIntensity: {
     type: 'number',
-    default: 100
+    default: 100,
   },
   soundsEnabled: {
     type: 'boolean',
-    default: false
+    default: false,
   },
   soundsVolume: {
     type: 'number',
-    default: 100
-  }
+    default: 100,
+  },
 };
 
 class SettingsService {
@@ -87,11 +87,11 @@ class SettingsService {
         windowState: {
           width: 1400,
           height: 900,
-          isMaximized: false
+          isMaximized: false,
         },
         theme: 'dark',
-        recentFiles: []
-      }
+        recentFiles: [],
+      },
     });
   }
 
@@ -100,7 +100,7 @@ class SettingsService {
     return this.store.get('windowState', {
       width: 1400,
       height: 900,
-      isMaximized: false
+      isMaximized: false,
     });
   }
 
@@ -126,7 +126,7 @@ class SettingsService {
     const recentFiles = this.getRecentFiles();
 
     // Remove if already exists
-    const filtered = recentFiles.filter(f => f !== filePath);
+    const filtered = recentFiles.filter((f) => f !== filePath);
 
     // Add to front
     filtered.unshift(filePath);
@@ -269,7 +269,7 @@ class SettingsService {
     this.store.set('windowState', {
       width: 1400,
       height: 900,
-      isMaximized: false
+      isMaximized: false,
     });
     this.store.delete('selectedTheme');
     this.store.delete('themeDarkMode');

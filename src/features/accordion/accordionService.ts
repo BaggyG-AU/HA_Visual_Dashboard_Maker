@@ -28,7 +28,8 @@ export const normalizeExpanderConfig = (card: ExpanderCardConfig): NormalizedExp
   clear: Boolean(card.clear),
   overlayMargin: toStringWithDefault(card['overlay-margin'], DEFAULT_OVERLAY_MARGIN),
   childPadding: toStringWithDefault(card['child-padding'], DEFAULT_CHILD_PADDING),
-  buttonBackground: typeof card['button-background'] === 'string' ? card['button-background'] : undefined,
+  buttonBackground:
+    typeof card['button-background'] === 'string' ? card['button-background'] : undefined,
 });
 
 export const getExpanderNestingDepth = (card: Card, depth = 1): number => {

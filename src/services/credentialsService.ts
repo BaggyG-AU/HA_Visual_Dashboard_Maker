@@ -16,12 +16,12 @@ import { safeStorage } from 'electron';
 import { logger } from './logger';
 
 export interface HACredential {
-  id: string;              // Unique identifier (timestamp-based)
-  name: string;            // User-friendly name (e.g., "Home HA", "Remote HA")
-  url: string;             // HA instance URL
-  encryptedToken: string;  // Encrypted long-lived access token
-  lastUsed?: number;       // Timestamp of last use
-  createdAt: number;       // Timestamp of creation
+  id: string; // Unique identifier (timestamp-based)
+  name: string; // User-friendly name (e.g., "Home HA", "Remote HA")
+  url: string; // HA instance URL
+  encryptedToken: string; // Encrypted long-lived access token
+  lastUsed?: number; // Timestamp of last use
+  createdAt: number; // Timestamp of creation
 }
 
 export interface CredentialsStore {
@@ -91,7 +91,7 @@ class CredentialsService {
 
     if (id) {
       // Update existing credential
-      const index = credentials.findIndex(c => c.id === id);
+      const index = credentials.findIndex((c) => c.id === id);
       if (index === -1) {
         throw new Error(`Credential with id ${id} not found`);
       }
@@ -142,7 +142,7 @@ class CredentialsService {
    */
   getCredential(id: string): { name: string; url: string; token: string } | null {
     const credentials = this.store.get('credentials', []);
-    const credential = credentials.find(c => c.id === id);
+    const credential = credentials.find((c) => c.id === id);
 
     if (!credential) {
       return null;
@@ -185,7 +185,7 @@ class CredentialsService {
    */
   markAsUsed(id: string): void {
     const credentials = this.store.get('credentials', []);
-    const index = credentials.findIndex(c => c.id === id);
+    const index = credentials.findIndex((c) => c.id === id);
 
     if (index !== -1) {
       credentials[index].lastUsed = Date.now();
@@ -199,7 +199,7 @@ class CredentialsService {
    */
   deleteCredential(id: string): boolean {
     const credentials = this.store.get('credentials', []);
-    const filtered = credentials.filter(c => c.id !== id);
+    const filtered = credentials.filter((c) => c.id !== id);
 
     if (filtered.length === credentials.length) {
       return false; // Credential not found
@@ -229,7 +229,7 @@ class CredentialsService {
   findByUrl(url: string): Omit<HACredential, 'encryptedToken'> | null {
     const normalizedUrl = url.replace(/\/$/, '');
     const credentials = this.store.get('credentials', []);
-    const credential = credentials.find(c => c.url === normalizedUrl);
+    const credential = credentials.find((c) => c.url === normalizedUrl);
 
     if (!credential) {
       return null;

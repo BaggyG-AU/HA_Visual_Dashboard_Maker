@@ -39,7 +39,12 @@ test.describe('Multi-entity Support (Feature 3.7)', () => {
       switchTab: (tab: 'Form' | 'Advanced Options' | 'YAML') => Promise<void>;
       expectActiveTab: (tab: 'Form' | 'Advanced Options' | 'YAML') => Promise<void>;
     },
-    yamlEditor: { expectMonacoVisible: (scope?: 'properties' | 'modal' | 'canvas', testInfo?: TestInfo) => Promise<void> },
+    yamlEditor: {
+      expectMonacoVisible: (
+        scope?: 'properties' | 'modal' | 'canvas',
+        testInfo?: TestInfo,
+      ) => Promise<void>;
+    },
     testInfo: TestInfo,
   ): Promise<void> {
     const openYaml = async () => {
@@ -63,7 +68,9 @@ test.describe('Multi-entity Support (Feature 3.7)', () => {
     }
   }
 
-  test('supports add, reorder, aggregate mode, and realtime aggregate updates', async ({ page }, testInfo) => {
+  test('supports add, reorder, aggregate mode, and realtime aggregate updates', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const {
@@ -82,11 +89,14 @@ test.describe('Multi-entity Support (Feature 3.7)', () => {
       await appDSL.waitUntilReady();
       await appDSL.setConnected(true);
       await entityContext.setEntities(TEST_ENTITIES, testInfo);
-      await seedEntityCache(window, TEST_ENTITIES.map((entity) => ({
-        entity_id: entity.entity_id,
-        state: entity.state,
-        attributes: entity.attributes,
-      })));
+      await seedEntityCache(
+        window,
+        TEST_ENTITIES.map((entity) => ({
+          entity_id: entity.entity_id,
+          state: entity.state,
+          attributes: entity.attributes,
+        })),
+      );
 
       await dashboard.createNew();
       await palette.expandCategory('Controls');
@@ -97,7 +107,10 @@ test.describe('Multi-entity Support (Feature 3.7)', () => {
       await properties.expectVisible();
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value: initialYaml } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value: initialYaml } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       const parsed = (yaml.load(initialYaml) as Record<string, unknown>) || {};
       parsed.entities = ['light.alpha', 'switch.beta', 'light.gamma'];
       parsed.entity = 'light.alpha';
@@ -131,7 +144,9 @@ test.describe('Multi-entity Support (Feature 3.7)', () => {
     }
   });
 
-  test('supports batch mode confirmation and YAML persistence via seeded config', async ({ page }, testInfo) => {
+  test('supports batch mode confirmation and YAML persistence via seeded config', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const {
@@ -150,11 +165,14 @@ test.describe('Multi-entity Support (Feature 3.7)', () => {
       await appDSL.waitUntilReady();
       await appDSL.setConnected(true);
       await entityContext.setEntities(TEST_ENTITIES, testInfo);
-      await seedEntityCache(window, TEST_ENTITIES.map((entity) => ({
-        entity_id: entity.entity_id,
-        state: entity.state,
-        attributes: entity.attributes,
-      })));
+      await seedEntityCache(
+        window,
+        TEST_ENTITIES.map((entity) => ({
+          entity_id: entity.entity_id,
+          state: entity.state,
+          attributes: entity.attributes,
+        })),
+      );
 
       await dashboard.createNew();
       await palette.expandCategory('Controls');
@@ -165,7 +183,10 @@ test.describe('Multi-entity Support (Feature 3.7)', () => {
       await properties.expectVisible();
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value: initialYaml } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value: initialYaml } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       const parsed = (yaml.load(initialYaml) as Record<string, unknown>) || {};
       parsed.entities = ['switch.beta', 'light.alpha', 'light.gamma'];
       parsed.entity = 'switch.beta';
@@ -187,7 +208,10 @@ test.describe('Multi-entity Support (Feature 3.7)', () => {
       await expect(window.getByTestId('multi-entity-batch-panel')).toBeVisible();
 
       await reopenPropertiesYamlContext(canvas, properties, yamlEditor, testInfo);
-      const { value: finalYaml } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value: finalYaml } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       const finalParsed = (yaml.load(finalYaml) as Record<string, unknown>) || {};
 
       expect(finalParsed.entities).toEqual(['switch.beta', 'light.alpha', 'light.gamma']);

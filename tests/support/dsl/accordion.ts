@@ -25,7 +25,9 @@ export class AccordionDSL {
     await expect(searchInput).toBeVisible();
     await searchInput.fill('custom:expander-card');
 
-    const card = this.window.getByTestId('card-palette').getByTestId('palette-card-custom:expander-card');
+    const card = this.window
+      .getByTestId('card-palette')
+      .getByTestId('palette-card-custom:expander-card');
     await expect(card).toBeVisible({ timeout: 5000 });
     await card.dblclick();
 
@@ -90,11 +92,16 @@ export class AccordionDSL {
     const expander = this.getExpander(cardIndex);
     await expect(expander).toBeVisible();
     await expander.scrollIntoViewIfNeeded();
-    await expect.poll(async () => {
-      const box = await expander.boundingBox();
-      if (!box) return false;
-      return box.width > 20 && box.height > 20;
-    }, { timeout: 5000 }).toBe(true);
+    await expect
+      .poll(
+        async () => {
+          const box = await expander.boundingBox();
+          if (!box) return false;
+          return box.width > 20 && box.height > 20;
+        },
+        { timeout: 5000 },
+      )
+      .toBe(true);
 
     const screenshot = await expander.screenshot({
       animations: 'disabled',

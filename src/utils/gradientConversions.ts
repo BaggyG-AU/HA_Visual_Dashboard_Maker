@@ -51,11 +51,16 @@ export const gradientToCss = (gradient: GradientDefinition): string => {
 };
 
 const parseStops = (stopsPart: string): GradientStop[] => {
-  const pieces = stopsPart.split(',').map((s) => s.trim()).filter(Boolean);
+  const pieces = stopsPart
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
   return pieces.map((piece, index) => {
-    const match = piece.match(/(var\([^)]+\)|#[0-9a-f]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))\s+(\d+(?:\.\d+)?)%/i);
+    const match = piece.match(
+      /(var\([^)]+\)|#[0-9a-f]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\))\s+(\d+(?:\.\d+)?)%/i,
+    );
     const color = match ? match[1] : piece.split(' ')[0];
-    const position = match ? Number(match[2]) : (index === 0 ? 0 : 100);
+    const position = match ? Number(match[2]) : index === 0 ? 0 : 100;
     return {
       id: `stop-${index + 1}`,
       color,
@@ -100,11 +105,24 @@ export const parseGradient = (value?: string): GradientDefinition => {
   return defaultGradient;
 };
 
-export const updateStop = (stops: GradientStop[], id: string, updates: Partial<GradientStop>): GradientStop[] =>
-  stops.map((stop) => (stop.id === id ? { ...stop, ...updates, position: updates.position !== undefined ? clamp(updates.position) : stop.position } : stop));
+export const updateStop = (
+  stops: GradientStop[],
+  id: string,
+  updates: Partial<GradientStop>,
+): GradientStop[] =>
+  stops.map((stop) =>
+    stop.id === id
+      ? {
+          ...stop,
+          ...updates,
+          position: updates.position !== undefined ? clamp(updates.position) : stop.position,
+        }
+      : stop,
+  );
 
 export const addStop = (stops: GradientStop[], color: string): GradientStop[] => {
-  const nextPosition = stops.length === 0 ? 0 : clamp(stops[stops.length - 1].position + 20, 0, 100);
+  const nextPosition =
+    stops.length === 0 ? 0 : clamp(stops[stops.length - 1].position + 20, 0, 100);
   return [...stops, { id: `stop-${stops.length + 1}`, color, position: nextPosition }];
 };
 
@@ -113,11 +131,16 @@ export const removeStop = (stops: GradientStop[], id: string): GradientStop[] =>
   return filtered.length > 0 ? filtered : DEFAULT_STOPS;
 };
 
-export const reorderStops = (stops: GradientStop[], fromIndex: number, toIndex: number): GradientStop[] => {
+export const reorderStops = (
+  stops: GradientStop[],
+  fromIndex: number,
+  toIndex: number,
+): GradientStop[] => {
   const next = [...stops];
   const [moved] = next.splice(fromIndex, 1);
   next.splice(toIndex, 0, moved);
   return next.map((stop, idx) => ({ ...stop, id: `stop-${idx + 1}` }));
 };
 
-export const isGradientString = (value?: string): boolean => Boolean(value && /gradient\(/i.test(value));
+export const isGradientString = (value?: string): boolean =>
+  Boolean(value && /gradient\(/i.test(value));

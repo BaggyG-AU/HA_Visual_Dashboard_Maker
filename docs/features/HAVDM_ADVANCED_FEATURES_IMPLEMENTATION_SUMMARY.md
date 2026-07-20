@@ -18,12 +18,12 @@
 
 ## Documents Created
 
-| Document | Purpose | Location |
-|----------|---------|----------|
-| **User Stories** | Detailed Phase 1 user stories with full requirements | [HAVDM_ADVANCED_FEATURES_USER_STORIES.md](./HAVDM_ADVANCED_FEATURES_USER_STORIES.md) |
-| **Phase Summary** | Concise overview of all 7 phases and features | [HAVDM_ADVANCED_FEATURES_PHASES_SUMMARY.md](./HAVDM_ADVANCED_FEATURES_PHASES_SUMMARY.md) |
-| **Architecture Updates** | Code organization, standards, and dependencies | [../architecture/ARCHITECTURE.md](../architecture/ARCHITECTURE.md) |
-| **Testing Standards** | Enhanced testing requirements for new features | [../testing/TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) |
+| Document                 | Purpose                                              | Location                                                                                 |
+| ------------------------ | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **User Stories**         | Detailed Phase 1 user stories with full requirements | [HAVDM_ADVANCED_FEATURES_USER_STORIES.md](./HAVDM_ADVANCED_FEATURES_USER_STORIES.md)     |
+| **Phase Summary**        | Concise overview of all 7 phases and features        | [HAVDM_ADVANCED_FEATURES_PHASES_SUMMARY.md](./HAVDM_ADVANCED_FEATURES_PHASES_SUMMARY.md) |
+| **Architecture Updates** | Code organization, standards, and dependencies       | [../architecture/ARCHITECTURE.md](../architecture/ARCHITECTURE.md)                       |
+| **Testing Standards**    | Enhanced testing requirements for new features       | [../testing/TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md)                       |
 
 ---
 
@@ -40,6 +40,7 @@
 ### Code Organization
 
 **Hybrid Approach** - Organize by complexity:
+
 - **Simple components** (1 file) → `src/components/`
 - **Simple services** (1-2 files) → `src/services/`
 - **Complex features** (3+ files) → `src/features/[name]/`
@@ -55,6 +56,7 @@
 ### Upstream Card Alignment Gate (Mandatory for 5.x and Later)
 
 For Phase 5+ implementation and prompt artifacts:
+
 - Review relevant upstream base HA/HACS card implementations before coding
 - Confirm real upstream `type` mapping and YAML contract parity
 - If unmapped, document feasibility analysis (alternative upstream card, effort/risk, and now-vs-new-feature recommendation)
@@ -65,6 +67,7 @@ For Phase 5+ implementation and prompt artifacts:
 ## Phase Breakdown
 
 ### Phase 1: Foundation Layer (2-3 weeks)
+
 **Dependencies**: None
 **Features**: 5
 
@@ -80,6 +83,7 @@ For Phase 5+ implementation and prompt artifacts:
 ---
 
 ### Phase 2: UI Enhancement Layer (2-3 weeks)
+
 **Dependencies**: Phase 1 (Color Picker, Animations, Fonts)
 **Features**: 6
 
@@ -96,6 +100,7 @@ For Phase 5+ implementation and prompt artifacts:
 ---
 
 ### Phase 3: Entity Intelligence Layer (3-4 weeks)
+
 **Dependencies**: None (independent)
 **Features**: 7
 
@@ -113,6 +118,7 @@ For Phase 5+ implementation and prompt artifacts:
 ---
 
 ### Phase 4: Layout Infrastructure Layer (2-3 weeks)
+
 **Dependencies**: None (independent)
 **Features**: 6
 
@@ -129,6 +135,7 @@ For Phase 5+ implementation and prompt artifacts:
 ---
 
 ### Phase 5: Advanced Visualization Layer (4-5 weeks)
+
 **Dependencies**: Phases 1-4 (Colors, Animations, Gradients, Layouts)
 **Features**: 9
 
@@ -148,6 +155,7 @@ For Phase 5+ implementation and prompt artifacts:
 ---
 
 ### Phase 6: Template & Logic Enhancement (2-3 weeks)
+
 **Dependencies**: Phase 3 (Entity Intelligence)
 **Features**: 5
 
@@ -163,6 +171,7 @@ For Phase 5+ implementation and prompt artifacts:
 ---
 
 ### Phase 7: Ecosystem & Future Growth (3-4 weeks)
+
 **Dependencies**: Phases 1-6 (all stable)
 **Features**: 8
 
@@ -181,6 +190,7 @@ For Phase 5+ implementation and prompt artifacts:
 ---
 
 ### Phase 8: Bubble Card Popup Alignment (2-3 weeks)
+
 **Dependencies**: Phase 4 (Popup/Modal Card System), HACS Card Alignment Refactor (R2-R4)
 **Features**: 6
 
@@ -197,6 +207,7 @@ For Phase 5+ implementation and prompt artifacts:
 ---
 
 ### Existing Feature Alignment (2-3 weeks)
+
 **Dependencies**: Concurrent with phases
 **Features**: 8
 
@@ -218,12 +229,12 @@ For Phase 5+ implementation and prompt artifacts:
 
 All features MUST comply with:
 
-| Standard | Document | Key Requirements |
-|----------|----------|------------------|
-| **AI Development Rules** | [ai_rules.md](../../ai_rules.md) | Reuse patterns, no duplication, immutable workflow |
-| **Testing Standards** | [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) | DSL-first, 95%+ coverage, visual regression |
-| **Architecture Patterns** | [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) | Hybrid code organization, performance targets |
-| **Playwright Testing** | [PLAYWRIGHT_TESTING.md](../testing/PLAYWRIGHT_TESTING.md) | Trace-driven debugging, state-based waits |
+| Standard                  | Document                                                  | Key Requirements                                   |
+| ------------------------- | --------------------------------------------------------- | -------------------------------------------------- |
+| **AI Development Rules**  | [ai_rules.md](../../ai_rules.md)                          | Reuse patterns, no duplication, immutable workflow |
+| **Testing Standards**     | [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md)   | DSL-first, 95%+ coverage, visual regression        |
+| **Architecture Patterns** | [ARCHITECTURE.md](../architecture/ARCHITECTURE.md)        | Hybrid code organization, performance targets      |
+| **Playwright Testing**    | [PLAYWRIGHT_TESTING.md](../testing/PLAYWRIGHT_TESTING.md) | Trace-driven debugging, state-based waits          |
 
 ---
 
@@ -232,6 +243,7 @@ All features MUST comply with:
 ### Per-Phase Success
 
 Each phase complete when:
+
 - ✅ All features implemented with full functionality
 - ✅ All unit tests passing (95%+ coverage for new code)
 - ✅ All E2E tests passing (comprehensive scenarios)
@@ -266,14 +278,14 @@ Each phase complete when:
 
 ## Risk Mitigation
 
-| Risk Category | Key Risks | Mitigation Strategy |
-|--------------|-----------|---------------------|
-| **Technical** | Swiper.js integration complexity | Prototype early, have fallback plan |
-| **Technical** | Recharts performance with large datasets | Data throttling, virtual scrolling |
-| **Technical** | Google Fonts offline support | Pre-cache top 20 fonts, graceful degradation |
-| **Scope** | Feature creep | Strict phase adherence, defer to future |
-| **Timeline** | Timeline slippage | Buffer time in estimates, regular reviews |
-| **Dependency** | Breaking changes in dependencies | Lock versions, test before upgrading |
+| Risk Category  | Key Risks                                | Mitigation Strategy                          |
+| -------------- | ---------------------------------------- | -------------------------------------------- |
+| **Technical**  | Swiper.js integration complexity         | Prototype early, have fallback plan          |
+| **Technical**  | Recharts performance with large datasets | Data throttling, virtual scrolling           |
+| **Technical**  | Google Fonts offline support             | Pre-cache top 20 fonts, graceful degradation |
+| **Scope**      | Feature creep                            | Strict phase adherence, defer to future      |
+| **Timeline**   | Timeline slippage                        | Buffer time in estimates, regular reviews    |
+| **Dependency** | Breaking changes in dependencies         | Lock versions, test before upgrading         |
 
 ---
 
@@ -288,14 +300,14 @@ Each phase complete when:
 
 ## Documentation Status
 
-| Document | Status | Last Updated |
-|----------|--------|--------------|
-| User Stories (Phase 1) | ✅ Complete | Jan 4, 2026 |
-| Phase Summary (All phases) | ✅ Complete | Jan 4, 2026 |
-| Architecture Updates | ✅ Complete | Jan 4, 2026 |
-| Testing Standards Updates | ✅ Complete | Jan 4, 2026 |
-| Kanban Cards | ⏳ Pending | - |
-| Planning Questionnaire Answers | ⏳ Pending | - |
+| Document                       | Status      | Last Updated |
+| ------------------------------ | ----------- | ------------ |
+| User Stories (Phase 1)         | ✅ Complete | Jan 4, 2026  |
+| Phase Summary (All phases)     | ✅ Complete | Jan 4, 2026  |
+| Architecture Updates           | ✅ Complete | Jan 4, 2026  |
+| Testing Standards Updates      | ✅ Complete | Jan 4, 2026  |
+| Kanban Cards                   | ⏳ Pending  | -            |
+| Planning Questionnaire Answers | ⏳ Pending  | -            |
 
 ---
 

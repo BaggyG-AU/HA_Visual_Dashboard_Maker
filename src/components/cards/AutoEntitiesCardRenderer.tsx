@@ -110,7 +110,10 @@ export const AutoEntitiesCardRenderer: React.FC<AutoEntitiesCardRendererProps> =
         {/* Wrapped Card Info */}
         <div style={{ marginBottom: '12px' }}>
           <Text style={{ color: '#888', fontSize: '12px' }}>
-            Card Type: <Text code style={{ fontSize: '11px' }}>{wrappedCard.type || 'entities'}</Text>
+            Card Type:{' '}
+            <Text code style={{ fontSize: '11px' }}>
+              {wrappedCard.type || 'entities'}
+            </Text>
           </Text>
         </div>
 
@@ -162,7 +165,8 @@ export const AutoEntitiesCardRenderer: React.FC<AutoEntitiesCardRendererProps> =
             ))}
             {totalRules > filterPreviews.length && (
               <Text style={{ color: '#666', fontSize: '11px', fontStyle: 'italic' }}>
-                ... and {totalRules - filterPreviews.length} more rule{totalRules - filterPreviews.length > 1 ? 's' : ''}
+                ... and {totalRules - filterPreviews.length} more rule
+                {totalRules - filterPreviews.length > 1 ? 's' : ''}
               </Text>
             )}
           </div>
@@ -185,7 +189,8 @@ export const AutoEntitiesCardRenderer: React.FC<AutoEntitiesCardRendererProps> =
         {/* Footer Note */}
         <div style={{ marginTop: '12px', paddingTop: '8px', borderTop: '1px solid #333' }}>
           <Text style={{ color: '#666', fontSize: '10px' }}>
-            Auto-populates entities based on filters {showEmpty !== false ? '• Shows when empty' : ''}
+            Auto-populates entities based on filters{' '}
+            {showEmpty !== false ? '• Shows when empty' : ''}
           </Text>
         </div>
       </AntCard>

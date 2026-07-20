@@ -4,7 +4,9 @@ export class SettingsDSL {
   constructor(private window: Page) {}
 
   private async expectTabSelected(tab: 'Appearance' | 'Connection' | 'Diagnostics'): Promise<void> {
-    await expect(this.window.getByRole('tab', { name: tab, selected: true })).toBeVisible({ timeout: 5000 });
+    await expect(this.window.getByRole('tab', { name: tab, selected: true })).toBeVisible({
+      timeout: 5000,
+    });
   }
 
   async open(): Promise<void> {
@@ -50,12 +52,16 @@ export class SettingsDSL {
     await select.click();
 
     // Wait for dropdown to appear - it's rendered in a portal
-    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
+    const dropdown = this.window
+      .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
+      .last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
 
     // Select the option by class name (Ant Design v6 uses .ant-select-item-option)
     // Reference: tests/integration/theme-integration.spec.ts:29
-    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${level}$`, 'i') });
+    const option = dropdown.locator('.ant-select-item-option', {
+      hasText: new RegExp(`^${level}$`, 'i'),
+    });
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click({ timeout: 5000 });
 
@@ -95,9 +101,13 @@ export class SettingsDSL {
     const select = this.window.getByTestId('haptic-feedback-pattern-select');
     await expect(select).toBeVisible();
     await select.click();
-    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
+    const dropdown = this.window
+      .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
+      .last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
-    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${label}$`, 'i') });
+    const option = dropdown.locator('.ant-select-item-option', {
+      hasText: new RegExp(`^${label}$`, 'i'),
+    });
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click();
     await expect(dropdown).not.toBeVisible({ timeout: 5000 });
@@ -133,9 +143,13 @@ export class SettingsDSL {
     const select = this.window.getByTestId('ui-sounds-effect-select');
     await expect(select).toBeVisible();
     await select.click();
-    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
+    const dropdown = this.window
+      .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
+      .last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
-    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${label}$`, 'i') });
+    const option = dropdown.locator('.ant-select-item-option', {
+      hasText: new RegExp(`^${label}$`, 'i'),
+    });
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click();
     await expect(dropdown).not.toBeVisible({ timeout: 5000 });

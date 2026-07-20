@@ -6,7 +6,17 @@ test.describe('Card Background Customization - PropertiesPanel', () => {
     test.setTimeout(120000);
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, backgroundCustomizer, colorPicker, gradientEditor, yamlEditor } = ctx;
+    const {
+      appDSL,
+      dashboard,
+      palette,
+      canvas,
+      properties,
+      backgroundCustomizer,
+      colorPicker,
+      gradientEditor,
+      yamlEditor,
+    } = ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -53,7 +63,16 @@ test.describe('Card Background Customization - PropertiesPanel', () => {
   test.skip('image and blur backgrounds update preview + YAML', async ({ page }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, backgroundCustomizer, colorPicker, yamlEditor } = ctx;
+    const {
+      appDSL,
+      dashboard,
+      palette,
+      canvas,
+      properties,
+      backgroundCustomizer,
+      colorPicker,
+      yamlEditor,
+    } = ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -80,7 +99,11 @@ test.describe('Card Background Customization - PropertiesPanel', () => {
       await backgroundCustomizer.setNumericInput('background-overlay-opacity-input', 25);
 
       await canvas.expectBackgroundLayerVisible(0);
-      await canvas.expectBackgroundLayerCss(0, 'background-image', /url\("https:\/\/example\.com\/background\.jpg"\)/);
+      await canvas.expectBackgroundLayerCss(
+        0,
+        'background-image',
+        /url\("https:\/\/example\.com\/background\.jpg"\)/,
+      );
       await canvas.expectBackgroundLayerCss(0, 'filter', /blur\(4px\)/);
 
       await properties.switchTab('YAML');

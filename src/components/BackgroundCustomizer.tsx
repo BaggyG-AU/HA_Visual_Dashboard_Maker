@@ -99,7 +99,13 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({
   const popupContainer = (triggerNode: HTMLElement) => triggerNode.parentElement ?? triggerNode;
   const customSize = parseImageSizeCustom(value.imageSizeCustom);
 
-  const renderOpacityControl = (label: string, testId: string, inputTestId: string, opacityValue: number, onUpdate: (val: number) => void) => (
+  const renderOpacityControl = (
+    label: string,
+    testId: string,
+    inputTestId: string,
+    opacityValue: number,
+    onUpdate: (val: number) => void,
+  ) => (
     <Form.Item label={<span style={{ color: 'white' }}>{label}</span>} colon={false}>
       <Space direction="vertical" style={{ width: '100%' }} size="small">
         <Slider
@@ -159,7 +165,7 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({
             'background-opacity-slider',
             'background-opacity-input',
             value.backgroundOpacity,
-            (val) => update({ backgroundOpacity: val })
+            (val) => update({ backgroundOpacity: val }),
           )}
         </>
       )}
@@ -178,7 +184,7 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({
             'background-opacity-slider',
             'background-opacity-input',
             value.backgroundOpacity,
-            (val) => update({ backgroundOpacity: val })
+            (val) => update({ backgroundOpacity: val }),
           )}
         </>
       )}
@@ -233,7 +239,12 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({
                   placeholder="Width (e.g. 100%, 320px, auto)"
                   value={customSize.width}
                   onChange={(event) =>
-                    update({ imageSizeCustom: composeImageSizeCustom(event.target.value, customSize.height) })
+                    update({
+                      imageSizeCustom: composeImageSizeCustom(
+                        event.target.value,
+                        customSize.height,
+                      ),
+                    })
                   }
                   data-testid="background-image-size-custom-width-input"
                 />
@@ -241,7 +252,9 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({
                   placeholder="Height (e.g. 100%, 200px, auto)"
                   value={customSize.height}
                   onChange={(event) =>
-                    update({ imageSizeCustom: composeImageSizeCustom(customSize.width, event.target.value) })
+                    update({
+                      imageSizeCustom: composeImageSizeCustom(customSize.width, event.target.value),
+                    })
                   }
                   data-testid="background-image-size-custom-height-input"
                 />
@@ -270,7 +283,7 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({
             'background-image-opacity-slider',
             'background-image-opacity-input',
             value.imageOpacity,
-            (val) => update({ imageOpacity: val })
+            (val) => update({ imageOpacity: val }),
           )}
 
           <Form.Item label={<span style={{ color: 'white' }}>Image Blur (px)</span>} colon={false}>
@@ -279,7 +292,9 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({
                 min={0}
                 max={30}
                 value={value.imageBlur}
-                onChange={(val: number) => update({ imageBlur: typeof val === 'number' ? val : value.imageBlur })}
+                onChange={(val: number) =>
+                  update({ imageBlur: typeof val === 'number' ? val : value.imageBlur })
+                }
                 data-testid="background-image-blur-slider"
               />
               <InputNumber
@@ -325,20 +340,25 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({
             'background-overlay-opacity-slider',
             'background-overlay-opacity-input',
             value.overlayOpacity,
-            (val) => update({ overlayOpacity: val })
+            (val) => update({ overlayOpacity: val }),
           )}
         </>
       )}
 
       {value.type === 'blur' && (
         <>
-          <Form.Item label={<span style={{ color: 'white' }}>Backdrop Blur (px)</span>} colon={false}>
+          <Form.Item
+            label={<span style={{ color: 'white' }}>Backdrop Blur (px)</span>}
+            colon={false}
+          >
             <Space direction="vertical" style={{ width: '100%' }} size="small">
               <Slider
                 min={0}
                 max={30}
                 value={value.blurAmount}
-                onChange={(val: number) => update({ blurAmount: typeof val === 'number' ? val : value.blurAmount })}
+                onChange={(val: number) =>
+                  update({ blurAmount: typeof val === 'number' ? val : value.blurAmount })
+                }
                 data-testid="background-blur-slider"
               />
               <InputNumber
@@ -365,7 +385,7 @@ export const BackgroundCustomizer: React.FC<BackgroundCustomizerProps> = ({
             'background-tint-opacity-slider',
             'background-tint-opacity-input',
             value.backgroundOpacity,
-            (val) => update({ backgroundOpacity: val })
+            (val) => update({ backgroundOpacity: val }),
           )}
         </>
       )}

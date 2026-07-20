@@ -31,10 +31,16 @@ test.describe('Entity Caching', () => {
       expect(rowCount).toBe(4);
 
       // Verify specific entities are present
-      await expect(ctx.window.locator('.ant-table-row:has-text("light.living_room")')).toBeVisible();
-      await expect(ctx.window.locator('.ant-table-row:has-text("sensor.temperature")')).toBeVisible();
+      await expect(
+        ctx.window.locator('.ant-table-row:has-text("light.living_room")'),
+      ).toBeVisible();
+      await expect(
+        ctx.window.locator('.ant-table-row:has-text("sensor.temperature")'),
+      ).toBeVisible();
       await expect(ctx.window.locator('.ant-table-row:has-text("switch.fan")')).toBeVisible();
-      await expect(ctx.window.locator('.ant-table-row:has-text("binary_sensor.motion_detected")')).toBeVisible();
+      await expect(
+        ctx.window.locator('.ant-table-row:has-text("binary_sensor.motion_detected")'),
+      ).toBeVisible();
     } finally {
       await clearEntityCache(ctx.window);
       await close(ctx);
@@ -81,7 +87,7 @@ test.describe('Entity Caching', () => {
       const tableRows = ctx.window.locator('.ant-table-row');
 
       const isEmpty = await emptyState.isVisible();
-      const hasRows = await tableRows.count() > 0;
+      const hasRows = (await tableRows.count()) > 0;
 
       expect(isEmpty || hasRows).toBeTruthy();
 
@@ -226,7 +232,7 @@ test.describe('Entity Auto-Refresh on Connection', () => {
       const statusText = await ctx.entityBrowser.getConnectionStatusText();
 
       if (statusText?.includes('Connected')) {
-        const hasEntities = await ctx.entityBrowser.getRowCount() > 0;
+        const hasEntities = (await ctx.entityBrowser.getRowCount()) > 0;
         void hasEntities;
       }
     } finally {
@@ -329,8 +335,8 @@ test.describe('Entity Cache Storage', () => {
       await ctx.entityBrowser.open();
 
       const hasEntitiesOrEmpty =
-        await ctx.entityBrowser.getRowCount() > 0 ||
-        await ctx.window.locator('.ant-empty').isVisible();
+        (await ctx.entityBrowser.getRowCount()) > 0 ||
+        (await ctx.window.locator('.ant-empty').isVisible());
 
       expect(hasEntitiesOrEmpty).toBeTruthy();
     } finally {

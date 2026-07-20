@@ -30,7 +30,7 @@ const parseGridColumns = (template?: string): number => {
   }
 
   // Count individual columns
-  const columns = template.split(/\s+/).filter(col => col.trim().length > 0);
+  const columns = template.split(/\s+/).filter((col) => col.trim().length > 0);
   return columns.length;
 };
 
@@ -50,7 +50,7 @@ const parseGridRows = (template?: string): string => {
   }
 
   // Get first row height
-  const rows = template.split(/\s+/).filter(row => row.trim().length > 0);
+  const rows = template.split(/\s+/).filter((row) => row.trim().length > 0);
   return rows[0] || '30px';
 };
 
@@ -64,7 +64,7 @@ const parseGridRows = (template?: string): string => {
 const parseGridPosition = (position?: string): { start?: number; end?: number; span?: number } => {
   if (!position) return {};
 
-  const parts = position.split('/').map(p => p.trim());
+  const parts = position.split('/').map((p) => p.trim());
 
   if (parts.length === 2) {
     // "1 / 7" or "1 / span 4"
@@ -106,7 +106,7 @@ const parseGridPosition = (position?: string): { start?: number; end?: number; s
  */
 export const parseViewLayout = (
   card: Card,
-  index: number
+  index: number,
 ): { x: number; y: number; w: number; h: number } => {
   const viewLayout = card.view_layout;
 
@@ -172,7 +172,7 @@ export const isLayoutCardGrid = (view: View): boolean => {
   if (view.layout?.grid_template_columns || view.layout?.grid_template_rows) return true;
 
   // Check if any cards have view_layout
-  if (view.cards?.some(card => card.view_layout)) return true;
+  if (view.cards?.some((card) => card.view_layout)) return true;
 
   return false;
 };
@@ -216,9 +216,9 @@ export const convertLayoutCardToGridLayout = (view: View): LayoutItem[] => {
  * Convert react-grid-layout back to layout-card view_layout
  */
 export const convertGridLayoutToViewLayout = (
-  layout: readonly LayoutItem[]
+  layout: readonly LayoutItem[],
 ): Array<{ grid_column: string; grid_row: string }> => {
-  return layout.map(item => {
+  return layout.map((item) => {
     // Convert to CSS Grid 1-indexed positions
     const colStart = item.x + 1;
     const colEnd = item.x + item.w + 1;

@@ -33,7 +33,14 @@ describe('graphService', () => {
       makeCard({
         chart_type: 'pie',
         series: [
-          { entity: 'sensor.temp', label: 'Temperature', color: '#123456', axis: 'right', smooth: false, stack: true },
+          {
+            entity: 'sensor.temp',
+            label: 'Temperature',
+            color: '#123456',
+            axis: 'right',
+            smooth: false,
+            stack: true,
+          },
           { entity: '', label: 'Invalid' },
         ],
       }),

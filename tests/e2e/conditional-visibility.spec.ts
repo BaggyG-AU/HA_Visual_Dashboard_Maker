@@ -22,7 +22,9 @@ const TEST_ENTITIES = [
 ];
 
 test.describe('Conditional Visibility (Feature 3.5)', () => {
-  test('applies state-based visibility, updates live, and persists YAML', async ({ page }, testInfo) => {
+  test('applies state-based visibility, updates live, and persists YAML', async ({
+    page,
+  }, testInfo) => {
     // This test performs many sequential UI operations (launch, add card, YAML round-trips,
     // Ant Design dropdown interactions, Monaco editor waits). On WSL2 these accumulate
     // to ~55-65s total, so the default 60s timeout is not reliable.
@@ -30,7 +32,16 @@ test.describe('Conditional Visibility (Feature 3.5)', () => {
 
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, yamlEditor, entityContext, conditionalVisibility } = ctx;
+    const {
+      appDSL,
+      dashboard,
+      palette,
+      canvas,
+      properties,
+      yamlEditor,
+      entityContext,
+      conditionalVisibility,
+    } = ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -44,10 +55,17 @@ test.describe('Conditional Visibility (Feature 3.5)', () => {
       await canvas.selectCard(0);
       await properties.expectVisible();
       await properties.switchTab('YAML');
-      const { value: initialYaml } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value: initialYaml } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       const initialParsed = (yaml.load(initialYaml) as Record<string, unknown>) || {};
       initialParsed.entity = 'light.living_room';
-      await yamlEditor.setEditorContent(yaml.dump(initialParsed, { lineWidth: -1, noRefs: true, sortKeys: false }), 'properties', testInfo);
+      await yamlEditor.setEditorContent(
+        yaml.dump(initialParsed, { lineWidth: -1, noRefs: true, sortKeys: false }),
+        'properties',
+        testInfo,
+      );
       await properties.switchTab('Form');
 
       await conditionalVisibility.expectControlsVisible();
@@ -69,7 +87,10 @@ test.describe('Conditional Visibility (Feature 3.5)', () => {
       await conditionalVisibility.expectCardVisible(0);
 
       await properties.switchTab('YAML');
-      const { value: yamlContent } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value: yamlContent } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       const parsed = (yaml.load(yamlContent) as Record<string, unknown>) || {};
 
       const conditions = parsed.visibility_conditions as Array<Record<string, unknown>>;

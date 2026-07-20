@@ -39,7 +39,10 @@ export type EntityStates = Record<string, EntityState>;
 export class HAWebSocketService {
   private ws: WebSocket | null = null;
   private messageId = 1;
-  private pendingMessages = new Map<number, { resolve: (value: any) => void; reject: (reason: any) => void }>();
+  private pendingMessages = new Map<
+    number,
+    { resolve: (value: any) => void; reject: (reason: any) => void }
+  >();
   private entitySubscriptionId: number | null = null;
   private entityStateCallbacks: Set<(entities: EntityStates) => void> = new Set();
   private currentEntityStates: EntityStates = {};
@@ -139,7 +142,7 @@ export class HAWebSocketService {
           }
 
           // Notify all subscribers
-          this.entityStateCallbacks.forEach(callback => {
+          this.entityStateCallbacks.forEach((callback) => {
             callback({ ...this.currentEntityStates });
           });
         } else if (message.id !== undefined) {
@@ -344,7 +347,7 @@ export class HAWebSocketService {
    */
   async deployDashboard(
     tempUrlPath: string,
-    productionUrlPath: string | null
+    productionUrlPath: string | null,
   ): Promise<{ success: boolean; backupPath?: string; error?: string }> {
     try {
       // 1. Get current production config for backup
@@ -431,10 +434,13 @@ export class HAWebSocketService {
 
         // Convert array to object keyed by entity_id
         if (Array.isArray(initialStates)) {
-          this.currentEntityStates = initialStates.reduce((acc: EntityStates, entity: EntityState) => {
-            acc[entity.entity_id] = entity;
-            return acc;
-          }, {});
+          this.currentEntityStates = initialStates.reduce(
+            (acc: EntityStates, entity: EntityState) => {
+              acc[entity.entity_id] = entity;
+              return acc;
+            },
+            {},
+          );
         } else {
           this.currentEntityStates = initialStates;
         }
@@ -443,7 +449,7 @@ export class HAWebSocketService {
         callback({ ...this.currentEntityStates });
 
         // Also notify any other existing callbacks
-        this.entityStateCallbacks.forEach(cb => {
+        this.entityStateCallbacks.forEach((cb) => {
           if (cb !== callback) {
             cb({ ...this.currentEntityStates });
           }

@@ -13,12 +13,14 @@
 Our renderers are **visual preview components** for the dashboard editor, NOT the actual runtime Mushroom/ApexCharts/etc. cards that execute in Home Assistant.
 
 **What our renderers do:**
+
 - Display visual preview of card appearance in the editor
 - Show entity states, icons, and basic styling
 - Provide drag-and-drop positioning
 - Allow property editing via PropertiesPanel
 
 **What our renderers DON'T do:**
+
 - Execute JavaScript templates or actions
 - Handle user interactions (tap, hold, double-tap)
 - Connect to Home Assistant services
@@ -26,6 +28,7 @@ Our renderers are **visual preview components** for the dashboard editor, NOT th
 - Execute card-specific business logic
 
 **Impact on Update Requirements:**
+
 - **Runtime behavior changes** (actions, defaults, interactions) → NO UPDATE NEEDED
 - **Visual schema changes** (new properties affecting appearance) → UPDATE NEEDED
 - **Configuration structure changes** (new card types, required props) → UPDATE NEEDED
@@ -37,11 +40,13 @@ Our renderers are **visual preview components** for the dashboard editor, NOT th
 ### Research Findings Summary
 
 **Breaking Changes:**
+
 - v5.0.5: Template card redesign (icons conditional on actions, default action change)
 - v5.0.9: Color temperature changed from mired to Kelvin
 - v4.3.0: Light brightness slider minimum changed (0→1)
 
 **New Features:**
+
 - v5.0.6: RGB color format support
 - v4.4.0: Empty card component, fan direction button
 - v4.3.0: Header text alignment
@@ -53,6 +58,7 @@ Our renderers are **visual preview components** for the dashboard editor, NOT th
 **Card Types Supported**: All 13 variants (entity, light, fan, cover, climate, media-player, lock, alarm-control-panel, template, etc.)
 
 **What's Implemented:**
+
 - Icon rendering with state-based colors
 - Horizontal/vertical layouts
 - Hide icon/name/state toggles
@@ -62,30 +68,32 @@ Our renderers are **visual preview components** for the dashboard editor, NOT th
 
 **Breaking Changes Impact Assessment:**
 
-| Change | Type | Our Renderer Impact | Update Needed? |
-|--------|------|---------------------|----------------|
-| Template card icon background conditional on actions | Runtime | No visual change in preview | ❌ NO |
-| Default action toggle→more-info | Runtime | Actions not executed in preview | ❌ NO |
-| Color temperature mired→Kelvin | Data Format | Would need entity state conversion if displayed | ⚠️ MAYBE |
-| Light brightness min 0→1 | Configuration | Preview doesn't render slider controls | ❌ NO |
-| RGB color format support | Visual | Already supported (line 133-136) | ✅ DONE |
-| Empty card component | New Type | New card type for spacing | ✅ YES |
-| Fan direction button | Visual | Preview doesn't render control buttons | ❌ NO |
-| Header text alignment | Visual | Not implemented in current renderer | ⚠️ MAYBE |
+| Change                                               | Type          | Our Renderer Impact                             | Update Needed? |
+| ---------------------------------------------------- | ------------- | ----------------------------------------------- | -------------- |
+| Template card icon background conditional on actions | Runtime       | No visual change in preview                     | ❌ NO          |
+| Default action toggle→more-info                      | Runtime       | Actions not executed in preview                 | ❌ NO          |
+| Color temperature mired→Kelvin                       | Data Format   | Would need entity state conversion if displayed | ⚠️ MAYBE       |
+| Light brightness min 0→1                             | Configuration | Preview doesn't render slider controls          | ❌ NO          |
+| RGB color format support                             | Visual        | Already supported (line 133-136)                | ✅ DONE        |
+| Empty card component                                 | New Type      | New card type for spacing                       | ✅ YES         |
+| Fan direction button                                 | Visual        | Preview doesn't render control buttons          | ❌ NO          |
+| Header text alignment                                | Visual        | Not implemented in current renderer             | ⚠️ MAYBE       |
 
 ### Recommendation: **MINIMAL UPDATES**
 
 **Required:**
+
 1. Add support for `mushroom-empty-card` type (v4.4.0)
    - Should render as blank spacer for layout purposes
    - Priority: LOW (rarely used in editor context)
 
-**Optional:**
-2. Implement header text alignment if `align_text` property exists
-   - Check if property is used in visual preview
-   - Priority: LOW
+**Optional:** 2. Implement header text alignment if `align_text` property exists
+
+- Check if property is used in visual preview
+- Priority: LOW
 
 **Not Needed:**
+
 - Template card redesign (runtime behavior only)
 - Color temperature format (not visually displayed)
 - Light brightness minimum (control logic, not visual)
@@ -100,6 +108,7 @@ Our renderers are **visual preview components** for the dashboard editor, NOT th
 ### Research Findings Summary
 
 **Major Features:**
+
 - v2.2.0: `section_mode` for dashboard sections
 - v2.2.0: Array-based `stroke_dash` patterns
 - v2.2.2: Fixed rendering in nested stacks
@@ -112,16 +121,17 @@ Our renderers are **visual preview components** for the dashboard editor, NOT th
 
 **Impact Assessment:**
 
-| Feature | Type | Our Renderer Impact | Update Needed? |
-|---------|------|---------------------|----------------|
-| `section_mode` | Configuration | May affect card sizing/layout in sections | ⚠️ MAYBE |
-| Nested stack rendering fix | Bug Fix | Our renderer doesn't use actual ApexCharts component | ❌ NO |
-| Array stroke_dash patterns | Visual Schema | Would need to parse array format | ⚠️ MAYBE |
-| Multi-y-axis | Visual Feature | Not implemented in preview | ⚠️ MAYBE |
+| Feature                    | Type           | Our Renderer Impact                                  | Update Needed? |
+| -------------------------- | -------------- | ---------------------------------------------------- | -------------- |
+| `section_mode`             | Configuration  | May affect card sizing/layout in sections            | ⚠️ MAYBE       |
+| Nested stack rendering fix | Bug Fix        | Our renderer doesn't use actual ApexCharts component | ❌ NO          |
+| Array stroke_dash patterns | Visual Schema  | Would need to parse array format                     | ⚠️ MAYBE       |
+| Multi-y-axis               | Visual Feature | Not implemented in preview                           | ⚠️ MAYBE       |
 
 ### Recommendation: **DEFER - OUT OF SCOPE**
 
 ApexCharts is a complex charting library. Our renderer likely shows a **placeholder/mockup** rather than actual charts. The breaking changes affect chart rendering details that:
+
 1. Require the full ApexCharts library
 2. Are too complex for preview context
 3. Would need actual time-series data
@@ -135,6 +145,7 @@ ApexCharts is a complex charting library. Our renderer likely shows a **placehol
 ### Research Findings Summary
 
 **Major Features:**
+
 - v2.6.0: Gas and water flow support
 - v2.4.0: Bidirectional grid-to-battery flows
 - v2.4.0: Dashboard link configuration
@@ -148,27 +159,28 @@ ApexCharts is a complex charting library. Our renderer likely shows a **placehol
 
 **Impact Assessment:**
 
-| Feature | Type | Our Renderer Impact | Update Needed? |
-|---------|------|---------------------|----------------|
-| Gas/water entities | Visual Feature | New entity types to display | ✅ YES |
-| Bidirectional battery flows | Visual Feature | Flow direction rendering | ⚠️ MAYBE |
-| Dashboard link | Configuration | Link property (not visual) | ❌ NO |
+| Feature                     | Type           | Our Renderer Impact         | Update Needed? |
+| --------------------------- | -------------- | --------------------------- | -------------- |
+| Gas/water entities          | Visual Feature | New entity types to display | ✅ YES         |
+| Bidirectional battery flows | Visual Feature | Flow direction rendering    | ⚠️ MAYBE       |
+| Dashboard link              | Configuration  | Link property (not visual)  | ❌ NO          |
 
 ### Recommendation: **ADDITIVE UPDATES**
 
 **Required:**
+
 1. Add support for `gas` and `water` entity properties in configuration
    - Should render as additional flow circles/arrows
    - Priority: MEDIUM
 
-**Optional:**
-2. Implement bidirectional battery flow arrows
-   - Visual indicator for grid-to-battery vs battery-to-grid
-   - Priority: LOW
+**Optional:** 2. Implement bidirectional battery flow arrows
 
-**Testing:**
-3. Verify compatibility with HA 2026.1 (card is 3 years old)
-   - May have compatibility issues with modern HA
+- Visual indicator for grid-to-battery vs battery-to-grid
+- Priority: LOW
+
+**Testing:** 3. Verify compatibility with HA 2026.1 (card is 3 years old)
+
+- May have compatibility issues with modern HA
 
 **Conclusion**: Relatively straightforward additive updates for gas/water support.
 
@@ -179,6 +191,7 @@ ApexCharts is a complex charting library. Our renderer likely shows a **placehol
 ### Research Findings Summary
 
 **Major Features:**
+
 - v0.13.0: Loader component, `show_legend_state`, `icon_image`
 - v0.12.0: Nested attribute access, `icon_image`
 - All changes backward compatible
@@ -190,21 +203,23 @@ ApexCharts is a complex charting library. Our renderer likely shows a **placehol
 
 **Impact Assessment:**
 
-| Feature | Type | Our Renderer Impact | Update Needed? |
-|---------|------|---------------------|----------------|
-| Loader component | UX Feature | Loading state (not needed in preview) | ❌ NO |
-| `show_legend_state` | Configuration | Legend display toggle | ⚠️ MAYBE |
-| `icon_image` | Visual Feature | Image URL instead of icon | ✅ YES |
-| Nested attribute access | Data Feature | Parsing complex attributes | ❌ NO |
+| Feature                 | Type           | Our Renderer Impact                   | Update Needed? |
+| ----------------------- | -------------- | ------------------------------------- | -------------- |
+| Loader component        | UX Feature     | Loading state (not needed in preview) | ❌ NO          |
+| `show_legend_state`     | Configuration  | Legend display toggle                 | ⚠️ MAYBE       |
+| `icon_image`            | Visual Feature | Image URL instead of icon             | ✅ YES         |
+| Nested attribute access | Data Feature   | Parsing complex attributes            | ❌ NO          |
 
 ### Recommendation: **MINIMAL UPDATES**
 
 **Optional:**
+
 1. Support `icon_image` property for custom image display
    - Replace icon with `<img>` tag when property present
    - Priority: LOW (rarely used)
 
 **Not Needed:**
+
 - Loader component (preview doesn't load data)
 - Nested attributes (data parsing, not visual)
 - `show_legend_state` (legend likely not rendered in preview)
@@ -218,6 +233,7 @@ ApexCharts is a complex charting library. Our renderer likely shows a **placehol
 ### Research Findings Summary
 
 **Changes:**
+
 - v2.2.0-v2.2.1: Bug fixes and translations only
 - v2.1.2: Button debounce (runtime logic)
 - v2.1.0: Critical fix for HA >= 2023.9.0 compatibility
@@ -230,12 +246,12 @@ ApexCharts is a complex charting library. Our renderer likely shows a **placehol
 
 **Impact Assessment:**
 
-| Change | Type | Our Renderer Impact | Update Needed? |
-|--------|------|---------------------|----------------|
-| Bug fixes | Runtime | No visual changes | ❌ NO |
-| Button debounce | Runtime Logic | Preview doesn't handle interactions | ❌ NO |
-| Translations | Localization | Preview uses entity names, not translations | ❌ NO |
-| HA 2023.9.0 fix | Compatibility | May affect entity attribute access | ⚠️ MAYBE |
+| Change          | Type          | Our Renderer Impact                         | Update Needed? |
+| --------------- | ------------- | ------------------------------------------- | -------------- |
+| Bug fixes       | Runtime       | No visual changes                           | ❌ NO          |
+| Button debounce | Runtime Logic | Preview doesn't handle interactions         | ❌ NO          |
+| Translations    | Localization  | Preview uses entity names, not translations | ❌ NO          |
+| HA 2023.9.0 fix | Compatibility | May affect entity attribute access          | ⚠️ MAYBE       |
 
 ### Recommendation: **NO UPDATES NEEDED**
 
@@ -288,6 +304,7 @@ Based on the constraint: **"ONLY CHANGES REQUIRED TO SUPPORT NEW VERSIONS SHOULD
 ### Decision: **DEFER ALL PHASE 4.2 UPDATES**
 
 **Rationale:**
+
 1. **No breaking changes** affect our visual preview renderers
 2. All identified updates are **additive features**, not compatibility fixes
 3. Current renderers are **100% backward compatible** with their respective card versions
@@ -297,10 +314,12 @@ Based on the constraint: **"ONLY CHANGES REQUIRED TO SUPPORT NEW VERSIONS SHOULD
 ### Alternative: Implement High-Value Updates Only
 
 If user wants to proceed despite no breaking changes:
+
 1. **Power Flow Gas/Water** (most visible, medium effort)
 2. **Mushroom Empty Card** (quick win, low effort)
 
 Skip:
+
 - ApexCharts (too complex)
 - Mini Graph icon_image (rarely used)
 - Mushroom text alignment (minor visual tweak)
@@ -336,12 +355,14 @@ Skip:
 ### Option 1: Skip Phase 4.2 Entirely (RECOMMENDED)
 
 **Reasons:**
+
 - No breaking changes affecting compatibility
 - All renderers work with latest card versions
 - Real cards render correctly in Home Assistant
 - Saves ~3-5 hours of development time
 
 **Next Steps:**
+
 - Mark Phase 4.2 as "Reviewed - No Updates Required"
 - Update documentation to reflect version compatibility
 - Move on to other project priorities
@@ -349,6 +370,7 @@ Skip:
 ### Option 2: Implement High-Value Features
 
 **If user wants visual improvements:**
+
 - Implement Power Flow gas/water (2 hours)
 - Implement Mushroom empty card (30 min)
 - Skip the rest
@@ -383,6 +405,7 @@ If Option 1 is chosen, update:
 ## Conclusion
 
 **Phase 4.2 Analysis Complete:**
+
 - ✅ Research completed for 5 custom cards
 - ✅ Impact analysis for each renderer
 - ✅ No breaking changes found

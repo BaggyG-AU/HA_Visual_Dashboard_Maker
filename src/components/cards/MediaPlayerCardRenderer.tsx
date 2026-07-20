@@ -51,7 +51,10 @@ export const MediaPlayerCardRenderer: React.FC<MediaPlayerCardRendererProps> = (
     attributes.friendly_name ||
     card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
     'Media Player';
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   // Determine if player is playing
   const isPlaying = state === 'playing';
@@ -91,30 +94,34 @@ export const MediaPlayerCardRenderer: React.FC<MediaPlayerCardRendererProps> = (
       }}
       styles={{
         body: {
-        padding: '16px',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        gap: '12px',
-      },
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          gap: '12px',
+        },
       }}
       onClick={onClick}
       hoverable
     >
       {/* Header with name and state */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <Text strong style={{ color: '#e6e6e6', fontSize: '14px' }}>
           {displayName}
         </Text>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
           <div
             style={{
               width: '8px',
@@ -137,20 +144,24 @@ export const MediaPlayerCardRenderer: React.FC<MediaPlayerCardRendererProps> = (
       </div>
 
       {/* Album art and media info */}
-      <div style={{
-        display: 'flex',
-        gap: '12px',
-        flex: 1,
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: '12px',
+          flex: 1,
+        }}
+      >
         {/* Album art */}
-        <div style={{
-          width: '80px',
-          height: '80px',
-          borderRadius: '8px',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          overflow: 'hidden',
-          flexShrink: 0,
-        }}>
+        <div
+          style={{
+            width: '80px',
+            height: '80px',
+            borderRadius: '8px',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            overflow: 'hidden',
+            flexShrink: 0,
+          }}
+        >
           {entityPicture ? (
             <img
               src={entityPicture}
@@ -162,29 +173,33 @@ export const MediaPlayerCardRenderer: React.FC<MediaPlayerCardRendererProps> = (
               }}
             />
           ) : (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '32px',
-              color: '#666',
-            }}>
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '32px',
+                color: '#666',
+              }}
+            >
               🎵
             </div>
           )}
         </div>
 
         {/* Media info */}
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          gap: '4px',
-          minWidth: 0,
-        }}>
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            gap: '4px',
+            minWidth: 0,
+          }}
+        >
           <Text
             strong
             style={{
@@ -236,11 +251,13 @@ export const MediaPlayerCardRenderer: React.FC<MediaPlayerCardRendererProps> = (
             trailColor="rgba(255, 255, 255, 0.1)"
             size="small"
           />
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginTop: '4px',
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginTop: '4px',
+            }}
+          >
             <Text type="secondary" style={{ fontSize: '10px' }}>
               {formatTime(mediaPosition)}
             </Text>
@@ -253,16 +270,18 @@ export const MediaPlayerCardRenderer: React.FC<MediaPlayerCardRendererProps> = (
 
       {/* Control buttons */}
       {!isOff && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '12px',
-          padding: '8px',
-          backgroundColor: 'rgba(255, 255, 255, 0.02)',
-          borderRadius: '8px',
-          marginTop: 'auto',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            padding: '8px',
+            backgroundColor: 'rgba(255, 255, 255, 0.02)',
+            borderRadius: '8px',
+            marginTop: 'auto',
+          }}
+        >
           <StepBackwardOutlined
             style={{
               fontSize: '20px',
@@ -299,11 +318,13 @@ export const MediaPlayerCardRenderer: React.FC<MediaPlayerCardRendererProps> = (
 
       {/* Volume indicator */}
       {!isOff && volumeLevel > 0 && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
           <SoundOutlined style={{ fontSize: '14px', color: '#999' }} />
           <Progress
             percent={volumeLevel}
@@ -321,15 +342,17 @@ export const MediaPlayerCardRenderer: React.FC<MediaPlayerCardRendererProps> = (
 
       {/* Off state */}
       {isOff && (
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          color: '#666',
-        }}>
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            color: '#666',
+          }}
+        >
           <PoweroffOutlined style={{ fontSize: '48px' }} />
           <Text type="secondary" style={{ fontSize: '12px' }}>
             {state === 'unavailable' ? 'Unavailable' : 'Off'}
@@ -339,11 +362,13 @@ export const MediaPlayerCardRenderer: React.FC<MediaPlayerCardRendererProps> = (
 
       {/* No entity warning */}
       {!entity && card.entity && (
-        <div style={{
-          textAlign: 'center',
-          padding: '20px',
-          color: '#666',
-        }}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '20px',
+            color: '#666',
+          }}
+        >
           <Text type="secondary" style={{ fontSize: '12px' }}>
             {card.entity}
           </Text>

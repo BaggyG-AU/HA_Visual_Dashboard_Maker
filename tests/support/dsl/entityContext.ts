@@ -6,18 +6,21 @@ export class EntityContextDSL {
 
   private async ensureTestApi(): Promise<void> {
     await expect
-      .poll(async () => {
-        return await this.window.evaluate(() => {
-          const testWindow = window as Window & {
-            __testEntityApi?: { setEntities?: unknown; patchEntities?: unknown };
-          };
-          return Boolean(
-            testWindow.__testEntityApi
-            && typeof testWindow.__testEntityApi.setEntities === 'function'
-            && typeof testWindow.__testEntityApi.patchEntities === 'function'
-          );
-        });
-      }, { timeout: 8000 })
+      .poll(
+        async () => {
+          return await this.window.evaluate(() => {
+            const testWindow = window as Window & {
+              __testEntityApi?: { setEntities?: unknown; patchEntities?: unknown };
+            };
+            return Boolean(
+              testWindow.__testEntityApi &&
+              typeof testWindow.__testEntityApi.setEntities === 'function' &&
+              typeof testWindow.__testEntityApi.patchEntities === 'function',
+            );
+          });
+        },
+        { timeout: 8000 },
+      )
       .toBe(true);
   }
 
@@ -25,33 +28,54 @@ export class EntityContextDSL {
     try {
       await this.ensureTestApi();
       await this.window.evaluate((payload) => {
-        const testWindow = window as Window & { __testEntityApi?: { setEntities: (entities: Array<Record<string, unknown>>) => void } };
+        const testWindow = window as Window & {
+          __testEntityApi?: { setEntities: (entities: Array<Record<string, unknown>>) => void };
+        };
         testWindow.__testEntityApi?.setEntities(payload);
       }, entities);
     } catch (error) {
       if (testInfo) {
-        await attachDebugJson(testInfo, 'entity-context-set-entities.json', { error: String(error) });
+        await attachDebugJson(testInfo, 'entity-context-set-entities.json', {
+          error: String(error),
+        });
       }
       throw error;
     }
   }
 
-  async patchEntity(entityId: string, patch: Record<string, unknown>, testInfo?: TestInfo): Promise<void> {
+  async patchEntity(
+    entityId: string,
+    patch: Record<string, unknown>,
+    testInfo?: TestInfo,
+  ): Promise<void> {
     try {
       await this.ensureTestApi();
-      await this.window.evaluate(({ id, patchData }) => {
-        const testWindow = window as Window & { __testEntityApi?: { patchEntities: (changes: Record<string, unknown>) => void } };
-        testWindow.__testEntityApi?.patchEntities({ [id]: { entity_id: id, ...patchData } });
-      }, { id: entityId, patchData: patch });
+      await this.window.evaluate(
+        ({ id, patchData }) => {
+          const testWindow = window as Window & {
+            __testEntityApi?: { patchEntities: (changes: Record<string, unknown>) => void };
+          };
+          testWindow.__testEntityApi?.patchEntities({ [id]: { entity_id: id, ...patchData } });
+        },
+        { id: entityId, patchData: patch },
+      );
     } catch (error) {
       if (testInfo) {
-        await attachDebugJson(testInfo, 'entity-context-patch-entity.json', { error: String(error), entityId, patch });
+        await attachDebugJson(testInfo, 'entity-context-patch-entity.json', {
+          error: String(error),
+          entityId,
+          patch,
+        });
       }
       throw error;
     }
   }
 
-  async expectPreviewValue(field: 'name' | 'title' | 'content', value: string | RegExp, testInfo?: TestInfo): Promise<void> {
+  async expectPreviewValue(
+    field: 'name' | 'title' | 'content',
+    value: string | RegExp,
+    testInfo?: TestInfo,
+  ): Promise<void> {
     const container = this.window.getByTestId(`entity-context-preview-${field}`);
     try {
       await expect(container).toBeVisible();

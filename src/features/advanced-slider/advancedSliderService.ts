@@ -14,7 +14,8 @@ const DEFAULT_PRECISION = 0;
 const DEFAULT_COLOR = '#4fa3ff';
 const MAX_MARKERS = 21;
 
-const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
 
 const toFiniteNumber = (value: unknown, fallback: number): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -74,10 +75,12 @@ const normalizeZones = (
       const to = clamp(toFiniteNumber((zone as AdvancedSliderZone).to, max), min, max);
       const lower = Math.min(from, to);
       const upper = Math.max(from, to);
-      const color = typeof zone.color === 'string' && zone.color.trim() ? zone.color.trim() : DEFAULT_COLOR;
-      const label = typeof zone.label === 'string' && zone.label.trim()
-        ? zone.label.trim()
-        : `${roundToPrecision(lower, 2)}-${roundToPrecision(upper, 2)}`;
+      const color =
+        typeof zone.color === 'string' && zone.color.trim() ? zone.color.trim() : DEFAULT_COLOR;
+      const label =
+        typeof zone.label === 'string' && zone.label.trim()
+          ? zone.label.trim()
+          : `${roundToPrecision(lower, 2)}-${roundToPrecision(upper, 2)}`;
 
       return {
         from: lower,
@@ -88,7 +91,7 @@ const normalizeZones = (
       };
     })
     .filter((zone): zone is NormalizedAdvancedSliderZone & { sortIndex: number } => Boolean(zone))
-    .sort((a, b) => (a.from - b.from) || (a.to - b.to) || (a.sortIndex - b.sortIndex))
+    .sort((a, b) => a.from - b.from || a.to - b.to || a.sortIndex - b.sortIndex)
     .map(({ sortIndex, ...zone }) => zone);
 };
 

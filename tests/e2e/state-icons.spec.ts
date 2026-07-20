@@ -50,7 +50,10 @@ test.describe('State Icons (Feature 3.6)', () => {
       await properties.expectVisible();
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value: initialYaml } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value: initialYaml } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       const initialParsed = (yaml.load(initialYaml) as Record<string, unknown>) || {};
       initialParsed.entity = 'light.living_room';
       await yamlEditor.setEditorContent(

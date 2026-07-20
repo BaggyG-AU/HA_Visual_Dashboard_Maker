@@ -13,10 +13,5 @@ export const WeatherForecastCardRenderer: React.FC<WeatherForecastCardRendererPr
   isSelected = false,
   onClick,
 }) => (
-  <WeatherForecastVisualizationCardRenderer
-    card={card}
-    isSelected={isSelected}
-    onClick={onClick}
-  />
+  <WeatherForecastVisualizationCardRenderer card={card} isSelected={isSelected} onClick={onClick} />
 );
-

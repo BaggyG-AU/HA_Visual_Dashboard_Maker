@@ -108,7 +108,9 @@ test.describe('Popup Card', () => {
     }
   });
 
-  test('properties panel size and close-on-backdrop update behavior', async ({ page }, testInfo) => {
+  test('properties panel size and close-on-backdrop update behavior', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, canvas, properties, yamlEditor, popup } = ctx;

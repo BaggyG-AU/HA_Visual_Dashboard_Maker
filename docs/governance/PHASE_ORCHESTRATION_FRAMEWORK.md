@@ -56,7 +56,7 @@ When this framework is invoked, the caller must provide:
 PHASE_NAME: <e.g., Phase 7 – Canvas Structural Parity>  
 CURRENT_VERSION: <e.g., 0.8.1-beta.3>  
 INITIATION_VERSION: <e.g., 0.8.2-beta.0>  
-OPTIONAL: PHASE_BRANCH_NAME override  
+OPTIONAL: PHASE_BRANCH_NAME override
 
 If not provided, the framework must:
 
@@ -146,6 +146,7 @@ You must produce ALL sections below.
 ---
 
 ## 0) Executive Summary
+
 ...
 (Sections 0 through 12 remain unchanged)
 ...
@@ -158,9 +159,9 @@ Each slice prompt MUST:
 
 - Explicitly reference compliance with `ai_rules.md`
 - Enforce Immutable Reuse Rule:
-  1) Passing specs
-  2) DSL methods
-  3) Helpers/fixtures
+  1. Passing specs
+  2. DSL methods
+  3. Helpers/fixtures
 - Prohibit duplicate DSL methods
 - If modifying DSL:
   - Include consumer inventory
@@ -206,6 +207,7 @@ The final governance blueprint is considered incomplete if any slice lacks a ful
 ---
 
 ## 14) Test Strategy & Regression Containment
+
 ...
 (unchanged)
 ...
@@ -213,6 +215,7 @@ The final governance blueprint is considered incomplete if any slice lacks a ful
 ---
 
 ## 23) Phase Initiation Checklist
+
 ...
 (unchanged)
 ...
@@ -227,17 +230,18 @@ After generating the complete blueprint:
    - If it does not exist, create it.
 
 2. Write the governance blueprint file to:
+
    ```
    docs/governance/phases/<phase-name-slug>-blueprint.md
    ```
 
 3. The file must begin with header metadata:
-   - Phase Name  
-   - CURRENT_VERSION  
-   - INITIATION_VERSION  
-   - ISO generation timestamp  
-   - Governance Mode: HARD MODE++  
-   - AI Model used  
+   - Phase Name
+   - CURRENT_VERSION
+   - INITIATION_VERSION
+   - ISO generation timestamp
+   - Governance Mode: HARD MODE++
+   - AI Model used
    - References to `ai_rules.md` and this framework
 
 4. Do NOT overwrite existing archived blueprints unless explicit user confirmation.
@@ -253,6 +257,7 @@ After generating the complete blueprint:
    - Prepare a commit message that references the phase and blueprint.
 
 If any of the above cannot be completed safely:
+
 - STOP and ask for clarification.
 
 ---
@@ -291,6 +296,7 @@ Governance requirements:
 - If any slice lacks a complete implementation-ready prompt, the blueprint is incomplete.
 
 Stop after:
+
 - Writing the file.
 - Confirming location and filename.
 - Preparing commit message.

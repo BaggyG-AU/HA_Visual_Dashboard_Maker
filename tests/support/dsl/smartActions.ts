@@ -30,7 +30,11 @@ export class SmartActionsDSL {
     }
   }
 
-  async expectPreviewContains(testIdPrefix: string, text: string | RegExp, testInfo?: TestInfo): Promise<void> {
+  async expectPreviewContains(
+    testIdPrefix: string,
+    text: string | RegExp,
+    testInfo?: TestInfo,
+  ): Promise<void> {
     const preview = this.getPreview(testIdPrefix);
     try {
       await expect(preview).toBeVisible({ timeout: 5000 });
@@ -45,8 +49,12 @@ export class SmartActionsDSL {
 
   async attachDiagnostics(testInfo: TestInfo, testIdPrefix: string): Promise<void> {
     const diagnostics = await this.window.evaluate((prefix) => {
-      const toggle = document.querySelector(`[data-testid="${prefix}-smart-defaults-toggle"]`) as HTMLElement | null;
-      const preview = document.querySelector(`[data-testid="${prefix}-smart-defaults-preview"]`) as HTMLElement | null;
+      const toggle = document.querySelector(
+        `[data-testid="${prefix}-smart-defaults-toggle"]`,
+      ) as HTMLElement | null;
+      const preview = document.querySelector(
+        `[data-testid="${prefix}-smart-defaults-preview"]`,
+      ) as HTMLElement | null;
       return {
         toggleExists: Boolean(toggle),
         toggleAriaChecked: toggle?.getAttribute('aria-checked') ?? null,
@@ -60,4 +68,3 @@ export class SmartActionsDSL {
 }
 
 export default SmartActionsDSL;
-

@@ -64,12 +64,12 @@ export interface EntityDomain {
 
 // Theme types
 export interface ThemeVars {
-  "primary-color": string;
-  "text-primary-color": string;
-  "accent-color": string;
-  "primary-background-color": string;
-  "card-background-color": string;
-  "secondary-text-color": string;
+  'primary-color': string;
+  'text-primary-color': string;
+  'accent-color': string;
+  'primary-background-color': string;
+  'card-background-color': string;
+  'secondary-text-color': string;
   [key: string]: string; // Additional custom variables
 }
 

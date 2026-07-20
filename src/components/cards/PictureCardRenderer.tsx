@@ -20,7 +20,10 @@ export const PictureCardRenderer: React.FC<PictureCardRendererProps> = ({
   onClick,
 }) => {
   const hasImage = card.image && card.image.length > 0;
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   return (
     <AntCard
@@ -35,23 +38,25 @@ export const PictureCardRenderer: React.FC<PictureCardRendererProps> = ({
       }}
       styles={{
         body: {
-        padding: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        overflow: 'hidden',
-      },
+          padding: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          overflow: 'hidden',
+        },
       }}
       onClick={onClick}
       hoverable
     >
       {hasImage ? (
-        <div style={{
-          width: '100%',
-          height: '100%',
-          position: 'relative',
-          overflow: 'hidden',
-        }}>
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
           <img
             src={card.image}
             alt="Picture card"
@@ -70,34 +75,38 @@ export const PictureCardRenderer: React.FC<PictureCardRendererProps> = ({
             }}
           />
           {/* Error placeholder */}
-          <div style={{
-            display: 'none',
-            width: '100%',
-            height: '100%',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            color: '#666',
-            flexDirection: 'column',
-            gap: '8px',
-          }}>
+          <div
+            style={{
+              display: 'none',
+              width: '100%',
+              height: '100%',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: '#666',
+              flexDirection: 'column',
+              gap: '8px',
+            }}
+          >
             <PictureOutlined style={{ fontSize: '48px' }} />
             <div style={{ fontSize: '12px' }}>Image not found</div>
           </div>
         </div>
       ) : (
         // No image placeholder
-        <div style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          color: '#666',
-          flexDirection: 'column',
-          gap: '8px',
-        }}>
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            color: '#666',
+            flexDirection: 'column',
+            gap: '8px',
+          }}
+        >
           <PictureOutlined style={{ fontSize: '48px' }} />
           <div style={{ fontSize: '12px' }}>No image configured</div>
         </div>

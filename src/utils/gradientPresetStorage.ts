@@ -23,7 +23,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value && typeof value === 'object' && !Array.isArray(value));
 
 const isValidCategory = (value: unknown): value is GradientPreset['category'] =>
-  value === 'Material' || value === 'Nature' || value === 'Tech' || value === 'Monochrome' || value === 'Custom';
+  value === 'Material' ||
+  value === 'Nature' ||
+  value === 'Tech' ||
+  value === 'Monochrome' ||
+  value === 'Custom';
 
 const normalizePreset = (value: Record<string, unknown>): GradientPreset | null => {
   const name = typeof value.name === 'string' ? value.name.trim() : '';
@@ -104,7 +108,9 @@ export const parsePresetCollection = (raw: unknown): PresetImportResult => {
   return { presets, added: presets.length, errors };
 };
 
-export const loadPresetCollection = (storageKey = GRADIENT_PRESET_STORAGE_KEY): PresetLoadResult => {
+export const loadPresetCollection = (
+  storageKey = GRADIENT_PRESET_STORAGE_KEY,
+): PresetLoadResult => {
   try {
     const stored = localStorage.getItem(storageKey);
     if (!stored) return { presets: [] };
@@ -120,7 +126,10 @@ export const loadPresetCollection = (storageKey = GRADIENT_PRESET_STORAGE_KEY): 
   }
 };
 
-export const savePresetCollection = (presets: GradientPreset[], storageKey = GRADIENT_PRESET_STORAGE_KEY): void => {
+export const savePresetCollection = (
+  presets: GradientPreset[],
+  storageKey = GRADIENT_PRESET_STORAGE_KEY,
+): void => {
   try {
     localStorage.setItem(storageKey, serializePresetCollection(presets));
   } catch (error) {
@@ -128,7 +137,10 @@ export const savePresetCollection = (presets: GradientPreset[], storageKey = GRA
   }
 };
 
-export const mergePresets = (existing: GradientPreset[], incoming: GradientPreset[]): PresetImportResult => {
+export const mergePresets = (
+  existing: GradientPreset[],
+  incoming: GradientPreset[],
+): PresetImportResult => {
   const errors: string[] = [];
   const existingIds = new Set(existing.map((preset) => preset.id));
   const merged = [...existing];

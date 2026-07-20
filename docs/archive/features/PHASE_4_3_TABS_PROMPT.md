@@ -36,20 +36,20 @@ Read these files BEFORE writing any code. They contain immutable rules, architec
 
 Follow the same structure, naming conventions, and integration points used by delivered layout features:
 
-| Purpose | File |
-|---------|------|
-| Accordion types | `src/features/accordion/types.ts` |
-| Accordion service | `src/features/accordion/accordionService.ts` |
-| Accordion feature component | `src/features/accordion/AccordionPanel.tsx` |
-| Accordion renderer | `src/components/cards/AccordionCardRenderer.tsx` |
-| Swiper types | `src/features/carousel/types.ts` |
-| Swiper service | `src/features/carousel/carouselService.ts` |
-| Swiper renderer | `src/components/cards/SwiperCardRenderer.tsx` |
-| Card registry pattern | `src/services/cardRegistry.ts` |
-| BaseCard dispatch pattern | `src/components/BaseCard.tsx` |
-| DSL registration | `tests/support/index.ts` |
-| Existing layout DSL style | `tests/support/dsl/carousel.ts`, `tests/support/dsl/accordion.ts` |
-| Existing layout E2E style | `tests/e2e/carousel.spec.ts`, `tests/e2e/accordion.spec.ts` |
+| Purpose                     | File                                                              |
+| --------------------------- | ----------------------------------------------------------------- |
+| Accordion types             | `src/features/accordion/types.ts`                                 |
+| Accordion service           | `src/features/accordion/accordionService.ts`                      |
+| Accordion feature component | `src/features/accordion/AccordionPanel.tsx`                       |
+| Accordion renderer          | `src/components/cards/AccordionCardRenderer.tsx`                  |
+| Swiper types                | `src/features/carousel/types.ts`                                  |
+| Swiper service              | `src/features/carousel/carouselService.ts`                        |
+| Swiper renderer             | `src/components/cards/SwiperCardRenderer.tsx`                     |
+| Card registry pattern       | `src/services/cardRegistry.ts`                                    |
+| BaseCard dispatch pattern   | `src/components/BaseCard.tsx`                                     |
+| DSL registration            | `tests/support/index.ts`                                          |
+| Existing layout DSL style   | `tests/support/dsl/carousel.ts`, `tests/support/dsl/accordion.ts` |
+| Existing layout E2E style   | `tests/e2e/carousel.spec.ts`, `tests/e2e/accordion.spec.ts`       |
 
 ---
 
@@ -83,15 +83,15 @@ Follow the same structure, naming conventions, and integration points used by de
 
 ### Code Organization
 
-| Purpose | Path |
-|---------|------|
-| Types | `src/types/tabs.ts` |
-| Service | `src/services/tabsService.ts` |
-| Feature component | `src/features/tabs/TabsPanel.tsx` |
-| Card renderer | `src/components/cards/TabsCardRenderer.tsx` |
-| Card registry | Add entry in `src/services/cardRegistry.ts` |
-| BaseCard dispatch | Add case in `src/components/BaseCard.tsx` |
-| PropertiesPanel | Add tabs-specific controls in `src/components/PropertiesPanel.tsx` |
+| Purpose           | Path                                                               |
+| ----------------- | ------------------------------------------------------------------ |
+| Types             | `src/types/tabs.ts`                                                |
+| Service           | `src/services/tabsService.ts`                                      |
+| Feature component | `src/features/tabs/TabsPanel.tsx`                                  |
+| Card renderer     | `src/components/cards/TabsCardRenderer.tsx`                        |
+| Card registry     | Add entry in `src/services/cardRegistry.ts`                        |
+| BaseCard dispatch | Add case in `src/components/BaseCard.tsx`                          |
+| PropertiesPanel   | Add tabs-specific controls in `src/components/PropertiesPanel.tsx` |
 
 ### YAML Schema
 
@@ -105,19 +105,19 @@ default_tab: 0
 animation: fade
 lazy_render: true
 tabs:
-  - title: "Lights"
+  - title: 'Lights'
     icon: mdi:lightbulb
     cards:
       - type: button
         entity: light.living_room
       - type: button
         entity: light.kitchen
-  - title: "Climate"
+  - title: 'Climate'
     icon: mdi:thermometer
     cards:
       - type: thermostat
         entity: climate.living_room
-  - title: "Media"
+  - title: 'Media'
     icon: mdi:play-circle
     cards:
       - type: media-control
@@ -166,6 +166,7 @@ When adding tabs-specific controls to `PropertiesPanel.tsx`, you **MUST** follow
 ## Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [ ] Tabs render with clickable tab headers
 - [ ] Tab switching shows correct content panel
 - [ ] Horizontal and vertical orientations work
@@ -176,6 +177,7 @@ When adding tabs-specific controls to `PropertiesPanel.tsx`, you **MUST** follow
 - [ ] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [ ] Tab icons with MDI icon picker
 - [ ] Tab switch animations (`fade`, `slide`)
 - [ ] Default active tab and lazy rendering configuration
@@ -183,6 +185,7 @@ When adding tabs-specific controls to `PropertiesPanel.tsx`, you **MUST** follow
 - [ ] Tab badge/count support
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Runtime drag-reorderable tabs
 - [ ] Runtime closable tabs
 - [ ] Nested tabs inside tabs
@@ -195,6 +198,7 @@ When adding tabs-specific controls to `PropertiesPanel.tsx`, you **MUST** follow
 ### Unit Tests
 
 Create `tests/unit/tabs-service.spec.ts`:
+
 - Configuration parsing and validation
 - Tab normalization (title/icon defaults)
 - Default active tab logic and bounds clamping
@@ -204,6 +208,7 @@ Create `tests/unit/tabs-service.spec.ts`:
 ### E2E Tests (DSL-first only)
 
 Create `tests/support/dsl/tabs.ts` (`TabsDSL`):
+
 - `addTabsCard()`
 - `clickTab(index)`
 - `expectTabActive(index)`
@@ -217,6 +222,7 @@ Create `tests/support/dsl/tabs.ts` (`TabsDSL`):
 Register `TabsDSL` in `tests/support/index.ts` (import, interface field, instantiation).
 
 Create `tests/e2e/tabs.spec.ts`:
+
 - Add tabs card from palette
 - Click tabs to switch panels
 - Position changes (top/bottom/left/right)
@@ -226,6 +232,7 @@ Create `tests/e2e/tabs.spec.ts`:
 - PropertiesPanel controls update live preview
 
 Create `tests/e2e/tabs.visual.spec.ts`:
+
 - Snapshots for positions, active states, and style variations
 
 ### Accessibility
@@ -283,6 +290,7 @@ Create `tests/e2e/tabs.visual.spec.ts`:
 ## Output Format
 
 Respond with:
+
 1. A concise implementation plan for Feature 4.3
 2. File-by-file change list (planned)
 3. Test plan + commands
@@ -302,6 +310,7 @@ After implementation, run exactly one **Fast Gate** pass and then stop:
 4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
 
 After this single Fast Gate run, provide a summary report that includes:
+
 - Exact commands executed
 - Pass/fail status for each command
 - Any failing tests with artifact paths under `test-results/artifacts/**`

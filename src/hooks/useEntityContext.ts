@@ -6,7 +6,8 @@ export const useEntityContextResolver = () => {
   const { entities } = useHAEntities();
 
   return useCallback(
-    (template: string, defaultEntityId?: string | null) => resolveEntityContext(template, defaultEntityId, entities),
+    (template: string, defaultEntityId?: string | null) =>
+      resolveEntityContext(template, defaultEntityId, entities),
     [entities],
   );
 };

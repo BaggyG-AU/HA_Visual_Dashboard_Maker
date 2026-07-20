@@ -16,10 +16,15 @@ test.describe('Entity Type Dashboard Generation', () => {
       await ctx.appDSL.waitUntilReady();
 
       // Click "New Dashboard" button
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
 
       // Wait for dialog options to appear (more reliable than waiting for modal wrapper)
-      await expect(ctx.window.getByTestId('new-dashboard-blank-option')).toBeVisible({ timeout: 10000 });
+      await expect(ctx.window.getByTestId('new-dashboard-blank-option')).toBeVisible({
+        timeout: 10000,
+      });
 
       // Verify all three options are visible
       await expect(ctx.window.getByTestId('new-dashboard-blank-option')).toBeVisible();
@@ -41,10 +46,15 @@ test.describe('Entity Type Dashboard Generation', () => {
       await ctx.appDSL.waitUntilReady();
 
       // Open new dashboard dialog
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
 
       // Wait for dialog content to appear (checking actual modal content, not wrapper)
-      await expect(ctx.window.getByTestId('new-dashboard-blank-option')).toBeVisible({ timeout: 10000 });
+      await expect(ctx.window.getByTestId('new-dashboard-blank-option')).toBeVisible({
+        timeout: 10000,
+      });
 
       // Click blank option
       await ctx.window.getByTestId('new-dashboard-blank-option').click();
@@ -64,10 +74,15 @@ test.describe('Entity Type Dashboard Generation', () => {
       await ctx.appDSL.waitUntilReady();
 
       // Open new dashboard dialog
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
 
       // Wait for dialog content to appear
-      await expect(ctx.window.getByTestId('new-dashboard-blank-option')).toBeVisible({ timeout: 10000 });
+      await expect(ctx.window.getByTestId('new-dashboard-blank-option')).toBeVisible({
+        timeout: 10000,
+      });
 
       // Entity type option should be disabled/grayed when offline
       const entityTypeCard = ctx.window.getByTestId('new-dashboard-entity-type-option');
@@ -89,24 +104,72 @@ test.describe('Entity Type Dashboard Generation', () => {
       // Seed entity cache with comprehensive test data for all categories
       await seedEntityCache(ctx.window, [
         // Lights
-        { entity_id: 'light.living_room', state: 'on', attributes: { friendly_name: 'Living Room Light' } },
-        { entity_id: 'light.bedroom', state: 'off', attributes: { friendly_name: 'Bedroom Light' } },
+        {
+          entity_id: 'light.living_room',
+          state: 'on',
+          attributes: { friendly_name: 'Living Room Light' },
+        },
+        {
+          entity_id: 'light.bedroom',
+          state: 'off',
+          attributes: { friendly_name: 'Bedroom Light' },
+        },
         // Cameras
-        { entity_id: 'camera.front_door', state: 'idle', attributes: { friendly_name: 'Front Door Camera' } },
+        {
+          entity_id: 'camera.front_door',
+          state: 'idle',
+          attributes: { friendly_name: 'Front Door Camera' },
+        },
         // Sensors
-        { entity_id: 'sensor.temperature', state: '22', attributes: { friendly_name: 'Temperature', device_class: 'temperature', unit_of_measurement: '°C' } },
-        { entity_id: 'sensor.power', state: '150', attributes: { friendly_name: 'Power', device_class: 'power', unit_of_measurement: 'W' } },
+        {
+          entity_id: 'sensor.temperature',
+          state: '22',
+          attributes: {
+            friendly_name: 'Temperature',
+            device_class: 'temperature',
+            unit_of_measurement: '°C',
+          },
+        },
+        {
+          entity_id: 'sensor.power',
+          state: '150',
+          attributes: { friendly_name: 'Power', device_class: 'power', unit_of_measurement: 'W' },
+        },
         // Climate
-        { entity_id: 'climate.thermostat', state: 'heat', attributes: { friendly_name: 'Thermostat' } },
+        {
+          entity_id: 'climate.thermostat',
+          state: 'heat',
+          attributes: { friendly_name: 'Thermostat' },
+        },
         // Presence
         { entity_id: 'person.john', state: 'home', attributes: { friendly_name: 'John' } },
-        { entity_id: 'device_tracker.phone', state: 'home', attributes: { friendly_name: 'Phone' } },
+        {
+          entity_id: 'device_tracker.phone',
+          state: 'home',
+          attributes: { friendly_name: 'Phone' },
+        },
         // Covers
-        { entity_id: 'cover.garage', state: 'closed', attributes: { friendly_name: 'Garage Door' } },
+        {
+          entity_id: 'cover.garage',
+          state: 'closed',
+          attributes: { friendly_name: 'Garage Door' },
+        },
         // Security
-        { entity_id: 'alarm_control_panel.home', state: 'disarmed', attributes: { friendly_name: 'Home Alarm' } },
-        { entity_id: 'lock.front_door', state: 'locked', attributes: { friendly_name: 'Front Door' } },
-        { entity_id: 'binary_sensor.motion', state: 'off', attributes: { device_class: 'motion', friendly_name: 'Motion' } },
+        {
+          entity_id: 'alarm_control_panel.home',
+          state: 'disarmed',
+          attributes: { friendly_name: 'Home Alarm' },
+        },
+        {
+          entity_id: 'lock.front_door',
+          state: 'locked',
+          attributes: { friendly_name: 'Front Door' },
+        },
+        {
+          entity_id: 'binary_sensor.motion',
+          state: 'off',
+          attributes: { device_class: 'motion', friendly_name: 'Motion' },
+        },
         // Rooms
         { entity_id: 'switch.fan', state: 'on', attributes: { friendly_name: 'Fan' } },
         // Media
@@ -119,16 +182,23 @@ test.describe('Entity Type Dashboard Generation', () => {
       });
 
       // Open new dashboard dialog
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
 
       // Wait for dialog content to appear
-      await expect(ctx.window.getByTestId('new-dashboard-blank-option')).toBeVisible({ timeout: 10000 });
+      await expect(ctx.window.getByTestId('new-dashboard-blank-option')).toBeVisible({
+        timeout: 10000,
+      });
 
       // Click entity type option
       await ctx.window.getByTestId('new-dashboard-entity-type-option').click();
 
       // Wait for wizard content to appear (not the modal wrapper which is "hidden")
-      await expect(ctx.window.getByTestId('entity-category-card-lights')).toBeVisible({ timeout: 10000 });
+      await expect(ctx.window.getByTestId('entity-category-card-lights')).toBeVisible({
+        timeout: 10000,
+      });
 
       // Verify categories are shown (we have lights, camera, and sensor entities)
       await expect(ctx.window.getByTestId('entity-category-card-lights')).toBeVisible();
@@ -150,8 +220,16 @@ test.describe('Entity Type Dashboard Generation', () => {
 
       // Seed entity cache with lights
       await seedEntityCache(ctx.window, [
-        { entity_id: 'light.living_room', state: 'on', attributes: { friendly_name: 'Living Room Light' } },
-        { entity_id: 'light.bedroom', state: 'off', attributes: { friendly_name: 'Bedroom Light' } },
+        {
+          entity_id: 'light.living_room',
+          state: 'on',
+          attributes: { friendly_name: 'Living Room Light' },
+        },
+        {
+          entity_id: 'light.bedroom',
+          state: 'off',
+          attributes: { friendly_name: 'Bedroom Light' },
+        },
         { entity_id: 'light.kitchen', state: 'on', attributes: { friendly_name: 'Kitchen Light' } },
       ]);
 
@@ -161,11 +239,16 @@ test.describe('Entity Type Dashboard Generation', () => {
       });
 
       // Open wizard
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
       await ctx.window.getByTestId('new-dashboard-entity-type-option').click();
 
       // Wait for wizard content (category cards) to appear
-      await expect(ctx.window.getByTestId('entity-category-card-lights')).toBeVisible({ timeout: 10000 });
+      await expect(ctx.window.getByTestId('entity-category-card-lights')).toBeVisible({
+        timeout: 10000,
+      });
 
       // Select lights category
       await ctx.window.getByTestId('entity-category-card-lights').click();
@@ -205,16 +288,23 @@ test.describe('Entity Type Dashboard Generation', () => {
       });
 
       // Open wizard
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
       await ctx.window.getByTestId('new-dashboard-entity-type-option').click();
 
       // Wait for loading to finish and error to appear
-      await expect(ctx.window.getByTestId('entity-type-wizard-error')).toBeVisible({ timeout: 10000 });
+      await expect(ctx.window.getByTestId('entity-type-wizard-error')).toBeVisible({
+        timeout: 10000,
+      });
 
       // Verify error message is shown
       await expect(ctx.window.getByTestId('entity-type-wizard-error')).toBeVisible();
       await expect(ctx.window.getByText(/No entity categories available/i)).toBeVisible();
-      await expect(ctx.window.getByText(/Make sure you have entities in your Home Assistant instance/i)).toBeVisible();
+      await expect(
+        ctx.window.getByText(/Make sure you have entities in your Home Assistant instance/i),
+      ).toBeVisible();
 
       // Verify Retry button is available in the error alert
       await expect(ctx.window.getByRole('button', { name: /Retry/i })).toBeVisible();
@@ -234,8 +324,16 @@ test.describe('Entity Type Dashboard Generation', () => {
 
       // Seed with camera entities
       await seedEntityCache(ctx.window, [
-        { entity_id: 'camera.front_door', state: 'idle', attributes: { friendly_name: 'Front Door' } },
-        { entity_id: 'camera.back_yard', state: 'recording', attributes: { friendly_name: 'Back Yard' } },
+        {
+          entity_id: 'camera.front_door',
+          state: 'idle',
+          attributes: { friendly_name: 'Front Door' },
+        },
+        {
+          entity_id: 'camera.back_yard',
+          state: 'recording',
+          attributes: { friendly_name: 'Back Yard' },
+        },
       ]);
 
       // Simulate connection
@@ -244,7 +342,10 @@ test.describe('Entity Type Dashboard Generation', () => {
       });
 
       // Open wizard and select surveillance
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
       await ctx.window.getByTestId('new-dashboard-entity-type-option').click();
       await ctx.window.getByTestId('entity-category-card-surveillance').click();
       await ctx.window.getByRole('button', { name: /Create Dashboard/i }).click();
@@ -277,7 +378,10 @@ test.describe('Entity Type Dashboard Generation', () => {
       });
 
       // Generate lights dashboard
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
       await ctx.window.getByTestId('new-dashboard-entity-type-option').click();
       await ctx.window.getByTestId('entity-category-card-lights').click();
       await ctx.window.getByRole('button', { name: /Create Dashboard/i }).click();
@@ -298,14 +402,21 @@ test.describe('Entity Type Dashboard Generation', () => {
       await seedEntityCache(ctx.window, [
         { entity_id: 'person.john', state: 'home', attributes: { friendly_name: 'John' } },
         { entity_id: 'person.jane', state: 'away', attributes: { friendly_name: 'Jane' } },
-        { entity_id: 'device_tracker.phone', state: 'home', attributes: { friendly_name: 'Phone' } },
+        {
+          entity_id: 'device_tracker.phone',
+          state: 'home',
+          attributes: { friendly_name: 'Phone' },
+        },
       ]);
 
       await ctx.window.evaluate(() => {
         (window as any).__testThemeApi?.setConnected(true);
       });
 
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
       await ctx.window.getByTestId('new-dashboard-entity-type-option').click();
       await ctx.window.getByTestId('entity-category-card-presence').click();
       await ctx.window.getByRole('button', { name: /Create Dashboard/i }).click();
@@ -324,7 +435,11 @@ test.describe('Entity Type Dashboard Generation', () => {
       await ctx.appDSL.waitUntilReady();
 
       await seedEntityCache(ctx.window, [
-        { entity_id: 'cover.garage_door', state: 'closed', attributes: { friendly_name: 'Garage' } },
+        {
+          entity_id: 'cover.garage_door',
+          state: 'closed',
+          attributes: { friendly_name: 'Garage' },
+        },
         { entity_id: 'cover.blinds', state: 'open', attributes: { friendly_name: 'Blinds' } },
       ]);
 
@@ -332,7 +447,10 @@ test.describe('Entity Type Dashboard Generation', () => {
         (window as any).__testThemeApi?.setConnected(true);
       });
 
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
       await ctx.window.getByTestId('new-dashboard-entity-type-option').click();
       await ctx.window.getByTestId('entity-category-card-covers').click();
       await ctx.window.getByRole('button', { name: /Create Dashboard/i }).click();
@@ -351,16 +469,31 @@ test.describe('Entity Type Dashboard Generation', () => {
       await ctx.appDSL.waitUntilReady();
 
       await seedEntityCache(ctx.window, [
-        { entity_id: 'alarm_control_panel.home', state: 'disarmed', attributes: { friendly_name: 'Alarm' } },
-        { entity_id: 'lock.front_door', state: 'locked', attributes: { friendly_name: 'Front Door' } },
-        { entity_id: 'binary_sensor.motion', state: 'off', attributes: { device_class: 'motion', friendly_name: 'Motion' } },
+        {
+          entity_id: 'alarm_control_panel.home',
+          state: 'disarmed',
+          attributes: { friendly_name: 'Alarm' },
+        },
+        {
+          entity_id: 'lock.front_door',
+          state: 'locked',
+          attributes: { friendly_name: 'Front Door' },
+        },
+        {
+          entity_id: 'binary_sensor.motion',
+          state: 'off',
+          attributes: { device_class: 'motion', friendly_name: 'Motion' },
+        },
       ]);
 
       await ctx.window.evaluate(() => {
         (window as any).__testThemeApi?.setConnected(true);
       });
 
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
       await ctx.window.getByTestId('new-dashboard-entity-type-option').click();
       await ctx.window.getByTestId('entity-category-card-security').click();
       await ctx.window.getByRole('button', { name: /Create Dashboard/i }).click();
@@ -388,7 +521,10 @@ test.describe('Entity Type Dashboard Generation', () => {
         (window as any).__testThemeApi?.setConnected(true);
       });
 
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
       await ctx.window.getByTestId('new-dashboard-entity-type-option').click();
       await ctx.window.getByTestId('entity-category-card-rooms').click();
       await ctx.window.getByRole('button', { name: /Create Dashboard/i }).click();
@@ -408,14 +544,21 @@ test.describe('Entity Type Dashboard Generation', () => {
 
       await seedEntityCache(ctx.window, [
         { entity_id: 'media_player.tv', state: 'playing', attributes: { friendly_name: 'TV' } },
-        { entity_id: 'media_player.speaker', state: 'idle', attributes: { friendly_name: 'Speaker' } },
+        {
+          entity_id: 'media_player.speaker',
+          state: 'idle',
+          attributes: { friendly_name: 'Speaker' },
+        },
       ]);
 
       await ctx.window.evaluate(() => {
         (window as any).__testThemeApi?.setConnected(true);
       });
 
-      await ctx.window.getByRole('button', { name: /New Dashboard/i }).first().click();
+      await ctx.window
+        .getByRole('button', { name: /New Dashboard/i })
+        .first()
+        .click();
       await ctx.window.getByTestId('new-dashboard-entity-type-option').click();
       await ctx.window.getByTestId('entity-category-card-media').click();
       await ctx.window.getByRole('button', { name: /Create Dashboard/i }).click();

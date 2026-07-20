@@ -19,24 +19,28 @@ The Entity Type Dashboard Generator is a feature that automatically creates pre-
 The system supports the following categories:
 
 #### Lights 💡
+
 - **Description**: Control and monitor all your lighting
 - **Required Domains**: `light`
 - **Generated Cards**: Light cards with on/off toggles and brightness controls
 - **Layout**: Two-column grid with up to 6 light entities
 
 #### Surveillance 📹
+
 - **Description**: Monitor security cameras
 - **Required Domains**: `camera`
 - **Generated Cards**: Picture-entity cards with live camera streams
 - **Layout**: Two-column grid with up to 6 camera entities
 
 #### Power Management ⚡
+
 - **Description**: Energy consumption and battery monitoring
 - **Required Domains**: `sensor` (filtered by device_class: power, energy, battery)
 - **Generated Cards**: Sensor cards with line graphs for trend visualization
 - **Layout**: Two-column grid with up to 6 power/energy/battery sensors
 
 #### Environment/Aircon 🌡️
+
 - **Description**: Climate control and environmental monitoring
 - **Required Domains**: `climate`, `sensor` (temperature/humidity)
 - **Generated Cards**:
@@ -49,13 +53,17 @@ The system supports the following categories:
 ### Components
 
 #### 1. `NewDashboardDialog.tsx`
+
 Main entry point for dashboard creation with three options:
+
 - Blank Dashboard
 - From Template (placeholder)
 - From Entity Type (new feature)
 
 #### 2. `EntityTypeDashboardWizard.tsx`
+
 Category selection wizard that:
+
 - Loads cached entities from HA
 - Filters available categories based on entity domains
 - Shows entity counts per category
@@ -63,7 +71,9 @@ Category selection wizard that:
 - Triggers dashboard generation
 
 #### 3. `dashboardGeneratorService.ts`
+
 Core logic for:
+
 - Category availability checking
 - Entity filtering and sorting
 - Dashboard configuration generation
@@ -110,6 +120,7 @@ Loaded into editor via loadDashboard()
 ### E2E Tests (`tests/e2e/entity-type-dashboard.spec.ts`)
 
 Tests cover:
+
 - ✅ Option visibility in new dashboard dialog
 - ✅ Blank dashboard creation
 - ✅ Offline error handling
@@ -121,6 +132,7 @@ Tests cover:
 ### Integration Tests (`tests/integration/dashboard-generator.spec.ts`)
 
 Tests cover:
+
 - ✅ Category filtering logic
 - ✅ Entity sorting and limiting
 - ✅ Dashboard structure generation
@@ -130,6 +142,7 @@ Tests cover:
 ## Manual QA Checklist
 
 ### Category Selection
+
 - [ ] All three dashboard creation options visible in dialog
 - [ ] Tooltips show appropriate help text for each option
 - [ ] "From Entity Type" disabled when offline with clear message
@@ -138,6 +151,7 @@ Tests cover:
 - [ ] Create button disabled until category selected
 
 ### Dashboard Generation
+
 - [ ] Lights dashboard creates light cards with correct entities
 - [ ] Surveillance dashboard creates picture-entity cards
 - [ ] Power dashboard filters correct sensor types (power/energy/battery)
@@ -149,12 +163,14 @@ Tests cover:
 - [ ] Success message shows correct title and card count
 
 ### Error States
+
 - [ ] Offline: Clear error message in wizard
 - [ ] No entities: Empty state with refresh button
 - [ ] No matching entities for category: Not selectable or shows 0 count
 - [ ] Loading state shows spinner while fetching entities
 
 ### Platform Support
+
 - [ ] Windows: All features work correctly
 - [ ] Linux/WSL: All features work correctly
 - [ ] Layout renders properly on both platforms
@@ -162,6 +178,7 @@ Tests cover:
 ## Future Enhancements
 
 ### Planned
+
 - [ ] More categories (Media, Security, Weather, etc.)
 - [ ] Customizable entity limits
 - [ ] Area-based filtering (e.g., "Living Room Lights")
@@ -169,6 +186,7 @@ Tests cover:
 - [ ] Save custom category templates
 
 ### Deferred
+
 - [ ] AI-suggested layouts based on entity relationships
 - [ ] Multi-category dashboards
 - [ ] Custom category creation

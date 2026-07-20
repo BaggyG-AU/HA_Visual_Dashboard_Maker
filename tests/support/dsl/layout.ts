@@ -15,7 +15,9 @@ export class LayoutDSL {
   }
 
   private async waitForAllSelectDropdownsToClose(): Promise<void> {
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+      timeout: 5000,
+    });
   }
 
   private async openSelectDropdown(select: Locator): Promise<void> {
@@ -41,13 +43,18 @@ export class LayoutDSL {
   private getInputNumberInput(testId: string): Locator {
     const wrapper = this.window.getByTestId(`${testId}-field`);
     const byWrapper = wrapper.locator('input.ant-input-number-input').first();
-    const byDirect = this.window.getByTestId(testId).locator('input.ant-input-number-input').first();
+    const byDirect = this.window
+      .getByTestId(testId)
+      .locator('input.ant-input-number-input')
+      .first();
     return byWrapper.or(byDirect).first();
   }
 
   private async selectOptionByText(pattern: RegExp): Promise<void> {
     await expect(this.getVisibleSelectDropdown()).toBeVisible({ timeout: 5000 });
-    const option = this.window.locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: pattern }).first();
+    const option = this.window
+      .locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: pattern })
+      .first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.evaluate((el) => {
       (el as HTMLElement).click();
@@ -56,7 +63,10 @@ export class LayoutDSL {
     await this.waitForAllSelectDropdownsToClose();
   }
 
-  private async addLayoutCard(cardType: 'vertical-stack' | 'horizontal-stack' | 'grid', testInfo?: import('@playwright/test').TestInfo): Promise<void> {
+  private async addLayoutCard(
+    cardType: 'vertical-stack' | 'horizontal-stack' | 'grid',
+    testInfo?: import('@playwright/test').TestInfo,
+  ): Promise<void> {
     const searchInput = this.window.getByTestId('card-search');
     await expect(searchInput).toBeVisible();
     await searchInput.fill(cardType);
@@ -154,7 +164,9 @@ export class LayoutDSL {
     await this.selectOptionByText(new RegExp(`^${value}$`, 'i'));
   }
 
-  async setJustifyContent(value: 'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly'): Promise<void> {
+  async setJustifyContent(
+    value: 'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly',
+  ): Promise<void> {
     const select = this.window.getByTestId('layout-justify-content');
     await expect(select).toBeVisible();
     await this.openSelectDropdown(select);
@@ -176,37 +188,54 @@ export class LayoutDSL {
     const select = this.window.getByTestId('layout-wrap');
     await expect(select).toBeVisible();
     await this.openSelectDropdown(select);
-    const label = mode === 'nowrap'
-      ? 'No Wrap'
-      : mode
-        .split('-')
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
+    const label =
+      mode === 'nowrap'
+        ? 'No Wrap'
+        : mode
+            .split('-')
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ');
     await this.selectOptionByText(new RegExp(`^${label}$`, 'i'));
   }
 
-  async expectGapApplied(cardType: 'vertical-stack' | 'horizontal-stack' | 'grid-row' | 'grid-column', expectedPx: number, cardIndex = 0): Promise<void> {
+  async expectGapApplied(
+    cardType: 'vertical-stack' | 'horizontal-stack' | 'grid-row' | 'grid-column',
+    expectedPx: number,
+    cardIndex = 0,
+  ): Promise<void> {
     const card = this.getCard(cardIndex);
 
     if (cardType === 'vertical-stack') {
       const container = card.getByTestId('vertical-stack-container');
-      await expect.poll(async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).gap)).toBe(`${expectedPx}px`);
+      await expect
+        .poll(async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).gap))
+        .toBe(`${expectedPx}px`);
       return;
     }
 
     if (cardType === 'horizontal-stack') {
       const container = card.getByTestId('horizontal-stack-container');
-      await expect.poll(async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).gap)).toBe(`${expectedPx}px`);
+      await expect
+        .poll(async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).gap))
+        .toBe(`${expectedPx}px`);
       return;
     }
 
     const container = card.getByTestId('grid-layout-container');
     if (cardType === 'grid-row') {
-      await expect.poll(async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).rowGap)).toBe(`${expectedPx}px`);
+      await expect
+        .poll(
+          async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).rowGap),
+        )
+        .toBe(`${expectedPx}px`);
       return;
     }
 
-    await expect.poll(async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).columnGap)).toBe(`${expectedPx}px`);
+    await expect
+      .poll(
+        async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).columnGap),
+      )
+      .toBe(`${expectedPx}px`);
   }
 
   async expectAlignmentApplied(
@@ -215,26 +244,49 @@ export class LayoutDSL {
     cardIndex = 0,
   ): Promise<void> {
     const card = this.getCard(cardIndex);
-    const container = cardType === 'vertical-stack'
-      ? card.getByTestId('vertical-stack-container')
-      : cardType === 'horizontal-stack'
-        ? card.getByTestId('horizontal-stack-container')
-        : card.getByTestId('grid-layout-container');
+    const container =
+      cardType === 'vertical-stack'
+        ? card.getByTestId('vertical-stack-container')
+        : cardType === 'horizontal-stack'
+          ? card.getByTestId('horizontal-stack-container')
+          : card.getByTestId('grid-layout-container');
 
     if (expected.alignItems) {
-      await expect.poll(async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).alignItems)).toBe(expected.alignItems);
+      await expect
+        .poll(
+          async () =>
+            await container.evaluate((el) => getComputedStyle(el as HTMLElement).alignItems),
+        )
+        .toBe(expected.alignItems);
     }
     if (expected.justifyContent) {
-      await expect.poll(async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).justifyContent)).toBe(expected.justifyContent);
+      await expect
+        .poll(
+          async () =>
+            await container.evaluate((el) => getComputedStyle(el as HTMLElement).justifyContent),
+        )
+        .toBe(expected.justifyContent);
     }
     if (expected.justifyItems) {
-      await expect.poll(async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).justifyItems)).toBe(expected.justifyItems);
+      await expect
+        .poll(
+          async () =>
+            await container.evaluate((el) => getComputedStyle(el as HTMLElement).justifyItems),
+        )
+        .toBe(expected.justifyItems);
     }
   }
 
-  async expectWrapApplied(expectedMode: 'nowrap' | 'wrap' | 'wrap-reverse', cardIndex = 0): Promise<void> {
+  async expectWrapApplied(
+    expectedMode: 'nowrap' | 'wrap' | 'wrap-reverse',
+    cardIndex = 0,
+  ): Promise<void> {
     const container = this.getCard(cardIndex).getByTestId('horizontal-stack-container');
-    await expect.poll(async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).flexWrap)).toBe(expectedMode);
+    await expect
+      .poll(
+        async () => await container.evaluate((el) => getComputedStyle(el as HTMLElement).flexWrap),
+      )
+      .toBe(expectedMode);
   }
 
   async expectLayoutScreenshot(name: string, cardIndex = 0): Promise<void> {

@@ -22,26 +22,27 @@ Rename `custom:accordion-card` to `custom:expander-card` and restructure from a 
 
 ### Top-Level Properties
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `type` | `string` | — | Must be `custom:expander-card` |
-| `title` | `string` | — | Text shown in the header |
-| `title-card` | `Card` | — | Full HA card config to render as header (overrides `title`) |
-| `title-card-button-overlay` | `boolean` | `false` | Overlay expand button on the title-card |
-| `cards` | `Card[]` | `[]` | Child cards shown when expanded |
-| `expanded` | `boolean` | `false` | Whether section is expanded by default |
-| `expanded-icon` | `string` | `mdi:chevron-up` | MDI icon shown when expanded |
-| `collapsed-icon` | `string` | `mdi:chevron-down` | MDI icon shown when collapsed |
-| `gap` | `string` | `0.6em` | Gap between header and content |
-| `padding` | `string` | `0` | Content area padding |
-| `clear` | `boolean` | `false` | Clear content area float |
-| `overlay-margin` | `string` | `2em` | Margin for overlay button |
-| `child-padding` | `string` | — | Padding applied to each child card |
-| `button-background` | `string` | — | CSS color for expand/collapse button background |
+| Property                    | Type      | Default            | Description                                                 |
+| --------------------------- | --------- | ------------------ | ----------------------------------------------------------- |
+| `type`                      | `string`  | —                  | Must be `custom:expander-card`                              |
+| `title`                     | `string`  | —                  | Text shown in the header                                    |
+| `title-card`                | `Card`    | —                  | Full HA card config to render as header (overrides `title`) |
+| `title-card-button-overlay` | `boolean` | `false`            | Overlay expand button on the title-card                     |
+| `cards`                     | `Card[]`  | `[]`               | Child cards shown when expanded                             |
+| `expanded`                  | `boolean` | `false`            | Whether section is expanded by default                      |
+| `expanded-icon`             | `string`  | `mdi:chevron-up`   | MDI icon shown when expanded                                |
+| `collapsed-icon`            | `string`  | `mdi:chevron-down` | MDI icon shown when collapsed                               |
+| `gap`                       | `string`  | `0.6em`            | Gap between header and content                              |
+| `padding`                   | `string`  | `0`                | Content area padding                                        |
+| `clear`                     | `boolean` | `false`            | Clear content area float                                    |
+| `overlay-margin`            | `string`  | `2em`              | Margin for overlay button                                   |
+| `child-padding`             | `string`  | —                  | Padding applied to each child card                          |
+| `button-background`         | `string`  | —                  | CSS color for expand/collapse button background             |
 
 ### Upstream YAML Examples
 
 **Basic (text title):**
+
 ```yaml
 type: custom:expander-card
 title: Living Room Controls
@@ -56,6 +57,7 @@ cards:
 ```
 
 **With title-card:**
+
 ```yaml
 type: custom:expander-card
 title-card:
@@ -74,6 +76,7 @@ cards:
 ```
 
 **Multi-section (multiple expander-cards in a stack):**
+
 ```yaml
 type: vertical-stack
 cards:
@@ -96,6 +99,7 @@ cards:
 ```
 
 **Nested expander-cards:**
+
 ```yaml
 type: custom:expander-card
 title: Home
@@ -120,10 +124,11 @@ cards:
 ### Type string: `custom:accordion-card`
 
 ### Multi-section model with `sections[]` array:
+
 ```yaml
 type: custom:accordion-card
-expand_mode: single   # 'single' | 'multi'
-style: bordered        # 'bordered' | 'borderless' | 'ghost'
+expand_mode: single # 'single' | 'multi'
+style: bordered # 'bordered' | 'borderless' | 'ghost'
 header_background: '#1a1a2e'
 content_padding: 12
 sections:
@@ -141,6 +146,7 @@ sections:
 ```
 
 ### HAVDM-Only Features (NOT in upstream):
+
 - `expand_mode: 'single' | 'multi'` — upstream doesn't have this; each expander-card is independent
 - `style: 'bordered' | 'borderless' | 'ghost'` — Ant Design styling modes
 - `header_background` — upstream uses `button-background` differently
@@ -169,6 +175,7 @@ The card palette entry changes from "Accordion" → "Expander Card" with `source
 ## Files to Modify
 
 ### 1. Type Definitions
+
 **File**: `src/features/accordion/types.ts`
 
 **Replace entire file with:**
@@ -211,9 +218,11 @@ export interface NormalizedExpanderConfig {
 ```
 
 ### 2. Service Layer
+
 **File**: `src/features/accordion/accordionService.ts`
 
 **Rewrite to match single-section model:**
+
 - `normalizeExpanderConfig(card: ExpanderCardConfig): NormalizedExpanderConfig`
 - Remove `normalizeAccordionConfig`, `getDefaultExpandedSections`, `toggleAccordionSection`, `setAllSectionsExpanded`
 - Remove multi-section logic (ensureValidDefaultExpansion, normalizeSection)
@@ -222,9 +231,11 @@ export interface NormalizedExpanderConfig {
 - Keep `MAX_ACCORDION_DEPTH` → rename to `MAX_EXPANDER_DEPTH`
 
 ### 3. Component
+
 **File**: `src/features/accordion/AccordionPanel.tsx`
 
 **Rename to `ExpanderPanel.tsx` and restructure:**
+
 - Single collapsible section (no sections loop)
 - Header: render `title-card` if present, otherwise text title
 - Expand/collapse with `expanded-icon`/`collapsed-icon`
@@ -233,16 +244,20 @@ export interface NormalizedExpanderConfig {
 - Keep accessibility: `aria-expanded`, keyboard Enter/Space
 
 ### 4. Card Renderer
+
 **File**: `src/components/cards/AccordionCardRenderer.tsx`
 
 **Rename to `ExpanderCardRenderer.tsx`:**
+
 - Update imports to reference new types and component names
 - Update type check from `'custom:accordion-card'` to `'custom:expander-card'`
 
 ### 5. Card Registry
+
 **File**: `src/services/cardRegistry.ts` (line ~326)
 
 **Changes:**
+
 ```typescript
 // BEFORE:
 {
@@ -272,9 +287,11 @@ export interface NormalizedExpanderConfig {
 ```
 
 ### 6. BaseCard
+
 **File**: `src/components/BaseCard.tsx` (line ~257)
 
 **Changes:**
+
 ```typescript
 // BEFORE:
 case 'custom:accordion-card':
@@ -282,12 +299,15 @@ case 'custom:accordion-card':
 // AFTER:
 case 'custom:expander-card':
 ```
+
 - Update import of renderer component name
 
 ### 7. PropertiesPanel
+
 **File**: `src/components/PropertiesPanel.tsx`
 
 **Changes (extensive — accordion has ~600 lines of form UI):**
+
 - Replace all `'custom:accordion-card'` with `'custom:expander-card'`
 - Lines: ~603, ~1105, ~1115, ~1134, ~2460, ~3179, ~4369
 - Remove multi-section management UI (add section, remove section, section list)
@@ -295,16 +315,20 @@ case 'custom:expander-card':
 - Remove `expand_mode` and `style` dropdowns
 
 ### 8. JSON Schema
+
 **File**: `src/schemas/ha-dashboard-schema.json` (line ~190)
 
 **Changes:**
+
 - Replace `"custom:accordion-card"` with `"custom:expander-card"` in type enum
 - Update property definitions to match upstream schema
 
 ### 9. Unit Tests
+
 **File**: `tests/unit/accordion-service.spec.ts`
 
 **Rewrite completely:**
+
 - Replace all `'custom:accordion-card'` with `'custom:expander-card'`
 - Remove multi-section test cases
 - Add single-section normalization tests
@@ -312,14 +336,18 @@ case 'custom:expander-card':
 - Add nesting depth tests (using new function names)
 
 ### 10. E2E Tests
+
 **Files:**
+
 - `tests/e2e/accordion.spec.ts` — Rewrite BASE_YAML to upstream format, update all assertions
 - `tests/e2e/accordion.visual.spec.ts` — Update BASE_YAML
 
 ### 11. DSL
+
 **File**: `tests/support/dsl/accordion.ts`
 
 **Changes:**
+
 - Update palette search from `'custom:accordion-card'` to `'custom:expander-card'`
 - Remove multi-section DSL methods (addSection, removeSection, getSectionCount)
 - Add single-section DSL methods (setTitle, toggleExpanded, setTitleCard)
@@ -343,6 +371,7 @@ Full regression and CI testing are handled separately and are not part of this p
 ## YAML Round-Trip Test Cases
 
 ### Import Test (upstream → HAVDM):
+
 ```yaml
 # Input:
 type: custom:expander-card
@@ -362,6 +391,7 @@ cards:
 ```
 
 Expected normalized config:
+
 - `title`: 'My Section'
 - `expanded`: true
 - `gap`: '1em'
@@ -372,6 +402,7 @@ Expected normalized config:
 - `cards`: 2 cards
 
 ### Import Test (title-card variant):
+
 ```yaml
 type: custom:expander-card
 title-card:
@@ -385,11 +416,13 @@ cards:
 ```
 
 Expected normalized config:
+
 - `title`: '' (empty, title-card takes precedence)
 - `titleCard`: { type: 'entities', entities: [...] }
 - `titleCardButtonOverlay`: true
 
 ### Export Test:
+
 Internal config should serialize back to upstream format exactly.
 
 ---
@@ -413,7 +446,7 @@ type: vertical-stack
 cards:
   - type: custom:expander-card
     title: Section 1
-    expanded: true   # first section gets expanded=true
+    expanded: true # first section gets expanded=true
     cards: [...]
   - type: custom:expander-card
     title: Section 2

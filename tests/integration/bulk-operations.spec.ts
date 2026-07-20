@@ -31,7 +31,10 @@ test.describe('Bulk Operations Integration', () => {
   });
 
   test.fixme('applies bulk property edit to selected cards and preserves undo granularity', async () => {
-    test.fixme(true, 'Known issue: multi-select property edits currently create multiple history entries instead of one atomic undo step.');
+    test.fixme(
+      true,
+      'Known issue: multi-select property edits currently create multiple history entries instead of one atomic undo step.',
+    );
     const ctx = await launchWithDSL();
 
     try {

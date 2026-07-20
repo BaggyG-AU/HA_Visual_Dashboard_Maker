@@ -25,7 +25,16 @@ test.describe('Entity Remapping (Feature 3.3)', () => {
   test('auto-maps missing entities and updates YAML', async ({ page }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, yamlEditor, entityContext, entityRemapping } = ctx;
+    const {
+      appDSL,
+      dashboard,
+      palette,
+      canvas,
+      properties,
+      yamlEditor,
+      entityContext,
+      entityRemapping,
+    } = ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -57,7 +66,9 @@ test.describe('Entity Remapping (Feature 3.3)', () => {
         return {
           remapDebug: testWindow.__remapDebug ?? null,
           modalCount: document.querySelectorAll('[data-testid="entity-remapping-modal"]').length,
-          debugState: (document.querySelector('[data-testid="remap-debug-state"]') as HTMLElement | null)?.dataset ?? null,
+          debugState:
+            (document.querySelector('[data-testid="remap-debug-state"]') as HTMLElement | null)
+              ?.dataset ?? null,
         };
       });
       await testInfo.attach('debug-after-apply.json', {
@@ -70,8 +81,12 @@ test.describe('Entity Remapping (Feature 3.3)', () => {
       if (await modal.count()) {
         const diag = await ctx.window.evaluate(() => {
           const testWindow = window as Window & { __remapDebug?: unknown };
-          const state = document.querySelector('[data-testid="remap-debug-state"]') as HTMLElement | null;
-          const root = document.querySelector('[data-testid="entity-remapping-modal"]') as HTMLElement | null;
+          const state = document.querySelector(
+            '[data-testid="remap-debug-state"]',
+          ) as HTMLElement | null;
+          const root = document.querySelector(
+            '[data-testid="entity-remapping-modal"]',
+          ) as HTMLElement | null;
           const wrap = document.querySelector('.ant-modal-wrap') as HTMLElement | null;
           return {
             remapDebug: testWindow.__remapDebug ?? null,
@@ -84,10 +99,18 @@ test.describe('Entity Remapping (Feature 3.3)', () => {
                 }
               : null,
             rootStyle: root
-              ? { display: root.style.display, visibility: root.style.visibility, classes: root.className }
+              ? {
+                  display: root.style.display,
+                  visibility: root.style.visibility,
+                  classes: root.className,
+                }
               : null,
             wrapStyle: wrap
-              ? { display: wrap.style.display, visibility: wrap.style.visibility, classes: wrap.className }
+              ? {
+                  display: wrap.style.display,
+                  visibility: wrap.style.visibility,
+                  classes: wrap.className,
+                }
               : null,
           };
         });
@@ -103,12 +126,18 @@ test.describe('Entity Remapping (Feature 3.3)', () => {
         contentType: 'application/json',
       });
       await expect
-        .poll(async () => {
-          return await yamlEditor.anyYamlContains(/light\.missing_lamp_local/);
-        }, { timeout: 8000 })
+        .poll(
+          async () => {
+            return await yamlEditor.anyYamlContains(/light\.missing_lamp_local/);
+          },
+          { timeout: 8000 },
+        )
         .toBe(true);
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value: after } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value: after } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       const updated = yaml.load(after) as Record<string, any>;
       expect(updated.entity).toBe('light.missing_lamp_local');
     } finally {

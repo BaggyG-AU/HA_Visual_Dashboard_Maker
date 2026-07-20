@@ -12,7 +12,10 @@ import { Page, expect } from '@playwright/test';
  * @param window - Playwright Page object
  * @param customEntities - Optional custom entities array. If not provided, uses default test entities.
  */
-export async function seedEntityCache(window: Page, customEntities?: Array<Record<string, unknown>>): Promise<void> {
+export async function seedEntityCache(
+  window: Page,
+  customEntities?: Array<Record<string, unknown>>,
+): Promise<void> {
   const defaultEntities = [
     {
       entity_id: 'light.living_room',
@@ -44,9 +47,15 @@ export async function seedEntityCache(window: Page, customEntities?: Array<Recor
 
   await window.evaluate(async (entities) => {
     const testWindow = window as unknown as Window & {
-      electronAPI: { testSeedEntityCache: (payload: Array<Record<string, unknown>>) => Promise<{ success: boolean }> };
+      electronAPI: {
+        testSeedEntityCache: (
+          payload: Array<Record<string, unknown>>,
+        ) => Promise<{ success: boolean }>;
+      };
     };
-    const result = await testWindow.electronAPI.testSeedEntityCache(entities as Array<Record<string, unknown>>);
+    const result = await testWindow.electronAPI.testSeedEntityCache(
+      entities as Array<Record<string, unknown>>,
+    );
     if (result.success) {
       console.log('[EntityBrowserDSL] Seeded', entities.length, 'test entities');
     }
@@ -83,7 +92,10 @@ export class EntityBrowserDSL {
 
       let hasVisibleModal = false;
       for (let j = 0; j < count; j++) {
-        const isVisible = await modalWraps.nth(j).isVisible().catch(() => false);
+        const isVisible = await modalWraps
+          .nth(j)
+          .isVisible()
+          .catch(() => false);
         if (isVisible) {
           hasVisibleModal = true;
           break;
@@ -94,18 +106,24 @@ export class EntityBrowserDSL {
 
       await this.window.keyboard.press('Escape');
       const closeButtons = this.window.locator(
-        '.ant-modal-wrap:visible .ant-modal-close, .ant-modal-wrap:visible button:has-text("Close"), .ant-modal-wrap:visible button:has-text("Cancel")'
+        '.ant-modal-wrap:visible .ant-modal-close, .ant-modal-wrap:visible button:has-text("Close"), .ant-modal-wrap:visible button:has-text("Cancel")',
       );
       const closeCount = await closeButtons.count();
       if (closeCount > 0) {
-        await closeButtons.first().click().catch(() => undefined);
+        await closeButtons
+          .first()
+          .click()
+          .catch(() => undefined);
       }
 
       await expect
-        .poll(async () => {
-          const visible = this.window.locator('.ant-modal-wrap:visible');
-          return await visible.count();
-        }, { timeout: 2500 })
+        .poll(
+          async () => {
+            const visible = this.window.locator('.ant-modal-wrap:visible');
+            return await visible.count();
+          },
+          { timeout: 2500 },
+        )
         .toBeLessThan(count)
         .catch(() => undefined);
     }
@@ -135,7 +153,8 @@ export class EntityBrowserDSL {
    * Open the Entity Browser modal from Insert Entity button (in YAML editors)
    */
   async openFromInsertButton(): Promise<void> {
-    const insertButton = this.window.getByTestId('yaml-insert-entity-button')
+    const insertButton = this.window
+      .getByTestId('yaml-insert-entity-button')
       .or(this.window.locator('button:has-text("Insert Entity")'));
     await expect(insertButton).toBeVisible();
     await insertButton.click();
@@ -287,7 +306,9 @@ export class EntityBrowserDSL {
   /**
    * Expect connection status badge to show specific text
    */
-  async expectConnectionStatus(status: 'Connected' | 'Not Connected' | 'Offline (Cached)'): Promise<void> {
+  async expectConnectionStatus(
+    status: 'Connected' | 'Not Connected' | 'Offline (Cached)',
+  ): Promise<void> {
     const statusBadge = this.window.getByTestId('entity-browser-status-badge');
     await expect(statusBadge).toBeVisible();
     const statusText = await statusBadge.textContent();
@@ -385,10 +406,13 @@ export class EntityBrowserDSL {
 
     const rows = modal.locator('.ant-table-row');
     // Allow attached rows if present; ignore if empty
-    await rows.first().waitFor({ state: 'attached', timeout: 1000 }).catch(() => {
-      // Allow empty state without failing the wait
-      return undefined;
-    });
+    await rows
+      .first()
+      .waitFor({ state: 'attached', timeout: 1000 })
+      .catch(() => {
+        // Allow empty state without failing the wait
+        return undefined;
+      });
 
     return await rows.count();
   }

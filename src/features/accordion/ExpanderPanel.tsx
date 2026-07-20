@@ -41,11 +41,7 @@ const usePrefersReducedMotion = () => {
   return prefersReducedMotion;
 };
 
-export const ExpanderPanel: React.FC<ExpanderPanelProps> = ({
-  card,
-  depth = 1,
-  onCardClick,
-}) => {
+export const ExpanderPanel: React.FC<ExpanderPanelProps> = ({ card, depth = 1, onCardClick }) => {
   const config = useMemo(() => normalizeExpanderConfig(card), [card]);
   const prefersReducedMotion = usePrefersReducedMotion();
   const [expanded, setExpanded] = useState(config.expanded);
@@ -72,18 +68,24 @@ export const ExpanderPanel: React.FC<ExpanderPanelProps> = ({
             color: '#7f7f7f',
           }}
         >
-          <Text type="secondary" style={{ fontSize: '12px' }}>(No cards)</Text>
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            (No cards)
+          </Text>
         </div>
       );
     }
 
     return sectionCards.map((childCard, cardIndex) => {
-      const nestedCard = childCard.type === 'custom:expander-card'
-        ? { ...childCard, _expanderDepth: depth + 1 }
-        : childCard;
+      const nestedCard =
+        childCard.type === 'custom:expander-card'
+          ? { ...childCard, _expanderDepth: depth + 1 }
+          : childCard;
 
       return (
-        <div key={`expander-card-${cardIndex}`} style={{ minHeight: 0, padding: config.childPadding }}>
+        <div
+          key={`expander-card-${cardIndex}`}
+          style={{ minHeight: 0, padding: config.childPadding }}
+        >
           <BaseCard
             card={nestedCard}
             isSelected={false}
@@ -100,7 +102,11 @@ export const ExpanderPanel: React.FC<ExpanderPanelProps> = ({
   const panelId = `expander-panel-${depth}`;
 
   return (
-    <div data-testid="expander-panel" style={{ height: '100%', overflow: 'auto' }} onClick={onCardClick}>
+    <div
+      data-testid="expander-panel"
+      style={{ height: '100%', overflow: 'auto' }}
+      onClick={onCardClick}
+    >
       <div
         data-testid="expander-section-0"
         style={{
@@ -150,16 +156,18 @@ export const ExpanderPanel: React.FC<ExpanderPanelProps> = ({
             )}
 
             <span
-              style={config.titleCardButtonOverlay
-                ? {
-                  position: 'absolute',
-                  right: config.overlayMargin,
-                  top: '50%',
-                  transform: `translateY(-50%) ${expanded ? 'rotate(0deg)' : 'rotate(0deg)'}`,
-                }
-                : {
-                  marginLeft: config.overlayMargin,
-                }}
+              style={
+                config.titleCardButtonOverlay
+                  ? {
+                      position: 'absolute',
+                      right: config.overlayMargin,
+                      top: '50%',
+                      transform: `translateY(-50%) ${expanded ? 'rotate(0deg)' : 'rotate(0deg)'}`,
+                    }
+                  : {
+                      marginLeft: config.overlayMargin,
+                    }
+              }
             >
               <MdiIcon
                 icon={expanded ? config.expandedIcon : config.collapsedIcon}

@@ -1,11 +1,6 @@
 import { DashboardCategory, Entity } from './dashboardGeneratorService';
 
-export type WizardState =
-  | 'offline'
-  | 'loading'
-  | 'ready'
-  | 'empty'
-  | 'error';
+export type WizardState = 'offline' | 'loading' | 'ready' | 'empty' | 'error';
 
 export interface WizardContext {
   isConnected: boolean;
@@ -44,4 +39,3 @@ export function countEntitiesByDomain(entities: Entity[]): Record<string, number
     return acc;
   }, {});
 }
-

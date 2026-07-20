@@ -39,9 +39,7 @@ describe('gradientPresetStorage', () => {
   });
 
   it('accepts legacy preset arrays', () => {
-    const legacy = [
-      { name: 'Legacy', css: 'linear-gradient(90deg, #000 0%, #fff 100%)' },
-    ];
+    const legacy = [{ name: 'Legacy', css: 'linear-gradient(90deg, #000 0%, #fff 100%)' }];
     const result = parsePresetCollection(legacy);
     expect(result.errors).toHaveLength(0);
     expect(result.presets[0].category).toBe('Custom');

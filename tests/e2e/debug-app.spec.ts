@@ -56,10 +56,16 @@ test.describe('Debug: Application Inspection', () => {
 
       // 6. Look for specific components by class patterns
       const components = {
-        'Card Palette': await window.locator('[class*="CardPalette"], [class*="card-palette"]').count(),
-        'Canvas/Grid': await window.locator('[class*="Canvas"], [class*="Grid"], .react-grid-layout').count(),
-        'Properties Panel': await window.locator('[class*="Properties"], [class*="properties"]').count(),
-        'Allotment': await window.locator('.split-view-container, [class*="Allotment"]').count(),
+        'Card Palette': await window
+          .locator('[class*="CardPalette"], [class*="card-palette"]')
+          .count(),
+        'Canvas/Grid': await window
+          .locator('[class*="Canvas"], [class*="Grid"], .react-grid-layout')
+          .count(),
+        'Properties Panel': await window
+          .locator('[class*="Properties"], [class*="properties"]')
+          .count(),
+        Allotment: await window.locator('.split-view-container, [class*="Allotment"]').count(),
         'Ant Design': await window.locator('[class*="ant-"]').count(),
       };
 
@@ -84,7 +90,7 @@ test.describe('Debug: Application Inspection', () => {
         });
         return Array.from(classes).sort();
       });
-      console.log('Unique class names (first 50):',classNames.slice(0, 50));
+      console.log('Unique class names (first 50):', classNames.slice(0, 50));
 
       // 10. Ensure the app remains interactive at the end of inspection
       await expect(window.locator('body')).toBeVisible();
@@ -94,7 +100,6 @@ test.describe('Debug: Application Inspection', () => {
       // Basic assertion - app should have loaded something
       expect(divCount).toBeGreaterThan(0);
       expect(html.length).toBeGreaterThan(100);
-
     } finally {
       await close(ctx);
     }

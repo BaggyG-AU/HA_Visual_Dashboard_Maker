@@ -316,7 +316,7 @@ describe('ColorPicker', () => {
           showRecentColors={true}
           maxRecentColors={10}
           disabled={false}
-        />
+        />,
       );
 
       expect(screen.getByTestId('color-picker')).toBeInTheDocument();
@@ -326,13 +326,7 @@ describe('ColorPicker', () => {
     });
 
     it('should work with minimal features', () => {
-      render(
-        <ColorPicker
-          value="#FF0000"
-          showFormatToggle={false}
-          showRecentColors={false}
-        />
-      );
+      render(<ColorPicker value="#FF0000" showFormatToggle={false} showRecentColors={false} />);
 
       expect(screen.getByTestId('color-picker')).toBeInTheDocument();
       expect(screen.queryByTestId('color-picker-format-toggle')).not.toBeInTheDocument();

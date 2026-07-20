@@ -13,6 +13,7 @@ This release introduces the **Entity Type Dashboard Generator**, a powerful feat
 ### What's New
 
 #### New Dashboard Dialog
+
 - **Three Creation Options**:
   1. **Blank Dashboard** - Start from scratch with an empty canvas
   2. **Template Dashboard** - Use pre-built dashboard templates (coming soon)
@@ -21,6 +22,7 @@ This release introduces the **Entity Type Dashboard Generator**, a powerful feat
 - Consistent with Home Assistant design patterns
 
 #### Entity Type Dashboard Wizard
+
 - **Category Selection Interface** - Browse available dashboard categories
 - **Smart Category Detection** - Only shows categories with matching entities
 - **Entity Count Badges** - See how many entities are available per category
@@ -78,6 +80,7 @@ This release introduces the **Entity Type Dashboard Generator**, a powerful feat
 ### Technical Features
 
 #### Smart Entity Filtering
+
 - **Domain-Based Filtering** - Matches entities by Home Assistant domain
 - **Attribute Filtering** - Filters by device class and unit of measurement
 - **Exclusion Rules** - Removes unavailable and disabled entities
@@ -85,6 +88,7 @@ This release introduces the **Entity Type Dashboard Generator**, a powerful feat
 - **Alphabetical Sorting** - Consistent entity ordering
 
 #### Automatic Card Type Selection
+
 - **Entity Cards** - For lights, switches, and general controls
 - **Picture Entity Cards** - For camera feeds
 - **Thermostat Cards** - For climate entities
@@ -96,12 +100,14 @@ This release introduces the **Entity Type Dashboard Generator**, a powerful feat
 - **Media Control Cards** - For media players
 
 #### Grid Layout Generation
+
 - **Automatic Positioning** - Cards positioned in 2-column grid
 - **Responsive Sizing** - Each card is 6 columns wide (50% width)
 - **Row Heights** - Automatically calculated (5 units per card)
 - **Clean Spacing** - Professional dashboard appearance
 
 #### Dashboard Metadata
+
 - **Auto-Generated Titles** - Descriptive dashboard names (e.g., "Lights Dashboard")
 - **View Configuration** - Single view with icon and theme support
 - **Entity Count Tracking** - Success messages show card count
@@ -110,6 +116,7 @@ This release introduces the **Entity Type Dashboard Generator**, a powerful feat
 ### User Experience
 
 #### Workflow
+
 1. Click "New Dashboard" button
 2. Select "Entity Type Dashboard" option
 3. Choose from available categories (based on your entities)
@@ -118,6 +125,7 @@ This release introduces the **Entity Type Dashboard Generator**, a powerful feat
 6. Edit, rearrange, or customize as needed
 
 #### Visual Feedback
+
 - **Category Cards** - Large, clickable cards with icons and descriptions
 - **Selection Indicator** - Blue border highlights selected category
 - **Badge Counts** - Green badges show available entity counts
@@ -126,6 +134,7 @@ This release introduces the **Entity Type Dashboard Generator**, a powerful feat
 - **Success Messages** - Toast notifications confirming creation
 
 #### Connection Requirements
+
 - **Online Mode Required** - Wizard only available when connected to HA
 - **Offline Detection** - Shows error message when not connected
 - **Entity Cache** - Uses cached entity list from Home Assistant
@@ -135,6 +144,7 @@ This release introduces the **Entity Type Dashboard Generator**, a powerful feat
 ## Enhanced Testing Infrastructure
 
 ### New Test Files
+
 1. **`tests/e2e/entity-type-dashboard.spec.ts`** - 13 comprehensive E2E tests
    - Dialog display and option selection
    - Offline state handling
@@ -152,12 +162,14 @@ This release introduces the **Entity Type Dashboard Generator**, a powerful feat
    - Entity limit enforcement
 
 ### Testing Enhancements
+
 - **Enhanced `seedEntityCache`** - Now accepts custom entity arrays for testing
 - **Modal Visibility Fixes** - Improved handling of Ant Design modal components
 - **Timing Improvements** - Better waits for modal transitions
 - **All Tests Passing** - 32/32 tests passing (13 E2E + 19 integration)
 
 ### Test Coverage
+
 - ✅ Dialog interactions and navigation
 - ✅ Category selection and validation
 - ✅ Dashboard generation for all categories
@@ -228,6 +240,7 @@ This release introduces the **Entity Type Dashboard Generator**, a powerful feat
    - Backward compatible with default entities
 
 ### Statistics
+
 - **Total Lines Added**: 1,938
 - **Total Lines Removed**: 4
 - **Files Modified**: 8
@@ -242,16 +255,19 @@ This release introduces the **Entity Type Dashboard Generator**, a powerful feat
 ### Test Execution Commands
 
 **Integration Tests**:
+
 ```bash
 npx playwright test --project=electron-integration --workers=1 --trace=retain-on-failure
 ```
 
 **E2E Tests**:
+
 ```bash
 npx playwright test --project=electron-e2e --workers=1 --trace=retain-on-failure
 ```
 
 **Specific Feature Tests**:
+
 ```bash
 # Entity Type Dashboard E2E tests
 npx playwright test tests/e2e/entity-type-dashboard.spec.ts --project=electron-e2e --workers=1
@@ -261,6 +277,7 @@ npx playwright test tests/integration/dashboard-generator.spec.ts --project=elec
 ```
 
 ### Test Results
+
 - ✅ **32/32 tests passing** (100% pass rate)
 - ✅ All 9 category scenarios validated
 - ✅ Error handling verified
@@ -269,6 +286,7 @@ npx playwright test tests/integration/dashboard-generator.spec.ts --project=elec
 - ✅ Grid layouts accurate
 
 ### Test Stability
+
 - Multiple test runs completed successfully
 - No flaky tests identified
 - Proper timing and waits implemented
@@ -281,22 +299,26 @@ npx playwright test tests/integration/dashboard-generator.spec.ts --project=elec
 ### Architecture
 
 **Service Layer**:
+
 - `DashboardGeneratorService` - Singleton service pattern
 - Category definitions with metadata (icon, name, description, help text)
 - Entity filtering by domain, device class, and unit of measurement
 - Dashboard YAML generation with proper structure
 
 **Component Layer**:
+
 - `NewDashboardDialog` - Modal dialog with 3 options
 - `EntityTypeDashboardWizard` - Category selection and generation
 - Integration with existing canvas and YAML editor
 
 **State Management**:
+
 - Uses existing Zustand store for dashboard state
 - Connection status from theme store
 - Entity cache from Electron IPC
 
 **Data Flow**:
+
 ```
 User clicks "New Dashboard"
   ↓
@@ -323,23 +345,24 @@ Success message displayed
 
 ### Card Type Mapping
 
-| Entity Domain | Device Class / Attribute | Card Type |
-|--------------|-------------------------|-----------|
-| `light` | - | Entity |
-| `camera` | - | Picture Entity |
-| `climate` | - | Thermostat |
-| `sensor` | `power`, `energy`, `voltage` | Sensor |
-| `sensor` | `temperature`, `humidity` | Sensor |
-| `person` | - | Entity |
-| `device_tracker` | - | Entity |
-| `cover` | - | Cover |
-| `alarm_control_panel` | - | Alarm Panel |
-| `lock` | - | Lock |
-| `binary_sensor` | `door`, `window` | Binary Sensor |
-| `switch` | - | Entity |
-| `media_player` | - | Media Control |
+| Entity Domain         | Device Class / Attribute     | Card Type      |
+| --------------------- | ---------------------------- | -------------- |
+| `light`               | -                            | Entity         |
+| `camera`              | -                            | Picture Entity |
+| `climate`             | -                            | Thermostat     |
+| `sensor`              | `power`, `energy`, `voltage` | Sensor         |
+| `sensor`              | `temperature`, `humidity`    | Sensor         |
+| `person`              | -                            | Entity         |
+| `device_tracker`      | -                            | Entity         |
+| `cover`               | -                            | Cover          |
+| `alarm_control_panel` | -                            | Alarm Panel    |
+| `lock`                | -                            | Lock           |
+| `binary_sensor`       | `door`, `window`             | Binary Sensor  |
+| `switch`              | -                            | Entity         |
+| `media_player`        | -                            | Media Control  |
 
 ### Grid Layout Algorithm
+
 ```typescript
 // 2-column grid layout
 // Each card: 6 columns wide (50% of 12-column grid)
@@ -365,6 +388,7 @@ Card position = {
 ## Known Issues & Limitations
 
 ### Current Limitations
+
 1. **Template Dashboard Option** - Not yet implemented (shows placeholder message)
 2. **Entity Limit** - Fixed at 6 entities per category
 3. **Single View** - Generated dashboards have only one view
@@ -372,6 +396,7 @@ Card position = {
 5. **Fixed Grid Layout** - 2-column grid layout only
 
 ### Workarounds
+
 1. Use "Entity Type Dashboard" or "Blank Dashboard" options
 2. After generation, manually add more entities via YAML editor
 3. Create additional views using YAML editor
@@ -383,6 +408,7 @@ Card position = {
 ## Future Enhancements
 
 ### Planned for v0.4.0-beta
+
 - **Entity Selection** - Choose which entities to include in dashboard
 - **Layout Options** - 1-column, 2-column, 3-column grid layouts
 - **Template Library** - Pre-built dashboard templates
@@ -391,6 +417,7 @@ Card position = {
 - **Category Icons** - More icon options for categories
 
 ### Under Consideration
+
 - **AI-Powered Suggestions** - Recommend dashboard layouts based on entities
 - **Dashboard Preview** - Preview before creation
 - **Import/Export Categories** - Share custom category definitions
@@ -401,10 +428,12 @@ Card position = {
 ## Documentation
 
 ### User Documentation
+
 - **[ENTITY_TYPE_DASHBOARD_GENERATOR.md](../features/ENTITY_TYPE_DASHBOARD_GENERATOR.md)** - Complete feature guide
 - **[Entity-type dashboard generator.md](../product/Entity-type%20dashboard%20generator.md)** - Product specification
 
 ### Technical Documentation
+
 - **[dashboardGeneratorService.ts](../../src/services/dashboardGeneratorService.ts)** - Service implementation with inline docs
 - **[Test files](../../tests/)** - Comprehensive test coverage with examples
 
@@ -413,6 +442,7 @@ Card position = {
 ## Performance
 
 ### Metrics
+
 - **Entity Loading**: < 500ms (cached from previous HA connection)
 - **Category Filtering**: < 50ms (for typical entity counts)
 - **Dashboard Generation**: < 100ms (instant)
@@ -420,6 +450,7 @@ Card position = {
 - **Canvas Rendering**: < 200ms (depends on card count)
 
 ### Optimizations
+
 - Entity cache reused from existing HA connection
 - Efficient filtering with early termination
 - Pre-built category definitions (no runtime computation)
@@ -430,6 +461,7 @@ Card position = {
 ## Accessibility
 
 ### Features
+
 - **Keyboard Navigation** - Full keyboard support in dialog and wizard
 - **Screen Reader Support** - Proper ARIA labels and roles
 - **High Contrast** - Works with all theme modes
@@ -441,6 +473,7 @@ Card position = {
 ## Security
 
 ### Considerations
+
 - ✅ No new IPC channels added (uses existing entity cache)
 - ✅ YAML generation validated before loading
 - ✅ No arbitrary code execution
@@ -462,6 +495,7 @@ Card position = {
 **No configuration changes required**
 
 ### Testing After Upgrade
+
 1. Connect to Home Assistant instance
 2. Click "New Dashboard" button (should show new dialog)
 3. Select "Entity Type Dashboard" option
@@ -476,6 +510,7 @@ Card position = {
 This release was developed with assistance from **Claude Sonnet 4.5** via Claude Code.
 
 ### Development Credits
+
 - **Feature Implementation**: Claude Sonnet 4.5
 - **Test Suite Development**: Comprehensive Playwright tests (32 scenarios)
 - **Documentation**: Complete user and technical documentation
@@ -487,12 +522,15 @@ This release was developed with assistance from **Claude Sonnet 4.5** via Claude
 ## Support
 
 ### Getting Help
+
 - **Documentation**: See `docs/features/ENTITY_TYPE_DASHBOARD_GENERATOR.md`
 - **GitHub Issues**: [Report bugs and request features](https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker/issues)
 - **Testing Guide**: See `docs/testing/TESTING_STANDARDS.md`
 
 ### Reporting Issues
+
 Please include:
+
 - App version (v0.3.0-beta.1)
 - Operating system
 - Home Assistant version

@@ -60,7 +60,10 @@ export class AdvancedSliderDSL {
   }
 
   async pressArrowRight(times = 1): Promise<void> {
-    const slider = this.window.getByTestId('advanced-slider-control').locator('[role="slider"]').first();
+    const slider = this.window
+      .getByTestId('advanced-slider-control')
+      .locator('[role="slider"]')
+      .first();
     await expect(slider).toBeVisible();
     await slider.focus();
     for (let index = 0; index < times; index += 1) {
@@ -69,7 +72,10 @@ export class AdvancedSliderDSL {
   }
 
   async expectAriaValueNow(expected: string): Promise<void> {
-    const slider = this.window.getByTestId('advanced-slider-control').locator('[role="slider"]').first();
+    const slider = this.window
+      .getByTestId('advanced-slider-control')
+      .locator('[role="slider"]')
+      .first();
     await expect(slider).toHaveAttribute('aria-valuenow', expected);
   }
 
@@ -104,12 +110,16 @@ export class AdvancedSliderDSL {
     const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
 
-    const option = dropdown.locator('.ant-select-item-option', {
-      hasText: new RegExp(`^${label}$`, 'i'),
-    }).first();
+    const option = dropdown
+      .locator('.ant-select-item-option', {
+        hasText: new RegExp(`^${label}$`, 'i'),
+      })
+      .first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click();
 
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+      timeout: 5000,
+    });
   }
 }

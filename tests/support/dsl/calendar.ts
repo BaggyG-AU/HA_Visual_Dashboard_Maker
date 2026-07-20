@@ -5,7 +5,8 @@ export interface CalendarFormConfig {
   view?: 'month' | 'week' | 'day';
   showWeekNumbers?: boolean;
   showAgenda?: boolean;
-  onDateSelectAction?: 'none' | 'more-info' | 'toggle' | 'call-service' | 'navigate' | 'url' | 'popup';
+  onDateSelectAction?:
+    'none' | 'more-info' | 'toggle' | 'call-service' | 'navigate' | 'url' | 'popup';
 }
 
 export class CalendarDSL {
@@ -26,7 +27,10 @@ export class CalendarDSL {
 
   async configure(config: CalendarFormConfig): Promise<void> {
     if (config.view) {
-      await this.selectByTestId('calendar-view', config.view.charAt(0).toUpperCase() + config.view.slice(1));
+      await this.selectByTestId(
+        'calendar-view',
+        config.view.charAt(0).toUpperCase() + config.view.slice(1),
+      );
     }
 
     if (typeof config.showWeekNumbers === 'boolean') {
@@ -47,7 +51,10 @@ export class CalendarDSL {
         url: 'URL',
         popup: 'Popup',
       };
-      await this.selectByTestId('calendar-on-date-select-action', labelByAction[config.onDateSelectAction]);
+      await this.selectByTestId(
+        'calendar-on-date-select-action',
+        labelByAction[config.onDateSelectAction],
+      );
     }
   }
 
@@ -89,7 +96,9 @@ export class CalendarDSL {
 
     if (found) {
       await option.click();
-      await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+      await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+        timeout: 5000,
+      });
       return;
     }
 

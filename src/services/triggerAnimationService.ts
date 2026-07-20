@@ -45,9 +45,7 @@ const sanitizeAnimationName = (name: string): string => {
   }
 
   // Keep custom names only when they are CSS-safe identifiers.
-  return /^[a-z_][a-z0-9_-]*$/i.test(normalized)
-    ? normalized
-    : BUILTIN_ANIMATION_NAMES.pulse;
+  return /^[a-z_][a-z0-9_-]*$/i.test(normalized) ? normalized : BUILTIN_ANIMATION_NAMES.pulse;
 };
 
 const normalizeEntityIdFromCard = (card: Card): string | null => {
@@ -62,7 +60,11 @@ const normalizeEntityIdFromCard = (card: Card): string | null => {
     if (typeof candidate === 'string' && candidate.trim().length > 0) {
       return candidate;
     }
-    if (isRecord(candidate) && typeof candidate.entity === 'string' && candidate.entity.trim().length > 0) {
+    if (
+      isRecord(candidate) &&
+      typeof candidate.entity === 'string' &&
+      candidate.entity.trim().length > 0
+    ) {
       return candidate.entity;
     }
   }
@@ -104,31 +106,37 @@ export const normalizeTriggerAnimations = (
       return;
     }
 
-    const sourceAnimation = typeof entry.animation === 'string' && entry.animation.trim().length > 0
-      ? entry.animation
-      : 'pulse';
+    const sourceAnimation =
+      typeof entry.animation === 'string' && entry.animation.trim().length > 0
+        ? entry.animation
+        : 'pulse';
 
     const durationInput = toFiniteNumber(entry.duration_ms);
-    const durationMs = durationInput === null
-      ? DEFAULT_DURATION_MS
-      : clamp(Math.round(durationInput), MIN_DURATION_MS, MAX_DURATION_MS);
+    const durationMs =
+      durationInput === null
+        ? DEFAULT_DURATION_MS
+        : clamp(Math.round(durationInput), MIN_DURATION_MS, MAX_DURATION_MS);
 
     const iterationsInput = toFiniteNumber(entry.iterations);
-    const iterations = iterationsInput === null
-      ? DEFAULT_ITERATIONS
-      : clamp(Math.round(iterationsInput), 1, MAX_ITERATIONS);
+    const iterations =
+      iterationsInput === null
+        ? DEFAULT_ITERATIONS
+        : clamp(Math.round(iterationsInput), 1, MAX_ITERATIONS);
 
-    const easing = typeof entry.easing === 'string' && entry.easing.trim().length > 0
-      ? entry.easing.trim()
-      : DEFAULT_EASING;
+    const easing =
+      typeof entry.easing === 'string' && entry.easing.trim().length > 0
+        ? entry.easing.trim()
+        : DEFAULT_EASING;
 
-    const target = typeof entry.target === 'string' && entry.target.trim().length > 0
-      ? entry.target.trim()
-      : undefined;
+    const target =
+      typeof entry.target === 'string' && entry.target.trim().length > 0
+        ? entry.target.trim()
+        : undefined;
 
-    const rawId = typeof entry.id === 'string' && entry.id.trim().length > 0
-      ? entry.id.trim()
-      : `trigger-animation-${index}`;
+    const rawId =
+      typeof entry.id === 'string' && entry.id.trim().length > 0
+        ? entry.id.trim()
+        : `trigger-animation-${index}`;
 
     normalized.push({
       id: rawId,
@@ -190,16 +198,10 @@ export const resolveTriggerAnimation = (
   return configs.find((config) => config.trigger === trigger) ?? null;
 };
 
-export const toAnimationKeyframes = (
-  animationName: string,
-): Keyframe[] => {
+export const toAnimationKeyframes = (animationName: string): Keyframe[] => {
   switch (animationName) {
     case BUILTIN_ANIMATION_NAMES.flash:
-      return [
-        { opacity: 1 },
-        { opacity: 0.35 },
-        { opacity: 1 },
-      ];
+      return [{ opacity: 1 }, { opacity: 0.35 }, { opacity: 1 }];
     case BUILTIN_ANIMATION_NAMES.shake:
       return [
         { transform: 'translateX(0)' },
@@ -214,11 +216,7 @@ export const toAnimationKeyframes = (
         { transform: 'translateY(0)' },
       ];
     case BUILTIN_ANIMATION_NAMES.pulse:
-      return [
-        { transform: 'scale(1)' },
-        { transform: 'scale(1.025)' },
-        { transform: 'scale(1)' },
-      ];
+      return [{ transform: 'scale(1)' }, { transform: 'scale(1.025)' }, { transform: 'scale(1)' }];
     default:
       return [];
   }

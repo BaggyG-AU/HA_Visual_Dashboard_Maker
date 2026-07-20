@@ -7,7 +7,10 @@
 
 import { Page, expect, type LocatorScreenshotOptions } from '@playwright/test';
 
-type ScreenshotOptions = LocatorScreenshotOptions & { animations?: 'disabled' | 'allow'; caret?: 'hide' | 'initial' };
+type ScreenshotOptions = LocatorScreenshotOptions & {
+  animations?: 'disabled' | 'allow';
+  caret?: 'hide' | 'initial';
+};
 
 export class CanvasDSL {
   constructor(private window: Page) {}
@@ -68,7 +71,11 @@ export class CanvasDSL {
 
     for (const pos of positions) {
       await canvas.click({ position: pos });
-      const hidden = await this.window.getByTestId('properties-panel').count().then((c) => c === 0).catch(() => false);
+      const hidden = await this.window
+        .getByTestId('properties-panel')
+        .count()
+        .then((c) => c === 0)
+        .catch(() => false);
       if (hidden) return;
     }
 
@@ -147,7 +154,11 @@ export class CanvasDSL {
     await expect(layer).toBeVisible();
   }
 
-  async expectBackgroundLayerCss(index: number, property: string, value: string | RegExp): Promise<void> {
+  async expectBackgroundLayerCss(
+    index: number,
+    property: string,
+    value: string | RegExp,
+  ): Promise<void> {
     const layer = this.getBackgroundLayerVisual(index);
     await expect(layer).toHaveCSS(property, value);
   }
@@ -155,7 +166,11 @@ export class CanvasDSL {
   async expectBackgroundLayerScreenshot(
     index: number,
     name: string,
-    options: ScreenshotOptions & { maxDiffPixels?: number; maxDiffPixelRatio?: number; threshold?: number } = { animations: 'disabled', caret: 'hide' },
+    options: ScreenshotOptions & {
+      maxDiffPixels?: number;
+      maxDiffPixelRatio?: number;
+      threshold?: number;
+    } = { animations: 'disabled', caret: 'hide' },
   ): Promise<void> {
     const layer = this.getBackgroundLayerVisual(index);
     await expect(layer).toBeVisible();
@@ -176,7 +191,9 @@ export class CanvasDSL {
       }
     });
     await this.window.evaluate(async () => {
-      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
     });
 
     const box = await layer.boundingBox();
@@ -206,53 +223,63 @@ export class CanvasDSL {
     });
   }
 
-  async measureBackgroundLayerFps(index = 0, frameCount = 60): Promise<{ fps: number; avgFrameTime: number; samples: number; minFps: number }> {
+  async measureBackgroundLayerFps(
+    index = 0,
+    frameCount = 60,
+  ): Promise<{ fps: number; avgFrameTime: number; samples: number; minFps: number }> {
     const card = this.getCard(index);
     await expect(card).toBeVisible();
     await this.window.bringToFront();
-    await this.window.waitForFunction(() => document.hasFocus(), null, { timeout: 3000 }).catch(() => false);
+    await this.window
+      .waitForFunction(() => document.hasFocus(), null, { timeout: 3000 })
+      .catch(() => false);
 
-    return await this.window.evaluate(({ frames, targetIndex }) => {
-      const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-testid="card-background-layer"]'));
-      const layer = layers[targetIndex] || layers[0];
-      if (!layer) {
-        return { fps: 0, avgFrameTime: Infinity, samples: 0, minFps: 0 };
-      }
+    return await this.window.evaluate(
+      ({ frames, targetIndex }) => {
+        const layers = Array.from(
+          document.querySelectorAll<HTMLElement>('[data-testid="card-background-layer"]'),
+        );
+        const layer = layers[targetIndex] || layers[0];
+        if (!layer) {
+          return { fps: 0, avgFrameTime: Infinity, samples: 0, minFps: 0 };
+        }
 
-      const samples: number[] = [];
-      let last = performance.now();
-      let count = 0;
-      const warmupFrames = Math.min(5, Math.max(0, frames - 1));
-      let toggle = false;
+        const samples: number[] = [];
+        let last = performance.now();
+        let count = 0;
+        const warmupFrames = Math.min(5, Math.max(0, frames - 1));
+        let toggle = false;
 
-      return new Promise((resolve) => {
-        const step = () => {
-          const now = performance.now();
-          if (count >= warmupFrames) {
-            samples.push(now - last);
-          }
-          last = now;
+        return new Promise((resolve) => {
+          const step = () => {
+            const now = performance.now();
+            if (count >= warmupFrames) {
+              samples.push(now - last);
+            }
+            last = now;
 
-          toggle = !toggle;
-          layer.style.opacity = toggle ? '0.98' : '1';
+            toggle = !toggle;
+            layer.style.opacity = toggle ? '0.98' : '1';
 
-          count += 1;
-          if (count < frames) {
-            requestAnimationFrame(step);
-          } else {
-            const avg = samples.reduce((a, b) => a + b, 0) / Math.max(samples.length, 1);
-            const maxFrameTime = samples.length ? Math.max(...samples) : Infinity;
-            resolve({
-              fps: 1000 / avg,
-              avgFrameTime: avg,
-              samples: samples.length,
-              minFps: Number.isFinite(maxFrameTime) ? 1000 / maxFrameTime : 0,
-            });
-          }
-        };
+            count += 1;
+            if (count < frames) {
+              requestAnimationFrame(step);
+            } else {
+              const avg = samples.reduce((a, b) => a + b, 0) / Math.max(samples.length, 1);
+              const maxFrameTime = samples.length ? Math.max(...samples) : Infinity;
+              resolve({
+                fps: 1000 / avg,
+                avgFrameTime: avg,
+                samples: samples.length,
+                minFps: Number.isFinite(maxFrameTime) ? 1000 / maxFrameTime : 0,
+              });
+            }
+          };
 
-        requestAnimationFrame(step);
-      });
-    }, { frames: frameCount, targetIndex: index });
+          requestAnimationFrame(step);
+        });
+      },
+      { frames: frameCount, targetIndex: index },
+    );
   }
 }

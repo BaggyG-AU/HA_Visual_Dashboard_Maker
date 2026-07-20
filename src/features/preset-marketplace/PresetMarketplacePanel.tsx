@@ -10,7 +10,9 @@ interface PresetMarketplacePanelProps {
   onPresetImport: (dashboardYaml: string, dashboardTitle: string, dashboardId: string) => void;
 }
 
-export const PresetMarketplacePanel: React.FC<PresetMarketplacePanelProps> = ({ onPresetImport }) => {
+export const PresetMarketplacePanel: React.FC<PresetMarketplacePanelProps> = ({
+  onPresetImport,
+}) => {
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +21,7 @@ export const PresetMarketplacePanel: React.FC<PresetMarketplacePanelProps> = ({ 
 
   const selectedPreset = useMemo(
     () => presets.find((preset) => preset.id === selectedPresetId) ?? null,
-    [presets, selectedPresetId]
+    [presets, selectedPresetId],
   );
 
   const loadPresets = async () => {
@@ -66,7 +68,12 @@ export const PresetMarketplacePanel: React.FC<PresetMarketplacePanelProps> = ({ 
   };
 
   return (
-    <Space direction="vertical" size="middle" style={{ width: '100%' }} data-testid="preset-marketplace-panel">
+    <Space
+      direction="vertical"
+      size="middle"
+      style={{ width: '100%' }}
+      data-testid="preset-marketplace-panel"
+    >
       <Alert
         type="info"
         showIcon
@@ -74,13 +81,7 @@ export const PresetMarketplacePanel: React.FC<PresetMarketplacePanelProps> = ({ 
       />
 
       {error && (
-        <Alert
-          type="error"
-          showIcon
-          closable
-          onClose={() => setError(null)}
-          message={error}
-        />
+        <Alert type="error" showIcon closable onClose={() => setError(null)} message={error} />
       )}
 
       <Space style={{ width: '100%', justifyContent: 'space-between' }}>
@@ -161,7 +162,11 @@ export const PresetMarketplacePanel: React.FC<PresetMarketplacePanelProps> = ({ 
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Select a preset" />
             ) : (
               <Space direction="vertical" size={10} style={{ width: '100%' }}>
-                <Title level={4} style={{ margin: 0 }} data-testid="preset-marketplace-preview-title">
+                <Title
+                  level={4}
+                  style={{ margin: 0 }}
+                  data-testid="preset-marketplace-preview-title"
+                >
                   {selectedPreset.title}
                 </Title>
                 <Text>{selectedPreset.description}</Text>

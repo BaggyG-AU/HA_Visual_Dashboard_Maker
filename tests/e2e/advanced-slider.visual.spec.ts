@@ -33,7 +33,9 @@ test.describe('Advanced Slider Visual Regression', () => {
       await card.scrollIntoViewIfNeeded();
       const firstBox = await card.boundingBox();
       if (!firstBox) {
-        throw new Error('Failed to capture canvas card bounding box for horizontal slider screenshot');
+        throw new Error(
+          'Failed to capture canvas card bounding box for horizontal slider screenshot',
+        );
       }
       await test.expect(ctx.window).toHaveScreenshot('advanced-slider-horizontal-markers.png', {
         clip: {
@@ -50,7 +52,9 @@ test.describe('Advanced Slider Visual Regression', () => {
       await advancedSlider.configure({ orientation: 'vertical', showMarkers: false });
       const secondBox = await card.boundingBox();
       if (!secondBox) {
-        throw new Error('Failed to capture canvas card bounding box for vertical slider screenshot');
+        throw new Error(
+          'Failed to capture canvas card bounding box for vertical slider screenshot',
+        );
       }
       await test.expect(ctx.window).toHaveScreenshot('advanced-slider-vertical-no-markers.png', {
         clip: {

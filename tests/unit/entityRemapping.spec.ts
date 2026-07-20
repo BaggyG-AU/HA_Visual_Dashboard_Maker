@@ -14,13 +14,10 @@ const sampleConfig: DashboardConfig = {
         { type: 'sensor', entity: 'sensor.temp_bedroom' },
         {
           type: 'entities',
-          entities: [
-            'switch.kitchen',
-            { entity: 'light.dining_room' }
-          ]
-        }
-      ]
-    }
+          entities: ['switch.kitchen', { entity: 'light.dining_room' }],
+        },
+      ],
+    },
   ],
 };
 
@@ -29,32 +26,47 @@ const available: EntityState[] = [
     entity_id: 'light.living_room',
     state: 'on',
     attributes: { friendly_name: 'Living Room Light' },
-    last_changed: '', last_updated: '', context: { id: '', parent_id: null, user_id: null }
+    last_changed: '',
+    last_updated: '',
+    context: { id: '', parent_id: null, user_id: null },
   },
   {
     entity_id: 'switch.kitchen',
     state: 'off',
     attributes: { friendly_name: 'Kitchen Switch' },
-    last_changed: '', last_updated: '', context: { id: '', parent_id: null, user_id: null }
+    last_changed: '',
+    last_updated: '',
+    context: { id: '', parent_id: null, user_id: null },
   },
   {
     entity_id: 'sensor.bedroom_temperature',
     state: '21.0',
     attributes: { friendly_name: 'Bedroom Temperature' },
-    last_changed: '', last_updated: '', context: { id: '', parent_id: null, user_id: null }
-  }
+    last_changed: '',
+    last_updated: '',
+    context: { id: '', parent_id: null, user_id: null },
+  },
 ];
 
 describe('entityRemappingService', () => {
   it('extracts entity ids from dashboard config', () => {
     const ids = entityRemappingService.extractEntityIds(sampleConfig);
-    expect(ids).toEqual(expect.arrayContaining(['light.lounge', 'sensor.temp_bedroom', 'switch.kitchen', 'light.dining_room']));
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'light.lounge',
+        'sensor.temp_bedroom',
+        'switch.kitchen',
+        'light.dining_room',
+      ]),
+    );
   });
 
   it('detects missing entities', () => {
     const ids = entityRemappingService.extractEntityIds(sampleConfig);
     const missing = entityRemappingService.detectMissing(ids, available);
-    expect(missing).toEqual(expect.arrayContaining(['light.lounge', 'sensor.temp_bedroom', 'light.dining_room']));
+    expect(missing).toEqual(
+      expect.arrayContaining(['light.lounge', 'sensor.temp_bedroom', 'light.dining_room']),
+    );
     expect(missing).not.toContain('switch.kitchen');
   });
 
@@ -76,4 +88,3 @@ describe('entityRemappingService', () => {
     expect(ids).not.toContain('light.lounge');
   });
 });
-

@@ -53,7 +53,8 @@ test.describe('YAML Service Integration', () => {
   });
 
   test('should validate YAML syntax before parsing', async () => {
-    const invalidYaml = 'title: Test:\nviews:\n  - path: home\n    cards:\n      - type: button\n        entity light.kitchen'; // missing colon
+    const invalidYaml =
+      'title: Test:\nviews:\n  - path: home\n    cards:\n      - type: button\n        entity light.kitchen'; // missing colon
     expect(() => yaml.load(invalidYaml)).toThrow();
     try {
       yaml.load(invalidYaml);
@@ -115,7 +116,7 @@ test.describe('Card Registry Integration', () => {
       'plant-status',
     ];
 
-    standardCards.forEach(type => {
+    standardCards.forEach((type) => {
       const meta = cardRegistry.get(type);
       expect(meta?.type).toBe(type);
       expect(meta?.isCustom).toBe(false);
@@ -132,7 +133,7 @@ test.describe('Card Registry Integration', () => {
       'custom:better-thermostat-ui-card',
     ];
 
-    customCards.forEach(type => {
+    customCards.forEach((type) => {
       const meta = cardRegistry.get(type);
       expect(meta?.type).toBe(type);
       expect(meta?.isCustom).toBe(true);
@@ -145,18 +146,22 @@ test.describe('Card Registry Integration', () => {
     const controlCards = cardRegistry.getByCategory('control');
     const sensorCards = cardRegistry.getByCategory('sensor');
 
-    expect(layoutCards.map(c => c.type)).toEqual(expect.arrayContaining(['horizontal-stack', 'grid']));
-    expect(controlCards.map(c => c.type)).toEqual(expect.arrayContaining(['button', 'light']));
-    expect(sensorCards.map(c => c.type)).toEqual(expect.arrayContaining(['entities', 'glance', 'sensor', 'gauge']));
+    expect(layoutCards.map((c) => c.type)).toEqual(
+      expect.arrayContaining(['horizontal-stack', 'grid']),
+    );
+    expect(controlCards.map((c) => c.type)).toEqual(expect.arrayContaining(['button', 'light']));
+    expect(sensorCards.map((c) => c.type)).toEqual(
+      expect.arrayContaining(['entities', 'glance', 'sensor', 'gauge']),
+    );
   });
 
   test('should filter cards by source', async () => {
     const builtin = cardRegistry.getBySource('builtin');
     const hacs = cardRegistry.getBySource('hacs');
 
-    expect(builtin.find(c => c.type === 'button')).toBeTruthy();
-    expect(hacs.find(c => c.type === 'custom:apexcharts-card')).toBeTruthy();
-    expect(hacs.every(c => c.isCustom)).toBe(true);
+    expect(builtin.find((c) => c.type === 'button')).toBeTruthy();
+    expect(hacs.find((c) => c.type === 'custom:apexcharts-card')).toBeTruthy();
+    expect(hacs.every((c) => c.isCustom)).toBe(true);
   });
 });
 
@@ -173,7 +178,10 @@ test.describe('File Service Integration', () => {
         return { success: false, error: (error as Error).message };
       }
     };
-    (globalThis as any).window.electronAPI.writeFile = async (filePath: string, content: string) => {
+    (globalThis as any).window.electronAPI.writeFile = async (
+      filePath: string,
+      content: string,
+    ) => {
       try {
         fs.writeFileSync(filePath, content, 'utf-8');
         return { success: true };
@@ -230,7 +238,12 @@ test.describe('HA Connection Service Integration', () => {
       if (url.endsWith('/api/states')) {
         return { success: true, data: sampleEntities, status: 200, callCount };
       }
-      return { success: true, data: { version: '2024.5.0', components: ['stream'] }, status: 200, callCount };
+      return {
+        success: true,
+        data: { version: '2024.5.0', components: ['stream'] },
+        status: 200,
+        callCount,
+      };
     };
     (haConnectionService as any).entitiesCache = [];
     (haConnectionService as any).lastFetchTime = 0;
@@ -285,7 +298,11 @@ test.describe('HA Connection Service Integration', () => {
 
   test('should batch validate multiple entities', async () => {
     haConnectionService.setConfig({ url: 'http://ha.local', token: 'abc' });
-    const results = await haConnectionService.validateEntities(['light.one', 'sensor.temp', 'light.unknown']);
+    const results = await haConnectionService.validateEntities([
+      'light.one',
+      'sensor.temp',
+      'light.unknown',
+    ]);
     expect(results.get('light.one')).toBe(true);
     expect(results.get('sensor.temp')).toBe(true);
     expect(results.get('light.unknown')).toBe(false);
@@ -338,7 +355,12 @@ test.describe('Template Service Integration', () => {
 
   test('should recommend templates based on entities', async () => {
     const meta = loadTemplateMetadata();
-    const userEntities = ['sensor.grid_power', 'sensor.solar_power', 'sensor.home_power', 'sensor.current_power_usage'];
+    const userEntities = [
+      'sensor.grid_power',
+      'sensor.solar_power',
+      'sensor.home_power',
+      'sensor.current_power_usage',
+    ];
 
     const recommendations = meta.templates
       .map((tpl: any) => {
@@ -361,7 +383,7 @@ test.describe('Template Service Integration', () => {
           (t: any) =>
             t.name.toLowerCase().includes(query) ||
             t.description.toLowerCase().includes(query) ||
-            t.tags.some((tag: string) => tag.toLowerCase().includes(query))
+            t.tags.some((tag: string) => tag.toLowerCase().includes(query)),
         )
         .map((t: any) => t.id);
 
@@ -482,7 +504,14 @@ test.describe('Card Sizing Contract Integration', () => {
 
     const glance = getCardSizeConstraints({
       type: 'glance',
-      entities: ['light.one', 'switch.two', 'sensor.three', 'sensor.four', 'sensor.five', 'sensor.six'],
+      entities: [
+        'light.one',
+        'switch.two',
+        'sensor.three',
+        'sensor.four',
+        'sensor.five',
+        'sensor.six',
+      ],
     } as any);
     expect(glance.minW).toBeGreaterThanOrEqual(3);
     expect(glance.minH).toBeGreaterThanOrEqual(2);
@@ -503,9 +532,9 @@ test.describe('Card Sizing Contract Integration', () => {
 
     const layout = generateMasonryLayout(cards);
     expect(layout.length).toBe(3);
-    expect(layout.every(item => item.w > 0 && item.h > 0)).toBe(true);
+    expect(layout.every((item) => item.w > 0 && item.h > 0)).toBe(true);
 
-    const xs = layout.map(l => l.x);
+    const xs = layout.map((l) => l.x);
     expect(xs).toEqual(expect.arrayContaining([0, 6]));
   });
 });
@@ -540,7 +569,10 @@ test.describe('Layout Card Parser Integration', () => {
   test('should convert layout-card to RGL format', async () => {
     const view = {
       type: 'custom:layout-card',
-      layout: { grid_template_columns: 'repeat(12, 1fr)', grid_template_rows: 'repeat(auto-fill, 56px)' },
+      layout: {
+        grid_template_columns: 'repeat(12, 1fr)',
+        grid_template_rows: 'repeat(auto-fill, 56px)',
+      },
       cards: [
         { type: 'button', view_layout: { grid_column: '1 / 5', grid_row: '1 / 3' } },
         { type: 'entities', view_layout: { grid_column: '5 / 9', grid_row: '1 / 2' } },

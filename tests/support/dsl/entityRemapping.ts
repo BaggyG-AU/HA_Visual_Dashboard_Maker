@@ -15,27 +15,46 @@ export class EntityRemappingDSL {
     const wrap = this.window.locator('.remap-modal-wrap-force');
     try {
       await expect
-        .poll(async () => {
-          const box = await wrap.boundingBox().catch(() => null);
-          if (box && box.width > 0 && box.height > 0) return true;
-          const rootBox = await modal.boundingBox().catch(() => null);
-          return rootBox !== null && rootBox.width > 0 && rootBox.height > 0;
-        }, { timeout: 5000 })
+        .poll(
+          async () => {
+            const box = await wrap.boundingBox().catch(() => null);
+            if (box && box.width > 0 && box.height > 0) return true;
+            const rootBox = await modal.boundingBox().catch(() => null);
+            return rootBox !== null && rootBox.width > 0 && rootBox.height > 0;
+          },
+          { timeout: 5000 },
+        )
         .toBe(true);
       await expect(wrap).toBeVisible();
     } catch (error) {
       if (testInfo) {
         const debug = await this.window.evaluate(() => {
           const testWindow = window as Window & { __remapDebug?: unknown };
-          const stateElement = document.querySelector('[data-testid="remap-debug-state"]') as HTMLElement | null;
+          const stateElement = document.querySelector(
+            '[data-testid="remap-debug-state"]',
+          ) as HTMLElement | null;
           const wrap = document.querySelector('.ant-modal-wrap') as HTMLElement | null;
-          const root = document.querySelector('[data-testid="entity-remapping-modal"]') as HTMLElement | null;
+          const root = document.querySelector(
+            '[data-testid="entity-remapping-modal"]',
+          ) as HTMLElement | null;
           return {
             remapDebug: testWindow.__remapDebug ?? null,
             stateDataset: stateElement ? { ...stateElement.dataset } : null,
             modalAriaHidden: root?.getAttribute('aria-hidden') ?? null,
-            wrapStyle: wrap ? { display: wrap.style.display, visibility: wrap.style.visibility, classes: wrap.className } : null,
-            rootStyle: root ? { display: root.style.display, visibility: root.style.visibility, classes: root.className } : null,
+            wrapStyle: wrap
+              ? {
+                  display: wrap.style.display,
+                  visibility: wrap.style.visibility,
+                  classes: wrap.className,
+                }
+              : null,
+            rootStyle: root
+              ? {
+                  display: root.style.display,
+                  visibility: root.style.visibility,
+                  classes: root.className,
+                }
+              : null,
             wrapRect: wrap ? wrap.getBoundingClientRect().toJSON() : null,
             rootRect: root ? root.getBoundingClientRect().toJSON() : null,
           };
@@ -80,7 +99,9 @@ export class EntityRemappingDSL {
     }
 
     await expect
-      .poll(async () => await this.window.getByTestId('entity-remapping-modal').count(), { timeout: 5000 })
+      .poll(async () => await this.window.getByTestId('entity-remapping-modal').count(), {
+        timeout: 5000,
+      })
       .toBe(0);
   }
 }

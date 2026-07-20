@@ -6,11 +6,19 @@ import { formatAttributeValue } from '../services/attributeFormatter';
 const { Text } = Typography;
 
 const isTestEnv = (): boolean => {
-  if (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1' || process.env.PLAYWRIGHT_TEST === '1')) {
+  if (
+    typeof process !== 'undefined' &&
+    (process.env.NODE_ENV === 'test' ||
+      process.env.E2E === '1' ||
+      process.env.PLAYWRIGHT_TEST === '1')
+  ) {
     return true;
   }
   if (typeof window !== 'undefined') {
-    const testWindow = window as Window & { E2E?: string | boolean; PLAYWRIGHT_TEST?: string | boolean };
+    const testWindow = window as Window & {
+      E2E?: string | boolean;
+      PLAYWRIGHT_TEST?: string | boolean;
+    };
     return Boolean(testWindow.E2E || testWindow.PLAYWRIGHT_TEST);
   }
   return false;
@@ -28,7 +36,10 @@ const renderInline = (
   entries: Array<{ key: string; label: string; value: string }>,
   testIdPrefix: string,
 ) => (
-  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }} data-testid={`${testIdPrefix}-inline`}>
+  <div
+    style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}
+    data-testid={`${testIdPrefix}-inline`}
+  >
     {entries.map((entry) => (
       <Text
         key={entry.key}
@@ -45,7 +56,10 @@ const renderStacked = (
   entries: Array<{ key: string; label: string; value: string }>,
   testIdPrefix: string,
 ) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }} data-testid={`${testIdPrefix}-stacked`}>
+  <div
+    style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
+    data-testid={`${testIdPrefix}-stacked`}
+  >
     {entries.map((entry) => (
       <div key={entry.key} data-testid={`${testIdPrefix}-item-${entry.key}`}>
         <Text style={{ color: '#9e9e9e', fontSize: '12px' }}>{entry.label}:</Text>{' '}
@@ -71,7 +85,11 @@ const renderTable = (
   >
     <tbody>
       {entries.map((entry) => (
-        <tr key={entry.key} style={{ height: '32px' }} data-testid={`${testIdPrefix}-item-${entry.key}`}>
+        <tr
+          key={entry.key}
+          style={{ height: '32px' }}
+          data-testid={`${testIdPrefix}-item-${entry.key}`}
+        >
           <td
             style={{
               paddingRight: '8px',

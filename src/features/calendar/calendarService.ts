@@ -30,7 +30,7 @@ const startOfWeek = (timestamp: number): number => {
   const date = new Date(startOfDay(timestamp));
   const day = date.getUTCDay();
   const diff = (day + 6) % 7; // Monday start
-  return date.getTime() - (diff * DAY_MS);
+  return date.getTime() - diff * DAY_MS;
 };
 
 const toView = (value: unknown): CalendarViewMode => {
@@ -71,16 +71,20 @@ const normalizeCardEvent = (event: CalendarEventConfig, index: number): Calendar
   const start = toTimestamp(event.start);
   if (start === null) return null;
 
-  const end = toTimestamp(event.end) ?? (start + DAY_MS);
+  const end = toTimestamp(event.end) ?? start + DAY_MS;
   const normalizedEnd = end <= start ? start + DAY_MS : end;
-  const titleCandidate = typeof event.title === 'string' && event.title.trim().length > 0
-    ? event.title.trim()
-    : typeof event.summary === 'string' && event.summary.trim().length > 0
-      ? event.summary.trim()
-      : `Event ${index + 1}`;
+  const titleCandidate =
+    typeof event.title === 'string' && event.title.trim().length > 0
+      ? event.title.trim()
+      : typeof event.summary === 'string' && event.summary.trim().length > 0
+        ? event.summary.trim()
+        : `Event ${index + 1}`;
 
   return {
-    id: typeof event.id === 'string' && event.id.trim().length > 0 ? event.id.trim() : `calendar-event-${index}`,
+    id:
+      typeof event.id === 'string' && event.id.trim().length > 0
+        ? event.id.trim()
+        : `calendar-event-${index}`,
     title: titleCandidate,
     start,
     end: normalizedEnd,
@@ -104,24 +108,29 @@ const normalizeEntityEvents = (
     .map((entry, index) => {
       if (!entry || typeof entry !== 'object') return null;
       const raw = entry as Record<string, unknown>;
-      const start = toTimestamp(raw.start)
-        ?? toTimestamp(raw.start_time)
-        ?? toTimestamp(raw.timestamp)
-        ?? toTimestamp(raw.date);
+      const start =
+        toTimestamp(raw.start) ??
+        toTimestamp(raw.start_time) ??
+        toTimestamp(raw.timestamp) ??
+        toTimestamp(raw.date);
 
       if (start === null) return null;
 
-      const end = toTimestamp(raw.end) ?? toTimestamp(raw.end_time) ?? (start + DAY_MS);
+      const end = toTimestamp(raw.end) ?? toTimestamp(raw.end_time) ?? start + DAY_MS;
       const normalizedEnd = end <= start ? start + DAY_MS : end;
 
-      const title = typeof raw.title === 'string' && raw.title.trim().length > 0
-        ? raw.title.trim()
-        : typeof raw.summary === 'string' && raw.summary.trim().length > 0
-          ? raw.summary.trim()
-          : `Event ${index + 1}`;
+      const title =
+        typeof raw.title === 'string' && raw.title.trim().length > 0
+          ? raw.title.trim()
+          : typeof raw.summary === 'string' && raw.summary.trim().length > 0
+            ? raw.summary.trim()
+            : `Event ${index + 1}`;
 
       return {
-        id: typeof raw.id === 'string' && raw.id.trim().length > 0 ? raw.id.trim() : `${entityId}-${index}`,
+        id:
+          typeof raw.id === 'string' && raw.id.trim().length > 0
+            ? raw.id.trim()
+            : `${entityId}-${index}`,
         title,
         start,
         end: normalizedEnd,
@@ -139,8 +148,8 @@ const createSyntheticEvents = (date: string): CalendarEvent[] => {
     {
       id: 'synthetic-0',
       title: 'Morning routine',
-      start: dayStart + (8 * 60 * 60 * 1000),
-      end: dayStart + (9 * 60 * 60 * 1000),
+      start: dayStart + 8 * 60 * 60 * 1000,
+      end: dayStart + 9 * 60 * 60 * 1000,
       status: 'success',
       allDay: false,
       sourceEntity: 'calendar.home',
@@ -148,8 +157,8 @@ const createSyntheticEvents = (date: string): CalendarEvent[] => {
     {
       id: 'synthetic-1',
       title: 'Work focus block',
-      start: dayStart + (13 * 60 * 60 * 1000),
-      end: dayStart + (15 * 60 * 60 * 1000),
+      start: dayStart + 13 * 60 * 60 * 1000,
+      end: dayStart + 15 * 60 * 60 * 1000,
       status: 'warning',
       allDay: false,
       sourceEntity: 'calendar.work',
@@ -157,8 +166,8 @@ const createSyntheticEvents = (date: string): CalendarEvent[] => {
     {
       id: 'synthetic-2',
       title: 'Evening lights automation',
-      start: dayStart + (19 * 60 * 60 * 1000),
-      end: dayStart + (20 * 60 * 60 * 1000),
+      start: dayStart + 19 * 60 * 60 * 1000,
+      end: dayStart + 20 * 60 * 60 * 1000,
       status: 'neutral',
       allDay: false,
       sourceEntity: 'calendar.home',
@@ -175,15 +184,16 @@ export const normalizeCalendarCard = (
   card: CalendarViewCardConfig,
   nowTimestamp = Date.now(),
 ): NormalizedCalendarViewCardConfig => {
-  const view = card.view
-    ? toView(card.view)
-    : fromInitialView(card.initial_view);
+  const view = card.view ? toView(card.view) : fromInitialView(card.initial_view);
 
   const selectedDate = toTimestamp(card.selected_date) ?? nowTimestamp;
 
   return {
     type: 'calendar',
-    title: typeof card.title === 'string' && card.title.trim().length > 0 ? card.title.trim() : 'Calendar',
+    title:
+      typeof card.title === 'string' && card.title.trim().length > 0
+        ? card.title.trim()
+        : 'Calendar',
     calendarEntities: normalizeEntities(card),
     view,
     showWeekNumbers: Boolean(card.show_week_numbers),
@@ -202,8 +212,8 @@ export const resolveCalendarEvents = (
 
   const fromCard = Array.isArray(card.events)
     ? card.events
-      .map((event, index) => normalizeCardEvent(event, index))
-      .filter((event): event is CalendarEvent => Boolean(event))
+        .map((event, index) => normalizeCardEvent(event, index))
+        .filter((event): event is CalendarEvent => Boolean(event))
     : [];
 
   const fromEntities = normalized.calendarEntities.flatMap((entityId) => {
@@ -211,11 +221,12 @@ export const resolveCalendarEvents = (
     return normalizeEntityEvents(entityId, entity?.attributes);
   });
 
-  const baseEvents = fromCard.length > 0
-    ? fromCard
-    : fromEntities.length > 0
-      ? fromEntities
-      : createSyntheticEvents(normalized.selectedDate);
+  const baseEvents =
+    fromCard.length > 0
+      ? fromCard
+      : fromEntities.length > 0
+        ? fromEntities
+        : createSyntheticEvents(normalized.selectedDate);
 
   return [...baseEvents].sort((a, b) => a.start - b.start);
 };
@@ -228,18 +239,20 @@ export const buildCalendarDateCells = (
   const anchorDay = startOfDay(selectedTimestamp);
 
   if (view === 'day') {
-    return [{
-      key: selectedDateIso,
-      timestamp: anchorDay,
-      isoDate: selectedDateIso,
-      isCurrentMonth: true,
-    }];
+    return [
+      {
+        key: selectedDateIso,
+        timestamp: anchorDay,
+        isoDate: selectedDateIso,
+        isCurrentMonth: true,
+      },
+    ];
   }
 
   if (view === 'week') {
     const weekStart = startOfWeek(anchorDay);
     return Array.from({ length: 7 }, (_, index) => {
-      const timestamp = weekStart + (index * DAY_MS);
+      const timestamp = weekStart + index * DAY_MS;
       return {
         key: toIsoDate(timestamp),
         timestamp,
@@ -254,7 +267,7 @@ export const buildCalendarDateCells = (
   const firstGridDay = startOfWeek(monthStart);
 
   return Array.from({ length: 42 }, (_, index) => {
-    const timestamp = firstGridDay + (index * DAY_MS);
+    const timestamp = firstGridDay + index * DAY_MS;
     const date = new Date(timestamp);
 
     return {
@@ -266,9 +279,7 @@ export const buildCalendarDateCells = (
   });
 };
 
-export const groupEventsByDate = (
-  events: CalendarEvent[],
-): Map<string, CalendarEvent[]> => {
+export const groupEventsByDate = (events: CalendarEvent[]): Map<string, CalendarEvent[]> => {
   const buckets = new Map<string, CalendarEvent[]>();
 
   events.forEach((event) => {
@@ -290,7 +301,10 @@ export const groupEventsByDate = (
   return buckets;
 };
 
-export const getAgendaEventsForDate = (events: CalendarEvent[], isoDate: string): CalendarEvent[] => {
+export const getAgendaEventsForDate = (
+  events: CalendarEvent[],
+  isoDate: string,
+): CalendarEvent[] => {
   const dayStart = startOfDay(toTimestamp(isoDate) ?? Date.now());
   return events.filter((event) => eventOverlapsDate(event, dayStart));
 };

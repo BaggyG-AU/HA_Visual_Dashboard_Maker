@@ -8,7 +8,9 @@ export class PopupDSL {
   }
 
   private async waitForAllSelectDropdownsToClose(): Promise<void> {
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+      timeout: 5000,
+    });
   }
 
   private async openSelectDropdown(select: Locator): Promise<void> {
@@ -23,7 +25,9 @@ export class PopupDSL {
 
   private async selectOptionByText(pattern: RegExp): Promise<void> {
     await expect(this.getVisibleSelectDropdown()).toBeVisible({ timeout: 5000 });
-    const option = this.window.locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: pattern }).first();
+    const option = this.window
+      .locator('.ant-select-dropdown:visible .ant-select-item-option', { hasText: pattern })
+      .first();
     await expect(option).toBeVisible();
     await option.evaluate((el) => {
       (el as HTMLElement).click();
@@ -41,7 +45,9 @@ export class PopupDSL {
     await expect(searchInput).toBeVisible();
     await searchInput.fill('custom:popup-card');
 
-    const card = this.window.getByTestId('card-palette').getByTestId('palette-card-custom:popup-card');
+    const card = this.window
+      .getByTestId('card-palette')
+      .getByTestId('palette-card-custom:popup-card');
     await expect(card).toBeVisible({ timeout: 5000 });
     await card.dblclick();
 
@@ -73,7 +79,11 @@ export class PopupDSL {
   }
 
   async expectPopupCardCount(count: number): Promise<void> {
-    await expect(this.window.locator('[data-testid="popup-modal-content"] [data-testid="conditional-visibility-wrapper"]')).toHaveCount(count);
+    await expect(
+      this.window.locator(
+        '[data-testid="popup-modal-content"] [data-testid="conditional-visibility-wrapper"]',
+      ),
+    ).toHaveCount(count);
   }
 
   async closePopupWithButton(level = 0): Promise<void> {
@@ -95,7 +105,9 @@ export class PopupDSL {
     await this.window.keyboard.press('Escape');
   }
 
-  async setPopupSize(size: 'auto' | 'small' | 'medium' | 'large' | 'fullscreen' | 'custom'): Promise<void> {
+  async setPopupSize(
+    size: 'auto' | 'small' | 'medium' | 'large' | 'fullscreen' | 'custom',
+  ): Promise<void> {
     const select = this.window.getByTestId('popup-size');
     await expect(select).toBeVisible();
     await this.openSelectDropdown(select);
@@ -132,10 +144,15 @@ export class PopupDSL {
 
   async expectFocusReturnedToTrigger(): Promise<void> {
     await expect
-      .poll(async () => {
-        const isFocused = await this.window.getByTestId('popup-trigger-open').evaluate((el) => el === document.activeElement);
-        return isFocused;
-      }, { timeout: 5000 })
+      .poll(
+        async () => {
+          const isFocused = await this.window
+            .getByTestId('popup-trigger-open')
+            .evaluate((el) => el === document.activeElement);
+          return isFocused;
+        },
+        { timeout: 5000 },
+      )
       .toBe(true);
   }
 

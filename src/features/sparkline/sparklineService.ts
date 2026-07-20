@@ -21,7 +21,8 @@ const DEFAULT_RANGE_PRESET: SparklineRangePreset = '24h';
 const DEFAULT_HEIGHT = 96;
 const DEFAULT_MAX_POINTS = 48;
 
-const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
 
 const toFiniteNumber = (value: unknown, fallback: number): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -83,10 +84,14 @@ export const parseRangePresetToHours = (value: unknown): number | null => {
   return RANGE_PRESET_HOURS[normalized] ?? null;
 };
 
-export const normalizeSparklineCard = (card: SparklineCardConfig): NormalizedSparklineCardConfig => {
+export const normalizeSparklineCard = (
+  card: SparklineCardConfig,
+): NormalizedSparklineCardConfig => {
   const parsedPreset = parseRangePresetToHours((card as { range?: unknown }).range);
   const hoursToShow = clamp(
-    Math.round(parsedPreset ?? toFiniteNumber(card.hours_to_show, RANGE_PRESET_HOURS[DEFAULT_RANGE_PRESET])),
+    Math.round(
+      parsedPreset ?? toFiniteNumber(card.hours_to_show, RANGE_PRESET_HOURS[DEFAULT_RANGE_PRESET]),
+    ),
     1,
     RANGE_PRESET_HOURS['7d'],
   );
@@ -97,7 +102,8 @@ export const normalizeSparklineCard = (card: SparklineCardConfig): NormalizedSpa
     type: 'custom:mini-graph-card',
     entity: getPrimaryEntity(card),
     name: typeof card.name === 'string' ? card.name : undefined,
-    color: typeof card.color === 'string' && card.color.trim().length > 0 ? card.color : DEFAULT_COLOR,
+    color:
+      typeof card.color === 'string' && card.color.trim().length > 0 ? card.color : DEFAULT_COLOR,
     lineWidth: clamp(toFiniteNumber(card.line_width, DEFAULT_LINE_WIDTH), 1, 8),
     pointsPerHour: clamp(toFiniteNumber(card.points_per_hour, DEFAULT_POINTS_PER_HOUR), 0.25, 24),
     hoursToShow,
@@ -167,10 +173,10 @@ export const buildSparklineDataset = (
 
   const rawPoints: SparklinePoint[] = Array.from({ length: rawPointCount }, (_, index) => {
     const timestamp = now - (rawPointCount - index - 1) * stepMs;
-    const trend = Math.sin((index + seed % 13) / 8) * 6;
-    const seasonal = Math.cos((index + seed % 29) / 21) * 2.5;
+    const trend = Math.sin((index + (seed % 13)) / 8) * 6;
+    const seasonal = Math.cos((index + (seed % 29)) / 21) * 2.5;
     const noise = (seededNoise(index * 31 + seed) - 0.5) * 2.2;
-    const slope = ((index / Math.max(1, rawPointCount - 1)) - 0.5) * (seed % 11) * 0.4;
+    const slope = (index / Math.max(1, rawPointCount - 1) - 0.5) * (seed % 11) * 0.4;
     return {
       timestamp,
       value: Number((stateValue + trend + seasonal + noise + slope).toFixed(2)),

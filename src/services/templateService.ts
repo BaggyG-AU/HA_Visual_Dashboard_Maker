@@ -5,7 +5,12 @@
  * Provides template discovery, loading, and metadata management.
  */
 import { logger } from './logger';
-import type { DashboardTemplate, TemplateCategory, TemplateMetadata, TemplateDifficulty } from '../types/templates';
+import type {
+  DashboardTemplate,
+  TemplateCategory,
+  TemplateMetadata,
+  TemplateDifficulty,
+} from '../types/templates';
 
 export type { DashboardTemplate, TemplateCategory, TemplateMetadata } from '../types/templates';
 
@@ -53,7 +58,7 @@ class TemplateService {
    */
   async getTemplatesByCategory(categoryId: string): Promise<DashboardTemplate[]> {
     const templates = await this.getTemplates();
-    return templates.filter(t => t.category === categoryId);
+    return templates.filter((t) => t.category === categoryId);
   }
 
   /**
@@ -61,7 +66,7 @@ class TemplateService {
    */
   async getTemplatesByDifficulty(difficulty: TemplateDifficulty): Promise<DashboardTemplate[]> {
     const templates = await this.getTemplates();
-    return templates.filter(t => t.difficulty === difficulty);
+    return templates.filter((t) => t.difficulty === difficulty);
   }
 
   /**
@@ -71,11 +76,12 @@ class TemplateService {
     const templates = await this.getTemplates();
     const lowerQuery = query.toLowerCase();
 
-    return templates.filter(t =>
-      t.name.toLowerCase().includes(lowerQuery) ||
-      t.description.toLowerCase().includes(lowerQuery) ||
-      t.tags.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
-      t.features.some(feature => feature.toLowerCase().includes(lowerQuery))
+    return templates.filter(
+      (t) =>
+        t.name.toLowerCase().includes(lowerQuery) ||
+        t.description.toLowerCase().includes(lowerQuery) ||
+        t.tags.some((tag) => tag.toLowerCase().includes(lowerQuery)) ||
+        t.features.some((feature) => feature.toLowerCase().includes(lowerQuery)),
     );
   }
 
@@ -92,7 +98,7 @@ class TemplateService {
    */
   async getTemplate(id: string): Promise<DashboardTemplate | null> {
     const templates = await this.getTemplates();
-    return templates.find(t => t.id === id) || null;
+    return templates.find((t) => t.id === id) || null;
   }
 
   /**
@@ -119,16 +125,19 @@ class TemplateService {
   /**
    * Check if user has required entities for a template
    */
-  async checkRequiredEntities(template: DashboardTemplate, userEntities: string[]): Promise<{
+  async checkRequiredEntities(
+    template: DashboardTemplate,
+    userEntities: string[],
+  ): Promise<{
     hasAll: boolean;
     missing: string[];
     present: string[];
   }> {
-    const userEntitySet = new Set(userEntities.map(e => e.toLowerCase()));
+    const userEntitySet = new Set(userEntities.map((e) => e.toLowerCase()));
     const missing: string[] = [];
     const present: string[] = [];
 
-    template.requiredEntities.forEach(requiredEntity => {
+    template.requiredEntities.forEach((requiredEntity) => {
       const entityLower = requiredEntity.toLowerCase();
       if (userEntitySet.has(entityLower)) {
         present.push(requiredEntity);
@@ -164,7 +173,7 @@ class TemplateService {
     // Sort by score (descending)
     recommendations.sort((a, b) => b.score - a.score);
 
-    return recommendations.map(r => r.template);
+    return recommendations.map((r) => r.template);
   }
 
   /**

@@ -76,10 +76,7 @@ export function generateLayoutCardDashboard(): GeneratedDashboard {
               grid_column: '1 / 7',
               grid_row: '1 / 5',
             },
-            entities: [
-              { entity: 'light.living_room' },
-              { entity: 'light.bedroom' },
-            ],
+            entities: [{ entity: 'light.living_room' }, { entity: 'light.bedroom' }],
           },
           {
             type: 'button',
@@ -110,10 +107,7 @@ export function generateLargeDashboard(cardCount = 50): GeneratedDashboard {
         cards.push({
           type: 'entities',
           title: `Entities ${i + 1}`,
-          entities: [
-            { entity: `light.light_${i}` },
-            { entity: `sensor.sensor_${i}` },
-          ],
+          entities: [{ entity: `light.light_${i}` }, { entity: `sensor.sensor_${i}` }],
         });
         break;
 
@@ -130,10 +124,7 @@ export function generateLargeDashboard(cardCount = 50): GeneratedDashboard {
         cards.push({
           type: 'glance',
           title: `Glance ${i + 1}`,
-          entities: [
-            { entity: `sensor.temp_${i}` },
-            { entity: `sensor.humidity_${i}` },
-          ],
+          entities: [{ entity: `sensor.temp_${i}` }, { entity: `sensor.humidity_${i}` }],
         });
         break;
 
@@ -180,10 +171,7 @@ export function generateMultiViewDashboard(): GeneratedDashboard {
           {
             type: 'entities',
             title: 'Bedroom Lights',
-            entities: [
-              { entity: 'light.bedroom_ceiling' },
-              { entity: 'light.bedroom_lamp' },
-            ],
+            entities: [{ entity: 'light.bedroom_ceiling' }, { entity: 'light.bedroom_lamp' }],
           },
         ],
       },
@@ -304,10 +292,7 @@ export function generateEntities(domain: string, count: number): string[] {
 /**
  * Create a card configuration
  */
-export function createCard(
-  type: string,
-  props: Record<string, any> = {}
-): GeneratedCard {
+export function createCard(type: string, props: Record<string, any> = {}): GeneratedCard {
   return {
     type,
     ...props,
@@ -317,10 +302,7 @@ export function createCard(
 /**
  * Create an entities card with random entities
  */
-export function createEntitiesCard(
-  title: string,
-  entityCount = 3
-): GeneratedCard {
+export function createEntitiesCard(title: string, entityCount = 3): GeneratedCard {
   return createCard('entities', {
     title,
     entities: [
@@ -345,10 +327,7 @@ export function createButtonCard(entity: string, name: string): GeneratedCard {
 /**
  * Create a glance card
  */
-export function createGlanceCard(
-  title: string,
-  entities: string[]
-): GeneratedCard {
+export function createGlanceCard(title: string, entities: string[]): GeneratedCard {
   return createCard('glance', {
     title,
     entities: entities.map((entity) => ({ entity })),

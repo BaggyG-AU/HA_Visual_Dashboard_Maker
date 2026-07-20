@@ -65,8 +65,10 @@ export class SoundsDSL {
         }
       }
 
-      (testWindow as Window & { AudioContext?: typeof AudioContext }).AudioContext = MockAudioContext as unknown as typeof AudioContext;
-      (testWindow as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext = MockAudioContext as unknown as typeof AudioContext;
+      (testWindow as Window & { AudioContext?: typeof AudioContext }).AudioContext =
+        MockAudioContext as unknown as typeof AudioContext;
+      (testWindow as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext =
+        MockAudioContext as unknown as typeof AudioContext;
     });
   }
 
@@ -86,10 +88,12 @@ export class SoundsDSL {
 
   async expectSoundCalls(count: number, testInfo?: TestInfo): Promise<void> {
     try {
-      await expect.poll(async () => {
-        const calls = await this.getSoundCalls();
-        return calls.length;
-      }).toBe(count);
+      await expect
+        .poll(async () => {
+          const calls = await this.getSoundCalls();
+          return calls.length;
+        })
+        .toBe(count);
     } catch (error) {
       if (testInfo) {
         const calls = await this.getSoundCalls().catch(() => []);

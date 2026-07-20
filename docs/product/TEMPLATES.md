@@ -5,12 +5,14 @@ This directory contains pre-built dashboard templates for common Home Assistant 
 ## Available Templates
 
 ### 1. Home Overview (`home-overview.yaml`)
+
 **Difficulty:** Beginner
 **Category:** Overview
 
 A comprehensive main dashboard showing at-a-glance status of your entire home.
 
 **Features:**
+
 - Weather forecast
 - Person/presence tracking
 - Quick action scenes (Good Morning, Good Night, Away, Home)
@@ -20,6 +22,7 @@ A comprehensive main dashboard showing at-a-glance status of your entire home.
 - Upcoming calendar events
 
 **Required Entities:**
+
 - `weather.forecast_home`
 - `person.john`, `person.jane`
 - `sensor.lights_on_count`
@@ -28,12 +31,14 @@ A comprehensive main dashboard showing at-a-glance status of your entire home.
 ---
 
 ### 2. Energy Management (`energy-management.yaml`)
+
 **Difficulty:** Intermediate
 **Category:** Utility
 
 Monitor and optimize energy consumption, solar production, and costs.
 
 **Features:**
+
 - Power flow visualization (grid, solar, home, battery)
 - Real-time power consumption gauges
 - Solar production tracking
@@ -42,6 +47,7 @@ Monitor and optimize energy consumption, solar production, and costs.
 - Historical energy trends (24h, weekly, monthly)
 
 **Required Entities:**
+
 - `sensor.grid_power`
 - `sensor.solar_power` (optional for non-solar setups)
 - `sensor.home_power`
@@ -50,12 +56,14 @@ Monitor and optimize energy consumption, solar production, and costs.
 ---
 
 ### 3. Security & Surveillance (`security-surveillance.yaml`)
+
 **Difficulty:** Intermediate
 **Category:** Security
 
 Complete security monitoring with cameras, locks, alarms, and sensors.
 
 **Features:**
+
 - Alarm panel control (arm/disarm)
 - Live camera feeds (front, back, garage, backyard)
 - Door lock management
@@ -64,6 +72,7 @@ Complete security monitoring with cameras, locks, alarms, and sensors.
 - Security event history (24 hours)
 
 **Required Entities:**
+
 - `alarm_control_panel.home`
 - `camera.front_door`, `camera.back_door`, etc.
 - `lock.front_door`, `lock.back_door`
@@ -72,12 +81,14 @@ Complete security monitoring with cameras, locks, alarms, and sensors.
 ---
 
 ### 4. Climate & HVAC (`climate-hvac.yaml`)
+
 **Difficulty:** Intermediate
 **Category:** Climate
 
 Control heating, cooling, and monitor climate conditions throughout your home.
 
 **Features:**
+
 - Multi-zone thermostat controls
 - Room-by-room temperature monitoring
 - Humidity tracking
@@ -87,6 +98,7 @@ Control heating, cooling, and monitor climate conditions throughout your home.
 - Automation controls (eco mode, away mode)
 
 **Required Entities:**
+
 - `climate.living_room_thermostat`
 - `sensor.living_room_temperature`
 - `sensor.living_room_humidity`
@@ -95,12 +107,14 @@ Control heating, cooling, and monitor climate conditions throughout your home.
 ---
 
 ### 5. Lighting Control (`lighting-control.yaml`)
+
 **Difficulty:** Beginner
 **Category:** Lighting
 
 Master control panel for all lights with scenes, groups, and automation.
 
 **Features:**
+
 - Quick scene buttons (Bright, Dim, Movie, Dinner, Reading, All Off)
 - Room-based light controls
 - Brightness and color controls
@@ -109,6 +123,7 @@ Master control panel for all lights with scenes, groups, and automation.
 - Automation toggles (circadian lighting, motion activated)
 
 **Required Entities:**
+
 - `light.living_room_ceiling`
 - `scene.bright`, `scene.dim`, etc.
 - `sensor.lights_on_count`
@@ -116,12 +131,14 @@ Master control panel for all lights with scenes, groups, and automation.
 ---
 
 ### 6. Living Room (`living-room.yaml`)
+
 **Difficulty:** Beginner
 **Category:** Rooms
 
 Comprehensive room dashboard with all living room devices and controls.
 
 **Features:**
+
 - All room lights with individual control
 - Thermostat and climate monitoring
 - Media player controls
@@ -131,6 +148,7 @@ Comprehensive room dashboard with all living room devices and controls.
 - Energy usage tracking
 
 **Required Entities:**
+
 - `light.living_room_ceiling`
 - `climate.living_room_thermostat`
 - `media_player.living_room_tv`
@@ -139,12 +157,14 @@ Comprehensive room dashboard with all living room devices and controls.
 ---
 
 ### 7. Media & Entertainment (`media-entertainment.yaml`)
+
 **Difficulty:** Beginner
 **Category:** Media
 
 Control all media players, TVs, speakers, and streaming devices.
 
 **Features:**
+
 - Media player controls for each room
 - Whole home audio grouping
 - Streaming service integration (Spotify, Plex, etc.)
@@ -153,6 +173,7 @@ Control all media players, TVs, speakers, and streaming devices.
 - AV equipment power controls
 
 **Required Entities:**
+
 - `media_player.living_room_tv`
 - `media_player.living_room_soundbar`
 - `media_player.spotify`
@@ -180,6 +201,7 @@ const recommendations = await templateService.getRecommendations(userEntities);
 ### Method 2: Direct File Loading
 
 Templates are standard Home Assistant YAML files that can be:
+
 1. Loaded directly into the application
 2. Copied and customized
 3. Used as reference for creating custom dashboards

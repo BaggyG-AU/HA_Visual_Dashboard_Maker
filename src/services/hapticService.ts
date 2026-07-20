@@ -71,7 +71,10 @@ export const setHapticSettings = (next: Partial<HapticSettings>): HapticSettings
   return getHapticSettings();
 };
 
-export const triggerHapticPattern = (pattern: HapticPattern, override?: HapticCardConfig): boolean => {
+export const triggerHapticPattern = (
+  pattern: HapticPattern,
+  override?: HapticCardConfig,
+): boolean => {
   const vibrate = getVibrationFn();
   const effective = getEffectiveSettings(override);
   if (!effective.enabled || !vibrate) return false;
@@ -82,7 +85,10 @@ export const triggerHapticPattern = (pattern: HapticPattern, override?: HapticCa
   return vibrate(scaled);
 };
 
-export const triggerHapticForAction = (action: Action | undefined, override?: HapticCardConfig): boolean => {
+export const triggerHapticForAction = (
+  action: Action | undefined,
+  override?: HapticCardConfig,
+): boolean => {
   if (override?.enabled === false) return false;
   const pattern = override?.pattern ?? resolvePatternForAction(action);
   if (!pattern) return false;

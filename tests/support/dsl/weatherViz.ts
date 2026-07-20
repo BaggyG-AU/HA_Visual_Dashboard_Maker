@@ -29,7 +29,10 @@ export class WeatherVizDSL {
   }
 
   async expectForecastPointCountAtLeast(minCount: number): Promise<void> {
-    const count = await this.window.getByTestId('weather-viz-card').getByTestId('weather-viz-forecast-point').count();
+    const count = await this.window
+      .getByTestId('weather-viz-card')
+      .getByTestId('weather-viz-forecast-point')
+      .count();
     expect(count).toBeGreaterThanOrEqual(minCount);
   }
 
@@ -65,7 +68,9 @@ export class WeatherVizDSL {
     }
   }
 
-  private async setMetrics(metrics: Array<'temperature' | 'precipitation' | 'wind_speed'>): Promise<void> {
+  private async setMetrics(
+    metrics: Array<'temperature' | 'precipitation' | 'wind_speed'>,
+  ): Promise<void> {
     const select = this.propertiesPanel().getByTestId('weather-viz-metrics');
     await expect(select).toBeVisible();
     const clear = select.locator('.ant-select-clear').first();
@@ -120,7 +125,9 @@ export class WeatherVizDSL {
       await selectField.click();
     });
     const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
-    const option = dropdown.getByRole('option', { name: new RegExp(`^${escapeRegex(value)}$`, 'i') });
+    const option = dropdown.getByRole('option', {
+      name: new RegExp(`^${escapeRegex(value)}$`, 'i'),
+    });
     const found = await option
       .waitFor({ state: 'visible', timeout: 2000 })
       .then(() => true)
@@ -128,7 +135,9 @@ export class WeatherVizDSL {
 
     if (found) {
       await option.click();
-      await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+      await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+        timeout: 5000,
+      });
       return;
     }
 
@@ -141,7 +150,9 @@ export class WeatherVizDSL {
       await this.window.keyboard.press('Enter');
     }
 
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+      timeout: 5000,
+    });
   }
 
   private propertiesPanel() {

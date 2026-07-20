@@ -8,27 +8,35 @@
 ## Quick Verification Commands
 
 ### 1. Run Unit Tests (Already Passing)
+
 ```bash
 npm run test:unit
 ```
+
 **Expected**: 53/53 tests passing (includes 26 new custom card tests)
 
 ### 2. Run Lint (Already Passing)
+
 ```bash
 npm run lint
 ```
+
 **Expected**: No errors, only existing warnings
 
 ### 3. Integration Tests (Optional - Full Suite)
+
 ```bash
 npx playwright test --project=electron-integration --workers=1
 ```
+
 **Expected**: All integration tests should pass (these don't test UI, just logic)
 
 ### 4. E2E Tests (Optional - Full Suite)
+
 ```bash
 npx playwright test --project=electron-e2e --workers=1 --headed
 ```
+
 **Note**: This runs all E2E tests. The custom cards aren't directly tested by existing E2E specs.
 
 ---
@@ -36,6 +44,7 @@ npx playwright test --project=electron-e2e --workers=1 --headed
 ## Manual Smoke Testing Checklist
 
 ### Setup
+
 ```bash
 # Start the application
 npm start
@@ -47,6 +56,7 @@ npm run start:wsl
 ### Test 1: Card-mod (custom:card-mod)
 
 **Steps:**
+
 1. Connect to Home Assistant (if not already connected)
 2. Open Card Palette (left sidebar)
 3. Scroll to "Custom" category
@@ -54,6 +64,7 @@ npm run start:wsl
 5. Drag onto canvas
 
 **Expected Results:**
+
 - ✅ Card appears in palette with paint brush icon
 - ✅ Card renders on canvas with "Card-mod Styling" header
 - ✅ Shows security warning "Preview Only"
@@ -62,9 +73,11 @@ npm run start:wsl
 - ✅ Properties panel shows card properties when selected
 
 **YAML Export Check:**
+
 1. Add card to canvas
 2. Click "Edit YAML" button
 3. Verify YAML contains:
+
 ```yaml
 type: custom:card-mod
 style: ''
@@ -75,10 +88,12 @@ style: ''
 ### Test 2: Auto-entities (custom:auto-entities)
 
 **Steps:**
+
 1. Find "Auto Entities" in Custom category (thunderbolt icon)
 2. Drag onto canvas
 
 **Expected Results:**
+
 - ✅ Card shows "Auto Entities" header with yellow/gold icon
 - ✅ Shows wrapped card type (default: "entities")
 - ✅ Shows "No filters configured" if no filters set
@@ -86,6 +101,7 @@ style: ''
 - ✅ Properties panel accessible
 
 **Property Edit Check:**
+
 1. Select the card
 2. Open properties panel
 3. Try editing the card properties
@@ -93,6 +109,7 @@ style: ''
 5. Verify changes persist
 
 **YAML Export Check:**
+
 ```yaml
 type: custom:auto-entities
 filter:
@@ -106,10 +123,12 @@ card:
 ### Test 3: Vertical Stack in Card (custom:vertical-stack-in-card)
 
 **Steps:**
+
 1. Find "Vertical Stack in Card" in Custom category
 2. Drag onto canvas
 
 **Expected Results:**
+
 - ✅ Card shows purple/violet icon
 - ✅ Shows "Vertical Stack in Card" header
 - ✅ Displays card count: "Contains: 0 cards"
@@ -117,6 +136,7 @@ card:
 - ✅ Can be selected
 
 **YAML Export Check:**
+
 ```yaml
 type: custom:vertical-stack-in-card
 cards: []
@@ -127,10 +147,12 @@ cards: []
 ### Test 4: Custom Button Card (custom:button-card)
 
 **Steps:**
+
 1. Find "Button Card" in Custom category
 2. Drag onto canvas
 
 **Expected Results:**
+
 - ✅ Card shows button-style visual
 - ✅ Has icon in center
 - ✅ Shows entity name or "Button"
@@ -138,6 +160,7 @@ cards: []
 - ✅ Can be selected
 
 **YAML Export Check:**
+
 ```yaml
 type: custom:button-card
 entity: ''
@@ -148,16 +171,19 @@ entity: ''
 ### Test 5-8: Surveillance/Camera Cards
 
 **Test Each:**
+
 - custom:surveillance-card
 - custom:frigate-card
 - custom:camera-card
 - custom:webrtc-camera
 
 **Steps for Each:**
+
 1. Find card in Custom category (all have video camera icon)
 2. Drag onto canvas
 
 **Expected Results (All 4):**
+
 - ✅ Shows large video camera icon placeholder
 - ✅ Red camera icon in header
 - ✅ Shows card-specific name in header
@@ -168,24 +194,28 @@ entity: ''
 **YAML Export Checks:**
 
 Surveillance Card:
+
 ```yaml
 type: custom:surveillance-card
 cameras: []
 ```
 
 Frigate Card:
+
 ```yaml
 type: custom:frigate-card
 cameras: []
 ```
 
 Camera Card:
+
 ```yaml
 type: custom:camera-card
 entity: ''
 ```
 
 WebRTC Camera:
+
 ```yaml
 type: custom:webrtc-camera
 url: ''
@@ -198,19 +228,23 @@ url: ''
 ### Scenario 1: Card-mod with Styles
 
 **Steps:**
+
 1. Add custom:card-mod to canvas
 2. Select card, open properties
 3. Add style property:
+
 ```yaml
 style: |
   ha-card {
     background: red;
   }
 ```
+
 4. Apply changes
 5. Check YAML export
 
 **Expected:**
+
 - ✅ Style appears as code preview in card
 - ✅ Limited to ~100 chars preview
 - ✅ YAML export preserves full style string
@@ -220,8 +254,10 @@ style: |
 ### Scenario 2: Auto-entities with Filters
 
 **Steps:**
+
 1. Add custom:auto-entities to canvas
 2. Edit properties to add filter rules:
+
 ```yaml
 type: custom:auto-entities
 filter:
@@ -233,9 +269,11 @@ filter:
 card:
   type: entities
 ```
+
 3. Apply changes
 
 **Expected:**
+
 - ✅ Card shows filter counts (e.g., "+2 include, -1 exclude")
 - ✅ Shows preview of first few rules
 - ✅ Shows "... and N more rules" if many rules
@@ -246,8 +284,10 @@ card:
 ### Scenario 3: Vertical Stack with Nested Cards
 
 **Steps:**
+
 1. Add custom:vertical-stack-in-card
 2. Edit properties to add nested cards:
+
 ```yaml
 type: custom:vertical-stack-in-card
 title: My Stack
@@ -259,9 +299,11 @@ cards:
   - type: button
     entity: light.kitchen
 ```
+
 3. Apply changes
 
 **Expected:**
+
 - ✅ Shows card count: "Contains: 3 cards"
 - ✅ Shows card type breakdown (e.g., "button ×3")
 - ✅ Title appears in card header if set
@@ -272,17 +314,21 @@ cards:
 ### Scenario 4: Custom Button with Entity
 
 **Steps:**
+
 1. Add custom:button-card
 2. Edit to add entity:
+
 ```yaml
 type: custom:button-card
 entity: light.living_room
 name: My Light
 show_state: true
 ```
+
 3. Apply changes
 
 **Expected:**
+
 - ✅ Shows entity ID in footer
 - ✅ Icon changes based on domain (light = bulb)
 - ✅ Color indicates state (if entity exists)
@@ -293,8 +339,10 @@ show_state: true
 ### Scenario 5: Surveillance Card with Cameras
 
 **Steps:**
+
 1. Add custom:surveillance-card
 2. Edit to add cameras:
+
 ```yaml
 type: custom:surveillance-card
 cameras:
@@ -303,9 +351,11 @@ cameras:
   - entity: camera.backyard
     name: Backyard
 ```
+
 3. Apply changes
 
 **Expected:**
+
 - ✅ Shows camera count in description
 - ✅ Shows first camera name
 - ✅ YAML export preserves camera array
@@ -317,6 +367,7 @@ cameras:
 **Purpose**: Verify cards survive save/load cycle
 
 **Steps:**
+
 1. Create new dashboard
 2. Add one of each custom card type (8 cards total)
 3. Save dashboard to YAML file
@@ -325,6 +376,7 @@ cameras:
 6. Load the saved YAML file
 
 **Expected:**
+
 - ✅ All 8 cards load correctly
 - ✅ Each card shows correct renderer (not "Unsupported Card")
 - ✅ Properties preserved
@@ -337,6 +389,7 @@ cameras:
 **Purpose**: Verify property editing works for all cards
 
 **Steps:**
+
 1. Add each custom card type to canvas (one at a time)
 2. Select card
 3. Verify properties panel shows on right
@@ -346,6 +399,7 @@ cameras:
 7. Edit YAML to verify change persisted
 
 **Expected for All Cards:**
+
 - ✅ Properties panel appears when selected
 - ✅ Card-specific properties shown
 - ✅ Changes apply successfully
@@ -358,6 +412,7 @@ cameras:
 **Purpose**: Ensure existing cards still work
 
 **Quick Check:**
+
 1. Add a standard HA card (e.g., entities, button, glance)
 2. Add an existing custom card (e.g., apexcharts, bubble-card, mushroom)
 3. Verify both render correctly
@@ -365,6 +420,7 @@ cameras:
 5. Verify YAML export works
 
 **Expected:**
+
 - ✅ No regressions in existing cards
 - ✅ All existing cards still functional
 - ✅ No visual glitches or errors
@@ -374,11 +430,13 @@ cameras:
 ## Error Handling Test
 
 **Invalid YAML:**
+
 1. Create dashboard with custom:card-mod
 2. Edit YAML to add invalid syntax
 3. Try to apply/load
 
 **Expected:**
+
 - ✅ Error message shown
 - ✅ Dashboard doesn't crash
 - ✅ Can recover by fixing YAML
@@ -388,11 +446,13 @@ cameras:
 ## Performance Test
 
 **Many Cards:**
+
 1. Create dashboard
 2. Add 20+ custom cards (mix of all types)
 3. Observe performance
 
 **Expected:**
+
 - ✅ No noticeable lag
 - ✅ Scrolling smooth
 - ✅ Selection responsive
@@ -405,18 +465,21 @@ cameras:
 If testing on both Windows and Linux:
 
 **Windows:**
+
 ```bash
 npm start
 # Run manual tests above
 ```
 
 **Linux:**
+
 ```bash
 npm start  # or npm run start:wsl if on WSL
 # Run manual tests above
 ```
 
 **Expected:**
+
 - ✅ Cards render identically on both platforms
 - ✅ No platform-specific visual issues
 - ✅ YAML export/import works on both
@@ -443,7 +506,6 @@ test.describe('Custom Cards Part 2 - E2E', () => {
       // TODO: Verify renderer appears
       // TODO: Check properties panel
       // TODO: Verify YAML export
-
     } finally {
       await close(ctx);
     }
@@ -459,38 +521,43 @@ test.describe('Custom Cards Part 2 - E2E', () => {
 
 After completing all manual tests above, verify:
 
-- [  ] All 8 custom cards appear in palette
-- [  ] All 8 cards render with correct visuals
-- [  ] All 8 cards can be selected
-- [  ] All 8 cards show properties in panel
-- [  ] All 8 cards export to YAML correctly
-- [  ] All 8 cards load from YAML correctly
-- [  ] No regressions in existing cards
-- [  ] No performance issues
-- [  ] No visual glitches
-- [  ] Property editing works for all cards
+- [ ] All 8 custom cards appear in palette
+- [ ] All 8 cards render with correct visuals
+- [ ] All 8 cards can be selected
+- [ ] All 8 cards show properties in panel
+- [ ] All 8 cards export to YAML correctly
+- [ ] All 8 cards load from YAML correctly
+- [ ] No regressions in existing cards
+- [ ] No performance issues
+- [ ] No visual glitches
+- [ ] Property editing works for all cards
 
 ---
 
 ## Troubleshooting
 
 ### Card Not Appearing in Palette
+
 **Check:** Is cardRegistry properly initialized?
 **Fix:** Verify `src/services/cardRegistry.ts` includes the card
 
 ### Card Shows "Unsupported Card"
+
 **Check:** Is BaseCard.tsx routing correctly?
 **Fix:** Verify case statement in `src/components/BaseCard.tsx`
 
 ### Properties Panel Not Showing
+
 **Check:** Is card properly selected?
 **Fix:** Click card to ensure selection, check blue border
 
 ### YAML Export Missing Properties
+
 **Check:** Are properties being set correctly?
 **Fix:** Verify property panel apply action works
 
 ### Renderer Import Error
+
 **Check:** TypeScript compilation errors?
 **Fix:** Run `npx tsc --noEmit` to find type errors
 

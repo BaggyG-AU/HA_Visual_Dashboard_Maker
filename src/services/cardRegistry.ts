@@ -9,18 +9,12 @@
  */
 import { logger } from './logger';
 
-export type CardCategory =
-  | 'layout'
-  | 'sensor'
-  | 'control'
-  | 'media'
-  | 'information'
-  | 'custom';
+export type CardCategory = 'layout' | 'sensor' | 'control' | 'media' | 'information' | 'custom';
 
 export type CardSource =
-  | 'builtin'    // Standard HA cards
-  | 'hacs'       // HACS custom cards
-  | 'custom'     // User custom cards
+  | 'builtin' // Standard HA cards
+  | 'hacs' // HACS custom cards
+  | 'custom' // User custom cards
   | 'discovered'; // Discovered from HA instance
 
 export interface CardTypeMetadata {
@@ -407,7 +401,8 @@ class CardRegistry {
         name: 'Popup Card (HAVDM-only)',
         category: 'layout',
         icon: 'ExpandOutlined',
-        description: 'Trigger a modal popup containing cards. HAVDM editor feature - not a standard HACS card.',
+        description:
+          'Trigger a modal popup containing cards. HAVDM editor feature - not a standard HACS card.',
         isCustom: true,
         source: 'custom',
         defaultProps: {
@@ -423,9 +418,7 @@ class CardRegistry {
             show_footer: false,
             close_label: 'Close',
             footer_actions: [],
-            cards: [
-              { type: 'markdown', content: 'Popup content' },
-            ],
+            cards: [{ type: 'markdown', content: 'Popup content' }],
           },
         },
         requiredProps: ['popup'],
@@ -999,7 +992,7 @@ class CardRegistry {
       },
     ];
 
-    standardCards.forEach(card => this.register(card));
+    standardCards.forEach((card) => this.register(card));
   }
 
   /**
@@ -1007,9 +1000,7 @@ class CardRegistry {
    */
   register(metadata: CardTypeMetadata): void {
     const isCustom =
-      metadata.isCustom === true ||
-      metadata.source === 'custom' ||
-      metadata.category === 'custom';
+      metadata.isCustom === true || metadata.source === 'custom' || metadata.category === 'custom';
 
     this.cards.set(metadata.type, { ...metadata, isCustom });
   }
@@ -1032,21 +1023,21 @@ class CardRegistry {
    * Get cards by category
    */
   getByCategory(category: CardCategory): CardTypeMetadata[] {
-    return this.getAll().filter(card => card.category === category);
+    return this.getAll().filter((card) => card.category === category);
   }
 
   /**
    * Get cards by source
    */
   getBySource(source: CardSource): CardTypeMetadata[] {
-    return this.getAll().filter(card => card.source === source);
+    return this.getAll().filter((card) => card.source === source);
   }
 
   /**
    * Get all custom cards (HACS + custom)
    */
   getCustomCards(): CardTypeMetadata[] {
-    return this.getAll().filter(card => card.isCustom);
+    return this.getAll().filter((card) => card.isCustom);
   }
 
   /**

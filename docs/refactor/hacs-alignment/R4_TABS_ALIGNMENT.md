@@ -20,45 +20,46 @@ Rename `custom:tabs-card` to `custom:tabbed-card` and restructure the config to 
 
 ### Top-Level Properties
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `type` | `string` | — | Must be `custom:tabbed-card` |
-| `options` | `object` | — | Global options |
-| `options.defaultTabIndex` | `number` | `0` | 0-based index of default active tab |
-| `styles` | `object` | — | CSS custom properties applied to ALL tabs |
-| `attributes` | `object` | — | Default attributes applied to ALL tabs |
-| `tabs` | `TabDef[]` | — | **Required.** Array of tab definitions |
+| Property                  | Type       | Default | Description                               |
+| ------------------------- | ---------- | ------- | ----------------------------------------- |
+| `type`                    | `string`   | —       | Must be `custom:tabbed-card`              |
+| `options`                 | `object`   | —       | Global options                            |
+| `options.defaultTabIndex` | `number`   | `0`     | 0-based index of default active tab       |
+| `styles`                  | `object`   | —       | CSS custom properties applied to ALL tabs |
+| `attributes`              | `object`   | —       | Default attributes applied to ALL tabs    |
+| `tabs`                    | `TabDef[]` | —       | **Required.** Array of tab definitions    |
 
 ### Tab Definition
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `card` | `Card` | — | **Required.** Single HA card config for this tab's content |
-| `styles` | `object` | — | Per-tab CSS overrides (take precedence over global) |
-| `attributes` | `object` | — | Per-tab attribute overrides (take precedence over global) |
+| Property     | Type     | Default | Description                                                |
+| ------------ | -------- | ------- | ---------------------------------------------------------- |
+| `card`       | `Card`   | —       | **Required.** Single HA card config for this tab's content |
+| `styles`     | `object` | —       | Per-tab CSS overrides (take precedence over global)        |
+| `attributes` | `object` | —       | Per-tab attribute overrides (take precedence over global)  |
 
 ### Tab Attributes
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `label` | `string` | `""` | Tab header text |
-| `icon` | `string` | `""` | MDI icon (e.g., `mdi:fire`) |
-| `isFadingIndicator` | `boolean` | `false` | Fade indicator instead of slide |
-| `minWidth` | `boolean` | `false` | Shrink tab to minimum width |
-| `isMinWidthIndicator` | `boolean` | `false` | Shrink indicator to content |
-| `stacked` | `boolean` | `false` | Stack icon above label |
+| Property              | Type      | Default | Description                     |
+| --------------------- | --------- | ------- | ------------------------------- |
+| `label`               | `string`  | `""`    | Tab header text                 |
+| `icon`                | `string`  | `""`    | MDI icon (e.g., `mdi:fire`)     |
+| `isFadingIndicator`   | `boolean` | `false` | Fade indicator instead of slide |
+| `minWidth`            | `boolean` | `false` | Shrink tab to minimum width     |
+| `isMinWidthIndicator` | `boolean` | `false` | Shrink indicator to content     |
+| `stacked`             | `boolean` | `false` | Stack icon above label          |
 
 ### CSS Custom Properties (via `styles`)
 
-| Property | Default | Description |
-|----------|---------|-------------|
-| `--mdc-theme-primary` | HA theme color | Active tab text/indicator/ripple color |
-| `--mdc-tab-text-label-color-default` | `rgba(225,225,225,0.8)` | Inactive tab label color |
-| `--mdc-typography-button-font-size` | `14px` | Tab label font size |
+| Property                             | Default                 | Description                            |
+| ------------------------------------ | ----------------------- | -------------------------------------- |
+| `--mdc-theme-primary`                | HA theme color          | Active tab text/indicator/ripple color |
+| `--mdc-tab-text-label-color-default` | `rgba(225,225,225,0.8)` | Inactive tab label color               |
+| `--mdc-typography-button-font-size`  | `14px`                  | Tab label font size                    |
 
 ### Upstream YAML Examples
 
 **Basic:**
+
 ```yaml
 type: custom:tabbed-card
 tabs:
@@ -79,6 +80,7 @@ tabs:
 ```
 
 **With icons, stacking, and default tab:**
+
 ```yaml
 type: custom:tabbed-card
 options:
@@ -105,6 +107,7 @@ tabs:
 ```
 
 **Multiple cards in one tab (use a stack):**
+
 ```yaml
 type: custom:tabbed-card
 tabs:
@@ -127,18 +130,19 @@ tabs:
 ### Type string: `custom:tabs-card`
 
 ### HAVDM YAML format:
+
 ```yaml
 type: custom:tabs-card
-tab_position: top        # 'top' | 'bottom' | 'left' | 'right'  (HAVDM-only)
-tab_size: default        # 'default' | 'small' | 'large'  (HAVDM-only)
+tab_position: top # 'top' | 'bottom' | 'left' | 'right'  (HAVDM-only)
+tab_size: default # 'default' | 'small' | 'large'  (HAVDM-only)
 default_tab: 0
-animation: none          # 'none' | 'fade' | 'slide'  (HAVDM-only)
-lazy_render: true        # (HAVDM-only)
+animation: none # 'none' | 'fade' | 'slide'  (HAVDM-only)
+lazy_render: true # (HAVDM-only)
 tabs:
   - title: Lights
     icon: mdi:lightbulb
-    badge: "3"           # (HAVDM-only)
-    count: 5             # (HAVDM-only)
+    badge: '3' # (HAVDM-only)
+    count: 5 # (HAVDM-only)
     cards:
       - type: button
         entity: light.living_room
@@ -148,6 +152,7 @@ tabs:
 ```
 
 ### HAVDM-Only Features (keep internally, strip on export):
+
 - `tab_position` — upstream tabs are always on top
 - `tab_size` — upstream uses CSS custom properties instead
 - `animation` — upstream has no animation config
@@ -157,6 +162,7 @@ tabs:
 - `tabs[].cards[]` (plural) — upstream uses singular `tabs[].card`
 
 ### Key Structural Differences:
+
 1. **`tabs[].title` → `tabs[].attributes.label`**
 2. **`tabs[].icon` → `tabs[].attributes.icon`**
 3. **`tabs[].cards[]` (array) → `tabs[].card` (singular Card)**
@@ -168,6 +174,7 @@ tabs:
 ## Files to Modify
 
 ### 1. Type Definitions
+
 **File**: `src/types/tabs.ts`
 
 **Replace with upstream-aligned types:**
@@ -186,7 +193,7 @@ export interface TabbedCardAttributes {
 }
 
 export interface TabbedCardStyles {
-  [key: string]: string;  // CSS custom properties
+  [key: string]: string; // CSS custom properties
 }
 
 export interface TabbedCardTab {
@@ -236,9 +243,11 @@ export interface NormalizedTabsCardConfig {
 ```
 
 ### 2. Service Layer
+
 **File**: `src/services/tabsService.ts`
 
 **Changes:**
+
 - `normalizeTabsConfig()` must now parse the upstream `tabs[].attributes.label`/`tabs[].attributes.icon` format
 - When `tabs[].card` (singular) is present, wrap it in a single-element `cards[]` array internally
 - When `tabs[].cards[]` (HAVDM format) is present, keep as-is internally
@@ -252,17 +261,21 @@ export interface NormalizedTabsCardConfig {
   - Strips `_havdm_*` properties
 
 ### 3. Component
+
 **File**: `src/features/tabs/TabsPanel.tsx`
 
 **Changes:**
+
 - Update import of `TabsCardConfig` type (same module, new shape)
 - Component already works with `NormalizedTabsCardConfig` — no structural changes needed
 - Update the type reference in props interface if needed
 
 ### 4. Card Registry
+
 **File**: `src/services/cardRegistry.ts` (line ~343)
 
 **Changes:**
+
 ```typescript
 // BEFORE:
 {
@@ -296,9 +309,11 @@ export interface NormalizedTabsCardConfig {
 ```
 
 ### 5. BaseCard
+
 **File**: `src/components/BaseCard.tsx` (line ~260)
 
 **Changes:**
+
 ```typescript
 // BEFORE:
 case 'custom:tabs-card':
@@ -308,9 +323,11 @@ case 'custom:tabbed-card':
 ```
 
 ### 6. PropertiesPanel
+
 **File**: `src/components/PropertiesPanel.tsx`
 
 **Changes:**
+
 - Replace all `'custom:tabs-card'` with `'custom:tabbed-card'`
 - Lines: ~631, ~1177, ~3002
 - Update form field names to match new property paths (e.g., `attributes.label` instead of `title`)
@@ -318,29 +335,37 @@ case 'custom:tabbed-card':
 - Add new upstream properties to form: `stacked`, `isFadingIndicator`, `minWidth`, `styles`
 
 ### 7. JSON Schema
+
 **File**: `src/schemas/ha-dashboard-schema.json` (line ~191)
 
 **Changes:**
+
 - Replace `"custom:tabs-card"` with `"custom:tabbed-card"` in the type enum
 
 ### 8. Unit Tests
+
 **File**: `tests/unit/tabs-service.spec.ts`
 
 **Changes:**
+
 - Replace all `'custom:tabs-card'` with `'custom:tabbed-card'`
 - Add test cases for parsing upstream format (`tabs[].attributes.label`, `tabs[].card` singular)
 - Add test cases for `toUpstreamTabbedCard()` export
 - Add round-trip test cases
 
 ### 9. E2E Tests
+
 **Files:**
+
 - `tests/e2e/tabs.spec.ts` — Update BASE_YAML, all type string refs
 - `tests/e2e/tabs.visual.spec.ts` — Update BASE_YAML
 
 ### 10. DSL
+
 **File**: `tests/support/dsl/tabs.ts` (line ~86)
 
 **Changes:**
+
 - Update palette search from `'custom:tabs-card'` to `'custom:tabbed-card'`
 - Update palette card test ID reference
 
@@ -363,6 +388,7 @@ Full regression and CI testing are handled separately and are not part of this p
 ## YAML Round-Trip Test Cases
 
 ### Import Test (upstream → HAVDM):
+
 ```yaml
 # Input:
 type: custom:tabbed-card
@@ -393,12 +419,14 @@ tabs:
 ```
 
 Expected normalized config:
+
 - `default_tab`: 1
 - `tab_position`: 'top' (default, not in upstream)
 - Tab 0: title='Lights', icon='mdi:lightbulb', cards=[{type:'entities',...}]
 - Tab 1: title='Climate', icon='mdi:thermometer', cards=[{type:'vertical-stack',...}]
 
 ### Export Test (HAVDM → upstream):
+
 - `default_tab: 1` → `options: { defaultTabIndex: 1 }`
 - `tabs[0].title` → `tabs[0].attributes.label`
 - `tabs[0].icon` → `tabs[0].attributes.icon`

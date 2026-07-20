@@ -22,12 +22,15 @@ const makeCard = (overrides: Partial<CalendarViewCardConfig> = {}): CalendarView
 
 describe('calendarService', () => {
   it('normalizes calendar view and entity source fields', () => {
-    const normalized = normalizeCalendarCard(makeCard({
-      view: 'week',
-      show_week_numbers: true,
-      show_agenda: true,
-      on_date_select: { action: 'more-info' },
-    }), BASE_NOW);
+    const normalized = normalizeCalendarCard(
+      makeCard({
+        view: 'week',
+        show_week_numbers: true,
+        show_agenda: true,
+        on_date_select: { action: 'more-info' },
+      }),
+      BASE_NOW,
+    );
 
     expect(normalized.view).toBe('week');
     expect(normalized.calendarEntities).toEqual(['calendar.home']);
@@ -38,12 +41,16 @@ describe('calendarService', () => {
   });
 
   it('resolves explicit card events and preserves ordering', () => {
-    const events = resolveCalendarEvents(makeCard({
-      events: [
-        { start: '2026-02-15T13:00:00Z', title: 'Lunch', status: 'confirmed' },
-        { start: '2026-02-15T08:00:00Z', title: 'Standup', status: 'tentative' },
-      ],
-    }), new Map(), BASE_NOW);
+    const events = resolveCalendarEvents(
+      makeCard({
+        events: [
+          { start: '2026-02-15T13:00:00Z', title: 'Lunch', status: 'confirmed' },
+          { start: '2026-02-15T08:00:00Z', title: 'Standup', status: 'tentative' },
+        ],
+      }),
+      new Map(),
+      BASE_NOW,
+    );
 
     expect(events).toHaveLength(2);
     expect(events[0].title).toBe('Standup');
@@ -52,16 +59,23 @@ describe('calendarService', () => {
   });
 
   it('resolves events from entity attributes and groups by date', () => {
-    const events = resolveCalendarEvents(makeCard({ events: undefined }), new Map([
-      ['calendar.home', {
-        attributes: {
-          events: [
-            { start: '2026-02-15T08:00:00Z', end: '2026-02-15T09:00:00Z', title: 'Breakfast' },
-            { start: '2026-02-16T11:00:00Z', end: '2026-02-16T12:00:00Z', title: 'Meeting' },
-          ],
-        },
-      }],
-    ]), BASE_NOW);
+    const events = resolveCalendarEvents(
+      makeCard({ events: undefined }),
+      new Map([
+        [
+          'calendar.home',
+          {
+            attributes: {
+              events: [
+                { start: '2026-02-15T08:00:00Z', end: '2026-02-15T09:00:00Z', title: 'Breakfast' },
+                { start: '2026-02-16T11:00:00Z', end: '2026-02-16T12:00:00Z', title: 'Meeting' },
+              ],
+            },
+          },
+        ],
+      ]),
+      BASE_NOW,
+    );
 
     const grouped = groupEventsByDate(events);
     expect(grouped.get('2026-02-15')).toHaveLength(1);

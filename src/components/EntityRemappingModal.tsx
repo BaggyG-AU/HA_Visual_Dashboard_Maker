@@ -1,13 +1,33 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Modal, Typography, List, Select, Space, Flex, Button, Tag, Input, Divider, Alert, Tabs, Empty } from 'antd';
+import {
+  Modal,
+  Typography,
+  List,
+  Select,
+  Space,
+  Flex,
+  Button,
+  Tag,
+  Input,
+  Divider,
+  Alert,
+  Tabs,
+  Empty,
+} from 'antd';
 import type { EntityState } from '../services/haWebSocketService';
-import { entityRemappingService, type EntityMapping, type EntitySuggestion } from '../services/entityRemapping';
+import {
+  entityRemappingService,
+  type EntityMapping,
+  type EntitySuggestion,
+} from '../services/entityRemapping';
 import type { DashboardConfig } from '../types/dashboard';
 
 const { Text, Title } = Typography;
 const isTestEnv = () =>
-  (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.E2E === '1')) ||
-  (typeof window !== 'undefined' && Boolean((window as any).E2E || (window as any).PLAYWRIGHT_TEST));
+  (typeof process !== 'undefined' &&
+    (process.env.NODE_ENV === 'test' || process.env.E2E === '1')) ||
+  (typeof window !== 'undefined' &&
+    Boolean((window as any).E2E || (window as any).PLAYWRIGHT_TEST));
 
 interface Props {
   visible: boolean;
@@ -33,7 +53,9 @@ export const EntityRemappingModal: React.FC<Props> = ({
   const [historyVersion, setHistoryVersion] = useState(0);
 
   const suggestionsMap = useMemo<Record<string, EntitySuggestion[]>>(() => {
-    const entries = missingEntities.map((id) => [id, entityRemappingService.buildSuggestions(id, availableEntities)] as const);
+    const entries = missingEntities.map(
+      (id) => [id, entityRemappingService.buildSuggestions(id, availableEntities)] as const,
+    );
     return Object.fromEntries(entries);
   }, [missingEntities, availableEntities]);
 
@@ -47,10 +69,7 @@ export const EntityRemappingModal: React.FC<Props> = ({
     setMappingState((prev) => ({ ...initialState, ...prev }));
   }, [missingEntities, availableEntities]);
 
-  const savedMappings = useMemo(
-    () => entityRemappingService.getEntityMappings(),
-    [historyVersion]
-  );
+  const savedMappings = useMemo(() => entityRemappingService.getEntityMappings(), [historyVersion]);
 
   const handleChange = (source: string, target: string | null) => {
     setMappingState((prev) => ({ ...prev, [source]: target }));
@@ -95,9 +114,10 @@ export const EntityRemappingModal: React.FC<Props> = ({
   const handleApply = () => {
     if (isTestEnv() && typeof window !== 'undefined') {
       const testWindow = window as Window & { __remapDebug?: Record<string, unknown> };
-      const existing = (testWindow.__remapDebug && typeof testWindow.__remapDebug === 'object')
-        ? (testWindow.__remapDebug as Record<string, unknown>)
-        : {};
+      const existing =
+        testWindow.__remapDebug && typeof testWindow.__remapDebug === 'object'
+          ? (testWindow.__remapDebug as Record<string, unknown>)
+          : {};
       testWindow.__remapDebug = {
         ...existing,
         remapApplyClicked: true,
@@ -108,9 +128,10 @@ export const EntityRemappingModal: React.FC<Props> = ({
     if (!dashboardConfig) {
       if (isTestEnv() && typeof window !== 'undefined') {
         const testWindow = window as Window & { __remapDebug?: Record<string, unknown> };
-        const existing = (testWindow.__remapDebug && typeof testWindow.__remapDebug === 'object')
-          ? (testWindow.__remapDebug as Record<string, unknown>)
-          : {};
+        const existing =
+          testWindow.__remapDebug && typeof testWindow.__remapDebug === 'object'
+            ? (testWindow.__remapDebug as Record<string, unknown>)
+            : {};
         testWindow.__remapDebug = {
           ...existing,
           remapApplyError: 'missing-dashboard-config',
@@ -160,24 +181,43 @@ export const EntityRemappingModal: React.FC<Props> = ({
       data-mapping-count={Object.values(mappingState).filter(Boolean).length}
       data-testid="entity-remapping-modal"
     >
-      <Tabs activeKey={activeTab} onChange={(key) => setActiveTab(key as any)} items={[
-        { key: 'remap', label: 'Remap' },
-        { key: 'history', label: 'History' },
-      ]} />
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key as any)}
+        items={[
+          { key: 'remap', label: 'Remap' },
+          { key: 'history', label: 'History' },
+        ]}
+      />
 
       {activeTab === 'remap' && (
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Alert
             type="info"
-            message={missingEntities.length ? 'Missing entities detected. Map them to available Home Assistant entities.' : 'No missing entities detected. You can still override mappings or reuse history.'}
+            message={
+              missingEntities.length
+                ? 'Missing entities detected. Map them to available Home Assistant entities.'
+                : 'No missing entities detected. You can still override mappings or reuse history.'
+            }
             showIcon
           />
 
           <Flex align="center" justify="space-between" style={{ width: '100%' }}>
-            <Title level={5} style={{ margin: 0 }}>Missing Entities ({missingEntities.length})</Title>
+            <Title level={5} style={{ margin: 0 }}>
+              Missing Entities ({missingEntities.length})
+            </Title>
             <Space>
-              <Button onClick={handleAutoMapAll} data-testid="remap-auto-map">Auto-map All</Button>
-              <Button type="primary" onClick={handleApply} disabled={!Object.values(mappingState).some(Boolean)} data-testid="remap-apply">Apply Mappings</Button>
+              <Button onClick={handleAutoMapAll} data-testid="remap-auto-map">
+                Auto-map All
+              </Button>
+              <Button
+                type="primary"
+                onClick={handleApply}
+                disabled={!Object.values(mappingState).some(Boolean)}
+                data-testid="remap-apply"
+              >
+                Apply Mappings
+              </Button>
             </Space>
           </Flex>
 
@@ -209,7 +249,11 @@ export const EntityRemappingModal: React.FC<Props> = ({
                           <Space direction="vertical" size={0}>
                             <Space>
                               <Text strong>{s.entityId}</Text>
-                              <Tag color={s.score >= 0.8 ? 'green' : s.score >= 0.6 ? 'blue' : 'default'}>
+                              <Tag
+                                color={
+                                  s.score >= 0.8 ? 'green' : s.score >= 0.6 ? 'blue' : 'default'
+                                }
+                              >
                                 {Math.round(s.score * 100)}%
                               </Tag>
                             </Space>
@@ -220,7 +264,11 @@ export const EntityRemappingModal: React.FC<Props> = ({
                     </Select>
                     <Input
                       placeholder="Manual entity ID"
-                      value={selected && !suggestions.find((s) => s.entityId === selected) ? selected : ''}
+                      value={
+                        selected && !suggestions.find((s) => s.entityId === selected)
+                          ? selected
+                          : ''
+                      }
                       onChange={(e) => handleChange(missing, e.target.value || null)}
                       data-testid={`remap-manual-${missing}`}
                     />
@@ -235,17 +283,33 @@ export const EntityRemappingModal: React.FC<Props> = ({
       {activeTab === 'history' && (
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Flex align="center" justify="space-between" style={{ width: '100%' }}>
-            <Title level={5} style={{ margin: 0 }}>Saved Mappings</Title>
-            <Button danger onClick={handleClearSaved} disabled={!savedMappings.length} data-testid="remap-clear-history">Clear All</Button>
+            <Title level={5} style={{ margin: 0 }}>
+              Saved Mappings
+            </Title>
+            <Button
+              danger
+              onClick={handleClearSaved}
+              disabled={!savedMappings.length}
+              data-testid="remap-clear-history"
+            >
+              Clear All
+            </Button>
           </Flex>
           {savedMappings.length === 0 && <Empty description="No saved mappings" />}
           {savedMappings.length > 0 && (
             <List
               dataSource={savedMappings}
               renderItem={(mapping) => (
-                <List.Item key={mapping.from}
+                <List.Item
+                  key={mapping.from}
                   actions={[
-                    <Button type="link" onClick={() => handleUseSaved(mapping)} data-testid={`remap-use-saved-${mapping.from}`}>Use</Button>,
+                    <Button
+                      type="link"
+                      onClick={() => handleUseSaved(mapping)}
+                      data-testid={`remap-use-saved-${mapping.from}`}
+                    >
+                      Use
+                    </Button>,
                     <Button
                       type="link"
                       danger
@@ -272,7 +336,10 @@ export const EntityRemappingModal: React.FC<Props> = ({
 
       <Divider style={{ marginTop: 16 }} />
       <Space direction="vertical" size={4}>
-        <Text type="secondary">Mappings are stored locally and reused on future imports. Confidence scores are derived from domain and name similarity.</Text>
+        <Text type="secondary">
+          Mappings are stored locally and reused on future imports. Confidence scores are derived
+          from domain and name similarity.
+        </Text>
       </Space>
     </Modal>
   );

@@ -3,7 +3,10 @@ import { Alert, Card as AntCard, Typography } from 'antd';
 import { MenuFoldOutlined } from '@ant-design/icons';
 import type { ExpanderCardConfig } from '../../features/accordion/types';
 import { ExpanderPanel } from '../../features/accordion/ExpanderPanel';
-import { MAX_EXPANDER_DEPTH, normalizeExpanderConfig } from '../../features/accordion/accordionService';
+import {
+  MAX_EXPANDER_DEPTH,
+  normalizeExpanderConfig,
+} from '../../features/accordion/accordionService';
 
 const { Text } = Typography;
 
@@ -19,9 +22,10 @@ export const ExpanderCardRenderer: React.FC<ExpanderCardRendererProps> = ({
   onClick,
 }) => {
   const normalized = useMemo(() => normalizeExpanderConfig(card), [card]);
-  const depth = typeof (card as { _expanderDepth?: unknown })._expanderDepth === 'number'
-    ? ((card as { _expanderDepth?: number })._expanderDepth as number)
-    : 1;
+  const depth =
+    typeof (card as { _expanderDepth?: unknown })._expanderDepth === 'number'
+      ? ((card as { _expanderDepth?: number })._expanderDepth as number)
+      : 1;
 
   return (
     <AntCard
@@ -61,33 +65,37 @@ export const ExpanderCardRenderer: React.FC<ExpanderCardRendererProps> = ({
       )}
 
       {isSelected && (
-        <div style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          padding: '4px 8px',
-          backgroundColor: 'rgba(0, 217, 255, 0.2)',
-          border: '1px solid #00d9ff',
-          borderRadius: '4px',
-          fontSize: '10px',
-          color: '#00d9ff',
-          fontWeight: 700,
-          pointerEvents: 'none',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            padding: '4px 8px',
+            backgroundColor: 'rgba(0, 217, 255, 0.2)',
+            border: '1px solid #00d9ff',
+            borderRadius: '4px',
+            fontSize: '10px',
+            color: '#00d9ff',
+            fontWeight: 700,
+            pointerEvents: 'none',
+          }}
+        >
           <MenuFoldOutlined style={{ marginRight: '4px' }} />
           EXPANDER
         </div>
       )}
 
       {normalized.cards.length === 0 && (
-        <div style={{
-          position: 'absolute',
-          bottom: '8px',
-          left: '8px',
-          padding: '4px 8px',
-          backgroundColor: 'rgba(0, 0, 0, 0.35)',
-          borderRadius: '4px',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '8px',
+            left: '8px',
+            padding: '4px 8px',
+            backgroundColor: 'rgba(0, 0, 0, 0.35)',
+            borderRadius: '4px',
+          }}
+        >
           <Text type="secondary" style={{ fontSize: '11px' }}>
             Add nested cards in Properties Panel
           </Text>

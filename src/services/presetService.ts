@@ -14,7 +14,9 @@ const PRESET_SCHEMA_VERSION = 1;
 
 const asStringArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
-  return value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0);
+  return value.filter(
+    (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0,
+  );
 };
 
 const uniqueStrings = (values: string[]): string[] => Array.from(new Set(values));
@@ -22,7 +24,10 @@ const uniqueStrings = (values: string[]): string[] => Array.from(new Set(values)
 const isValidRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value && typeof value === 'object' && !Array.isArray(value));
 
-const validatePresetRecord = (value: unknown, label: string): { preset: PresetRecord | null; errors: string[] } => {
+const validatePresetRecord = (
+  value: unknown,
+  label: string,
+): { preset: PresetRecord | null; errors: string[] } => {
   if (!isValidRecord(value)) {
     return { preset: null, errors: [`${label} must be an object.`] };
   }
@@ -36,7 +41,8 @@ const validatePresetRecord = (value: unknown, label: string): { preset: PresetRe
 
   const tags = uniqueStrings(asStringArray(value.tags));
   const entityIds = uniqueStrings(asStringArray(value.entityIds));
-  const cardCount = typeof value.cardCount === 'number' && Number.isFinite(value.cardCount) ? value.cardCount : -1;
+  const cardCount =
+    typeof value.cardCount === 'number' && Number.isFinite(value.cardCount) ? value.cardCount : -1;
 
   const errors: string[] = [];
 

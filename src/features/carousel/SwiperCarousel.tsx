@@ -1,6 +1,16 @@
 import React, { useMemo, useRef, useEffect } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Autoplay, EffectFade, EffectCube, EffectCoverflow, EffectFlip, Keyboard, A11y } from 'swiper/modules';
+import {
+  Navigation,
+  Pagination,
+  Autoplay,
+  EffectFade,
+  EffectCube,
+  EffectCoverflow,
+  EffectFlip,
+  Keyboard,
+  A11y,
+} from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -10,7 +20,12 @@ import 'swiper/css/effect-coverflow';
 import 'swiper/css/effect-flip';
 import { Typography } from 'antd';
 import type { Swiper as SwiperInstance } from 'swiper/types';
-import type { CarouselAlignment, CarouselAutoplayConfig, CarouselSlideConfig, SwiperCardConfig } from './types';
+import type {
+  CarouselAlignment,
+  CarouselAutoplayConfig,
+  CarouselSlideConfig,
+  SwiperCardConfig,
+} from './types';
 import { normalizeSwiperConfig, ensureSlideBackground } from './carouselService';
 import { getCardBackgroundStyle, applyBackgroundConfigToStyle } from '../../utils/backgroundStyle';
 import { BaseCard } from '../../components/BaseCard';
@@ -69,12 +84,13 @@ export const SwiperCarousel: React.FC<SwiperCarouselProps> = ({
 
   const paginationConfig = config.pagination
     ? {
-      type: config.pagination.type,
-      clickable: config.pagination.clickable,
-      renderCustom: config.pagination.type === 'custom'
-        ? (_swiper: SwiperInstance, current: number, total: number) => `${current} / ${total}`
-        : undefined,
-    }
+        type: config.pagination.type,
+        clickable: config.pagination.clickable,
+        renderCustom:
+          config.pagination.type === 'custom'
+            ? (_swiper: SwiperInstance, current: number, total: number) => `${current} / ${total}`
+            : undefined,
+      }
     : false;
 
   // Extract primitive values for stable memoisation.  Without this, autoplayConfig
@@ -84,7 +100,8 @@ export const SwiperCarousel: React.FC<SwiperCarouselProps> = ({
   // normalizeSwiperConfig yields `CarouselAutoplayConfig | false`, where `false`
   // means autoplay is off; read the options through an empty-object fallback.
   const autoplayOptions: CarouselAutoplayConfig = config.autoplay || {};
-  const autoplayEnabled = Boolean(config.autoplay && config.autoplay.enabled !== false) && !prefersReducedMotion;
+  const autoplayEnabled =
+    Boolean(config.autoplay && config.autoplay.enabled !== false) && !prefersReducedMotion;
   const autoplayDelay = autoplayOptions.delay ?? 5000;
   const autoplayStopOnLast = Boolean(autoplayOptions.stop_on_last_slide);
 
@@ -136,7 +153,9 @@ export const SwiperCarousel: React.FC<SwiperCarouselProps> = ({
     loop,
   ]);
 
-  const getSlideCardContainerStyle = (alignment: CarouselAlignment | undefined): React.CSSProperties => ({
+  const getSlideCardContainerStyle = (
+    alignment: CarouselAlignment | undefined,
+  ): React.CSSProperties => ({
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
@@ -152,7 +171,11 @@ export const SwiperCarousel: React.FC<SwiperCarouselProps> = ({
     return true;
   };
 
-  const findNextNavigableIndex = (currentIndex: number, direction: number, slides: CarouselSlideConfig[]) => {
+  const findNextNavigableIndex = (
+    currentIndex: number,
+    direction: number,
+    slides: CarouselSlideConfig[],
+  ) => {
     const total = slides.length;
     for (let offset = 1; offset <= total; offset += 1) {
       const nextIndex = (currentIndex + offset * direction + total) % total;
@@ -220,7 +243,13 @@ export const SwiperCarousel: React.FC<SwiperCarouselProps> = ({
     swiper.updateProgress?.();
     swiper.updateSlidesClasses?.();
     swiper.update?.();
-  }, [isEditing, config.direction, config.slides.length, config.slides_per_view, config.space_between]);
+  }, [
+    isEditing,
+    config.direction,
+    config.slides.length,
+    config.slides_per_view,
+    config.space_between,
+  ]);
 
   // Autoplay start/stop — declared AFTER the dimension-update effect so that
   // swiper.update() completes before we call autoplay.start().  prefersReducedMotion
@@ -249,7 +278,17 @@ export const SwiperCarousel: React.FC<SwiperCarouselProps> = ({
       <Swiper
         key={swiperKey}
         style={{ height: '100%' }}
-        modules={[Navigation, Pagination, Autoplay, EffectFade, EffectCube, EffectCoverflow, EffectFlip, Keyboard, A11y]}
+        modules={[
+          Navigation,
+          Pagination,
+          Autoplay,
+          EffectFade,
+          EffectCube,
+          EffectCoverflow,
+          EffectFlip,
+          Keyboard,
+          A11y,
+        ]}
         navigation={config.navigation}
         pagination={paginationConfig}
         // Hard-gate autoplay while editing/selected so Swiper doesn't start an
@@ -296,7 +335,9 @@ export const SwiperCarousel: React.FC<SwiperCarouselProps> = ({
               key={slide.id ?? `slide-${index}`}
               data-testid={`swiper-slide-${index}`}
               data-slide-index={index}
-              data-swiper-autoplay={typeof slide.autoplay_delay === 'number' ? slide.autoplay_delay : undefined}
+              data-swiper-autoplay={
+                typeof slide.autoplay_delay === 'number' ? slide.autoplay_delay : undefined
+              }
               role="tabpanel"
               aria-label={`Slide ${index + 1} of ${slides.length}`}
               style={{
@@ -338,7 +379,6 @@ export const SwiperCarousel: React.FC<SwiperCarouselProps> = ({
           );
         })}
       </Swiper>
-
     </div>
   );
 };

@@ -31,7 +31,7 @@ You are an AI assistant implementing **Feature 4.1: Swiper.js Integration (Carou
 **Version Target**: v0.7.4-beta.2  
 **Dependencies**: None  
 **Estimated Effort**: 5–6 days  
-**Status**: Ready to Begin  
+**Status**: Ready to Begin
 
 ### Key Requirements
 
@@ -90,7 +90,7 @@ cards:
       - sensor.temperature
       - sensor.humidity
   - type: markdown
-    content: "Welcome Home"
+    content: 'Welcome Home'
 ```
 
 ---
@@ -98,6 +98,7 @@ cards:
 ## Acceptance Criteria
 
 **Must Have**
+
 - Swiper carousel renders with pagination + navigation
 - Child cards render inside slides
 - Touch/mouse swipe works
@@ -108,12 +109,14 @@ cards:
 - All unit + E2E tests pass
 
 **Should Have**
+
 - Multiple transition effects
 - Per-slide backgrounds
 - Slides per view
 - Free mode + loop mode
 
 **Won’t Have**
+
 - Nested carousels
 - Virtual slides (100+)
 - Parallax effects
@@ -124,10 +127,12 @@ cards:
 ## Testing Requirements
 
 ### Unit Tests
+
 - `carouselService` parsing and validation
 - Per-slide config parsing
 
 ### E2E Tests (DSL-first only)
+
 - Create `tests/support/dsl/carousel.ts` (CarouselDSL)
 - E2E coverage:
   - Add carousel from palette
@@ -138,10 +143,12 @@ cards:
   - Keyboard navigation
 
 ### Visual Regression
+
 - Snapshot: first/middle/last slide
 - Snapshot: pagination styles
 
 ### Accessibility
+
 - ARIA role + roledescription
 - Keyboard navigation
 - `prefers-reduced-motion` respected
@@ -184,6 +191,7 @@ cards:
 ## Output Format
 
 Respond with:
+
 1. A concise implementation plan for Feature 4.1
 2. File-by-file change list (planned)
 3. Test plan + commands
@@ -203,6 +211,7 @@ After implementation, run exactly one **Fast Gate** pass and then stop:
 4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
 
 After this single Fast Gate run, provide a summary report that includes:
+
 - Exact commands executed
 - Pass/fail status for each command
 - Any failing tests with artifact paths under `test-results/artifacts/**`

@@ -42,7 +42,10 @@ export class SparklineDSL {
       await this.selectByTestId('sparkline-style', config.style);
     }
     if (config.density) {
-      await this.selectByTestId('sparkline-density', config.density === 'compact' ? 'Compact' : 'Regular');
+      await this.selectByTestId(
+        'sparkline-density',
+        config.density === 'compact' ? 'Compact' : 'Regular',
+      );
     }
     if (typeof config.lineWidth === 'number') {
       await this.fillInputNumber('sparkline-line-width', config.lineWidth);
@@ -96,12 +99,16 @@ export class SparklineDSL {
     const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
 
-    const option = dropdown.locator('.ant-select-item-option', {
-      hasText: new RegExp(`^${label}$`, 'i'),
-    }).first();
+    const option = dropdown
+      .locator('.ant-select-item-option', {
+        hasText: new RegExp(`^${label}$`, 'i'),
+      })
+      .first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click();
 
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+      timeout: 5000,
+    });
   }
 }

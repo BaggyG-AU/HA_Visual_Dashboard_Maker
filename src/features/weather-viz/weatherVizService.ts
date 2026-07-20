@@ -9,7 +9,8 @@ import type {
 const DEFAULT_METRICS: WeatherVizMetric[] = ['temperature', 'precipitation', 'wind_speed'];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value));
 
 const toNumber = (value: unknown): number | undefined => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -26,16 +27,24 @@ const isMetric = (value: unknown): value is WeatherVizMetric =>
 export const normalizeWeatherVizConfig = (
   card: WeatherForecastVisualizationCardConfig,
 ): NormalizedWeatherVizConfig => {
-  const requestedMode = card.mode === 'hourly' || card.forecast_type === 'hourly' ? 'hourly' : 'daily';
+  const requestedMode =
+    card.mode === 'hourly' || card.forecast_type === 'hourly' ? 'hourly' : 'daily';
   const metrics = Array.isArray(card.metrics) ? card.metrics.filter(isMetric) : [];
 
   return {
     mode: requestedMode,
     metrics: metrics.length > 0 ? metrics : DEFAULT_METRICS,
-    iconAnimation: card.icon_animation === 'off' || card.icon_animation === 'pulse' ? card.icon_animation : 'subtle',
+    iconAnimation:
+      card.icon_animation === 'off' || card.icon_animation === 'pulse'
+        ? card.icon_animation
+        : 'subtle',
     days: clamp(Math.floor(toNumber(card.days) ?? 5), 1, 7),
-    locale: typeof card.locale === 'string' && card.locale.trim().length > 0 ? card.locale.trim() : undefined,
-    unitSystem: card.unit_system === 'metric' || card.unit_system === 'imperial' ? card.unit_system : 'auto',
+    locale:
+      typeof card.locale === 'string' && card.locale.trim().length > 0
+        ? card.locale.trim()
+        : undefined,
+    unitSystem:
+      card.unit_system === 'metric' || card.unit_system === 'imperial' ? card.unit_system : 'auto',
     showForecast: card.show_forecast !== false,
   };
 };
@@ -149,7 +158,11 @@ export const formatWindSpeed = (
   if (value === undefined) return '--';
 
   const targetUnit = unitSystem === 'imperial' ? 'mph' : 'km/h';
-  if (unitSystem === 'auto' && typeof sourceUnitText === 'string' && sourceUnitText.trim().length > 0) {
+  if (
+    unitSystem === 'auto' &&
+    typeof sourceUnitText === 'string' &&
+    sourceUnitText.trim().length > 0
+  ) {
     return `${Math.round(value)} ${sourceUnitText}`;
   }
 
@@ -162,26 +175,33 @@ export const formatForecastDate = (
   mode: 'daily' | 'hourly',
   locale?: string,
 ): string => {
-  const formatter = mode === 'hourly'
-    ? new Intl.DateTimeFormat(locale, { hour: 'numeric' })
-    : new Intl.DateTimeFormat(locale, { weekday: 'short' });
+  const formatter =
+    mode === 'hourly'
+      ? new Intl.DateTimeFormat(locale, { hour: 'numeric' })
+      : new Intl.DateTimeFormat(locale, { weekday: 'short' });
   return formatter.format(new Date(timestamp));
 };
 
 export const buildForecastSummary = (points: WeatherForecastPoint[]): WeatherForecastSummary => {
   if (points.length === 0) return {};
 
-  const temperatures = points.map((point) => point.temperature).filter((v): v is number => v !== undefined);
-  const precip = points.map((point) => point.precipitation).filter((v): v is number => v !== undefined);
+  const temperatures = points
+    .map((point) => point.temperature)
+    .filter((v): v is number => v !== undefined);
+  const precip = points
+    .map((point) => point.precipitation)
+    .filter((v): v is number => v !== undefined);
   const winds = points.map((point) => point.windSpeed).filter((v): v is number => v !== undefined);
 
   return {
     minTemperature: temperatures.length > 0 ? Math.min(...temperatures) : undefined,
     maxTemperature: temperatures.length > 0 ? Math.max(...temperatures) : undefined,
-    avgTemperature: temperatures.length > 0
-      ? temperatures.reduce((acc, value) => acc + value, 0) / temperatures.length
-      : undefined,
-    totalPrecipitation: precip.length > 0 ? precip.reduce((acc, value) => acc + value, 0) : undefined,
+    avgTemperature:
+      temperatures.length > 0
+        ? temperatures.reduce((acc, value) => acc + value, 0) / temperatures.length
+        : undefined,
+    totalPrecipitation:
+      precip.length > 0 ? precip.reduce((acc, value) => acc + value, 0) : undefined,
     maxWindSpeed: winds.length > 0 ? Math.max(...winds) : undefined,
   };
 };
@@ -222,7 +242,9 @@ export const buildForecastPointAriaLabel = (
   const parts: string[] = [formatForecastDate(point.timestamp, config.mode, config.locale)];
 
   if (config.metrics.includes('temperature')) {
-    parts.push(`temperature ${formatTemperature(point.temperature, config.unitSystem, sourceUnits.temperature)}`);
+    parts.push(
+      `temperature ${formatTemperature(point.temperature, config.unitSystem, sourceUnits.temperature)}`,
+    );
   }
   if (config.metrics.includes('precipitation')) {
     const precip = point.precipitation !== undefined ? `${point.precipitation} mm` : '--';

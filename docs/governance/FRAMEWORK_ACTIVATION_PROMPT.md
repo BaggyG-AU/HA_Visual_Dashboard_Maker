@@ -23,6 +23,7 @@ Constraints:
 - Ask before committing.
 
 Output only:
+
 - Confirmation that file was written.
 - Filename.
 - Proposed commit message.

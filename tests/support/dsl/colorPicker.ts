@@ -215,12 +215,18 @@ export class ColorPickerDSL {
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       await this.window.keyboard.press('Escape');
-      await expect.poll(isClosed, { timeout: 1200 }).toBe(true).catch(() => undefined);
+      await expect
+        .poll(isClosed, { timeout: 1200 })
+        .toBe(true)
+        .catch(() => undefined);
       if (await isClosed()) return;
 
       // Reuse the background-customizer defensive pattern for stubborn popovers.
       await this.window.mouse.click(5, 5);
-      await expect.poll(isClosed, { timeout: 1200 }).toBe(true).catch(() => undefined);
+      await expect
+        .poll(isClosed, { timeout: 1200 })
+        .toBe(true)
+        .catch(() => undefined);
       if (await isClosed()) return;
     }
 
@@ -248,10 +254,13 @@ export class ColorPickerDSL {
   async waitForRecentColorPersisted(color: string): Promise<void> {
     const normalized = this.normalizeRecentHex(color);
     await expect
-      .poll(async () => {
-        const colors = await this.getRecentColorsFromStorage();
-        return colors.map((c) => c.toUpperCase()).includes(normalized);
-      }, { timeout: 5000 })
+      .poll(
+        async () => {
+          const colors = await this.getRecentColorsFromStorage();
+          return colors.map((c) => c.toUpperCase()).includes(normalized);
+        },
+        { timeout: 5000 },
+      )
       .toBe(true);
   }
 
@@ -268,9 +277,7 @@ export class ColorPickerDSL {
 
     await this.switchTab('recent', testId);
     const swatches = this.window.getByTestId(new RegExp(`^${testId}-picker-recent-\\d+$`));
-    await expect
-      .poll(async () => swatches.count(), { timeout: 5000 })
-      .toBe(expectedCount);
+    await expect.poll(async () => swatches.count(), { timeout: 5000 }).toBe(expectedCount);
   }
 
   async waitForRecentColorsEmpty(testId = 'color-picker'): Promise<void> {
@@ -279,7 +286,10 @@ export class ColorPickerDSL {
     await expect(picker.getByText('No recent colors yet.')).toBeVisible({ timeout: 5000 });
   }
 
-  private async ensureFormat(expected: 'HEX' | 'RGB' | 'HSL', testId = 'color-picker'): Promise<void> {
+  private async ensureFormat(
+    expected: 'HEX' | 'RGB' | 'HSL',
+    testId = 'color-picker',
+  ): Promise<void> {
     const toggle = this.getFormatToggle(testId);
     await expect(toggle).toBeVisible();
     for (let i = 0; i < 3; i++) {
@@ -357,7 +367,10 @@ export class ColorPickerDSL {
   /**
    * Verify current format matches expected
    */
-  async expectFormat(expectedFormat: 'HEX' | 'RGB' | 'HSL', testId = 'color-picker'): Promise<void> {
+  async expectFormat(
+    expectedFormat: 'HEX' | 'RGB' | 'HSL',
+    testId = 'color-picker',
+  ): Promise<void> {
     const toggle = this.getFormatToggle(testId);
     await expect(toggle).toHaveText(expectedFormat);
   }
@@ -397,7 +410,9 @@ export class ColorPickerDSL {
     await this.ensurePopoverOpen(testId);
     // Tab buttons are at ${testId}-picker-tab-favorites and ${testId}-picker-tab-recents
     // because ColorPickerInput passes `${testId}-picker` as the testId to ColorPicker
-    const tabButton = this.window.getByTestId(`${testId}-picker-tab-${tab === 'recent' ? 'recents' : 'favorites'}`);
+    const tabButton = this.window.getByTestId(
+      `${testId}-picker-tab-${tab === 'recent' ? 'recents' : 'favorites'}`,
+    );
     await expect(tabButton).toBeVisible();
     // click() auto-scrolls and retries on DOM detachment from popover re-renders
     await tabButton.click();
@@ -405,7 +420,9 @@ export class ColorPickerDSL {
     // State-based content check (avoids arbitrary waits)
     if (tab === 'recent') {
       const picker = this.getPickerPopover(testId);
-      await expect(picker.getByText('Recent Colors', { exact: true })).toBeVisible({ timeout: 5000 });
+      await expect(picker.getByText('Recent Colors', { exact: true })).toBeVisible({
+        timeout: 5000,
+      });
     }
   }
 
@@ -439,9 +456,7 @@ export class ColorPickerDSL {
 
     // Verify there's at least one recent color swatch
     const swatches = this.window.getByTestId(new RegExp(`^${testId}-picker-recent-\\d+$`));
-    await expect
-      .poll(async () => swatches.count(), { timeout: 5000 })
-      .toBeGreaterThan(0);
+    await expect.poll(async () => swatches.count(), { timeout: 5000 }).toBeGreaterThan(0);
   }
 
   /**
@@ -607,7 +622,10 @@ export class ColorPickerDSL {
   /**
    * Ensure popover is visually anchored inside a container (e.g., properties panel)
    */
-  async expectPopoverWithinContainer(containerTestId: string, testId = 'color-picker'): Promise<void> {
+  async expectPopoverWithinContainer(
+    containerTestId: string,
+    testId = 'color-picker',
+  ): Promise<void> {
     const container = this.window.getByTestId(containerTestId);
     const popover = this.getPopover(testId);
 
@@ -621,9 +639,13 @@ export class ColorPickerDSL {
     if (!containerBox || !popoverBox) return;
 
     expect(popoverBox.x).toBeGreaterThanOrEqual(containerBox.x - 2);
-    expect(popoverBox.x + popoverBox.width).toBeLessThanOrEqual(containerBox.x + containerBox.width + 2);
+    expect(popoverBox.x + popoverBox.width).toBeLessThanOrEqual(
+      containerBox.x + containerBox.width + 2,
+    );
     expect(popoverBox.y).toBeGreaterThanOrEqual(containerBox.y - 2);
-    expect(popoverBox.y + popoverBox.height).toBeLessThanOrEqual(containerBox.y + containerBox.height + 2);
+    expect(popoverBox.y + popoverBox.height).toBeLessThanOrEqual(
+      containerBox.y + containerBox.height + 2,
+    );
   }
 
   /**
@@ -643,13 +665,21 @@ export class ColorPickerDSL {
   /**
    * Contrast check between swatch border and container background
    */
-  async expectSwatchContrast(inputTestId: string, containerTestId: string, minimumRatio = 1.5): Promise<void> {
+  async expectSwatchContrast(
+    inputTestId: string,
+    containerTestId: string,
+    minimumRatio = 1.5,
+  ): Promise<void> {
     const swatch = this.getColorSwatch(inputTestId);
 
     const ratio = await swatch.evaluate((el, cTestId) => {
-      const containerEl = document.querySelector(`[data-testid="${cTestId}"]`) as HTMLElement | null;
+      const containerEl = document.querySelector(
+        `[data-testid="${cTestId}"]`,
+      ) as HTMLElement | null;
       const swatchStyle = window.getComputedStyle(el);
-      const containerStyle = containerEl ? window.getComputedStyle(containerEl) : window.getComputedStyle(document.body);
+      const containerStyle = containerEl
+        ? window.getComputedStyle(containerEl)
+        : window.getComputedStyle(document.body);
 
       const parseRgb = (color: string) => {
         const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
@@ -683,7 +713,9 @@ export class ColorPickerDSL {
   async ensureWindowActive(testInfo?: TestInfo): Promise<void> {
     await this.window.bringToFront();
 
-    const active = await this.window.waitForFunction(() => document.hasFocus(), null, { timeout: 3000 }).catch(() => false);
+    const active = await this.window
+      .waitForFunction(() => document.hasFocus(), null, { timeout: 3000 })
+      .catch(() => false);
     if (active) return;
 
     const diag = await this.collectFocusDiagnostics(undefined, 0);
@@ -711,7 +743,10 @@ export class ColorPickerDSL {
     await this.attachAndLogDiagnostics(testInfo, diag, 'color-picker-focus-diagnostics.json');
     if (testInfo?.attach) {
       const screenshot = await this.window.screenshot({ fullPage: true });
-      await testInfo.attach('color-picker-focus.png', { body: screenshot, contentType: 'image/png' });
+      await testInfo.attach('color-picker-focus.png', {
+        body: screenshot,
+        contentType: 'image/png',
+      });
     }
     await expect(target).toBeFocused(); // will throw with standard message
   }
@@ -719,47 +754,57 @@ export class ColorPickerDSL {
   /**
    * Collect focus diagnostics (JSON-safe)
    */
-  private async collectFocusDiagnostics(target?: Locator, attempts?: number, history?: Array<Record<string, unknown>>): Promise<Record<string, unknown>> {
+  private async collectFocusDiagnostics(
+    target?: Locator,
+    attempts?: number,
+    history?: Array<Record<string, unknown>>,
+  ): Promise<Record<string, unknown>> {
     const diag: Record<string, unknown> = { attempts, history };
     diag.document = await this.captureActiveElementSummary();
 
     if (target) {
       const box = await target.boundingBox();
       const visible = await target.isVisible().catch(() => false);
-      const attrs = await target.evaluate((el) => {
-        const elem = el as HTMLElement;
-        const closestPopover = elem.closest('[data-testid*="picker"]');
-        const tabbables = (root: Element | Document) =>
-          Array.from(
-            root.querySelectorAll<HTMLElement>(
-              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      const attrs = await target
+        .evaluate((el) => {
+          const elem = el as HTMLElement;
+          const closestPopover = elem.closest('[data-testid*="picker"]');
+          const tabbables = (root: Element | Document) =>
+            Array.from(
+              root.querySelectorAll<HTMLElement>(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+              ),
             )
-          )
-            .filter((n) => !n.hasAttribute('disabled') && n.offsetParent !== null)
-            .slice(0, 10)
-            .map((n) => ({
-              tag: n.tagName,
-              id: n.id || null,
-              testId: n.getAttribute('data-testid') || null,
-              aria: n.getAttribute('aria-label') || null,
-            }));
+              .filter((n) => !n.hasAttribute('disabled') && n.offsetParent !== null)
+              .slice(0, 10)
+              .map((n) => ({
+                tag: n.tagName,
+                id: n.id || null,
+                testId: n.getAttribute('data-testid') || null,
+                aria: n.getAttribute('aria-label') || null,
+              }));
 
-        const scope = closestPopover || document;
-        return {
-          tag: elem.tagName,
-          id: elem.id || null,
-          testId: elem.getAttribute('data-testid') || null,
-          aria: elem.getAttribute('aria-label') || null,
-          scopeTabbables: tabbables(scope),
-          scopeHasTarget: scope.contains(elem),
-        };
-      }).catch(() => ({}));
+          const scope = closestPopover || document;
+          return {
+            tag: elem.tagName,
+            id: elem.id || null,
+            testId: elem.getAttribute('data-testid') || null,
+            aria: elem.getAttribute('aria-label') || null,
+            scopeTabbables: tabbables(scope),
+            scopeHasTarget: scope.contains(elem),
+          };
+        })
+        .catch(() => ({}));
       diag.target = { visible, box, ...attrs };
     }
     return diag;
   }
 
-  private async attachAndLogDiagnostics(testInfo: TestInfo | undefined, diagnostics: Record<string, unknown>, label: string): Promise<void> {
+  private async attachAndLogDiagnostics(
+    testInfo: TestInfo | undefined,
+    diagnostics: Record<string, unknown>,
+    label: string,
+  ): Promise<void> {
     const body = JSON.stringify(diagnostics, null, 2);
     if (testInfo?.attach) {
       await testInfo.attach(label, {

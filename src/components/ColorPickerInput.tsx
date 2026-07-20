@@ -53,10 +53,13 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
     return false;
   });
 
-  const setPopoverOpen = useCallback((open: boolean) => {
-    popoverStateCache.set(testId, { open, timestamp: Date.now() });
-    setPopoverOpenRaw(open);
-  }, [testId]);
+  const setPopoverOpen = useCallback(
+    (open: boolean) => {
+      popoverStateCache.set(testId, { open, timestamp: Date.now() });
+      setPopoverOpenRaw(open);
+    },
+    [testId],
+  );
 
   // Allow keyboard users to dismiss the popover with Escape
   // Ant Design Popover content renders in a portal; we attach a document-level handler
@@ -81,7 +84,7 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
     (newColor: string) => {
       onChange?.(newColor);
     },
-    [onChange]
+    [onChange],
   );
 
   /**
@@ -91,17 +94,20 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange?.(e.target.value);
     },
-    [onChange]
+    [onChange],
   );
 
   /**
    * Handle popover visibility change
    */
-  const handlePopoverOpenChange = useCallback((open: boolean) => {
-    if (!disabled && !readOnly) {
-      setPopoverOpen(open);
-    }
-  }, [disabled, readOnly, setPopoverOpen]);
+  const handlePopoverOpenChange = useCallback(
+    (open: boolean) => {
+      if (!disabled && !readOnly) {
+        setPopoverOpen(open);
+      }
+    },
+    [disabled, readOnly, setPopoverOpen],
+  );
 
   /**
    * Handle swatch click - open popover
@@ -158,7 +164,17 @@ export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
         data-testid={`${testId}-picker`}
       />
     ),
-    [value, handleColorChange, format, showAlpha, showFormatToggle, showRecentColors, maxRecentColors, disabled, testId]
+    [
+      value,
+      handleColorChange,
+      format,
+      showAlpha,
+      showFormatToggle,
+      showRecentColors,
+      maxRecentColors,
+      disabled,
+      testId,
+    ],
   );
 
   return (

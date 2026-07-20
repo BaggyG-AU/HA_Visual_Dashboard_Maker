@@ -52,7 +52,9 @@ const parseAxisBound = (value: unknown): number | 'auto' => {
 const toBoolean = (value: unknown, fallback: boolean): boolean =>
   typeof value === 'boolean' ? value : fallback;
 
-const normalizeSeries = (series: NativeGraphCardConfig['series']): NormalizedGraphSeriesConfig[] => {
+const normalizeSeries = (
+  series: NativeGraphCardConfig['series'],
+): NormalizedGraphSeriesConfig[] => {
   if (!Array.isArray(series) || series.length === 0) {
     return [
       {
@@ -67,10 +69,15 @@ const normalizeSeries = (series: NativeGraphCardConfig['series']): NormalizedGra
   }
 
   return series
-    .filter((entry): entry is NonNullable<NativeGraphCardConfig['series']>[number] => Boolean(entry && entry.entity))
+    .filter((entry): entry is NonNullable<NativeGraphCardConfig['series']>[number] =>
+      Boolean(entry && entry.entity),
+    )
     .map((entry, index) => ({
       entity: entry.entity,
-      label: entry.label?.trim() || entry.entity.split('.')[1]?.replace(/_/g, ' ') || `Series ${index + 1}`,
+      label:
+        entry.label?.trim() ||
+        entry.entity.split('.')[1]?.replace(/_/g, ' ') ||
+        `Series ${index + 1}`,
       color: entry.color || DEFAULT_COLORS[index % DEFAULT_COLORS.length],
       axis: entry.axis === 'right' ? 'right' : 'left',
       smooth: toBoolean(entry.smooth, true),
@@ -102,9 +109,10 @@ export const normalizeGraphConfig = (card: NativeGraphCardConfig): NormalizedNat
   const refreshSeconds = toSeconds(card.refresh_interval, DEFAULT_REFRESH_SECONDS);
 
   const chartType = card.chart_type;
-  const supportedChartType = chartType === 'line' || chartType === 'bar' || chartType === 'area' || chartType === 'pie'
-    ? chartType
-    : 'line';
+  const supportedChartType =
+    chartType === 'line' || chartType === 'bar' || chartType === 'area' || chartType === 'pie'
+      ? chartType
+      : 'line';
 
   return {
     type: 'custom:native-graph-card',
@@ -130,7 +138,9 @@ export const buildGraphData = (
   config: NormalizedNativeGraphConfig,
   now = Date.now(),
 ): GraphServiceDataResult => {
-  const pointCount = clampPoints(config.time_range_seconds / Math.max(config.refresh_interval_seconds, 15));
+  const pointCount = clampPoints(
+    config.time_range_seconds / Math.max(config.refresh_interval_seconds, 15),
+  );
   const pointStep = Math.floor(config.time_range_seconds / pointCount) * 1000;
   const points = Array.from({ length: pointCount }, (_, index) => {
     const timestamp = now - (pointCount - index - 1) * pointStep;

@@ -28,7 +28,7 @@ export const SwiperCardRenderer: React.FC<SwiperCardRendererProps> = ({
   const hasTitle = Boolean(card.title);
   const backgroundStyle = getCardBackgroundStyle(
     card.style,
-    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f'
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
   );
 
   return (
@@ -60,33 +60,37 @@ export const SwiperCardRenderer: React.FC<SwiperCardRendererProps> = ({
       <SwiperCarousel card={card} isSelected={isSelected} onCardClick={onClick} />
 
       {isSelected && (
-        <div style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          padding: '4px 8px',
-          backgroundColor: 'rgba(0, 217, 255, 0.2)',
-          border: '1px solid #00d9ff',
-          borderRadius: '4px',
-          fontSize: '10px',
-          color: '#00d9ff',
-          fontWeight: 'bold',
-          pointerEvents: 'none',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            padding: '4px 8px',
+            backgroundColor: 'rgba(0, 217, 255, 0.2)',
+            border: '1px solid #00d9ff',
+            borderRadius: '4px',
+            fontSize: '10px',
+            color: '#00d9ff',
+            fontWeight: 'bold',
+            pointerEvents: 'none',
+          }}
+        >
           <SwapOutlined style={{ marginRight: '4px' }} />
           CAROUSEL
         </div>
       )}
 
       {!card.cards?.length && !card.slides?.length && (
-        <div style={{
-          position: 'absolute',
-          bottom: '8px',
-          left: '8px',
-          padding: '4px 8px',
-          backgroundColor: 'rgba(0, 0, 0, 0.35)',
-          borderRadius: '4px',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '8px',
+            left: '8px',
+            padding: '4px 8px',
+            backgroundColor: 'rgba(0, 0, 0, 0.35)',
+            borderRadius: '4px',
+          }}
+        >
           <Text type="secondary" style={{ fontSize: '11px' }}>
             Add cards to slides in YAML or Properties Panel
           </Text>

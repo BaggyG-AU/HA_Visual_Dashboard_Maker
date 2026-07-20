@@ -19,13 +19,18 @@ export const PopupTriggerCardRenderer: React.FC<PopupTriggerCardRendererProps> =
   isSelected = false,
   onClick,
 }) => {
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
-  const label = typeof card.trigger_label === 'string' && card.trigger_label.trim().length > 0
-    ? card.trigger_label
-    : 'Open Popup';
-  const icon = typeof card.trigger_icon === 'string' && card.trigger_icon.trim().length > 0
-    ? card.trigger_icon
-    : 'mdi:open-in-new';
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
+  const label =
+    typeof card.trigger_label === 'string' && card.trigger_label.trim().length > 0
+      ? card.trigger_label
+      : 'Open Popup';
+  const icon =
+    typeof card.trigger_icon === 'string' && card.trigger_icon.trim().length > 0
+      ? card.trigger_icon
+      : 'mdi:open-in-new';
 
   const openPopup = () => {
     const popupConfig = resolvePopupFromCard(card);
@@ -76,19 +81,21 @@ export const PopupTriggerCardRenderer: React.FC<PopupTriggerCardRendererProps> =
       </div>
 
       {isSelected && (
-        <div style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          padding: '4px 8px',
-          backgroundColor: 'rgba(0, 217, 255, 0.2)',
-          border: '1px solid #00d9ff',
-          borderRadius: '4px',
-          fontSize: '10px',
-          color: '#00d9ff',
-          fontWeight: 700,
-          pointerEvents: 'none',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            padding: '4px 8px',
+            backgroundColor: 'rgba(0, 217, 255, 0.2)',
+            border: '1px solid #00d9ff',
+            borderRadius: '4px',
+            fontSize: '10px',
+            color: '#00d9ff',
+            fontWeight: 700,
+            pointerEvents: 'none',
+          }}
+        >
           <ExpandOutlined style={{ marginRight: '4px' }} />
           POPUP
         </div>

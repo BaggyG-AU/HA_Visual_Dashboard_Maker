@@ -55,7 +55,7 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
     }
 
     // Mode 2: Check if cards have internal layout property (from user's manual resizing)
-    const hasExistingLayout = cards.some(card => 'layout' in card && card.layout);
+    const hasExistingLayout = cards.some((card) => 'layout' in card && card.layout);
 
     if (hasExistingLayout) {
       // Use existing layout information from cards
@@ -121,7 +121,7 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
         const updatedView = {
           ...view,
           cards: (view.cards || []).map((card, idx) => {
-            const layoutItem = newLayout.find(l => l.i === `card-${idx}`);
+            const layoutItem = newLayout.find((l) => l.i === `card-${idx}`);
             if (layoutItem) {
               return {
                 ...card,
@@ -170,7 +170,8 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
   const handleDeploy = () => {
     Modal.confirm({
       title: 'Deploy Dashboard',
-      content: 'This will backup the current production dashboard and deploy your changes. Continue?',
+      content:
+        'This will backup the current production dashboard and deploy your changes. Continue?',
       okText: 'Deploy',
       okType: 'primary',
       cancelText: 'Cancel',
@@ -181,26 +182,30 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
   const cards = view.cards || [];
 
   return (
-    <div style={{
-      position: 'relative',
-      width: '100%',
-      height: '100%',
-      backgroundColor: '#141414',
-    }}>
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#141414',
+      }}
+    >
       {/* Control Bar */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1000,
-        backgroundColor: 'rgba(20, 20, 20, 0.95)',
-        padding: '12px 16px',
-        borderBottom: '1px solid #434343',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      }}>
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          backgroundColor: 'rgba(20, 20, 20, 0.95)',
+          padding: '12px 16px',
+          borderBottom: '1px solid #434343',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <Space>
           <Tooltip title="Toggle between editing the layout and previewing the dashboard">
             <Button
@@ -229,10 +234,7 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
             </Button>
           </Tooltip>
           <Tooltip title="Close live preview and return to dashboard editor">
-            <Button
-              icon={<CloseOutlined />}
-              onClick={onClose}
-            >
+            <Button icon={<CloseOutlined />} onClick={onClose}>
               Close
             </Button>
           </Tooltip>
@@ -240,37 +242,44 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
       </div>
 
       {/* Main Content Area */}
-      <div style={{
-        position: 'absolute',
-        top: '60px',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        overflow: 'hidden',
-        backgroundColor: '#0d0d0d',
-      }}>
-        {/* Background pattern to indicate preview mode */}
-        <div style={{
+      <div
+        style={{
           position: 'absolute',
-          top: 0,
+          top: '60px',
           left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.02) 10px, rgba(255,255,255,0.02) 20px)',
-        }} />
+          right: 0,
+          bottom: 0,
+          overflow: 'hidden',
+          backgroundColor: '#0d0d0d',
+        }}
+      >
+        {/* Background pattern to indicate preview mode */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundImage:
+              'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.02) 10px, rgba(255,255,255,0.02) 20px)',
+          }}
+        />
 
         {/* Info banner */}
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          textAlign: 'center',
-          color: '#666',
-          fontSize: '14px',
-          zIndex: 1,
-          pointerEvents: 'none',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            color: '#666',
+            fontSize: '14px',
+            zIndex: 1,
+            pointerEvents: 'none',
+          }}
+        >
           <div style={{ marginBottom: '8px', fontSize: '16px', fontWeight: 500 }}>
             Live Preview Mode
           </div>
@@ -321,34 +330,36 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
             }}
           >
             {cards.map((card, index) => (
-                <div
-                  key={`card-${index}`}
-                  style={{
-                    border: editMode ? '2px dashed rgba(0, 217, 255, 0.6)' : '1px solid rgba(0, 217, 255, 0.3)',
-                    backgroundColor: editMode ? 'rgba(0, 217, 255, 0.08)' : 'rgba(0, 217, 255, 0.03)',
-                    borderRadius: '12px',
-                    cursor: editMode ? 'move' : 'default',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#00d9ff',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    padding: '8px',
-                    textAlign: 'center',
-                    backdropFilter: editMode ? 'blur(2px)' : 'none',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <div>
-                    <div>{card.type}</div>
-                    {card.title && (
-                      <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '4px' }}>
-                        {card.title}
-                      </div>
-                    )}
-                  </div>
+              <div
+                key={`card-${index}`}
+                style={{
+                  border: editMode
+                    ? '2px dashed rgba(0, 217, 255, 0.6)'
+                    : '1px solid rgba(0, 217, 255, 0.3)',
+                  backgroundColor: editMode ? 'rgba(0, 217, 255, 0.08)' : 'rgba(0, 217, 255, 0.03)',
+                  borderRadius: '12px',
+                  cursor: editMode ? 'move' : 'default',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#00d9ff',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  padding: '8px',
+                  textAlign: 'center',
+                  backdropFilter: editMode ? 'blur(2px)' : 'none',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <div>
+                  <div>{card.type}</div>
+                  {card.title && (
+                    <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '4px' }}>
+                      {card.title}
+                    </div>
+                  )}
                 </div>
+              </div>
             ))}
           </GridLayout>
         </div>

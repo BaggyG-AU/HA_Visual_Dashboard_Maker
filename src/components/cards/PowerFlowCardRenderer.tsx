@@ -1,6 +1,13 @@
 import React from 'react';
 import { Card as AntCard, Typography, Tag } from 'antd';
-import { SunOutlined, HomeOutlined, ThunderboltFilled, ApiOutlined, FireOutlined, CloudOutlined } from '@ant-design/icons';
+import {
+  SunOutlined,
+  HomeOutlined,
+  ThunderboltFilled,
+  ApiOutlined,
+  FireOutlined,
+  CloudOutlined,
+} from '@ant-design/icons';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { useEntityContextResolver } from '../../hooks/useEntityContext';
 
@@ -25,8 +32,8 @@ interface PowerFlowCardConfig {
     grid?: PowerFlowEntity;
     solar?: PowerFlowEntity;
     home?: PowerFlowEntity;
-    gas?: PowerFlowEntity;     // v2.6.0: Gas entity support
-    water?: PowerFlowEntity;   // v2.6.0: Water entity support
+    gas?: PowerFlowEntity; // v2.6.0: Gas entity support
+    water?: PowerFlowEntity; // v2.6.0: Water entity support
     individual?: PowerFlowEntity[];
   };
   clickable_entities?: boolean;
@@ -40,7 +47,7 @@ interface PowerFlowCardConfig {
   min_expected_power?: number;
   watt_threshold?: number;
   transparency_zero_lines?: number;
-  dashboard_link?: string;   // v2.4.0: Link to detailed dashboard
+  dashboard_link?: string; // v2.4.0: Link to detailed dashboard
   [key: string]: any;
 }
 
@@ -93,10 +100,18 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
     card.style,
     isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
   );
-  const solarLabel = entities.solar?.name ? resolveContext(entities.solar.name, entities.solar.entity) : 'Solar';
-  const gridLabel = entities.grid?.name ? resolveContext(entities.grid.name, entities.grid.entity) : 'Grid';
-  const homeLabel = entities.home?.name ? resolveContext(entities.home.name, entities.home.entity) : 'Home';
-  const batteryLabel = entities.battery?.name ? resolveContext(entities.battery.name, entities.battery.entity) : 'Battery';
+  const solarLabel = entities.solar?.name
+    ? resolveContext(entities.solar.name, entities.solar.entity)
+    : 'Solar';
+  const gridLabel = entities.grid?.name
+    ? resolveContext(entities.grid.name, entities.grid.entity)
+    : 'Grid';
+  const homeLabel = entities.home?.name
+    ? resolveContext(entities.home.name, entities.home.entity)
+    : 'Home';
+  const batteryLabel = entities.battery?.name
+    ? resolveContext(entities.battery.name, entities.battery.entity)
+    : 'Battery';
 
   const PowerNode: React.FC<{
     icon: React.ReactNode;
@@ -153,7 +168,9 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
             backgroundColor: '#00d9ff',
             boxShadow: '0 0 8px #00d9ff',
             borderRadius: '50%',
-            animation: vertical ? 'flowVertical 2s linear infinite' : 'flowHorizontal 2s linear infinite',
+            animation: vertical
+              ? 'flowVertical 2s linear infinite'
+              : 'flowHorizontal 2s linear infinite',
           }}
         />
       )}
@@ -164,12 +181,14 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
     <AntCard
       size="small"
       title={
-        <div style={{
-          fontSize: '16px',
-          fontWeight: 500,
-          color: '#e1e1e1',
-          padding: '0',
-        }}>
+        <div
+          style={{
+            fontSize: '16px',
+            fontWeight: 500,
+            color: '#e1e1e1',
+            padding: '0',
+          }}
+        >
           Energy Flow
         </div>
       }
@@ -210,7 +229,9 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
       >
         {/* Top Row: Solar */}
         {entities.solar && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}
+          >
             <PowerNode
               icon={<SunOutlined />}
               label={solarLabel}
@@ -271,7 +292,15 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
         {/* Individual Devices */}
         {individualCount > 0 && (
           <div style={{ marginTop: '8px', width: '100%' }}>
-            <Text type="secondary" style={{ fontSize: '10px', display: 'block', marginBottom: '4px', textAlign: 'center' }}>
+            <Text
+              type="secondary"
+              style={{
+                fontSize: '10px',
+                display: 'block',
+                marginBottom: '4px',
+                textAlign: 'center',
+              }}
+            >
               Individual Devices
             </Text>
             <div
@@ -287,7 +316,9 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
             >
               {individual.map((device, idx) => (
                 <Tag key={idx} color="blue" style={{ fontSize: '10px', margin: 0 }}>
-                  {device.name || device.entity?.split('.')[1]?.replace(/_/g, ' ') || `Device ${idx + 1}`}
+                  {device.name ||
+                    device.entity?.split('.')[1]?.replace(/_/g, ' ') ||
+                    `Device ${idx + 1}`}
                 </Tag>
               ))}
             </div>
@@ -297,7 +328,15 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
         {/* Gas and Water Entities (v2.6.0+) */}
         {(entities.gas || entities.water) && (
           <div style={{ marginTop: '12px', width: '100%' }}>
-            <Text type="secondary" style={{ fontSize: '10px', display: 'block', marginBottom: '8px', textAlign: 'center' }}>
+            <Text
+              type="secondary"
+              style={{
+                fontSize: '10px',
+                display: 'block',
+                marginBottom: '8px',
+                textAlign: 'center',
+              }}
+            >
               Utilities
             </Text>
             <div

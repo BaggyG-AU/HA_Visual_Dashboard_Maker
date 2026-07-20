@@ -14,20 +14,14 @@ export class ThemeService {
   /**
    * Apply theme CSS variables to an element
    */
-  applyThemeToElement(
-    element: HTMLElement,
-    theme: Theme,
-    darkMode: boolean
-  ): void {
+  applyThemeToElement(element: HTMLElement, theme: Theme, darkMode: boolean): void {
     logger.debug('Applying theme to element', { darkMode });
 
     // Merge base theme with mode-specific overrides
     const baseVars = { ...theme };
     delete baseVars.modes;
 
-    const modeVars = darkMode
-      ? theme.modes?.dark || {}
-      : theme.modes?.light || {};
+    const modeVars = darkMode ? theme.modes?.dark || {} : theme.modes?.light || {};
 
     const finalVars = { ...baseVars, ...modeVars };
 
@@ -48,9 +42,7 @@ export class ThemeService {
     const baseVars = { ...theme };
     delete baseVars.modes;
 
-    const modeVars = darkMode
-      ? theme.modes?.dark || {}
-      : theme.modes?.light || {};
+    const modeVars = darkMode ? theme.modes?.dark || {} : theme.modes?.light || {};
 
     const finalVars = { ...baseVars, ...modeVars };
 
@@ -78,7 +70,7 @@ export class ThemeService {
     }
 
     // Remove them
-    propsToRemove.forEach(prop => {
+    propsToRemove.forEach((prop) => {
       element.style.removeProperty(prop);
     });
   }
@@ -86,16 +78,11 @@ export class ThemeService {
   /**
    * Extract color palette from theme for preview
    */
-  getThemeColors(
-    theme: Theme,
-    darkMode: boolean
-  ): Record<string, string> {
+  getThemeColors(theme: Theme, darkMode: boolean): Record<string, string> {
     const baseVars = { ...theme };
     delete baseVars.modes;
 
-    const modeVars = darkMode
-      ? theme.modes?.dark || {}
-      : theme.modes?.light || {};
+    const modeVars = darkMode ? theme.modes?.dark || {} : theme.modes?.light || {};
 
     const finalVars = { ...baseVars, ...modeVars } as unknown as Record<string, string>;
 
@@ -103,7 +90,8 @@ export class ThemeService {
     return {
       primary: finalVars['primary-color'] as string,
       accent: finalVars['accent-color'] as string,
-      primaryText: finalVars['primary-text-color'] as string || finalVars['text-primary-color'] as string,
+      primaryText:
+        (finalVars['primary-text-color'] as string) || (finalVars['text-primary-color'] as string),
       secondaryText: finalVars['secondary-text-color'] as string,
       primaryBackground: finalVars['primary-background-color'] as string,
       cardBackground: finalVars['card-background-color'] as string,
@@ -120,7 +108,7 @@ export class ThemeService {
         ...payload,
       },
       null,
-      2
+      2,
     );
   }
 

@@ -36,7 +36,10 @@ export const ThemePreviewPanel: React.FC = () => {
 
   const colors = themeService.getThemeColors(currentTheme, darkMode);
 
-  const ColorSwatch: React.FC<{ label: string; color: string | undefined }> = ({ label, color }) => {
+  const ColorSwatch: React.FC<{ label: string; color: string | undefined }> = ({
+    label,
+    color,
+  }) => {
     if (!color) return null;
 
     return (
@@ -54,7 +57,9 @@ export const ThemePreviewPanel: React.FC = () => {
         <div style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontSize: '12px', color: '#888' }}>{label}</Text>
           <div>
-            <Text code style={{ fontSize: '11px' }}>{color}</Text>
+            <Text code style={{ fontSize: '11px' }}>
+              {color}
+            </Text>
           </div>
         </div>
       </div>
@@ -75,15 +80,15 @@ export const ThemePreviewPanel: React.FC = () => {
       <div style={{ marginBottom: '12px' }}>
         <Text strong>{currentThemeName}</Text>
         <div style={{ marginTop: '4px' }}>
-          <Tag color={darkMode ? 'blue' : 'gold'}>
-            {darkMode ? 'Dark Mode' : 'Light Mode'}
-          </Tag>
+          <Tag color={darkMode ? 'blue' : 'gold'}>{darkMode ? 'Dark Mode' : 'Light Mode'}</Tag>
         </div>
       </div>
 
       <Divider style={{ margin: '12px 0' }} />
 
-      <Title level={5} style={{ fontSize: '13px', marginTop: 0 }}>Colors</Title>
+      <Title level={5} style={{ fontSize: '13px', marginTop: 0 }}>
+        Colors
+      </Title>
 
       <ColorSwatch label="Primary" color={colors.primary} />
       <ColorSwatch label="Accent" color={colors.accent} />

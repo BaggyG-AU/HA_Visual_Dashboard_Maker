@@ -55,7 +55,7 @@ function diagnosticsArtifactPath(): string {
 async function captureLaunchDiagnostics(
   app: ElectronApplication,
   startMs: number,
-  timeoutMs: number
+  timeoutMs: number,
 ): Promise<{ artifactPath: string; diagnostics: ElectronLaunchDiagnostics }> {
   const diagnostics: ElectronLaunchDiagnostics = {
     timestamp: new Date().toISOString(),
@@ -130,13 +130,16 @@ async function findMainWindow(app: ElectronApplication, timeoutMs = 15000): Prom
   }
 
   const { artifactPath, diagnostics } = await captureLaunchDiagnostics(app, start, timeoutMs);
-  console.error('[electron launch] main window not found', JSON.stringify({
-    artifactPath,
-    elapsedMs: diagnostics.elapsedMs,
-    playwrightWindows: diagnostics.playwrightWindows,
-    browserWindowCount: diagnostics.browserWindows?.count ?? null,
-    errors: diagnostics.errors,
-  }));
+  console.error(
+    '[electron launch] main window not found',
+    JSON.stringify({
+      artifactPath,
+      elapsedMs: diagnostics.elapsedMs,
+      playwrightWindows: diagnostics.playwrightWindows,
+      browserWindowCount: diagnostics.browserWindows?.count ?? null,
+      errors: diagnostics.errors,
+    }),
+  );
   throw new Error(`Could not find main app window (non-DevTools). Diagnostics: ${artifactPath}`);
 }
 
@@ -145,10 +148,7 @@ async function findMainWindow(app: ElectronApplication, timeoutMs = 15000): Prom
  * Ensures no state leakage between tests
  */
 function createIsolatedUserDataDir(): string {
-  const dir = path.join(
-    os.tmpdir(),
-    `pw-electron-${crypto.randomBytes(8).toString('hex')}`
-  );
+  const dir = path.join(os.tmpdir(), `pw-electron-${crypto.randomBytes(8).toString('hex')}`);
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
@@ -171,11 +171,7 @@ export async function launch(): Promise<ElectronTestContext> {
   delete baseEnv.ELECTRON_RUN_AS_NODE;
 
   const app = await electron.launch({
-    args: [
-      mainPath,
-      `--user-data-dir=${userDataDir}`,
-      ...wslFlags,
-    ],
+    args: [mainPath, `--user-data-dir=${userDataDir}`, ...wslFlags],
     env: {
       ...baseEnv,
       NODE_ENV: 'test',
@@ -204,9 +200,9 @@ export async function launch(): Promise<ElectronTestContext> {
               isVisible: primary.isVisible(),
               isDestroyed: primary.isDestroyed(),
               isMinimized: primary.isMinimized(),
-              loading: primary.webContents.isLoading()
+              loading: primary.webContents.isLoading(),
             }
-          : null
+          : null,
       };
     });
     console.log('[electron launch] window info', JSON.stringify(info));
@@ -236,12 +232,16 @@ export async function launch(): Promise<ElectronTestContext> {
   await window.waitForSelector('#root > *', { timeout: 20000, state: 'attached' });
 
   // Wait for the app shell to become interactable instead of sleeping.
-  await window.waitForFunction(() => {
-    const shell = document.querySelector('[data-testid="app-shell"]');
-    const root = document.querySelector('#root');
-    const hasRenderedContent = Boolean(root && root.children.length > 0);
-    return Boolean(shell) || hasRenderedContent;
-  }, null, { timeout: 15000 });
+  await window.waitForFunction(
+    () => {
+      const shell = document.querySelector('[data-testid="app-shell"]');
+      const root = document.querySelector('#root');
+      const hasRenderedContent = Boolean(root && root.children.length > 0);
+      return Boolean(shell) || hasRenderedContent;
+    },
+    null,
+    { timeout: 15000 },
+  );
 
   // Ensure renderer can detect test mode even when built in production mode
   await window.evaluate(() => {

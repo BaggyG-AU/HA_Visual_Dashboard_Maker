@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { Modal, Form, Input, Button, Alert, Steps, Typography, Radio } from 'antd';
-import { CloudUploadOutlined, CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
+import {
+  CloudUploadOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 import { yamlService } from '../services/yamlService';
 import { logger } from '../services/logger';
@@ -15,7 +20,7 @@ interface DeployDialogProps {
 }
 
 interface DeployStatus {
-  step: number;  // 0: config, 1: validate YAML, 2: validate connection, 3: deploy, 4: complete/error
+  step: number; // 0: config, 1: validate YAML, 2: validate connection, 3: deploy, 4: complete/error
   message: string;
   error?: string;
   success: boolean;
@@ -81,7 +86,9 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
 
       // Strict validation: ensure views array exists and is not empty
       if (!dashboardConfig?.views || dashboardConfig.views.length === 0) {
-        throw new Error('Dashboard must contain at least one view. Your dashboard appears to be empty.');
+        throw new Error(
+          'Dashboard must contain at least one view. Your dashboard appears to be empty.',
+        );
       }
 
       // Validate each view has required properties
@@ -96,7 +103,7 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
       }
 
       // Wait a bit for visual feedback
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Step 2: Validate connection
       setDeployStatus({
@@ -115,14 +122,13 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
       }
 
       // Wait a bit for visual feedback
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Step 3: Deploy dashboard via Home Assistant WebSocket API
       setDeployStatus({
         step: 3,
-        message: deployMode === 'new'
-          ? 'Creating new dashboard...'
-          : 'Updating existing dashboard...',
+        message:
+          deployMode === 'new' ? 'Creating new dashboard...' : 'Updating existing dashboard...',
         success: false,
       });
 
@@ -135,7 +141,11 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
       }
 
       if (deployMode === 'new') {
-        const createResult = await window.electronAPI.haWsCreateDashboard(dashboardPath, values.title, values.icon);
+        const createResult = await window.electronAPI.haWsCreateDashboard(
+          dashboardPath,
+          values.title,
+          values.icon,
+        );
         if (!createResult.success) {
           throw new Error(createResult.error || 'Failed to create dashboard');
         }
@@ -145,28 +155,34 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
       // (The config might have a different title from editing)
       const deployConfig = {
         ...dashboardConfig,
-        title: values.title  // Use the title from the deployment form
+        title: values.title, // Use the title from the deployment form
       };
 
-      logger.debug('Final deploy config prepared', { title: deployConfig.title, viewCount: deployConfig.views?.length ?? 0 });
+      logger.debug('Final deploy config prepared', {
+        title: deployConfig.title,
+        viewCount: deployConfig.views?.length ?? 0,
+      });
 
-      const saveResult = await window.electronAPI.haWsSaveDashboardConfig(dashboardPath, deployConfig);
+      const saveResult = await window.electronAPI.haWsSaveDashboardConfig(
+        dashboardPath,
+        deployConfig,
+      );
       if (!saveResult.success) {
         throw new Error(saveResult.error || 'Failed to save dashboard configuration');
       }
 
       // Wait a bit for visual feedback
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Step 4: Complete
       setDeployStatus({
         step: 4,
-        message: deployMode === 'new'
-          ? `Dashboard "${values.title}" created successfully!`
-          : `Dashboard "${values.title}" updated successfully!`,
+        message:
+          deployMode === 'new'
+            ? `Dashboard "${values.title}" created successfully!`
+            : `Dashboard "${values.title}" updated successfully!`,
         success: true,
       });
-
     } catch (error) {
       setDeployStatus({
         step: 4,
@@ -275,12 +291,14 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
             ]}
           />
 
-          <div style={{
-            padding: '16px',
-            background: '#1f1f1f',
-            borderRadius: '4px',
-            marginBottom: '16px'
-          }}>
+          <div
+            style={{
+              padding: '16px',
+              background: '#1f1f1f',
+              borderRadius: '4px',
+              marginBottom: '16px',
+            }}
+          >
             <Text style={{ color: '#fff' }}>{deployStatus.message}</Text>
           </div>
 
@@ -397,16 +415,19 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
       {renderStepContent()}
 
       {deployStatus.step === 0 && (
-        <div style={{
-          marginTop: '24px',
-          padding: '12px',
-          background: '#1f1f1f',
-          border: '1px solid #434343',
-          borderRadius: '4px'
-        }}>
+        <div
+          style={{
+            marginTop: '24px',
+            padding: '12px',
+            background: '#1f1f1f',
+            border: '1px solid #434343',
+            borderRadius: '4px',
+          }}
+        >
           <Text style={{ color: '#888', fontSize: '12px' }}>
-            <strong style={{ color: '#fff' }}>Note:</strong> This will deploy the dashboard configuration directly to your Home Assistant instance.
-            Make sure to test your dashboard before deploying to production.
+            <strong style={{ color: '#fff' }}>Note:</strong> This will deploy the dashboard
+            configuration directly to your Home Assistant instance. Make sure to test your dashboard
+            before deploying to production.
           </Text>
         </div>
       )}

@@ -13,7 +13,9 @@ This release significantly expands custom card support by implementing **8 addit
 ### What's New
 
 #### 8 New Custom Card Renderers
+
 All cards include:
+
 - ✅ Visual placeholder renderers for canvas
 - ✅ Property panel integration (automatic)
 - ✅ YAML import/export preservation
@@ -21,6 +23,7 @@ All cards include:
 - ✅ Security-conscious rendering (no injection risks)
 
 #### Card-Mod (CSS Styling)
+
 - **Type**: `custom:card-mod`
 - **Repository**: [thomasloven/lovelace-card-mod](https://github.com/thomasloven/lovelace-card-mod)
 - **Purpose**: Apply custom CSS styles to any card
@@ -31,6 +34,7 @@ All cards include:
   - Alert indicator for security-conscious rendering
 
 #### Auto-Entities (Dynamic Entity Lists)
+
 - **Type**: `custom:auto-entities`
 - **Repository**: [thomasloven/lovelace-auto-entities](https://github.com/thomasloven/lovelace-auto-entities)
 - **Purpose**: Automatically populate entity lists based on filters
@@ -42,6 +46,7 @@ All cards include:
   - "Show empty" state indicator
 
 #### Vertical Stack in Card (Bordered Container)
+
 - **Type**: `custom:vertical-stack-in-card`
 - **Repository**: [ofekashery/vertical-stack-in-card](https://github.com/ofekashery/vertical-stack-in-card)
 - **Purpose**: Stack cards vertically in a single bordered container
@@ -53,6 +58,7 @@ All cards include:
   - Visual card type summary with count
 
 #### Custom Button Card (Advanced Buttons)
+
 - **Type**: `custom:button-card`
 - **Repository**: [custom-cards/button-card](https://github.com/custom-cards/button-card)
 - **Purpose**: Highly customizable button with templates
@@ -67,27 +73,32 @@ All cards include:
 #### Surveillance/Camera Cards (4 Types)
 
 **1. Surveillance Card** (`custom:surveillance-card`)
+
 - Multi-camera surveillance dashboard view
 - Shows camera count
 - Live indicator with pulse animation
 - "LIVE PREVIEW (in HA)" indicator
 
 **2. Frigate Card** (`custom:frigate-card`)
+
 - Frigate NVR integration
 - Camera count display
 - Optimized for Frigate installations
 
 **3. Camera Card** (`custom:camera-card`)
+
 - Enhanced camera with PTZ controls
 - Shows camera entity ID
 - Live feed placeholder
 
 **4. WebRTC Camera** (`custom:webrtc-camera`)
+
 - Low-latency WebRTC streaming
 - URL preview (truncated for security)
 - Live stream indicator
 
 All surveillance cards:
+
 - Security-conscious (no actual streams loaded in editor)
 - Visual placeholders with camera icon
 - Entity name display
@@ -95,6 +106,7 @@ All surveillance cards:
 - "Camera stream visible only in Home Assistant" footer
 
 #### Updated BaseCard Routing
+
 - Added routing for all 8 new custom cards
 - Fixed 5 missing Mushroom card variants:
   - `custom:mushroom-person-card`
@@ -111,6 +123,7 @@ All surveillance cards:
 ### New Test Files
 
 **`tests/unit/custom-cards-part2.spec.ts`** - 26 comprehensive unit tests
+
 - Card-mod validation (2 tests)
 - Auto-entities validation (3 tests)
 - Vertical-stack-in-card validation (3 tests)
@@ -121,6 +134,7 @@ All surveillance cards:
 - Card category filtering validation (1 test)
 
 ### Test Coverage
+
 - ✅ Registry metadata validation (name, category, source, isCustom)
 - ✅ Required props validation
 - ✅ Default props validation
@@ -130,13 +144,16 @@ All surveillance cards:
 - ✅ Card count assertions (minimum 8 new cards)
 
 ### Test Stability
+
 - **Unit Tests**: 53/53 passing (100% pass rate)
 - **Integration Tests**: 19/19 dashboard-generator passing
 - **ESLint**: No new warnings
 - **TypeScript**: Full type coverage maintained
 
 ### ESLint Fix
+
 Fixed Playwright test fixture error:
+
 ```typescript
 // Before (lint error)
 electronApp: async (_context, use) => {
@@ -218,6 +235,7 @@ electronApp: async ({}, use) => {
    - Version bump from `0.3.0-beta.1` to `0.3.1-beta.1`
 
 ### Statistics
+
 - **Total New Lines**: 2,433
 - **Total Lines Modified**: 38
 - **Files Created**: 9
@@ -234,21 +252,25 @@ electronApp: async ({}, use) => {
 ### Test Execution Commands
 
 **Unit Tests**:
+
 ```bash
 npm run test:unit
 ```
 
 **Integration Tests** (Dashboard Generator):
+
 ```bash
 npx playwright test --project=electron-integration --workers=1
 ```
 
 **Lint**:
+
 ```bash
 npm run lint
 ```
 
 ### Test Results
+
 - ✅ **53/53 unit tests passing** (100% pass rate)
   - 27 previous tests
   - 26 new custom-cards-part2 tests
@@ -257,7 +279,9 @@ npm run lint
 - ✅ **TypeScript compilation** (no errors)
 
 ### Manual Testing Guide
+
 See [CUSTOM_CARD_PART2_MANUAL_TESTING.md](../features/CUSTOM_CARD_PART2_MANUAL_TESTING.md) for:
+
 - Test scenarios for all 8 cards
 - YAML validation procedures
 - Property panel verification
@@ -272,6 +296,7 @@ See [CUSTOM_CARD_PART2_MANUAL_TESTING.md](../features/CUSTOM_CARD_PART2_MANUAL_T
 
 **Component Pattern**:
 All renderers follow consistent pattern:
+
 ```typescript
 interface CustomCardRendererProps {
   card: CustomCard;
@@ -289,6 +314,7 @@ export const CustomCardRenderer: React.FC<CustomCardRendererProps> = ({
 ```
 
 **Security Considerations**:
+
 - ✅ No CSS injection (card-mod shows styles as text only)
 - ✅ No external resource loading (camera cards show placeholders)
 - ✅ No arbitrary code execution
@@ -296,12 +322,14 @@ export const CustomCardRenderer: React.FC<CustomCardRendererProps> = ({
 - ✅ YAML parsing validated before loading
 
 **Card Registry Integration**:
+
 - All cards registered in `cardRegistry` singleton
 - Metadata includes: name, category, source, defaultProps, requiredProps
 - Property panel integration automatic via existing infrastructure
 - YAML serialization handled by existing exporters
 
 **Component Hierarchy**:
+
 ```
 BaseCard.tsx (routing)
   ├─ CardModCardRenderer.tsx
@@ -312,11 +340,13 @@ BaseCard.tsx (routing)
 ```
 
 **State Management**:
+
 - Uses existing Zustand store for card selection
 - HAEntityContext for entity lookup (button-card, surveillance cards)
 - No new state management added
 
 **Data Flow**:
+
 ```
 User adds custom card to canvas
   ↓
@@ -340,6 +370,7 @@ YAML export preserves all properties
 ### Card Type Coverage
 
 **Custom Cards Implemented (14 total)**:
+
 1. Mushroom Cards (6):
    - Template, Entity, Person, Switch, Number, Select, Vacuum
 2. ApexCharts Card (1)
@@ -351,9 +382,11 @@ YAML export preserves all properties
    - Surveillance Card, Frigate Card, Camera Card, WebRTC Camera
 
 **Standard HA Cards Implemented (19 total)**:
+
 - Alarm Panel, Button, Entities, Entity, Gauge, Glance, Grid, History Graph, Horizontal Stack, Light, Markdown, Media Control, Picture, Picture Elements, Picture Entity, Picture Glance, Sensor, Thermostat, Vertical Stack
 
 **Cards with Placeholder Renderers (8 total)**:
+
 - Conditional, Energy, Humidifier, Logbook, Map, Tile, Shopping List, Weather Forecast
 
 ---
@@ -363,6 +396,7 @@ YAML export preserves all properties
 **None** - This release is fully backward compatible with v0.3.0-beta.1.
 
 **Notes**:
+
 - All existing dashboards continue to work
 - YAML import/export unchanged
 - No configuration file changes
@@ -395,6 +429,7 @@ YAML export preserves all properties
    - Full template support only in Home Assistant
 
 ### Future Enhancements
+
 These limitations are by design for security and architecture simplicity. Full card rendering requires Home Assistant's Lovelace engine and is out of scope for the visual editor.
 
 ---
@@ -402,6 +437,7 @@ These limitations are by design for security and architecture simplicity. Full c
 ## Future Development
 
 ### Planned for v0.3.2-beta
+
 - **Custom Card Part 3** - Implement remaining HACS cards:
   - Layout cards (layout-card, grid-layout)
   - Mini cards (mini-graph-card, mini-media-player)
@@ -409,12 +445,14 @@ These limitations are by design for security and architecture simplicity. Full c
   - And more from top HACS integrations
 
 ### Planned for v0.4.0-beta
+
 - **Enhanced Property Editors** - Custom property editors for complex cards
 - **Card Templates** - Pre-configured card templates for common use cases
 - **Drag-and-Drop Palette** - Visual card palette with drag-and-drop
 - **Multi-Select** - Select and edit multiple cards at once
 
 ### Under Consideration
+
 - **Live Preview Mode** - Render cards using embedded HA Lovelace (if feasible)
 - **Card Validation** - Real-time YAML validation with error highlighting
 - **Auto-Complete** - Entity ID auto-complete in property editors
@@ -425,14 +463,17 @@ These limitations are by design for security and architecture simplicity. Full c
 ## Documentation
 
 ### User Documentation
+
 - **[CUSTOM_CARD_IMPLEMENTATION_STATUS.md](../features/CUSTOM_CARD_IMPLEMENTATION_STATUS.md)** - Complete card tracking
 - **[CUSTOM_CARD_PART2_MANUAL_TESTING.md](../features/CUSTOM_CARD_PART2_MANUAL_TESTING.md)** - Testing guide
 
 ### Technical Documentation
+
 - **[CUSTOM_CARD_IMPLEMENTATION_PART2_SUMMARY.md](../features/CUSTOM_CARD_IMPLEMENTATION_PART2_SUMMARY.md)** - Implementation details
 - **[CUSTOM_CARD_PART2_FINAL_SUMMARY.md](../features/CUSTOM_CARD_PART2_FINAL_SUMMARY.md)** - Final summary and checklist
 
 ### Test Documentation
+
 - **[tests/unit/custom-cards-part2.spec.ts](../../tests/unit/custom-cards-part2.spec.ts)** - Unit test examples
 
 ---
@@ -440,12 +481,14 @@ These limitations are by design for security and architecture simplicity. Full c
 ## Performance
 
 ### Metrics
+
 - **Card Rendering**: < 50ms (instant)
 - **Property Panel Loading**: < 100ms
 - **YAML Export**: < 50ms
 - **Canvas Re-render**: < 100ms (for typical card counts)
 
 ### Optimizations
+
 - Renderers use React.memo where appropriate
 - No external resource loading (security + performance)
 - Minimal DOM nodes in placeholders
@@ -456,6 +499,7 @@ These limitations are by design for security and architecture simplicity. Full c
 ## Accessibility
 
 ### Features
+
 - ✅ **Keyboard Navigation** - All cards keyboard accessible
 - ✅ **Screen Reader Support** - Proper ARIA labels
 - ✅ **High Contrast** - Works with all theme modes
@@ -467,6 +511,7 @@ These limitations are by design for security and architecture simplicity. Full c
 ## Security
 
 ### Enhancements
+
 - ✅ **No CSS Injection** - Card-mod shows styles as text only
 - ✅ **No External Loading** - Camera cards show placeholders only
 - ✅ **No Code Execution** - All rendering is declarative React
@@ -474,7 +519,9 @@ These limitations are by design for security and architecture simplicity. Full c
 - ✅ **Entity Sanitization** - Entity data already sanitized by HA WebSocket
 
 ### Security Review
+
 All new renderers reviewed for:
+
 - XSS vulnerabilities (none found)
 - Injection attacks (prevented by design)
 - External resource loading (disabled)
@@ -487,16 +534,19 @@ All new renderers reviewed for:
 ### From v0.3.0-beta.1
 
 1. **Pull latest changes** from the repository
+
    ```bash
    git pull origin main
    ```
 
 2. **Install dependencies** (no new dependencies added)
+
    ```bash
    npm install
    ```
 
 3. **Run tests** to verify functionality
+
    ```bash
    npm run test:unit
    npm run lint
@@ -512,6 +562,7 @@ All new renderers reviewed for:
 **No configuration changes required**
 
 ### Testing After Upgrade
+
 1. Open application
 2. Create new dashboard or open existing
 3. Add one of the new custom cards from palette (if available)
@@ -526,16 +577,19 @@ All new renderers reviewed for:
 ## Git Information
 
 ### Commit
+
 - **Hash**: `52341e8` (or later)
 - **Branch**: `feature/custom-cards-pt.2`
 - **Message**: "Phase 1 (Partial): Core Application Setup with React + Ant Design..." (full commit message includes all changes)
 
 ### Tag
+
 - **Tag**: `v0.3.1-beta.1`
 - **Type**: Annotated
 - **Message**: "Release v0.3.1-beta.1: Custom Card Implementation Part 2"
 
 ### Files Changed Summary
+
 ```
 9 files created (2,433 lines)
 3 files modified (38 lines)
@@ -550,6 +604,7 @@ All new renderers reviewed for:
 This release was developed with assistance from **Claude Sonnet 4.5** via Claude Code.
 
 ### Development Credits
+
 - **Feature Implementation**: 8 custom card renderers with full integration
 - **Test Suite Development**: 26 comprehensive unit tests
 - **Documentation**: 4 technical documentation files + testing guide
@@ -562,12 +617,15 @@ This release was developed with assistance from **Claude Sonnet 4.5** via Claude
 ## Support
 
 ### Getting Help
+
 - **Documentation**: See `docs/features/` directory for all feature docs
 - **GitHub Issues**: [Report bugs and request features](https://github.com/BaggyG-AU/HA_Visual_Dashboard_Maker/issues)
 - **Testing Guide**: See `docs/features/CUSTOM_CARD_PART2_MANUAL_TESTING.md`
 
 ### Reporting Issues
+
 Please include:
+
 - App version (v0.3.1-beta.1)
 - Operating system
 - Home Assistant version
@@ -582,6 +640,7 @@ Please include:
 ## Acknowledgments
 
 Special thanks to:
+
 - **thomasloven** - card-mod and auto-entities card authors
 - **ofekashery** - vertical-stack-in-card author
 - **custom-cards** - button-card maintainers

@@ -74,16 +74,16 @@ Before implementation, complete this gate and include results in your response:
 
 ## Implementation Targets
 
-| Purpose | Path |
-|---------|------|
-| Feature types | `src/features/graphs/types.ts` |
-| Graph service | `src/features/graphs/graphService.ts` |
-| Feature component | `src/features/graphs/NativeGraphsCard.tsx` |
-| Renderer | `src/components/cards/NativeGraphsCardRenderer.tsx` |
-| Card registry | `src/services/cardRegistry.ts` |
-| BaseCard dispatch | `src/components/BaseCard.tsx` |
-| PropertiesPanel controls | `src/components/PropertiesPanel.tsx` |
-| YAML schema | `src/schemas/ha-dashboard-schema.json` |
+| Purpose                  | Path                                                |
+| ------------------------ | --------------------------------------------------- |
+| Feature types            | `src/features/graphs/types.ts`                      |
+| Graph service            | `src/features/graphs/graphService.ts`               |
+| Feature component        | `src/features/graphs/NativeGraphsCard.tsx`          |
+| Renderer                 | `src/components/cards/NativeGraphsCardRenderer.tsx` |
+| Card registry            | `src/services/cardRegistry.ts`                      |
+| BaseCard dispatch        | `src/components/BaseCard.tsx`                       |
+| PropertiesPanel controls | `src/components/PropertiesPanel.tsx`                |
+| YAML schema              | `src/schemas/ha-dashboard-schema.json`              |
 
 ### YAML Example
 
@@ -100,10 +100,10 @@ y_axis:
 series:
   - entity: sensor.living_room_temperature
     label: Temperature
-    color: "#4fa3ff"
+    color: '#4fa3ff'
   - entity: sensor.living_room_humidity
     label: Humidity
-    color: "#6ccf7f"
+    color: '#6ccf7f'
 ```
 
 ---
@@ -111,6 +111,7 @@ series:
 ## Acceptance Criteria
 
 **Must Have**
+
 - Native graph card renders all supported chart types
 - Multi-series rendering works with independent colors/labels
 - PropertiesPanel updates preview without remount regressions
@@ -118,11 +119,13 @@ series:
 - Unit + E2E + visual tests pass
 
 **Should Have**
+
 - Zoom/pan support for line/area charts
 - Series-level smoothing/stacking options
 - Lightweight empty/error states
 
 **Won't Have**
+
 - Server-side aggregation engine
 - Extremely large dataset virtualization (>10k points)
 
@@ -131,18 +134,22 @@ series:
 ## Testing Requirements
 
 ### Unit
+
 - Graph config normalization/validation
 - Series parsing and fallback behavior
 - Time-range parsing and axis defaults
 
 ### E2E (DSL-first)
+
 - Add `GraphsDSL` in `tests/support/dsl/graphs.ts`
 - Validate add/edit chart, series config, and YAML round-trip
 
 ### Visual Regression
+
 - Snapshots for line/bar/area/pie and multi-series variants
 
 ### Accessibility
+
 - Keyboard access to all graph controls
 - ARIA labeling for chart container and legends
 - Respect `prefers-reduced-motion`
@@ -185,6 +192,7 @@ After implementation, run exactly one **Fast Gate** pass and then stop:
 4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
 
 After this single Fast Gate run, provide a summary report that includes:
+
 - Exact commands executed
 - Pass/fail status for each command
 - Any failing tests with artifact paths under `test-results/artifacts/**`

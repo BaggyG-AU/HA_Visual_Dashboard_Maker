@@ -28,12 +28,16 @@ export class AttributeDisplayDSL {
 
   private async waitForSelectOption(label: string): Promise<Locator> {
     const optionPattern = new RegExp(`^${label}$`, 'i');
-    await expect.poll(async () => await this.window.locator('.ant-select-dropdown:visible').count(), {
-      timeout: 5000,
-    }).toBeGreaterThan(0);
+    await expect
+      .poll(async () => await this.window.locator('.ant-select-dropdown:visible').count(), {
+        timeout: 5000,
+      })
+      .toBeGreaterThan(0);
 
     const visibleDropdown = this.window.locator('.ant-select-dropdown:visible').last();
-    const scopedOption = visibleDropdown.locator('.ant-select-item-option:visible', { hasText: optionPattern }).first();
+    const scopedOption = visibleDropdown
+      .locator('.ant-select-item-option:visible', { hasText: optionPattern })
+      .first();
     await scopedOption.waitFor({ state: 'visible', timeout: 5000 });
     return scopedOption;
   }
@@ -43,7 +47,12 @@ export class AttributeDisplayDSL {
       const isVisible = (el: Element) => {
         const style = window.getComputedStyle(el as HTMLElement);
         const rect = (el as HTMLElement).getBoundingClientRect();
-        return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+        return (
+          style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          rect.width > 0 &&
+          rect.height > 0
+        );
       };
 
       const dropdowns = Array.from(document.querySelectorAll('.ant-select-dropdown'));
@@ -51,7 +60,9 @@ export class AttributeDisplayDSL {
       if (!dropdown) return false;
 
       const options = Array.from(dropdown.querySelectorAll<HTMLElement>('.ant-select-item-option'));
-      const match = options.find((opt) => (opt.textContent ?? '').trim().toLowerCase() === labelText.toLowerCase());
+      const match = options.find(
+        (opt) => (opt.textContent ?? '').trim().toLowerCase() === labelText.toLowerCase(),
+      );
       if (!match) return false;
       match.click();
       return true;
@@ -75,7 +86,9 @@ export class AttributeDisplayDSL {
     if (await input.isVisible({ timeout: 1000 }).catch(() => false)) {
       await input.fill('');
       await input.pressSequentially(value, { delay: 0 });
-      const typedOption = dropdown.getByRole('option', { name: new RegExp(`^${value}$`, 'i') }).first();
+      const typedOption = dropdown
+        .getByRole('option', { name: new RegExp(`^${value}$`, 'i') })
+        .first();
       if (await typedOption.waitFor({ state: 'visible', timeout: 2000 }).catch(() => false)) {
         await typedOption.click();
       } else {
@@ -139,9 +152,13 @@ export class AttributeDisplayDSL {
     await expect(select).toBeVisible();
     await this.openSelectDropdown(select);
     const label = layout[0].toUpperCase() + layout.slice(1);
-    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
+    const dropdown = this.window
+      .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
+      .last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
-    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${label}$`, 'i') });
+    const option = dropdown.locator('.ant-select-item-option', {
+      hasText: new RegExp(`^${label}$`, 'i'),
+    });
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click({ timeout: 5000 });
     await expect(select).toContainText(new RegExp(label, 'i'));
@@ -153,9 +170,16 @@ export class AttributeDisplayDSL {
     await input.fill(label);
   }
 
-  async setNumberFormat(attribute: string, precision: number, unit: string, testInfo?: TestInfo): Promise<void> {
+  async setNumberFormat(
+    attribute: string,
+    precision: number,
+    unit: string,
+    testInfo?: TestInfo,
+  ): Promise<void> {
     await this.setFormatType(attribute, 'number');
-    const precisionInput = this.panel.getByTestId(`attribute-display-format-precision-${this.toTestId(attribute)}`);
+    const precisionInput = this.panel.getByTestId(
+      `attribute-display-format-precision-${this.toTestId(attribute)}`,
+    );
     try {
       await expect(precisionInput).toBeVisible();
       const isInput = await precisionInput.evaluate((el) => el.tagName === 'INPUT');
@@ -164,14 +188,18 @@ export class AttributeDisplayDSL {
       await precisionField.click({ clickCount: 3 });
       await precisionField.fill(String(precision));
       await precisionField.blur();
-      const unitInput = this.panel.getByTestId(`attribute-display-format-unit-${this.toTestId(attribute)}`);
+      const unitInput = this.panel.getByTestId(
+        `attribute-display-format-unit-${this.toTestId(attribute)}`,
+      );
       await expect(unitInput).toBeVisible();
       await unitInput.fill(unit);
     } catch (error) {
       if (testInfo) {
         const testId = this.toTestId(attribute);
         const debug = await this.window.evaluate((id) => {
-          const select = document.querySelector(`[data-testid="attribute-display-format-type-${id}"]`);
+          const select = document.querySelector(
+            `[data-testid="attribute-display-format-type-${id}"]`,
+          );
           const item = document.querySelector(`[data-testid="attribute-display-item-${id}"]`);
           return {
             selectText: select?.textContent?.trim() ?? null,
@@ -189,8 +217,12 @@ export class AttributeDisplayDSL {
 
   async setBooleanFormat(attribute: string, trueLabel: string, falseLabel: string): Promise<void> {
     await this.setFormatType(attribute, 'boolean');
-    const trueInput = this.panel.getByTestId(`attribute-display-format-trueLabel-${this.toTestId(attribute)}`);
-    const falseInput = this.panel.getByTestId(`attribute-display-format-falseLabel-${this.toTestId(attribute)}`);
+    const trueInput = this.panel.getByTestId(
+      `attribute-display-format-trueLabel-${this.toTestId(attribute)}`,
+    );
+    const falseInput = this.panel.getByTestId(
+      `attribute-display-format-falseLabel-${this.toTestId(attribute)}`,
+    );
     await expect(trueInput).toBeVisible();
     await trueInput.fill(trueLabel);
     await expect(falseInput).toBeVisible();
@@ -199,7 +231,9 @@ export class AttributeDisplayDSL {
 
   async setTimestampFormat(attribute: string, mode: 'relative' | 'absolute'): Promise<void> {
     await this.setFormatType(attribute, 'timestamp');
-    const select = this.panel.getByTestId(`attribute-display-format-timestampMode-${this.toTestId(attribute)}`);
+    const select = this.panel.getByTestId(
+      `attribute-display-format-timestampMode-${this.toTestId(attribute)}`,
+    );
     await expect(select).toBeVisible();
     await this.openSelectDropdown(select);
     const label = mode[0].toUpperCase() + mode.slice(1);
@@ -214,8 +248,13 @@ export class AttributeDisplayDSL {
     await expect(select).toContainText(new RegExp(label, 'i'));
   }
 
-  async setFormatType(attribute: string, type: 'number' | 'boolean' | 'string' | 'timestamp' | 'json'): Promise<void> {
-    const select = this.panel.getByTestId(`attribute-display-format-type-${this.toTestId(attribute)}`);
+  async setFormatType(
+    attribute: string,
+    type: 'number' | 'boolean' | 'string' | 'timestamp' | 'json',
+  ): Promise<void> {
+    const select = this.panel.getByTestId(
+      `attribute-display-format-type-${this.toTestId(attribute)}`,
+    );
     await expect(select).toBeVisible();
     const label = type[0].toUpperCase() + type.slice(1);
     const currentLabel = (await select.textContent()) ?? '';
@@ -256,17 +295,30 @@ export class AttributeDisplayDSL {
     };
 
     if (!(await isMovedBeforeTarget())) {
-      await this.window.evaluate(({ sourceId, targetId }) => {
-        const items = Array.from(document.querySelectorAll<HTMLElement>('[data-testid^="attribute-display-item-"]'));
-        const fromIndex = items.findIndex((el) => el.dataset.testid === `attribute-display-item-${sourceId}`);
-        const target = items.find((el) => el.dataset.testid === `attribute-display-item-${targetId}`);
-        if (fromIndex < 0 || !target) return;
+      await this.window.evaluate(
+        ({ sourceId, targetId }) => {
+          const items = Array.from(
+            document.querySelectorAll<HTMLElement>('[data-testid^="attribute-display-item-"]'),
+          );
+          const fromIndex = items.findIndex(
+            (el) => el.dataset.testid === `attribute-display-item-${sourceId}`,
+          );
+          const target = items.find(
+            (el) => el.dataset.testid === `attribute-display-item-${targetId}`,
+          );
+          if (fromIndex < 0 || !target) return;
 
-        const dataTransfer = new DataTransfer();
-        dataTransfer.setData('text/plain', String(fromIndex));
-        target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer }));
-        target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer }));
-      }, { sourceId: fromId, targetId: toId });
+          const dataTransfer = new DataTransfer();
+          dataTransfer.setData('text/plain', String(fromIndex));
+          target.dispatchEvent(
+            new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer }),
+          );
+          target.dispatchEvent(
+            new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer }),
+          );
+        },
+        { sourceId: fromId, targetId: toId },
+      );
     }
 
     await expect.poll(isMovedBeforeTarget, { timeout: 5000 }).toBe(true);
@@ -288,13 +340,20 @@ export class AttributeDisplayDSL {
     });
   }
 
-  async expectRenderedAttribute(attribute: string, value: string | RegExp, testIdPrefix = 'attribute-display-button'): Promise<void> {
+  async expectRenderedAttribute(
+    attribute: string,
+    value: string | RegExp,
+    testIdPrefix = 'attribute-display-button',
+  ): Promise<void> {
     const locator = this.window.getByTestId(`${testIdPrefix}-item-${this.toTestId(attribute)}`);
     await expect(locator).toBeVisible();
     await expect(locator).toContainText(value);
   }
 
-  async expectLayoutVisible(layout: 'inline' | 'stacked' | 'table', testIdPrefix = 'attribute-display-button'): Promise<void> {
+  async expectLayoutVisible(
+    layout: 'inline' | 'stacked' | 'table',
+    testIdPrefix = 'attribute-display-button',
+  ): Promise<void> {
     const locator = this.window.getByTestId(`${testIdPrefix}-${layout}`);
     await expect(locator).toBeVisible();
   }
@@ -303,7 +362,11 @@ export class AttributeDisplayDSL {
     layout: 'inline' | 'stacked' | 'table',
     snapshotName: string,
     testIdPrefix = 'attribute-display-button',
-    screenshotOptions: { maxDiffPixels?: number; maxDiffPixelRatio?: number; threshold?: number } = {},
+    screenshotOptions: {
+      maxDiffPixels?: number;
+      maxDiffPixelRatio?: number;
+      threshold?: number;
+    } = {},
   ): Promise<void> {
     const locator = this.window.getByTestId(`${testIdPrefix}-${layout}`);
     await expect(locator).toBeVisible();

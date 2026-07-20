@@ -46,18 +46,20 @@ test.describe('Dashboard Templates', () => {
       // Load template metadata directly (reuse real templates.json)
       expect(fs.existsSync(templatesPath)).toBe(true);
       const raw = fs.readFileSync(templatesPath, 'utf-8');
-      const metadata = JSON.parse(raw) as { templates: Array<{ name: string; description: string; tags?: string[] }> };
+      const metadata = JSON.parse(raw) as {
+        templates: Array<{ name: string; description: string; tags?: string[] }>;
+      };
 
       expect(metadata.templates.length).toBeGreaterThan(0);
 
       // Simple filter: match by name/description/tags
       const query = 'home';
-      const filtered = metadata.templates.filter(t => {
+      const filtered = metadata.templates.filter((t) => {
         const q = query.toLowerCase();
         return (
           t.name.toLowerCase().includes(q) ||
           t.description.toLowerCase().includes(q) ||
-          (t.tags || []).some(tag => tag.toLowerCase().includes(q))
+          (t.tags || []).some((tag) => tag.toLowerCase().includes(q))
         );
       });
       expect(filtered.length).toBeGreaterThan(0);

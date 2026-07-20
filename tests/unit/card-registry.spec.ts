@@ -128,7 +128,7 @@ describe('cardRegistry', () => {
     if (pre) {
       // If it exists, that’s fine but this test becomes meaningless—fail fast so you notice.
       throw new Error(
-        `Test assumes "${customType}" is not pre-registered, but it already exists. Pick a different customType.`
+        `Test assumes "${customType}" is not pre-registered, but it already exists. Pick a different customType.`,
       );
     }
 
@@ -174,6 +174,6 @@ describe('cardRegistry', () => {
 
     const customCards = reg.getCustomCards?.() ?? [];
     expect(Array.isArray(customCards)).toBe(true);
-    expect(customCards.some(c => c.type === customType)).toBe(true);
+    expect(customCards.some((c) => c.type === customType)).toBe(true);
   });
 });

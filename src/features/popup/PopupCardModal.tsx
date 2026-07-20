@@ -39,15 +39,13 @@ const usePrefersReducedMotion = () => {
   return prefersReducedMotion;
 };
 
-export const PopupCardModal: React.FC<PopupCardModalProps> = ({
-  item,
-  index,
-  onClose,
-}) => {
+export const PopupCardModal: React.FC<PopupCardModalProps> = ({ item, index, onClose }) => {
   const prefersReducedMotion = usePrefersReducedMotion();
   const dimensions = getPopupModalDimensions(item.config);
   const isFullscreen = item.config.size === 'fullscreen';
-  const modalBodyHeight = isFullscreen ? 'calc(100vh - 140px)' : dimensions.bodyMaxHeight ?? '70vh';
+  const modalBodyHeight = isFullscreen
+    ? 'calc(100vh - 140px)'
+    : (dimensions.bodyMaxHeight ?? '70vh');
 
   const footer = item.config.show_footer ? (
     <Space wrap>
@@ -94,7 +92,7 @@ export const PopupCardModal: React.FC<PopupCardModalProps> = ({
       }}
       transitionName={prefersReducedMotion ? '' : undefined}
       maskTransitionName={prefersReducedMotion ? '' : undefined}
-      zIndex={1200 + (index * 10)}
+      zIndex={1200 + index * 10}
       destroyOnClose
       data-testid={`popup-modal-${index}`}
     >
@@ -106,17 +104,19 @@ export const PopupCardModal: React.FC<PopupCardModalProps> = ({
           gap: '12px',
         }}
       >
-        {item.config.cards.length > 0 ? item.config.cards.map((popupCard, cardIndex) => (
-          <div key={`${item.id}-card-${cardIndex}`} style={{ minHeight: 0 }}>
-            <BaseCard
-              card={popupCard}
-              isSelected={false}
-              onClick={(event) => {
-                event?.stopPropagation?.();
-              }}
-            />
-          </div>
-        )) : (
+        {item.config.cards.length > 0 ? (
+          item.config.cards.map((popupCard, cardIndex) => (
+            <div key={`${item.id}-card-${cardIndex}`} style={{ minHeight: 0 }}>
+              <BaseCard
+                card={popupCard}
+                isSelected={false}
+                onClick={(event) => {
+                  event?.stopPropagation?.();
+                }}
+              />
+            </div>
+          ))
+        ) : (
           <div
             style={{
               minHeight: '42px',

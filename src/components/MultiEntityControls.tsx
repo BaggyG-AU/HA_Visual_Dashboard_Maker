@@ -89,23 +89,34 @@ export const MultiEntityControls: React.FC<MultiEntityControlsProps> = ({
     });
   }, [value]);
 
-  const snapshot = useMemo(() => buildAggregateSnapshot(uniqueEntities, entities), [entities, uniqueEntities]);
+  const snapshot = useMemo(
+    () => buildAggregateSnapshot(uniqueEntities, entities),
+    [entities, uniqueEntities],
+  );
   const aggregateValue = useMemo(
     () => evaluateAggregateFunction(aggregateFunction, uniqueEntities, entities),
     [aggregateFunction, entities, uniqueEntities],
   );
 
-  const removeEntity = useCallback((entityId: string) => {
-    onChange?.(uniqueEntities.filter((entry) => entry !== entityId));
-  }, [onChange, uniqueEntities]);
+  const removeEntity = useCallback(
+    (entityId: string) => {
+      onChange?.(uniqueEntities.filter((entry) => entry !== entityId));
+    },
+    [onChange, uniqueEntities],
+  );
 
-  const reorder = useCallback((from: number, to: number) => {
-    onChange?.(moveItem(uniqueEntities, from, to));
-  }, [onChange, uniqueEntities]);
+  const reorder = useCallback(
+    (from: number, to: number) => {
+      onChange?.(moveItem(uniqueEntities, from, to));
+    },
+    [onChange, uniqueEntities],
+  );
 
   return (
     <div data-testid="multi-entity-controls" style={{ marginTop: 16 }}>
-      <Text strong style={{ color: 'white' }}>Multi-entity Support</Text>
+      <Text strong style={{ color: 'white' }}>
+        Multi-entity Support
+      </Text>
       <Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>
         Configure this card to control multiple entities in individual, aggregate, or batch mode.
       </Text>
@@ -121,7 +132,10 @@ export const MultiEntityControls: React.FC<MultiEntityControlsProps> = ({
           filterOption={(input, option) => {
             const label = typeof option?.label === 'string' ? option.label : '';
             const value = typeof option?.value === 'string' ? option.value : '';
-            return label.toLowerCase().includes(input.toLowerCase()) || value.toLowerCase().includes(input.toLowerCase());
+            return (
+              label.toLowerCase().includes(input.toLowerCase()) ||
+              value.toLowerCase().includes(input.toLowerCase())
+            );
           }}
           placeholder="Select entities"
           style={{ width: '100%', marginTop: 4 }}
@@ -129,7 +143,10 @@ export const MultiEntityControls: React.FC<MultiEntityControlsProps> = ({
         />
       </div>
 
-      <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }} data-testid="multi-entity-list">
+      <div
+        style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}
+        data-testid="multi-entity-list"
+      >
         {uniqueEntities.length === 0 && (
           <Text style={{ color: '#666', fontSize: 12 }} data-testid="multi-entity-empty">
             Add entities to enable multi-entity behavior.
@@ -177,8 +194,18 @@ export const MultiEntityControls: React.FC<MultiEntityControlsProps> = ({
                   >
                     Drag
                   </Text>
-                  <Text style={{ color: '#e6e6e6' }} data-testid={`multi-entity-label-${testIdEntity}`}>{entityId}</Text>
-                  <Tag color={state === 'on' ? 'green' : 'default'} data-testid={`multi-entity-state-${testIdEntity}`}>{state}</Tag>
+                  <Text
+                    style={{ color: '#e6e6e6' }}
+                    data-testid={`multi-entity-label-${testIdEntity}`}
+                  >
+                    {entityId}
+                  </Text>
+                  <Tag
+                    color={state === 'on' ? 'green' : 'default'}
+                    data-testid={`multi-entity-state-${testIdEntity}`}
+                  >
+                    {state}
+                  </Tag>
                 </Space>
                 <Space size="small">
                   <Button
@@ -258,11 +285,11 @@ export const MultiEntityControls: React.FC<MultiEntityControlsProps> = ({
         type="info"
         showIcon
         style={{ marginTop: 12 }}
-        message={(
+        message={
           <span data-testid="multi-entity-aggregate-indicator">
             {`Aggregate indicator: ${summarizeAggregateState(uniqueEntities, entities)}`}
           </span>
-        )}
+        }
         description={
           <span data-testid="multi-entity-aggregate-preview">
             {`Function result (${aggregateFunction}): ${formatAggregateValue(aggregateValue)} | `}

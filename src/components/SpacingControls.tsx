@@ -70,41 +70,52 @@ export const SpacingControls: React.FC<SpacingControlsProps> = ({ form, onProgra
     draftValuesRef.current.card_padding = paddingValue;
   }, [paddingValue]);
 
-  const updateField = useCallback((fieldName: 'card_margin' | 'card_padding', nextValue: unknown) => {
-    draftValuesRef.current[fieldName] = nextValue;
-    form.setFieldsValue({ [fieldName]: nextValue });
-    setTimeout(() => {
-      onProgrammaticChange();
-    }, 0);
-  }, [form, onProgrammaticChange]);
+  const updateField = useCallback(
+    (fieldName: 'card_margin' | 'card_padding', nextValue: unknown) => {
+      draftValuesRef.current[fieldName] = nextValue;
+      form.setFieldsValue({ [fieldName]: nextValue });
+      setTimeout(() => {
+        onProgrammaticChange();
+      }, 0);
+    },
+    [form, onProgrammaticChange],
+  );
 
-  const handleModeChange = useCallback((fieldName: 'card_margin' | 'card_padding', nextMode: SpacingMode) => {
-    const currentValue = draftValuesRef.current[fieldName];
-    const sides = getSpacingSideValues(currentValue);
-    const nextValue = spacingValueToFormValue(nextMode, { ...sides, mode: nextMode });
-    updateField(fieldName, nextValue);
-  }, [updateField]);
+  const handleModeChange = useCallback(
+    (fieldName: 'card_margin' | 'card_padding', nextMode: SpacingMode) => {
+      const currentValue = draftValuesRef.current[fieldName];
+      const sides = getSpacingSideValues(currentValue);
+      const nextValue = spacingValueToFormValue(nextMode, { ...sides, mode: nextMode });
+      updateField(fieldName, nextValue);
+    },
+    [updateField],
+  );
 
-  const handlePresetChange = useCallback((fieldName: 'card_margin' | 'card_padding', preset: SpacingPreset) => {
-    if (preset === 'custom') {
-      return;
-    }
+  const handlePresetChange = useCallback(
+    (fieldName: 'card_margin' | 'card_padding', preset: SpacingPreset) => {
+      if (preset === 'custom') {
+        return;
+      }
 
-    updateField(fieldName, preset);
-  }, [updateField]);
+      updateField(fieldName, preset);
+    },
+    [updateField],
+  );
 
-  const handleAllValueChange = useCallback((fieldName: 'card_margin' | 'card_padding', rawValue: unknown) => {
-    updateField(fieldName, clampCardSpacing(rawValue, 0));
-  }, [updateField]);
+  const handleAllValueChange = useCallback(
+    (fieldName: 'card_margin' | 'card_padding', rawValue: unknown) => {
+      updateField(fieldName, clampCardSpacing(rawValue, 0));
+    },
+    [updateField],
+  );
 
-  const handleSideChange = useCallback((
-    fieldName: 'card_margin' | 'card_padding',
-    side: SpacingSide,
-    rawValue: unknown,
-  ) => {
-    const currentValue = draftValuesRef.current[fieldName];
-    updateField(fieldName, updateSpacingSide(currentValue, side, rawValue));
-  }, [updateField]);
+  const handleSideChange = useCallback(
+    (fieldName: 'card_margin' | 'card_padding', side: SpacingSide, rawValue: unknown) => {
+      const currentValue = draftValuesRef.current[fieldName];
+      updateField(fieldName, updateSpacingSide(currentValue, side, rawValue));
+    },
+    [updateField],
+  );
 
   const renderSection = (
     title: string,
@@ -118,12 +129,18 @@ export const SpacingControls: React.FC<SpacingControlsProps> = ({ form, onProgra
 
     return (
       <div style={{ marginBottom: 16 }}>
-        <Text strong style={{ color: 'white' }}>{title}</Text>
+        <Text strong style={{ color: 'white' }}>
+          {title}
+        </Text>
         {renderBoxModel(title)}
 
         <Form.Item
           label={<span style={{ color: 'white' }}>Mode</span>}
-          help={<span style={{ color: '#666' }}>Apply one value to all sides or set each side independently</span>}
+          help={
+            <span style={{ color: '#666' }}>
+              Apply one value to all sides or set each side independently
+            </span>
+          }
         >
           <Select
             value={mode}
@@ -138,7 +155,9 @@ export const SpacingControls: React.FC<SpacingControlsProps> = ({ form, onProgra
 
         <Form.Item
           label={<span style={{ color: 'white' }}>Preset</span>}
-          help={<span style={{ color: '#666' }}>Choose a preset token or switch to custom values</span>}
+          help={
+            <span style={{ color: '#666' }}>Choose a preset token or switch to custom values</span>
+          }
         >
           <Select
             value={preset}
@@ -174,7 +193,10 @@ export const SpacingControls: React.FC<SpacingControlsProps> = ({ form, onProgra
         ) : (
           <Space direction="vertical" style={{ width: '100%' }} size="small">
             {sideLabels.map(({ side, label }) => (
-              <Form.Item key={`${fieldName}-${side}`} label={<span style={{ color: 'white' }}>{label}</span>}>
+              <Form.Item
+                key={`${fieldName}-${side}`}
+                label={<span style={{ color: 'white' }}>{label}</span>}
+              >
                 <div data-testid={`${testIdPrefix}-${side}-field`}>
                   <InputNumber
                     min={0}
@@ -196,11 +218,14 @@ export const SpacingControls: React.FC<SpacingControlsProps> = ({ form, onProgra
   return (
     <>
       <Divider />
-      <Text strong style={{ color: 'white' }}>Card Spacing</Text>
+      <Text strong style={{ color: 'white' }}>
+        Card Spacing
+      </Text>
       {renderSection('Margin', 'card_margin', marginValue, 'spacing-margin')}
       {renderSection('Padding', 'card_padding', paddingValue, 'spacing-padding')}
       <Text style={{ color: '#666', fontSize: 12 }}>
-        Presets are stored as tokens in YAML. Custom values are exported as numbers or per-side objects.
+        Presets are stored as tokens in YAML. Custom values are exported as numbers or per-side
+        objects.
       </Text>
     </>
   );

@@ -46,19 +46,25 @@ const persisted = readPersistedThemeManagerState();
 function resolveThemeByName(
   themeName: string | null,
   availableThemes: Record<string, Theme>,
-  savedThemes: Record<string, SavedThemeRecord>
+  savedThemes: Record<string, SavedThemeRecord>,
 ): Theme | null {
   if (!themeName) return null;
   return availableThemes[themeName] ?? savedThemes[themeName]?.theme ?? null;
 }
 
-function deriveEffectiveThemeState(state: ThemeStore): Pick<ThemeStore, 'currentThemeName' | 'currentTheme'> {
+function deriveEffectiveThemeState(
+  state: ThemeStore,
+): Pick<ThemeStore, 'currentThemeName' | 'currentTheme'> {
   const overrideThemeName = state.activeViewKey
-    ? state.viewOverrides[state.activeViewKey]?.themeName ?? null
+    ? (state.viewOverrides[state.activeViewKey]?.themeName ?? null)
     : null;
 
   const preferredThemeName = overrideThemeName ?? state.baseThemeName;
-  const preferredTheme = resolveThemeByName(preferredThemeName, state.availableThemes, state.savedThemes);
+  const preferredTheme = resolveThemeByName(
+    preferredThemeName,
+    state.availableThemes,
+    state.savedThemes,
+  );
 
   return {
     currentThemeName: preferredThemeName,
@@ -170,7 +176,11 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
     set((state) => {
       if (sync) {
         const syncedThemeName = state.lastHAThemeName;
-        const syncedTheme = resolveThemeByName(syncedThemeName, state.availableThemes, state.savedThemes);
+        const syncedTheme = resolveThemeByName(
+          syncedThemeName,
+          state.availableThemes,
+          state.savedThemes,
+        );
 
         const syncedState = {
           ...state,
@@ -283,7 +293,9 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
       const nextSavedThemes = { ...state.savedThemes };
       delete nextSavedThemes[name];
 
-      const nextViewOverrides = Object.entries(state.viewOverrides).reduce<Record<string, ThemeViewOverride>>((acc, [key, override]) => {
+      const nextViewOverrides = Object.entries(state.viewOverrides).reduce<
+        Record<string, ThemeViewOverride>
+      >((acc, [key, override]) => {
         if (override.themeName !== name) {
           acc[key] = override;
         }
@@ -320,10 +332,13 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
   importThemeManager: (rawJson: string) => {
     const payload = themeService.parseThemeManagerPayload(rawJson);
 
-    const importedSavedThemes = payload.savedThemes.reduce<Record<string, SavedThemeRecord>>((acc, record) => {
-      acc[record.name] = record;
-      return acc;
-    }, {});
+    const importedSavedThemes = payload.savedThemes.reduce<Record<string, SavedThemeRecord>>(
+      (acc, record) => {
+        acc[record.name] = record;
+        return acc;
+      },
+      {},
+    );
 
     const importedOverrides = payload.viewOverrides;
 

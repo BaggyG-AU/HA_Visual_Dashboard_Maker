@@ -45,16 +45,19 @@ Run these steps **before** you switch branches or run any of the `/tools/*` scri
 If `git status` shows changes:
 
 ### A) Modified files (tracked)
+
 - **If the changes are part of the feature/test work** → commit them with a clear message.
 - **If they’re temporary/debug noise** → discard or stash.
 - **If they’re workflow tooling (prompts/tools/tasks)** → commit them before creating a test branch.
 
 ### B) Untracked files
+
 - **If you want them in the repo** → add + commit.
 - **If they’re generated output** → add to `.gitignore` and remove.
 - **If they’re temporary** → delete them or stash via a temporary commit (last resort).
 
 ### C) Staged but not committed
+
 - Commit them (preferred), or unstage if you staged by accident.
 
 ---
@@ -66,14 +69,17 @@ If `git status` shows changes:
 Use this when you are on `main` and want to start feature development (Claude).
 
 **Pre-flight**
+
 - Complete the **Core Git Clean Checklist** on `main`.
 - Ensure `main` is up-to-date with origin.
 
 **Action**
+
 - Run:
   - `tools/feature-start "<feature name>"`
 
 **After**
+
 - Confirm you are on `feature/<name>`
 - Open the Claude prompt:
   - `prompts/claude/feature-development.md`
@@ -85,20 +91,24 @@ Use this when you are on `main` and want to start feature development (Claude).
 Use this when feature work is complete and you are ready to focus on Playwright failures.
 
 **Pre-flight**
+
 - Complete the **Core Git Clean Checklist** on the `feature/<name>` branch.
 - Ensure all feature work (including prompt/tooling changes) is **committed**.
 - Ensure the feature branch is **pushed** (not ahead of origin).
 
 **Action**
+
 - Run:
   - `tools/test-start "<feature name>"`
 
 **After**
+
 - Confirm you are on `test/<name>`
 - Open the Codex prompt:
   - `prompts/codex/playwright-fix.md`
 
 **E2E loop**
+
 - Run Playwright tests locally/CI.
 - Feed failures (output + traces + screenshots) into Codex.
 - Repeat until green.
@@ -110,15 +120,18 @@ Use this when feature work is complete and you are ready to focus on Playwright 
 Use this when E2E is passing and you want to merge the test fixes into the feature branch.
 
 **Pre-flight**
+
 - Complete the **Core Git Clean Checklist** on `test/<name>`.
 - Confirm all test fixes are **committed**.
 - Confirm the test branch is **pushed** (so it’s recoverable if anything goes wrong).
 
 **Action**
+
 - Run:
   - `tools/test-finish "<feature name>"`
 
 **After**
+
 - Confirm you are back on `feature/<name>` (or that `feature/<name>` now includes the test fixes).
 - Re-run your relevant test suites (sanity check).
 
@@ -129,15 +142,18 @@ Use this when E2E is passing and you want to merge the test fixes into the featu
 Use this when feature is complete and stable (unit/integration + E2E green).
 
 **Pre-flight**
+
 - Complete the **Core Git Clean Checklist** on `feature/<name>`.
 - Ensure the feature branch is **pushed** and not diverged.
 - Ensure E2E is green and all required checks are complete.
 
 **Action**
+
 - Run:
   - `tools/feature-finish "<feature name>"`
 
 **After**
+
 - Confirm you are on `main`
 - Pull latest `main` and verify CI/required checks as normal.
 

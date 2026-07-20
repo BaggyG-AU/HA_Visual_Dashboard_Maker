@@ -56,7 +56,9 @@ export const TimelineCard: React.FC<TimelineCardProps> = ({
     [events, selectedTimestamp],
   );
 
-  const selectedLabel = events[selectedIndex] ? formatTimelineTimestamp(events[selectedIndex].timestamp) : 'No events';
+  const selectedLabel = events[selectedIndex]
+    ? formatTimelineTimestamp(events[selectedIndex].timestamp)
+    : 'No events';
 
   const title = normalized.title?.trim() || 'Timeline';
   const compact = normalized.itemDensity === 'compact';
@@ -67,9 +69,10 @@ export const TimelineCard: React.FC<TimelineCardProps> = ({
     isSelected ? 'rgba(79, 163, 255, 0.12)' : '#1f1f1f',
   );
 
-  const ariaSummary = events.length === 0
-    ? 'Timeline has no events'
-    : `${events.length} events. Selected time ${selectedLabel}.`;
+  const ariaSummary =
+    events.length === 0
+      ? 'Timeline has no events'
+      : `${events.length} events. Selected time ${selectedLabel}.`;
 
   return (
     <AntCard
@@ -101,9 +104,14 @@ export const TimelineCard: React.FC<TimelineCardProps> = ({
       }}
     >
       {normalized.showNowMarker && (
-        <div data-testid="timeline-now-marker" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div
+          data-testid="timeline-now-marker"
+          style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+        >
           <ClockCircleOutlined style={{ color: '#4fa3ff' }} />
-          <Text style={{ color: '#9ecbff', fontSize: compact ? 11 : 12 }}>Now: {formatTimelineTimestamp(normalized.nowTimestamp)}</Text>
+          <Text style={{ color: '#9ecbff', fontSize: compact ? 11 : 12 }}>
+            Now: {formatTimelineTimestamp(normalized.nowTimestamp)}
+          </Text>
         </div>
       )}
 
@@ -118,13 +126,17 @@ export const TimelineCard: React.FC<TimelineCardProps> = ({
       {events.length > 0 && (
         <>
           {normalized.enableScrubber && events.length > 1 && (
-            <div data-testid="timeline-scrubber" aria-label="Timeline scrubber" style={{ padding: compact ? '0 2px' : '0 4px' }}>
+            <div
+              data-testid="timeline-scrubber"
+              aria-label="Timeline scrubber"
+              style={{ padding: compact ? '0 2px' : '0 4px' }}
+            >
               <Slider
                 min={0}
                 max={events.length - 1}
                 value={selectedIndex}
                 onChange={(next: number | number[]) => {
-                  const index = typeof next === 'number' ? next : next[0] ?? 0;
+                  const index = typeof next === 'number' ? next : (next[0] ?? 0);
                   const event = events[index];
                   if (event) {
                     setSelectedTimestamp(event.timestamp);
@@ -138,7 +150,10 @@ export const TimelineCard: React.FC<TimelineCardProps> = ({
                   },
                 }}
               />
-              <Text data-testid="timeline-selected-timestamp" style={{ color: '#9f9f9f', fontSize: 11 }}>
+              <Text
+                data-testid="timeline-selected-timestamp"
+                style={{ color: '#9f9f9f', fontSize: 11 }}
+              >
                 Selected: {selectedLabel}
               </Text>
             </div>
@@ -158,7 +173,11 @@ export const TimelineCard: React.FC<TimelineCardProps> = ({
             }}
           >
             {grouped.map((group) => (
-              <div key={group.key} data-testid="timeline-group" style={{ minWidth: axisVertical ? undefined : 240 }}>
+              <div
+                key={group.key}
+                data-testid="timeline-group"
+                style={{ minWidth: axisVertical ? undefined : 240 }}
+              >
                 {normalized.groupBy !== 'none' && (
                   <Text strong style={{ color: '#d9d9d9', fontSize: compact ? 11 : 12 }}>
                     {group.label}
@@ -175,7 +194,8 @@ export const TimelineCard: React.FC<TimelineCardProps> = ({
                   }}
                 >
                   {group.events.map((event) => {
-                    const isSelectedEvent = Math.abs(event.timestamp - selectedTimestamp) <= 60 * 1000;
+                    const isSelectedEvent =
+                      Math.abs(event.timestamp - selectedTimestamp) <= 60 * 1000;
                     return (
                       <div
                         key={event.id}
@@ -185,7 +205,9 @@ export const TimelineCard: React.FC<TimelineCardProps> = ({
                         style={{
                           border: `1px solid ${isSelectedEvent ? '#4fa3ff' : '#3a3a3a'}`,
                           borderRadius: 8,
-                          background: isSelectedEvent ? 'rgba(79, 163, 255, 0.12)' : 'rgba(255,255,255,0.03)',
+                          background: isSelectedEvent
+                            ? 'rgba(79, 163, 255, 0.12)'
+                            : 'rgba(255,255,255,0.03)',
                           padding: compact ? '6px 8px' : '8px 10px',
                           minWidth: axisVertical ? undefined : 210,
                           flex: axisVertical ? undefined : '1 0 auto',
@@ -205,7 +227,10 @@ export const TimelineCard: React.FC<TimelineCardProps> = ({
                               <>
                                 <br />
                                 <Text style={{ color: '#8a8a8a', fontSize: 11 }}>
-                                  {truncateTimelineText(event.description, normalized.truncateLength)}
+                                  {truncateTimelineText(
+                                    event.description,
+                                    normalized.truncateLength,
+                                  )}
                                 </Text>
                               </>
                             )}

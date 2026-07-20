@@ -31,11 +31,21 @@ test.describe('Sparkline Visual Regression', () => {
       await yamlEditor.setEditorContent(BASE_YAML, 'properties');
       await properties.switchTab('Form');
 
-      await sparkline.configure({ style: 'line', density: 'regular', showMinMax: true, showCurrent: true });
+      await sparkline.configure({
+        style: 'line',
+        density: 'regular',
+        showMinMax: true,
+        showCurrent: true,
+      });
       await sparkline.verifyRendered();
       await sparkline.expectSparklineScreenshot('sparkline-line-regular.png');
 
-      await sparkline.configure({ style: 'area', density: 'compact', showMinMax: true, showCurrent: true });
+      await sparkline.configure({
+        style: 'area',
+        density: 'compact',
+        showMinMax: true,
+        showCurrent: true,
+      });
       await sparkline.verifyRendered();
       await sparkline.expectSparklineScreenshot('sparkline-area-compact.png');
     } finally {

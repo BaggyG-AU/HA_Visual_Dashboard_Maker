@@ -39,7 +39,10 @@ export const GaugeCardRenderer: React.FC<GaugeCardRendererProps> = ({
     attributes.friendly_name ||
     card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
     'Gauge';
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   // Calculate percentage for gauge
   const percentage = Math.min(100, Math.max(0, ((numericValue - min) / (max - min)) * 100));
@@ -83,14 +86,14 @@ export const GaugeCardRenderer: React.FC<GaugeCardRendererProps> = ({
       }}
       styles={{
         body: {
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100%',
-        gap: '16px',
-      },
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          gap: '16px',
+        },
       }}
       onClick={onClick}
       hoverable
@@ -172,7 +175,14 @@ export const GaugeCardRenderer: React.FC<GaugeCardRendererProps> = ({
       </Text>
 
       {/* Range display */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '0 8px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          width: '100%',
+          padding: '0 8px',
+        }}
+      >
         <Text type="secondary" style={{ fontSize: '11px' }}>
           {min}
         </Text>

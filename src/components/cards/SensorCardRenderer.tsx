@@ -40,7 +40,10 @@ export const SensorCardRenderer: React.FC<SensorCardRendererProps> = ({
     card.entity?.split('.')[1]?.replace(/_/g, ' ') ||
     'Sensor';
   const showGraph = card.graph !== 'none';
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   // Get icon based on device class
   const getIcon = () => {
@@ -78,9 +81,7 @@ export const SensorCardRenderer: React.FC<SensorCardRendererProps> = ({
       });
     }
 
-    return points.map((p, i) =>
-      `${i === 0 ? 'M' : 'L'} ${p.x} ${100 - p.y}`
-    ).join(' ');
+    return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${100 - p.y}`).join(' ');
   };
 
   const icon = getIcon();
@@ -97,52 +98,52 @@ export const SensorCardRenderer: React.FC<SensorCardRendererProps> = ({
       }}
       styles={{
         body: {
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        gap: '12px',
-      },
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          gap: '12px',
+        },
       }}
       onClick={onClick}
       hoverable
     >
       {/* Header with icon */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-      }}>
-        <div style={{ fontSize: '28px', lineHeight: 1 }}>
-          {icon}
-        </div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+        }}
+      >
+        <div style={{ fontSize: '28px', lineHeight: 1 }}>{icon}</div>
         <Text strong style={{ color: '#e6e6e6', fontSize: '14px' }}>
           {displayName}
         </Text>
       </div>
 
       {/* Large value display */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flex: 1,
-        gap: '4px',
-      }}>
-        <div style={{
-          fontSize: '48px',
-          fontWeight: 'bold',
-          color: '#e6e6e6',
-          lineHeight: 1,
-        }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: 1,
+          gap: '4px',
+        }}
+      >
+        <div
+          style={{
+            fontSize: '48px',
+            fontWeight: 'bold',
+            color: '#e6e6e6',
+            lineHeight: 1,
+          }}
+        >
           {state}
         </div>
-        {unit && (
-          <Text style={{ fontSize: '16px', color: '#999' }}>
-            {unit}
-          </Text>
-        )}
+        {unit && <Text style={{ fontSize: '16px', color: '#999' }}>{unit}</Text>}
       </div>
 
       {card.attribute_display && card.attribute_display.length > 0 && (
@@ -156,11 +157,13 @@ export const SensorCardRenderer: React.FC<SensorCardRendererProps> = ({
 
       {/* Optional graph */}
       {showGraph && !isNaN(parseFloat(state)) && (
-        <div style={{
-          height: '40px',
-          position: 'relative',
-          marginTop: 'auto',
-        }}>
+        <div
+          style={{
+            height: '40px',
+            position: 'relative',
+            marginTop: 'auto',
+          }}
+        >
           <svg
             width="100%"
             height="100%"

@@ -1,6 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { Button, Divider, Input, Select, Space, Tooltip, Typography, message } from 'antd';
-import { PlusOutlined, DeleteOutlined, CopyOutlined, UploadOutlined, DownloadOutlined, ScissorOutlined } from '@ant-design/icons';
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  CopyOutlined,
+  UploadOutlined,
+  DownloadOutlined,
+  ScissorOutlined,
+} from '@ant-design/icons';
 import type { ColorPalette } from '../types/colorPalette';
 import { logger } from '../services/logger';
 
@@ -46,7 +53,10 @@ export const ColorPaletteManager: React.FC<ColorPaletteManagerProps> = ({
   const [nameDraft, setNameDraft] = useState('');
   const [importing, setImporting] = useState(false);
 
-  const activePalette = useMemo(() => palettes.find((p) => p.id === activePaletteId), [palettes, activePaletteId]);
+  const activePalette = useMemo(
+    () => palettes.find((p) => p.id === activePaletteId),
+    [palettes, activePaletteId],
+  );
   const paletteOptions = palettes.map((p) => ({ label: p.name, value: p.id, disabled: false }));
 
   const handleAddColor = () => {
@@ -138,10 +148,19 @@ export const ColorPaletteManager: React.FC<ColorPaletteManagerProps> = ({
           data-testid={`${testId}-palette-select`}
         />
         <Tooltip title="New palette">
-          <Button icon={<PlusOutlined />} onClick={() => onCreate()} data-testid={`${testId}-palette-new`} />
+          <Button
+            icon={<PlusOutlined />}
+            onClick={() => onCreate()}
+            data-testid={`${testId}-palette-new`}
+          />
         </Tooltip>
         <Tooltip title="Duplicate palette">
-          <Button icon={<CopyOutlined />} onClick={handleDuplicate} disabled={!activePalette} data-testid={`${testId}-palette-duplicate`} />
+          <Button
+            icon={<CopyOutlined />}
+            onClick={handleDuplicate}
+            disabled={!activePalette}
+            data-testid={`${testId}-palette-duplicate`}
+          />
         </Tooltip>
         <Tooltip title="Delete palette">
           <Button
@@ -165,7 +184,9 @@ export const ColorPaletteManager: React.FC<ColorPaletteManagerProps> = ({
             data-testid={`${testId}-palette-name-input`}
           />
           {activePalette.description && (
-            <Text style={{ color: '#888', display: 'block', marginTop: 4 }}>{activePalette.description}</Text>
+            <Text style={{ color: '#888', display: 'block', marginTop: 4 }}>
+              {activePalette.description}
+            </Text>
           )}
         </div>
       )}
@@ -173,16 +194,33 @@ export const ColorPaletteManager: React.FC<ColorPaletteManagerProps> = ({
       <Divider style={{ margin: '8px 0', borderColor: '#333' }} />
 
       <Space wrap size="small" style={{ marginBottom: 8 }}>
-        <Button icon={<PlusOutlined />} onClick={handleAddColor} data-testid={`${testId}-add-color`}>
+        <Button
+          icon={<PlusOutlined />}
+          onClick={handleAddColor}
+          data-testid={`${testId}-add-color`}
+        >
           Add Current
         </Button>
-        <Button icon={<UploadOutlined />} data-testid={`${testId}-palette-import`} onClick={() => document.getElementById(`${testId}-palette-file-input`)?.click()} loading={importing}>
+        <Button
+          icon={<UploadOutlined />}
+          data-testid={`${testId}-palette-import`}
+          onClick={() => document.getElementById(`${testId}-palette-file-input`)?.click()}
+          loading={importing}
+        >
           Import
         </Button>
-        <Button icon={<DownloadOutlined />} onClick={handleExportJson} data-testid={`${testId}-palette-export`}>
+        <Button
+          icon={<DownloadOutlined />}
+          onClick={handleExportJson}
+          data-testid={`${testId}-palette-export`}
+        >
           Export JSON
         </Button>
-        <Button icon={<ScissorOutlined />} onClick={handleCopyCss} data-testid={`${testId}-palette-export-css`}>
+        <Button
+          icon={<ScissorOutlined />}
+          onClick={handleCopyCss}
+          data-testid={`${testId}-palette-export-css`}
+        >
           Copy CSS vars
         </Button>
       </Space>
@@ -197,9 +235,18 @@ export const ColorPaletteManager: React.FC<ColorPaletteManagerProps> = ({
 
       {activePalette && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(48px, 1fr))', gap: 8 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(48px, 1fr))',
+              gap: 8,
+            }}
+          >
             {activePalette.colors.map((color, index) => (
-              <div key={`${color}-${index}`} style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'stretch' }}>
+              <div
+                key={`${color}-${index}`}
+                style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'stretch' }}
+              >
                 <button
                   type="button"
                   data-testid={`${testId}-favorite-${index}`}
@@ -222,7 +269,12 @@ export const ColorPaletteManager: React.FC<ColorPaletteManagerProps> = ({
                 />
                 {!activePalette.isDefault && (
                   <Space size={4} style={{ justifyContent: 'center' }}>
-                    <Button size="small" disabled={index === 0} onClick={() => moveColor(index, -1)} data-testid={`${testId}-favorite-move-up-${index}`}>
+                    <Button
+                      size="small"
+                      disabled={index === 0}
+                      onClick={() => moveColor(index, -1)}
+                      data-testid={`${testId}-favorite-move-up-${index}`}
+                    >
                       ↑
                     </Button>
                     <Button

@@ -63,9 +63,12 @@ export class StateIconsDSL {
 
   async attachDiagnostics(testInfo: TestInfo): Promise<void> {
     const diagnostics = await this.window.evaluate(() => {
-      const controls = Boolean(document.querySelector('[data-testid="state-icon-mapping-controls"]'));
+      const controls = Boolean(
+        document.querySelector('[data-testid="state-icon-mapping-controls"]'),
+      );
       const add = Boolean(document.querySelector('[data-testid="state-icon-add-mapping"]'));
-      const preview = document.querySelector('[data-testid="state-icon-preview-source"]')?.textContent ?? null;
+      const preview =
+        document.querySelector('[data-testid="state-icon-preview-source"]')?.textContent ?? null;
       const allTestIds = Array.from(document.querySelectorAll<HTMLElement>('[data-testid]'))
         .map((el) => el.getAttribute('data-testid'))
         .filter(Boolean);
@@ -101,7 +104,9 @@ export class StateIconsDSL {
     const input = select.locator('input[role="combobox"]');
     if (await input.isVisible({ timeout: 1000 }).catch(() => false)) {
       await input.pressSequentially(iconName, { delay: 0 });
-      const optionByRole = dropdown.getByRole('option', { name: new RegExp(`^${iconName}$`, 'i') }).first();
+      const optionByRole = dropdown
+        .getByRole('option', { name: new RegExp(`^${iconName}$`, 'i') })
+        .first();
       if (await optionByRole.waitFor({ state: 'visible', timeout: 2000 }).catch(() => false)) {
         await optionByRole.click();
         return;

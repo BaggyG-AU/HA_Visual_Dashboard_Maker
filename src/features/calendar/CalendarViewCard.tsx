@@ -13,7 +13,12 @@ import {
   normalizeCalendarCard,
   resolveCalendarEvents,
 } from './calendarService';
-import type { CalendarDateCell, CalendarEventStatus, CalendarViewCardConfig, CalendarViewMode } from './types';
+import type {
+  CalendarDateCell,
+  CalendarEventStatus,
+  CalendarViewCardConfig,
+  CalendarViewMode,
+} from './types';
 
 const { Text } = Typography;
 
@@ -62,20 +67,11 @@ export const CalendarViewCard: React.FC<CalendarViewCardProps> = ({
     return map;
   }, [getEntity, normalized.calendarEntities]);
 
-  const events = useMemo(
-    () => resolveCalendarEvents(card, entitiesById),
-    [card, entitiesById],
-  );
+  const events = useMemo(() => resolveCalendarEvents(card, entitiesById), [card, entitiesById]);
 
-  const dateCells = useMemo(
-    () => buildCalendarDateCells(view, selectedDate),
-    [view, selectedDate],
-  );
+  const dateCells = useMemo(() => buildCalendarDateCells(view, selectedDate), [view, selectedDate]);
 
-  const eventsByDate = useMemo(
-    () => groupEventsByDate(events),
-    [events],
-  );
+  const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
 
   const agendaEvents = useMemo(
     () => getAgendaEventsForDate(events, selectedDate),
@@ -88,9 +84,10 @@ export const CalendarViewCard: React.FC<CalendarViewCardProps> = ({
   );
 
   const title = normalized.title || 'Calendar';
-  const dateSummary = dateCells.length === 1
-    ? formatCalendarDateLabel(dateCells[0].timestamp, 'day')
-    : formatCalendarDateLabel(dateCells[0].timestamp, view);
+  const dateSummary =
+    dateCells.length === 1
+      ? formatCalendarDateLabel(dateCells[0].timestamp, 'day')
+      : formatCalendarDateLabel(dateCells[0].timestamp, view);
 
   const backgroundStyle = getCardBackgroundStyle(
     card.style,
@@ -132,7 +129,9 @@ export const CalendarViewCard: React.FC<CalendarViewCardProps> = ({
     const nextCell = dateCells[targetIndex];
     if (nextCell) {
       setSelectedDate(nextCell.isoDate);
-      const target = document.querySelector<HTMLButtonElement>(`[data-calendar-date-index="${targetIndex}"]`);
+      const target = document.querySelector<HTMLButtonElement>(
+        `[data-calendar-date-index="${targetIndex}"]`,
+      );
       target?.focus();
     }
   };
@@ -171,7 +170,9 @@ export const CalendarViewCard: React.FC<CalendarViewCardProps> = ({
         },
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+      <div
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}
+      >
         <Segmented
           data-testid="calendar-view-mode"
           value={view}
@@ -194,21 +195,41 @@ export const CalendarViewCard: React.FC<CalendarViewCardProps> = ({
       )}
 
       <div style={{ display: 'flex', flex: 1, gap: 12, minHeight: 0 }}>
-        <div style={{ flex: normalized.showAgenda ? '0 0 68%' : '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <div
+          style={{
+            flex: normalized.showAgenda ? '0 0 68%' : '1 1 auto',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           <div
             data-testid="calendar-grid"
             role="grid"
             aria-label={`Calendar ${view} view`}
             style={{
               display: 'grid',
-              gridTemplateColumns: view === 'month' ? 'repeat(7, minmax(0, 1fr))' : `repeat(${dateCells.length}, minmax(0, 1fr))`,
+              gridTemplateColumns:
+                view === 'month'
+                  ? 'repeat(7, minmax(0, 1fr))'
+                  : `repeat(${dateCells.length}, minmax(0, 1fr))`,
               gap: 6,
               overflowY: 'auto',
               paddingRight: 2,
             }}
           >
             {view === 'month' && normalized.showWeekNumbers && (
-              <div data-testid="calendar-week-number-toggle" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 6, color: '#9d9d9d', fontSize: 11 }}>
+              <div
+                data-testid="calendar-week-number-toggle"
+                style={{
+                  gridColumn: '1 / -1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  color: '#9d9d9d',
+                  fontSize: 11,
+                }}
+              >
                 <NumberOutlined />
                 <span>Week numbers enabled</span>
               </div>
@@ -217,9 +238,10 @@ export const CalendarViewCard: React.FC<CalendarViewCardProps> = ({
             {dateCells.map((cell, index) => {
               const cellEvents = eventsByDate.get(cell.isoDate) ?? [];
               const isActive = cell.isoDate === selectedDate;
-              const weekNumber = normalized.showWeekNumbers && (view === 'month' || view === 'week')
-                ? getWeekNumber(cell.timestamp)
-                : null;
+              const weekNumber =
+                normalized.showWeekNumbers && (view === 'month' || view === 'week')
+                  ? getWeekNumber(cell.timestamp)
+                  : null;
 
               return (
                 <div
@@ -252,11 +274,17 @@ export const CalendarViewCard: React.FC<CalendarViewCardProps> = ({
                   >
                     {new Date(cell.timestamp).getDate()}
                     {weekNumber !== null && (
-                      <span style={{ marginLeft: 6, color: '#8f8f8f', fontSize: 10 }}>W{weekNumber}</span>
+                      <span style={{ marginLeft: 6, color: '#8f8f8f', fontSize: 10 }}>
+                        W{weekNumber}
+                      </span>
                     )}
                   </Button>
 
-                  <div data-testid="calendar-event-badges" role="list" style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div
+                    data-testid="calendar-event-badges"
+                    role="list"
+                    style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}
+                  >
                     {cellEvents.slice(0, 2).map((event) => (
                       <Tag
                         key={`${cell.isoDate}-${event.id}`}
@@ -274,7 +302,9 @@ export const CalendarViewCard: React.FC<CalendarViewCardProps> = ({
                       </Tag>
                     ))}
                     {cellEvents.length > 2 && (
-                      <Text style={{ color: '#8f8f8f', fontSize: 11 }}>+{cellEvents.length - 2} more</Text>
+                      <Text style={{ color: '#8f8f8f', fontSize: 11 }}>
+                        +{cellEvents.length - 2} more
+                      </Text>
                     )}
                   </div>
                 </div>
@@ -321,10 +351,14 @@ export const CalendarViewCard: React.FC<CalendarViewCardProps> = ({
                   background: 'rgba(255,255,255,0.02)',
                 }}
               >
-                <Text style={{ color: '#f0f0f0', fontSize: 12 }} strong>{event.title}</Text>
+                <Text style={{ color: '#f0f0f0', fontSize: 12 }} strong>
+                  {event.title}
+                </Text>
                 <br />
                 <Text style={{ color: '#9b9b9b', fontSize: 11 }}>
-                  {event.allDay ? 'All day' : `${formatCalendarTimeLabel(event.start)} - ${formatCalendarTimeLabel(event.end)}`}
+                  {event.allDay
+                    ? 'All day'
+                    : `${formatCalendarTimeLabel(event.start)} - ${formatCalendarTimeLabel(event.end)}`}
                 </Text>
               </div>
             ))}

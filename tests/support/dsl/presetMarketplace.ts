@@ -4,7 +4,9 @@ export class PresetMarketplaceDSL {
   constructor(private window: Page) {}
 
   async open(): Promise<void> {
-    const button = this.window.getByRole('button', { name: /Browse HA Dashboards|Download/i }).first();
+    const button = this.window
+      .getByRole('button', { name: /Browse HA Dashboards|Download/i })
+      .first();
     await expect(button).toBeVisible();
     await button.click();
 

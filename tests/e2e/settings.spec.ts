@@ -35,13 +35,19 @@ test.describe('Settings', () => {
 
       // Test switching to each tab
       await ctx.settings.selectTab('Appearance');
-      await expect(ctx.window.getByRole('tab', { name: 'Appearance', selected: true })).toBeVisible();
+      await expect(
+        ctx.window.getByRole('tab', { name: 'Appearance', selected: true }),
+      ).toBeVisible();
 
       await ctx.settings.selectTab('Connection');
-      await expect(ctx.window.getByRole('tab', { name: 'Connection', selected: true })).toBeVisible();
+      await expect(
+        ctx.window.getByRole('tab', { name: 'Connection', selected: true }),
+      ).toBeVisible();
 
       await ctx.settings.selectTab('Diagnostics');
-      await expect(ctx.window.getByRole('tab', { name: 'Diagnostics', selected: true })).toBeVisible();
+      await expect(
+        ctx.window.getByRole('tab', { name: 'Diagnostics', selected: true }),
+      ).toBeVisible();
     } finally {
       await close(ctx);
     }
@@ -173,7 +179,9 @@ test.describe('Settings', () => {
 
       // Verify confirmation popup appears
       await expect(ctx.window.getByText(/Reset UI state\?/i)).toBeVisible();
-      await expect(ctx.window.getByText(/This resets window\/layout\/theme preferences/i)).toBeVisible();
+      await expect(
+        ctx.window.getByText(/This resets window\/layout\/theme preferences/i),
+      ).toBeVisible();
 
       // Cancel the operation
       const cancelButton = ctx.window.getByRole('button', { name: /Cancel/i }).last();

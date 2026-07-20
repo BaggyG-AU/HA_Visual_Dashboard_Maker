@@ -9,6 +9,7 @@ Alpha 3 release introduces **Camera Streaming Support**, **Dashboard Templates**
 ## New Features
 
 ### Camera Streaming Integration
+
 - **Stream component detection** - Automatically checks if Home Assistant's `stream:` component is enabled
 - **Live camera support** - Configure cameras with live streaming or snapshot modes
 - **Visual status indicators** - Success/warning alerts show stream component availability
@@ -21,6 +22,7 @@ Alpha 3 release introduces **Camera Streaming Support**, **Dashboard Templates**
   - Camera icon placeholders showing camera name and view mode
 
 ### Dashboard Template System
+
 - **7 professional templates** ready to use out of the box:
   - **Home Overview** - Central hub with weather, presence, quick actions, and status summaries
   - **Energy Management** - Power flow visualization, solar tracking, consumption analytics
@@ -39,6 +41,7 @@ Alpha 3 release introduces **Camera Streaming Support**, **Dashboard Templates**
 - **Template service** (`templateService.ts`) - Manages template discovery, loading, and entity validation
 
 ### YAML Editor
+
 - **Direct YAML editing** - Edit raw YAML for advanced configurations
 - **Syntax highlighting** - Color-coded YAML syntax for readability
 - **Bidirectional sync** - Changes between visual editor and YAML stay in sync
@@ -46,6 +49,7 @@ Alpha 3 release introduces **Camera Streaming Support**, **Dashboard Templates**
 - **Monaco Editor integration** - Professional code editor experience
 
 ### Enhanced Card Renderers
+
 - **26 additional card renderers** implemented:
   - **HACS Custom Cards**: Bubble Card, Mushroom Card, Mini Graph Card
   - **Stack Cards**: Horizontal Stack, Vertical Stack (with nested card rendering)
@@ -61,6 +65,7 @@ Alpha 3 release introduces **Camera Streaming Support**, **Dashboard Templates**
 - **Visual polish** - Better rendering to match Home Assistant's UI styling
 
 ### Service Layer Enhancements
+
 - **`haConnectionService.ts`** improvements:
   - `fetchConfig()` - Retrieve Home Assistant configuration
   - `isComponentEnabled()` - Check if any component is enabled
@@ -71,12 +76,14 @@ Alpha 3 release introduces **Camera Streaming Support**, **Dashboard Templates**
 ## Technical Improvements
 
 ### New Files Added
+
 - **`src/services/templateService.ts`** - Template management service
 - **`templates/templates.json`** - Template metadata and categories
 - **`templates/*.yaml`** - 7 pre-built dashboard templates
 - **26+ card renderer components** in `src/components/cards/`
 
 ### Updated Components
+
 - **`PropertiesPanel.tsx`** - Added camera fields and stream component warnings
 - **`PictureEntityCardRenderer.tsx`** - Camera icon display with entity name and view mode
 - **`PictureGlanceCardRenderer.tsx`** - Camera icon display
@@ -85,6 +92,7 @@ Alpha 3 release introduces **Camera Streaming Support**, **Dashboard Templates**
 - **`src/main.ts`** - Added template path IPC handler
 
 ### Type System Updates
+
 - **`HAConfig` interface** - Home Assistant configuration structure with components array
 - **Template interfaces** - DashboardTemplate, TemplateCategory, TemplateMetadata
 
@@ -93,30 +101,37 @@ Alpha 3 release introduces **Camera Streaming Support**, **Dashboard Templates**
 ### Template Categories
 
 #### Overview
+
 - **Home Overview** - Main dashboard showing overall home status
   - Weather forecast, person tracking, quick action scenes, status summaries
 
 #### Utilities
+
 - **Energy Management** - Energy consumption and solar monitoring
   - Power flow visualization, real-time consumption, solar tracking, cost monitoring
 
 #### Security
+
 - **Security & Surveillance** - Complete security monitoring
   - Alarm panel control, live camera feeds, door locks, motion detection
 
 #### Climate
+
 - **Climate & HVAC** - Temperature and HVAC control
   - Multi-zone thermostats, temperature/humidity monitoring, HVAC status
 
 #### Lighting
+
 - **Lighting Control** - Master light control panel
   - Room-based controls, scene buttons, brightness/color control, energy monitoring
 
 #### Rooms
+
 - **Living Room** - Comprehensive room control
   - All room lights, thermostat, media controls, window blinds, room scenes
 
 #### Media
+
 - **Media & Entertainment** - Media player control
   - Media players, whole home audio, streaming services, activity scenes, remote controls
 
@@ -137,6 +152,7 @@ Alpha 3 release introduces **Camera Streaming Support**, **Dashboard Templates**
 ## Known Limitations
 
 ### Camera Streaming
+
 - **Live Preview limitations** - Camera live preview only shows in Home Assistant, not in the editor
   - Editor shows camera icon placeholder with entity name and view mode
   - Full camera feed visible when dashboard is loaded in Home Assistant
@@ -144,6 +160,7 @@ Alpha 3 release introduces **Camera Streaming Support**, **Dashboard Templates**
   - App automatically detects and warns if not enabled
 
 ### Templates
+
 - **Entity name matching** - Templates use example entity names (e.g., `light.living_room_ceiling`)
   - You must update entity names to match your Home Assistant setup
   - Future releases will include entity mapping UI
@@ -152,6 +169,7 @@ Alpha 3 release introduces **Camera Streaming Support**, **Dashboard Templates**
   - Cards show as placeholders in editor until installed in HA
 
 ### YAML Editor
+
 - **No auto-completion** - YAML editor doesn't have entity or card type auto-completion yet
 - **Limited validation** - Basic YAML syntax checking, no schema validation
 

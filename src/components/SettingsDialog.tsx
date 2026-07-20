@@ -1,12 +1,42 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Tabs, Space, Select, Button, Typography, Divider, Switch, message, Popconfirm, Slider, InputNumber } from 'antd';
-import { BgColorsOutlined, LinkOutlined, ToolOutlined, BugOutlined, CopyOutlined, DeleteOutlined, ReloadOutlined, SoundOutlined } from '@ant-design/icons';
+import {
+  Modal,
+  Tabs,
+  Space,
+  Select,
+  Button,
+  Typography,
+  Divider,
+  Switch,
+  message,
+  Popconfirm,
+  Slider,
+  InputNumber,
+} from 'antd';
+import {
+  BgColorsOutlined,
+  LinkOutlined,
+  ToolOutlined,
+  BugOutlined,
+  CopyOutlined,
+  DeleteOutlined,
+  ReloadOutlined,
+  SoundOutlined,
+} from '@ant-design/icons';
 import { ThemeSettingsDialog } from './ThemeSettingsDialog';
 import { ConnectionDialog } from './ConnectionDialog';
 import { logger } from '../services/logger';
-import { hasHapticSupport, previewHapticPattern, setHapticSettings } from '../services/hapticService';
+import {
+  hasHapticSupport,
+  previewHapticPattern,
+  setHapticSettings,
+} from '../services/hapticService';
 import type { HapticPattern } from '../types/haptics';
-import { hasSoundSupport, previewSoundEffect, setSoundSettings as applySoundSettings } from '../services/soundService';
+import {
+  hasSoundSupport,
+  previewSoundEffect,
+  setSoundSettings as applySoundSettings,
+} from '../services/soundService';
 import type { SoundEffect } from '../types/sounds';
 
 const { Text } = Typography;
@@ -22,7 +52,14 @@ interface SettingsDialogProps {
   onConnect?: (url: string, token: string) => void;
 }
 
-export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose, onVerboseChange, activeTab = 'appearance', onTabChange, onConnect }) => {
+export const SettingsDialog: React.FC<SettingsDialogProps> = ({
+  visible,
+  onClose,
+  onVerboseChange,
+  activeTab = 'appearance',
+  onTabChange,
+  onConnect,
+}) => {
   const [loggingLevel, setLoggingLevel] = useState<LoggingLevel>('info');
   const [loadingLevel, setLoadingLevel] = useState(false);
   const [copying, setCopying] = useState(false);
@@ -73,7 +110,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
       { label: 'Debug', value: 'debug' },
       { label: 'Trace', value: 'trace' },
     ],
-    []
+    [],
   );
 
   const handleLoggingChange = async (value: LoggingLevel) => {
@@ -205,7 +242,9 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
                 Appearance
               </Space>
             ),
-            children: <ThemeSettingsDialog visible={visible} onClose={() => undefined} renderInline />,
+            children: (
+              <ThemeSettingsDialog visible={visible} onClose={() => undefined} renderInline />
+            ),
           },
           {
             key: 'connection',
@@ -253,7 +292,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
                 <div>
                   <Text strong>Copy Diagnostics</Text>
                   <div style={{ marginTop: 8 }}>
-                    <Button icon={<CopyOutlined />} onClick={handleCopyDiagnostics} loading={copying}>
+                    <Button
+                      icon={<CopyOutlined />}
+                      onClick={handleCopyDiagnostics}
+                      loading={copying}
+                    >
                       Copy diagnostic info
                     </Button>
                   </div>
@@ -293,7 +336,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
                   </Text>
                   <div style={{ marginTop: 16 }}>
                     <Text strong>Intensity</Text>
-                    <Space direction="vertical" style={{ width: '100%', marginTop: 8 }} size="small">
+                    <Space
+                      direction="vertical"
+                      style={{ width: '100%', marginTop: 8 }}
+                      size="small"
+                    >
                       <Slider
                         min={0}
                         max={100}
@@ -361,7 +408,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ visible, onClose
                   </Text>
                   <div style={{ marginTop: 16 }}>
                     <Text strong>Volume</Text>
-                    <Space direction="vertical" style={{ width: '100%', marginTop: 8 }} size="small">
+                    <Space
+                      direction="vertical"
+                      style={{ width: '100%', marginTop: 8 }}
+                      size="small"
+                    >
                       <Slider
                         min={0}
                         max={100}

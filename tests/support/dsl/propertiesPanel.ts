@@ -87,9 +87,7 @@ export class PropertiesPanelDSL {
       await tabElement.click();
     }
 
-    await expect
-      .poll(isTabActive, { timeout: 3000 })
-      .toBe(true);
+    await expect.poll(isTabActive, { timeout: 3000 }).toBe(true);
 
     // Prefer any visible tabpane instead of relying on a single active class.
     const visibleTabPane = this.panel.locator('.ant-tabs-tabpane:visible').first();
@@ -140,8 +138,12 @@ export class PropertiesPanelDSL {
     await this.expectActiveTab('YAML');
 
     // Wait for editor container scoped to properties panel
-    let editorContainer = this.panel.locator('[data-testid="yaml-editor-container"]:visible').first();
-    const hasVisibleContainer = await editorContainer.isVisible({ timeout: 2000 }).catch(() => false);
+    let editorContainer = this.panel
+      .locator('[data-testid="yaml-editor-container"]:visible')
+      .first();
+    const hasVisibleContainer = await editorContainer
+      .isVisible({ timeout: 2000 })
+      .catch(() => false);
     if (!hasVisibleContainer) {
       const yamlTab = await this.getVisibleTab('YAML');
       await yamlTab.click();
@@ -150,25 +152,28 @@ export class PropertiesPanelDSL {
     await expect(editorContainer).toBeVisible({ timeout });
 
     await expect
-      .poll(async () => {
-        const monacoVisible = await editorContainer.locator('.monaco-editor:visible').count();
-        const textareaVisible = await editorContainer.locator('textarea:visible').count();
-        if (monacoVisible + textareaVisible > 0) {
-          return true;
-        }
-        const hasMonacoModel = await this.window.evaluate(() => {
-          const testWindow = window as Window & {
-            __monacoModel?: { getValue?: () => string } | null;
-            __monacoEditor?: { getModel?: () => unknown } | null;
-            monaco?: { editor?: { getModels?: () => unknown[] } };
-          };
-          const explicitModel = Boolean(testWindow.__monacoModel?.getValue);
-          const explicitEditor = Boolean(testWindow.__monacoEditor?.getModel?.());
-          const globalModels = Boolean(testWindow.monaco?.editor?.getModels?.()?.length);
-          return explicitModel || explicitEditor || globalModels;
-        });
-        return hasMonacoModel;
-      }, { timeout })
+      .poll(
+        async () => {
+          const monacoVisible = await editorContainer.locator('.monaco-editor:visible').count();
+          const textareaVisible = await editorContainer.locator('textarea:visible').count();
+          if (monacoVisible + textareaVisible > 0) {
+            return true;
+          }
+          const hasMonacoModel = await this.window.evaluate(() => {
+            const testWindow = window as Window & {
+              __monacoModel?: { getValue?: () => string } | null;
+              __monacoEditor?: { getModel?: () => unknown } | null;
+              monaco?: { editor?: { getModels?: () => unknown[] } };
+            };
+            const explicitModel = Boolean(testWindow.__monacoModel?.getValue);
+            const explicitEditor = Boolean(testWindow.__monacoEditor?.getModel?.());
+            const globalModels = Boolean(testWindow.monaco?.editor?.getModels?.()?.length);
+            return explicitModel || explicitEditor || globalModels;
+          });
+          return hasMonacoModel;
+        },
+        { timeout },
+      )
       .toBe(true);
   }
 
@@ -284,21 +289,31 @@ export class PropertiesPanelDSL {
   async dismissTransientOverlays(): Promise<void> {
     await this.window.keyboard.press('Escape').catch(() => undefined);
     await this.window
-      .waitForFunction(() => {
-        const isVisible = (el: Element) => {
-          const node = el as HTMLElement;
-          const rect = node.getBoundingClientRect();
-          const style = window.getComputedStyle(node);
-          return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
-        };
+      .waitForFunction(
+        () => {
+          const isVisible = (el: Element) => {
+            const node = el as HTMLElement;
+            const rect = node.getBoundingClientRect();
+            const style = window.getComputedStyle(node);
+            return (
+              style.display !== 'none' &&
+              style.visibility !== 'hidden' &&
+              rect.width > 0 &&
+              rect.height > 0
+            );
+          };
 
-        const blockingPopovers = Array.from(document.querySelectorAll('.ant-popover'))
-          .filter((el) => !el.classList.contains('ant-popover-hidden'))
-          .filter(isVisible);
-        const blockingDropdowns = Array.from(document.querySelectorAll('.ant-select-dropdown'))
-          .filter(isVisible);
-        return blockingPopovers.length === 0 && blockingDropdowns.length === 0;
-      }, null, { timeout: 2000 })
+          const blockingPopovers = Array.from(document.querySelectorAll('.ant-popover'))
+            .filter((el) => !el.classList.contains('ant-popover-hidden'))
+            .filter(isVisible);
+          const blockingDropdowns = Array.from(
+            document.querySelectorAll('.ant-select-dropdown'),
+          ).filter(isVisible);
+          return blockingPopovers.length === 0 && blockingDropdowns.length === 0;
+        },
+        null,
+        { timeout: 2000 },
+      )
       .catch(() => undefined);
   }
 }

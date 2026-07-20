@@ -59,7 +59,8 @@ export const DASHBOARD_CATEGORIES: DashboardCategory[] = [
     description: 'Climate control and environmental monitoring',
     icon: '🌡️',
     requiredDomains: ['climate', 'sensor'],
-    helpText: 'Climate/thermostat cards with temperature and humidity sensors, including mode controls',
+    helpText:
+      'Climate/thermostat cards with temperature and humidity sensors, including mode controls',
   },
   {
     id: 'presence',
@@ -67,7 +68,8 @@ export const DASHBOARD_CATEGORIES: DashboardCategory[] = [
     description: 'Track who is home and location status',
     icon: '👥',
     requiredDomains: ['person', 'device_tracker'],
-    helpText: 'House status view with presence tracking, last arrival/departure, and quick mode toggles',
+    helpText:
+      'House status view with presence tracking, last arrival/departure, and quick mode toggles',
   },
   {
     id: 'covers',
@@ -75,7 +77,8 @@ export const DASHBOARD_CATEGORIES: DashboardCategory[] = [
     description: 'Control doors, garage, gates, and window covers',
     icon: '🚪',
     requiredDomains: ['cover'],
-    helpText: 'Openings view with door/garage/gate controls grouped by room, with quick open/close/stop actions',
+    helpText:
+      'Openings view with door/garage/gate controls grouped by room, with quick open/close/stop actions',
   },
   {
     id: 'security',
@@ -83,7 +86,8 @@ export const DASHBOARD_CATEGORIES: DashboardCategory[] = [
     description: 'Arm/disarm alarm and monitor locks',
     icon: '🔒',
     requiredDomains: ['alarm_control_panel', 'lock', 'binary_sensor'],
-    helpText: 'Security view with arm/disarm controls, lock status, perimeter sensors, and quick actions',
+    helpText:
+      'Security view with arm/disarm controls, lock status, perimeter sensors, and quick actions',
   },
   {
     id: 'rooms',
@@ -91,7 +95,8 @@ export const DASHBOARD_CATEGORIES: DashboardCategory[] = [
     description: 'Room-based device and sensor overview',
     icon: '🏠',
     requiredDomains: ['switch', 'sensor'],
-    helpText: 'Compact room cards showing key sensors and top actions, grouped by area when available',
+    helpText:
+      'Compact room cards showing key sensors and top actions, grouped by area when available',
   },
   {
     id: 'media',
@@ -108,11 +113,11 @@ class DashboardGeneratorService {
    * Get available categories based on user entities
    */
   getAvailableCategories(entities: Entity[]): DashboardCategory[] {
-    const entityDomains = new Set(entities.map(e => e.entity_id.split('.')[0]));
+    const entityDomains = new Set(entities.map((e) => e.entity_id.split('.')[0]));
 
-    return DASHBOARD_CATEGORIES.filter(category => {
+    return DASHBOARD_CATEGORIES.filter((category) => {
       // Category is available if user has at least one required domain
-      return category.requiredDomains.some(domain => entityDomains.has(domain));
+      return category.requiredDomains.some((domain) => entityDomains.has(domain));
     });
   }
 
@@ -120,11 +125,11 @@ class DashboardGeneratorService {
    * Get entities for a specific category
    */
   getEntitiesForCategory(categoryId: string, allEntities: Entity[]): Entity[] {
-    const category = DASHBOARD_CATEGORIES.find(c => c.id === categoryId);
+    const category = DASHBOARD_CATEGORIES.find((c) => c.id === categoryId);
     if (!category) return [];
 
     // Filter entities that match category's domains
-    const filteredEntities = allEntities.filter(entity => {
+    const filteredEntities = allEntities.filter((entity) => {
       const domain = entity.entity_id.split('.')[0];
       const domainMatch = category.requiredDomains.includes(domain);
       if (!domainMatch) return false;
@@ -136,16 +141,14 @@ class DashboardGeneratorService {
     });
 
     // Sort by entity_id and limit to 6
-    return filteredEntities
-      .sort((a, b) => a.entity_id.localeCompare(b.entity_id))
-      .slice(0, 6);
+    return filteredEntities.sort((a, b) => a.entity_id.localeCompare(b.entity_id)).slice(0, 6);
   }
 
   /**
    * Generate dashboard for Lights category
    */
   private generateLightsDashboard(entities: Entity[]): DashboardConfig {
-    const lightEntities = entities.filter(e => e.entity_id.startsWith('light.'));
+    const lightEntities = entities.filter((e) => e.entity_id.startsWith('light.'));
 
     const cards = lightEntities.map((entity, index) => ({
       type: 'light',
@@ -181,7 +184,7 @@ class DashboardGeneratorService {
    * Generate dashboard for Surveillance category
    */
   private generateSurveillanceDashboard(entities: Entity[]): DashboardConfig {
-    const cameraEntities = entities.filter(e => e.entity_id.startsWith('camera.'));
+    const cameraEntities = entities.filter((e) => e.entity_id.startsWith('camera.'));
 
     const cards = cameraEntities.map((entity, index) => ({
       type: 'picture-entity',
@@ -220,7 +223,7 @@ class DashboardGeneratorService {
    * Generate dashboard for Power Management category
    */
   private generatePowerDashboard(entities: Entity[]): DashboardConfig {
-    const powerSensors = entities.filter(e => this.isPowerSensor(e));
+    const powerSensors = entities.filter((e) => this.isPowerSensor(e));
 
     const cards = powerSensors.map((entity, index) => ({
       type: 'sensor',
@@ -257,8 +260,8 @@ class DashboardGeneratorService {
    * Generate dashboard for Climate/Environment category
    */
   private generateClimateDashboard(entities: Entity[]): DashboardConfig {
-    const climateEntities = entities.filter(e => e.entity_id.startsWith('climate.'));
-    const tempHumiditySensors = entities.filter(e => {
+    const climateEntities = entities.filter((e) => e.entity_id.startsWith('climate.'));
+    const tempHumiditySensors = entities.filter((e) => {
       if (!e.entity_id.startsWith('sensor.')) return false;
       const deviceClass = e.attributes.device_class?.toLowerCase();
       return deviceClass === 'temperature' || deviceClass === 'humidity';
@@ -323,8 +326,8 @@ class DashboardGeneratorService {
    * Generate dashboard for Presence & People category
    */
   private generatePresenceDashboard(entities: Entity[]): DashboardConfig {
-    const personEntities = entities.filter(e => e.entity_id.startsWith('person.'));
-    const trackerEntities = entities.filter(e => e.entity_id.startsWith('device_tracker.'));
+    const personEntities = entities.filter((e) => e.entity_id.startsWith('person.'));
+    const trackerEntities = entities.filter((e) => e.entity_id.startsWith('device_tracker.'));
 
     const cards: any[] = [];
 
@@ -382,7 +385,7 @@ class DashboardGeneratorService {
    * Generate dashboard for Covers & Shades category
    */
   private generateCoversDashboard(entities: Entity[]): DashboardConfig {
-    const coverEntities = entities.filter(e => e.entity_id.startsWith('cover.'));
+    const coverEntities = entities.filter((e) => e.entity_id.startsWith('cover.'));
 
     const cards = coverEntities.map((entity, index) => ({
       type: 'cover',
@@ -418,12 +421,17 @@ class DashboardGeneratorService {
    * Generate dashboard for Security & Access category
    */
   private generateSecurityDashboard(entities: Entity[]): DashboardConfig {
-    const alarmEntities = entities.filter(e => e.entity_id.startsWith('alarm_control_panel.'));
-    const lockEntities = entities.filter(e => e.entity_id.startsWith('lock.'));
-    const sensorEntities = entities.filter(e => {
+    const alarmEntities = entities.filter((e) => e.entity_id.startsWith('alarm_control_panel.'));
+    const lockEntities = entities.filter((e) => e.entity_id.startsWith('lock.'));
+    const sensorEntities = entities.filter((e) => {
       if (!e.entity_id.startsWith('binary_sensor.')) return false;
       const deviceClass = e.attributes.device_class?.toLowerCase();
-      return deviceClass === 'door' || deviceClass === 'window' || deviceClass === 'motion' || deviceClass === 'opening';
+      return (
+        deviceClass === 'door' ||
+        deviceClass === 'window' ||
+        deviceClass === 'motion' ||
+        deviceClass === 'opening'
+      );
     });
 
     const cards: any[] = [];
@@ -501,8 +509,8 @@ class DashboardGeneratorService {
    * Generate dashboard for Appliances & Rooms category
    */
   private generateRoomsDashboard(entities: Entity[]): DashboardConfig {
-    const switchEntities = entities.filter(e => e.entity_id.startsWith('switch.'));
-    const sensorEntities = entities.filter(e => e.entity_id.startsWith('sensor.'));
+    const switchEntities = entities.filter((e) => e.entity_id.startsWith('switch.'));
+    const sensorEntities = entities.filter((e) => e.entity_id.startsWith('sensor.'));
 
     // Mix switches and sensors
     const combined = [...switchEntities, ...sensorEntities].slice(0, 6);
@@ -545,7 +553,7 @@ class DashboardGeneratorService {
    * Generate dashboard for Media & Entertainment category
    */
   private generateMediaDashboard(entities: Entity[]): DashboardConfig {
-    const mediaEntities = entities.filter(e => e.entity_id.startsWith('media_player.'));
+    const mediaEntities = entities.filter((e) => e.entity_id.startsWith('media_player.'));
 
     const cards = mediaEntities.map((entity, index) => ({
       type: 'media-control',

@@ -14,6 +14,7 @@
 ### Breaking Changes
 
 #### v5.0.5 (September 2025) - Template Card Redesign
+
 - **Mushroom theme variables no longer applied** to template cards
 - **Icons only show backgrounds when actions assigned** (previously always shown)
 - **Default action changed from `toggle` to `more-info`**
@@ -21,23 +22,28 @@
 - Legacy fallback available via `mushroom-legacy-template-card` type
 
 #### v4.3.0 (February 2025)
+
 - **Light brightness slider minimum changed from 0 to 1** - affects minimum brightness configuration
 
 ### Major New Features
 
 #### v5.0.9 (January 2026)
+
 - Fixed color temperature slider to use Kelvin instead of mired
 - Vietnamese translation updates
 
 #### v5.0.7 (September 2025)
+
 - Switched color library from previous implementation to **culori**
 - Improved tabs in chips editor
 
 #### v5.0.6 (September 2025)
+
 - **RGB color format support** in template card
 - Template slot implementation for tile info
 
 #### v5.0.5 (September 2025)
+
 - **Template Card Complete Redesign:**
   - Keyboard accessibility support
   - Icon interaction support (tap, hold, double-tap actions)
@@ -45,14 +51,17 @@
   - Automatic migration from legacy versions
 
 #### v4.5.0 (July 2025)
+
 - **Quickbar access via Mushroom chips**
 - Thermostat icon modernization
 
 #### v4.4.0 (April 2025)
+
 - **Empty Card component** for spacing/layout purposes
 - **Fan direction button** for fan card
 
 #### v4.3.0 (February 2025)
+
 - Header text alignment support
 - Humidifier humidity/action display
 
@@ -68,6 +77,7 @@
 - **Empty Card:** New card type for layouts (v4.4.0)
 
 ### Renderer Impact
+
 - **HIGH PRIORITY:** Template card rendering requires complete overhaul due to v5.0.5 changes
 - Icon background rendering logic must be conditional on action presence
 - Default action behavior changed (toggle → more-info)
@@ -89,6 +99,7 @@
 ### Major New Features
 
 #### v0.13.0 (May 2025)
+
 - **Loader/spinner component** for improved UX during data loading
 - **`show_legend_state` configuration option** - control legend state display
 - **CSS class `tooltip--label`** added for custom styling
@@ -97,6 +108,7 @@
 - Attribute configuration respect for name, icon color, and indicators
 
 #### v0.12.0 (January 2024)
+
 - **Attribute tree structure support** when available
 - **`icon_image` option** to override icons with image URLs
 - First datapoint tooltip support for line graphs
@@ -113,6 +125,7 @@
 - **`attribute`** field: Now supports nested access (e.g., `dict_attribute.value_1` or `list_attribute.0.value_1`)
 
 ### Renderer Impact
+
 - **LOW PRIORITY:** Mostly additive features
 - Consider implementing loader/spinner component for better UX
 - Add support for `show_legend_state` option
@@ -133,22 +146,27 @@
 **Note:** Repository maintainers warn that "since this card is in its debut, you should expect breaking changes moving forward."
 
 #### v2.1.0 (July 2024)
+
 - **Fixed `extremas` calculation with `time_delta`** - may affect existing chart ranges
 - **Corrected display behavior with server time plus series offset** - timing calculations changed
 
 ### Major New Features
 
 #### v2.2.3 (August 2025)
+
 - Fixed chart not rendering sometimes (issue #945)
 
 #### v2.2.2 (August 2025)
+
 - Fixed charts failing to display when nested inside vertical or horizontal stack cards
 
 #### v2.2.1 (August 2025)
+
 - Prevented manual `apex_config` xaxis and points annotations from being erased
 - Restored legacy behavior for non-section-mode cards in section views
 
 #### v2.2.0 (August 2025)
+
 - **Display card version on the card** (useful for debugging)
 - **`section_mode` support** for sections views - major layout feature
 - **Option to hide null or zero values in the header**
@@ -157,6 +175,7 @@
 - Fixed graph rendering width when heading titles are lengthy
 
 #### v2.1.0 (July 2024)
+
 - **Change type statistics functionality**
 - **Dashed line support** for series
 - **`in_legend: false` option** to hide specific series
@@ -180,6 +199,7 @@
 - **`experimental`** (earlier): Object housing beta features
 
 ### Renderer Impact
+
 - **MEDIUM PRIORITY:** Several rendering changes
 - Implement `section_mode` for proper dashboard integration
 - Support array-based `stroke_dash` patterns
@@ -204,23 +224,29 @@
 ### Major New Features
 
 #### v2.6.2 (March 2023)
+
 - Fixed number formatting calculation problem
 
 #### v2.6.1 (November 2022)
+
 - Restored background display capability for entities
 
 #### v2.6.0 (November 2022)
+
 - **Extended card scope to support gas and water flows** - major feature addition
 - Corrected solar text color styling
 
 #### v2.5.1 (July 2022)
+
 - Improved animation smoothness for Safari-based interfaces
 
 #### v2.5.0 (May 2022)
+
 - Browser console logging for misconfigured or unavailable entities
 - **Off-grid support functionality**
 
 #### v2.4.0 (May 2022)
+
 - **`dashboard_link` configuration option**
 - **Bidirectional grid-to-battery power flow support**
 - **Configurable decimal places via `w_decimals` option**
@@ -228,6 +254,7 @@
 ### Configuration Schema Updates
 
 Current schema includes:
+
 - **Card options:** `type`, `entities`, `title`, `dashboard_link`, `inverted_entities`, `kw_decimals`, `w_decimals`, `min_flow_rate`, `max_flow_rate`, `watt_threshold`
 - **Entities object:** Support for `grid`, `battery`, `battery_charge`, `solar`, `gas`, and `water` entities
 - **Split entities:** Configuration for separate consumption and production entity IDs
@@ -236,6 +263,7 @@ Current schema includes:
 - **`gas` and `water`** (v2.6.0): New entity types
 
 ### Renderer Impact
+
 - **MEDIUM PRIORITY:** Feature additions for gas/water
 - Implement gas and water flow rendering (v2.6.0)
 - Support bidirectional grid-to-battery flows (v2.4.0)
@@ -255,6 +283,7 @@ Current schema includes:
 ### Breaking Changes
 
 #### v3.0.0 Beta (January 2025) - NOT STABLE
+
 - **MAJOR BREAKING CHANGE:** Card types now split into two variants:
   - `custom:better-thermostat-normal-climate-card`
   - `custom:better-thermostat-mini-climate-card`
@@ -266,28 +295,34 @@ Current schema includes:
 ### Major New Features
 
 #### v2.2.1 (November 2024)
+
 - Translation updates and localization improvements (Croatian, Polish, Russian, Bulgarian, French, Brazilian Portuguese, Latvian)
 - Migration to inlang system for translations
 
 #### v2.2.0 (November 2024)
+
 - Fixed status action icon (HVAC action display)
 - Corrected target/current value swap in display mode
 - Extended Czech localization support
 
 #### v2.1.3 (September 2024)
+
 - Prepared infrastructure to support cooling mode in the future
 - Slovak translation updates
 
 #### v2.1.2 (September 2024)
+
 - Fixed layout issues on small grids
 - **Added debounce delay to +/- buttons** to prevent service call flooding
 - Further cooling mode preparation
 
 #### v2.1.1 (September 2024)
+
 - Resolved grid stack scaling issues
 - Fixed handling of unnamed cards
 
 #### v2.1.0 (September 2024)
+
 - **CRITICAL FIX:** Resolved main bug with HA >= 2023.9.0 that would crash the Home Assistant frontend
 - Scaling improvements for smaller screens
 
@@ -295,22 +330,23 @@ Current schema includes:
 
 Current stable schema (v2.2.1) includes:
 
-| Option | Type | Purpose |
-|--------|------|---------|
-| `type` | string | Must be `custom:better-thermostat-ui-card` |
-| `entity` | string | Climate entity ID (requires better_thermostat 1.3.0+) |
-| `eco_temperature` | number | Target temperature for eco modes |
-| `disable_window` | boolean | Toggle window indicator |
-| `disable_summer` | boolean | Toggle summer indicator |
-| `disable_heat` | boolean | Toggle heat button |
-| `disable_eco` | boolean | Toggle eco button |
-| `disable_off` | boolean | Toggle off button |
-| `disable_buttons` | boolean | Toggle temperature adjustment buttons |
-| `name` | string/boolean | Override entity name display |
+| Option            | Type           | Purpose                                               |
+| ----------------- | -------------- | ----------------------------------------------------- |
+| `type`            | string         | Must be `custom:better-thermostat-ui-card`            |
+| `entity`          | string         | Climate entity ID (requires better_thermostat 1.3.0+) |
+| `eco_temperature` | number         | Target temperature for eco modes                      |
+| `disable_window`  | boolean        | Toggle window indicator                               |
+| `disable_summer`  | boolean        | Toggle summer indicator                               |
+| `disable_heat`    | boolean        | Toggle heat button                                    |
+| `disable_eco`     | boolean        | Toggle eco button                                     |
+| `disable_off`     | boolean        | Toggle off button                                     |
+| `disable_buttons` | boolean        | Toggle temperature adjustment buttons                 |
+| `name`            | string/boolean | Override entity name display                          |
 
 **No schema changes in recent stable releases** - only bug fixes and translations.
 
 ### Renderer Impact
+
 - **LOW PRIORITY:** Stable version is mostly bug fixes
 - Ensure debounce handling for +/- buttons (v2.1.2)
 - Validate HVAC action icon rendering (v2.2.0)
@@ -323,6 +359,7 @@ Current stable schema (v2.2.1) includes:
 ## Summary of Renderer Implementation Priorities
 
 ### HIGH PRIORITY (Breaking Changes / Major Features)
+
 1. **Mushroom Cards v5.0.5+** - Template card redesign requires significant renderer updates
    - Action-based icon background rendering
    - Default action behavior change
@@ -330,6 +367,7 @@ Current stable schema (v2.2.1) includes:
    - Color temperature Kelvin conversion
 
 ### MEDIUM PRIORITY (Significant Features)
+
 2. **ApexCharts Card v2.2.0+** - Section mode and rendering improvements
    - `section_mode` implementation
    - Array-based stroke dash patterns
@@ -342,6 +380,7 @@ Current stable schema (v2.2.1) includes:
    - Dashboard link support
 
 ### LOW PRIORITY (Minor Updates / Backward Compatible)
+
 4. **Mini Graph Card v0.13.0** - Additive features
    - Loader component
    - `show_legend_state` option

@@ -56,7 +56,9 @@ test.describe('Accordion Card', () => {
       await properties.switchTab('Form');
 
       await accordion.setTitle('Main Lights');
-      await expect(canvas.getCard(0).getByTestId('expander-section-header-0')).toContainText('Main Lights');
+      await expect(canvas.getCard(0).getByTestId('expander-section-header-0')).toContainText(
+        'Main Lights',
+      );
       await accordion.toggleExpanded(0);
       await accordion.expectCollapsed(0);
     } finally {

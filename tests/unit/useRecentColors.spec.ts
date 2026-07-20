@@ -99,7 +99,7 @@ describe('useRecentColors', () => {
     });
 
     it('should add multiple colors in order', () => {
-      const { result} = renderHook(() => useRecentColors());
+      const { result } = renderHook(() => useRecentColors());
 
       act(() => {
         result.current.addRecentColor('#FF0000');
@@ -296,7 +296,7 @@ describe('useRecentColors', () => {
 
       expect(localStorage.setItem).toHaveBeenCalledWith(
         'havdm-recent-colors',
-        expect.stringContaining('#FF0000')
+        expect.stringContaining('#FF0000'),
       );
     });
 

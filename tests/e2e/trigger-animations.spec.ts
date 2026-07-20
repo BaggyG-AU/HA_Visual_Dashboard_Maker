@@ -14,13 +14,16 @@ const TEST_ENTITIES = [
 ];
 
 test.describe('Trigger Animations (Slice F)', () => {
-  test('configures action trigger animation in properties and persists deterministic YAML', async ({ page }) => {
+  test('configures action trigger animation in properties and persists deterministic YAML', async ({
+    page,
+  }) => {
     // This flow includes Electron launch, YAML round-trips, and multiple AntD select interactions.
     // Per testing standards, use an explicit timeout for legitimately long end-to-end flows.
     test.setTimeout(90_000);
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, yamlEditor, entityContext, window } = ctx;
+    const { appDSL, dashboard, palette, canvas, properties, yamlEditor, entityContext, window } =
+      ctx;
 
     try {
       await appDSL.waitUntilReady();

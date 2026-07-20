@@ -7,7 +7,6 @@ vi.mock('electron-store', () => {
 
   return {
     default: class MockStore {
-
       get(key: string, defaultValue?: any) {
         return mockData.has(key) ? mockData.get(key) : defaultValue;
       }
@@ -23,7 +22,7 @@ vi.mock('electron-store', () => {
       clear() {
         mockData.clear();
       }
-    }
+    },
   };
 });
 
@@ -232,9 +231,7 @@ describe('settingsService', () => {
     });
 
     it('clears cached entities', () => {
-      const testEntities = [
-        { entity_id: 'light.living_room', state: 'on' },
-      ];
+      const testEntities = [{ entity_id: 'light.living_room', state: 'on' }];
 
       settingsService.setCachedEntities(testEntities);
       settingsService.clearCachedEntities();
@@ -298,7 +295,7 @@ describe('settingsService', () => {
     it('supports all logging levels', () => {
       const levels: LoggingLevel[] = ['off', 'error', 'warn', 'info', 'debug', 'trace'];
 
-      levels.forEach(level => {
+      levels.forEach((level) => {
         settingsService.setLoggingLevel(level);
         expect(settingsService.getLoggingLevel()).toBe(level);
       });

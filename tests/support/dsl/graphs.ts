@@ -50,10 +50,9 @@ export class GraphsDSL {
     await expect(chart).toBeVisible();
     await this.expectNoRendererFallback();
     await expect
-      .poll(
-        async () => await this.window.getByTestId('native-graph-legend-item').count(),
-        { timeout: 5000 },
-      )
+      .poll(async () => await this.window.getByTestId('native-graph-legend-item').count(), {
+        timeout: 5000,
+      })
       .toBe(expectedSeriesCount);
   }
 
@@ -73,7 +72,9 @@ export class GraphsDSL {
           bodySnippet: snippet,
         };
       });
-      throw new Error(`canvas-card not found before screenshot ${name}: ${JSON.stringify(diagnostics)}`);
+      throw new Error(
+        `canvas-card not found before screenshot ${name}: ${JSON.stringify(diagnostics)}`,
+      );
     }
     const card = cardIndex === 0 ? cards.first() : cards.nth(cardIndex);
     await expect(card).toBeVisible();
@@ -97,12 +98,16 @@ export class GraphsDSL {
     const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
 
-    const option = dropdown.locator('.ant-select-item-option', {
-      hasText: new RegExp(`^${label}$`, 'i'),
-    }).first();
+    const option = dropdown
+      .locator('.ant-select-item-option', {
+        hasText: new RegExp(`^${label}$`, 'i'),
+      })
+      .first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click();
 
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+      timeout: 5000,
+    });
   }
 }

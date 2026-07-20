@@ -36,17 +36,17 @@ Read these files BEFORE writing any code. They contain immutable rules, architec
 
 Follow the same structure, naming conventions, and integration points used by delivered features:
 
-| Purpose | File |
-|---------|------|
-| Base wrapper integration point | `src/components/BaseCard.tsx` |
-| Layout config normalization style | `src/services/layoutConfig.ts` |
-| Dashboard/shared types baseline | `src/types/dashboard.ts` |
-| PropertiesPanel integration reference | `src/components/PropertiesPanel.tsx` |
-| Existing feature controls pattern | `src/components/AttributeDisplayControls.tsx` |
-| Existing DSL registration pattern | `tests/support/index.ts` |
-| Existing DSL style | `tests/support/dsl/layout.ts`, `tests/support/dsl/popup.ts` |
-| Existing unit testing style | `tests/unit/layout-config.spec.ts`, `tests/unit/popup-service.spec.ts` |
-| Existing E2E style | `tests/e2e/layout.spec.ts`, `tests/e2e/popup.spec.ts` |
+| Purpose                               | File                                                                   |
+| ------------------------------------- | ---------------------------------------------------------------------- |
+| Base wrapper integration point        | `src/components/BaseCard.tsx`                                          |
+| Layout config normalization style     | `src/services/layoutConfig.ts`                                         |
+| Dashboard/shared types baseline       | `src/types/dashboard.ts`                                               |
+| PropertiesPanel integration reference | `src/components/PropertiesPanel.tsx`                                   |
+| Existing feature controls pattern     | `src/components/AttributeDisplayControls.tsx`                          |
+| Existing DSL registration pattern     | `tests/support/index.ts`                                               |
+| Existing DSL style                    | `tests/support/dsl/layout.ts`, `tests/support/dsl/popup.ts`            |
+| Existing unit testing style           | `tests/unit/layout-config.spec.ts`, `tests/unit/popup-service.spec.ts` |
+| Existing E2E style                    | `tests/e2e/layout.spec.ts`, `tests/e2e/popup.spec.ts`                  |
 
 ---
 
@@ -80,20 +80,20 @@ Follow the same structure, naming conventions, and integration points used by de
 
 ### Code Organization
 
-| Purpose | Path |
-|---------|------|
-| Spacing service | `src/services/cardSpacing.ts` |
-| Spacing types | `src/types/spacing.ts` |
-| Base card integration | `src/components/BaseCard.tsx` |
-| PropertiesPanel controls | `src/components/SpacingControls.tsx` |
-| PropertiesPanel wiring | `src/components/PropertiesPanel.tsx` |
-| Dashboard type extensions | `src/types/dashboard.ts` |
-| YAML schema updates | `src/schemas/ha-dashboard-schema.json` |
-| Spacing DSL helper | `tests/support/dsl/spacing.ts` |
-| DSL registration | `tests/support/index.ts` |
-| Unit tests | `tests/unit/card-spacing.spec.ts` |
-| E2E tests | `tests/e2e/spacing.spec.ts` |
-| Visual tests | `tests/e2e/spacing.visual.spec.ts` |
+| Purpose                   | Path                                   |
+| ------------------------- | -------------------------------------- |
+| Spacing service           | `src/services/cardSpacing.ts`          |
+| Spacing types             | `src/types/spacing.ts`                 |
+| Base card integration     | `src/components/BaseCard.tsx`          |
+| PropertiesPanel controls  | `src/components/SpacingControls.tsx`   |
+| PropertiesPanel wiring    | `src/components/PropertiesPanel.tsx`   |
+| Dashboard type extensions | `src/types/dashboard.ts`               |
+| YAML schema updates       | `src/schemas/ha-dashboard-schema.json` |
+| Spacing DSL helper        | `tests/support/dsl/spacing.ts`         |
+| DSL registration          | `tests/support/index.ts`               |
+| Unit tests                | `tests/unit/card-spacing.spec.ts`      |
+| E2E tests                 | `tests/e2e/spacing.spec.ts`            |
+| Visual tests              | `tests/e2e/spacing.visual.spec.ts`     |
 
 ### YAML Schema
 
@@ -152,6 +152,7 @@ When adding spacing controls to `PropertiesPanel.tsx`, you **MUST** follow `ai_r
 ## Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [ ] Margin controls work (all-sides and per-side)
 - [ ] Padding controls work (all-sides and per-side)
 - [ ] Spacing presets work (`none`, `tight`, `normal`, `relaxed`, `spacious`, `custom`)
@@ -162,12 +163,14 @@ When adding spacing controls to `PropertiesPanel.tsx`, you **MUST** follow `ai_r
 - [ ] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [ ] Visual box-model diagram in spacing controls UI
 - [ ] Toggle between all-sides and per-side modes
 - [ ] CSS shorthand YAML format support with normalization
 - [ ] Visual regression snapshots for key spacing combinations
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Responsive spacing by breakpoint
 - [ ] Global spacing defaults applied to every card
 - [ ] Animation transitions for spacing changes
@@ -180,6 +183,7 @@ When adding spacing controls to `PropertiesPanel.tsx`, you **MUST** follow `ai_r
 ### Unit Tests
 
 Create `tests/unit/card-spacing.spec.ts`:
+
 - Parse/normalize margin/padding for all supported formats
 - Preset mapping (`none`, `tight`, `normal`, `relaxed`, `spacious`, `custom`)
 - Numeric clamping/validation behavior
@@ -189,6 +193,7 @@ Create `tests/unit/card-spacing.spec.ts`:
 ### E2E Tests (DSL-first only)
 
 Create `tests/support/dsl/spacing.ts` (`SpacingDSL`):
+
 - `setCardMargin(valueOrPreset)`
 - `setCardPadding(valueOrPreset)`
 - `setMarginMode(mode: 'all' | 'per-side')`
@@ -201,6 +206,7 @@ Create `tests/support/dsl/spacing.ts` (`SpacingDSL`):
 Register `SpacingDSL` in `tests/support/index.ts` (import, interface field, instantiation).
 
 Create `tests/e2e/spacing.spec.ts`:
+
 - Set margin via PropertiesPanel
 - Set padding via PropertiesPanel
 - Toggle all-sides vs per-side mode
@@ -209,6 +215,7 @@ Create `tests/e2e/spacing.spec.ts`:
 - Backward compatibility with cards lacking spacing fields
 
 Create `tests/e2e/spacing.visual.spec.ts`:
+
 - Snapshots for spacing presets and representative per-side configurations
 
 ### Accessibility
@@ -261,6 +268,7 @@ Create `tests/e2e/spacing.visual.spec.ts`:
 ## Output Format
 
 Respond with:
+
 1. A concise implementation plan for Feature 4.6
 2. File-by-file change list (planned)
 3. Test plan + commands
@@ -280,6 +288,7 @@ After implementation, run exactly one **Fast Gate** pass and then stop:
 4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
 
 After this single Fast Gate run, provide a summary report that includes:
+
 - Exact commands executed
 - Pass/fail status for each command
 - Any failing tests with artifact paths under `test-results/artifacts/**`

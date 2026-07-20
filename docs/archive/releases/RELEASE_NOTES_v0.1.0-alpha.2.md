@@ -9,6 +9,7 @@ Alpha 2 release focuses on improved dashboard rendering accuracy and full **layo
 ## New Features
 
 ### Layout-Card Integration (Phase 7)
+
 - **Full layout-card support** with bidirectional conversion
 - **Three layout modes** automatically detected:
   1. **Layout-Card Grid** - Uses `view_layout` with `grid_column`/`grid_row` for exact positioning
@@ -18,6 +19,7 @@ Alpha 2 release focuses on improved dashboard rendering accuracy and full **layo
 - **Automatic mode detection** - App recognizes and handles all three modes seamlessly
 
 ### Improved Card Dimension Calculations
+
 - **Smart height estimation** based on card type and content
 - **Compact rendering** matching Home Assistant's visual density
 - **Card-specific calculations**:
@@ -30,6 +32,7 @@ Alpha 2 release focuses on improved dashboard rendering accuracy and full **layo
 ## Technical Improvements
 
 ### New Utilities
+
 - **layoutCardParser.ts** - Parse layout-card `view_layout` to react-grid-layout coordinates
   - Parse CSS Grid syntax (1-based → 0-based indexing)
   - Extract grid configuration from view layout
@@ -40,11 +43,13 @@ Alpha 2 release focuses on improved dashboard rendering accuracy and full **layo
   - Check dashboard layout mode
 
 ### Enhanced Components
+
 - **GridCanvas.tsx** - Three-mode layout generation with automatic detection
 - **UnsupportedCard.tsx** - More compact placeholder design
 - **App.tsx** - Handles both layout-card and internal layout systems
 
 ### Type System Updates
+
 - **ViewLayout interface** - Full type support for layout-card properties
 - **View interface** - Added layout-card type, layout_type, and layout configuration
 - **Card interfaces** - Support for view_layout property
@@ -52,6 +57,7 @@ Alpha 2 release focuses on improved dashboard rendering accuracy and full **layo
 ## Documentation
 
 ### New Documentation
+
 - **LAYOUT_CARD_INTEGRATION.md** - Comprehensive guide covering:
   - Three layout modes explained
   - Installation and setup
@@ -61,6 +67,7 @@ Alpha 2 release focuses on improved dashboard rendering accuracy and full **layo
   - Conversion between modes
 
 ### Test Dashboards
+
 - **test-dashboards/control_panel.json** - Real Home Assistant dashboard for testing
   - Contains custom HACS cards (power-flow-card-plus, apexcharts-card)
   - Masonry layout with multiple entity cards
@@ -103,12 +110,14 @@ Alternatively, continue using masonry or internal layout for simpler workflows.
 ## Technical Details
 
 ### Grid System
+
 - **12-column grid** (standard)
 - **30px row height** (default)
 - **8px gap** between cards
 - **CSS Grid 1-based indexing** converted to react-grid-layout 0-based
 
 ### Layout-Card Format
+
 ```yaml
 views:
   - type: custom:layout-card
@@ -119,8 +128,8 @@ views:
     cards:
       - type: entities
         view_layout:
-          grid_column: 1 / 7    # Columns 1-6 (0-indexed: x:0, w:6)
-          grid_row: 1 / 5       # Rows 1-4 (0-indexed: y:0, h:4)
+          grid_column: 1 / 7 # Columns 1-6 (0-indexed: x:0, w:6)
+          grid_row: 1 / 5 # Rows 1-4 (0-indexed: y:0, h:4)
 ```
 
 ## Next Steps (Planned for Alpha 3)

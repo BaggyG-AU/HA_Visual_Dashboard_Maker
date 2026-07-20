@@ -31,7 +31,10 @@ export const HorizontalStackCardRenderer: React.FC<HorizontalStackCardRendererPr
   const defaultEntityId =
     childCards.find((child) => typeof (child as any)?.entity === 'string')?.entity ?? null;
   const resolvedTitle = card.title ? resolveContext(card.title, defaultEntityId) : '';
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
   const layout = useMemo(() => normalizeHorizontalStackLayout(card), [card]);
 
   // If no child cards, show placeholder
@@ -47,16 +50,16 @@ export const HorizontalStackCardRenderer: React.FC<HorizontalStackCardRendererPr
           transition: 'all 0.3s ease',
         }}
         styles={{
-        body: {
-          padding: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          gap: '8px',
-        },
-      }}
+          body: {
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            gap: '8px',
+          },
+        }}
         onClick={onClick}
         hoverable
       >
@@ -98,17 +101,18 @@ export const HorizontalStackCardRenderer: React.FC<HorizontalStackCardRendererPr
       hoverable
     >
       {/* Horizontal layout container */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'row',
-        gap: `${layout.gap}px`,
-        alignItems: layout.alignItems,
-        justifyContent: layout.justifyContent,
-        flexWrap: layout.wrap,
-        height: '100%',
-        overflow: 'auto',
-      }}
-      data-testid="horizontal-stack-container"
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          gap: `${layout.gap}px`,
+          alignItems: layout.alignItems,
+          justifyContent: layout.justifyContent,
+          flexWrap: layout.wrap,
+          height: '100%',
+          overflow: 'auto',
+        }}
+        data-testid="horizontal-stack-container"
       >
         {childCards.map((childCard, index) => (
           <div
@@ -133,19 +137,21 @@ export const HorizontalStackCardRenderer: React.FC<HorizontalStackCardRendererPr
 
       {/* Stack indicator overlay when selected */}
       {isSelected && (
-        <div style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          padding: '4px 8px',
-          backgroundColor: 'rgba(0, 217, 255, 0.2)',
-          border: '1px solid #00d9ff',
-          borderRadius: '4px',
-          fontSize: '10px',
-          color: '#00d9ff',
-          fontWeight: 'bold',
-          pointerEvents: 'none',
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            padding: '4px 8px',
+            backgroundColor: 'rgba(0, 217, 255, 0.2)',
+            border: '1px solid #00d9ff',
+            borderRadius: '4px',
+            fontSize: '10px',
+            color: '#00d9ff',
+            fontWeight: 'bold',
+            pointerEvents: 'none',
+          }}
+        >
           <BorderHorizontalOutlined style={{ marginRight: '4px' }} />
           HORIZONTAL STACK
         </div>

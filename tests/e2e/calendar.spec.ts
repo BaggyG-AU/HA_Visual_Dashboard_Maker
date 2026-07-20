@@ -46,10 +46,16 @@ test.describe('Calendar View Card', () => {
       await expect(window.getByTestId('calendar-agenda')).toBeVisible();
       await expect(window.getByTestId('calendar-date-action')).toContainText('more-info');
 
-      await window.getByTestId('calendar-view-mode').locator('.ant-segmented-item', { hasText: /^Week$/i }).click();
+      await window
+        .getByTestId('calendar-view-mode')
+        .locator('.ant-segmented-item', { hasText: /^Week$/i })
+        .click();
       await expect(window.getByTestId('calendar-grid')).toHaveAttribute('aria-label', /week/i);
 
-      await window.getByTestId('calendar-view-mode').locator('.ant-segmented-item', { hasText: /^Day$/i }).click();
+      await window
+        .getByTestId('calendar-view-mode')
+        .locator('.ant-segmented-item', { hasText: /^Day$/i })
+        .click();
       await expect(window.getByTestId('calendar-grid')).toHaveAttribute('aria-label', /day/i);
     } finally {
       await close(ctx);
@@ -79,7 +85,10 @@ test.describe('Calendar View Card', () => {
 
       await calendar.arrowNavigateDates(2);
       await window.keyboard.press('Enter');
-      await expect(window.getByTestId('calendar-date-cell').first()).toHaveAttribute('aria-label', /events/i);
+      await expect(window.getByTestId('calendar-date-cell').first()).toHaveAttribute(
+        'aria-label',
+        /events/i,
+      );
 
       await properties.switchTab('YAML');
       const yaml = await yamlEditor.getEditorContent();

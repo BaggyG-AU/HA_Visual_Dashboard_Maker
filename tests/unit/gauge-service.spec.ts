@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeGaugeCardProConfig, normalizeGaugeSegments } from '../../src/features/gauge/gaugeService';
+import {
+  normalizeGaugeCardProConfig,
+  normalizeGaugeSegments,
+} from '../../src/features/gauge/gaugeService';
 import type { GaugeCardProConfig } from '../../src/features/gauge/types';
 
 const makeCard = (overrides: Partial<GaugeCardProConfig> = {}): GaugeCardProConfig => ({

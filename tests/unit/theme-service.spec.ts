@@ -141,7 +141,7 @@ describe('theme manager service and store workflows', () => {
 
   it('rejects malformed import payloads', () => {
     expect(() => useThemeStore.getState().importThemeManager('{"version":2}')).toThrow(
-      /Unsupported theme export version/
+      /Unsupported theme export version/,
     );
   });
 });

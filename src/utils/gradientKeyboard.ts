@@ -3,7 +3,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 export const adjustAngleForArrow = (
   angle: number,
   key: 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown',
-  shift = false
+  shift = false,
 ): number => {
   const step = shift ? 10 : 1;
   const delta = key === 'ArrowLeft' || key === 'ArrowDown' ? -step : step;
@@ -13,7 +13,7 @@ export const adjustAngleForArrow = (
 export const adjustStopPositionForArrow = (
   position: number,
   key: 'ArrowLeft' | 'ArrowRight',
-  shift = false
+  shift = false,
 ): number => {
   const step = shift ? 10 : 1;
   const delta = key === 'ArrowLeft' ? -step : step;

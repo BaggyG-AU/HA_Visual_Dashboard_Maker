@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeStateStyleMap, resolveStateStyleValue } from '../../src/services/stateStyleMapping';
+import {
+  normalizeStateStyleMap,
+  resolveStateStyleValue,
+} from '../../src/services/stateStyleMapping';
 
 describe('stateStyleMapping', () => {
   it('normalizes keys immutably and case-insensitively', () => {

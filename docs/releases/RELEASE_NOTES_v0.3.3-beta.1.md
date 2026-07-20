@@ -19,6 +19,7 @@ This release focuses exclusively on fixing and enhancing the Playwright test sui
 **Issue**: Multiple Playwright tests were failing due to Ant Design v6.1.3 DOM structure changes and strict mode violations.
 
 **Fixed Tests**:
+
 1. **Settings E2E Tests** (`tests/e2e/settings.spec.ts`)
    - "should change logging level and persist across dialog opens"
    - "should support all logging levels"
@@ -89,15 +90,18 @@ This release focuses exclusively on fixing and enhancing the Playwright test sui
 ## ✅ Test Results
 
 **Before Fixes**:
+
 - ❌ 4 tests failing across Settings and theme integration suites
 
 **After Fixes**:
+
 - ✅ All Settings E2E tests passing (10/10 tests)
 - ✅ All theme integration tests passing (4/4 tests)
 - ✅ All other test suites remain passing
 - ✅ 100% test pass rate
 
 **Test Coverage**:
+
 - Settings dialog open/close
 - Tab navigation (Appearance, Connection, Diagnostics)
 - Logging level selection and persistence
@@ -118,6 +122,7 @@ This release focuses exclusively on fixing and enhancing the Playwright test sui
 ### Ant Design v6 DOM Structure
 
 **Key Differences from v4/v5**:
+
 - Select dropdown options use class `.ant-select-item-option` instead of `role="option"`
 - Dropdowns are rendered in portals under `document.body`
 - Root Select element receives `data-testid` attribute (Semantic DOM feature)
@@ -125,6 +130,7 @@ This release focuses exclusively on fixing and enhancing the Playwright test sui
 - `aria-expanded` attribute on combobox, not root element
 
 **Testing Pattern for Select Component**:
+
 ```typescript
 // 1. Locate Select by data-testid (applies to root element)
 const select = window.getByTestId('logging-level-select');
@@ -138,7 +144,7 @@ await expect(dropdown).toBeVisible({ timeout: 5000 });
 
 // 4. Select option by class name (NOT role)
 const option = dropdown.locator('.ant-select-item-option', {
-  hasText: new RegExp(`^${level}$`, 'i')
+  hasText: new RegExp(`^${level}$`, 'i'),
 });
 await option.click({ timeout: 5000 });
 
@@ -152,32 +158,39 @@ await expect(select).toContainText(new RegExp(level, 'i'));
 ### Nested Tabs Pattern
 
 **When to Use `.last()`**:
+
 ```typescript
 // Outer tabs (Settings dialog)
 await window.getByRole('tab', { name: /Appearance/i }).click();
 
 // Inner tabs (Theme Settings within Appearance)
 // Use .last() to disambiguate from outer tabs
-await window.getByRole('tab', { name: /CSS Variables/i }).last().click();
-await window.getByRole('tab', { name: /Theme JSON/i }).last().click();
+await window
+  .getByRole('tab', { name: /CSS Variables/i })
+  .last()
+  .click();
+await window
+  .getByRole('tab', { name: /Theme JSON/i })
+  .last()
+  .click();
 ```
 
 ### Monaco Editor Async Rendering Pattern
 
 **Correct Wait Strategy**:
+
 ```typescript
 // Wait for DOM attachment first (React useEffect)
-await expect(window.getByTestId('theme-settings-css'))
-  .toBeAttached({ timeout: 10000 });
+await expect(window.getByTestId('theme-settings-css')).toBeAttached({ timeout: 10000 });
 
 // Then wait for visibility (CSS/layout)
-await expect(window.getByTestId('theme-settings-css'))
-  .toBeVisible({ timeout: 10000 });
+await expect(window.getByTestId('theme-settings-css')).toBeVisible({ timeout: 10000 });
 ```
 
 ### Multiple Close Buttons Pattern
 
 **Disambiguating Modal Buttons**:
+
 ```typescript
 // Settings dialog has TWO Close buttons:
 // 1. Modal X button: <button aria-label="Close" class="ant-modal-close">
@@ -208,6 +221,7 @@ All changes follow the project's testing standards:
 **None** - This release only fixes tests, no product code changes.
 
 **Notes**:
+
 - All existing functionality unchanged
 - No API changes
 - No configuration changes
@@ -221,6 +235,7 @@ All changes follow the project's testing standards:
 ### Updated Test Documentation
 
 **Test Pattern Reference**:
+
 - Ant Design v6 Select component interaction pattern documented in `tests/support/dsl/settings.ts` (lines 22-44)
 - Reference to existing working pattern in `tests/integration/theme-integration.spec.ts:29`
 - Nested tabs pattern documented with inline comments
@@ -228,6 +243,7 @@ All changes follow the project's testing standards:
 - Multiple Close buttons pattern documented with inline comments
 
 **Testing Standards**:
+
 - All tests continue to follow `docs/testing/TESTING_STANDARDS.md`
 - DSL helpers properly organized
 - Stable selectors using `data-testid`
@@ -240,6 +256,7 @@ All changes follow the project's testing standards:
 **None identified in this release.**
 
 All known issues from v0.3.2-beta.1 remain unchanged:
+
 - Code-only mode not yet implemented
 - YAML comments not preserved on round-trip
 - Schema coverage at HA 2025.12 baseline
@@ -252,11 +269,13 @@ All known issues from v0.3.2-beta.1 remain unchanged:
 ### From v0.3.2-beta.1
 
 1. **Pull latest changes** from the repository
+
    ```bash
    git pull origin fix/deploy-error
    ```
 
 2. **Install dependencies** (no changes, but good practice)
+
    ```bash
    npm install
    ```
@@ -286,6 +305,7 @@ npm run test
 ```
 
 **Expected Results**:
+
 - ✅ All 10 Settings tests pass
 - ✅ All 4 theme integration tests pass
 - ✅ No timeout errors
@@ -337,6 +357,7 @@ npm run test
 ### Issue Resolution Process
 
 This release demonstrates thorough test debugging:
+
 - Rigorous analysis of test-results artifacts (screenshots, traces, videos)
 - Research into Ant Design v6 DOM structure changes
 - Pattern discovery within existing codebase
@@ -346,6 +367,7 @@ This release demonstrates thorough test debugging:
 ### Testing Standards
 
 All fixes maintain the project's high testing standards:
+
 - DSL pattern for test helpers
 - Stable selectors with `data-testid`
 - No weakened assertions
@@ -365,6 +387,7 @@ All fixes maintain the project's high testing standards:
 ### Reporting Test Issues
 
 Please include:
+
 - App version (v0.3.3-beta.1)
 - Test file and test name
 - Playwright version (^1.57.0)

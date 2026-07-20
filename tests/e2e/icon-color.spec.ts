@@ -6,7 +6,17 @@ test.describe('Icon Color modes - PropertiesPanel', () => {
   test('custom icon color applies and persists to YAML', async ({ page }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, iconColor, colorPicker, yamlEditor, window } = ctx;
+    const {
+      appDSL,
+      dashboard,
+      palette,
+      canvas,
+      properties,
+      iconColor,
+      colorPicker,
+      yamlEditor,
+      window,
+    } = ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -28,7 +38,10 @@ test.describe('Icon Color modes - PropertiesPanel', () => {
 
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
       expect(value.toLowerCase()).toContain('icon_color');
       expect(value.toLowerCase()).toContain('icon_color_mode');
@@ -41,7 +54,8 @@ test.describe('Icon Color modes - PropertiesPanel', () => {
   test('state-based icon colors persist to YAML', async ({ page }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
-    const { appDSL, dashboard, palette, canvas, properties, iconColor, colorPicker, yamlEditor } = ctx;
+    const { appDSL, dashboard, palette, canvas, properties, iconColor, colorPicker, yamlEditor } =
+      ctx;
 
     try {
       await appDSL.waitUntilReady();
@@ -68,7 +82,10 @@ test.describe('Icon Color modes - PropertiesPanel', () => {
 
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
       const yamlLower = value.toLowerCase();
       expect(yamlLower).toContain('icon_color_mode');
@@ -102,7 +119,10 @@ test.describe('Icon Color modes - PropertiesPanel', () => {
 
       await properties.switchTab('YAML');
       await yamlEditor.expectMonacoVisible('properties', testInfo);
-      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(testInfo, 'properties');
+      const { value, diagnostics } = await yamlEditor.getEditorContentWithDiagnostics(
+        testInfo,
+        'properties',
+      );
       debugLog('[yamlEditor diagnostics summary]', JSON.stringify(diagnostics, null, 2));
       const yamlLower = value.toLowerCase();
       expect(yamlLower).toContain('icon_color_mode');

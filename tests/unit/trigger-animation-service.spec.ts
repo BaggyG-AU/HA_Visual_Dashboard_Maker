@@ -95,7 +95,12 @@ describe('triggerAnimationService', () => {
       },
     };
 
-    const secondPass = resolveStateChangeTrigger(card, configs, updatedEntities, firstPass.nextSnapshots);
+    const secondPass = resolveStateChangeTrigger(
+      card,
+      configs,
+      updatedEntities,
+      firstPass.nextSnapshots,
+    );
     expect(secondPass.triggered?.id).toBe('one');
 
     const thirdEntities: EntityStates = {
@@ -106,7 +111,12 @@ describe('triggerAnimationService', () => {
       },
     };
 
-    const thirdPass = resolveStateChangeTrigger(card, configs, thirdEntities, secondPass.nextSnapshots);
+    const thirdPass = resolveStateChangeTrigger(
+      card,
+      configs,
+      thirdEntities,
+      secondPass.nextSnapshots,
+    );
     expect(thirdPass.triggered?.id).toBe('two');
   });
 

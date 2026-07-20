@@ -121,14 +121,21 @@ export class CardPaletteDSL {
     await expect(searchInput).toHaveValue('');
   }
 
-  private async attachPaletteDiagnostics(targetTestId: string, testInfo?: import('@playwright/test').TestInfo): Promise<void> {
+  private async attachPaletteDiagnostics(
+    targetTestId: string,
+    testInfo?: import('@playwright/test').TestInfo,
+  ): Promise<void> {
     if (!testInfo) return;
     const palette = this.window.getByTestId('card-palette');
     const diagnostics = await this.window.evaluate((testId) => {
       const paletteRoot = document.querySelector('[data-testid="card-palette"]');
       const searchInput = document.querySelector<HTMLInputElement>('[data-testid="card-search"]');
-      const cards = Array.from(paletteRoot?.querySelectorAll<HTMLElement>('[data-testid^="palette-card-"]') ?? []);
-      const categoryButtons = Array.from(paletteRoot?.querySelectorAll<HTMLElement>('[role="button"]') ?? []);
+      const cards = Array.from(
+        paletteRoot?.querySelectorAll<HTMLElement>('[data-testid^="palette-card-"]') ?? [],
+      );
+      const categoryButtons = Array.from(
+        paletteRoot?.querySelectorAll<HTMLElement>('[role="button"]') ?? [],
+      );
       return {
         targetTestId: testId,
         searchValue: searchInput?.value ?? '',
@@ -156,7 +163,10 @@ export class CardPaletteDSL {
       contentType: 'image/png',
     });
 
-    await this.window.screenshot({ path: testInfo.outputPath('fullpage-screenshot.png'), fullPage: true });
+    await this.window.screenshot({
+      path: testInfo.outputPath('fullpage-screenshot.png'),
+      fullPage: true,
+    });
     await testInfo.attach('fullpage-screenshot.png', {
       path: testInfo.outputPath('fullpage-screenshot.png'),
       contentType: 'image/png',

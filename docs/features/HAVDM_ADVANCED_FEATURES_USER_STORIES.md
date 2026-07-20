@@ -38,13 +38,13 @@ This document contains comprehensive user stories for HAVDM's advanced feature s
 
 ### Technology Stack Decisions
 
-| Component | Selected Technology | Rationale |
-|-----------|-------------------|-----------|
-| **Color Picker** | `react-colorful` (2KB) | Modern, lightweight, accessible |
+| Component            | Selected Technology          | Rationale                                     |
+| -------------------- | ---------------------------- | --------------------------------------------- |
+| **Color Picker**     | `react-colorful` (2KB)       | Modern, lightweight, accessible               |
 | **Animation System** | Custom CSS animation library | Maximum flexibility, YAML storage integration |
-| **Carousel/Slider** | Swiper.js v12+ | Feature-rich, battle-tested |
-| **Charts** | Recharts | React-native, SVG-based, composable |
-| **Google Fonts** | CDN + local fallback | Best of both: speed online, works offline |
+| **Carousel/Slider**  | Swiper.js v12+               | Feature-rich, battle-tested                   |
+| **Charts**           | Recharts                     | React-native, SVG-based, composable           |
+| **Google Fonts**     | CDN + local fallback         | Best of both: speed online, works offline     |
 
 ### Code Organization Strategy
 
@@ -94,6 +94,7 @@ src/
 ### Compliance Statement
 
 All features in this document **MUST** comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Immutable AI development rules
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first testing approach
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Application architecture patterns
@@ -104,11 +105,13 @@ All features in this document **MUST** comply with:
 ## Phase Organization
 
 ### Phase 1: Foundation Layer (No Dependencies)
+
 **Duration**: 2-3 weeks
 **Features**: 5 foundational features
 **Goal**: Establish core visual enhancement infrastructure
 
 Features:
+
 1. Color Picker Component (react-colorful integration)
 2. Animation CSS Framework
 3. Typography/Google Fonts System
@@ -118,11 +121,13 @@ Features:
 ---
 
 ### Phase 2: UI Enhancement Layer (Depends on Phase 1)
+
 **Duration**: 2-3 weeks
 **Features**: 6 visual enhancement features
 **Goal**: Build on color/typography foundation
 
 Features:
+
 1. Gradient Editor (depends on Color Picker)
 2. Favorite Colors Manager (depends on Color Picker)
 3. Icon Color Customization (depends on Color Picker)
@@ -133,11 +138,13 @@ Features:
 ---
 
 ### Phase 3: Entity Intelligence Layer (Independent)
+
 **Duration**: 3-4 weeks
 **Features**: 7 smart entity features
 **Goal**: Intelligent entity handling and context
 
 Features:
+
 1. Smart Default Actions (tap-action intelligence)
 2. Entity Context Variables (template system)
 3. Entity Remapping (fuzzy matching)
@@ -149,12 +156,14 @@ Features:
 ---
 
 ### Phase 4: Layout Infrastructure Layer (Independent)
+
 **Phase Status**: :white_check_mark: Complete
 **Duration**: 2-3 weeks
 **Features**: 6 layout features
 **Goal**: Advanced card layouts and containers
 
 Features:
+
 1. Swiper.js Integration (carousel foundation)
 2. Accordion Card Module
 3. Tabs Card Module
@@ -165,12 +174,14 @@ Features:
 ---
 
 ### Phase 5: Advanced Visualization Layer (Depends on Phases 1-4)
+
 **Phase Status**: :construction: In Progress (kickoff started in v0.7.5-beta.0)
 **Duration**: 3-4 weeks
 **Features**: 8 complex visualization features
 **Goal**: Rich data visualization and interactions
 
 Features:
+
 1. Native Graphs (depends on Colors, Animations)
 2. Advanced Gauge Card (depends on Gradients, Graphs)
 3. Advanced Slider Card (depends on Haptics, Animations)
@@ -183,11 +194,13 @@ Features:
 ---
 
 ### Phase 6: Template & Logic Enhancement (Depends on Phase 3)
+
 **Duration**: 2-3 weeks
 **Features**: 5 advanced logic features
 **Goal**: Dynamic content and automation
 
 Features:
+
 1. Universal Action System (depends on Smart Defaults)
 2. Visual Logic Editor (depends on Entity Context)
 3. Unified Template System (depends on Entity Context Variables)
@@ -197,11 +210,13 @@ Features:
 ---
 
 ### Phase 7: Ecosystem & Future Growth (Depends on Phases 1-6)
+
 **Duration**: 3-4 weeks
 **Features**: 8 ecosystem features
 **Goal**: Community and extensibility
 
 Features:
+
 1. Preset Marketplace (depends on Entity Remapping)
 2. Theme Manager (depends on Colors, Gradients, Fonts)
 3. Card Duplication & Cloning
@@ -329,11 +344,11 @@ HAVDM currently requires users to manually enter hex codes for color customizati
 #### Risks
 
 - **Integration Complexity**: react-colorful may have different API than expected
-  - *Mitigation*: Review library docs thoroughly before implementation
+  - _Mitigation_: Review library docs thoroughly before implementation
 - **Performance**: Color picker in PropertiesPanel re-renders
-  - *Mitigation*: Use React.memo and optimize re-renders
+  - _Mitigation_: Use React.memo and optimize re-renders
 - **Accessibility**: Color picker keyboard navigation
-  - *Mitigation*: Test with keyboard-only navigation, screen readers
+  - _Mitigation_: Test with keyboard-only navigation, screen readers
 
 #### Acceptance Criteria
 
@@ -378,12 +393,14 @@ HAVDM currently requires users to manually enter hex codes for color customizati
 #### Testing & Verification
 
 **Unit Tests**:
+
 - [ ] ColorPicker component renders correctly
 - [ ] Hex input validation (valid/invalid formats)
 - [ ] RGB <-> HSL <-> Hex conversion accuracy
 - [ ] Recent colors history logic (add, limit to 10, retrieve)
 
 **E2E Tests** (Playwright):
+
 - [ ] User can open color picker from PropertiesPanel
 - [ ] User can select color using hue/saturation selector
 - [ ] User can adjust alpha channel
@@ -394,11 +411,13 @@ HAVDM currently requires users to manually enter hex codes for color customizati
 - [ ] Selected color persists in YAML
 
 **Visual Regression Tests**:
+
 - [ ] Color picker component appearance
 - [ ] Color picker in various states (open, closed, focused)
 - [ ] Recent colors swatches rendering
 
 **Accessibility Tests**:
+
 - [ ] Keyboard-only navigation test
 - [ ] Screen reader test (NVDA/JAWS)
 - [ ] Color contrast validation
@@ -406,6 +425,7 @@ HAVDM currently requires users to manually enter hex codes for color customizati
 #### Compliance
 
 This feature MUST comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Reuse ColorPicker component, no duplicate implementations
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first E2E tests using ColorPickerDSL
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Component lives in `src/components/ColorPicker.tsx`
@@ -486,11 +506,11 @@ Modern dashboard interfaces benefit from subtle animations that provide visual f
 #### Risks
 
 - **Performance**: Too many concurrent animations degrade performance
-  - *Mitigation*: Limit concurrent animations, use CSS transforms (GPU-accelerated), provide performance warning
+  - _Mitigation_: Limit concurrent animations, use CSS transforms (GPU-accelerated), provide performance warning
 - **Accessibility**: Animations may trigger motion sensitivity
-  - *Mitigation*: Respect `prefers-reduced-motion` media query, provide disable option
+  - _Mitigation_: Respect `prefers-reduced-motion` media query, provide disable option
 - **Browser Compatibility**: Some CSS animations may not work in older Chromium
-  - *Mitigation*: Test in target Electron version, use widely-supported animations
+  - _Mitigation_: Test in target Electron version, use widely-supported animations
 
 #### Acceptance Criteria
 
@@ -543,12 +563,14 @@ Modern dashboard interfaces benefit from subtle animations that provide visual f
 #### Testing & Verification
 
 **Unit Tests**:
+
 - [ ] `animationService.ts` generates correct CSS classes
 - [ ] Config to CSS conversion accuracy
 - [ ] `prefers-reduced-motion` detection logic
 - [ ] YAML serialization/deserialization
 
 **E2E Tests** (Playwright):
+
 - [ ] User can select animation type from PropertiesPanel
 - [ ] User can configure animation duration/delay
 - [ ] User can select easing function
@@ -558,14 +580,17 @@ Modern dashboard interfaces benefit from subtle animations that provide visual f
 - [ ] Animation respects `prefers-reduced-motion` setting
 
 **Visual Regression Tests**:
+
 - [ ] Animation PropertiesPanel UI
 - [ ] Cards with various animations applied (screenshots at start/mid/end of animation)
 
 **Performance Tests**:
+
 - [ ] 10 cards with concurrent animations maintain 60fps
 - [ ] Animation CPU usage < 20% (single core)
 
 **Accessibility Tests**:
+
 - [ ] Animations disabled with `prefers-reduced-motion: reduce`
 - [ ] Animation controls keyboard navigable
 - [ ] No essential information conveyed only by animation
@@ -573,6 +598,7 @@ Modern dashboard interfaces benefit from subtle animations that provide visual f
 #### Compliance
 
 This feature MUST comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Reuse animation CSS, centralized in `animations.css`
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first tests, no arbitrary waits
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - CSS in `src/styles/`, service in `src/services/`
@@ -610,6 +636,7 @@ tests/
 - Respect user's OS-level motion preferences (`prefers-reduced-motion`)
 
 **Example Animation Config (YAML)**:
+
 ```yaml
 type: custom:button-card
 entity: light.living_room
@@ -673,13 +700,13 @@ Typography is a fundamental element of visual design and brand identity. HAVDM u
 #### Risks
 
 - **Font Loading Performance**: Google Fonts CDN may be slow or unavailable
-  - *Mitigation*: Local fallback fonts, cache popular fonts, async loading with FOUT handling
+  - _Mitigation_: Local fallback fonts, cache popular fonts, async loading with FOUT handling
 - **Offline Support**: Google Fonts require internet connection
-  - *Mitigation*: Pre-cache top 20 Google Fonts locally, graceful fallback to system fonts
+  - _Mitigation_: Pre-cache top 20 Google Fonts locally, graceful fallback to system fonts
 - **Bundle Size**: Caching fonts increases app size
-  - *Mitigation*: Only cache popular fonts, lazy load others, use modern font formats (woff2)
+  - _Mitigation_: Only cache popular fonts, lazy load others, use modern font formats (woff2)
 - **Typography Overload**: Too many options overwhelm users
-  - *Mitigation*: Provide sensible defaults, group controls logically, show preview
+  - _Mitigation_: Provide sensible defaults, group controls logically, show preview
 
 #### Acceptance Criteria
 
@@ -744,12 +771,14 @@ Typography is a fundamental element of visual design and brand identity. HAVDM u
 #### Testing & Verification
 
 **Unit Tests**:
+
 - [ ] `fontService.ts` fetches Google Fonts list
 - [ ] Font loading logic (CDN -> cache -> fallback)
 - [ ] Typography config serialization/deserialization
 - [ ] Font family validation (exists in list)
 
 **E2E Tests** (Playwright):
+
 - [ ] User can browse available Google Fonts
 - [ ] User can search/filter fonts
 - [ ] User can select font family for card title
@@ -760,16 +789,19 @@ Typography is a fundamental element of visual design and brand identity. HAVDM u
 - [ ] Offline mode uses fallback fonts
 
 **Visual Regression Tests**:
+
 - [ ] Typography controls UI
 - [ ] Font preview display
 - [ ] Cards with various typography applied
 
 **Performance Tests**:
+
 - [ ] Font loading time < 200ms (cached)
 - [ ] Font loading time < 2s (uncached, CDN)
 - [ ] Fallback triggers within 2s if CDN fails
 
 **Accessibility Tests**:
+
 - [ ] Minimum font size enforced (12px)
 - [ ] Relative units supported (rem, em)
 - [ ] Contrast ratio maintained with custom fonts
@@ -777,6 +809,7 @@ Typography is a fundamental element of visual design and brand identity. HAVDM u
 #### Compliance
 
 This feature MUST comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Centralized font service, no duplicate font loading
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first tests
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Service in `src/services/fontService.ts`
@@ -821,6 +854,7 @@ tests/
 - Group typography controls in collapsible sections to reduce UI clutter
 
 **Example Typography Config (YAML)**:
+
 ```yaml
 type: entities
 title: Living Room
@@ -887,9 +921,9 @@ Visual depth and hierarchy are essential for professional dashboard design. HAVD
 #### Risks
 
 - **Performance**: Complex shadows degrade rendering performance
-  - *Mitigation*: Warn users about performance with many large shadows, use CSS `will-change` sparingly
+  - _Mitigation_: Warn users about performance with many large shadows, use CSS `will-change` sparingly
 - **Browser Compatibility**: Some border styles may render differently
-  - *Mitigation*: Test in target Electron version, provide fallbacks
+  - _Mitigation_: Test in target Electron version, provide fallbacks
 
 #### Acceptance Criteria
 
@@ -937,12 +971,14 @@ Visual depth and hierarchy are essential for professional dashboard design. HAVD
 #### Testing & Verification
 
 **Unit Tests**:
+
 - [ ] Shadow config to CSS conversion
 - [ ] Border config to CSS conversion
 - [ ] Preset shadow values correct
 - [ ] YAML serialization/deserialization
 
 **E2E Tests** (Playwright):
+
 - [ ] User can adjust shadow offset, blur, spread
 - [ ] User can set shadow color
 - [ ] User can add multiple shadow layers
@@ -953,16 +989,19 @@ Visual depth and hierarchy are essential for professional dashboard design. HAVD
 - [ ] Config persists in YAML
 
 **Visual Regression Tests**:
+
 - [ ] Shadow/Border controls UI
 - [ ] Cards with various shadows applied
 - [ ] Cards with various borders applied
 
 **Performance Tests**:
+
 - [ ] 20 cards with complex shadows maintain 60fps
 
 #### Compliance
 
 This feature MUST comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Centralized shadow/border logic
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first tests
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Component in `src/components/`
@@ -1001,6 +1040,7 @@ tests/
 - Consider using Ant Design's `<InputNumber>` for numeric inputs
 
 **Example Shadow/Border Config (YAML)**:
+
 ```yaml
 type: entities
 style:
@@ -1045,9 +1085,9 @@ Opacity controls allow users to adjust the transparency of cards, icons, text, a
 #### Risks
 
 - **Readability**: Transparent text may be unreadable
-  - *Mitigation*: Warn users if opacity < 50% on text elements, show contrast warnings
+  - _Mitigation_: Warn users if opacity < 50% on text elements, show contrast warnings
 - **Performance**: Transparency can impact rendering performance
-  - *Mitigation*: Use CSS `opacity` (GPU-accelerated), avoid alpha channels in gradients when possible
+  - _Mitigation_: Use CSS `opacity` (GPU-accelerated), avoid alpha channels in gradients when possible
 
 #### Acceptance Criteria
 
@@ -1078,11 +1118,13 @@ Opacity controls allow users to adjust the transparency of cards, icons, text, a
 #### Testing & Verification
 
 **Unit Tests**:
+
 - [ ] Opacity percentage to CSS decimal conversion (100% -> 1, 50% -> 0.5)
 - [ ] YAML serialization/deserialization
 - [ ] Contrast ratio calculation for opacity warnings
 
 **E2E Tests** (Playwright):
+
 - [ ] User can adjust card opacity
 - [ ] User can adjust background opacity
 - [ ] User can adjust content opacity
@@ -1091,15 +1133,18 @@ Opacity controls allow users to adjust the transparency of cards, icons, text, a
 - [ ] Warning shown for low text opacity
 
 **Visual Regression Tests**:
+
 - [ ] Opacity controls UI
 - [ ] Cards with various opacity values
 
 **Accessibility Tests**:
+
 - [ ] Contrast ratio warnings trigger correctly
 
 #### Compliance
 
 This feature MUST comply with:
+
 - ✅ [ai_rules.md](../../ai_rules.md) - Centralized opacity logic
 - ✅ [TESTING_STANDARDS.md](../testing/TESTING_STANDARDS.md) - DSL-first tests
 - ✅ [ARCHITECTURE.md](../architecture/ARCHITECTURE.md) - Component in `src/components/`
@@ -1133,14 +1178,15 @@ tests/
 - Provide quick buttons for common values (0%, 25%, 50%, 75%, 100%)
 
 **Example Opacity Config (YAML)**:
+
 ```yaml
 type: entities
 style:
-  opacity: 0.9        # 90% opacity
+  opacity: 0.9 # 90% opacity
 ```
 
 ---
 
 ## Phase 2: UI Enhancement Layer
 
-*[Due to length constraints, I'll create Phase 2-7 in a continued response. Let me mark this todo as complete and continue.]*
+_[Due to length constraints, I'll create Phase 2-7 in a continued response. Let me mark this todo as complete and continue.]_

@@ -36,22 +36,23 @@ Before creating any artifacts, you MUST read and understand the following docume
 **Total Features**: 9
 
 **Versioning Convention**:
+
 - `v0.7.<phase>-beta.<feature>`
 - Example: `v0.7.5-beta.3` = Phase 5, Feature 3
 
 ### Features to Implement
 
-| Feature | Priority | Estimated Effort | Prompt |
-|---------|----------|------------------|--------|
-| 5.1: Native Graphs | High | 6-7 days | `PHASE_5_1_NATIVE_GRAPHS_PROMPT.md` |
-| 5.2: Advanced Gauge Card | High | 5-6 days | `PHASE_5_2_ADVANCED_GAUGE_PROMPT.md` |
-| 5.3: Advanced Slider Card | High | 5-6 days | `PHASE_5_3_ADVANCED_SLIDER_PROMPT.md` |
-| 5.4: Progress Ring Visualization | Medium | 3-4 days | `PHASE_5_4_PROGRESS_RING_PROMPT.md` |
-| 5.5: Sparkline Mini-graphs | Medium | 3-4 days | `PHASE_5_5_SPARKLINE_MINI_GRAPHS_PROMPT.md` |
-| 5.6: Timeline Card | Medium | 4-5 days | `PHASE_5_6_TIMELINE_CARD_PROMPT.md` |
-| 5.7: Calendar View Card | High | 5-6 days | `PHASE_5_7_CALENDAR_VIEW_PROMPT.md` |
-| 5.8: Weather Forecast Visualization | Medium | 4-5 days | `PHASE_5_8_WEATHER_FORECAST_VISUALIZATION_PROMPT.md` |
-| 5.9: ApexCharts Advanced Integration | High | 8-12 days | `PHASE_5_9_APEXCHARTS_ADVANCED_INTEGRATION_PROMPT.md` |
+| Feature                              | Priority | Estimated Effort | Prompt                                                |
+| ------------------------------------ | -------- | ---------------- | ----------------------------------------------------- |
+| 5.1: Native Graphs                   | High     | 6-7 days         | `PHASE_5_1_NATIVE_GRAPHS_PROMPT.md`                   |
+| 5.2: Advanced Gauge Card             | High     | 5-6 days         | `PHASE_5_2_ADVANCED_GAUGE_PROMPT.md`                  |
+| 5.3: Advanced Slider Card            | High     | 5-6 days         | `PHASE_5_3_ADVANCED_SLIDER_PROMPT.md`                 |
+| 5.4: Progress Ring Visualization     | Medium   | 3-4 days         | `PHASE_5_4_PROGRESS_RING_PROMPT.md`                   |
+| 5.5: Sparkline Mini-graphs           | Medium   | 3-4 days         | `PHASE_5_5_SPARKLINE_MINI_GRAPHS_PROMPT.md`           |
+| 5.6: Timeline Card                   | Medium   | 4-5 days         | `PHASE_5_6_TIMELINE_CARD_PROMPT.md`                   |
+| 5.7: Calendar View Card              | High     | 5-6 days         | `PHASE_5_7_CALENDAR_VIEW_PROMPT.md`                   |
+| 5.8: Weather Forecast Visualization  | Medium   | 4-5 days         | `PHASE_5_8_WEATHER_FORECAST_VISUALIZATION_PROMPT.md`  |
+| 5.9: ApexCharts Advanced Integration | High     | 8-12 days        | `PHASE_5_9_APEXCHARTS_ADVANCED_INTEGRATION_PROMPT.md` |
 
 ### Technology Decisions
 
@@ -70,6 +71,7 @@ Before creating any artifacts, you MUST read and understand the following docume
 Create `do./ADVANCED_VISUALIZATION_LAYER_IMPLEMENTATION.md`.
 
 Minimum required sections:
+
 - Header (branch, version baseline, dependencies, status)
 - Overview (phase goals, business value, key principles)
 - Feature status table (5.1-5.9)
@@ -85,6 +87,7 @@ Minimum required sections:
 ### 2. Kanban User Stories
 
 Prepare user stories (one per feature minimum) with:
+
 - Title
 - User story statement
 - Scope in/out
@@ -102,6 +105,7 @@ For each feature work item, reference its dedicated prompt file and ensure execu
 ### 4. Upstream Alignment Gate (Mandatory for 5.x and Later)
 
 For every 5.x+ feature prompt and implementation checklist, include a mandatory pre-implementation gate that requires:
+
 - Review of the relevant upstream base HA/HACS card implementation/docs
 - Mapping confirmation to a real upstream card type and YAML contract (`ai_rules.md` Rule 10)
 - If unmapped: feasibility assessment of alternative upstream cards, refactor effort/risk, and recommendation to do now vs create a new feature in the relevant phase (for example `5.10`)
@@ -126,17 +130,21 @@ All artifacts MUST include explicit compliance statements for:
 Define and enforce for each feature:
 
 1. **Unit Tests**
+
 - Config normalization and validation
 - Service logic and edge cases
 
 2. **E2E Tests (DSL-first)**
+
 - Add or extend visualization DSL modules under `tests/support/dsl/`
 - Validate user workflows, runtime rendering behavior, and YAML round-trip
 
 3. **Visual Regression**
+
 - Baselines for each chart/card mode and key states
 
 4. **Accessibility Validation**
+
 - Keyboard operation
 - ARIA labeling and semantic output
 - Reduced-motion behavior where animations exist
@@ -168,6 +176,7 @@ After clarifying questions are resolved, deliver:
 ## Reference: Prior Phase Baseline
 
 Phase 4 completion artifacts and implementation references:
+
 - `do./LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md`
 - `docs/releases/RELEASE_NOTES_v0.7.4-beta.5.md`
 
@@ -191,6 +200,7 @@ After implementation, run exactly one **Fast Gate** pass and then stop:
 4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
 
 After this single Fast Gate run, provide a summary report that includes:
+
 - Exact commands executed
 - Pass/fail status for each command
 - Any failing tests with artifact paths under `test-results/artifacts/**`

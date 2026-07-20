@@ -8,7 +8,11 @@ describe('attributeFormatter', () => {
   });
 
   it('formats booleans with custom labels', () => {
-    const result = formatAttributeValue(true, { type: 'boolean', trueLabel: 'Yes', falseLabel: 'No' });
+    const result = formatAttributeValue(true, {
+      type: 'boolean',
+      trueLabel: 'Yes',
+      falseLabel: 'No',
+    });
     expect(result).toBe('Yes');
   });
 
@@ -19,13 +23,21 @@ describe('attributeFormatter', () => {
 
   it('formats timestamps with absolute mode', () => {
     const date = new Date('2025-01-01T12:30:00.000Z');
-    const result = formatAttributeValue(date, { type: 'timestamp', timestampMode: 'absolute' }, new Date('2025-01-01T12:31:00.000Z'));
+    const result = formatAttributeValue(
+      date,
+      { type: 'timestamp', timestampMode: 'absolute' },
+      new Date('2025-01-01T12:31:00.000Z'),
+    );
     expect(result).toContain('2025');
   });
 
   it('formats timestamps with relative mode', () => {
     const date = new Date('2025-01-01T12:30:00.000Z');
-    const result = formatAttributeValue(date, { type: 'timestamp', timestampMode: 'relative' }, new Date('2025-01-01T12:30:30.000Z'));
+    const result = formatAttributeValue(
+      date,
+      { type: 'timestamp', timestampMode: 'relative' },
+      new Date('2025-01-01T12:30:30.000Z'),
+    );
     expect(result).toBe('30s ago');
   });
 

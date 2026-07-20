@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import { DashboardConfig, DashboardState } from '../types/dashboard';
 import { yamlService } from '../services/yamlService';
-import { normalizeCardIndices, resolveSelectionState, type SelectionMode } from '../utils/bulkSelection';
+import {
+  normalizeCardIndices,
+  resolveSelectionState,
+  type SelectionMode,
+} from '../utils/bulkSelection';
 
 interface HistoryState {
   past: DashboardConfig[];
@@ -16,8 +20,17 @@ interface DashboardActions {
   endBatchUpdate: () => void;
   setSelectedView: (index: number | null) => void;
   setSelectedCard: (viewIndex: number | null, cardIndex: number | null) => void;
-  setSelectedCards: (viewIndex: number | null, cardIndices: number[], primaryCardIndex?: number | null) => void;
-  selectCardWithMode: (viewIndex: number | null, cardIndex: number | null, mode?: SelectionMode, cardCount?: number) => void;
+  setSelectedCards: (
+    viewIndex: number | null,
+    cardIndices: number[],
+    primaryCardIndex?: number | null,
+  ) => void;
+  selectCardWithMode: (
+    viewIndex: number | null,
+    cardIndex: number | null,
+    mode?: SelectionMode,
+    cardCount?: number,
+  ) => void;
   markDirty: () => void;
   markClean: () => void;
   clearDashboard: () => void;
@@ -157,7 +170,11 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     });
   },
 
-  setSelectedCards: (viewIndex: number | null, cardIndices: number[], primaryCardIndex: number | null = null) => {
+  setSelectedCards: (
+    viewIndex: number | null,
+    cardIndices: number[],
+    primaryCardIndex: number | null = null,
+  ) => {
     const normalized = normalizeCardIndices(cardIndices);
     const nextPrimary =
       primaryCardIndex !== null && normalized.includes(primaryCardIndex)
@@ -172,7 +189,12 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     });
   },
 
-  selectCardWithMode: (viewIndex: number | null, cardIndex: number | null, mode: SelectionMode = 'replace', cardCount?: number) => {
+  selectCardWithMode: (
+    viewIndex: number | null,
+    cardIndex: number | null,
+    mode: SelectionMode = 'replace',
+    cardCount?: number,
+  ) => {
     if (viewIndex === null || cardIndex === null) {
       set({
         selectedViewIndex: viewIndex,

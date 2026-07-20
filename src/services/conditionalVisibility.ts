@@ -1,5 +1,10 @@
 import type { EntityStates } from './haWebSocketService';
-import type { EntityConfig, VisibilityCondition, VisibilityConditionGroup, VisibilityConditionRule } from '../types/dashboard';
+import type {
+  EntityConfig,
+  VisibilityCondition,
+  VisibilityConditionGroup,
+  VisibilityConditionRule,
+} from '../types/dashboard';
 
 const toComparableValue = (value: unknown): string | number | boolean | null => {
   if (value === null || value === undefined) return null;
@@ -32,13 +37,21 @@ const normalizeState = (value: unknown): string => {
   return '';
 };
 
-export const stateEquals = (entityId: string, value: string | number | boolean, entities: EntityStates): boolean => {
+export const stateEquals = (
+  entityId: string,
+  value: string | number | boolean,
+  entities: EntityStates,
+): boolean => {
   const entity = entities[entityId];
   if (!entity) return false;
   return normalizeState(entity.state) === String(value);
 };
 
-export const stateNotEquals = (entityId: string, value: string | number | boolean, entities: EntityStates): boolean => {
+export const stateNotEquals = (
+  entityId: string,
+  value: string | number | boolean,
+  entities: EntityStates,
+): boolean => {
   const entity = entities[entityId];
   if (!entity) return false;
   return normalizeState(entity.state) !== String(value);
@@ -122,9 +135,13 @@ const evaluateRule = (rule: VisibilityConditionRule, entities: EntityStates): bo
     case 'state_not_equals':
       return rule.value !== undefined ? stateNotEquals(rule.entity, rule.value, entities) : false;
     case 'state_in':
-      return Array.isArray(rule.values) && rule.values.length > 0 ? stateIn(rule.entity, rule.values, entities) : false;
+      return Array.isArray(rule.values) && rule.values.length > 0
+        ? stateIn(rule.entity, rule.values, entities)
+        : false;
     case 'state_not_in':
-      return Array.isArray(rule.values) && rule.values.length > 0 ? stateNotIn(rule.entity, rule.values, entities) : false;
+      return Array.isArray(rule.values) && rule.values.length > 0
+        ? stateNotIn(rule.entity, rule.values, entities)
+        : false;
     case 'attribute_equals':
       return rule.attribute !== undefined && rule.value !== undefined
         ? attributeEquals(rule.entity, rule.attribute, rule.value, entities)
@@ -144,7 +161,10 @@ const evaluateRule = (rule: VisibilityConditionRule, entities: EntityStates): bo
   }
 };
 
-export const evaluateVisibilityCondition = (condition: VisibilityCondition, entities: EntityStates): boolean => {
+export const evaluateVisibilityCondition = (
+  condition: VisibilityCondition,
+  entities: EntityStates,
+): boolean => {
   if (isGroup(condition)) {
     const nested = condition.conditions ?? [];
     if (nested.length === 0) return true;
@@ -175,7 +195,10 @@ export const evaluateVisibilityConditions = (
   return conditions.every((condition) => evaluateVisibilityCondition(condition, entities));
 };
 
-export const evaluateEntityVisibility = (entity: string | EntityConfig, entities: EntityStates): boolean => {
+export const evaluateEntityVisibility = (
+  entity: string | EntityConfig,
+  entities: EntityStates,
+): boolean => {
   if (typeof entity === 'string') return true;
   if (!entity || typeof entity !== 'object') return true;
   return evaluateVisibilityConditions(entity.visibility_conditions, entities);

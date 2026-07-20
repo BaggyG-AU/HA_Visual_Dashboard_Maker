@@ -44,10 +44,12 @@ and the user explicitly invokes it, the AI agent MUST:
 3. Follow Stop Conditions defined in the active Phase Governance document in addition to the rules in `ai_rules.md`.
 
 Precedence boundaries:
+
 - `ai_rules.md` governs **implementation behavior, test safety, DSL discipline, state integrity, React correctness, and Git workflow**.
 - The Phase Governance Framework governs **phase structure, packaging, blast radius control, and release readiness**.
 
 If conflicts arise:
+
 - Implementation safety rules in `ai_rules.md` cannot be bypassed.
 - Governance rules control scope and sequencing.
 
@@ -75,6 +77,7 @@ Never guess version progression.
 When debugging or changing tests/automation, you MUST first search for a working pattern and reuse it.
 
 Search in this order:
+
 1. Passing specs in `tests/**/*.spec.ts`
 2. DSLs in `tests/support/dsl/**`
 3. Helpers/fixtures in `tests/support/**` and `tests/helpers/**`
@@ -99,6 +102,7 @@ All new or updated docs must live under `/docs`:
 - Archive stale content → `docs/archive/**`
 
 Root markdown must stay minimal:
+
 - `README.md`
 - `LICENSE`
 - `ai_rules.md`
@@ -108,6 +112,7 @@ Root markdown must stay minimal:
 # 3) Required Workflow for Fixing Failing Tests
 
 Follow:
+
 - `docs/testing/TESTING_STANDARDS.md`
 - `docs/testing/PLAYWRIGHT_TESTING.md`
 
@@ -176,6 +181,7 @@ Always provide copy/paste verification plan.
 # 6) Deliverables for Test Fixes
 
 Must include:
+
 - Reused test/helper references
 - Root cause explanation
 - Patch summary
@@ -190,6 +196,7 @@ All state updates must use immutable patterns.
 Never mutate arrays or objects in place.
 
 Use:
+
 - Spread operators
 - `map`, `filter`
 - Object cloning
@@ -224,6 +231,7 @@ If user says:
 "I want to start a new feature called <feature_name>"
 
 → MUST run:
+
 ```
 ./tools/feature-start "<feature_name>"
 ```
@@ -232,6 +240,7 @@ If user says:
 "I have completed <feature_name>"
 
 → MUST run:
+
 ```
 ./tools/feature-finish "<feature_name>"
 ```
@@ -239,6 +248,7 @@ If user says:
 Never perform ad-hoc git operations outside these scripts.
 
 Always validate:
+
 - Current branch
 - Clean working tree
 - Main up-to-date
@@ -284,6 +294,7 @@ AI must never continue blindly past Stop Conditions.
 All custom card types must map to real upstream HACS or base Home Assistant cards.
 
 Requirements:
+
 - Card type strings must match upstream exactly.
 - YAML schema must match upstream.
 - HAVDM-only extensions must:

@@ -5,6 +5,7 @@ The Properties Panel uses a popover color picker for card color fields. It suppo
 ## Where You’ll See It
 
 Common examples:
+
 - `custom:button-card` → **Color** (card border/accent) and **Icon Color**
 - Mushroom cards → **Icon color** (where supported)
 - Card-mod style field helper → inline `color:` in CSS style strings
@@ -12,11 +13,13 @@ Common examples:
 ## Supported Formats
 
 You can type any of these directly into the value field:
+
 - Hex: `#RRGGBB`, `#RRGGBBAA`
 - RGB/RGBA: `rgb(255, 0, 0)`, `rgba(255, 0, 0, 0.5)`
 - HSL/HSLA: `hsl(210, 50%, 50%)`, `hsla(210, 50%, 50%, 0.5)`
 
 Notes:
+
 - Invalid values are rejected and the input reverts to the last valid value.
 - Some card fields may accept special values like `auto` (where supported by that card); these bypass the picker validation and are treated as a raw string.
 
@@ -28,13 +31,12 @@ Notes:
 
 ## Keyboard-Only Workflow
 
-1) Tab to the color swatch and press `Enter` to open the popover.
-2) Tab to the value field and type a color.
-3) Press `Enter` to confirm the typed value.
-4) Press `Escape` to close the popover.
+1. Tab to the color swatch and press `Enter` to open the popover.
+2. Tab to the value field and type a color.
+3. Press `Enter` to confirm the typed value.
+4. Press `Escape` to close the popover.
 
 ## Troubleshooting
 
 - **Popover closes unexpectedly**: click back into the input field to reopen, or use the swatch and `Enter`.
 - **Value “reverts” after typing**: the value was not valid for the current format; type a supported format and press `Enter`.
-

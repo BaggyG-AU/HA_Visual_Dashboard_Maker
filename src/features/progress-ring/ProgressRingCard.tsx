@@ -28,10 +28,10 @@ const angleToLinearCoords = (angle: number): { x1: number; y1: number; x2: numbe
   const y = Math.sin(radians);
 
   return {
-    x1: 50 - (x * 50),
-    y1: 50 - (y * 50),
-    x2: 50 + (x * 50),
-    y2: 50 + (y * 50),
+    x1: 50 - x * 50,
+    y1: 50 - y * 50,
+    x2: 50 + x * 50,
+    y2: 50 + y * 50,
   };
 };
 
@@ -71,10 +71,7 @@ export const ProgressRingCard: React.FC<ProgressRingCardProps> = ({
     [entityStates, normalized],
   );
 
-  const ringGeometry = useMemo(
-    () => buildRingGeometry(runtimeRings, RING_SIZE),
-    [runtimeRings],
-  );
+  const ringGeometry = useMemo(() => buildRingGeometry(runtimeRings, RING_SIZE), [runtimeRings]);
 
   const backgroundStyle = getCardBackgroundStyle(
     card.style,
@@ -84,11 +81,14 @@ export const ProgressRingCard: React.FC<ProgressRingCardProps> = ({
   const title = normalized.title?.trim() || 'Progress Ring';
   const transitionEnabled = normalized.animate && !prefersReducedMotion;
   const center = RING_SIZE / 2;
-  const ariaLabel = runtimeRings.length > 0
-    ? runtimeRings
-      .map((ring) => `${ring.label}: ${ring.displayValue} (${Math.round(ring.percent)} percent)`)
-      .join(', ')
-    : 'No rings configured';
+  const ariaLabel =
+    runtimeRings.length > 0
+      ? runtimeRings
+          .map(
+            (ring) => `${ring.label}: ${ring.displayValue} (${Math.round(ring.percent)} percent)`,
+          )
+          .join(', ')
+      : 'No rings configured';
 
   return (
     <AntCard
@@ -237,7 +237,10 @@ export const ProgressRingCard: React.FC<ProgressRingCardProps> = ({
                 pointerEvents: 'none',
               }}
             >
-              <Text style={{ color: '#e6e6e6', fontSize: 22, fontWeight: 600 }} data-testid="progress-ring-center-value">
+              <Text
+                style={{ color: '#e6e6e6', fontSize: 22, fontWeight: 600 }}
+                data-testid="progress-ring-center-value"
+              >
                 {Math.round(runtimeRings[0]?.percent ?? 0)}%
               </Text>
               {runtimeRings[0] && (

@@ -68,7 +68,9 @@ export class CarouselDSL {
   }
 
   async expectActiveSlide(index: number, cardIndex = 0): Promise<void> {
-    await expect.poll(async () => await this.getActiveSlideIndex(cardIndex), { timeout: 5000 }).toBe(index);
+    await expect
+      .poll(async () => await this.getActiveSlideIndex(cardIndex), { timeout: 5000 })
+      .toBe(index);
   }
 
   async getActiveSlideIndex(cardIndex = 0): Promise<number | null> {
@@ -104,13 +106,21 @@ export class CarouselDSL {
     await this.window.mouse.up();
   }
 
-  async expectPaginationType(type: 'bullets' | 'fraction' | 'progressbar' | 'custom', cardIndex = 0): Promise<void> {
-    await expect.poll(async () => {
-      const pagination = this.getPagination(cardIndex);
-      const visible = await pagination.isVisible().catch(() => false);
-      if (!visible) return '';
-      return (await pagination.getAttribute('class')) ?? '';
-    }, { timeout: 5000 }).toMatch(new RegExp(`swiper-pagination-${type}`));
+  async expectPaginationType(
+    type: 'bullets' | 'fraction' | 'progressbar' | 'custom',
+    cardIndex = 0,
+  ): Promise<void> {
+    await expect
+      .poll(
+        async () => {
+          const pagination = this.getPagination(cardIndex);
+          const visible = await pagination.isVisible().catch(() => false);
+          if (!visible) return '';
+          return (await pagination.getAttribute('class')) ?? '';
+        },
+        { timeout: 5000 },
+      )
+      .toMatch(new RegExp(`swiper-pagination-${type}`));
   }
 
   async setPaginationType(type: 'bullets' | 'fraction' | 'progressbar' | 'custom'): Promise<void> {
@@ -128,13 +138,17 @@ export class CarouselDSL {
     const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
 
-    const option = dropdown.locator('.ant-select-item-option', {
-      hasText: new RegExp(`^${labelByType[type]}$`, 'i'),
-    }).first();
+    const option = dropdown
+      .locator('.ant-select-item-option', {
+        hasText: new RegExp(`^${labelByType[type]}$`, 'i'),
+      })
+      .first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click();
 
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 5000 });
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+      timeout: 5000,
+    });
   }
 
   async toggleAutoplay(enabled: boolean): Promise<void> {
@@ -157,9 +171,13 @@ export class CarouselDSL {
     const select = this.window.getByTestId('swiper-effect');
     await expect(select).toBeVisible();
     await select.click();
-    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
+    const dropdown = this.window
+      .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
+      .last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
-    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${effect}$`, 'i') });
+    const option = dropdown.locator('.ant-select-item-option', {
+      hasText: new RegExp(`^${effect}$`, 'i'),
+    });
     await expect(option).toBeVisible();
     await option.click();
     await expect(select).toContainText(new RegExp(effect, 'i'));
@@ -169,9 +187,13 @@ export class CarouselDSL {
     const select = this.window.getByTestId('swiper-slides-per-view');
     await expect(select).toBeVisible();
     await select.click();
-    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
+    const dropdown = this.window
+      .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
+      .last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
-    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${value}$`, 'i') });
+    const option = dropdown.locator('.ant-select-item-option', {
+      hasText: new RegExp(`^${value}$`, 'i'),
+    });
     await expect(option).toBeVisible();
     await option.click();
     await expect(select).toContainText(new RegExp(String(value), 'i'));
@@ -183,7 +205,9 @@ export class CarouselDSL {
     await button.click();
   }
 
-  async pressArrowKey(direction: 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown'): Promise<void> {
+  async pressArrowKey(
+    direction: 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown',
+  ): Promise<void> {
     await this.window.keyboard.press(direction);
   }
 

@@ -4,7 +4,10 @@ export class ThemeManagerDSL {
   constructor(private window: Page) {}
 
   async openThemeManagerTab(): Promise<void> {
-    await this.window.getByRole('tab', { name: /Theme Manager/i }).last().click();
+    await this.window
+      .getByRole('tab', { name: /Theme Manager/i })
+      .last()
+      .click();
     await expect(this.window.getByTestId('theme-manager-save')).toBeVisible({ timeout: 5000 });
   }
 
@@ -15,7 +18,9 @@ export class ThemeManagerDSL {
 
   async selectSavedTheme(name: string): Promise<void> {
     await this.window.getByTestId('theme-manager-saved-select').click();
-    const option = this.window.locator('.ant-select-item-option', { hasText: new RegExp(`^${name}$`) }).first();
+    const option = this.window
+      .locator('.ant-select-item-option', { hasText: new RegExp(`^${name}$`) })
+      .first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click();
   }
@@ -51,16 +56,22 @@ export class ThemeManagerDSL {
     await select.click();
 
     const optionText = themeName ?? 'No override (use global theme)';
-    const dropdown = this.window.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
+    const dropdown = this.window
+      .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
+      .last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
-    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(`^${optionText}$`) }).first();
+    const option = dropdown
+      .locator('.ant-select-item-option', { hasText: new RegExp(`^${optionText}$`) })
+      .first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click();
   }
 
   async expectSavedThemeVisible(name: string): Promise<void> {
     await this.window.getByTestId('theme-manager-saved-select').click();
-    const option = this.window.locator('.ant-select-item-option', { hasText: new RegExp(`^${name}$`) }).first();
+    const option = this.window
+      .locator('.ant-select-item-option', { hasText: new RegExp(`^${name}$`) })
+      .first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await this.window.keyboard.press('Escape');
   }

@@ -58,7 +58,10 @@ describe('dashboard store model utilities', () => {
     const nextConfig: DashboardConfig = {
       ...baseConfig,
       views: [
-        { ...baseConfig.views[0], cards: [{ type: 'markdown', content: 'Updated' }] } as DashboardConfig['views'][number],
+        {
+          ...baseConfig.views[0],
+          cards: [{ type: 'markdown', content: 'Updated' }],
+        } as DashboardConfig['views'][number],
       ],
     };
 
@@ -88,11 +91,21 @@ describe('dashboard store model utilities', () => {
 
     state.applyBatchedConfig({
       ...baseConfig,
-      views: [{ ...v0, cards: [...baseCards, { type: 'markdown', content: 'A' }] } as DashboardConfig['views'][number]],
+      views: [
+        {
+          ...v0,
+          cards: [...baseCards, { type: 'markdown', content: 'A' }],
+        } as DashboardConfig['views'][number],
+      ],
     });
     state.applyBatchedConfig({
       ...baseConfig,
-      views: [{ ...v0, cards: [...baseCards, { type: 'markdown', content: 'AB' }] } as DashboardConfig['views'][number]],
+      views: [
+        {
+          ...v0,
+          cards: [...baseCards, { type: 'markdown', content: 'AB' }],
+        } as DashboardConfig['views'][number],
+      ],
     });
 
     let after = useDashboardStore.getState();

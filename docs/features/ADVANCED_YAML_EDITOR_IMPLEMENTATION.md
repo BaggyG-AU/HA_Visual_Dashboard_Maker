@@ -140,6 +140,7 @@ EditorModeStore (Zustand)
 ### Synchronization Flow
 
 **Visual → YAML (Immediate)**:
+
 ```
 User edits visual canvas
   ↓
@@ -155,6 +156,7 @@ Status: Synced
 ```
 
 **YAML → Visual (Hybrid)**:
+
 ```
 User types in YAML editor
   ↓
@@ -195,6 +197,7 @@ The HA dashboard schema is designed for extensibility:
 ```
 
 **Key Design Decisions**:
+
 - `additionalProperties: true` - Allows HA schema evolution without refactoring
 - Modular definitions - Easy to extend with new card types
 - Pattern validation for entity IDs: `^[a-z_]+\.[a-z0-9_]+$`
@@ -254,6 +257,7 @@ The HA dashboard schema is designed for extensibility:
 ### Unit Tests (35 new tests, all passing)
 
 **YAML Service Tests (15 tests)**:
+
 - Serialization (indentation, arrays)
 - Parsing (syntax, structure validation)
 - Round-trip consistency
@@ -261,6 +265,7 @@ The HA dashboard schema is designed for extensibility:
 - Validation (syntax errors, line numbers)
 
 **Editor Mode Store Tests (20 tests)**:
+
 - Initial state verification
 - Mode switching (visual/split/code)
 - Sync status management
@@ -280,6 +285,7 @@ The HA dashboard schema is designed for extensibility:
 See [CUSTOM_CARD_PART2_MANUAL_TESTING.md](./CUSTOM_CARD_PART2_MANUAL_TESTING.md) for comprehensive manual testing guide (adapt for YAML editor).
 
 **Key Scenarios**:
+
 1. Toggle between Visual and Split modes
 2. Edit YAML with syntax errors → verify error display
 3. Apply valid YAML → verify visual update
@@ -293,35 +299,41 @@ See [CUSTOM_CARD_PART2_MANUAL_TESTING.md](./CUSTOM_CARD_PART2_MANUAL_TESTING.md)
 ## Acceptance Criteria Verification
 
 ### ✅ Split View Functionality
+
 - [x] Split view opens with visual (left) and code (right) panes
 - [x] Resizable splitter between panes
 - [x] Changes in YAML reflect in visual after successful parse
 - [x] Errors shown inline without breaking visual state
 
 ### ✅ Two-Way Sync
+
 - [x] Visual edits update YAML immediately
 - [x] YAML edits show validation status (valid/error)
 - [x] Invalid YAML prevents state corruption
 - [x] Last valid state preserved for rollback
 
 ### ✅ Schema Autocomplete
+
 - [x] Autocomplete triggered for card types (e.g., "type: en..." → "entities")
 - [x] Autocomplete for properties (e.g., "show_name: ...")
 - [x] Hover documentation for properties
 - [x] Inline validation errors with schema
 
 ### ✅ YAML Validation
+
 - [x] Real-time syntax validation
 - [x] Error messages with line numbers
 - [x] Prevents applying invalid YAML
 - [x] Rollback to last valid state
 
 ### ✅ Formatting Controls
+
 - [x] Pretty-print button reformats YAML
 - [x] Fix indentation button (2-space tabs)
 - [x] Format preserves structure and values
 
 ### ✅ Card Selection → YAML Jump
+
 - [x] Clicking card in visual jumps to YAML
 - [x] YAML section highlighted and scrolled into view
 - [x] Works across multiple views and cards
@@ -331,16 +343,19 @@ See [CUSTOM_CARD_PART2_MANUAL_TESTING.md](./CUSTOM_CARD_PART2_MANUAL_TESTING.md)
 ## Non-Functional Requirements
 
 ### ✅ Performance
+
 - No noticeable UI freezes with large YAML files
 - Debouncing prevents excessive re-renders
 - Monaco handles large files efficiently
 
 ### ✅ Security
+
 - No IPC or file access changes
 - No security posture changes
 - Validation prevents injection attacks
 
 ### ✅ Lint Compliance
+
 - **Existing warnings**: 368 (pre-existing in codebase)
 - **New warnings**: 2 (non-null assertions in tests)
 - **New errors**: 0
@@ -410,6 +425,7 @@ See [CUSTOM_CARD_PART2_MANUAL_TESTING.md](./CUSTOM_CARD_PART2_MANUAL_TESTING.md)
 **None** - This feature is fully backward compatible.
 
 **Backward Compatibility Notes**:
+
 - Existing YAML editor dialog (`YamlEditorDialog`) still works
 - All existing tests passing
 - No changes to dashboard file format
@@ -444,6 +460,7 @@ No migration needed - this is a new feature. Existing workflows continue to work
 ### Lines of Code
 
 **New Files**:
+
 - `editorModeStore.ts`: 95 lines
 - `ha-dashboard-schema.json`: 366 lines
 - `YamlEditor.tsx`: 284 lines
@@ -453,6 +470,7 @@ No migration needed - this is a new feature. Existing workflows continue to work
 **Total New Lines**: 1,491 lines
 
 **Modified Files**:
+
 - `monaco-setup.ts`: +19 lines
 - `YamlEditorDialog.tsx`: -200 lines (simplified)
 - `App.tsx`: +18 lines
@@ -521,6 +539,7 @@ No migration needed - this is a new feature. Existing workflows continue to work
 ## Changelog
 
 **v0.3.2-beta.1** (In Progress):
+
 - ✅ Added split view mode (visual + YAML side-by-side)
 - ✅ Added HA dashboard schema (HA 2025.12+)
 - ✅ Added schema-based autocomplete and validation
@@ -571,11 +590,13 @@ No migration needed - this is a new feature. Existing workflows continue to work
 **Impact**: Prevented adding cards to blank canvas in visual mode. Error occurred when switching cards in PropertiesPanel.
 
 **Fix Applied**: Added missing state declaration at line 35:
+
 ```typescript
 const [hasChanges, setHasChanges] = useState<boolean>(false);
 ```
 
 **Verification**:
+
 - ✅ All 88 unit tests passing
 - ✅ No new lint errors introduced
 - ✅ Card addition should now work correctly
@@ -621,6 +642,7 @@ const [hasChanges, setHasChanges] = useState<boolean>(false);
    - [advanced-yaml-editor.spec.ts:113,125](../../tests/unit/advanced-yaml-editor.spec.ts)
 
 **Files Modified**:
+
 - [src/components/SplitViewEditor.tsx](../../src/components/SplitViewEditor.tsx)
 - [src/components/YamlEditor.tsx](../../src/components/YamlEditor.tsx)
 - [tests/unit/advanced-yaml-editor.spec.ts](../../tests/unit/advanced-yaml-editor.spec.ts)
@@ -648,16 +670,19 @@ const [hasChanges, setHasChanges] = useState<boolean>(false);
      - [IconSelect.tsx:176](../../src/components/IconSelect.tsx#L176)
 
 **Impact**:
+
 - ✅ Removes all runtime deprecation warnings
 - ✅ Future-proofs code for Ant Design v7
 - ✅ No functional changes, purely API updates
 
 **Files Modified**:
+
 - [src/components/PropertiesPanel.tsx](../../src/components/PropertiesPanel.tsx) - 25+ Alert components
 - [src/components/EntitySelect.tsx](../../src/components/EntitySelect.tsx) - 1 Select component
 - [src/components/IconSelect.tsx](../../src/components/IconSelect.tsx) - 1 Select component
 
 **Verification**:
+
 - ✅ All 88 unit tests passing
 - ✅ Lint: 357 warnings (unchanged - deprecations are runtime warnings, not lint warnings)
 - ✅ Zero deprecation warnings in console

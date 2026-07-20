@@ -106,7 +106,7 @@ test.describe('Monaco Editor in Dashboard YAML Editor', () => {
         hasRunHook: typeof (window as any).__runYamlValidation === 'function',
         hasForceHook: typeof (window as any).__forceYamlValidation === 'function',
         lastError: (window as any).__lastValidationError,
-        value: (window as any).monaco?.editor?.getModels?.()[0]?.getValue?.()
+        value: (window as any).monaco?.editor?.getModels?.()[0]?.getValue?.(),
       }));
       console.log('DEBUG validate YAML', debug);
 
@@ -127,7 +127,9 @@ test.describe('Monaco Editor in Dashboard YAML Editor', () => {
       await editor.click();
       await ctx.window.keyboard.press('Control+A');
 
-      await ctx.window.keyboard.type('title: Test Dashboard\nviews:\n  - title: Home\n    cards: []');
+      await ctx.window.keyboard.type(
+        'title: Test Dashboard\nviews:\n  - title: Home\n    cards: []',
+      );
       await ctx.window.waitForTimeout(500);
 
       await ctx.yamlEditor.expectValidationSuccess();
@@ -383,7 +385,7 @@ test.describe('Monaco Editor Features', () => {
       await ctx.window.waitForFunction(
         () => Boolean((window as any).monaco?.editor?.getModels?.()[0]),
         null,
-        { timeout: 10000 }
+        { timeout: 10000 },
       );
 
       // Capture initial content, append a marker, then verify undo/redo restores it
@@ -403,7 +405,7 @@ test.describe('Monaco Editor Features', () => {
               forceMoveMarkers: true,
             },
           ],
-          () => null
+          () => null,
         );
         return { initialContent: current, appendedContent: `${current}${insertText}` };
       });
@@ -612,7 +614,7 @@ test.describe('Monaco Editor Error Handling', () => {
         hasRunHook: typeof (window as any).__runYamlValidation === 'function',
         hasForceHook: typeof (window as any).__forceYamlValidation === 'function',
         lastError: (window as any).__lastValidationError,
-        value: (window as any).monaco?.editor?.getModels?.()[0]?.getValue?.()
+        value: (window as any).monaco?.editor?.getModels?.()[0]?.getValue?.(),
       }));
       console.log('DEBUG syntax recovery', debug);
 

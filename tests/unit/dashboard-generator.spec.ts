@@ -5,10 +5,7 @@ import {
   Entity,
 } from '../../src/services/dashboardGeneratorService';
 import { Card } from '../../src/types/dashboard';
-import {
-  sampleEntities,
-  withExtraLights,
-} from './fixtures/entities';
+import { sampleEntities, withExtraLights } from './fixtures/entities';
 
 type Layout = { x: number; y: number; w: number; h: number };
 type LayoutCard = Card & { layout: Layout };
@@ -19,24 +16,22 @@ const isLayoutCard = (card: Card | undefined): card is LayoutCard => {
   if (!candidate || typeof candidate !== 'object') return false;
 
   const layout = candidate as Record<string, unknown>;
-  return ['x', 'y', 'w', 'h'].every(
-    key => typeof layout[key] === 'number'
-  );
+  return ['x', 'y', 'w', 'h'].every((key) => typeof layout[key] === 'number');
 };
 
 describe('dashboardGeneratorService', () => {
   it('filters available categories by required domains', () => {
     const cats = dashboardGeneratorService.getAvailableCategories(sampleEntities);
-    const catIds = cats.map(c => c.id);
+    const catIds = cats.map((c) => c.id);
 
     expect(catIds).toContain('lights');
     expect(catIds).toContain('surveillance');
     expect(catIds).toContain('power');
     expect(catIds).toContain('rooms');
 
-    const onlyLights = sampleEntities.filter(e => e.entity_id.startsWith('light.'));
+    const onlyLights = sampleEntities.filter((e) => e.entity_id.startsWith('light.'));
     const lightsOnlyCategories = dashboardGeneratorService.getAvailableCategories(onlyLights);
-    expect(lightsOnlyCategories.map(c => c.id)).toEqual(['lights']);
+    expect(lightsOnlyCategories.map((c) => c.id)).toEqual(['lights']);
   });
 
   it('filters entities per category and limits to six sorted alphabetically', () => {
@@ -73,7 +68,7 @@ describe('dashboardGeneratorService', () => {
     ];
 
     const powerEntities = dashboardGeneratorService.getEntitiesForCategory('power', mixedSensors);
-    const ids = powerEntities.map(e => e.entity_id);
+    const ids = powerEntities.map((e) => e.entity_id);
 
     expect(ids).toContain('sensor.main_power');
     expect(ids).toContain('sensor.energy_total');
@@ -105,7 +100,7 @@ describe('dashboardGeneratorService', () => {
     positionedCards.forEach((card) => {
       rows.set(card.layout.y, (rows.get(card.layout.y) || 0) + 1);
     });
-    rows.forEach(countInRow => expect(countInRow).toBeLessThanOrEqual(2));
+    rows.forEach((countInRow) => expect(countInRow).toBeLessThanOrEqual(2));
   });
 
   it('caps category entity count at six', () => {
@@ -122,7 +117,7 @@ describe('dashboardGeneratorService', () => {
   });
 
   it('keeps category help text and ids in sync with registry', () => {
-    const ids = DASHBOARD_CATEGORIES.map(c => c.id);
+    const ids = DASHBOARD_CATEGORIES.map((c) => c.id);
     expect(ids).toContain('lights');
     expect(ids).toContain('power');
   });

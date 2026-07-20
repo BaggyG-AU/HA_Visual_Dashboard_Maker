@@ -102,7 +102,10 @@ export const CardModCardRenderer: React.FC<CardModCardRendererProps> = ({
         {wrappedCard && (
           <div style={{ marginBottom: '12px' }}>
             <Text style={{ color: '#888', fontSize: '12px' }}>
-              Wraps: <Text code style={{ fontSize: '11px' }}>{wrappedCard.type || 'unknown'}</Text>
+              Wraps:{' '}
+              <Text code style={{ fontSize: '11px' }}>
+                {wrappedCard.type || 'unknown'}
+              </Text>
             </Text>
           </div>
         )}

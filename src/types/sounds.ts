@@ -1,4 +1,5 @@
-export type SoundEffect = 'click' | 'success' | 'error' | 'toggle-on' | 'toggle-off' | 'notification';
+export type SoundEffect =
+  'click' | 'success' | 'error' | 'toggle-on' | 'toggle-off' | 'notification';
 
 export interface SoundSettings {
   enabled: boolean;

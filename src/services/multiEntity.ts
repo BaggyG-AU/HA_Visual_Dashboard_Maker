@@ -9,25 +9,9 @@ import type {
   BatchActionType,
 } from '../types/multiEntity';
 
-const ON_STATES = new Set([
-  'on',
-  'open',
-  'playing',
-  'home',
-  'locked',
-  'active',
-  'heat',
-  'cool',
-]);
+const ON_STATES = new Set(['on', 'open', 'playing', 'home', 'locked', 'active', 'heat', 'cool']);
 
-const OFF_STATES = new Set([
-  'off',
-  'closed',
-  'idle',
-  'not_home',
-  'unlocked',
-  'standby',
-]);
+const OFF_STATES = new Set(['off', 'closed', 'idle', 'not_home', 'unlocked', 'standby']);
 
 const numericState = (state: unknown): number | null => {
   if (typeof state === 'number') {
@@ -52,7 +36,9 @@ export const normalizeEntityIdList = (entities: unknown[] | undefined): string[]
       }
       return undefined;
     })
-    .filter((entityId): entityId is string => typeof entityId === 'string' && entityId.trim().length > 0);
+    .filter(
+      (entityId): entityId is string => typeof entityId === 'string' && entityId.trim().length > 0,
+    );
 };
 
 export const resolveMultiEntityIds = (card: Pick<Card, 'entity' | 'entities'>): string[] => {
@@ -88,7 +74,10 @@ const entityStateValue = (entityId: string, states: EntityStates): string | null
   return states[entityId]?.state ?? null;
 };
 
-export const buildAggregateSnapshot = (entityIds: string[], states: EntityStates): AggregateSnapshot => {
+export const buildAggregateSnapshot = (
+  entityIds: string[],
+  states: EntityStates,
+): AggregateSnapshot => {
   const total = entityIds.length;
   let available = 0;
   let onCount = 0;
@@ -213,7 +202,11 @@ const domainFor = (entityId: string): string => {
   return entityId.split('.')[0];
 };
 
-const buildOperation = (entityId: string, service: string, serviceData: Record<string, unknown> = {}): BatchOperation => ({
+const buildOperation = (
+  entityId: string,
+  service: string,
+  serviceData: Record<string, unknown> = {},
+): BatchOperation => ({
   entityId,
   service,
   serviceData: {
@@ -237,9 +230,13 @@ export const planBatchAction = (
   const action = normalizeBatchAction(actionInput);
   switch (action.type) {
     case 'turn_on':
-      return entityIds.map((entityId) => buildOperation(entityId, `${domainFor(entityId)}.turn_on`));
+      return entityIds.map((entityId) =>
+        buildOperation(entityId, `${domainFor(entityId)}.turn_on`),
+      );
     case 'turn_off':
-      return entityIds.map((entityId) => buildOperation(entityId, `${domainFor(entityId)}.turn_off`));
+      return entityIds.map((entityId) =>
+        buildOperation(entityId, `${domainFor(entityId)}.turn_off`),
+      );
     case 'toggle':
       return entityIds.map((entityId) => {
         const nextService = isOnState(entityStateValue(entityId, states))
@@ -260,13 +257,21 @@ export const planBatchAction = (
         });
       });
     case 'call_service':
-      return entityIds.map((entityId) => buildOperation(entityId, action.service || `${domainFor(entityId)}.toggle`, action.service_data));
+      return entityIds.map((entityId) =>
+        buildOperation(
+          entityId,
+          action.service || `${domainFor(entityId)}.toggle`,
+          action.service_data,
+        ),
+      );
     default:
       return [];
   }
 };
 
-export const isDestructiveBatchAction = (actionInput: BatchActionConfig | BatchActionType): boolean => {
+export const isDestructiveBatchAction = (
+  actionInput: BatchActionConfig | BatchActionType,
+): boolean => {
   const action = normalizeBatchAction(actionInput);
   if (action.type === 'turn_off') return true;
   if (action.type === 'set_state') {

@@ -30,18 +30,18 @@ Read these files BEFORE writing any code. They contain immutable rules, architec
 
 Feature 4.1 was delivered successfully and establishes the pattern you MUST follow. Study these files:
 
-| Purpose | File |
-|---------|------|
-| **Types** | `src/features/carousel/types.ts` |
-| **Service** | `src/features/carousel/carouselService.ts` |
-| **Feature component** | `src/features/carousel/SwiperCarousel.tsx` |
-| **Card renderer** | `src/components/cards/SwiperCardRenderer.tsx` |
-| **Card registry entry** | `src/services/cardRegistry.ts` (search `custom:swipe-card`) |
-| **BaseCard dispatch** | `src/components/BaseCard.tsx` (search `swiper-card`) |
-| **DSL** | `tests/support/dsl/carousel.ts` |
-| **DSL registration** | `tests/support/index.ts` |
-| **E2E tests** | `tests/e2e/carousel.spec.ts`, `tests/e2e/carousel.visual.spec.ts` |
-| **Unit tests** | `tests/unit/carousel-service.spec.ts` |
+| Purpose                 | File                                                              |
+| ----------------------- | ----------------------------------------------------------------- |
+| **Types**               | `src/features/carousel/types.ts`                                  |
+| **Service**             | `src/features/carousel/carouselService.ts`                        |
+| **Feature component**   | `src/features/carousel/SwiperCarousel.tsx`                        |
+| **Card renderer**       | `src/components/cards/SwiperCardRenderer.tsx`                     |
+| **Card registry entry** | `src/services/cardRegistry.ts` (search `custom:swipe-card`)       |
+| **BaseCard dispatch**   | `src/components/BaseCard.tsx` (search `swiper-card`)              |
+| **DSL**                 | `tests/support/dsl/carousel.ts`                                   |
+| **DSL registration**    | `tests/support/index.ts`                                          |
+| **E2E tests**           | `tests/e2e/carousel.spec.ts`, `tests/e2e/carousel.visual.spec.ts` |
+| **Unit tests**          | `tests/unit/carousel-service.spec.ts`                             |
 
 Follow the same structure, naming conventions, and integration points exactly.
 
@@ -82,15 +82,15 @@ Follow the same structure, naming conventions, and integration points exactly.
 
 ### Code Organization (mirror Feature 4.1 pattern)
 
-| Purpose | Path |
-|---------|------|
-| Types | `src/features/accordion/types.ts` |
-| Service | `src/features/accordion/accordionService.ts` |
-| Feature component | `src/features/accordion/AccordionPanel.tsx` |
-| Card renderer | `src/components/cards/AccordionCardRenderer.tsx` |
-| Card registry | Add entry in `src/services/cardRegistry.ts` |
-| BaseCard dispatch | Add case in `src/components/BaseCard.tsx` |
-| PropertiesPanel | Add accordion-specific controls in `src/components/PropertiesPanel.tsx` |
+| Purpose           | Path                                                                    |
+| ----------------- | ----------------------------------------------------------------------- |
+| Types             | `src/features/accordion/types.ts`                                       |
+| Service           | `src/features/accordion/accordionService.ts`                            |
+| Feature component | `src/features/accordion/AccordionPanel.tsx`                             |
+| Card renderer     | `src/components/cards/AccordionCardRenderer.tsx`                        |
+| Card registry     | Add entry in `src/services/cardRegistry.ts`                             |
+| BaseCard dispatch | Add case in `src/components/BaseCard.tsx`                               |
+| PropertiesPanel   | Add accordion-specific controls in `src/components/PropertiesPanel.tsx` |
 
 ### YAML Schema
 
@@ -101,7 +101,7 @@ type: custom:expander-card
 expand_mode: single
 style: bordered
 sections:
-  - title: "Lights"
+  - title: 'Lights'
     icon: mdi:lightbulb
     default_expanded: true
     cards:
@@ -109,12 +109,12 @@ sections:
         entity: light.living_room
       - type: button
         entity: light.kitchen
-  - title: "Climate"
+  - title: 'Climate'
     icon: mdi:thermometer
     cards:
       - type: thermostat
         entity: climate.living_room
-  - title: "Security"
+  - title: 'Security'
     icon: mdi:shield
     cards:
       - type: alarm-panel
@@ -166,6 +166,7 @@ When adding accordion-specific controls to `PropertiesPanel.tsx`, you **MUST** f
 ## Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [ ] Accordion renders with collapsible sections
 - [ ] Click header to expand/collapse works
 - [ ] Single-expand and multi-expand modes work
@@ -177,6 +178,7 @@ When adding accordion-specific controls to `PropertiesPanel.tsx`, you **MUST** f
 - [ ] All unit and E2E tests pass
 
 **Should Have (Nice to Have)**:
+
 - [ ] Nested accordion support (up to 3 levels)
 - [ ] Custom header icons (MDI)
 - [ ] Multiple style modes (bordered, borderless, ghost)
@@ -184,6 +186,7 @@ When adding accordion-specific controls to `PropertiesPanel.tsx`, you **MUST** f
 - [ ] Default expanded sections configuration
 
 **Won't Have (Out of Scope)**:
+
 - [ ] Drag-and-drop to reorder sections at runtime
 - [ ] Animated section reordering
 - [ ] Accordion within carousel slides (complex cross-container nesting)
@@ -195,6 +198,7 @@ When adding accordion-specific controls to `PropertiesPanel.tsx`, you **MUST** f
 ### Unit Tests
 
 Create `tests/unit/accordion-service.spec.ts`:
+
 - Configuration parsing and validation
 - Expand mode logic (single vs multi)
 - Section normalization
@@ -204,6 +208,7 @@ Create `tests/unit/accordion-service.spec.ts`:
 ### E2E Tests (DSL-first only)
 
 Create `tests/support/dsl/accordion.ts` (`AccordionDSL`):
+
 - `addAccordionCard()` — add from card palette
 - `clickSectionHeader(index)` — toggle expand/collapse
 - `expectSectionExpanded(index)` / `expectSectionCollapsed(index)`
@@ -216,6 +221,7 @@ Create `tests/support/dsl/accordion.ts` (`AccordionDSL`):
 Register `AccordionDSL` in `tests/support/index.ts` (add import, interface field, and instantiation — follow `CarouselDSL` pattern exactly).
 
 Create `tests/e2e/accordion.spec.ts`:
+
 - Add accordion card from palette
 - Click section header to expand/collapse
 - Single-expand mode only allows one open section
@@ -226,6 +232,7 @@ Create `tests/e2e/accordion.spec.ts`:
 - PropertiesPanel controls update accordion live
 
 Create `tests/e2e/accordion.visual.spec.ts`:
+
 - Visual snapshots: expanded, collapsed, bordered, borderless, ghost styles
 
 ### Accessibility
@@ -283,6 +290,7 @@ Create `tests/e2e/accordion.visual.spec.ts`:
 ## Output Format
 
 Respond with:
+
 1. A concise implementation plan for Feature 4.2
 2. File-by-file change list (planned)
 3. Test plan + commands
@@ -302,6 +310,7 @@ After implementation, run exactly one **Fast Gate** pass and then stop:
 4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
 
 After this single Fast Gate run, provide a summary report that includes:
+
 - Exact commands executed
 - Pass/fail status for each command
 - Any failing tests with artifact paths under `test-results/artifacts/**`

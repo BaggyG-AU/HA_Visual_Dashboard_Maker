@@ -382,7 +382,8 @@ describe('Editor Mode Store', () => {
     });
 
     it('should rollback to last valid state', () => {
-      const { setLastValidYaml, setLastValidConfig, rollbackToLastValid } = useEditorModeStore.getState();
+      const { setLastValidYaml, setLastValidConfig, rollbackToLastValid } =
+        useEditorModeStore.getState();
 
       setLastValidYaml(validYaml);
       setLastValidConfig(validConfig);

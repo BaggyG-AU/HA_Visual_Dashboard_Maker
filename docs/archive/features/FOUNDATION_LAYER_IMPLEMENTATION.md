@@ -13,6 +13,7 @@
 This document tracks the implementation of Phase 1 (Foundation Layer) features from the HAVDM Advanced Features roadmap. These foundational features provide the infrastructure for visual enhancement and serve as dependencies for Phases 2-7.
 
 **Features in Phase 1**:
+
 1. ✅ Color Picker Component (react-colorful) - **COMPLETE**
 2. ✅ Animation CSS Framework - **CURRENT FOCUS**
 3. ⏳ Typography/Google Fonts System
@@ -31,6 +32,7 @@ This document tracks the implementation of Phase 1 (Foundation Layer) features f
 ### Implementation Checklist
 
 #### Phase 1: Setup & Dependencies (Day 1)
+
 - [x] Install `react-colorful` package
 - [x] Verify version compatibility with React 19 (current app builds & runs with React 19 + react-colorful)
 - [x] Check bundle size impact
@@ -38,6 +40,7 @@ This document tracks the implementation of Phase 1 (Foundation Layer) features f
 - [x] Create type definitions for color formats
 
 #### Phase 2: Core Component (Days 1-2)
+
 - [x] Create `src/components/ColorPicker.tsx`
 - [x] Create `src/types/color.ts` for TypeScript types
 - [x] Create `src/hooks/useRecentColors.ts` for history management
@@ -54,6 +57,7 @@ This document tracks the implementation of Phase 1 (Foundation Layer) features f
 - [x] Style with Ant Design theme compatibility
 
 #### Phase 3: PropertiesPanel Integration (Days 2-3)
+
 - [x] Audit all color fields in PropertiesPanel:
   - [x] Button card: `color`, `icon_color`
   - [x] Mushroom cards: `icon_color`
@@ -71,6 +75,7 @@ This document tracks the implementation of Phase 1 (Foundation Layer) features f
 - [x] Ensure popover positioning works in scrollable panel
 
 #### Phase 4: YAML Persistence (Day 3)
+
 - [x] Test color format serialization:
   - [x] Hex format: `#RRGGBB`
   - [x] Hex with alpha: `#RRGGBBAA` (accepted/preserved when provided)
@@ -90,6 +95,7 @@ This document tracks the implementation of Phase 1 (Foundation Layer) features f
   - [x] Color format conversions
 
 #### Phase 5: Unit Tests (Day 4)
+
 - [x] Create `tests/unit/ColorPicker.spec.ts`
 - [x] Test color format conversions:
   - [x] Hex to RGB conversion accuracy
@@ -113,6 +119,7 @@ This document tracks the implementation of Phase 1 (Foundation Layer) features f
   - [x] Persistence
 
 #### Phase 6: E2E Tests (Day 4-5)
+
 - [x] Create `tests/e2e/color-picker.spec.ts`
 - [x] Create `tests/support/dsl/colorPicker.ts` DSL helper
 - [x] Test opening color picker:
@@ -160,11 +167,12 @@ This document tracks the implementation of Phase 1 (Foundation Layer) features f
 **E2E Test Results**: 14 of 15 tests passing (93.3%), 1 skipped due to Monaco editor test limitation
 
 #### Phase 7: Visual Regression & Accessibility (Day 5)
- - [x] Visual regression tests:
-   - [x] Color picker component appearance (closed + popover states)
-   - [x] Color picker in various states (open, closed, focused)
-   - [x] Recent colors swatches rendering
-   - [x] Popover positioning within scrollable PropertiesPanel
+
+- [x] Visual regression tests:
+  - [x] Color picker component appearance (closed + popover states)
+  - [x] Color picker in various states (open, closed, focused)
+  - [x] Recent colors swatches rendering
+  - [x] Popover positioning within scrollable PropertiesPanel
 - [x] Accessibility tests:
   - [x] Keyboard-only navigation test (open via swatch, enter to confirm, escape to close)
   - [ ] Screen reader test (manual)
@@ -174,6 +182,7 @@ This document tracks the implementation of Phase 1 (Foundation Layer) features f
   - [⏭️] Visual regression + keyboard focus E2E in Electron (SKIPPED) — Playwright reports page focus as "inactive" in Electron despite manual verification; revisit when stable window-focus hook is available.
 
 #### Phase 8: Documentation (Day 5)
+
 - [x] Update README with color picker usage
 - [x] Document keyboard shortcuts
 - [x] Add examples to user guide
@@ -182,6 +191,7 @@ This document tracks the implementation of Phase 1 (Foundation Layer) features f
 - [x] Document component API (props, events)
 
 #### Phase 9: Integration & Testing
+
 - [x] Run all unit tests: `npm run test:unit`
 - [x] Run lint: `npm run lint` (warnings only)
 - [x] Run Playwright tests (latest run): **269 passed, 22 skipped, 0 failed** (see `test-results/results.json`)
@@ -198,17 +208,20 @@ This document tracks the implementation of Phase 1 (Foundation Layer) features f
 ### Dependencies Review
 
 #### Required NPM Packages
+
 - [x] `react-colorful` - Install via: `npm install react-colorful`
   - Size: ~2KB gzipped
   - React 19 compatible: YES (check package.json peer dependencies)
   - TypeScript support: YES (built-in types)
 
 #### Existing Dependencies (Already Available)
+
 - [x] `antd` (v6.1.0) - For Form, Input, Popover components
 - [x] `react` (v19.2.3) - Core React functionality
 - [x] `zustand` (v5.0.9) - If needed for global state (likely not needed)
 
 #### File Structure
+
 ```
 src/
 ├── components/
@@ -240,6 +253,7 @@ tests/
 ### Acceptance Criteria
 
 **Must Have (Blocking Release)**:
+
 - [x] ColorPicker component renders with hue/sat/alpha controls
 - [ ] Format toggle works (hex/RGB/HSL)
 - [ ] Recent colors display and work (max 10)
@@ -254,12 +268,14 @@ tests/
 - [ ] Documentation complete
 
 **Should Have (Nice to Have)**:
+
 - [ ] Visual regression tests verified
 - [ ] Manual accessibility testing complete
 - [ ] Performance benchmarks acceptable
 - [ ] User guide with examples
 
 **Won't Have (Future)**:
+
 - Named color constants (e.g., "primary", "accent") - Phase 7
 - Color themes/presets - Phase 7
 - Advanced color theory tools (complementary colors) - Future
@@ -272,6 +288,7 @@ tests/
 **Problem**: E2E test "should update YAML when color is changed" consistently failed with Monaco editor unable to read content.
 
 **Debugging Attempts** (Jan 6, 2026):
+
 1. **Attempt 1**: Changed from `inputValue()` to `yamlEditor.getEditorContent()` DSL method
    - Error: Returned empty string
 2. **Attempt 2**: Added `expect.poll()` to wait for Monaco model initialization (pattern from entity-browser.spec.ts)
@@ -291,6 +308,7 @@ tests/
 **Resolution**: Test skipped with detailed documentation. Functionality works manually and via unit tests. E2E coverage: 14/15 tests (93.3%).
 
 **Future Investigation**:
+
 - Consider refactoring PropertiesPanel to use shared YamlEditor component
 - Investigate Tab component lifecycle interaction with Monaco
 - Consider alternative test approach (e.g., checking form state instead of Monaco content)
@@ -298,36 +316,40 @@ tests/
 #### Key Implementation Decisions
 
 **ColorPicker Input Commit Behavior**:
+
 - **Decision**: Only commit onChange on Enter/blur, not on every keystroke
 - **Rationale**: Allows Escape key to revert uncommitted changes, follows standard form UX
 - **Impact**: Fixed Escape key test failure
 
 **Invalid Color Handling**:
+
 - **Decision**: Revert to last valid value on blur if input is invalid
 - **Rationale**: Prevents form from being in invalid state, provides clear feedback to user
 - **Impact**: Improved UX, fixed invalid input test failure
 
 **PropertiesPanel Width**:
+
 - **Decision**: Widened from 300px to 450px
 - **Rationale**: Accommodates ColorPicker UI without cramping (color preview, recent colors)
 - **Impact**: Better UX, fixed layout test failures
 
 **Nested Component Test IDs**:
+
 - **Decision**: ColorPickerInput elements get `-picker` suffix (e.g., `button-card-color-input-picker`)
 - **Rationale**: Avoids ID collisions between wrapper and nested picker, enables stable selectors
 - **Impact**: DSL methods target nested elements correctly
 
 ### Risk Register
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| react-colorful incompatible with React 19 | High | Low | ✅ Checked - fully compatible |
-| Performance issues with many color pickers | Medium | Low | ✅ Using React.memo, no issues observed |
-| Accessibility gaps | Medium | Medium | ✅ ARIA labels added, keyboard nav tested |
-| YAML format conflicts | High | Low | ✅ Tested hex/rgb/hsl formats thoroughly |
-| PropertiesPanel layout breaks | Medium | Medium | ✅ Widened to 450px, tested with multiple cards |
-| Recent colors localStorage issues | Low | Low | ✅ Error handling added, localStorage tests pass |
-| Monaco editor test detection | Medium | High | ⚠️ OCCURRED - test skipped, functionality confirmed manually |
+| Risk                                       | Impact | Probability | Mitigation                                                   |
+| ------------------------------------------ | ------ | ----------- | ------------------------------------------------------------ |
+| react-colorful incompatible with React 19  | High   | Low         | ✅ Checked - fully compatible                                |
+| Performance issues with many color pickers | Medium | Low         | ✅ Using React.memo, no issues observed                      |
+| Accessibility gaps                         | Medium | Medium      | ✅ ARIA labels added, keyboard nav tested                    |
+| YAML format conflicts                      | High   | Low         | ✅ Tested hex/rgb/hsl formats thoroughly                     |
+| PropertiesPanel layout breaks              | Medium | Medium      | ✅ Widened to 450px, tested with multiple cards              |
+| Recent colors localStorage issues          | Low    | Low         | ✅ Error handling added, localStorage tests pass             |
+| Monaco editor test detection               | Medium | High        | ⚠️ OCCURRED - test skipped, functionality confirmed manually |
 
 ### Compliance Checklist
 
@@ -339,22 +361,27 @@ tests/
 ### Progress Tracking
 
 **Day 1**: Setup & Core Component
+
 - Status: Not started
 - Blockers: None
 
 **Day 2**: Component Completion & Integration
+
 - Status: Not started
 - Blockers: TBD
 
 **Day 3**: YAML Persistence & Testing Setup
+
 - Status: Not started
 - Blockers: TBD
 
 **Day 4**: Unit & E2E Tests
+
 - Status: Not started
 - Blockers: TBD
 
 **Day 5**: Documentation & Polish
+
 - Status: Not started
 - Blockers: TBD
 
@@ -367,7 +394,7 @@ tests/
 **Estimated Effort**: 4-6 days
 **Status**: ⏳ Not Started
 
-*Implementation details to be added when Feature 1.1 is complete.*
+_Implementation details to be added when Feature 1.1 is complete._
 
 ---
 
@@ -378,7 +405,7 @@ tests/
 **Estimated Effort**: 5-7 days
 **Status**: ⏳ Not Started
 
-*Implementation details to be added when Feature 1.2 is complete.*
+_Implementation details to be added when Feature 1.2 is complete._
 
 ---
 
@@ -389,7 +416,7 @@ tests/
 **Estimated Effort**: 3-4 days
 **Status**: ⏳ Not Started
 
-*Implementation details to be added when Feature 1.3 is complete.*
+_Implementation details to be added when Feature 1.3 is complete._
 
 ---
 
@@ -400,7 +427,7 @@ tests/
 **Estimated Effort**: 2-3 days
 **Status**: ⏳ Not Started
 
-*Implementation details to be added when Feature 1.4 is complete.*
+_Implementation details to be added when Feature 1.4 is complete._
 
 ---
 
@@ -411,11 +438,13 @@ tests/
 **Completion**: 0/5 features (0%)
 
 **Next Steps**:
+
 1. Complete Feature 1.1 (Color Picker Component)
 2. Review and update this document daily
 3. Move to Feature 1.2 when Feature 1.1 is complete
 
 **Notes**:
+
 - This document should be updated daily with progress
 - Each feature should have detailed implementation notes added before starting
 - Blockers should be documented immediately

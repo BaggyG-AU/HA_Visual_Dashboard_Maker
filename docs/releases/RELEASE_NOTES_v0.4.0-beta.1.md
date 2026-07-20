@@ -26,6 +26,7 @@
 - Improved ARIA labeling for core controls and recent colors list items.
 
 Key files:
+
 - `src/components/ColorPicker.tsx`
 - `src/components/ColorPickerInput.tsx`
 - `src/hooks/useRecentColors.ts`
@@ -41,6 +42,7 @@ Key files:
 - Added a small, testable debounce utility to keep behavior deterministic and unit-testable.
 
 Key files:
+
 - `src/components/PropertiesPanel.tsx`
 - `src/store/dashboardStore.ts`
 - `src/utils/debouncedCommit.ts`
@@ -58,6 +60,7 @@ Key files:
 - Added E2E coverage for Color Picker integration in the Properties Panel.
 
 Key files:
+
 - `tests/e2e/color-picker.spec.ts`
 - `tests/support/dsl/colorPicker.ts`
 - `tests/support/dsl/propertiesPanel.ts`
@@ -69,6 +72,7 @@ Key files:
 - Added/updated dashboard store tests for batching behavior.
 
 Key files:
+
 - `tests/unit/ColorPicker.spec.tsx`
 - `tests/unit/colorConversions.spec.ts`
 - `tests/unit/useRecentColors.spec.ts`
@@ -81,6 +85,7 @@ Key files:
 - Reduced net new warning count introduced by recent work (kept warnings under the pre-existing baseline).
 
 Key files:
+
 - `.eslintrc.json`
 - `.eslintignore`
 
@@ -99,6 +104,7 @@ Phase 8 documentation is completed for the Color Picker Foundation Layer work:
   - Skipped tests registry (with revisit triggers)
 
 Key files:
+
 - `docs/archive/features/FOUNDATION_LAYER_IMPLEMENTATION.md`
 - `docs/features/COLOR_PICKER_COMPONENT_API.md`
 - `docs/product/COLOR_PICKER_USER_GUIDE.md`
@@ -111,14 +117,17 @@ Key files:
 ## ✅ Test Results
 
 Latest recorded Playwright run (`test-results/results.json`):
+
 - **269 passed**
 - **22 skipped**
 - **0 failed**
 
 Vitest:
+
 - `npm run test:unit` ✅
 
 ESLint:
+
 - `npm run lint` ✅ (warnings only)
 
 ---
@@ -134,12 +143,12 @@ See the Skipped Tests Registry in `docs/testing/TESTING_STANDARDS.md` for detail
 
 ## 📦 Upgrade Instructions
 
-1) Pull latest changes (or merge the feature branch into your target branch).
-2) Install dependencies:
+1. Pull latest changes (or merge the feature branch into your target branch).
+2. Install dependencies:
    ```bash
    npm install
    ```
-3) Recommended local verification:
+3. Recommended local verification:
    ```bash
    npm run lint
    npm run test:unit
@@ -166,4 +175,3 @@ This release includes changes after merge commit `18d2fcf` (“Merge pull reques
 ## 🎯 Summary
 
 **v0.4.0-beta.1** advances the Foundation Layer with a production-ready Color Picker workflow, stronger automated coverage, and smoother editing UX by eliminating spammy update feedback and reducing state/history churn during rapid edits.
-

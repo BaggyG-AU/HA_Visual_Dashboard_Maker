@@ -54,7 +54,10 @@ const parseDefault = (value?: StateIconsMap): { icon?: string; color?: string } 
   };
 };
 
-const buildValue = (rows: MappingRow[], defaults: { icon?: string; color?: string }): StateIconsMap => {
+const buildValue = (
+  rows: MappingRow[],
+  defaults: { icon?: string; color?: string },
+): StateIconsMap => {
   const next: StateIconsMap = {};
 
   rows.forEach((row) => {
@@ -93,16 +96,27 @@ export const StateIconMappingControls: React.FC<StateIconMappingControlsProps> =
   const entity = entityId ? getEntity(entityId) : null;
   const currentState = entity?.state ?? 'unknown';
 
-  const preview = useMemo(() => getStateIcon({
-    entityId: entityId ?? undefined,
-    state: currentState,
-    stateIcons: value,
-    entityAttributes: entity?.attributes,
-  }), [entity?.attributes, entityId, currentState, value]);
+  const preview = useMemo(
+    () =>
+      getStateIcon({
+        entityId: entityId ?? undefined,
+        state: currentState,
+        stateIcons: value,
+        entityAttributes: entity?.attributes,
+      }),
+    [entity?.attributes, entityId, currentState, value],
+  );
 
   const previewStates = useMemo(() => {
     const rowStates = rows.map((row) => sanitizeStateKey(row.state)).filter(Boolean);
-    const stateSet = new Set<string>([currentState, ...rowStates, 'on', 'off', 'unavailable', 'unknown']);
+    const stateSet = new Set<string>([
+      currentState,
+      ...rowStates,
+      'on',
+      'off',
+      'unavailable',
+      'unknown',
+    ]);
     return Array.from(stateSet);
   }, [currentState, rows]);
 
@@ -144,9 +158,12 @@ export const StateIconMappingControls: React.FC<StateIconMappingControlsProps> =
 
   return (
     <div data-testid="state-icon-mapping-controls" style={{ marginTop: 16 }}>
-      <Text strong style={{ color: 'white' }}>State Icons</Text>
+      <Text strong style={{ color: 'white' }}>
+        State Icons
+      </Text>
       <Text type="secondary" style={{ display: 'block', fontSize: 12, marginTop: 4 }}>
-        Map entity states to icon and color overrides. User mappings take precedence over domain defaults.
+        Map entity states to icon and color overrides. User mappings take precedence over domain
+        defaults.
       </Text>
 
       {!entityId && (
@@ -159,7 +176,11 @@ export const StateIconMappingControls: React.FC<StateIconMappingControlsProps> =
       )}
 
       <Card size="small" style={{ marginTop: 12, background: '#111', borderColor: '#303030' }}>
-        <Space align="center" size="middle" style={{ width: '100%', justifyContent: 'space-between' }}>
+        <Space
+          align="center"
+          size="middle"
+          style={{ width: '100%', justifyContent: 'space-between' }}
+        >
           <Space align="center" size="small">
             <MdiIcon
               icon={preview.icon}
@@ -168,10 +189,17 @@ export const StateIconMappingControls: React.FC<StateIconMappingControlsProps> =
               testId="state-icon-preview-icon"
             />
             <div>
-              <Text style={{ color: '#f0f0f0', display: 'block' }} data-testid="state-icon-preview-state">
+              <Text
+                style={{ color: '#f0f0f0', display: 'block' }}
+                data-testid="state-icon-preview-state"
+              >
                 State: {currentState}
               </Text>
-              <Text type="secondary" style={{ fontSize: 12 }} data-testid="state-icon-preview-source">
+              <Text
+                type="secondary"
+                style={{ fontSize: 12 }}
+                data-testid="state-icon-preview-source"
+              >
                 Resolved from: {preview.source}
               </Text>
             </div>
@@ -188,7 +216,11 @@ export const StateIconMappingControls: React.FC<StateIconMappingControlsProps> =
 
       <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         {rows.map((row, index) => (
-          <Card key={row.key} size="small" style={{ background: '#161616', borderColor: '#2f2f2f' }}>
+          <Card
+            key={row.key}
+            size="small"
+            style={{ background: '#161616', borderColor: '#2f2f2f' }}
+          >
             <Space direction="vertical" style={{ width: '100%' }} size="small">
               <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">
                 <Text style={{ color: '#ddd' }}>Mapping #{index + 1}</Text>

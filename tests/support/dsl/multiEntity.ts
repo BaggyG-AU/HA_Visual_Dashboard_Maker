@@ -27,7 +27,9 @@ export class MultiEntityDSL {
       await input.type(entityId);
 
       const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
-      const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(entityId, 'i') }).first();
+      const option = dropdown
+        .locator('.ant-select-item-option', { hasText: new RegExp(entityId, 'i') })
+        .first();
       if (await option.count()) {
         await expect(option).toBeVisible();
         await option.click();
@@ -80,7 +82,9 @@ export class MultiEntityDSL {
 
     // Close any stale overlay/dropdown before interacting with the mode selector.
     await this.window.keyboard.press('Escape');
-    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, { timeout: 2000 });
+    await expect(this.window.locator('.ant-select-dropdown:visible')).toHaveCount(0, {
+      timeout: 2000,
+    });
 
     try {
       await select.click();
@@ -89,7 +93,9 @@ export class MultiEntityDSL {
     }
 
     const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
-    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(mode, 'i') }).first();
+    const option = dropdown
+      .locator('.ant-select-item-option', { hasText: new RegExp(mode, 'i') })
+      .first();
     await expect(option).toBeVisible();
     await option.click();
     await expect(select).toContainText(new RegExp(mode, 'i'));
@@ -100,7 +106,9 @@ export class MultiEntityDSL {
     await expect(select).toBeVisible();
     await select.click();
     const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
-    const option = dropdown.locator('.ant-select-item-option', { hasText: new RegExp(value.replace('_', ' '), 'i') }).first();
+    const option = dropdown
+      .locator('.ant-select-item-option', { hasText: new RegExp(value.replace('_', ' '), 'i') })
+      .first();
     await expect(option).toBeVisible();
     await option.click();
   }

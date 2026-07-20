@@ -98,7 +98,8 @@ describe('yamlService', () => {
             title: 'Test View',
             path: 'test',
             type: 'custom:grid-layout', // HAVDM-specific
-            layout: { // HAVDM-specific
+            layout: {
+              // HAVDM-specific
               grid_template_columns: 'repeat(12, 1fr)',
               grid_template_rows: 'repeat(auto-fill, 56px)',
               grid_gap: '8px',

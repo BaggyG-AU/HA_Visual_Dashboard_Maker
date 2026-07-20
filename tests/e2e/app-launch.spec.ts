@@ -38,7 +38,7 @@ test.describe('Application Launch', () => {
       const dimensions = await ctx.window.evaluate(() => {
         return {
           width: window.innerWidth,
-          height: window.innerHeight
+          height: window.innerHeight,
         };
       });
 
@@ -93,7 +93,7 @@ test.describe('Application Launch', () => {
           !error.includes('Extension') &&
           !error.includes('favicon') &&
           !error.includes('404') &&
-          !error.toLowerCase().includes('warning')
+          !error.toLowerCase().includes('warning'),
       );
 
       // App should not have critical errors

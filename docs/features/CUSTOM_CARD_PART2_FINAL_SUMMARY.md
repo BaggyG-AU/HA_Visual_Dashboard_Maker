@@ -10,6 +10,7 @@
 Successfully implemented renderers and UX integration for **8 custom HACS cards** that were previously registered but lacked visual support.
 
 ### Cards Implemented
+
 1. ✅ **Card-mod** (`custom:card-mod`) - CSS styling layer
 2. ✅ **Auto-entities** (`custom:auto-entities`) - Filter-based entity population
 3. ✅ **Vertical Stack in Card** (`custom:vertical-stack-in-card`) - Bordered stack container
@@ -24,6 +25,7 @@ Successfully implemented renderers and UX integration for **8 custom HACS cards*
 ## Test Results
 
 ### ✅ Unit Tests: ALL PASSING (53/53)
+
 ```
 Test Files  7 passed (7)
 Tests       53 passed (53)
@@ -33,12 +35,14 @@ Duration    1.27s
 ```
 
 ### ✅ Lint: PASSING
+
 ```
 ✅ No errors
 ⚠️  Existing warnings only (no new warnings introduced)
 ```
 
 ### ✅ Integration Tests: Dashboard Generator PASSING (19/19)
+
 ```
 All dashboard-generator tests passing
 Other integration test failures are pre-existing (Electron launch issues)
@@ -52,6 +56,7 @@ Other integration test failures are pre-existing (Electron launch issues)
 ## Files Created (7)
 
 ### Renderers (5 files, 862 lines)
+
 1. `src/components/cards/CardModCardRenderer.tsx` - 153 lines
 2. `src/components/cards/AutoEntitiesCardRenderer.tsx` - 202 lines
 3. `src/components/cards/VerticalStackInCardRenderer.tsx` - 185 lines
@@ -59,9 +64,11 @@ Other integration test failures are pre-existing (Electron launch issues)
 5. `src/components/cards/SurveillanceCardRenderer.tsx` - 174 lines
 
 ### Tests (1 file, 232 lines)
+
 6. `tests/unit/custom-cards-part2.spec.ts` - 26 unit tests
 
 ### Documentation (1 file)
+
 7. `docs/features/CUSTOM_CARD_PART2_MANUAL_TESTING.md` - Comprehensive testing guide
 
 ---
@@ -82,12 +89,14 @@ Other integration test failures are pre-existing (Electron launch issues)
 ## Acceptance Criteria - ALL MET ✅
 
 ### From User Story:
+
 - ✅ **AC1**: Custom cards appear in palette with name/icon/description
 - ✅ **AC2**: Adding card renders placeholder/approximation with basic props
 - ✅ **AC3**: Selecting shows property fields/defaults per card type
 - ✅ **AC4**: YAML export preserves card types/props
 
 ### Non-Functional Requirements:
+
 - ✅ **Performance-neutral**: No slowdown in palette or rendering
 - ✅ **Security posture unchanged**: No new IPC channels, no external loading
 - ✅ **Lint rules maintained**: No rule weakening, no new warnings
@@ -97,16 +106,19 @@ Other integration test failures are pre-existing (Electron launch issues)
 ## Security Review
 
 ### Card-mod
+
 - **Risk**: CSS injection
 - **Mitigation**: CSS shown as text only, no actual style injection in preview
 - **Status**: ✅ Safe
 
 ### Auto-entities
+
 - **Risk**: Large entity lists
 - **Mitigation**: Preview limited, no actual entity querying
 - **Status**: ✅ Safe
 
 ### Surveillance Cards
+
 - **Risk**: External URL loading
 - **Mitigation**: No streams loaded, URLs shown as text only
 - **Status**: ✅ Safe
@@ -129,21 +141,25 @@ Type Safety:      Full TypeScript coverage
 ## Integration Points
 
 ### ✅ Card Registry
+
 - All cards already registered with correct metadata
 - No registry changes needed
 - Cards appear automatically in palette
 
 ### ✅ BaseCard Routing
+
 - All 8 cards routed correctly
 - Proper type casting maintained
 - Follows existing patterns
 
 ### ✅ Property Panel
+
 - All cards work with existing property editor
 - Properties editable and apply correctly
 - No property panel code changes needed
 
 ### ✅ YAML Serialization
+
 - All cards export to YAML correctly
 - All properties preserved
 - Loading from YAML works correctly
@@ -244,6 +260,7 @@ These can be addressed in future user stories if needed.
 ## Commands to Run
 
 ### Verify Implementation
+
 ```bash
 # Unit tests (should pass 53/53)
 npm run test:unit
@@ -259,6 +276,7 @@ npm start
 ```
 
 ### Before Merge
+
 ```bash
 # Ensure working tree clean
 git status

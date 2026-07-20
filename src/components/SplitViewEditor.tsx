@@ -19,7 +19,10 @@ interface SplitViewEditorProps {
   selectedCardIndices?: number[];
 
   /** Card selection callback */
-  onCardSelect: (cardIndex: number | null, options?: { mode?: 'replace' | 'toggle' | 'range' }) => void;
+  onCardSelect: (
+    cardIndex: number | null,
+    options?: { mode?: 'replace' | 'toggle' | 'range' },
+  ) => void;
 
   /** Layout change callback (from visual canvas) */
   onLayoutChange: (layout: Layout) => void;
@@ -60,10 +63,7 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
   onCardDelete,
   canPaste,
 }) => {
-  const {
-    config,
-    updateConfig,
-  } = useDashboardStore();
+  const { config, updateConfig } = useDashboardStore();
 
   const {
     syncStatus,
@@ -114,30 +114,36 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
   }, [config]);
 
   // Handle YAML changes from editor
-  const handleYamlChange = useCallback((newYaml: string) => {
-    setYamlContent(newYaml);
-    setPendingYaml(newYaml);
+  const handleYamlChange = useCallback(
+    (newYaml: string) => {
+      setYamlContent(newYaml);
+      setPendingYaml(newYaml);
 
-    // Mark as pending until applied
-    if (newYaml !== lastValidYaml) {
-      setSyncStatus('pending-code');
-    } else {
-      setSyncStatus('synced');
-      setPendingYaml(null);
-    }
-  }, [lastValidYaml, setPendingYaml, setSyncStatus]);
+      // Mark as pending until applied
+      if (newYaml !== lastValidYaml) {
+        setSyncStatus('pending-code');
+      } else {
+        setSyncStatus('synced');
+        setPendingYaml(null);
+      }
+    },
+    [lastValidYaml, setPendingYaml, setSyncStatus],
+  );
 
   // Handle validation changes
-  const handleValidationChange = useCallback((isValid: boolean, error: string | null) => {
-    setIsYamlValid(isValid);
-    setValidationError(error);
+  const handleValidationChange = useCallback(
+    (isValid: boolean, error: string | null) => {
+      setIsYamlValid(isValid);
+      setValidationError(error);
 
-    if (!isValid) {
-      setSyncStatus('error');
-    } else if (pendingYaml && pendingYaml !== lastValidYaml) {
-      setSyncStatus('pending-code');
-    }
-  }, [pendingYaml, lastValidYaml, setValidationError, setSyncStatus]);
+      if (!isValid) {
+        setSyncStatus('error');
+      } else if (pendingYaml && pendingYaml !== lastValidYaml) {
+        setSyncStatus('pending-code');
+      }
+    },
+    [pendingYaml, lastValidYaml, setValidationError, setSyncStatus],
+  );
 
   // Apply YAML changes to visual view
   const handleApplyYaml = useCallback(() => {
@@ -173,7 +179,15 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
     } catch (error) {
       message.error(`Failed to apply YAML: ${(error as Error).message}`);
     }
-  }, [isYamlValid, validationError, pendingYaml, updateConfig, setLastValidYaml, setLastValidConfig, clearPending]);
+  }, [
+    isYamlValid,
+    validationError,
+    pendingYaml,
+    updateConfig,
+    setLastValidYaml,
+    setLastValidConfig,
+    clearPending,
+  ]);
 
   // Rollback YAML to last valid state
   const handleRollback = useCallback(() => {
@@ -225,14 +239,16 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Sync Status Bar */}
-      <div style={{
-        padding: '8px 16px',
-        background: '#1f1f1f',
-        borderBottom: '1px solid #434343',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      }}>
+      <div
+        style={{
+          padding: '8px 16px',
+          background: '#1f1f1f',
+          borderBottom: '1px solid #434343',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <Space>
           {syncStatus === 'synced' && (
             <span style={{ color: '#52c41a', fontSize: '12px' }}>
@@ -250,9 +266,7 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
             </span>
           )}
           {syncStatus === 'error' && (
-            <span style={{ color: '#ff4d4f', fontSize: '12px' }}>
-              ⚠️ Validation Error
-            </span>
+            <span style={{ color: '#ff4d4f', fontSize: '12px' }}>⚠️ Validation Error</span>
           )}
         </Space>
 
@@ -281,11 +295,7 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
           </Tooltip>
 
           <Tooltip title="Sync YAML from current visual state">
-            <Button
-              size="small"
-              icon={<SyncOutlined />}
-              onClick={handleSyncFromVisual}
-            >
+            <Button size="small" icon={<SyncOutlined />} onClick={handleSyncFromVisual}>
               Sync from Visual
             </Button>
           </Tooltip>
@@ -310,7 +320,9 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
         <Allotment defaultSizes={[60, 40]}>
           {/* Left Pane: Visual Canvas */}
           <Allotment.Pane minSize={400}>
-            <div style={{ height: '100%', overflow: 'auto', padding: '16px', background: '#141414' }}>
+            <div
+              style={{ height: '100%', overflow: 'auto', padding: '16px', background: '#141414' }}
+            >
               <GridCanvas
                 view={currentView}
                 selectedCardIndex={selectedCardIndex}
@@ -329,7 +341,9 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
 
           {/* Right Pane: YAML Editor */}
           <Allotment.Pane minSize={400}>
-            <div style={{ height: '100%', overflow: 'auto', padding: '16px', background: '#0d0d0d' }}>
+            <div
+              style={{ height: '100%', overflow: 'auto', padding: '16px', background: '#0d0d0d' }}
+            >
               <YamlEditor
                 value={yamlContent}
                 onChange={handleYamlChange}

@@ -12,7 +12,11 @@ import { ColorPickerDSL } from './colorPicker';
 export class GradientEditorDSL {
   private baseTestId: string;
   private colorPicker: ColorPickerDSL;
-  constructor(private window: Page, private app?: ElectronApplication, baseTestId = 'advanced-style-gradient-input') {
+  constructor(
+    private window: Page,
+    private app?: ElectronApplication,
+    baseTestId = 'advanced-style-gradient-input',
+  ) {
     this.baseTestId = baseTestId;
     this.colorPicker = new ColorPickerDSL(window);
   }
@@ -55,19 +59,26 @@ export class GradientEditorDSL {
 
   private async getVisibleStopColorPickers(): Promise<string[]> {
     return await this.window.evaluate((editorTestId) => {
-      const nodes = Array.from(document.querySelectorAll<HTMLElement>(`[data-testid^="${editorTestId}-stop-color-"][data-testid$="-picker"]`));
+      const nodes = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          `[data-testid^="${editorTestId}-stop-color-"][data-testid$="-picker"]`,
+        ),
+      );
       const isVisible = (el: HTMLElement) => {
         const box = el.getBoundingClientRect();
         return box.width > 0 && box.height > 0 && getComputedStyle(el).visibility !== 'hidden';
       };
-      return nodes.filter(isVisible).map((node) => node.getAttribute('data-testid') || '').filter(Boolean);
+      return nodes
+        .filter(isVisible)
+        .map((node) => node.getAttribute('data-testid') || '')
+        .filter(Boolean);
     }, this.editorTestId);
   }
 
   private async attachPresetDiagnostics(
     testInfo: TestInfo | undefined,
     diagnostics: Record<string, unknown>,
-    label = 'gradient-preset-diagnostics.json'
+    label = 'gradient-preset-diagnostics.json',
   ): Promise<void> {
     const body = JSON.stringify(diagnostics, null, 2);
     if (testInfo?.attach) {
@@ -77,7 +88,11 @@ export class GradientEditorDSL {
       const outDir = path.join(process.cwd(), 'test-results', 'diagnostics');
       await mkdir(outDir, { recursive: true });
       await writeFile(path.join(outDir, label), body, 'utf-8');
-      await writeFile(path.join(outDir, label.replace(/\\.json$/i, `-${Date.now()}.json`)), body, 'utf-8');
+      await writeFile(
+        path.join(outDir, label.replace(/\\.json$/i, `-${Date.now()}.json`)),
+        body,
+        'utf-8',
+      );
     } catch {
       // best-effort only
     }
@@ -94,7 +109,11 @@ export class GradientEditorDSL {
     try {
       await this.window.waitForFunction(
         (editorTestId) => {
-          const nodes = Array.from(document.querySelectorAll<HTMLElement>(`[data-testid^="${editorTestId}-stop-color-"][data-testid$="-picker"]`));
+          const nodes = Array.from(
+            document.querySelectorAll<HTMLElement>(
+              `[data-testid^="${editorTestId}-stop-color-"][data-testid$="-picker"]`,
+            ),
+          );
           const isVisible = (el: HTMLElement) => {
             const box = el.getBoundingClientRect();
             return box.width > 0 && box.height > 0 && getComputedStyle(el).visibility !== 'hidden';
@@ -102,7 +121,7 @@ export class GradientEditorDSL {
           return nodes.filter(isVisible).length === 0;
         },
         this.editorTestId,
-        { timeout: 2000 }
+        { timeout: 2000 },
       );
     } catch (error) {
       const diagnostics = await this.collectFocusDiagnostics();
@@ -132,32 +151,13 @@ export class GradientEditorDSL {
 
   async toggleType(type: 'linear' | 'radial'): Promise<void> {
     await this.openGradientPopover();
-    const clicked = await this.window.evaluate(({ editorTestId, nextType }) => {
-      const inputs = Array.from(document.querySelectorAll<HTMLInputElement>(`[data-testid="${editorTestId}-type-${nextType}"]`));
-      const isVisible = (el: HTMLElement | null) => {
-        if (!el) return false;
-        const box = el.getBoundingClientRect();
-        return box.width > 0 && box.height > 0 && getComputedStyle(el).visibility !== 'hidden';
-      };
-      for (const input of inputs) {
-        const wrapper = input.closest('label') as HTMLElement | null;
-        if (!wrapper || !isVisible(wrapper)) continue;
-        wrapper.click();
-        return true;
-      }
-      return false;
-    }, { editorTestId: this.editorTestId, nextType: type });
-
-    if (!clicked) {
-      throw new Error(`Unable to click visible gradient type option: ${type}`);
-    }
-  }
-
-  async expectType(type: 'linear' | 'radial'): Promise<void> {
-    await this.openGradientPopover();
-    await expect.poll(async () => {
-      return await this.window.evaluate(({ editorTestId, expectedType }) => {
-        const inputs = Array.from(document.querySelectorAll<HTMLInputElement>(`[data-testid="${editorTestId}-type-${expectedType}"]`));
+    const clicked = await this.window.evaluate(
+      ({ editorTestId, nextType }) => {
+        const inputs = Array.from(
+          document.querySelectorAll<HTMLInputElement>(
+            `[data-testid="${editorTestId}-type-${nextType}"]`,
+          ),
+        );
         const isVisible = (el: HTMLElement | null) => {
           if (!el) return false;
           const box = el.getBoundingClientRect();
@@ -166,11 +166,51 @@ export class GradientEditorDSL {
         for (const input of inputs) {
           const wrapper = input.closest('label') as HTMLElement | null;
           if (!wrapper || !isVisible(wrapper)) continue;
-          return wrapper.classList.contains('ant-radio-button-wrapper-checked');
+          wrapper.click();
+          return true;
         }
         return false;
-      }, { editorTestId: this.editorTestId, expectedType: type });
-    }, { timeout: 5000 }).toBe(true);
+      },
+      { editorTestId: this.editorTestId, nextType: type },
+    );
+
+    if (!clicked) {
+      throw new Error(`Unable to click visible gradient type option: ${type}`);
+    }
+  }
+
+  async expectType(type: 'linear' | 'radial'): Promise<void> {
+    await this.openGradientPopover();
+    await expect
+      .poll(
+        async () => {
+          return await this.window.evaluate(
+            ({ editorTestId, expectedType }) => {
+              const inputs = Array.from(
+                document.querySelectorAll<HTMLInputElement>(
+                  `[data-testid="${editorTestId}-type-${expectedType}"]`,
+                ),
+              );
+              const isVisible = (el: HTMLElement | null) => {
+                if (!el) return false;
+                const box = el.getBoundingClientRect();
+                return (
+                  box.width > 0 && box.height > 0 && getComputedStyle(el).visibility !== 'hidden'
+                );
+              };
+              for (const input of inputs) {
+                const wrapper = input.closest('label') as HTMLElement | null;
+                if (!wrapper || !isVisible(wrapper)) continue;
+                return wrapper.classList.contains('ant-radio-button-wrapper-checked');
+              }
+              return false;
+            },
+            { editorTestId: this.editorTestId, expectedType: type },
+          );
+        },
+        { timeout: 5000 },
+      )
+      .toBe(true);
   }
 
   async focusAngleInput(): Promise<void> {
@@ -181,7 +221,10 @@ export class GradientEditorDSL {
     await expect(input).toBeFocused();
   }
 
-  async pressArrowOnAngle(key: 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown', shift = false): Promise<void> {
+  async pressArrowOnAngle(
+    key: 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown',
+    shift = false,
+  ): Promise<void> {
     await this.focusAngleInput();
     if (shift) {
       await this.window.keyboard.down('Shift');
@@ -236,13 +279,19 @@ export class GradientEditorDSL {
   async adjustStopPositionByIndex(index: number, position: number): Promise<void> {
     await this.openGradientPopover();
     const stopId = await this.getStopIdByIndex(index);
-    const input = this.window.getByTestId(`${this.editorTestId}-stop-input-${stopId}`).locator('input');
+    const input = this.window
+      .getByTestId(`${this.editorTestId}-stop-input-${stopId}`)
+      .locator('input');
     await expect(input).toBeVisible();
     await input.fill(String(position));
     await input.press('Enter');
   }
 
-  async adjustStopPositionWithArrow(index: number, key: 'ArrowLeft' | 'ArrowRight', shift = false): Promise<void> {
+  async adjustStopPositionWithArrow(
+    index: number,
+    key: 'ArrowLeft' | 'ArrowRight',
+    shift = false,
+  ): Promise<void> {
     await this.focusStopByIndex(index);
     if (shift) {
       await this.window.keyboard.down('Shift');
@@ -279,15 +328,30 @@ export class GradientEditorDSL {
 
   async savePreset(name: string, testInfo?: TestInfo): Promise<void> {
     await this.openGradientPopover();
-    await this.attachPresetDiagnostics(testInfo, {
-      action: 'savePreset',
-      editorVisible: await this.window.getByTestId(this.editorTestId).isVisible().catch(() => false),
-      visiblePickers: await this.getVisibleStopColorPickers().catch(() => []),
-      activeElement: await this.window.evaluate(() => {
-        const el = document.activeElement as HTMLElement | null;
-        return el ? { tag: el.tagName, testId: el.getAttribute('data-testid'), role: el.getAttribute('role') } : null;
-      }).catch(() => null),
-    }, 'gradient-save-preset-diagnostics.json');
+    await this.attachPresetDiagnostics(
+      testInfo,
+      {
+        action: 'savePreset',
+        editorVisible: await this.window
+          .getByTestId(this.editorTestId)
+          .isVisible()
+          .catch(() => false),
+        visiblePickers: await this.getVisibleStopColorPickers().catch(() => []),
+        activeElement: await this.window
+          .evaluate(() => {
+            const el = document.activeElement as HTMLElement | null;
+            return el
+              ? {
+                  tag: el.tagName,
+                  testId: el.getAttribute('data-testid'),
+                  role: el.getAttribute('role'),
+                }
+              : null;
+          })
+          .catch(() => null),
+      },
+      'gradient-save-preset-diagnostics.json',
+    );
     await this.closeStopColorPopovers(testInfo);
     const input = this.window.getByTestId(`${this.editorTestId}-preset-name`);
     await expect(input).toBeVisible();
@@ -297,27 +361,44 @@ export class GradientEditorDSL {
     await button.click();
 
     // Wait for preset list + export button to reflect the new preset.
-    const userPresetCards = this.window.locator(`[data-testid^="${this.editorTestId}-user-preset-"]`);
+    const userPresetCards = this.window.locator(
+      `[data-testid^="${this.editorTestId}-user-preset-"]`,
+    );
     await expect(userPresetCards.first()).toBeVisible({ timeout: 5000 });
-    await expect(this.window.locator(`[data-testid^="${this.editorTestId}-user-preset-"]`, { hasText: name }).first()).toBeVisible({ timeout: 5000 });
-    await expect(this.window.getByTestId(`${this.editorTestId}-preset-export`)).toBeEnabled({ timeout: 5000 });
+    await expect(
+      this.window
+        .locator(`[data-testid^="${this.editorTestId}-user-preset-"]`, { hasText: name })
+        .first(),
+    ).toBeVisible({ timeout: 5000 });
+    await expect(this.window.getByTestId(`${this.editorTestId}-preset-export`)).toBeEnabled({
+      timeout: 5000,
+    });
   }
 
   async deleteUserPresetByIndex(index: number, testInfo?: TestInfo): Promise<void> {
     await this.openGradientPopover();
-    await this.attachPresetDiagnostics(testInfo, {
-      action: 'deleteUserPresetByIndex',
-      index,
-      editorVisible: await this.window.getByTestId(this.editorTestId).isVisible().catch(() => false),
-      visiblePickers: await this.getVisibleStopColorPickers().catch(() => []),
-    }, 'gradient-delete-preset-diagnostics.json');
+    await this.attachPresetDiagnostics(
+      testInfo,
+      {
+        action: 'deleteUserPresetByIndex',
+        index,
+        editorVisible: await this.window
+          .getByTestId(this.editorTestId)
+          .isVisible()
+          .catch(() => false),
+        visiblePickers: await this.getVisibleStopColorPickers().catch(() => []),
+      },
+      'gradient-delete-preset-diagnostics.json',
+    );
     await this.closeStopColorPopovers(testInfo);
     const preset = this.getUserPresetCards().nth(index);
     await expect(preset).toBeVisible();
     const testId = await preset.getAttribute('data-testid');
     if (!testId) throw new Error('Unable to resolve preset id.');
     const presetId = testId.replace(`${this.editorTestId}-user-preset-`, '');
-    const deleteButton = this.window.getByTestId(`${this.editorTestId}-user-preset-delete-${presetId}`);
+    const deleteButton = this.window.getByTestId(
+      `${this.editorTestId}-user-preset-delete-${presetId}`,
+    );
     await deleteButton.click();
   }
 
@@ -331,7 +412,7 @@ export class GradientEditorDSL {
 
   private getUserPresetCards(): Locator {
     return this.window.locator(
-      `[data-testid^="${this.editorTestId}-user-preset-"]:not([data-testid^="${this.editorTestId}-user-preset-delete-"])`
+      `[data-testid^="${this.editorTestId}-user-preset-"]:not([data-testid^="${this.editorTestId}-user-preset-delete-"])`,
     );
   }
 
@@ -343,23 +424,35 @@ export class GradientEditorDSL {
 
   async importPresets(filePath: string, testInfo?: TestInfo): Promise<void> {
     await this.openGradientPopover();
-    const beforeImportCount = await this.getUserPresetCards().count().catch(() => 0);
-    await this.attachPresetDiagnostics(testInfo, {
-      action: 'importPresets',
-      filePath,
-      editorVisible: await this.window.getByTestId(this.editorTestId).isVisible().catch(() => false),
-      visiblePickers: await this.getVisibleStopColorPickers().catch(() => []),
-    }, 'gradient-import-presets-diagnostics.json');
+    const beforeImportCount = await this.getUserPresetCards()
+      .count()
+      .catch(() => 0);
+    await this.attachPresetDiagnostics(
+      testInfo,
+      {
+        action: 'importPresets',
+        filePath,
+        editorVisible: await this.window
+          .getByTestId(this.editorTestId)
+          .isVisible()
+          .catch(() => false),
+        visiblePickers: await this.getVisibleStopColorPickers().catch(() => []),
+      },
+      'gradient-import-presets-diagnostics.json',
+    );
     await this.closeStopColorPopovers(testInfo);
     try {
       if (this.app) {
-        await this.app.evaluate(({ ipcMain }, data) => {
-          ipcMain.removeHandler('dialog:openFile');
-          ipcMain.handle('dialog:openFile', () => ({
-            canceled: false,
-            filePath: data.filePath,
-          }));
-        }, { filePath });
+        await this.app.evaluate(
+          ({ ipcMain }, data) => {
+            ipcMain.removeHandler('dialog:openFile');
+            ipcMain.handle('dialog:openFile', () => ({
+              canceled: false,
+              filePath: data.filePath,
+            }));
+          },
+          { filePath },
+        );
 
         await this.window.getByTestId(`${this.editorTestId}-preset-import`).click();
         return;
@@ -385,48 +478,69 @@ export class GradientEditorDSL {
     } catch (error) {
       const fileInput = this.window.getByTestId(`${this.editorTestId}-preset-file-input`);
       const inputExists = this.app ? null : (await fileInput.count()) > 0;
-      await this.attachPresetDiagnostics(testInfo, {
-        method: this.app ? 'ipc-dialog' : (inputExists ? 'dom-input' : 'filechooser'),
-        inputTestId: this.app ? null : `${this.editorTestId}-preset-file-input`,
-        inputExists,
-        editorVisible: await this.window.getByTestId(this.editorTestId).isVisible().catch(() => false),
-        visiblePickers: await this.getVisibleStopColorPickers(),
-      }, 'gradient-preset-import-error.json');
+      await this.attachPresetDiagnostics(
+        testInfo,
+        {
+          method: this.app ? 'ipc-dialog' : inputExists ? 'dom-input' : 'filechooser',
+          inputTestId: this.app ? null : `${this.editorTestId}-preset-file-input`,
+          inputExists,
+          editorVisible: await this.window
+            .getByTestId(this.editorTestId)
+            .isVisible()
+            .catch(() => false),
+          visiblePickers: await this.getVisibleStopColorPickers(),
+        },
+        'gradient-preset-import-error.json',
+      );
       throw error;
     }
   }
 
   async exportPresets(testInfo?: TestInfo): Promise<string> {
     await this.openGradientPopover();
-    await this.attachPresetDiagnostics(testInfo, {
-      action: 'exportPresets',
-      editorVisible: await this.window.getByTestId(this.editorTestId).isVisible().catch(() => false),
-      visiblePickers: await this.getVisibleStopColorPickers().catch(() => []),
-      electronApi: await this.window.evaluate(() => {
-        const api = (window as Partial<Window>).electronAPI as unknown as {
-          saveFileDialog?: unknown;
-          writeFile?: unknown;
-        } | undefined;
-        return {
-          exists: Boolean(api),
-          hasSaveFileDialog: typeof api?.saveFileDialog === 'function',
-          hasWriteFile: typeof api?.writeFile === 'function',
-        };
-      }).catch(() => ({ exists: false, hasSaveFileDialog: false, hasWriteFile: false })),
-      note: 'If a native save dialog appears (Electron), download events may not fire.',
-    }, 'gradient-export-presets-diagnostics.json');
+    await this.attachPresetDiagnostics(
+      testInfo,
+      {
+        action: 'exportPresets',
+        editorVisible: await this.window
+          .getByTestId(this.editorTestId)
+          .isVisible()
+          .catch(() => false),
+        visiblePickers: await this.getVisibleStopColorPickers().catch(() => []),
+        electronApi: await this.window
+          .evaluate(() => {
+            const api = (window as Partial<Window>).electronAPI as unknown as
+              | {
+                  saveFileDialog?: unknown;
+                  writeFile?: unknown;
+                }
+              | undefined;
+            return {
+              exists: Boolean(api),
+              hasSaveFileDialog: typeof api?.saveFileDialog === 'function',
+              hasWriteFile: typeof api?.writeFile === 'function',
+            };
+          })
+          .catch(() => ({ exists: false, hasSaveFileDialog: false, hasWriteFile: false })),
+        note: 'If a native save dialog appears (Electron), download events may not fire.',
+      },
+      'gradient-export-presets-diagnostics.json',
+    );
     await this.closeStopColorPopovers(testInfo);
     try {
       if (this.app && testInfo) {
         const exportPath = testInfo.outputPath('gradient-presets.json');
 
-        await this.app.evaluate(({ ipcMain }, data) => {
-          ipcMain.removeHandler('dialog:saveFile');
-          ipcMain.handle('dialog:saveFile', () => ({
-            canceled: false,
-            filePath: data.exportPath,
-          }));
-        }, { exportPath });
+        await this.app.evaluate(
+          ({ ipcMain }, data) => {
+            ipcMain.removeHandler('dialog:saveFile');
+            ipcMain.handle('dialog:saveFile', () => ({
+              canceled: false,
+              filePath: data.exportPath,
+            }));
+          },
+          { exportPath },
+        );
 
         const ipcSanity = await this.window.evaluate(async () => {
           const api = (window as Window).electronAPI;
@@ -440,18 +554,27 @@ export class GradientEditorDSL {
             return { ok: false, reason: (error as Error).message || String(error) };
           }
         });
-        await this.attachPresetDiagnostics(testInfo, { ipcSanity }, 'gradient-export-presets-sanity.json');
+        await this.attachPresetDiagnostics(
+          testInfo,
+          { ipcSanity },
+          'gradient-export-presets-sanity.json',
+        );
 
         await this.window.getByTestId(`${this.editorTestId}-preset-export`).click();
 
-        await expect.poll(async () => {
-          try {
-            await readFile(exportPath, 'utf-8');
-            return true;
-          } catch {
-            return false;
-          }
-        }, { timeout: 5000 }).toBe(true);
+        await expect
+          .poll(
+            async () => {
+              try {
+                await readFile(exportPath, 'utf-8');
+                return true;
+              } catch {
+                return false;
+              }
+            },
+            { timeout: 5000 },
+          )
+          .toBe(true);
 
         return await readFile(exportPath, 'utf-8');
       }
@@ -464,12 +587,19 @@ export class GradientEditorDSL {
       if (!path) throw new Error('Preset export download path unavailable.');
       return await readFile(path, 'utf-8');
     } catch (error) {
-      await this.attachPresetDiagnostics(testInfo, {
-        method: this.app && testInfo ? 'ipc-dialog' : 'download',
-        error: (error as Error).message || String(error),
-        editorVisible: await this.window.getByTestId(this.editorTestId).isVisible().catch(() => false),
-        visiblePickers: await this.getVisibleStopColorPickers(),
-      }, 'gradient-preset-export-error.json');
+      await this.attachPresetDiagnostics(
+        testInfo,
+        {
+          method: this.app && testInfo ? 'ipc-dialog' : 'download',
+          error: (error as Error).message || String(error),
+          editorVisible: await this.window
+            .getByTestId(this.editorTestId)
+            .isVisible()
+            .catch(() => false),
+          visiblePickers: await this.getVisibleStopColorPickers(),
+        },
+        'gradient-preset-export-error.json',
+      );
       throw error;
     }
   }
@@ -503,10 +633,18 @@ export class GradientEditorDSL {
     return await this.window.evaluate((editorTestId) => {
       const active = document.activeElement as HTMLElement | null;
       const stopRows = Array.from(document.querySelectorAll('[role="option"][data-testid]'));
-      const editor = document.querySelector(`[data-testid="${editorTestId}"]`) as HTMLElement | null;
-      const angleWrapper = document.querySelector(`[data-testid="${editorTestId}-angle-input"]`) as HTMLElement | null;
+      const editor = document.querySelector(
+        `[data-testid="${editorTestId}"]`,
+      ) as HTMLElement | null;
+      const angleWrapper = document.querySelector(
+        `[data-testid="${editorTestId}-angle-input"]`,
+      ) as HTMLElement | null;
       const angleInput = angleWrapper?.querySelector('input') as HTMLInputElement | null;
-      const pickerNodes = Array.from(document.querySelectorAll<HTMLElement>(`[data-testid^="${editorTestId}-stop-color-"][data-testid$="-picker"]`));
+      const pickerNodes = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          `[data-testid^="${editorTestId}-stop-color-"][data-testid$="-picker"]`,
+        ),
+      );
       const isVisible = (el?: HTMLElement | null) => {
         if (!el) return false;
         const box = el.getBoundingClientRect();
@@ -515,17 +653,19 @@ export class GradientEditorDSL {
       const tabbables = editor
         ? Array.from(
             editor.querySelectorAll<HTMLElement>(
-              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            )
+              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+            ),
           ).slice(0, 20)
         : [];
       return {
-        activeElement: active ? {
-          tag: active.tagName,
-          testId: active.getAttribute('data-testid'),
-          role: active.getAttribute('role'),
-          tabIndex: active.getAttribute('tabindex'),
-        } : null,
+        activeElement: active
+          ? {
+              tag: active.tagName,
+              testId: active.getAttribute('data-testid'),
+              role: active.getAttribute('role'),
+              tabIndex: active.getAttribute('tabindex'),
+            }
+          : null,
         stopRows: stopRows.map((node) => ({
           testId: node.getAttribute('data-testid'),
           ariaSelected: node.getAttribute('aria-selected'),
@@ -535,7 +675,9 @@ export class GradientEditorDSL {
           exists: Boolean(angleInput),
           visible: isVisible(angleInput || null),
         },
-        visiblePickers: pickerNodes.filter((node) => isVisible(node)).map((node) => node.getAttribute('data-testid')),
+        visiblePickers: pickerNodes
+          .filter((node) => isVisible(node))
+          .map((node) => node.getAttribute('data-testid')),
         tabbables: tabbables.map((el) => ({
           tag: el.tagName,
           testId: el.getAttribute('data-testid'),
@@ -547,16 +689,24 @@ export class GradientEditorDSL {
   }
 
   private async getEditorTabbableCount(): Promise<number> {
-    return await this.window.evaluate((editorTestId) => {
-      const editor = document.querySelector(`[data-testid="${editorTestId}"]`) as HTMLElement | null;
-      if (!editor) return 0;
-      return editor.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      ).length;
-    }, this.editorTestId).catch(() => 0);
+    return await this.window
+      .evaluate((editorTestId) => {
+        const editor = document.querySelector(
+          `[data-testid="${editorTestId}"]`,
+        ) as HTMLElement | null;
+        if (!editor) return 0;
+        return editor.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ).length;
+      }, this.editorTestId)
+      .catch(() => 0);
   }
 
-  private async attachFocusDiagnostics(testInfo: TestInfo | undefined, diagnostics: Record<string, unknown>, label = 'gradient-focus-diagnostics.json'): Promise<void> {
+  private async attachFocusDiagnostics(
+    testInfo: TestInfo | undefined,
+    diagnostics: Record<string, unknown>,
+    label = 'gradient-focus-diagnostics.json',
+  ): Promise<void> {
     const body = JSON.stringify(diagnostics, null, 2);
     if (testInfo?.attach) {
       await testInfo.attach(label, { body: Buffer.from(body), contentType: 'application/json' });
@@ -565,7 +715,11 @@ export class GradientEditorDSL {
       const outDir = path.join(process.cwd(), 'test-results', 'diagnostics');
       await mkdir(outDir, { recursive: true });
       await writeFile(path.join(outDir, label), body, 'utf-8');
-      await writeFile(path.join(outDir, label.replace(/\\.json$/i, `-${Date.now()}.json`)), body, 'utf-8');
+      await writeFile(
+        path.join(outDir, label.replace(/\\.json$/i, `-${Date.now()}.json`)),
+        body,
+        'utf-8',
+      );
     } catch {
       // best-effort only
     }
@@ -605,7 +759,11 @@ export class GradientEditorDSL {
       await expect(input).toBeVisible({ timeout: 5000 });
     } catch (error) {
       const diagnostics = await this.collectFocusDiagnostics();
-      await this.attachFocusDiagnostics(testInfo, diagnostics, 'gradient-angle-input-visible-diagnostics.json');
+      await this.attachFocusDiagnostics(
+        testInfo,
+        diagnostics,
+        'gradient-angle-input-visible-diagnostics.json',
+      );
       throw error;
     }
 
@@ -640,7 +798,11 @@ export class GradientEditorDSL {
     await this.window.keyboard.press('Escape').catch(() => undefined);
 
     const diagnostics = await this.collectFocusDiagnostics();
-    await this.attachFocusDiagnostics(testInfo, diagnostics, 'gradient-angle-focus-diagnostics.json');
+    await this.attachFocusDiagnostics(
+      testInfo,
+      diagnostics,
+      'gradient-angle-focus-diagnostics.json',
+    );
     throw new Error(`Unable to focus angle input within ${budget} Tab presses.`);
   }
 }

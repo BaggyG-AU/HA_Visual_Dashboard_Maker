@@ -32,9 +32,10 @@ const toTickLabel = (timestamp: number): string => {
 const CHART_MARGIN = Object.freeze({ top: 8, right: 16, left: 0, bottom: 8 });
 const TOOLTIP_STYLE = Object.freeze({ backgroundColor: '#1b1b1b', border: '1px solid #333' });
 
-const getYAxisDomain = (
-  axis: { min: number | 'auto'; max: number | 'auto' },
-): [number | 'auto', number | 'auto'] | undefined => {
+const getYAxisDomain = (axis: {
+  min: number | 'auto';
+  max: number | 'auto';
+}): [number | 'auto', number | 'auto'] | undefined => {
   const min = axis.min;
   const max = axis.max;
   if (min === 'auto' && max === 'auto') return undefined;
@@ -70,9 +71,10 @@ export const NativeGraphsCard: React.FC<NativeGraphsCardProps> = ({
   const title = normalized.title?.trim() ? normalized.title : 'Native Graph';
 
   const hasSeries = normalized.series.length > 0;
-  const legendEntries = normalized.chart_type === 'pie'
-    ? chartData.pie.map((entry) => ({ label: entry.name, color: entry.color }))
-    : normalized.series.map((series) => ({ label: series.label, color: series.color }));
+  const legendEntries =
+    normalized.chart_type === 'pie'
+      ? chartData.pie.map((entry) => ({ label: entry.name, color: entry.color }))
+      : normalized.series.map((series) => ({ label: series.label, color: series.color }));
   const pieTotal = chartData.pie.reduce((acc, item) => acc + item.value, 0);
 
   return (
@@ -107,7 +109,8 @@ export const NativeGraphsCard: React.FC<NativeGraphsCardProps> = ({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text style={{ color: '#9f9f9f', fontSize: '11px' }}>
-          {normalized.chart_type.toUpperCase()} | {normalized.time_range} | refresh {normalized.refresh_interval}
+          {normalized.chart_type.toUpperCase()} | {normalized.time_range} | refresh{' '}
+          {normalized.refresh_interval}
         </Text>
       </div>
 
@@ -127,117 +130,115 @@ export const NativeGraphsCard: React.FC<NativeGraphsCardProps> = ({
           aria-label="Native graph chart preview"
         >
           {normalized.chart_type === 'line' && (
-            <LineChart width={chartWidth} height={chartHeight} data={chartData.points} margin={CHART_MARGIN}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                <XAxis
-                  dataKey="timestamp"
-                  tickFormatter={toTickLabel}
-                  stroke="#9f9f9f"
-                  minTickGap={20}
+            <LineChart
+              width={chartWidth}
+              height={chartHeight}
+              data={chartData.points}
+              margin={CHART_MARGIN}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis
+                dataKey="timestamp"
+                tickFormatter={toTickLabel}
+                stroke="#9f9f9f"
+                minTickGap={20}
+              />
+              <YAxis yAxisId="left" stroke="#9f9f9f" domain={yAxisDomain} />
+              <Tooltip
+                labelFormatter={(value) => toTickLabel(Number(value))}
+                contentStyle={TOOLTIP_STYLE}
+              />
+              {normalized.series.some((series) => series.axis === 'right') && (
+                <YAxis yAxisId="right" orientation="right" stroke="#9f9f9f" domain={yAxisDomain} />
+              )}
+              {normalized.series.map((series, index) => (
+                <Line
+                  key={series.entity}
+                  type={series.smooth ? 'monotone' : 'linear'}
+                  dataKey={`series_${index}`}
+                  name={series.label}
+                  stroke={series.color}
+                  strokeWidth={2}
+                  dot={false}
+                  yAxisId={series.axis}
+                  isAnimationActive={false}
                 />
-                <YAxis
-                  yAxisId="left"
-                  stroke="#9f9f9f"
-                  domain={yAxisDomain}
-                />
-                <Tooltip
-                  labelFormatter={(value) => toTickLabel(Number(value))}
-                  contentStyle={TOOLTIP_STYLE}
-                />
-                {normalized.series.some((series) => series.axis === 'right') && (
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    stroke="#9f9f9f"
-                    domain={yAxisDomain}
-                  />
-                )}
-                {normalized.series.map((series, index) => (
-                  <Line
-                    key={series.entity}
-                    type={series.smooth ? 'monotone' : 'linear'}
-                    dataKey={`series_${index}`}
-                    name={series.label}
-                    stroke={series.color}
-                    strokeWidth={2}
-                    dot={false}
-                    yAxisId={series.axis}
-                    isAnimationActive={false}
-                  />
-                ))}
+              ))}
             </LineChart>
           )}
 
           {normalized.chart_type === 'area' && (
-            <AreaChart width={chartWidth} height={chartHeight} data={chartData.points} margin={CHART_MARGIN}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                <XAxis dataKey="timestamp" tickFormatter={toTickLabel} stroke="#9f9f9f" minTickGap={20} />
-                <YAxis
-                  yAxisId="left"
-                  stroke="#9f9f9f"
-                  domain={yAxisDomain}
+            <AreaChart
+              width={chartWidth}
+              height={chartHeight}
+              data={chartData.points}
+              margin={CHART_MARGIN}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis
+                dataKey="timestamp"
+                tickFormatter={toTickLabel}
+                stroke="#9f9f9f"
+                minTickGap={20}
+              />
+              <YAxis yAxisId="left" stroke="#9f9f9f" domain={yAxisDomain} />
+              <Tooltip
+                labelFormatter={(value) => toTickLabel(Number(value))}
+                contentStyle={TOOLTIP_STYLE}
+              />
+              {normalized.series.some((series) => series.axis === 'right') && (
+                <YAxis yAxisId="right" orientation="right" stroke="#9f9f9f" domain={yAxisDomain} />
+              )}
+              {normalized.series.map((series, index) => (
+                <Area
+                  key={series.entity}
+                  type={series.smooth ? 'monotone' : 'linear'}
+                  dataKey={`series_${index}`}
+                  name={series.label}
+                  stroke={series.color}
+                  fill={series.color}
+                  fillOpacity={0.2}
+                  yAxisId={series.axis}
+                  stackId={series.stack ? 'stack' : undefined}
+                  isAnimationActive={false}
                 />
-                <Tooltip
-                  labelFormatter={(value) => toTickLabel(Number(value))}
-                  contentStyle={TOOLTIP_STYLE}
-                />
-                {normalized.series.some((series) => series.axis === 'right') && (
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    stroke="#9f9f9f"
-                    domain={yAxisDomain}
-                  />
-                )}
-                {normalized.series.map((series, index) => (
-                  <Area
-                    key={series.entity}
-                    type={series.smooth ? 'monotone' : 'linear'}
-                    dataKey={`series_${index}`}
-                    name={series.label}
-                    stroke={series.color}
-                    fill={series.color}
-                    fillOpacity={0.2}
-                    yAxisId={series.axis}
-                    stackId={series.stack ? 'stack' : undefined}
-                    isAnimationActive={false}
-                  />
-                ))}
+              ))}
             </AreaChart>
           )}
 
           {normalized.chart_type === 'bar' && (
-            <BarChart width={chartWidth} height={chartHeight} data={chartData.points} margin={CHART_MARGIN}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                <XAxis dataKey="timestamp" tickFormatter={toTickLabel} stroke="#9f9f9f" minTickGap={20} />
-                <YAxis
-                  yAxisId="left"
-                  stroke="#9f9f9f"
-                  domain={yAxisDomain}
+            <BarChart
+              width={chartWidth}
+              height={chartHeight}
+              data={chartData.points}
+              margin={CHART_MARGIN}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis
+                dataKey="timestamp"
+                tickFormatter={toTickLabel}
+                stroke="#9f9f9f"
+                minTickGap={20}
+              />
+              <YAxis yAxisId="left" stroke="#9f9f9f" domain={yAxisDomain} />
+              <Tooltip
+                labelFormatter={(value) => toTickLabel(Number(value))}
+                contentStyle={TOOLTIP_STYLE}
+              />
+              {normalized.series.some((series) => series.axis === 'right') && (
+                <YAxis yAxisId="right" orientation="right" stroke="#9f9f9f" domain={yAxisDomain} />
+              )}
+              {normalized.series.map((series, index) => (
+                <Bar
+                  key={series.entity}
+                  dataKey={`series_${index}`}
+                  name={series.label}
+                  fill={series.color}
+                  yAxisId={series.axis}
+                  stackId={series.stack ? 'stack' : undefined}
+                  isAnimationActive={false}
                 />
-                <Tooltip
-                  labelFormatter={(value) => toTickLabel(Number(value))}
-                  contentStyle={TOOLTIP_STYLE}
-                />
-                {normalized.series.some((series) => series.axis === 'right') && (
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    stroke="#9f9f9f"
-                    domain={yAxisDomain}
-                  />
-                )}
-                {normalized.series.map((series, index) => (
-                  <Bar
-                    key={series.entity}
-                    dataKey={`series_${index}`}
-                    name={series.label}
-                    fill={series.color}
-                    yAxisId={series.axis}
-                    stackId={series.stack ? 'stack' : undefined}
-                    isAnimationActive={false}
-                  />
-                ))}
+              ))}
             </BarChart>
           )}
 
@@ -258,12 +259,29 @@ export const NativeGraphsCard: React.FC<NativeGraphsCardProps> = ({
                 const ratio = pieTotal > 0 ? Math.max(0.01, entry.value / pieTotal) : 0.01;
                 const widthPercent = Math.max(4, Math.round(ratio * 100));
                 return (
-                  <div key={entry.name} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#cfcfcf' }}>
+                  <div
+                    key={entry.name}
+                    style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontSize: '11px',
+                        color: '#cfcfcf',
+                      }}
+                    >
                       <span>{entry.name}</span>
                       <span>{Math.round(ratio * 100)}%</span>
                     </div>
-                    <div style={{ height: '8px', borderRadius: '99px', background: '#262626', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        height: '8px',
+                        borderRadius: '99px',
+                        background: '#262626',
+                        overflow: 'hidden',
+                      }}
+                    >
                       <div
                         style={{
                           height: '100%',

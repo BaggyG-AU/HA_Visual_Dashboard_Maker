@@ -20,7 +20,7 @@ export async function attachDebug(
   testInfo: TestInfo,
   name: string,
   body: string | Buffer,
-  options: DebugAttachOptions = {}
+  options: DebugAttachOptions = {},
 ): Promise<void> {
   const contentType = options.contentType ?? 'text/plain';
   const shouldConsole = options.alsoConsole ?? isDebugEnabled();
@@ -37,7 +37,7 @@ export async function attachDebugJson(
   testInfo: TestInfo,
   name: string,
   data: unknown,
-  options: Omit<DebugAttachOptions, 'contentType'> = {}
+  options: Omit<DebugAttachOptions, 'contentType'> = {},
 ): Promise<void> {
   const json = JSON.stringify(data, null, 2);
   const safeName = name.endsWith('.json') ? name : `${name}.json`;

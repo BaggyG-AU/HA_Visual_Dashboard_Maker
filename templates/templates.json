@@ -113,11 +113,7 @@
         "Energy monitoring",
         "Automation toggles"
       ],
-      "requiredEntities": [
-        "light.living_room_ceiling",
-        "scene.bright",
-        "sensor.lights_on_count"
-      ],
+      "requiredEntities": ["light.living_room_ceiling", "scene.bright", "sensor.lights_on_count"],
       "tags": ["lights", "lighting", "scenes", "automation", "control"]
     },
     {

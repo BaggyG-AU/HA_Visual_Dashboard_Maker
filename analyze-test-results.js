@@ -11,10 +11,10 @@ let skipped = 0;
 
 const failedTests = [];
 
-results.suites.forEach(suite => {
-  suite.suites?.forEach(subsuite => {
-    subsuite.specs?.forEach(spec => {
-      spec.tests?.forEach(test => {
+results.suites.forEach((suite) => {
+  suite.suites?.forEach((subsuite) => {
+    subsuite.specs?.forEach((spec) => {
+      spec.tests?.forEach((test) => {
         totalTests++;
         const status = test.results?.[0]?.status;
 
@@ -25,19 +25,17 @@ results.suites.forEach(suite => {
             file: suite.title,
             suite: subsuite.title,
             test: spec.title,
-            error: test.results[0].error?.message || 'No error message'
+            error: test.results[0].error?.message || 'No error message',
           });
-        }
-        else if (status === 'timedOut') {
+        } else if (status === 'timedOut') {
           timedOut++;
           failedTests.push({
             file: suite.title,
             suite: subsuite.title,
             test: spec.title,
-            error: 'TIMEOUT'
+            error: 'TIMEOUT',
           });
-        }
-        else if (status === 'skipped') skipped++;
+        } else if (status === 'skipped') skipped++;
       });
     });
   });

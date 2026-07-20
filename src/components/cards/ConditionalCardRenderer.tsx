@@ -1,6 +1,10 @@
 import React from 'react';
 import { Card as AntCard, Typography, Tag } from 'antd';
-import { QuestionCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import {
+  QuestionCircleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+} from '@ant-design/icons';
 import { ConditionalCard } from '../../types/dashboard';
 import { getCardBackgroundStyle } from '../../utils/backgroundStyle';
 import { BaseCard } from '../BaseCard';
@@ -29,7 +33,7 @@ export const ConditionalCardRenderer: React.FC<ConditionalCardRendererProps> = (
   const evaluateConditions = () => {
     const conditions = card.conditions || [];
 
-    return conditions.map(condition => {
+    return conditions.map((condition) => {
       const entity = getEntity(condition.entity);
       const currentState = entity?.state || 'unknown';
 
@@ -56,8 +60,11 @@ export const ConditionalCardRenderer: React.FC<ConditionalCardRendererProps> = (
   };
 
   const evaluatedConditions = evaluateConditions();
-  const allConditionsMet = evaluatedConditions.every(c => c.met);
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const allConditionsMet = evaluatedConditions.every((c) => c.met);
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   // If no child card, show placeholder
   if (!card.card) {
@@ -72,16 +79,16 @@ export const ConditionalCardRenderer: React.FC<ConditionalCardRendererProps> = (
           transition: 'all 0.3s ease',
         }}
         styles={{
-        body: {
-          padding: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          gap: '8px',
-        },
-      }}
+          body: {
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            gap: '8px',
+          },
+        }}
         onClick={onClick}
         hoverable
       >
@@ -104,18 +111,23 @@ export const ConditionalCardRenderer: React.FC<ConditionalCardRendererProps> = (
         cursor: 'pointer',
         border: isSelected ? '2px solid #00d9ff' : '1px solid #434343',
         borderRadius: '8px',
-        ...getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : 'transparent'),
+        ...getCardBackgroundStyle(
+          card.style,
+          isSelected ? 'rgba(0, 217, 255, 0.1)' : 'transparent',
+        ),
         transition: 'all 0.3s ease',
       }}
       onClick={onClick}
     >
       {/* Render child card */}
-      <div style={{
-        height: '100%',
-        opacity: allConditionsMet ? 1 : 0.3,
-        transition: 'opacity 0.3s ease',
-        pointerEvents: allConditionsMet ? 'auto' : 'none',
-      }}>
+      <div
+        style={{
+          height: '100%',
+          opacity: allConditionsMet ? 1 : 0.3,
+          transition: 'opacity 0.3s ease',
+          pointerEvents: allConditionsMet ? 'auto' : 'none',
+        }}
+      >
         <BaseCard
           card={card.card}
           isSelected={false}
@@ -126,16 +138,18 @@ export const ConditionalCardRenderer: React.FC<ConditionalCardRendererProps> = (
       </div>
 
       {/* Conditional overlay indicator */}
-      <div style={{
-        position: 'absolute',
-        top: '8px',
-        left: '8px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '4px',
-        pointerEvents: 'none',
-        zIndex: 10,
-      }}>
+      <div
+        style={{
+          position: 'absolute',
+          top: '8px',
+          left: '8px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          pointerEvents: 'none',
+          zIndex: 10,
+        }}
+      >
         {evaluatedConditions.map((condition, index) => (
           <Tag
             key={index}
@@ -154,20 +168,22 @@ export const ConditionalCardRenderer: React.FC<ConditionalCardRendererProps> = (
 
       {/* Conditional badge */}
       {isSelected && (
-        <div style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          padding: '2px 8px',
-          backgroundColor: allConditionsMet ? 'rgba(82, 196, 26, 0.2)' : 'rgba(255, 77, 79, 0.2)',
-          border: `1px solid ${allConditionsMet ? '#52c41a' : '#ff4d4f'}`,
-          borderRadius: '4px',
-          fontSize: '9px',
-          color: allConditionsMet ? '#52c41a' : '#ff4d4f',
-          fontWeight: 'bold',
-          pointerEvents: 'none',
-          zIndex: 10,
-        }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            padding: '2px 8px',
+            backgroundColor: allConditionsMet ? 'rgba(82, 196, 26, 0.2)' : 'rgba(255, 77, 79, 0.2)',
+            border: `1px solid ${allConditionsMet ? '#52c41a' : '#ff4d4f'}`,
+            borderRadius: '4px',
+            fontSize: '9px',
+            color: allConditionsMet ? '#52c41a' : '#ff4d4f',
+            fontWeight: 'bold',
+            pointerEvents: 'none',
+            zIndex: 10,
+          }}
+        >
           CONDITIONAL {allConditionsMet ? '✓' : '✗'}
         </div>
       )}

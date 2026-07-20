@@ -36,19 +36,20 @@ Before creating any artifacts, you MUST read and understand the following docume
 **Total Features**: 6
 
 **Versioning Convention**:
+
 - `v0.7.<phase>-beta.<feature>`
 - Example: `v0.7.4-beta.3` = Phase 4, Feature 3
 
 ### Features to Implement
 
-| Feature | Priority | Estimated Effort | Description |
-|---------|----------|------------------|-------------|
-| 4.1: Swiper.js Integration | High | 5-6 days | Carousel/slider foundation using Swiper.js v12+ |
-| 4.2: Accordion Card Module | Medium | 3-4 days | Collapsible sections with expand/collapse animations |
-| 4.3: Tabs Card Module | Medium | 3-4 days | Tabbed interface for organizing card content |
-| 4.4: Popup/Modal Card System | High | 5-6 days | Cards that open in modal overlays |
-| 4.5: Horizontal/Vertical Layout Enhancements | Medium | 2-3 days | Improvements to stack card layouts |
-| 4.6: Card Spacing Controls | Medium | 2-3 days | Margin and padding controls for cards |
+| Feature                                      | Priority | Estimated Effort | Description                                          |
+| -------------------------------------------- | -------- | ---------------- | ---------------------------------------------------- |
+| 4.1: Swiper.js Integration                   | High     | 5-6 days         | Carousel/slider foundation using Swiper.js v12+      |
+| 4.2: Accordion Card Module                   | Medium   | 3-4 days         | Collapsible sections with expand/collapse animations |
+| 4.3: Tabs Card Module                        | Medium   | 3-4 days         | Tabbed interface for organizing card content         |
+| 4.4: Popup/Modal Card System                 | High     | 5-6 days         | Cards that open in modal overlays                    |
+| 4.5: Horizontal/Vertical Layout Enhancements | Medium   | 2-3 days         | Improvements to stack card layouts                   |
+| 4.6: Card Spacing Controls                   | Medium   | 2-3 days         | Margin and padding controls for cards                |
 
 ### Technology Decisions (from Approved Planning Document)
 
@@ -67,6 +68,7 @@ Before creating any artifacts, you MUST read and understand the following docume
 Create `do./LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md` following the exact format of `ENTITY_INTELLIGENCE_LAYER_IMPLIMENTATION.md`:
 
 **Required Sections**:
+
 - Header with branch name, version target, dependencies, status, planned start
 - Overview with phase goal, business value, key principles
 - Feature Status Overview table
@@ -84,6 +86,7 @@ Create `do./LAYOUT_INFRASTRUCTURE_LAYER_IMPLEMENTATION.md` following the exact f
 **Implementation Details to Include**:
 
 For **Feature 4.1 (Swiper.js Integration)**:
+
 - Swiper.js v12+ installation and configuration
 - Carousel/slider React component with pagination, navigation, autoplay
 - Touch/mouse swipe gestures
@@ -92,6 +95,7 @@ For **Feature 4.1 (Swiper.js Integration)**:
 - YAML schema for carousel configuration
 
 For **Feature 4.2 (Accordion Card Module)**:
+
 - Collapsible section component
 - Expand/collapse animations (CSS transitions)
 - Single or multiple sections open mode
@@ -100,6 +104,7 @@ For **Feature 4.2 (Accordion Card Module)**:
 - YAML schema for accordion configuration
 
 For **Feature 4.3 (Tabs Card Module)**:
+
 - Tabbed interface component
 - Horizontal and vertical tab orientations
 - Tab icons and labels
@@ -109,6 +114,7 @@ For **Feature 4.3 (Tabs Card Module)**:
 - YAML schema for tabs configuration
 
 For **Feature 4.4 (Popup/Modal Card System)**:
+
 - Modal overlay component
 - Full-screen or custom size modes
 - Close mechanisms (button, backdrop click, ESC key)
@@ -118,12 +124,14 @@ For **Feature 4.4 (Popup/Modal Card System)**:
 - YAML schema for popup configuration
 
 For **Feature 4.5 (Horizontal/Vertical Layout Enhancements)**:
+
 - Gap/spacing control for stack cards
 - Alignment options (start, center, end, stretch, space-between)
 - Wrap behavior for horizontal layouts
 - Integration with existing stack card renderers
 
 For **Feature 4.6 (Card Spacing Controls)**:
+
 - Margin controls (per-side or all sides)
 - Padding controls (per-side or all sides)
 - Spacing presets (none, tight, normal, relaxed, custom)
@@ -236,6 +244,7 @@ After clarifying questions are resolved, deliver:
 ## Reference: Previous Phase Success
 
 Phase 3 (Entity Intelligence Layer) was successfully completed with:
+
 - 7 features delivered (3.1-3.7)
 - 126 files changed, 9,280 insertions
 - All unit and E2E tests passing
@@ -262,6 +271,7 @@ After implementation, run exactly one **Fast Gate** pass and then stop:
 4. `npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if integration scope is impacted)
 
 After this single Fast Gate run, provide a summary report that includes:
+
 - Exact commands executed
 - Pass/fail status for each command
 - Any failing tests with artifact paths under `test-results/artifacts/**`

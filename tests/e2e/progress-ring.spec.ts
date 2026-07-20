@@ -48,14 +48,22 @@ test.describe('Progress Ring', () => {
 
       await progressRing.verifyRendered();
       await progressRing.expectRingSummaryCount(2);
-      await expect(ctx.window.getByTestId('progress-ring-visual')).toHaveAttribute('aria-label', /Daily:/i);
-      await expect(ctx.window.getByTestId('progress-ring-visual')).toHaveAttribute('aria-label', /Monthly:/i);
+      await expect(ctx.window.getByTestId('progress-ring-visual')).toHaveAttribute(
+        'aria-label',
+        /Daily:/i,
+      );
+      await expect(ctx.window.getByTestId('progress-ring-visual')).toHaveAttribute(
+        'aria-label',
+        /Monthly:/i,
+      );
     } finally {
       await close(ctx);
     }
   });
 
-  test('updates direction and geometry controls through form and persists YAML', async ({ page }) => {
+  test('updates direction and geometry controls through form and persists YAML', async ({
+    page,
+  }) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, progressRing, canvas, properties, yamlEditor } = ctx;

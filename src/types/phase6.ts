@@ -16,4 +16,9 @@ export interface TriggerAnimationContract {
   trigger_animations?: TriggerAnimationConfig[];
 }
 
-export interface Phase6CardContracts extends ActionBindingContract, VisualLogicContract, StateStylingContract, TriggerAnimationContract {}
+export interface Phase6CardContracts
+  extends
+    ActionBindingContract,
+    VisualLogicContract,
+    StateStylingContract,
+    TriggerAnimationContract {}

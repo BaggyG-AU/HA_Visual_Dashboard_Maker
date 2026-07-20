@@ -25,7 +25,7 @@ const importedThemePayload = JSON.stringify(
     viewOverrides: {},
   },
   null,
-  2
+  2,
 );
 
 test.describe('Theme Manager', () => {

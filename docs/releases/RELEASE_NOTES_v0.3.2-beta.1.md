@@ -24,12 +24,14 @@ This release introduces a **comprehensive YAML editing experience** with split-v
 #### Split View Editing Mode
 
 **Visual + Code Side-by-Side**:
+
 - ✅ Resizable split panes (visual canvas left, YAML editor right)
 - ✅ Toggle between Visual and Split modes via segmented control
 - ✅ Real-time synchronization with intelligent debouncing
 - ✅ Seamless workflow for power users who prefer both views
 
 **Key Benefits**:
+
 - Edit complex card configurations in YAML while seeing visual preview
 - Quickly jump between visual design and code tweaking
 - Learn YAML syntax by watching how visual changes generate code
@@ -38,6 +40,7 @@ This release introduces a **comprehensive YAML editing experience** with split-v
 #### Schema-Based Autocomplete
 
 **Intelligent Code Completion**:
+
 - ✅ Home Assistant dashboard schema (HA 2025.12+)
 - ✅ Autocomplete for card types, properties, and entity IDs
 - ✅ Hover documentation showing property descriptions
@@ -45,6 +48,7 @@ This release introduces a **comprehensive YAML editing experience** with split-v
 - ✅ Pattern validation for entity IDs (`sensor.temperature`, etc.)
 
 **Powered by Monaco Editor**:
+
 - Same editor as VS Code
 - YAML language server integration
 - IntelliSense-style autocomplete
@@ -53,11 +57,13 @@ This release introduces a **comprehensive YAML editing experience** with split-v
 #### Two-Way Synchronization
 
 **Visual → YAML (Immediate)**:
+
 - Changes in visual canvas update YAML instantly
 - No manual sync required
 - Always see current state in both views
 
 **YAML → Visual (Validated)**:
+
 - Type in YAML editor with 300ms debouncing
 - Real-time syntax validation as you type
 - Click "Apply YAML" to update visual canvas
@@ -65,6 +71,7 @@ This release introduces a **comprehensive YAML editing experience** with split-v
 - Rollback to last valid state if needed
 
 **Sync Status Indicators**:
+
 - 🟢 **Synced**: Visual and YAML are in sync
 - 🟡 **Pending**: YAML changes waiting to be applied
 - 🔴 **Error**: YAML has validation errors
@@ -72,12 +79,14 @@ This release introduces a **comprehensive YAML editing experience** with split-v
 #### YAML Formatting & Validation
 
 **Formatting Tools**:
+
 - ✅ **Pretty-Print** button: Reformats YAML to canonical style
 - ✅ **Fix Indentation** button: Corrects spacing to 2-space tabs
 - ✅ **Format on Paste**: Automatically formats pasted YAML
 - ✅ **Format on Type**: Optional auto-formatting as you type
 
 **Validation Features**:
+
 - Real-time syntax validation (catches typos immediately)
 - Schema validation (ensures valid card types and properties)
 - Error markers with line numbers and descriptions
@@ -86,12 +95,14 @@ This release introduces a **comprehensive YAML editing experience** with split-v
 #### Card Selection → YAML Jump
 
 **Bidirectional Navigation**:
+
 - ✅ Click card in visual view → jumps to corresponding YAML
 - ✅ YAML section highlighted and scrolled into view
 - ✅ Works across multiple views and cards
 - ✅ Instant navigation for debugging
 
 **Use Cases**:
+
 - Find card configuration quickly in large dashboards
 - Debug specific card issues
 - Copy YAML for specific cards
@@ -100,6 +111,7 @@ This release introduces a **comprehensive YAML editing experience** with split-v
 #### Robust Error Handling
 
 **Never Lose Your Work**:
+
 - ✅ Last valid YAML state always preserved
 - ✅ Error banner with rollback option
 - ✅ Prevents state corruption from invalid YAML
@@ -188,6 +200,7 @@ This release introduces a **comprehensive YAML editing experience** with split-v
 ### State Management
 
 **EditorModeStore** (Zustand):
+
 ```typescript
 {
   mode: 'visual' | 'code' | 'split'
@@ -203,6 +216,7 @@ This release introduces a **comprehensive YAML editing experience** with split-v
 ### Synchronization Flow
 
 **Visual → YAML (Immediate)**:
+
 ```
 User edits visual canvas
   ↓
@@ -218,6 +232,7 @@ Status: Synced ✅
 ```
 
 **YAML → Visual (Validated)**:
+
 ```
 User types in YAML editor
   ↓
@@ -240,29 +255,35 @@ If error: Show error, keep last valid state
 ### Schema Structure
 
 **HA Dashboard Schema Design**:
+
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
-    "view": { /* panel/view schema */ },
+    "view": {/* panel/view schema */},
     "card": {
       "type": "object",
       "properties": {
         "type": {
           "enum": [
-            "alarm-panel", "button", "entities", "entity",
-            "custom:mushroom-template-card", "custom:apexcharts-card",
+            "alarm-panel",
+            "button",
+            "entities",
+            "entity",
+            "custom:mushroom-template-card",
+            "custom:apexcharts-card"
             /* ... all 33 card types */
           ]
         }
       },
-      "additionalProperties": true  // Allows future properties
+      "additionalProperties": true // Allows future properties
     }
   }
 }
 ```
 
 **Key Design Decisions**:
+
 - `additionalProperties: true` - Allows HA schema evolution without refactoring
 - Modular definitions - Easy to extend with new card types
 - Pattern validation for entity IDs: `^[a-z_]+\.[a-z0-9_]+$`
@@ -275,21 +296,25 @@ If error: Show error, keep last valid state
 ### Test Execution Commands
 
 **Unit Tests**:
+
 ```bash
 npm run test:unit
 ```
 
 **Integration Tests** (Dashboard Generator):
+
 ```bash
 npx playwright test --project=electron-integration --workers=1
 ```
 
 **E2E Tests** (Full app tests):
+
 ```bash
 npx playwright test --project=electron-e2e --workers=1
 ```
 
 **Lint**:
+
 ```bash
 npm run lint
 ```
@@ -306,6 +331,7 @@ npm run lint
 ### New Test Coverage
 
 **YAML Service Tests (15 tests)**:
+
 - Serialization with correct indentation
 - Parsing with syntax validation
 - Round-trip consistency (config → YAML → config)
@@ -313,6 +339,7 @@ npm run lint
 - Validation (syntax errors, line numbers)
 
 **Editor Mode Store Tests (20 tests)**:
+
 - Initial state verification
 - Mode switching (visual/split/code)
 - Sync status management
@@ -360,6 +387,7 @@ npm run lint
 - Virtual scrolling (Monaco built-in, handles large files)
 
 **Performance Metrics**:
+
 - Split view open time: <200ms
 - YAML serialization: <50ms (typical dashboard)
 - YAML parsing: <100ms (typical dashboard)
@@ -402,35 +430,41 @@ npm run lint
 ## ✅ Acceptance Criteria Verification
 
 ### Split View Functionality
+
 - [x] Split view opens with visual (left) and code (right) panes
 - [x] Resizable splitter between panes (powered by `allotment`)
 - [x] Changes in YAML reflect in visual after successful parse
 - [x] Errors shown inline without breaking visual state
 
 ### Two-Way Sync
+
 - [x] Visual edits update YAML immediately
 - [x] YAML edits show validation status (valid/error/pending)
 - [x] Invalid YAML prevents state corruption
 - [x] Last valid state preserved for rollback
 
 ### Schema Autocomplete
+
 - [x] Autocomplete triggered for card types (e.g., "type: en..." → "entities")
 - [x] Autocomplete for properties (e.g., "show_name: ..." → true/false)
 - [x] Hover documentation for properties
 - [x] Inline validation errors with schema
 
 ### YAML Validation
+
 - [x] Real-time syntax validation
 - [x] Error messages with line numbers
 - [x] Prevents applying invalid YAML
 - [x] Rollback to last valid state
 
 ### Formatting Controls
+
 - [x] Pretty-print button reformats YAML
 - [x] Fix indentation button (2-space tabs)
 - [x] Format preserves structure and values
 
 ### Card Selection → YAML Jump
+
 - [x] Clicking card in visual jumps to YAML
 - [x] YAML section highlighted and scrolled into view
 - [x] Works across multiple views and cards
@@ -442,6 +476,7 @@ npm run lint
 **None** - This release is fully backward compatible with v0.3.1-beta.1.
 
 **Notes**:
+
 - All existing dashboards continue to work
 - Visual-only mode unchanged (default mode)
 - YAML import/export unchanged
@@ -478,6 +513,7 @@ npm run lint
 ### Future Enhancements
 
 Planned improvements for future releases:
+
 - Code-only mode (hide visual pane entirely)
 - YAML comment preservation (requires different YAML parser)
 - Schema updates for newer HA versions
@@ -496,11 +532,13 @@ Planned improvements for future releases:
 ### Feature Highlights
 
 **In-App Help**:
+
 - Sync status tooltips explain current state
 - Error messages include actionable fixes
 - Formatting buttons have descriptive labels
 
 **User Guide Sections** (in implementation doc):
+
 1. How to enable Split view
 2. Understanding sync status
 3. Using autocomplete effectively
@@ -511,12 +549,14 @@ Planned improvements for future releases:
 ### Technical Documentation
 
 **Architecture Details**:
+
 - State management flow diagrams
 - Synchronization sequence diagrams
 - Schema structure and design decisions
 - Performance optimization strategies
 
 **Developer Notes**:
+
 - Component responsibilities
 - Extension points for new features
 - Testing strategies
@@ -529,18 +569,21 @@ Planned improvements for future releases:
 ### Visual Design
 
 **Split View Layout**:
+
 - Clean, uncluttered interface
 - Intuitive segmented control (Visual | Split)
 - Resizable panes with drag handle
 - Status bar with clear indicators
 
 **Error Presentation**:
+
 - Non-intrusive error banner (dismissible)
 - Inline error markers in YAML editor
 - Clear error messages with line numbers
 - Rollback option always visible on errors
 
 **Sync Status UI**:
+
 - Color-coded status (green=synced, yellow=pending, red=error)
 - Clear button labels (Apply YAML, Rollback, Force Sync)
 - Tooltips explain what each status means
@@ -548,12 +591,14 @@ Planned improvements for future releases:
 ### Workflow Enhancements
 
 **Power User Features**:
+
 - Keyboard shortcuts (Ctrl+S to apply YAML)
 - Fast toggle between Visual and Split
 - Jump to YAML section with single click
 - Format/indent with single button click
 
 **Beginner-Friendly**:
+
 - Default to Visual mode (no learning curve)
 - Autocomplete teaches YAML syntax
 - Error messages explain what went wrong
@@ -566,6 +611,7 @@ Planned improvements for future releases:
 ### Planned for v0.4.0-beta.1 (Phase 1 Implementation)
 
 **HAVDM Advanced Features - Foundation Layer**:
+
 1. Color Picker Component (react-colorful)
 2. Animation CSS Framework
 3. Typography/Google Fonts System
@@ -577,6 +623,7 @@ See [HAVDM_ADVANCED_FEATURES_USER_STORIES.md](../features/HAVDM_ADVANCED_FEATURE
 ### Under Consideration
 
 **YAML Editor Enhancements**:
+
 - Code-only mode (no visual pane)
 - YAML comment preservation
 - Multi-cursor editing
@@ -585,6 +632,7 @@ See [HAVDM_ADVANCED_FEATURES_USER_STORIES.md](../features/HAVDM_ADVANCED_FEATURE
 - Version history
 
 **Schema Enhancements**:
+
 - Dynamic schema loading from HA instance
 - Custom card schema contributions
 - User-defined snippets
@@ -597,16 +645,19 @@ See [HAVDM_ADVANCED_FEATURES_USER_STORIES.md](../features/HAVDM_ADVANCED_FEATURE
 ### From v0.3.1-beta.1
 
 1. **Pull latest changes** from the repository
+
    ```bash
    git pull origin feature/advanced-yaml-editor
    ```
 
 2. **Install dependencies** (no new dependencies added)
+
    ```bash
    npm install
    ```
 
 3. **Run tests** to verify functionality
+
    ```bash
    npm run test:unit
    npm run lint
@@ -649,6 +700,7 @@ This release represents a major milestone in editor functionality:
 ### Technology Stack
 
 Special thanks to:
+
 - **Monaco Editor** - VS Code's editor engine
 - **monaco-yaml** - YAML language server for Monaco
 - **js-yaml** - YAML parsing and serialization
@@ -668,6 +720,7 @@ Special thanks to:
 ### Reporting Issues
 
 Please include:
+
 - App version (v0.3.2-beta.1)
 - Operating system
 - Home Assistant version
@@ -680,6 +733,7 @@ Please include:
 ### Providing Feedback
 
 For feedback on the YAML editor:
+
 1. Test Split view mode with your dashboards
 2. Try autocomplete and validation features
 3. Note any UX friction or confusion
@@ -736,6 +790,7 @@ For feedback on the YAML editor:
 **This release empowers advanced users with professional code editing tools while maintaining HAVDM's approachable visual-first design.**
 
 ### Settings & Diagnostics
+
 - Centralized Settings dialog (Appearance, Connection, Diagnostics) replaces the old theme cog. Theme and HA connection controls now live under Settings (paint brush icon).
 - Added configurable logging levels (OFF/ERROR/WARN/INFO/DEBUG/TRACE) persisted across restarts; defaults to DEBUG in dev, INFO in packaged builds.
 - Diagnostics tab includes copy-to-clipboard info (tokens redacted), verbose UI debug overlay toggle, and maintenance actions (clear entity cache, reset UI state).

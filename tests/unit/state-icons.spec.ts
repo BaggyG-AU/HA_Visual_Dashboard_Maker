@@ -91,7 +91,11 @@ describe('stateIcons service', () => {
       { entityId: 'fan.bedroom', state: 'on', expected: 'mdi:fan' },
       { entityId: 'media_player.tv', state: 'playing', expected: 'mdi:play-circle' },
       { entityId: 'person.micah', state: 'home', expected: 'mdi:home-account' },
-      { entityId: 'alarm_control_panel.house', state: 'armed_home', expected: 'mdi:shield-home-outline' },
+      {
+        entityId: 'alarm_control_panel.house',
+        state: 'armed_home',
+        expected: 'mdi:shield-home-outline',
+      },
       { entityId: 'camera.driveway', state: 'streaming', expected: 'mdi:video' },
       { entityId: 'vacuum.robovac', state: 'cleaning', expected: 'mdi:robot-vacuum' },
       { entityId: 'sun.sun', state: 'above_horizon', expected: 'mdi:white-balance-sunny' },

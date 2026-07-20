@@ -29,21 +29,22 @@ describe('tabsService', () => {
   });
 
   it('clamps default tab index to valid range', () => {
-    const config = normalizeTabsConfig(makeCard({
-      options: { defaultTabIndex: 99 },
-      tabs: [
-        { attributes: { label: 'One' } },
-        { attributes: { label: 'Two' } },
-      ],
-    }));
+    const config = normalizeTabsConfig(
+      makeCard({
+        options: { defaultTabIndex: 99 },
+        tabs: [{ attributes: { label: 'One' } }, { attributes: { label: 'Two' } }],
+      }),
+    );
 
     expect(config.default_tab).toBe(1);
   });
 
   it('preserves static badge and count fields', () => {
-    const config = normalizeTabsConfig(makeCard({
-      tabs: [{ attributes: { label: 'Status' }, badge: 'NEW', count: 3 }],
-    }));
+    const config = normalizeTabsConfig(
+      makeCard({
+        tabs: [{ attributes: { label: 'Status' }, badge: 'NEW', count: 3 }],
+      }),
+    );
 
     expect(config.tabs[0].badge).toBe('NEW');
     expect(config.tabs[0].count).toBe(3);
@@ -69,25 +70,27 @@ describe('tabsService', () => {
   });
 
   it('parses upstream attributes and singular tab card shape', () => {
-    const config = normalizeTabsConfig(makeCard({
-      options: { defaultTabIndex: 1 },
-      tabs: [
-        {
-          attributes: { label: 'Lights', icon: 'mdi:lightbulb' },
-          card: { type: 'markdown', content: 'A' },
-        },
-        {
-          attributes: { label: 'Climate', icon: 'mdi:thermometer' },
-          card: {
-            type: 'vertical-stack',
-            cards: [
-              { type: 'markdown', content: 'B' },
-              { type: 'markdown', content: 'C' },
-            ],
+    const config = normalizeTabsConfig(
+      makeCard({
+        options: { defaultTabIndex: 1 },
+        tabs: [
+          {
+            attributes: { label: 'Lights', icon: 'mdi:lightbulb' },
+            card: { type: 'markdown', content: 'A' },
           },
-        },
-      ],
-    }));
+          {
+            attributes: { label: 'Climate', icon: 'mdi:thermometer' },
+            card: {
+              type: 'vertical-stack',
+              cards: [
+                { type: 'markdown', content: 'B' },
+                { type: 'markdown', content: 'C' },
+              ],
+            },
+          },
+        ],
+      }),
+    );
 
     expect(config.default_tab).toBe(1);
     expect(config.tabs[0]).toMatchObject({
@@ -111,31 +114,36 @@ describe('tabsService', () => {
   });
 
   it('exports normalized config to upstream tabbed-card format', () => {
-    const normalized = normalizeTabsConfig(makeCard({
-      options: { defaultTabIndex: 1 },
-      _havdm_tab_position: 'left',
-      _havdm_animation: 'fade',
-      tabs: [
-        {
-          attributes: { label: 'Single', icon: 'mdi:one' },
-          cards: [{ type: 'markdown', content: 'One' }],
-          badge: '3',
-          count: 3,
-        },
-        {
-          attributes: { label: 'Multi', icon: 'mdi:two' },
-          cards: [
-            { type: 'markdown', content: 'Two' },
-            { type: 'markdown', content: 'Three' },
-          ],
-        },
-      ],
-    }));
+    const normalized = normalizeTabsConfig(
+      makeCard({
+        options: { defaultTabIndex: 1 },
+        _havdm_tab_position: 'left',
+        _havdm_animation: 'fade',
+        tabs: [
+          {
+            attributes: { label: 'Single', icon: 'mdi:one' },
+            cards: [{ type: 'markdown', content: 'One' }],
+            badge: '3',
+            count: 3,
+          },
+          {
+            attributes: { label: 'Multi', icon: 'mdi:two' },
+            cards: [
+              { type: 'markdown', content: 'Two' },
+              { type: 'markdown', content: 'Three' },
+            ],
+          },
+        ],
+      }),
+    );
 
-    const upstream = toUpstreamTabbedCard(normalized, makeCard({
-      styles: { '--mdc-theme-primary': 'yellow' },
-      attributes: { stacked: true },
-    }));
+    const upstream = toUpstreamTabbedCard(
+      normalized,
+      makeCard({
+        styles: { '--mdc-theme-primary': 'yellow' },
+        attributes: { stacked: true },
+      }),
+    );
 
     expect(upstream.type).toBe('custom:tabbed-card');
     expect(upstream.options).toEqual({ defaultTabIndex: 1 });

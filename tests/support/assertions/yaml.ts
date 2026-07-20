@@ -42,9 +42,7 @@ export async function expectMonacoEditor(window: Page, timeout = 3000): Promise<
 
   // Monaco can render as .monaco-editor or fall back to textarea
   await expect(
-    editorContainer.locator('.monaco-editor')
-      .or(editorContainer.locator('textarea'))
-      .first()
+    editorContainer.locator('.monaco-editor').or(editorContainer.locator('textarea')).first(),
   ).toBeVisible({ timeout });
 }
 

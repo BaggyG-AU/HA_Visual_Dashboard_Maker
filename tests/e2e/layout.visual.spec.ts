@@ -101,7 +101,9 @@ test.describe('Layout Visual Regression', () => {
     }
   });
 
-  test('captures grid row and column spacing with item alignment variants', async ({ page }, testInfo) => {
+  test('captures grid row and column spacing with item alignment variants', async ({
+    page,
+  }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
     const { appDSL, dashboard, canvas, properties, yamlEditor, layout } = ctx;

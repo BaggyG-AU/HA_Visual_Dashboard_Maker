@@ -1,6 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Flex, Button, Alert, Space, Typography, Spin, Tag, Empty, Tooltip, Tabs } from 'antd';
-import { DownloadOutlined, FileTextOutlined, ReloadOutlined, HomeOutlined, ShopOutlined } from '@ant-design/icons';
+import {
+  Modal,
+  Flex,
+  Button,
+  Alert,
+  Space,
+  Typography,
+  Spin,
+  Tag,
+  Empty,
+  Tooltip,
+  Tabs,
+} from 'antd';
+import {
+  DownloadOutlined,
+  FileTextOutlined,
+  ReloadOutlined,
+  HomeOutlined,
+  ShopOutlined,
+} from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 import { logger } from '../services/logger';
 import { PresetMarketplacePanel } from '../features/preset-marketplace/PresetMarketplacePanel';
@@ -124,7 +142,10 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
     setError(null);
 
     try {
-      logger.info(`Downloading dashboard: ${dashboard.title}`, { id: dashboard.id, url_path: dashboard.url_path });
+      logger.info(`Downloading dashboard: ${dashboard.title}`, {
+        id: dashboard.id,
+        url_path: dashboard.url_path,
+      });
 
       // For default dashboard, use null as urlPath
       // For custom dashboards, use the url_path field (NOT the id field)
@@ -254,12 +275,12 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
           description={
             <div style={{ fontSize: '12px' }}>
               <p style={{ marginTop: '8px', marginBottom: '8px' }}>
-                Click <strong>"Refresh Dashboards"</strong> to connect to your Home Assistant instance
-                and automatically discover all available dashboards.
+                Click <strong>"Refresh Dashboards"</strong> to connect to your Home Assistant
+                instance and automatically discover all available dashboards.
               </p>
               <p style={{ marginTop: '0', marginBottom: 0 }}>
-                Once loaded, click <strong>"Download"</strong> next to any dashboard to load it into the editor.
-                No manual file downloads needed!
+                Once loaded, click <strong>"Download"</strong> next to any dashboard to load it into
+                the editor. No manual file downloads needed!
               </p>
             </div>
           }
@@ -400,8 +421,8 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
         }}
       >
         <Text style={{ color: '#666', fontSize: '11px' }}>
-          <strong style={{ color: '#888' }}>Tip:</strong> Imported dashboards and presets load into the editor.
-          You can make changes and save locally or deploy to Home Assistant.
+          <strong style={{ color: '#888' }}>Tip:</strong> Imported dashboards and presets load into
+          the editor. You can make changes and save locally or deploy to Home Assistant.
         </Text>
       </div>
     </Modal>

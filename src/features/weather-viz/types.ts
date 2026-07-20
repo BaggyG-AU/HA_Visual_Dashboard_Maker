@@ -44,4 +44,3 @@ export interface WeatherForecastSummary {
   totalPrecipitation?: number;
   maxWindSpeed?: number;
 }
-

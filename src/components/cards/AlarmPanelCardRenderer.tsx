@@ -68,7 +68,10 @@ export const AlarmPanelCardRenderer: React.FC<AlarmPanelCardRendererProps> = ({
   };
 
   const stateInfo = getStateInfo();
-  const backgroundStyle = getCardBackgroundStyle(card.style, isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f');
+  const backgroundStyle = getCardBackgroundStyle(
+    card.style,
+    isSelected ? 'rgba(0, 217, 255, 0.1)' : '#1f1f1f',
+  );
 
   // Get button info for each state
   const getButtonInfo = (alarmState: string) => {
@@ -84,7 +87,11 @@ export const AlarmPanelCardRenderer: React.FC<AlarmPanelCardRendererProps> = ({
       case 'armed_custom_bypass':
         return { icon: <SafetyOutlined />, label: 'Custom', color: '#03a9f4' };
       default:
-        return { icon: <SafetyOutlined />, label: alarmState.replace('armed_', '').replace(/_/g, ' '), color: '#666' };
+        return {
+          icon: <SafetyOutlined />,
+          label: alarmState.replace('armed_', '').replace(/_/g, ' '),
+          color: '#666',
+        };
     }
   };
 
@@ -111,28 +118,32 @@ export const AlarmPanelCardRenderer: React.FC<AlarmPanelCardRendererProps> = ({
       hoverable
     >
       {/* Header with name */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <Text strong style={{ color: '#e6e6e6', fontSize: '14px' }}>
           {displayName}
         </Text>
       </div>
 
       {/* Current state display */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px',
-        backgroundColor: `${stateInfo.color}11`,
-        border: `2px solid ${stateInfo.color}`,
-        borderRadius: '12px',
-        gap: '12px',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          backgroundColor: `${stateInfo.color}11`,
+          border: `2px solid ${stateInfo.color}`,
+          borderRadius: '12px',
+          gap: '12px',
+        }}
+      >
         <div
           style={{
             width: '64px',
@@ -150,12 +161,14 @@ export const AlarmPanelCardRenderer: React.FC<AlarmPanelCardRendererProps> = ({
         >
           {stateInfo.icon}
         </div>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '4px',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
           <Text
             strong
             style={{
@@ -175,12 +188,14 @@ export const AlarmPanelCardRenderer: React.FC<AlarmPanelCardRendererProps> = ({
       </div>
 
       {/* Arm/Disarm buttons */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: '8px',
-        marginTop: 'auto',
-      }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '8px',
+          marginTop: 'auto',
+        }}
+      >
         {alarmStates.map((alarmState) => {
           const buttonInfo = getButtonInfo(alarmState);
           const isActive = state === alarmState;
@@ -201,10 +216,12 @@ export const AlarmPanelCardRenderer: React.FC<AlarmPanelCardRendererProps> = ({
                 transition: 'all 0.3s ease',
               }}
             >
-              <div style={{
-                fontSize: '24px',
-                color: isActive ? buttonInfo.color : '#999',
-              }}>
+              <div
+                style={{
+                  fontSize: '24px',
+                  color: isActive ? buttonInfo.color : '#999',
+                }}
+              >
                 {buttonInfo.icon}
               </div>
               <Text
@@ -224,12 +241,14 @@ export const AlarmPanelCardRenderer: React.FC<AlarmPanelCardRendererProps> = ({
 
       {/* Code format indicator */}
       {codeFormat && (
-        <div style={{
-          textAlign: 'center',
-          padding: '8px',
-          backgroundColor: 'rgba(255, 255, 255, 0.02)',
-          borderRadius: '6px',
-        }}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '8px',
+            backgroundColor: 'rgba(255, 255, 255, 0.02)',
+            borderRadius: '6px',
+          }}
+        >
           <Text type="secondary" style={{ fontSize: '10px' }}>
             Code format: {codeFormat}
           </Text>
@@ -238,11 +257,13 @@ export const AlarmPanelCardRenderer: React.FC<AlarmPanelCardRendererProps> = ({
 
       {/* No entity warning */}
       {!entity && card.entity && (
-        <div style={{
-          textAlign: 'center',
-          padding: '20px',
-          color: '#666',
-        }}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '20px',
+            color: '#666',
+          }}
+        >
           <SafetyOutlined style={{ fontSize: '32px', marginBottom: '8px' }} />
           <Text type="secondary" style={{ display: 'block', fontSize: '12px' }}>
             {card.entity}

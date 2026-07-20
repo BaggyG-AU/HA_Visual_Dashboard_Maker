@@ -34,11 +34,13 @@ describe('accordionService', () => {
       entities: ['light.living_room'],
     } as unknown as Card;
 
-    const config = normalizeExpanderConfig(makeCard({
-      'title-card': titleCard,
-      'title-card-button-overlay': true,
-      cards: [{ type: 'button', entity: 'switch.tv' } as unknown as Card],
-    }));
+    const config = normalizeExpanderConfig(
+      makeCard({
+        'title-card': titleCard,
+        'title-card-button-overlay': true,
+        cards: [{ type: 'button', entity: 'switch.tv' } as unknown as Card],
+      }),
+    );
 
     expect(config.title).toBe('');
     expect(config.titleCard).toEqual(titleCard);
@@ -47,19 +49,21 @@ describe('accordionService', () => {
   });
 
   it('keeps explicit upstream values', () => {
-    const config = normalizeExpanderConfig(makeCard({
-      title: 'My Section',
-      expanded: true,
-      gap: '1em',
-      padding: '8px',
-      'expanded-icon': 'mdi:chevron-up',
-      'collapsed-icon': 'mdi:chevron-down',
-      'button-background': 'rgba(0,0,0,0.3)',
-      cards: [
-        { type: 'button', entity: 'light.living_room' } as unknown as Card,
-        { type: 'entities', entities: ['sensor.temperature'] } as unknown as Card,
-      ],
-    }));
+    const config = normalizeExpanderConfig(
+      makeCard({
+        title: 'My Section',
+        expanded: true,
+        gap: '1em',
+        padding: '8px',
+        'expanded-icon': 'mdi:chevron-up',
+        'collapsed-icon': 'mdi:chevron-down',
+        'button-background': 'rgba(0,0,0,0.3)',
+        cards: [
+          { type: 'button', entity: 'light.living_room' } as unknown as Card,
+          { type: 'entities', entities: ['sensor.temperature'] } as unknown as Card,
+        ],
+      }),
+    );
 
     expect(config.title).toBe('My Section');
     expect(config.expanded).toBe(true);

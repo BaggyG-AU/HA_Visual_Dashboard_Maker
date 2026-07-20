@@ -38,9 +38,7 @@ interface UseRecentColorsReturn {
 /**
  * Custom hook for managing recent colors with localStorage
  */
-export function useRecentColors(
-  options: UseRecentColorsOptions = {}
-): UseRecentColorsReturn {
+export function useRecentColors(options: UseRecentColorsOptions = {}): UseRecentColorsReturn {
   const { maxColors = DEFAULT_MAX_COLORS, storageKey = STORAGE_KEY } = options;
 
   const [recentColors, setRecentColors] = useState<string[]>([]);
@@ -96,7 +94,7 @@ export function useRecentColors(
         return [normalized, ...filtered].slice(0, maxColors);
       });
     },
-    [maxColors]
+    [maxColors],
   );
 
   /**

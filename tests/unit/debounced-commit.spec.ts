@@ -27,4 +27,3 @@ describe('createDebouncedCommit', () => {
     expect(onCommit).toHaveBeenCalledWith('abc');
   });
 });
-

@@ -10,6 +10,11 @@ package-lock.json
 **/*-snapshots/
 **/*.snap
 
+# Test fixtures are DATA, not source. Several tests assert on exact YAML/JSON
+# text (round-trip fidelity, legacy-format migration), so reformatting them
+# would silently change what those tests verify.
+tests/fixtures/
+
 # Generated / vendored
 *.min.js
 *.min.css

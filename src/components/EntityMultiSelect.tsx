@@ -11,7 +11,7 @@ interface EntityMultiSelectProps {
   value?: string[];
   onChange?: (value: string[]) => void;
   placeholder?: string;
-  filterDomains?: string[];  // e.g., ['light', 'switch']
+  filterDomains?: string[]; // e.g., ['light', 'switch']
   dataTestId?: string;
 }
 
@@ -71,8 +71,8 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
     }
 
     const newValidationMap = new Map<string, HAEntity | null>();
-    value.forEach(entityId => {
-      const entity = entities.find(e => e.entity_id === entityId);
+    value.forEach((entityId) => {
+      const entity = entities.find((e) => e.entity_id === entityId);
       newValidationMap.set(entityId, entity || null);
     });
     setValidationMap(newValidationMap);
@@ -84,7 +84,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
       return entities;
     }
 
-    return entities.filter(entity => {
+    return entities.filter((entity) => {
       const domain = entity.entity_id.split('.')[0];
       return filterDomains.includes(domain);
     });
@@ -92,7 +92,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
 
   // Create options for the select component
   const options = useMemo(() => {
-    return filteredEntities.map(entity => {
+    return filteredEntities.map((entity) => {
       const domain = entity.entity_id.split('.')[0];
       const friendlyName = entity.attributes.friendly_name || entity.entity_id;
 
@@ -122,7 +122,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
     const selected: typeof options = [];
     const unselected: typeof options = [];
 
-    options.forEach(option => {
+    options.forEach((option) => {
       if (safeValue.includes(option.value)) {
         selected.push(option);
       } else {
@@ -144,22 +144,25 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
     if (!value || !Array.isArray(value) || value.length === 0) return null;
     if (loading) return null;
 
-    const invalidEntities = value.filter(id => !validationMap.get(id));
-    const validEntities = value.filter(id => validationMap.get(id));
+    const invalidEntities = value.filter((id) => !validationMap.get(id));
+    const validEntities = value.filter((id) => validationMap.get(id));
 
     if (invalidEntities.length === 0) {
       return (
-        <div style={{
-          marginTop: '8px',
-          padding: '8px 12px',
-          background: '#1f3a1f',
-          border: '1px solid #2a4a2a',
-          borderRadius: '4px'
-        }}>
+        <div
+          style={{
+            marginTop: '8px',
+            padding: '8px 12px',
+            background: '#1f3a1f',
+            border: '1px solid #2a4a2a',
+            borderRadius: '4px',
+          }}
+        >
           <Space>
             <CheckCircleOutlined style={{ color: '#52c41a' }} />
             <Text style={{ color: '#52c41a', fontSize: '12px' }}>
-              All {validEntities.length} {validEntities.length === 1 ? 'entity' : 'entities'} validated
+              All {validEntities.length} {validEntities.length === 1 ? 'entity' : 'entities'}{' '}
+              validated
             </Text>
           </Space>
         </div>
@@ -176,7 +179,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
                 The following entities do not exist:
               </Text>
               <div style={{ marginTop: '4px' }}>
-                {invalidEntities.map(id => (
+                {invalidEntities.map((id) => (
                   <div key={id} style={{ marginTop: '4px' }}>
                     <Space>
                       <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
@@ -193,17 +196,20 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
         />
 
         {validEntities.length > 0 && (
-          <div style={{
-            marginTop: '8px',
-            padding: '8px 12px',
-            background: '#1f3a1f',
-            border: '1px solid #2a4a2a',
-            borderRadius: '4px'
-          }}>
+          <div
+            style={{
+              marginTop: '8px',
+              padding: '8px 12px',
+              background: '#1f3a1f',
+              border: '1px solid #2a4a2a',
+              borderRadius: '4px',
+            }}
+          >
             <Space>
               <CheckCircleOutlined style={{ color: '#52c41a' }} />
               <Text style={{ color: '#52c41a', fontSize: '12px' }}>
-                {validEntities.length} {validEntities.length === 1 ? 'entity' : 'entities'} validated
+                {validEntities.length} {validEntities.length === 1 ? 'entity' : 'entities'}{' '}
+                validated
               </Text>
             </Space>
           </div>
