@@ -1,5 +1,5 @@
 import React, { useMemo, useRef } from 'react';
-import GridLayout from 'react-grid-layout/legacy';
+import GridLayout, { getCompactor } from 'react-grid-layout';
 import type { Layout } from 'react-grid-layout';
 import { View, Card } from '../types/dashboard';
 import { getBackgroundLayerStyle } from '../utils/backgroundStyle';
@@ -11,6 +11,42 @@ import { logger } from '../services/logger';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import './GridCanvas.css';
+
+// Canvas geometry. react-grid-layout v2 replaced the flat v1 props
+// (cols/rowHeight/margin/containerPadding) with a single `gridConfig` object,
+// and reads geometry ONLY from it — flat props are silently ignored.
+//
+// These values are react-grid-layout's own defaults, stated explicitly. Until
+// this was migrated, the flat props below were being dropped and the canvas had
+// been rendering on these defaults for real, so pinning them here keeps the
+// canvas pixel-identical to what users see today.
+//
+// NOTE: this is deliberately NOT the 56px row that cardSizingContract.ts
+// documents ("1 row = 56px in HA sections grid"). Honouring 56 is the correct
+// end state for Home-Assistant-Sections parity, but it makes every card ~2.7x
+// shorter and the card `h` heuristics need re-tuning first (content currently
+// clips, and the fixed-size icon circles lack flex-shrink: 0). Tracked
+// separately — do not change these numbers without re-baselining
+// tests/e2e/layout.visual.spec.ts.
+//
+// MUST stay identical between the empty and populated grids below.
+const GRID_CONFIG = {
+  cols: 12,
+  rowHeight: 150,
+  margin: [10, 10],
+  containerPadding: null,
+} as const;
+
+// Equivalent of v1's compactType="vertical" + allowOverlap/preventCollision=false.
+// Built via getCompactor() rather than the bare `verticalCompactor` export, which
+// is the raw compaction pass without the collision handling those flags implied.
+// (This matches v2's own default; stated explicitly so the intent survives.)
+const COMPACTOR = getCompactor('vertical', false, false);
+
+// v2 defaults to a 3px drag threshold; v1 had none, and the legacy shim pins 0
+// for compatibility. Kept at 0 so a click still registers as a click (card
+// selection) rather than being swallowed as a micro-drag.
+const DRAG_THRESHOLD = 0;
 
 interface GridCanvasProps {
   view: View;
@@ -157,15 +193,11 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         <GridLayout
           className="layout"
           layout={[]}
-          cols={12}
-          rowHeight={56}
           width={1200}
-          isDraggable={false}
-          isResizable={false}
-          compactType="vertical"
-          useCSSTransforms={true}
-          margin={[16, 16]}
-          containerPadding={[0, 0]}
+          gridConfig={GRID_CONFIG}
+          dragConfig={{ enabled: false, threshold: DRAG_THRESHOLD }}
+          resizeConfig={{ enabled: false }}
+          compactor={COMPACTOR}
           style={{
             backgroundColor: '#141414',
             minHeight: 'calc(100% - 32px)',
@@ -208,20 +240,13 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
       <GridLayout
         className="layout"
         layout={layout}
-        cols={12}
-        rowHeight={56}
         width={1200}
+        gridConfig={GRID_CONFIG}
         onDragStop={handleLayoutChange}
         onResizeStop={handleLayoutChange}
-        isDraggable={true}
-        isResizable={true}
-        draggableCancel=".swiper"
-        compactType="vertical"
-        preventCollision={false}
-        allowOverlap={false}
-        useCSSTransforms={true}
-        margin={[16, 16]}
-        containerPadding={[0, 0]}
+        dragConfig={{ enabled: true, cancel: '.swiper', threshold: DRAG_THRESHOLD }}
+        resizeConfig={{ enabled: true }}
+        compactor={COMPACTOR}
         style={{
           backgroundColor: '#141414',
           minHeight: '100%',
