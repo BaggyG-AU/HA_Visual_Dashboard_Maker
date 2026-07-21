@@ -257,10 +257,14 @@ sets + the TRANSLATE/STRIP/CANVAS classification (§3).
 
 ## 9. Test strategy
 
-- **Unit** (new — there is no `yamlService`/`yamlConversionService` unit spec
-  today, audit part 2 §5): `serializeForHA` applies each `KEY_ACTION` class
-  correctly at top level **and nested** — STRIP keys gone; TRANSLATE keys emitted
-  as `card_mod`/`visibility` (card-mod present) or stripped + flagged (absent);
+- **Unit** (extend the EXISTING specs — `tests/unit/yaml-service.spec.ts` and
+  `tests/unit/yaml-conversion-service.spec.ts` both exist; the audit part 2 §5
+  claim that "there is no `yamlService`/`yamlConversionService` unit spec today"
+  was **wrong**, corrected here): `sanitizeForHA`/`serializeForHA` applies each
+  `KEY_ACTION` class correctly at top level **and nested** — STRIP keys gone
+  (B1/B2, `tests/unit/haExportContract.spec.ts` + the `export boundary (B2/B3)`
+  block in `yaml-service.spec.ts`); TRANSLATE keys emitted as
+  `card_mod`/`visibility` (card-mod present) or stripped + flagged (absent);
   CANVAS keys/types handled per §6a. Migrates bare `layout` by value shape;
   leaves Mushroom `layout: 'horizontal'`.
 - **Classification invariant:** no STRIP-class or raw TRANSLATE-class key
@@ -278,18 +282,18 @@ sets + the TRANSLATE/STRIP/CANVAS classification (§3).
 
 ## 10. Sequenced slices (maps to plan Phase 0–1)
 
-| Slice | Change                                                                   | Depends on    |
-| ----- | ------------------------------------------------------------------------ | ------------- |
-| B0    | Remove `DeployDialog` re-import; deploy the object                       | —             |
-| B1    | `haExportContract.ts` + `KEY_ACTION` map + type guard                    | —             |
-| B2    | Fold classification into `exportCard`; generic recursion                 | B1            |
-| B3    | Move spacer filter into the recursive pass                               | B2            |
-| B4    | Route Save/Live-Preview through `serializeForHA`                         | B2            |
-| B5    | Rename `layout` → `_havdm_layout` + import migration shim                | B2            |
-| B6    | TRANSLATE→card-mod: layout keys + `style` → `card_mod` (inventory-gated) | inventory, B2 |
-| B6b   | TRANSLATE→native: `visibility_conditions` → HA `visibility`              | B2            |
-| B7    | CANVAS-ONLY card types → native "Card Not Available" placeholder (§6a)   | B2            |
-| B8    | Warn-only validation self-check                                          | B2            |
+| Slice | Change                                                                    | Depends on    |
+| ----- | ------------------------------------------------------------------------- | ------------- |
+| B0    | Remove `DeployDialog` re-import; deploy the object — **DONE (PR #39)**    | —             |
+| B1    | `haExportContract.ts` + `KEY_ACTION` map + type guard — **DONE (PR #40)** | —             |
+| B2    | Fold STRIP into `exportCard`; generic recursion — **DONE**                | B1            |
+| B3    | Move spacer filter into the recursive pass — **DONE (folded into B2)**    | B2            |
+| B4    | Route Save/Live-Preview through `serializeForHA`                          | B2            |
+| B5    | Rename `layout` → `_havdm_layout` + import migration shim                 | B2            |
+| B6    | TRANSLATE→card-mod: layout keys + `style` → `card_mod` (inventory-gated)  | inventory, B2 |
+| B6b   | TRANSLATE→native: `visibility_conditions` → HA `visibility`               | B2            |
+| B7    | CANVAS-ONLY card types → native "Card Not Available" placeholder (§6a)    | B2            |
+| B8    | Warn-only validation self-check                                           | B2            |
 
 B0 is independently shippable and unblocks everything else. B6/B6b/B7 are the
 "superset translation" layer; they are what makes this a translating boundary

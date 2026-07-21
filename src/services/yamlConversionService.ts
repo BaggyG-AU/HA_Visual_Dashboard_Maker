@@ -1,6 +1,7 @@
 import { parseUpstreamSwipeCard } from '../features/carousel/carouselService';
 import type { SwiperCardConfig } from '../features/carousel/types';
 import type { TabsCardConfig, TabbedCardAttributes } from '../types/tabs';
+import { STRIP_KEYS } from './haExportContract';
 
 const SWIPE_KNOWN_PARAMETER_KEYS = new Set([
   'slidesPerView',
@@ -119,6 +120,24 @@ const omitKeys = (source: Record<string, unknown>, keys: Set<string>): Record<st
   });
   return result;
 };
+
+// Slice B2: the STRIP class of the export contract (haExportContract.ts) — the
+// HAVDM-internal bookkeeping keys that carry no HA meaning. Removed from every
+// card at every depth by exportCard (which processCardRecursively applies
+// recursively). NOTE: bare `layout` is deliberately NOT here — its rename to
+// `_havdm_layout` + import migration is slice B5, and stripping bare `layout`
+// now would clobber Mushroom's real `layout: 'horizontal'`.
+const STRIP_KEY_SET = new Set<string>(STRIP_KEYS);
+
+const stripInternalKeys = (card: Record<string, unknown>): Record<string, unknown> =>
+  omitKeys(card, STRIP_KEY_SET);
+
+// Slice B3: spacer cards are a HAVDM-internal layout device with no HA type
+// (`type: 'spacer'` renders as an error tile). They are filtered out of the
+// export at every depth by the recursive pass below (previously only at the top
+// level, in sanitizeForHA).
+const isSpacerCard = (card: Record<string, unknown>): boolean =>
+  card.type === 'spacer' || card._isSpacer === true;
 
 const slideCardsToCards = (slides: unknown, fallbackCards: unknown): Record<string, unknown>[] => {
   if (!Array.isArray(slides) || slides.length === 0) {
@@ -512,51 +531,71 @@ const migrateLegacyAccordion = (inputCard: Record<string, unknown>): Record<stri
   };
 };
 
+interface RecursiveProcessOptions {
+  // When provided, any nested card for which this returns true is dropped from
+  // the output (used by the export path to remove spacer cards at every depth).
+  dropCard?: (card: Record<string, unknown>) => boolean;
+}
+
 const processCardRecursively = (
   card: Record<string, unknown>,
   processor: (card: Record<string, unknown>) => Record<string, unknown>,
+  options: RecursiveProcessOptions = {},
 ): Record<string, unknown> => {
   const processed = processor({ ...card });
+  const { dropCard } = options;
 
   const processCardsArray = (cards: unknown): Record<string, unknown>[] | undefined => {
     if (!Array.isArray(cards)) return undefined;
     return cards
       .map((entry) => asCardRecord(entry))
       .filter((entry): entry is Record<string, unknown> => Boolean(entry))
-      .map((entry) => processCardRecursively(entry, processor));
+      .filter((entry) => !(dropCard?.(entry) ?? false))
+      .map((entry) => processCardRecursively(entry, processor, options));
   };
 
-  const processedType = processed.type;
+  const processSingularCard = (value: unknown): Record<string, unknown> | undefined => {
+    const singular = asCardRecord(value);
+    if (!singular) return undefined;
+    if (dropCard?.(singular)) return undefined;
+    return processCardRecursively(singular, processor, options);
+  };
 
-  if (
-    processedType === 'vertical-stack' ||
-    processedType === 'horizontal-stack' ||
-    processedType === 'grid' ||
-    processedType === 'custom:swipe-card' ||
-    processedType === 'custom:expander-card' ||
-    processedType === 'conditional'
-  ) {
-    const cards = processCardsArray(processed.cards);
-    if (cards) {
-      processed.cards = cards;
-    }
+  // Generic recursion (B2): recurse into any child `cards[]` array and any
+  // singular child `card`, regardless of the container's type. This replaces
+  // the previous hard-coded container allowlist, which missed custom containers
+  // like vertical-stack-in-card / auto-entities / decluttering-card /
+  // simple-swipe-card / bubble-card / fold-entity-row.
+  const nestedCards = processCardsArray(processed.cards);
+  if (nestedCards) {
+    processed.cards = nestedCards;
   }
 
-  if (processedType === 'conditional') {
-    const singular = asCardRecord(processed.card);
+  if ('card' in processed) {
+    const singular = processSingularCard(processed.card);
     if (singular) {
-      processed.card = processCardRecursively(singular, processor);
+      processed.card = singular;
+    } else if (asCardRecord(processed.card)) {
+      // The singular child existed but was dropped (e.g. a spacer).
+      delete processed.card;
     }
   }
 
-  if (processedType === 'custom:tabbed-card' && Array.isArray(processed.tabs)) {
+  // Non-standard nesting keys the generic cards/card rule does not reach. These
+  // stay type-guarded (unchanged from before B2) — only the cards/card recursion
+  // above is genericised, per the design.
+  if (processed.type === 'custom:tabbed-card' && Array.isArray(processed.tabs)) {
     processed.tabs = processed.tabs.map((tab) => {
       if (!isRecord(tab)) return tab;
       const nextTab = { ...tab };
 
-      const singular = asCardRecord(nextTab.card);
-      if (singular) {
-        nextTab.card = processCardRecursively(singular, processor);
+      if ('card' in nextTab) {
+        const singular = processSingularCard(nextTab.card);
+        if (singular) {
+          nextTab.card = singular;
+        } else if (asCardRecord(nextTab.card)) {
+          delete nextTab.card;
+        }
       }
 
       const cards = processCardsArray(nextTab.cards);
@@ -568,7 +607,7 @@ const processCardRecursively = (
     });
   }
 
-  if (processedType === 'custom:popup-card' && isRecord(processed.popup)) {
+  if (processed.type === 'custom:popup-card' && isRecord(processed.popup)) {
     const popup = { ...processed.popup };
     const cards = processCardsArray(popup.cards);
     if (cards) {
@@ -627,23 +666,25 @@ export function importCard(card: Record<string, unknown>): Record<string, unknow
 }
 
 export function exportCard(card: Record<string, unknown>): Record<string, unknown> {
+  let exported: Record<string, unknown>;
+
   if (card.type === 'custom:swipe-card') {
-    return exportSwipeCard(card);
+    exported = exportSwipeCard(card);
+  } else if (card.type === 'custom:expander-card') {
+    exported = exportExpanderCard(card);
+  } else if (card.type === 'custom:tabbed-card') {
+    exported = exportTabbedCard(card);
+  } else if (card.type === 'calendar') {
+    exported = exportCalendarCard(card);
+  } else {
+    exported = { ...card };
   }
 
-  if (card.type === 'custom:expander-card') {
-    return exportExpanderCard(card);
-  }
-
-  if (card.type === 'custom:tabbed-card') {
-    return exportTabbedCard(card);
-  }
-
-  if (card.type === 'calendar') {
-    return exportCalendarCard(card);
-  }
-
-  return { ...card };
+  // Slice B2: the global STRIP runs last, after the per-card canonical
+  // exporters, so nothing they pass through leaks. Because exportDashboard
+  // applies exportCard at every depth via processCardRecursively, this strips
+  // the internal keys from nested cards too.
+  return stripInternalKeys(exported);
 }
 
 export function importDashboard(dashboard: Record<string, unknown>): Record<string, unknown> {
@@ -682,10 +723,14 @@ export function exportDashboard(dashboard: Record<string, unknown>): Record<stri
 
     const nextView = { ...view };
     if (Array.isArray(nextView.cards)) {
+      // Slice B3: spacer filtering now lives in the export pass (top-level here
+      // + every nested depth via processCardRecursively's dropCard), replacing
+      // the old top-level-only filter in sanitizeForHA.
       nextView.cards = nextView.cards
         .map((card) => asCardRecord(card))
         .filter((card): card is Record<string, unknown> => Boolean(card))
-        .map((card) => processCardRecursively(card, exportCard));
+        .filter((card) => !isSpacerCard(card))
+        .map((card) => processCardRecursively(card, exportCard, { dropCard: isSpacerCard }));
     }
 
     return nextView;
