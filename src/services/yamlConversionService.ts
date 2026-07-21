@@ -2,6 +2,7 @@ import { parseUpstreamSwipeCard } from '../features/carousel/carouselService';
 import type { SwiperCardConfig } from '../features/carousel/types';
 import type { TabsCardConfig, TabbedCardAttributes } from '../types/tabs';
 import { STRIP_KEYS } from './haExportContract';
+import { translateToCardMod, type CardModWarning } from './cardModTranslator';
 
 const SWIPE_KNOWN_PARAMETER_KEYS = new Set([
   'slidesPerView',
@@ -683,7 +684,30 @@ export function importCard(card: Record<string, unknown>): Record<string, unknow
   return { ...migrated };
 }
 
-export function exportCard(card: Record<string, unknown>): Record<string, unknown> {
+/**
+ * Options threaded through the HA-bound export so every card at every depth is
+ * translated/stripped consistently.
+ */
+export interface ExportCardOptions {
+  /**
+   * Whether card-mod is available on the target instance (slice B6). Default
+   * `true` — assume present, matching the reference instance; the full
+   * capability-inventory gate is Phase 3. When `false`, the TRANSLATE→card-mod
+   * keys are stripped and a warning is recorded instead of emitting `card_mod`.
+   */
+  cardModAvailable?: boolean;
+  /**
+   * Optional accumulator. When provided, every card-mod warning raised while
+   * translating (at any depth) is pushed here. Slice B8 surfaces these to the
+   * user; B6 only collects them.
+   */
+  warnings?: CardModWarning[];
+}
+
+export function exportCard(
+  card: Record<string, unknown>,
+  options: ExportCardOptions = {},
+): Record<string, unknown> {
   let exported: Record<string, unknown>;
 
   if (card.type === 'custom:swipe-card') {
@@ -698,11 +722,22 @@ export function exportCard(card: Record<string, unknown>): Record<string, unknow
     exported = { ...card };
   }
 
+  // Slice B6: TRANSLATE the card-mod class (haExportContract CARD_MOD_KEYS) into
+  // a `card_mod` block — or strip + warn when card-mod is unavailable — AFTER the
+  // per-card canonical exporters (so string-valued expander `gap` etc. are
+  // already settled) and BEFORE the STRIP class below.
+  const translated = translateToCardMod(exported, {
+    cardModAvailable: options.cardModAvailable ?? true,
+  });
+  if (options.warnings && translated.warnings.length > 0) {
+    options.warnings.push(...translated.warnings);
+  }
+
   // Slice B2: the global STRIP runs last, after the per-card canonical
   // exporters, so nothing they pass through leaks. Because exportDashboard
   // applies exportCard at every depth via processCardRecursively, this strips
   // the internal keys from nested cards too.
-  return stripInternalKeys(exported);
+  return stripInternalKeys(translated.card);
 }
 
 export function importDashboard(dashboard: Record<string, unknown>): Record<string, unknown> {
@@ -729,12 +764,21 @@ export function importDashboard(dashboard: Record<string, unknown>): Record<stri
   return nextDashboard;
 }
 
-export function exportDashboard(dashboard: Record<string, unknown>): Record<string, unknown> {
+export function exportDashboard(
+  dashboard: Record<string, unknown>,
+  options: ExportCardOptions = {},
+): Record<string, unknown> {
   const nextDashboard: Record<string, unknown> = { ...dashboard };
 
   if (!Array.isArray(nextDashboard.views)) {
     return nextDashboard;
   }
+
+  // Bind the export options once so the SAME options object — including the
+  // optional `warnings` accumulator — reaches exportCard at every depth via
+  // processCardRecursively (slice B6).
+  const cardProcessor = (card: Record<string, unknown>): Record<string, unknown> =>
+    exportCard(card, options);
 
   nextDashboard.views = nextDashboard.views.map((view) => {
     if (!isRecord(view)) return view;
@@ -748,7 +792,7 @@ export function exportDashboard(dashboard: Record<string, unknown>): Record<stri
         .map((card) => asCardRecord(card))
         .filter((card): card is Record<string, unknown> => Boolean(card))
         .filter((card) => !isSpacerCard(card))
-        .map((card) => processCardRecursively(card, exportCard, { dropCard: isSpacerCard }));
+        .map((card) => processCardRecursively(card, cardProcessor, { dropCard: isSpacerCard }));
     }
 
     return nextView;

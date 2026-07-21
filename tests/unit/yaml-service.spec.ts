@@ -472,4 +472,133 @@ describe('yamlService', () => {
       expect(card.layout).toBe('horizontal');
     });
   });
+
+  // Slice B6: the TRANSLATE→card-mod class (haExportContract CARD_MOD_KEYS) is
+  // compiled into a `card_mod: { style: <css> }` block that mirrors what the
+  // HAVDM canvas renders — box keys (style/card_margin/card_padding) into an
+  // `ha-card { … }` rule, layout keys (gap/align_items/justify_*/wrap/row_gap/
+  // column_gap) into a `#root { … }` rule. sanitizeForHA runs the boundary with
+  // card-mod ASSUMED PRESENT (the default; the reference instance has it).
+  //
+  // RED-BEFORE-GREEN: every "fails on main" assertion was confirmed red when the
+  // B6 src (src/services/cardModTranslator.ts + the exportCard/exportDashboard
+  // wiring in src/services/yamlConversionService.ts) is reverted in the same
+  // checkout — on main the TRANSLATE keys pass through as inert bare keys and no
+  // `card_mod` block is produced.
+  describe('card-mod translate (B6)', () => {
+    const config: DashboardConfig = {
+      title: 'Translate',
+      views: [
+        {
+          title: 'V',
+          path: 'v',
+          cards: [
+            {
+              type: 'horizontal-stack',
+              gap: 12,
+              align_items: 'center',
+              justify_content: 'space-between',
+              wrap: 'wrap',
+              cards: [
+                {
+                  type: 'markdown',
+                  content: 'inner',
+                  style: 'background: red; border-radius: 8px;',
+                  card_margin: 4,
+                  card_padding: 8,
+                },
+              ],
+            },
+            {
+              type: 'grid',
+              row_gap: 6,
+              column_gap: 10,
+              align_items: 'start',
+              justify_items: 'end',
+              cards: [{ type: 'markdown', content: 'g' }],
+            },
+            {
+              // expander-card's real `gap` option is a STRING — must survive.
+              type: 'custom:expander-card',
+              gap: '0.5em',
+              cards: [{ type: 'markdown', content: 'e' }],
+            },
+          ],
+        } as unknown as DashboardConfig['views'][number],
+      ],
+    } as unknown as DashboardConfig;
+
+    const cardsOf = (cfg: DashboardConfig) =>
+      yamlService.sanitizeForHA(cfg).views[0]?.cards as unknown as Record<string, unknown>[];
+
+    it('compiles stack layout keys into a card_mod #root block (fails on main)', () => {
+      const stack = cardsOf(config).find((c) => c.type === 'horizontal-stack') as Record<
+        string,
+        unknown
+      >;
+      const cardMod = stack.card_mod as { style: string } | undefined;
+      expect(typeof cardMod?.style).toBe('string');
+      expect(cardMod?.style).toContain('#root {');
+      expect(cardMod?.style).toContain('gap: 12px;');
+      expect(cardMod?.style).toContain('align-items: center;');
+      expect(cardMod?.style).toContain('justify-content: space-between;');
+      expect(cardMod?.style).toContain('flex-wrap: wrap;');
+      // the raw TRANSLATE keys are removed
+      expect(stack).not.toHaveProperty('gap');
+      expect(stack).not.toHaveProperty('align_items');
+      expect(stack).not.toHaveProperty('justify_content');
+      expect(stack).not.toHaveProperty('wrap');
+    });
+
+    it('compiles style/margin/padding into ha-card, recursively (fails on main)', () => {
+      const stack = cardsOf(config).find((c) => c.type === 'horizontal-stack') as {
+        cards: Record<string, unknown>[];
+      };
+      const inner = stack.cards[0];
+      const cardMod = inner.card_mod as { style: string } | undefined;
+      expect(cardMod?.style).toContain('ha-card {');
+      expect(cardMod?.style).toContain('background: red;');
+      expect(cardMod?.style).toContain('border-radius: 8px;');
+      expect(cardMod?.style).toContain('margin: 4px 4px 4px 4px;');
+      expect(cardMod?.style).toContain('padding: 8px 8px 8px 8px;');
+      expect(inner).not.toHaveProperty('style');
+      expect(inner).not.toHaveProperty('card_margin');
+      expect(inner).not.toHaveProperty('card_padding');
+    });
+
+    it('compiles grid gap/justify keys into #root, mapping start -> flex-start (fails on main)', () => {
+      const grid = cardsOf(config).find((c) => c.type === 'grid') as Record<string, unknown>;
+      const cardMod = grid.card_mod as { style: string } | undefined;
+      expect(cardMod?.style).toContain('row-gap: 6px;');
+      expect(cardMod?.style).toContain('column-gap: 10px;');
+      expect(cardMod?.style).toContain('align-items: flex-start;');
+      expect(cardMod?.style).toContain('justify-items: end;');
+      expect(grid).not.toHaveProperty('row_gap');
+      expect(grid).not.toHaveProperty('column_gap');
+    });
+
+    it("leaves expander-card's string `gap` option untouched (collision guard)", () => {
+      const expander = cardsOf(config).find((c) => c.type === 'custom:expander-card') as Record<
+        string,
+        unknown
+      >;
+      expect(expander.gap).toBe('0.5em');
+      expect(expander).not.toHaveProperty('card_mod');
+    });
+
+    it('does not add card_mod to cards without any TRANSLATE keys', () => {
+      const plain: DashboardConfig = {
+        title: 'Plain',
+        views: [
+          {
+            title: 'V',
+            path: 'v',
+            cards: [{ type: 'markdown', content: 'nothing' }],
+          } as unknown as DashboardConfig['views'][number],
+        ],
+      } as unknown as DashboardConfig;
+      const card = cardsOf(plain)[0];
+      expect(card).not.toHaveProperty('card_mod');
+    });
+  });
 });
