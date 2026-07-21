@@ -7,15 +7,23 @@ import {
   WarningOutlined,
 } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
-import { yamlService } from '../services/yamlService';
 import { logger } from '../services/logger';
+import type { DashboardConfig } from '../types/dashboard';
 
 const { Text } = Typography;
 
 interface DeployDialogProps {
   visible: boolean;
   onClose: () => void;
-  dashboardYaml: string;
+  /**
+   * The HA-ready dashboard config to deploy — already run through
+   * `yamlService.sanitizeForHA`. This is the object that is sent verbatim to
+   * Home Assistant; it is NOT re-serialised and re-parsed on the way out. (An
+   * earlier version passed a YAML string and re-parsed it here, which ran the
+   * import mappers again and re-inflated HAVDM-internal keys the sanitiser had
+   * just removed — see the export-boundary design, slice B0.)
+   */
+  dashboardConfig: DashboardConfig | null;
   dashboardTitle?: string;
 }
 
@@ -37,7 +45,7 @@ interface DeployStatus {
 export const DeployDialog: React.FC<DeployDialogProps> = ({
   visible,
   onClose,
-  dashboardYaml,
+  dashboardConfig,
   dashboardTitle,
 }) => {
   const [form] = Form.useForm();
@@ -71,13 +79,12 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
         success: false,
       });
 
-      // Parse and validate YAML from editor
-      const parseResult = yamlService.parseDashboard(dashboardYaml);
-      if (!parseResult.success) {
-        throw new Error(`Invalid dashboard YAML: ${parseResult.error || 'Unknown error'}`);
+      // Deploy the already-sanitised config object directly — do NOT
+      // re-serialise and re-parse it (that would re-run the import mappers and
+      // re-inflate the HAVDM-internal keys sanitizeForHA removed).
+      if (!dashboardConfig) {
+        throw new Error('No dashboard configuration to deploy.');
       }
-
-      const dashboardConfig = parseResult.data;
 
       logger.debug('Preparing deploy dashboard config', {
         titleFromForm: values.title,
