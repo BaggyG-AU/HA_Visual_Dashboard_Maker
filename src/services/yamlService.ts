@@ -2,14 +2,11 @@ import * as yaml from 'js-yaml';
 import { DashboardConfig, YAMLParseResult } from '../types/dashboard';
 import { logger } from './logger';
 import { exportDashboard, importDashboard } from './yamlConversionService';
+import { selfCheckHaConfig } from './exportSelfCheck';
+import { summarizeExportWarnings } from './exportWarningSummary';
+import type { ExportWarning } from './exportWarnings';
 
 class YAMLService {
-  private static readonly POPUP_EXPORT_WARNING = [
-    '# WARNING: custom:popup-card is a HAVDM editor feature.',
-    '# This card will not render in Home Assistant without the HAVDM runtime.',
-    '# Consider using browser_mod popup or Bubble Card pop-up for HA-native popups.',
-  ].join('\n');
-
   /**
    * Parse YAML string to DashboardConfig
    */
@@ -109,10 +106,18 @@ class YAMLService {
   }
 
   /**
-   * Sanitize dashboard config for Home Assistant deployment
-   * Removes HAVDM-specific internal properties that HA doesn't recognize
+   * Sanitize dashboard config for Home Assistant deployment, and report what the
+   * boundary did (slice B8). Threads a warnings accumulator through the export so
+   * the card-mod (B6) / visibility (B6b) / placeholder (B7) translations are
+   * collected, then runs a warn-only self-check (`exportSelfCheck.ts`) for any
+   * HAVDM-only artefact that leaked through. `sanitizeForHA` returns just the
+   * config; this variant also returns the warnings for the deploy UI.
    */
-  sanitizeForHA(config: DashboardConfig): DashboardConfig {
+  sanitizeForHAWithReport(config: DashboardConfig): {
+    config: DashboardConfig;
+    warnings: ExportWarning[];
+  } {
+    const warnings: ExportWarning[] = [];
     const sanitized: DashboardConfig = {
       title: config.title,
       views: config.views.map((view) => {
@@ -161,41 +166,37 @@ class YAMLService {
       theme: config.theme,
     };
 
-    return exportDashboard(
-      sanitized as unknown as Record<string, unknown>,
-    ) as unknown as DashboardConfig;
+    const exported = exportDashboard(sanitized as unknown as Record<string, unknown>, {
+      warnings,
+    }) as unknown as DashboardConfig;
+
+    // B8 warn-only self-check: flag any HAVDM-only artefact that leaked through.
+    warnings.push(...selfCheckHaConfig(exported));
+
+    return { config: exported, warnings };
   }
 
   /**
-   * Serialize dashboard config for Home Assistant deployment
-   * Automatically sanitizes HAVDM-internal properties
+   * Sanitize dashboard config for Home Assistant deployment.
+   * Removes HAVDM-specific internal properties that HA doesn't recognize.
+   */
+  sanitizeForHA(config: DashboardConfig): DashboardConfig {
+    return this.sanitizeForHAWithReport(config).config;
+  }
+
+  /**
+   * Serialize dashboard config for Home Assistant deployment. Automatically
+   * sanitizes HAVDM-internal properties and, when the boundary translated,
+   * stripped, or substituted anything, prepends a plain-language comment
+   * summary (slice B8) so a user reading the exported file sees what changed.
    */
   serializeForHA(config: DashboardConfig): string {
-    const sanitized = this.sanitizeForHA(config);
+    const { config: sanitized, warnings } = this.sanitizeForHAWithReport(config);
     logger.debug('Sanitized config for HA', sanitized);
     const serialized = this.serializeDashboard(sanitized);
 
-    if (!this.containsPopupCard(sanitized)) {
-      return serialized;
-    }
-
-    return `${YAMLService.POPUP_EXPORT_WARNING}\n${serialized}`;
-  }
-
-  private containsPopupCard(value: unknown): boolean {
-    if (Array.isArray(value)) {
-      return value.some((item) => this.containsPopupCard(item));
-    }
-    if (!value || typeof value !== 'object') {
-      return false;
-    }
-
-    const record = value as Record<string, unknown>;
-    if (record.type === 'custom:popup-card') {
-      return true;
-    }
-
-    return Object.values(record).some((entry) => this.containsPopupCard(entry));
+    const comment = summarizeExportWarnings(warnings).commentBlock;
+    return comment ? `${comment}\n${serialized}` : serialized;
   }
 }
 

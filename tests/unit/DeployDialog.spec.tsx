@@ -104,4 +104,45 @@ describe('DeployDialog (B0: deploy the object, no re-parse)', () => {
     );
     expect(saveSpy).not.toHaveBeenCalled();
   });
+
+  // Slice B8: a plain-language pre-deploy summary of what the export boundary
+  // adjusted. RED-BEFORE-GREEN: the summary Alert does not exist on main
+  // (confirmed by reverting src/components/DeployDialog.tsx in the same checkout).
+  describe('export summary (B8)', () => {
+    it('shows a plain-language summary of the export warnings', () => {
+      render(
+        <DeployDialog
+          visible
+          onClose={() => {}}
+          dashboardConfig={haReadyConfig}
+          dashboardTitle="My Dashboard"
+          warnings={[
+            {
+              category: 'placeholder',
+              reason: 'canvas-only-type',
+              cardType: 'custom:popup-card',
+              keys: ['type'],
+              message: 'x',
+            },
+          ]}
+        />,
+      );
+      expect(screen.getByTestId('export-summary')).toBeInTheDocument();
+      expect(screen.getByText(/adjusted for Home Assistant/i)).toBeInTheDocument();
+      expect(screen.getByText(/Card Not Available/i)).toBeInTheDocument();
+    });
+
+    it('shows no summary when there are no warnings', () => {
+      render(
+        <DeployDialog
+          visible
+          onClose={() => {}}
+          dashboardConfig={haReadyConfig}
+          dashboardTitle="My Dashboard"
+          warnings={[]}
+        />,
+      );
+      expect(screen.queryByTestId('export-summary')).not.toBeInTheDocument();
+    });
+  });
 });

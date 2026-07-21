@@ -9,8 +9,8 @@
  * visual-first; MemPalace `drawer_havdm_decisions_d4f0886c7035390d30c1d1a7`).
  */
 
-/** Which TRANSLATE / substitution step raised the warning. */
-export type ExportWarningCategory = 'card-mod' | 'visibility' | 'placeholder';
+/** Which TRANSLATE / substitution / validation step raised the warning. */
+export type ExportWarningCategory = 'card-mod' | 'visibility' | 'placeholder' | 'self-check';
 
 /** Why the translation was imperfect. */
 export type ExportWarningReason =
@@ -20,7 +20,9 @@ export type ExportWarningReason =
   // visibility (B6b)
   | 'visibility-approximated'
   // canvas-only placeholder (B7)
-  | 'canvas-only-type';
+  | 'canvas-only-type'
+  // validation self-check (B8)
+  | 'leaked-internal';
 
 export interface ExportWarning {
   /** Which TRANSLATE step raised this. */

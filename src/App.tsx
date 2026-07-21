@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   ConfigProvider,
   Layout,
@@ -225,6 +225,14 @@ const App: React.FC = () => {
     canUndo,
     canRedo,
   } = useDashboardStore();
+
+  // Slice B8: run the export boundary (sanitise + collect translation/self-check
+  // warnings) only while the deploy dialog is open, so the DeployDialog gets both
+  // the HA-ready object and a plain-language summary of what was adjusted.
+  const deployReport = useMemo(
+    () => (deployDialogVisible && config ? yamlService.sanitizeForHAWithReport(config) : null),
+    [deployDialogVisible, config],
+  );
 
   // RemapWatcher callbacks MUST be reference-stable.
   //
@@ -1962,8 +1970,9 @@ const App: React.FC = () => {
         <DeployDialog
           visible={deployDialogVisible}
           onClose={handleCloseDeployDialog}
-          dashboardConfig={config ? yamlService.sanitizeForHA(config) : null}
+          dashboardConfig={deployReport?.config ?? null}
           dashboardTitle={config?.title}
+          warnings={deployReport?.warnings}
         />
         <DashboardBrowser
           visible={dashboardBrowserVisible}
