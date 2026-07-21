@@ -17,6 +17,29 @@ npx playwright test tests/integration/entity-browser.spec.ts:262 --project=elect
 
 Artifacts: `test-results/artifacts/...`. Open traces with `npx playwright show-trace <trace.zip>`.
 
+## Headless (WSL2 / no focus stealing)
+
+Under WSL2 + WSLg, every Electron window Playwright launches renders onto the
+Windows desktop and **steals focus** — you can't use the machine while a suite
+runs. Run the tests against a virtual X display (Xvfb) instead so the windows
+stay off-screen:
+
+```bash
+npm run test:e2e:headless           # electron-e2e under Xvfb
+npm run test:integration:headless   # electron-integration under Xvfb
+npm run test:headless               # all projects under Xvfb
+
+# Forward any Playwright args (single spec, workers, etc.):
+bash tools/test-headless.sh tests/e2e/sparkline.spec.ts --workers=1
+```
+
+These wrap `tools/test-headless.sh`, which drops `WAYLAND_DISPLAY` (so Electron
+takes the X11 path) and runs under `xvfb-run` on a fixed 1920×1080 screen.
+Visual-regression snapshots still match their baselines under Xvfb's software
+renderer, and the fixed screen size avoids the WSLg dynamic-resize artifact
+behind some viewport-clamp flakes. Requires `xvfb` (`sudo apt-get install -y
+xvfb`). **This is the preferred way to run the Electron suites locally.**
+
 ## DSL essentials
 
 Import from `tests/support`:
