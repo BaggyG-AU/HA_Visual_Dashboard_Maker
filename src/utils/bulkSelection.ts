@@ -148,12 +148,12 @@ export const applyBulkCardUpdate = (
 
     updatedCount += 1;
 
-    const existingLayout = card.layout;
+    const existingLayout = card._havdm_layout;
     const existingViewLayout = card.view_layout;
 
     return {
       ...updatedCard,
-      layout: existingLayout,
+      _havdm_layout: existingLayout,
       view_layout: existingViewLayout,
     } as Card;
   });

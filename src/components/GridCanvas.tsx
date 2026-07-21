@@ -77,14 +77,14 @@ const generateLayout = (view: View, cards: Card[]): Layout => {
     return gridLayout;
   }
 
-  // Mode 2: Check if cards have internal layout property
-  const hasExistingLayout = cards.some((card) => 'layout' in card && card.layout);
+  // Mode 2: Check if cards have internal geometry (_havdm_layout)
+  const hasExistingLayout = cards.some((card) => '_havdm_layout' in card && card._havdm_layout);
 
   if (hasExistingLayout) {
     // Use existing layout information with constraints
     const layouts = cards.map((card, index) => {
-      if ('layout' in card && card.layout) {
-        const layout = card.layout as any;
+      if ('_havdm_layout' in card && card._havdm_layout) {
+        const layout = card._havdm_layout as any;
         const constraints = getCardSizeConstraints(card);
         return {
           i: `card-${index}`,

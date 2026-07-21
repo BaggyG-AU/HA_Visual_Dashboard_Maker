@@ -40,15 +40,15 @@ export interface CardSizeConstraints {
 export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
   const cardType = card.type;
 
-  // Check if card already has explicit constraints from layout
-  if ('layout' in card && card.layout) {
+  // Check if card already has explicit constraints from its internal geometry
+  if ('_havdm_layout' in card && card._havdm_layout) {
     return {
-      w: card.layout.w || 6,
-      h: card.layout.h || 4,
-      minW: card.layout.minW || 3,
-      maxW: card.layout.maxW || 12,
-      minH: card.layout.minH || 2,
-      maxH: card.layout.maxH || 20,
+      w: card._havdm_layout.w || 6,
+      h: card._havdm_layout.h || 4,
+      minW: card._havdm_layout.minW || 3,
+      maxW: card._havdm_layout.maxW || 12,
+      minH: card._havdm_layout.minH || 2,
+      maxH: card._havdm_layout.maxH || 20,
     };
   }
 

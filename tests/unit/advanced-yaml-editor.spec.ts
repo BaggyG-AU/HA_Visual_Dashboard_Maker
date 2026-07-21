@@ -133,8 +133,8 @@ describe('Advanced YAML Editor - Round-Trip Serialization', () => {
       }
       const card = cards[0];
 
-      expect(card).toHaveProperty('layout');
-      expect(card.layout).toEqual({
+      expect(card).toHaveProperty('_havdm_layout');
+      expect(card._havdm_layout).toEqual({
         x: 0,
         y: 0,
         w: 6,

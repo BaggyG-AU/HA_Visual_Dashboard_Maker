@@ -154,7 +154,7 @@ class DashboardGeneratorService {
       type: 'light',
       entity: entity.entity_id,
       name: entity.attributes.friendly_name || entity.entity_id,
-      layout: {
+      _havdm_layout: {
         x: (index % 2) * 6,
         y: Math.floor(index / 2) * 4,
         w: 6,
@@ -193,7 +193,7 @@ class DashboardGeneratorService {
       show_name: true,
       show_state: true,
       camera_view: 'live',
-      layout: {
+      _havdm_layout: {
         x: (index % 2) * 6,
         y: Math.floor(index / 2) * 6,
         w: 6,
@@ -230,7 +230,7 @@ class DashboardGeneratorService {
       entity: entity.entity_id,
       name: entity.attributes.friendly_name || entity.entity_id,
       graph: 'line',
-      layout: {
+      _havdm_layout: {
         x: (index % 2) * 6,
         y: Math.floor(index / 2) * 4,
         w: 6,
@@ -276,7 +276,7 @@ class DashboardGeneratorService {
         type: 'thermostat',
         entity: entity.entity_id,
         name: entity.attributes.friendly_name || entity.entity_id,
-        layout: {
+        _havdm_layout: {
           x: (index % 2) * 6,
           y: yPosition,
           w: 6,
@@ -295,7 +295,7 @@ class DashboardGeneratorService {
         entity: entity.entity_id,
         name: entity.attributes.friendly_name || entity.entity_id,
         graph: 'line',
-        layout: {
+        _havdm_layout: {
           x: (index % 2) * 6,
           y: yPosition + Math.floor(index / 2) * 4,
           w: 6,
@@ -337,7 +337,7 @@ class DashboardGeneratorService {
         type: 'entities',
         entities: [entity.entity_id],
         title: entity.attributes.friendly_name || entity.entity_id,
-        layout: {
+        _havdm_layout: {
           x: (index % 2) * 6,
           y: Math.floor(index / 2) * 3,
           w: 6,
@@ -354,7 +354,7 @@ class DashboardGeneratorService {
         type: 'entities',
         entities: [entity.entity_id],
         title: entity.attributes.friendly_name || entity.entity_id,
-        layout: {
+        _havdm_layout: {
           x: (index % 2) * 6,
           y: yOffset + Math.floor(index / 2) * 3,
           w: 6,
@@ -391,7 +391,7 @@ class DashboardGeneratorService {
       type: 'cover',
       entity: entity.entity_id,
       name: entity.attributes.friendly_name || entity.entity_id,
-      layout: {
+      _havdm_layout: {
         x: (index % 2) * 6,
         y: Math.floor(index / 2) * 4,
         w: 6,
@@ -443,7 +443,7 @@ class DashboardGeneratorService {
         type: 'alarm-panel',
         entity: entity.entity_id,
         name: entity.attributes.friendly_name || entity.entity_id,
-        layout: {
+        _havdm_layout: {
           x: (index % 2) * 6,
           y: yPosition,
           w: 6,
@@ -461,7 +461,7 @@ class DashboardGeneratorService {
         type: 'lock',
         entity: entity.entity_id,
         name: entity.attributes.friendly_name || entity.entity_id,
-        layout: {
+        _havdm_layout: {
           x: (index % 2) * 6,
           y: yPosition + Math.floor(index / 2) * 3,
           w: 6,
@@ -478,7 +478,7 @@ class DashboardGeneratorService {
         type: 'entity',
         entity: entity.entity_id,
         name: entity.attributes.friendly_name || entity.entity_id,
-        layout: {
+        _havdm_layout: {
           x: (index % 2) * 6,
           y: yPosition + Math.floor(index / 2) * 2,
           w: 6,
@@ -522,7 +522,7 @@ class DashboardGeneratorService {
         entity: entity.entity_id,
         name: entity.attributes.friendly_name || entity.entity_id,
         ...(isSwitch ? {} : { graph: 'line' }),
-        layout: {
+        _havdm_layout: {
           x: (index % 2) * 6,
           y: Math.floor(index / 2) * 4,
           w: 6,
@@ -559,7 +559,7 @@ class DashboardGeneratorService {
       type: 'media-control',
       entity: entity.entity_id,
       name: entity.attributes.friendly_name || entity.entity_id,
-      layout: {
+      _havdm_layout: {
         x: (index % 2) * 6,
         y: Math.floor(index / 2) * 5,
         w: 6,

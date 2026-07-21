@@ -8,11 +8,11 @@ import { Card } from '../../src/types/dashboard';
 import { sampleEntities, withExtraLights } from './fixtures/entities';
 
 type Layout = { x: number; y: number; w: number; h: number };
-type LayoutCard = Card & { layout: Layout };
+type LayoutCard = Card & { _havdm_layout: Layout };
 
 const isLayoutCard = (card: Card | undefined): card is LayoutCard => {
   if (!card) return false;
-  const candidate = (card as Record<string, unknown>).layout;
+  const candidate = (card as Record<string, unknown>)._havdm_layout;
   if (!candidate || typeof candidate !== 'object') return false;
 
   const layout = candidate as Record<string, unknown>;
@@ -90,15 +90,15 @@ describe('dashboardGeneratorService', () => {
     const positionedCards = cards.filter(isLayoutCard);
     expect(positionedCards.length).toBe(cards.length);
     positionedCards.forEach((card) => {
-      expect([0, 6]).toContain(card.layout.x);
-      expect(card.layout.w).toBe(6);
-      expect(card.layout.h).toBe(4);
+      expect([0, 6]).toContain(card._havdm_layout.x);
+      expect(card._havdm_layout.w).toBe(6);
+      expect(card._havdm_layout.h).toBe(4);
     });
 
     // y positions should increment every row (2 cards per row)
     const rows = new Map<number, number>();
     positionedCards.forEach((card) => {
-      rows.set(card.layout.y, (rows.get(card.layout.y) || 0) + 1);
+      rows.set(card._havdm_layout.y, (rows.get(card._havdm_layout.y) || 0) + 1);
     });
     rows.forEach((countInRow) => expect(countInRow).toBeLessThanOrEqual(2));
   });

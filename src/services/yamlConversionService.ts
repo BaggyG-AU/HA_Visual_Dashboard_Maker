@@ -641,8 +641,26 @@ export function migrateLegacyCard(card: Record<string, unknown>): Record<string,
   return { ...card };
 }
 
+// Slice B5: migrate the legacy internal grid-geometry key. Old HAVDM saves and
+// imported dashboards carry a bare `layout: {x,y,w,h}` object; the internal key
+// is now `_havdm_layout` (renamed so it no longer collides with Mushroom's real
+// `layout: 'horizontal' | 'vertical'` option). Disambiguate BY VALUE SHAPE —
+// only an object carrying grid geometry (x/y/w/h) is migrated; a string layout
+// (Mushroom's option) or any other value is left untouched.
+const GEOMETRY_KEYS = ['x', 'y', 'w', 'h'] as const;
+
+const migrateInternalLayout = (card: Record<string, unknown>): Record<string, unknown> => {
+  const layout = card.layout;
+  if (isRecord(layout) && GEOMETRY_KEYS.some((key) => key in layout)) {
+    const { layout: _legacyLayout, ...rest } = card;
+    void _legacyLayout;
+    return { ...rest, _havdm_layout: layout };
+  }
+  return card;
+};
+
 export function importCard(card: Record<string, unknown>): Record<string, unknown> {
-  const migrated = migrateLegacyCard(card);
+  const migrated = migrateInternalLayout(migrateLegacyCard(card));
 
   if (migrated.type === 'custom:swipe-card') {
     return importSwipeCard(migrated);

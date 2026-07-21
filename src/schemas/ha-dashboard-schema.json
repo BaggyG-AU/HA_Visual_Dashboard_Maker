@@ -1127,9 +1127,9 @@
           "type": "boolean",
           "description": "Enable free mode (no snapping)"
         },
-        "layout": {
+        "_havdm_layout": {
           "type": "object",
-          "description": "Grid layout positioning (internal property)",
+          "description": "HAVDM canvas grid geometry (internal property; stripped on export to Home Assistant)",
           "properties": {
             "x": {
               "type": "integer",

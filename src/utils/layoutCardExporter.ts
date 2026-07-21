@@ -18,9 +18,9 @@ export const applyViewLayoutToCards = (view: View, gridLayout: readonly LayoutIt
 
     if (!viewLayout) return card;
 
-    // Remove internal layout property if it exists
+    // Remove internal grid geometry if it exists
     const cardWithoutLayout = { ...(card as Record<string, unknown>) };
-    delete cardWithoutLayout.layout;
+    delete cardWithoutLayout._havdm_layout;
 
     // Add view_layout. The spread widens to Record<string, unknown> (losing the
     // discriminating `type`), so the Card shape is re-asserted here.
@@ -109,7 +109,7 @@ export const getLayoutMode = (view: View): string => {
   if (view.type === 'masonry') {
     return 'Masonry';
   }
-  if ((view.cards || []).some((card) => 'layout' in card && card.layout)) {
+  if ((view.cards || []).some((card) => '_havdm_layout' in card && card._havdm_layout)) {
     return 'Custom Layout';
   }
   return 'Auto Layout';

@@ -52,7 +52,7 @@ describe('yamlService', () => {
               {
                 type: 'markdown',
                 content: 'Hello',
-                layout: { x: 0, y: 0, w: 4, h: 2 }, // HAVDM-specific
+                _havdm_layout: { x: 0, y: 0, w: 4, h: 2 }, // HAVDM-specific
               } as any,
             ],
           } as DashboardConfig['views'][number],
@@ -61,7 +61,7 @@ describe('yamlService', () => {
 
       const sanitized = yamlService.sanitizeForHA(configWithLayout);
 
-      expect(sanitized.views[0]?.cards?.[0]).not.toHaveProperty('layout');
+      expect(sanitized.views[0]?.cards?.[0]).not.toHaveProperty('_havdm_layout');
       expect(sanitized.views[0]?.cards?.[0]?.type).toBe('markdown');
       expect((sanitized.views[0]?.cards?.[0] as any).content).toBe('Hello');
     });
@@ -205,7 +205,7 @@ describe('yamlService', () => {
               {
                 type: 'markdown',
                 content: 'Hello',
-                layout: { x: 0, y: 0, w: 4, h: 2 }, // HAVDM-specific
+                _havdm_layout: { x: 0, y: 0, w: 4, h: 2 }, // HAVDM-specific
               } as any,
               { type: 'spacer' } as any, // HAVDM spacer
             ],
@@ -221,7 +221,7 @@ describe('yamlService', () => {
       expect(parsed.data?.views[0]).not.toHaveProperty('type');
       expect(parsed.data?.views[0]).not.toHaveProperty('layout');
       expect(parsed.data?.views[0]?.cards?.length).toBe(1); // Spacer removed
-      expect(parsed.data?.views[0]?.cards?.[0]).not.toHaveProperty('layout');
+      expect(parsed.data?.views[0]?.cards?.[0]).not.toHaveProperty('_havdm_layout');
     });
 
     it('produces valid YAML output', () => {
@@ -402,6 +402,74 @@ describe('yamlService', () => {
       expect(card).not.toHaveProperty('icon_color_mode');
       expect(card).not.toHaveProperty('_expanderDepth');
       expect(card.content).toBe('top');
+    });
+  });
+
+  // Slice B5: the internal grid-geometry key is renamed `layout` -> `_havdm_layout`
+  // (so it no longer collides with Mushroom's real `layout: 'horizontal'`), with a
+  // value-shape migration shim on import. Both "fails on main" assertions were
+  // confirmed red when only the B5 src changes are reverted in the same checkout.
+  describe('layout key rename + Mushroom collision (B5)', () => {
+    const importFirstCard = (yaml: string): Record<string, unknown> => {
+      const parsed = yamlService.parseDashboard(yaml);
+      expect(parsed.success).toBe(true);
+      return parsed.data?.views[0]?.cards?.[0] as unknown as Record<string, unknown>;
+    };
+
+    it('migrates a bare `layout: {x,y,w,h}` object to `_havdm_layout` on import (fails on main)', () => {
+      const card = importFirstCard(
+        [
+          'title: Migrate',
+          'views:',
+          '  - title: V',
+          '    path: v',
+          '    cards:',
+          '      - type: markdown',
+          '        content: Hello',
+          '        layout:',
+          '          x: 1',
+          '          y: 2',
+          '          w: 4',
+          '          h: 3',
+        ].join('\n'),
+      );
+      expect(card._havdm_layout).toEqual({ x: 1, y: 2, w: 4, h: 3 });
+      expect(card).not.toHaveProperty('layout');
+    });
+
+    it("leaves Mushroom's string `layout: 'horizontal'` untouched on import (value-shape disambiguation)", () => {
+      const card = importFirstCard(
+        [
+          'title: Mushroom',
+          'views:',
+          '  - title: V',
+          '    path: v',
+          '    cards:',
+          '      - type: custom:mushroom-template-card',
+          '        layout: horizontal',
+        ].join('\n'),
+      );
+      expect(card.layout).toBe('horizontal');
+      expect(card).not.toHaveProperty('_havdm_layout');
+    });
+
+    it("preserves Mushroom's `layout: 'horizontal'` through sanitizeForHA at the top level (fails on main)", () => {
+      const config: DashboardConfig = {
+        title: 'Mushroom Deploy',
+        views: [
+          {
+            title: 'V',
+            path: 'v',
+            cards: [{ type: 'custom:mushroom-template-card', layout: 'horizontal' }],
+          } as unknown as DashboardConfig['views'][number],
+        ],
+      } as unknown as DashboardConfig;
+
+      const card = yamlService.sanitizeForHA(config).views[0]?.cards?.[0] as unknown as Record<
+        string,
+        unknown
+      >;
+      expect(card.layout).toBe('horizontal');
     });
   });
 });

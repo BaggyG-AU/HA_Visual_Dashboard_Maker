@@ -54,14 +54,14 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
       return;
     }
 
-    // Mode 2: Check if cards have internal layout property (from user's manual resizing)
-    const hasExistingLayout = cards.some((card) => 'layout' in card && card.layout);
+    // Mode 2: Check if cards have internal geometry (_havdm_layout, from manual resizing)
+    const hasExistingLayout = cards.some((card) => '_havdm_layout' in card && card._havdm_layout);
 
     if (hasExistingLayout) {
       // Use existing layout information from cards
       const existingLayout = cards.map((card, index) => {
-        if ('layout' in card && card.layout) {
-          const layout = card.layout as any;
+        if ('_havdm_layout' in card && card._havdm_layout) {
+          const layout = card._havdm_layout as any;
           const constraints = getCardSizeConstraints(card);
           return {
             i: `card-${index}`,
@@ -125,7 +125,7 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
             if (layoutItem) {
               return {
                 ...card,
-                layout: {
+                _havdm_layout: {
                   x: layoutItem.x,
                   y: layoutItem.y,
                   w: layoutItem.w,

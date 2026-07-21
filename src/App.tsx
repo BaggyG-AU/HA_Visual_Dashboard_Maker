@@ -75,7 +75,7 @@ import {
 
 const { Header, Content, Sider } = Layout;
 type CardWithInternalLayout = Card & {
-  layout?: { x: number; y: number; w: number; h: number };
+  _havdm_layout?: { x: number; y: number; w: number; h: number };
 };
 
 type TestThemeData = {
@@ -144,7 +144,7 @@ const isTestEnv = (): boolean => {
 // added from the palette, which arrive without coordinates.
 const nextFreeRow = (cards: Card[]): number =>
   cards.reduce((bottom, card) => {
-    const layout = (card as CardWithInternalLayout).layout;
+    const layout = (card as CardWithInternalLayout)._havdm_layout;
     if (layout) {
       return Math.max(bottom, layout.y + layout.h);
     }
@@ -606,7 +606,7 @@ const App: React.FC = () => {
 
       return currentView.cards.some((card, index) => {
         const next = layout.find((item) => item.i === `card-${index}`);
-        const current = card.layout;
+        const current = card._havdm_layout;
         if (!next || !current) return true;
         return (
           current.x !== next.x ||
@@ -633,11 +633,11 @@ const App: React.FC = () => {
         updatedCards = currentView.cards.map((card, index) => {
           const viewLayout = viewLayouts[index];
           if (viewLayout) {
-            // Remove internal layout property and add view_layout
-            const { layout: _layout, ...cardWithoutLayout } = card as unknown as Record<
+            // Remove internal geometry and add view_layout
+            const { _havdm_layout: _layout, ...cardWithoutLayout } = card as unknown as Record<
               string,
               unknown
-            > & { layout?: unknown };
+            > & { _havdm_layout?: unknown };
             void _layout;
             return {
               ...(cardWithoutLayout as Record<string, unknown>),
@@ -656,7 +656,7 @@ const App: React.FC = () => {
           if (layoutItem) {
             return {
               ...card,
-              layout: {
+              _havdm_layout: {
                 x: layoutItem.x,
                 y: layoutItem.y,
                 w: layoutItem.w,
@@ -719,7 +719,7 @@ const App: React.FC = () => {
     // Create new card with default properties and size it to constraints
     const newCard: CardWithInternalLayout = {
       ...baseCard,
-      layout: {
+      _havdm_layout: {
         x,
         y,
         w: constraints.w,
@@ -904,17 +904,17 @@ const App: React.FC = () => {
 
     const currentView = config.views[selectedViewIndex];
 
-    // Create new cards from clipboard (remove old layout, will get new position)
+    // Create new cards from clipboard (remove old geometry, will get new position)
     const pastedCards = clipboard.cards.map((clipboardCard) => {
-      const { layout: _layout, ...cardWithoutLayout } = clipboardCard;
+      const { _havdm_layout: _layout, ...cardWithoutLayout } = clipboardCard;
       void _layout;
       return {
         ...cardWithoutLayout,
-        layout: {
+        _havdm_layout: {
           x: 0,
           y: Infinity, // Place at bottom
-          w: clipboardCard.layout?.w || 6,
-          h: clipboardCard.layout?.h || 4,
+          w: clipboardCard._havdm_layout?.w || 6,
+          h: clipboardCard._havdm_layout?.h || 4,
         },
       };
     });
