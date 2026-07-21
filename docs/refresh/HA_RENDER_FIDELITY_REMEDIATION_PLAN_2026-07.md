@@ -50,22 +50,38 @@ the carousel uses default settings), and the card types that do not exist.
 
 ---
 
-## 2. Decisions taken (2026-07-21)
+## 2. Vision & decisions (2026-07-21)
 
-- **D-FID-1 — Invented / non-rendering card types: KEEP AND FIX, do not delete.**
-  The initial card set was chosen for popularity (HA-native + HACS). Where a
-  card cannot render, re-implement it correctly (correct type string, correct
-  schema) rather than removing it. New cards will be added as the app matures.
-- **D-FID-2 — Capability is driven by a live inventory of the user's HA
-  instance.** HAVDM queries what the user has installed; anything absent (e.g.
-  card-mod) is shown **"Not Available"** and its function is disabled in-app.
-  - Feasibility **proven** 2026-07-21: `lovelace/resources` over the existing
-    WebSocket returns the installed HACS resource list (11 on the reference
-    instance). HAVDM does not use this command yet.
-  - **Open design tension with the standalone principle:** capability must come
-    from a **cached profile captured on connect and persisted**, not a live
-    query, so a disconnected or never-connected user still has a usable app.
-    Resolve before building the inventory workstream.
+Ratified via interview; full record in
+`drawer_havdm_decisions_d4f0886c7035390d30c1d1a7`.
+
+**Product vision — HAVDM is a _superset design tool_.** A richer canvas than HA;
+export **translates the design into working HA config wherever a translation
+exists**, and honestly marks what cannot be translated. Primary user is **both,
+visual-first** (canvas primary, YAML available; warnings must be plain-language).
+
+The translate-vs-mark line: features with a real HA target are **translated**
+(layout/style keys → card-mod; `visibility_conditions` → HA-native
+`visibility`); design-time concepts with no clean HA equivalent (the popup and
+native-graph card _types_) stay **canvas-only** and, on deploy, are replaced by a
+native "Card Not Available" placeholder that holds the slot (WYSIWYG).
+
+Decisions:
+
+- **D-FID-1 — Invented card types: KEEP AND FIX, do not delete.** Re-implement
+  correctly rather than removing; new cards are added as the app matures.
+- **D-FID-2 — Capability from a live inventory** of the user's HA, persisted as
+  an **offline-editable profile** (never a live query — preserves standalone).
+  `lovelace/resources` feasibility **proven** (11 resources on the reference
+  instance). Never-connected default is **permissive**.
+- **D-FID-3 — Export is a three-way classification**, not a denylist:
+  TRANSLATE / STRIP / CANVAS-ONLY (see the export-boundary design §3).
+- **D-FID-4 — Two-schema split**: permissive editor schema (Monaco) + strict
+  fidelity schema (deploy gate).
+- **D-FID-5 — "Not Available" cards are authorable** with a "won't render on your
+  instance" banner (not hard-disabled).
+- **card-mod is load-bearing** under this vision — its inventory detection gates
+  the whole TRANSLATE→card-mod path.
 
 ---
 

@@ -171,12 +171,19 @@ replaces that single-string check.
 
 The inventory and the boundary are **complementary, not substitutes**:
 
-- The **inventory** decides _whether to offer_ a card and _whether `style` can
-  become `card_mod`_ (export boundary §6).
+- The **inventory** decides _whether to offer_ a card and — critically — _whether
+  the whole TRANSLATE→card-mod path is live_ (export boundary §3, §6).
 - The **boundary** decides _whether an offered card deploys correctly_.
 
 A perfect inventory still leaves HAVDM leaking `_havdm_*`/`layout` and making
 every deployed card YAML-only in HA — so Phases 0–1 stand regardless of Phase 3.
+
+> **card-mod is load-bearing.** Under the superset vision
+> (`drawer_havdm_decisions_d4f0886c7035390d30c1d1a7`) the layout/style keys
+> _translate_ to card-mod on deploy. So card-mod detection is not a nicety — it
+> gates whether a large class of HAVDM features survives deploy at all. The
+> inventory should surface card-mod's presence prominently and **prompt the user
+> to install it** when absent. (It is installed on the reference instance.)
 
 ---
 

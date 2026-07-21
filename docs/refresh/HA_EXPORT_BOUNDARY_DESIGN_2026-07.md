@@ -48,50 +48,65 @@ Three structural defects follow:
 
 ---
 
-## 3. Core decision: hybrid denylist, not full allowlist
+## 3. Core decision: a three-way key/card classification
 
-Two candidate philosophies:
+> **Revised after the vision interview (2026-07-21,
+> `drawer_havdm_decisions_d4f0886c7035390d30c1d1a7`).** HAVDM is a **superset
+> design tool**: it offers more than HA, and export's job is to **translate the
+> design into working HA config wherever a translation exists**, and to honestly
+> mark what cannot be translated. So the boundary is **not** a simple denylist —
+> it is a classification with three actions.
 
-- **Allowlist** (emit only keys we know a card supports). Rejected: it fights the
-  "type any valid YAML" freedom, and it is a maintenance treadmill — every
-  upstream schema addition requires a HAVDM change, and any key we don't yet
-  model is wrongly dropped.
-- **Denylist** (remove a known set of HAVDM-invented keys). Chosen, because the
-  HAVDM-only keys are **finite and enumerable from the type system** — they are
-  precisely the fields `BaseCard` (`types/dashboard.ts:34-72`) and
-  `Phase6CardContracts` (`types/phase6.ts:19-24`) add beyond Home Assistant's
-  card config.
+A full **allowlist** (emit only keys we know a card supports) is still rejected:
+it fights the "type any valid YAML" freedom and is a maintenance treadmill. But a
+plain denylist is too blunt for a superset tool — it would _strip_ features that
+actually have a real HA target. Every HAVDM-only key/card gets one of three
+export actions:
 
-### 3.1 The HAVDM-only key registry
+| Class           | Members                                                                                                                                                                                                                                    | Export action                                                                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **TRANSLATE**   | `gap`, `align_items`, `justify_content`, `justify_items`, `wrap`, `row_gap`, `column_gap`, `card_margin`, `card_padding`, `style`; `visibility_conditions`/`visibility_operator`                                                           | → **card-mod CSS** (layout/style); → HA-native **`visibility`** (conditions). Emit when the instance supports the adapter; **strip + warn** when not. |
+| **STRIP**       | `_havdm_layout`, `_isSpacer`, `_expanderDepth`, `icon_color_mode` (derived HAVDM state)                                                                                                                                                    | pure internal bookkeeping, no HA meaning — remove silently                                                                                            |
+| **CANVAS-ONLY** | phantom card **types** (popup, native-graph, …); behavioural features with no HA mechanism: `attribute_display*`, `multi_entity_mode`, `aggregate_function`, `batch_actions`, `trigger_animations`, `state_styles`, `state_icons`, `sound` | design-time only. Card types → **placeholder-on-deploy** (§6a). Behavioural keys → strip (per-key confirm in Phase 4).                                |
 
-A single exported constant, derived to stay in lock-step with the types:
+The members are still **finite and enumerable from the type system** — precisely
+the fields `BaseCard` (`types/dashboard.ts:34-72`) and `Phase6CardContracts`
+(`types/phase6.ts:19-24`) add beyond HA's card config.
+
+### 3.1 The classification registry
 
 ```
 // src/services/haExportContract.ts  (new)
-export const HAVDM_ONLY_KEYS = [
-  // visual/behaviour extensions (BaseCard)
-  'style',                    // → card_mod on capable instances; see §6
-  'card_margin', 'card_padding',
-  'haptic', 'sound',
-  'attribute_display', 'attribute_display_layout',
-  'state_icons',
-  'icon_color_mode', 'icon_color_states', 'icon_color_attribute',
-  'multi_entity_mode', 'aggregate_function', 'batch_actions',
-  // Phase6CardContracts
-  'smart_defaults', 'state_styles', 'trigger_animations',
-  'visibility_conditions', 'visibility_operator',
-  // internal bookkeeping (namespaced target — see §5)
-  '_havdm_layout', '_isSpacer', '_expanderDepth',
-] as const;
+export const KEY_ACTION = {
+  // TRANSLATE — a real HA target exists
+  gap: 'card-mod', align_items: 'card-mod', justify_content: 'card-mod',
+  justify_items: 'card-mod', wrap: 'card-mod', row_gap: 'card-mod',
+  column_gap: 'card-mod', card_margin: 'card-mod', card_padding: 'card-mod',
+  style: 'card-mod',
+  visibility_conditions: 'ha-visibility', visibility_operator: 'ha-visibility',
+  // STRIP — internal bookkeeping
+  _havdm_layout: 'strip', _isSpacer: 'strip', _expanderDepth: 'strip',
+  icon_color_mode: 'strip',
+  // CANVAS-ONLY behavioural keys
+  attribute_display: 'canvas', attribute_display_layout: 'canvas',
+  multi_entity_mode: 'canvas', aggregate_function: 'canvas',
+  batch_actions: 'canvas', trigger_animations: 'canvas',
+  state_styles: 'canvas', state_icons: 'canvas', sound: 'canvas',
+} as const;
 ```
 
-> A type-level guard (`satisfies`) ties this list to the interfaces so a new
-> `BaseCard` field fails the build until it is classified as HA-real or
-> HAVDM-only. That is the "complete by construction" property.
+> A `satisfies` guard ties this map to the interfaces so a new `BaseCard` field
+> **fails the build until it is classified** TRANSLATE / STRIP / CANVAS-ONLY.
+> That is the "complete by construction" property, now over three actions.
 
-Kept **out** of the denylist deliberately (they are HA-real extras that
-`baseLovelaceCardConfig` accepts): `view_layout`, `visibility`, `grid_options`,
-`layout_options`.
+Kept **out** of the map deliberately (HA-real extras `baseLovelaceCardConfig`
+accepts): `view_layout`, `visibility`, `grid_options`, `layout_options`.
+
+> **card-mod is now load-bearing.** Under the superset+compile vision the
+> TRANSLATE→card-mod path is central, so the capability inventory's card-mod
+> detection gates it, and HAVDM should consider prompting users to install
+> card-mod. (card-mod is installed on the reference instance.) The exact
+> card-mod CSS mapping for each layout key is a Phase-1 sub-design.
 
 ### 3.2 The single boundary function
 
@@ -173,23 +188,36 @@ if (isObject(card.layout) && hasAny(card.layout, ['x','y','w','h'])) {
 
 ---
 
-## 6. `style` / backgrounds — the one genuine feature at stake
+## 6. `style` / backgrounds — TRANSLATE to card-mod
 
 `style` is emitted as a bare top-level key on every card but expander; card-mod
 reads only `card_mod: { style: … }` (audit parts 1 & 3, verified against
 card-mod v4.2.1). So today every background/CSS a user paints is dropped by HA.
 
-card-mod **is installed** on the reference instance (`lovelace/resources` probe,
-2026-07-21), so a real fix is viable. Options, gated by the capability inventory:
-
-- **A — emit `card_mod: { style }` when card-mod is available**, strip `style`
-  when it is not (with a UI warning that background won't render).
-- **B — canvas-only**, always strip, label the control "preview-only in HA".
-
-**Recommendation: A, gated on the inventory** — honours the fidelity principle
-where the user's instance can honour it, degrades to B with a clear warning where
-it can't. Requires the capability profile
+**Decision (ratified):** `style` (and the layout keys) are **TRANSLATE**-class —
+emit `card_mod: { style }` when card-mod is available; **strip + warn** when it is
+not. Gated on the capability profile
 ([`HA_CAPABILITY_INVENTORY_DESIGN`](./HA_CAPABILITY_INVENTORY_DESIGN_2026-07.md)).
+card-mod **is installed** on the reference instance (`lovelace/resources` probe,
+2026-07-21). The layout keys (`gap`/`align_items`/…) translate to the equivalent
+flex/grid CSS in the same `card_mod` block; the per-key CSS mapping is a Phase-1
+sub-design.
+
+## 6a. Canvas-only card types — placeholder-on-deploy
+
+Phantom card **types** (popup, native-graph, and the other non-existent types)
+are CANVAS-ONLY: they render on the HAVDM canvas but must not deploy as a card of
+that type. On deploy each is **substituted with a placeholder that holds its
+slot** (WYSIWYG geometry preserved) and displays **"Card Not Available"**.
+
+> ⚠ The placeholder **must be an HA-native, renderable card** — a `markdown` card
+> is the clean choice — **NOT `type: spacer`.** `spacer` is itself a phantom
+> type; HA renders it as _"Unknown type encountered: spacer"_, the exact error
+> tile this avoids (audit part 4). The substitution copies the original card's
+> `view_layout`/`grid_options`/size so the slot is preserved.
+
+Applies on every HA-bound route. The pre-deploy summary lists which cards were
+substituted (consistent with the "author-with-banner" palette policy).
 
 ---
 
@@ -220,21 +248,26 @@ Staged approach:
    capability inventory + per-card known-key sets** (Phase 4), since HA does not
    publish machine-readable per-card schemas.
 
-> **Open question for decision:** do we split into two schemas — a permissive
-> _editor_ schema (drives Monaco) and a strict _fidelity_ schema (drives the
-> deploy gate) — or correct the single schema and add a separate deploy-time
-> allow-check? Recommend the two-schema split; flagged for sign-off.
+**Decision (ratified 2026-07-21):** **two-schema split** — a permissive _editor_
+schema (drives Monaco) and a strict _fidelity_ schema (drives the deploy gate).
+The fidelity schema is derived from the capability inventory + per-card known-key
+sets + the TRANSLATE/STRIP/CANVAS classification (§3).
 
 ---
 
 ## 9. Test strategy
 
 - **Unit** (new — there is no `yamlService`/`yamlConversionService` unit spec
-  today, audit part 2 §5): `serializeForHA` strips every `HAVDM_ONLY_KEYS` entry
-  at top level **and nested**; preserves HA-real extras; migrates bare `layout`
-  by value shape; leaves Mushroom `layout: 'horizontal'`.
-- **Round-trip invariant:** `serializeForHA(x)` contains no key in
-  `HAVDM_ONLY_KEYS` at any depth — assert recursively.
+  today, audit part 2 §5): `serializeForHA` applies each `KEY_ACTION` class
+  correctly at top level **and nested** — STRIP keys gone; TRANSLATE keys emitted
+  as `card_mod`/`visibility` (card-mod present) or stripped + flagged (absent);
+  CANVAS keys/types handled per §6a. Migrates bare `layout` by value shape;
+  leaves Mushroom `layout: 'horizontal'`.
+- **Classification invariant:** no STRIP-class or raw TRANSLATE-class key
+  survives `serializeForHA(x)` at any depth — assert recursively.
+- **Placeholder invariant:** a canvas-only card type in the input yields a
+  native `markdown` "Card Not Available" card at the same slot in the output —
+  and **never** `type: spacer`.
 - **Regression, red-before-green in the same checkout:** a spacer nested in a
   stack must not appear in the boundary output (fails on `main` today).
 - **Full electron-e2e** for any `PropertiesPanel` / deploy-path change — the
@@ -245,15 +278,19 @@ Staged approach:
 
 ## 10. Sequenced slices (maps to plan Phase 0–1)
 
-| Slice | Change                                                    | Depends on    |
-| ----- | --------------------------------------------------------- | ------------- |
-| B0    | Remove `DeployDialog` re-import; deploy the object        | —             |
-| B1    | `haExportContract.ts` + `HAVDM_ONLY_KEYS` + type guard    | —             |
-| B2    | Fold global strip into `exportCard`; generic recursion    | B1            |
-| B3    | Move spacer filter into the recursive pass                | B2            |
-| B4    | Route Save/Live-Preview through `serializeForHA`          | B2            |
-| B5    | Rename `layout` → `_havdm_layout` + import migration shim | B2            |
-| B6    | `style` → `card_mod` gating                               | inventory, B2 |
-| B7    | Warn-only validation self-check                           | B2            |
+| Slice | Change                                                                   | Depends on    |
+| ----- | ------------------------------------------------------------------------ | ------------- |
+| B0    | Remove `DeployDialog` re-import; deploy the object                       | —             |
+| B1    | `haExportContract.ts` + `KEY_ACTION` map + type guard                    | —             |
+| B2    | Fold classification into `exportCard`; generic recursion                 | B1            |
+| B3    | Move spacer filter into the recursive pass                               | B2            |
+| B4    | Route Save/Live-Preview through `serializeForHA`                         | B2            |
+| B5    | Rename `layout` → `_havdm_layout` + import migration shim                | B2            |
+| B6    | TRANSLATE→card-mod: layout keys + `style` → `card_mod` (inventory-gated) | inventory, B2 |
+| B6b   | TRANSLATE→native: `visibility_conditions` → HA `visibility`              | B2            |
+| B7    | CANVAS-ONLY card types → native "Card Not Available" placeholder (§6a)   | B2            |
+| B8    | Warn-only validation self-check                                          | B2            |
 
-B0 is independently shippable and unblocks everything else.
+B0 is independently shippable and unblocks everything else. B6/B6b/B7 are the
+"superset translation" layer; they are what makes this a translating boundary
+rather than a stripping one.
