@@ -59,7 +59,10 @@ export interface BaseCard extends Phase6CardContracts {
   card_padding?: CardSpacingValue;
   // react-grid-layout canvas position/size (assigned by the generator/store).
   // All optional — some call sites supply only a subset (e.g. sizing constraints).
-  layout?: {
+  // Named `_havdm_layout` (not `layout`) so it does not collide with Mushroom's
+  // real `layout: 'horizontal' | 'vertical'` option; classified `strip` in the
+  // export contract (haExportContract.ts) so it never reaches Home Assistant.
+  _havdm_layout?: {
     x?: number;
     y?: number;
     w?: number;

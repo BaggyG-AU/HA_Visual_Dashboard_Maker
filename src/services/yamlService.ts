@@ -128,19 +128,14 @@ class YAMLService {
           visible: view.visible,
           cards:
             view.cards?.map((card) => {
-              // Create a clean copy. Bare `layout` (HAVDM grid geometry
-              // {x,y,w,h}) is stripped here at the top level; making that
-              // recursive is slice B5 (it must first be renamed to
-              // `_havdm_layout` so it doesn't clobber Mushroom's real
-              // `layout: 'horizontal'`).
+              // Create a clean copy. The HAVDM grid geometry is now the internal
+              // key `_havdm_layout` (slice B5) and is removed by the recursive
+              // export pass below (exportDashboard -> exportCard applies the
+              // STRIP class at every depth). Bare `layout` is left untouched — it
+              // is Mushroom's real `layout: 'horizontal' | 'vertical'` option,
+              // not HAVDM geometry. `_isSpacer` is likewise left intact so the
+              // recursive pass can detect and drop spacer cards (B3).
               const cleanCard: any = { ...card };
-              delete cleanCard.layout; // HAVDM grid positioning {x, y, w, h}
-
-              // NOTE: `_isSpacer` is intentionally NOT deleted here. Spacer
-              // removal and the internal-key STRIP (which includes _isSpacer)
-              // now run in the recursive export pass below
-              // (exportDashboard -> exportCard), which needs `_isSpacer`
-              // intact to detect and drop spacer cards at every depth (B3).
 
               // Remove any undefined or null values
               Object.keys(cleanCard).forEach((key) => {

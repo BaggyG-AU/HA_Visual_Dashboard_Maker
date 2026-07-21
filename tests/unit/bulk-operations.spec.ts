@@ -9,9 +9,9 @@ import {
 } from '../../src/utils/bulkSelection';
 
 const baseCards: Card[] = [
-  { type: 'button', name: 'A', layout: { x: 0, y: 0, w: 3, h: 2 } },
-  { type: 'button', name: 'B', layout: { x: 3, y: 0, w: 3, h: 2 } },
-  { type: 'markdown', content: 'C', layout: { x: 6, y: 0, w: 3, h: 2 } },
+  { type: 'button', name: 'A', _havdm_layout: { x: 0, y: 0, w: 3, h: 2 } },
+  { type: 'button', name: 'B', _havdm_layout: { x: 3, y: 0, w: 3, h: 2 } },
+  { type: 'markdown', content: 'C', _havdm_layout: { x: 6, y: 0, w: 3, h: 2 } },
 ];
 
 const baseConfig: DashboardConfig = {
@@ -79,7 +79,7 @@ describe('bulk selection utilities', () => {
     expect((result.cards[0] as Card & { name?: string }).name).toBe('Renamed');
     expect((result.cards[1] as Card & { name?: string }).name).toBe('Renamed');
     expect(result.cards[2].type).toBe('markdown');
-    expect(result.cards[0].layout).toEqual(baseCards[0].layout);
+    expect(result.cards[0]._havdm_layout).toEqual(baseCards[0]._havdm_layout);
   });
 
   it('removes cards by normalized indices', () => {

@@ -119,16 +119,17 @@ type HaNativeKey =
  * HAVDM-only fields whose export classification is intentionally deferred to a
  * later slice — parked here (rather than force-classified in `KEY_ACTION`) so
  * the guard stays green without pre-empting a decision the design defers:
- *  - `layout` — bare grid geometry `{x,y,w,h}`; renamed to `_havdm_layout`
- *    (already classified `'strip'`) by slice **B5** plus a value-shape import
- *    migration. Until then the bare key survives; do not add it to the B2 strip
- *    (it would clobber Mushroom's real `layout: 'horizontal'`).
  *  - `haptic` / `icon_color_states` / `icon_color_attribute` / `smart_defaults`
  *    — behavioural HAVDM inventions with no HA target; their per-key export
  *    handling is Phase 4 (design §3, CANVAS-ONLY "per-key confirm in Phase 4").
+ *
+ * (The internal grid-geometry key was renamed `layout` → `_havdm_layout` in
+ * slice B5; `_havdm_layout` is classified `'strip'` in `KEY_ACTION`, and bare
+ * `layout` is now solely Mushroom's real `'horizontal' | 'vertical'` option — no
+ * longer a `BaseCard` field, so it needs no entry here.)
  */
 type DeferredClassificationKey =
-  'layout' | 'haptic' | 'icon_color_states' | 'icon_color_attribute' | 'smart_defaults';
+  'haptic' | 'icon_color_states' | 'icon_color_attribute' | 'smart_defaults';
 
 /** Any card field that is neither classified, HA-native, nor deferred. */
 type UnclassifiedCardKey = Exclude<

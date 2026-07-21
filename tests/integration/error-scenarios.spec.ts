@@ -873,7 +873,7 @@ test.describe('Layout and Rendering Errors', () => {
   test('should handle negative card dimensions', async () => {
     const constraints = getCardSizeConstraints({
       type: 'button',
-      layout: {
+      _havdm_layout: {
         w: -1,
         h: -2,
         minW: -3,

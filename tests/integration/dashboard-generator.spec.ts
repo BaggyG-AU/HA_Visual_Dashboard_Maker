@@ -226,7 +226,7 @@ test.describe.skip('Dashboard Generator Service (covered by unit tests)', () => 
   test('should assign grid layout positions to cards', () => {
     const dashboard = dashboardGeneratorService.generateDashboard('lights', mockEntities);
 
-    const layout = dashboard?.views[0]?.cards?.[0]?.layout;
+    const layout = dashboard?.views[0]?.cards?.[0]?._havdm_layout;
     expect(layout).toBeDefined();
     expect(layout?.x).toBeGreaterThanOrEqual(0);
     expect(layout?.y).toBeGreaterThanOrEqual(0);
