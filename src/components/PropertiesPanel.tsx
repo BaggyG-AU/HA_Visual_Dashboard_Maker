@@ -1703,11 +1703,19 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   {card.type === 'gauge' && (
                     <>
                       <Form.Item label={<span style={{ color: 'white' }}>Min</span>} name="min">
-                        <Input data-testid="ha-gauge-min" type="number" placeholder="0" />
+                        <InputNumber
+                          data-testid="ha-gauge-min"
+                          placeholder="0"
+                          style={{ width: '100%' }}
+                        />
                       </Form.Item>
 
                       <Form.Item label={<span style={{ color: 'white' }}>Max</span>} name="max">
-                        <Input data-testid="ha-gauge-max" type="number" placeholder="100" />
+                        <InputNumber
+                          data-testid="ha-gauge-max"
+                          placeholder="100"
+                          style={{ width: '100%' }}
+                        />
                       </Form.Item>
 
                       <Form.Item label={<span style={{ color: 'white' }}>Unit</span>} name="unit">
@@ -1731,21 +1739,21 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                         label={<span style={{ color: 'white' }}>Green From</span>}
                         name={['severity', 'green']}
                       >
-                        <Input type="number" placeholder="0" />
+                        <InputNumber placeholder="0" style={{ width: '100%' }} />
                       </Form.Item>
 
                       <Form.Item
                         label={<span style={{ color: 'white' }}>Yellow From</span>}
                         name={['severity', 'yellow']}
                       >
-                        <Input type="number" placeholder="50" />
+                        <InputNumber placeholder="50" style={{ width: '100%' }} />
                       </Form.Item>
 
                       <Form.Item
                         label={<span style={{ color: 'white' }}>Red From</span>}
                         name={['severity', 'red']}
                       >
-                        <Input type="number" placeholder="80" />
+                        <InputNumber placeholder="80" style={{ width: '100%' }} />
                       </Form.Item>
                     </>
                   )}
@@ -1772,7 +1780,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Hours to Show</span>}
                     name="hours_to_show"
                   >
-                    <Input type="number" placeholder="24" />
+                    <InputNumber placeholder="24" style={{ width: '100%' }} />
                   </Form.Item>
                 </>
               )}
@@ -2416,12 +2424,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="points_per_hour"
                     help={<span style={{ color: '#666' }}>Data point density</span>}
                   >
-                    <Input
+                    <InputNumber
                       data-testid="sparkline-points-per-hour"
-                      type="number"
-                      step="0.25"
-                      min="0.25"
-                      max="24"
+                      step={0.25}
+                      min={0.25}
+                      max={24}
+                      style={{ width: '100%' }}
                     />
                   </Form.Item>
 
@@ -2429,7 +2437,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Stroke Width</span>}
                     name="line_width"
                   >
-                    <Input data-testid="sparkline-line-width" type="number" min="1" max="8" />
+                    <InputNumber
+                      data-testid="sparkline-line-width"
+                      min={1}
+                      max={8}
+                      style={{ width: '100%' }}
+                    />
                   </Form.Item>
 
                   <Form.Item
@@ -5531,7 +5544,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="update_interval"
                     help={<span style={{ color: '#666' }}>Update interval in seconds</span>}
                   >
-                    <Input type="number" placeholder="1" />
+                    <InputNumber placeholder="1" style={{ width: '100%' }} />
                   </Form.Item>
 
                   <Alert
@@ -5781,7 +5794,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="min"
                     help={<span style={{ color: '#666' }}>Minimum slider value</span>}
                   >
-                    <Input type="number" placeholder="0" />
+                    <InputNumber placeholder="0" style={{ width: '100%' }} />
                   </Form.Item>
 
                   <Form.Item
@@ -5789,7 +5802,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="max"
                     help={<span style={{ color: '#666' }}>Maximum slider value</span>}
                   >
-                    <Input type="number" placeholder="100" />
+                    <InputNumber placeholder="100" style={{ width: '100%' }} />
                   </Form.Item>
 
                   <Form.Item
@@ -5797,7 +5810,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="step"
                     help={<span style={{ color: '#666' }}>Slider step increment</span>}
                   >
-                    <Input type="number" placeholder="1" />
+                    <InputNumber placeholder="1" style={{ width: '100%' }} />
                   </Form.Item>
                 </>
               )}
@@ -5843,7 +5856,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       </span>
                     }
                   >
-                    <Input type="number" placeholder="5" />
+                    <InputNumber placeholder="5" style={{ width: '100%' }} />
                   </Form.Item>
 
                   <Alert
