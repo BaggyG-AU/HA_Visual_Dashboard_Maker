@@ -10,6 +10,7 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { cardRegistry, CardCategory, CardTypeMetadata } from '../services/cardRegistry';
+import { CANVAS_ONLY_CARD_TYPES } from '../services/haExportContract';
 
 interface CardPaletteProps {
   onCardAdd: (cardType: string) => void;
@@ -232,9 +233,9 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
                               }}
                             />
                           )}
-                          {card.type === 'custom:popup-card' && (
+                          {CANVAS_ONLY_CARD_TYPES.includes(card.type) && (
                             <Tooltip
-                              title="HAVDM-only - not available as a standalone HACS card"
+                              title="HAVDM canvas-only card — on deploy it becomes a 'Card Not Available' placeholder in Home Assistant"
                               placement="top"
                             >
                               <Badge
