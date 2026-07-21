@@ -231,4 +231,51 @@ describe('yamlService', () => {
       expect(yaml).toContain('- title: View A');
     });
   });
+
+  // Slice B0 of the export-boundary work: the deploy path must send the
+  // sanitised OBJECT directly, not re-serialise it and parse it back. Parsing
+  // re-runs the import mappers, which re-inflate HAVDM-internal keys that the
+  // export mappers had just removed. These tests lock the property that makes
+  // the direct object the correct thing to deploy.
+  describe('deploy boundary (B0): sanitizeForHA vs a re-parse round-trip', () => {
+    const configWithSwipe: DashboardConfig = {
+      title: 'Deploy Test',
+      views: [
+        {
+          title: 'View',
+          path: 'v',
+          cards: [
+            {
+              type: 'custom:swipe-card',
+              parameters: { pagination: true },
+              cards: [{ type: 'markdown', content: 'A' }],
+            } as any,
+          ],
+        } as any,
+      ],
+    };
+
+    const swipeOf = (dash: DashboardConfig | undefined) =>
+      dash?.views?.[0]?.cards?.[0] as Record<string, unknown> | undefined;
+
+    it('the sanitised object does not carry HAVDM-internal swipe keys', () => {
+      // This is what DeployDialog now sends to Home Assistant.
+      const direct = yamlService.sanitizeForHA(configWithSwipe);
+      const card = swipeOf(direct);
+      expect(card?.type).toBe('custom:swipe-card');
+      expect(card).not.toHaveProperty('slides');
+      expect(card).not.toHaveProperty('slides_per_view');
+    });
+
+    it('a re-parse round-trip RE-INFLATES those keys (the old deploy path)', () => {
+      // The pre-B0 path: serializeForHA -> string -> parseDashboard (import).
+      const roundTripped = yamlService.parseDashboard(
+        yamlService.serializeForHA(configWithSwipe),
+      ).data;
+      const card = swipeOf(roundTripped);
+      // Documents WHY B0 exists: the import mappers put the internal keys back.
+      expect(card).toHaveProperty('slides');
+      expect(card).toHaveProperty('slides_per_view');
+    });
+  });
 });

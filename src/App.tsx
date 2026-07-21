@@ -1934,7 +1934,7 @@ const App: React.FC = () => {
         <DeployDialog
           visible={deployDialogVisible}
           onClose={handleCloseDeployDialog}
-          dashboardYaml={config ? yamlService.serializeForHA(config) : ''}
+          dashboardConfig={config ? yamlService.sanitizeForHA(config) : null}
           dashboardTitle={config?.title}
         />
         <DashboardBrowser
