@@ -200,4 +200,40 @@ test.describe('Layout Enhancements', () => {
       await close(ctx);
     }
   });
+
+  test('yaml round trip preserves grid row and column gaps as numbers', async ({
+    page,
+  }, testInfo) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { appDSL, dashboard, canvas, properties, yamlEditor, layout } = ctx;
+
+    try {
+      await appDSL.waitUntilReady();
+      await dashboard.createNew();
+
+      await layout.addGridCard(testInfo);
+      await canvas.selectCard(0);
+      await properties.switchTab('YAML');
+      await yamlEditor.setEditorContent(GRID_BASE_YAML, 'properties');
+      await properties.switchTab('Form');
+
+      await layout.setGridRowGap(12);
+      await layout.setGridColumnGap(8);
+
+      await properties.switchTab('YAML');
+      // `column_gap` is the last edit above, so its arrival means the debounced
+      // serialisation has flushed the row gap too.
+      const yamlText = await yamlEditor.waitForEditorContent('column_gap:');
+
+      expect(yamlText).toContain('type: grid');
+      // Unquoted: these are deployed to Home Assistant, which expects numbers.
+      // A wrapper element between the Form.Item and its InputNumber makes AntD
+      // bind the wrapper, storing the raw DOM string and emitting `row_gap: '12'`.
+      expect(yamlText).toContain('row_gap: 12');
+      expect(yamlText).toContain('column_gap: 8');
+    } finally {
+      await close(ctx);
+    }
+  });
 });
