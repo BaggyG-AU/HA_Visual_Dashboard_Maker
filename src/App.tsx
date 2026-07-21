@@ -43,6 +43,11 @@ import { DeployDialog } from './components/DeployDialog';
 import { DashboardBrowser } from './components/DashboardBrowser';
 import { YamlEditorDialog } from './components/YamlEditorDialog';
 import { HADashboardIframe } from './components/HADashboardIframe';
+import {
+  resolveLivePreviewDeployTarget,
+  describeLiveDeployTarget,
+  type SourceDashboard,
+} from './services/livePreviewDeploy';
 import { SplitViewEditor } from './components/SplitViewEditor';
 import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
@@ -172,6 +177,11 @@ const App: React.FC = () => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [livePreviewMode, setLivePreviewMode] = useState<boolean>(false);
   const [tempDashboardPath, setTempDashboardPath] = useState<string | null>(null);
+  // Which HA dashboard the current design was downloaded from, so a Live-Preview
+  // deploy targets THAT dashboard instead of always overwriting the default
+  // 'lovelace' (Phase 0.2). null = not sourced from HA (opened from file / new)
+  // -> deploy must not guess a target; it routes to the explicit DeployDialog.
+  const [sourceDashboard, setSourceDashboard] = useState<SourceDashboard | null>(null);
   const [haUrl, setHaUrl] = useState<string>('');
   const [remapModalVisible, setRemapModalVisible] = useState<boolean>(false);
   const [missingEntities, setMissingEntities] = useState<string[]>([]);
@@ -369,6 +379,8 @@ const App: React.FC = () => {
       if (result) {
         // Load dashboard into store
         loadDashboard(result.content, result.filePath);
+        // Opened from a file, not from HA — no known deploy target (Phase 0.2).
+        setSourceDashboard(null);
 
         if (error) {
           message.error(`Failed to parse dashboard: ${error}`);
@@ -399,6 +411,8 @@ const App: React.FC = () => {
       if (result.success && result.content) {
         // Load dashboard into store
         loadDashboard(result.content, filePath);
+        // Opened from a file, not from HA — no known deploy target (Phase 0.2).
+        setSourceDashboard(null);
 
         if (error) {
           message.error(`Failed to parse dashboard: ${error}`);
@@ -1170,9 +1184,14 @@ const App: React.FC = () => {
     dashboardYaml: string,
     dashboardTitle: string,
     dashboardId: string,
+    source: SourceDashboard | null,
   ) => {
     // Load the downloaded dashboard into the editor
     loadDashboard(dashboardYaml, `${dashboardTitle} (${dashboardId})`);
+    // Remember the HA source so a later Live-Preview deploy writes back to THIS
+    // dashboard. `source` is null for imports with no HA origin (e.g. presets),
+    // and source.urlPath is null only for the default 'lovelace' (Phase 0.2).
+    setSourceDashboard(source);
     const parsed = yamlService.parseDashboard(dashboardYaml);
     if (parsed.success && parsed.data) {
       const referenced = entityRemappingService.extractEntityIds(parsed.data);
@@ -1224,6 +1243,7 @@ const App: React.FC = () => {
 
     const yamlContent = yamlService.serializeDashboard(blankDashboard);
     loadDashboard(yamlContent, null); // null filePath means it's unsaved
+    setSourceDashboard(null); // brand-new dashboard — no HA deploy target (Phase 0.2)
     message.success('New blank dashboard created!');
   };
 
@@ -1235,6 +1255,7 @@ const App: React.FC = () => {
 
   const handleCreateFromEntityType = (dashboardYaml: string, title: string) => {
     loadDashboard(dashboardYaml, null); // null filePath means it's unsaved
+    setSourceDashboard(null); // generated dashboard — no HA deploy target (Phase 0.2)
 
     // Parse to get card count for success message
     const result = yamlService.parseDashboard(dashboardYaml);
@@ -1330,11 +1351,32 @@ const App: React.FC = () => {
       return;
     }
 
+    const target = resolveLivePreviewDeployTarget(sourceDashboard);
+
+    // Not sourced from HA (opened from a file / newly created): there is no
+    // dashboard to deploy back to. Rather than silently overwrite the default
+    // 'lovelace' (the historical destructive bug), hand off to the explicit
+    // DeployDialog where the user creates or picks a target (Phase 0.2).
+    if (target.kind === 'unknown') {
+      message.info({
+        content: 'This design was not opened from Home Assistant — choose where to deploy it.',
+        key: 'deploy',
+        duration: 4,
+      });
+      await handleExitLivePreview();
+      setDeployDialogVisible(true);
+      return;
+    }
+
     try {
       message.loading({ content: 'Deploying to production...', key: 'deploy' });
 
-      // Deploy temp dashboard to production via IPC (null for default dashboard)
-      const result = await window.electronAPI.haWsDeployDashboard(tempDashboardPath, null);
+      // Deploy temp dashboard to the SOURCE dashboard it was loaded from.
+      // target.urlPath is null ONLY for the genuine default dashboard.
+      const result = await window.electronAPI.haWsDeployDashboard(
+        tempDashboardPath,
+        target.urlPath,
+      );
 
       if (result.success) {
         message.success({
@@ -1883,9 +1925,12 @@ const App: React.FC = () => {
                     <div style={{ height: 'calc(100vh - 250px)' }}>
                       {livePreviewMode && selectedViewIndex !== null ? (
                         <HADashboardIframe
-                          view={config.views[selectedViewIndex]}
+                          config={config}
+                          activeViewIndex={selectedViewIndex}
+                          onActiveViewChange={setSelectedView}
                           haUrl={haUrl}
                           tempDashboardPath={tempDashboardPath}
+                          deployTargetLabel={describeLiveDeployTarget(sourceDashboard)}
                           onLayoutChange={handleLayoutChange}
                           onDeploy={handleDeployFromLivePreview}
                           onClose={handleExitLivePreview}

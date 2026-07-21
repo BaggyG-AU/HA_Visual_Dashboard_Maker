@@ -40,7 +40,16 @@ interface Dashboard {
 interface DashboardBrowserProps {
   visible: boolean;
   onClose: () => void;
-  onDashboardDownload: (dashboardYaml: string, dashboardTitle: string, dashboardId: string) => void;
+  onDashboardDownload: (
+    dashboardYaml: string,
+    dashboardTitle: string,
+    dashboardId: string,
+    // HA source for a later Live-Preview deploy (Phase 0.2). An object means the
+    // design came from a real HA dashboard: `urlPath` is null ONLY for the
+    // default 'lovelace', else the dashboard's url_path. `null` means there is NO
+    // HA source (e.g. a marketplace preset) — deploy must not guess a target.
+    source: { urlPath: string | null; title: string } | null,
+  ) => void;
 }
 
 /**
@@ -166,8 +175,13 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
         noRefs: true,
       });
 
-      // Pass to parent component
-      onDashboardDownload(yamlString, dashboard.title, dashboard.id);
+      // Pass to parent component with the HA source so a later Live-Preview
+      // deploy targets THIS dashboard rather than defaulting to 'lovelace'
+      // (Phase 0.2). `urlPath` is null only for the default dashboard.
+      onDashboardDownload(yamlString, dashboard.title, dashboard.id, {
+        urlPath,
+        title: dashboard.title,
+      });
       onClose();
 
       logger.info(`Loaded dashboard into editor: ${dashboard.title}`);
@@ -403,7 +417,9 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
             children: (
               <PresetMarketplacePanel
                 onPresetImport={(dashboardYaml, dashboardTitle, dashboardId) => {
-                  onDashboardDownload(dashboardYaml, dashboardTitle, dashboardId);
+                  // A marketplace preset has no live HA source — deploy must not
+                  // guess a target, so pass null (routes to DeployDialog).
+                  onDashboardDownload(dashboardYaml, dashboardTitle, dashboardId, null);
                   onClose();
                 }}
               />

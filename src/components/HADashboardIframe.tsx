@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Space, message, Modal, Tooltip } from 'antd';
+import { Button, Space, message, Modal, Tooltip, Segmented } from 'antd';
 import { EditOutlined, DeploymentUnitOutlined, CloseOutlined } from '@ant-design/icons';
 import GridLayout, { getCompactor } from 'react-grid-layout';
 import type { Layout } from 'react-grid-layout';
-import { View } from '../types/dashboard';
+import { DashboardConfig, View } from '../types/dashboard';
 import { generateMasonryLayout, getCardSizeConstraints } from '../utils/cardSizingContract';
 import { isLayoutCardGrid, convertLayoutCardToGridLayout } from '../utils/layoutCardParser';
+import { mergeEditedView } from '../services/livePreviewDeploy';
+import { yamlService } from '../services/yamlService';
 import { logger } from '../services/logger';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -14,9 +16,18 @@ import 'react-resizable/css/styles.css';
 const HA_COMPACTOR = getCompactor('vertical', false, false);
 
 interface HADashboardIframeProps {
-  view: View;
+  /** The full dashboard config. Live Preview edits one view at a time but always
+   *  preserves every view in the temp/deploy config (Phase 0.2). */
+  config: DashboardConfig;
+  /** Index of the view currently being edited in the drag overlay. */
+  activeViewIndex: number;
+  /** Switch which view the overlay edits (drives the iframe + overlay). */
+  onActiveViewChange: (index: number) => void;
   haUrl: string;
   tempDashboardPath: string | null;
+  /** Plain-language name of the deploy destination for the confirm prompt;
+   *  null when the design was not opened from HA (deploy routes to DeployDialog). */
+  deployTargetLabel: string | null;
   onLayoutChange: (layout: Layout) => void;
   onDeploy: () => void;
   onClose: () => void;
@@ -26,12 +37,16 @@ interface HADashboardIframeProps {
  * HADashboardIframe Component
  *
  * Renders an iframe showing the actual Home Assistant dashboard with a transparent
- * drag-drop overlay for editing. Supports toggling between Edit and Preview modes.
+ * drag-drop overlay for editing. Supports toggling between Edit and Preview modes,
+ * and switching between the dashboard's views (multi-view editing).
  */
 export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
-  view,
+  config,
+  activeViewIndex,
+  onActiveViewChange,
   haUrl,
   tempDashboardPath,
+  deployTargetLabel,
   onLayoutChange,
   onDeploy,
   onClose,
@@ -40,16 +55,19 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
   const [layout, setLayout] = useState<Layout>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Generate layout from cards
+  const views = config.views || [];
+  const activeView: View | undefined = views[activeViewIndex];
+
+  // Generate layout from the active view's cards
   useEffect(() => {
-    const cards = view.cards || [];
+    const cards = activeView?.cards || [];
 
     // Mode 1: Check if using layout-card grid system (view_layout)
-    const usingLayoutCard = isLayoutCardGrid(view);
+    const usingLayoutCard = activeView ? isLayoutCardGrid(activeView) : false;
 
-    if (usingLayoutCard) {
+    if (activeView && usingLayoutCard) {
       // Use convertLayoutCardToGridLayout to parse view_layout
-      const gridLayout = convertLayoutCardToGridLayout(view);
+      const gridLayout = convertLayoutCardToGridLayout(activeView);
       setLayout(gridLayout);
       return;
     }
@@ -61,14 +79,14 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
       // Use existing layout information from cards
       const existingLayout = cards.map((card, index) => {
         if ('_havdm_layout' in card && card._havdm_layout) {
-          const layout = card._havdm_layout as any;
+          const cardLayout = card._havdm_layout as any;
           const constraints = getCardSizeConstraints(card);
           return {
             i: `card-${index}`,
-            x: layout.x ?? 0,
-            y: layout.y ?? 0,
-            w: layout.w ?? constraints.w,
-            h: layout.h ?? constraints.h,
+            x: cardLayout.x ?? 0,
+            y: cardLayout.y ?? 0,
+            w: cardLayout.w ?? constraints.w,
+            h: cardLayout.h ?? constraints.h,
             minW: constraints.minW,
             maxW: constraints.maxW,
             minH: constraints.minH,
@@ -95,11 +113,13 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
       const generatedLayout = generateMasonryLayout(cards);
       setLayout(generatedLayout);
     }
-  }, [view]);
+  }, [config, activeViewIndex, activeView]);
 
-  // Construct iframe URL with kiosk mode
+  // Construct iframe URL with kiosk mode, pointing at the active view. HA routes
+  // a view by its `path` when defined, otherwise by index.
+  const viewSegment = activeView?.path ?? activeViewIndex;
   const iframeUrl = tempDashboardPath
-    ? `${haUrl}/${tempDashboardPath}?kiosk`
+    ? `${haUrl}/${tempDashboardPath}/${viewSegment}?kiosk`
     : `${haUrl}/lovelace/0?kiosk`;
 
   const handleLayoutChange = async (newLayout: Layout) => {
@@ -107,7 +127,7 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
     onLayoutChange(newLayout);
 
     // Update temp dashboard in HA with new layout
-    if (tempDashboardPath) {
+    if (tempDashboardPath && activeView) {
       try {
         // Check WebSocket connection via IPC
         const wsStatus = await window.electronAPI.haWsIsConnected();
@@ -116,11 +136,11 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
           return;
         }
 
-        // Convert layout back to view config
+        // Apply the new grid geometry to the ACTIVE view's cards.
         // IMPORTANT: We need to preserve the internal layout property for persistence
-        const updatedView = {
-          ...view,
-          cards: (view.cards || []).map((card, idx) => {
+        const updatedView: View = {
+          ...activeView,
+          cards: (activeView.cards || []).map((card, idx) => {
             const layoutItem = newLayout.find((l) => l.i === `card-${idx}`);
             if (layoutItem) {
               return {
@@ -141,10 +161,17 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
           }),
         };
 
+        // Merge the edited view back into the FULL config so EVERY other view is
+        // preserved — the historical bug wrote `views: [updatedView]`, truncating
+        // a multi-view dashboard on the first drag. Sanitise so the temp shows
+        // what HA will actually render (B4 boundary).
+        const mergedConfig = mergeEditedView(config, activeViewIndex, updatedView);
+        const sanitized = yamlService.sanitizeForHA(mergedConfig);
+
         // Update temp dashboard via IPC
         const result = await window.electronAPI.haWsUpdateTempDashboard(tempDashboardPath, {
-          title: view.title || 'Dashboard',
-          views: [updatedView],
+          ...sanitized,
+          title: config.title || 'Dashboard',
         });
 
         if (!result.success) {
@@ -168,18 +195,30 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
   };
 
   const handleDeploy = () => {
-    Modal.confirm({
-      title: 'Deploy Dashboard',
-      content:
-        'This will backup the current production dashboard and deploy your changes. Continue?',
-      okText: 'Deploy',
-      okType: 'primary',
-      cancelText: 'Cancel',
-      onOk: onDeploy,
-    });
+    if (deployTargetLabel) {
+      Modal.confirm({
+        title: 'Deploy Dashboard',
+        content: `This will back up ${deployTargetLabel} in Home Assistant, then deploy all ${views.length} view${views.length === 1 ? '' : 's'} of your design to it. Continue?`,
+        okText: 'Deploy',
+        okType: 'primary',
+        cancelText: 'Cancel',
+        onOk: onDeploy,
+      });
+    } else {
+      // No known HA target — onDeploy hands off to the explicit DeployDialog.
+      Modal.confirm({
+        title: 'Deploy Dashboard',
+        content:
+          'This design was not opened from Home Assistant, so there is no dashboard to deploy back to. You will choose or create a target next.',
+        okText: 'Choose target…',
+        okType: 'primary',
+        cancelText: 'Cancel',
+        onOk: onDeploy,
+      });
+    }
   };
 
-  const cards = view.cards || [];
+  const cards = activeView?.cards || [];
 
   return (
     <div
@@ -204,9 +243,10 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: '12px',
         }}
       >
-        <Space>
+        <Space wrap>
           <Tooltip title="Toggle between editing the layout and previewing the dashboard">
             <Button
               type={editMode ? 'primary' : 'default'}
@@ -216,8 +256,21 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
               {editMode ? 'Edit Mode' : 'Preview Mode'}
             </Button>
           </Tooltip>
+          {views.length > 1 && (
+            <Tooltip title="Switch which view you are editing — all views are deployed together">
+              <Segmented
+                value={activeViewIndex}
+                onChange={(value) => onActiveViewChange(Number(value))}
+                options={views.map((v, i) => ({
+                  label: v.title || `View ${i + 1}`,
+                  value: i,
+                }))}
+                data-testid="live-preview-view-switcher"
+              />
+            </Tooltip>
+          )}
           {editMode && (
-            <div style={{ color: '#9e9e9e', fontSize: '12px', marginLeft: '8px' }}>
+            <div style={{ color: '#9e9e9e', fontSize: '12px' }}>
               Drag and resize cards to arrange your dashboard
             </div>
           )}
