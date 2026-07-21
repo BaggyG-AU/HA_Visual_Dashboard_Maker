@@ -601,4 +601,146 @@ describe('yamlService', () => {
       expect(card).not.toHaveProperty('card_mod');
     });
   });
+
+  // Slice B6b: the TRANSLATE→HA-native-`visibility` class (haExportContract
+  // HA_VISIBILITY_KEYS: visibility_conditions + visibility_operator) is compiled
+  // into HA's native card-level `visibility` array, mirroring HAVDM's own
+  // evaluator (conditionalVisibility.ts). No capability gate — native HA feature.
+  //
+  // RED-BEFORE-GREEN: every "fails on main" assertion was confirmed red when the
+  // B6b src (src/services/visibilityTranslator.ts + the exportCard wiring) is
+  // reverted in the same checkout — on main the visibility keys pass through
+  // untranslated and no `visibility` array is produced.
+  describe('visibility translate (B6b)', () => {
+    const cardsOf = (cfg: DashboardConfig) =>
+      yamlService.sanitizeForHA(cfg).views[0]?.cards as unknown as Record<string, unknown>[];
+
+    const wrap = (cards: Record<string, unknown>[]): DashboardConfig =>
+      ({
+        title: 'Vis',
+        views: [{ title: 'V', path: 'v', cards } as unknown as DashboardConfig['views'][number]],
+      }) as unknown as DashboardConfig;
+
+    it('translates state_equals + default AND operator into native visibility (fails on main)', () => {
+      const card = cardsOf(
+        wrap([
+          {
+            type: 'markdown',
+            content: 'x',
+            visibility_conditions: [{ condition: 'state_equals', entity: 'light.a', value: 'on' }],
+          },
+        ]),
+      )[0];
+      expect(card.visibility).toEqual([{ condition: 'state', entity: 'light.a', state: 'on' }]);
+      expect(card).not.toHaveProperty('visibility_conditions');
+      expect(card).not.toHaveProperty('visibility_operator');
+    });
+
+    it('wraps an OR operator in a single or-group (fails on main)', () => {
+      const card = cardsOf(
+        wrap([
+          {
+            type: 'markdown',
+            content: 'x',
+            visibility_operator: 'or',
+            visibility_conditions: [
+              { condition: 'state_equals', entity: 'light.a', value: 'on' },
+              { condition: 'state_equals', entity: 'light.b', value: 'on' },
+            ],
+          },
+        ]),
+      )[0];
+      expect(card.visibility).toEqual([
+        {
+          condition: 'or',
+          conditions: [
+            { condition: 'state', entity: 'light.a', state: 'on' },
+            { condition: 'state', entity: 'light.b', state: 'on' },
+          ],
+        },
+      ]);
+    });
+
+    it('maps state_in + numeric + attribute conditions (fails on main)', () => {
+      const card = cardsOf(
+        wrap([
+          {
+            type: 'markdown',
+            content: 'x',
+            visibility_conditions: [
+              { condition: 'state_in', entity: 'sensor.mode', values: ['home', 'away'] },
+              {
+                condition: 'attribute_greater_than',
+                entity: 'sensor.t',
+                attribute: 'temperature',
+                value: 20,
+              },
+              {
+                condition: 'attribute_equals',
+                entity: 'climate.x',
+                attribute: 'preset',
+                value: 'eco',
+              },
+            ],
+          },
+        ]),
+      )[0];
+      expect(card.visibility).toEqual([
+        { condition: 'state', entity: 'sensor.mode', state: ['home', 'away'] },
+        { condition: 'numeric_state', entity: 'sensor.t', attribute: 'temperature', above: 20 },
+        { condition: 'state', entity: 'climate.x', attribute: 'preset', state: 'eco' },
+      ]);
+    });
+
+    it('recursively translates nested and/or groups (fails on main)', () => {
+      const card = cardsOf(
+        wrap([
+          {
+            type: 'markdown',
+            content: 'x',
+            visibility_conditions: [
+              {
+                condition: 'or',
+                conditions: [
+                  { condition: 'state_equals', entity: 'light.a', value: 'on' },
+                  { condition: 'state_not_equals', entity: 'light.b', value: 'on' },
+                ],
+              },
+            ],
+          },
+        ]),
+      )[0];
+      expect(card.visibility).toEqual([
+        {
+          condition: 'or',
+          conditions: [
+            { condition: 'state', entity: 'light.a', state: 'on' },
+            { condition: 'state', entity: 'light.b', state_not: 'on' },
+          ],
+        },
+      ]);
+    });
+
+    it('translates visibility on a NESTED card (recursion) (fails on main)', () => {
+      const stack = cardsOf(
+        wrap([
+          {
+            type: 'vertical-stack',
+            cards: [
+              {
+                type: 'markdown',
+                content: 'inner',
+                visibility_conditions: [
+                  { condition: 'state_equals', entity: 'light.a', value: 'on' },
+                ],
+              },
+            ],
+          },
+        ]),
+      )[0] as { cards: Record<string, unknown>[] };
+      const inner = stack.cards[0];
+      expect(inner.visibility).toEqual([{ condition: 'state', entity: 'light.a', state: 'on' }]);
+      expect(inner).not.toHaveProperty('visibility_conditions');
+    });
+  });
 });

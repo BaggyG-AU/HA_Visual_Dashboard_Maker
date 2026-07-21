@@ -266,6 +266,48 @@ substituted (consistent with the "author-with-banner" palette policy).
 
 ---
 
+## 6b. `visibility_conditions` — TRANSLATE to native `visibility` (implemented)
+
+Implemented in `src/services/visibilityTranslator.ts` (`translateVisibility`),
+plugged into `exportCard` beside the card-mod translate and the STRIP step, so it
+runs at every depth. HAVDM's own `visibility_conditions` + `visibility_operator`
+(`types/logic.ts`) compile into Home Assistant's **native card-level `visibility`**
+array (HA 2024.6+; reference instance 2026.7.2). **No capability gate** — native
+`visibility` is a core HA feature, not an add-on.
+
+The per-rule mapping mirrors HAVDM's own evaluator (`conditionalVisibility.ts`) so
+a card behaves in HA exactly as it did on the canvas:
+
+- **Root operator** (`visibility_operator`, default `and`): `and` → the translated
+  conditions as the array (HA ANDs it implicitly); `or` → a single
+  `{ condition: 'or', conditions: [...] }` wrapper.
+
+  | HAVDM rule                                        | HA condition                                                                  |
+  | ------------------------------------------------- | ----------------------------------------------------------------------------- |
+  | `state_equals {entity,value}`                     | `{condition:'state', entity, state:<value>}`                                  |
+  | `state_not_equals {entity,value}`                 | `{condition:'state', entity, state_not:<value>}`                              |
+  | `state_in {entity,values}`                        | `{condition:'state', entity, state:[…]}`                                      |
+  | `state_not_in {entity,values}`                    | `{condition:'state', entity, state_not:[…]}`                                  |
+  | `attribute_equals {entity,attribute,value}`       | `{condition:'state', entity, attribute, state:<value>}`                       |
+  | `attribute_greater_than {entity,attribute,value}` | `{condition:'numeric_state', entity, attribute, above:<n>}`                   |
+  | `attribute_less_than {entity,attribute,value}`    | `{condition:'numeric_state', entity, attribute, below:<n>}`                   |
+  | `and`/`or` group                                  | `{condition:'and'\|'or', conditions:[…recursive]}`                            |
+  | `entity_exists {entity}`                          | `{condition:'state', entity, state_not:['unavailable','unknown']}` **+ warn** |
+
+- **`entity_exists`** has no native HA `visibility` condition. Per the ratified
+  decision (2026-07-21) it is **approximated** to "the entity is available" and a
+  plain-language `ExportWarning` (`category: 'visibility'`, reason
+  `visibility-approximated`) is recorded.
+- Scalar `state`/`state_not` values are **stringified** (mirrors the evaluator's
+  `String(value)` compare); `numeric_state` bounds are coerced to `Number`.
+- If a card already carries a native `visibility`, the translated conditions are
+  **appended** (both are top-level AND).
+- Warnings share the B6 accumulator — `CardModWarning` was generalised to
+  **`ExportWarning`** (`src/services/exportWarnings.ts`, `category: 'card-mod' |
+'visibility'`) so B8 consumes one unified list.
+
+---
+
 ## 7. Save-to-file: two intents, one switch
 
 Save/Save As currently emits raw internal config (not HA-loadable). But a saved
@@ -336,7 +378,7 @@ sets + the TRANSLATE/STRIP/CANVAS classification (§3).
 | B4    | Route Save/Live-Preview through `serializeForHA` — **DONE (PR #43)**          | B2         |
 | B5    | Rename `layout` → `_havdm_layout` + import migration shim — **DONE (PR #44)** | B2         |
 | B6    | TRANSLATE→card-mod: layout keys + `style` → `card_mod` (§6.1) — **DONE**      | B2         |
-| B6b   | TRANSLATE→native: `visibility_conditions` → HA `visibility`                   | B2         |
+| B6b   | TRANSLATE→native: `visibility_conditions` → HA `visibility` (§6b) — **DONE**  | B2         |
 | B7    | CANVAS-ONLY card types → native "Card Not Available" placeholder (§6a)        | B2         |
 | B8    | Warn-only validation self-check                                               | B2         |
 
