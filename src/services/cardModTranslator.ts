@@ -50,18 +50,7 @@ import {
   toJustifyItemsCss,
 } from './layoutConfig';
 import { toSpacingCssShorthand } from './cardSpacing';
-
-/** A record of card-mod keys that could not be translated and were dropped. */
-export interface CardModWarning {
-  /** The `type` of the card whose keys were dropped. */
-  cardType: string;
-  /** The card-mod keys that were present and affected. */
-  keys: string[];
-  /** Why translation did not happen. */
-  reason: 'card-mod-unavailable' | 'existing-object-style';
-  /** Plain-language, non-expert-friendly explanation (vision answer 2). */
-  message: string;
-}
+import type { ExportWarning } from './exportWarnings';
 
 export interface TranslateCardModOptions {
   /**
@@ -75,7 +64,7 @@ export interface TranslateCardModOptions {
 
 export interface TranslateCardModResult {
   card: Record<string, unknown>;
-  warnings: CardModWarning[];
+  warnings: ExportWarning[];
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -194,6 +183,7 @@ export const translateToCardMod = (
       card: output,
       warnings: [
         {
+          category: 'card-mod',
           cardType,
           keys: claimedKeys,
           reason: 'card-mod-unavailable',
@@ -239,6 +229,7 @@ export const translateToCardMod = (
     card: output,
     warnings: [
       {
+        category: 'card-mod',
         cardType,
         keys: claimedKeys,
         reason: 'existing-object-style',

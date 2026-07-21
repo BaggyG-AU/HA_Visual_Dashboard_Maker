@@ -2,7 +2,9 @@ import { parseUpstreamSwipeCard } from '../features/carousel/carouselService';
 import type { SwiperCardConfig } from '../features/carousel/types';
 import type { TabsCardConfig, TabbedCardAttributes } from '../types/tabs';
 import { STRIP_KEYS } from './haExportContract';
-import { translateToCardMod, type CardModWarning } from './cardModTranslator';
+import { translateToCardMod } from './cardModTranslator';
+import { translateVisibility } from './visibilityTranslator';
+import type { ExportWarning } from './exportWarnings';
 
 const SWIPE_KNOWN_PARAMETER_KEYS = new Set([
   'slidesPerView',
@@ -697,11 +699,11 @@ export interface ExportCardOptions {
    */
   cardModAvailable?: boolean;
   /**
-   * Optional accumulator. When provided, every card-mod warning raised while
-   * translating (at any depth) is pushed here. Slice B8 surfaces these to the
-   * user; B6 only collects them.
+   * Optional accumulator. When provided, every export warning raised while
+   * translating (card-mod B6 + visibility B6b, at any depth) is pushed here.
+   * Slice B8 surfaces these to the user; B6/B6b only collect them.
    */
-  warnings?: CardModWarning[];
+  warnings?: ExportWarning[];
 }
 
 export function exportCard(
@@ -726,18 +728,25 @@ export function exportCard(
   // a `card_mod` block — or strip + warn when card-mod is unavailable — AFTER the
   // per-card canonical exporters (so string-valued expander `gap` etc. are
   // already settled) and BEFORE the STRIP class below.
-  const translated = translateToCardMod(exported, {
+  const cardMod = translateToCardMod(exported, {
     cardModAvailable: options.cardModAvailable ?? true,
   });
-  if (options.warnings && translated.warnings.length > 0) {
-    options.warnings.push(...translated.warnings);
+
+  // Slice B6b: TRANSLATE the ha-visibility class (HA_VISIBILITY_KEYS) —
+  // `visibility_conditions`/`visibility_operator` — into HA's native card-level
+  // `visibility` array. No capability gate (native HA feature).
+  const visibility = translateVisibility(cardMod.card);
+
+  if (options.warnings) {
+    if (cardMod.warnings.length > 0) options.warnings.push(...cardMod.warnings);
+    if (visibility.warnings.length > 0) options.warnings.push(...visibility.warnings);
   }
 
   // Slice B2: the global STRIP runs last, after the per-card canonical
   // exporters, so nothing they pass through leaks. Because exportDashboard
   // applies exportCard at every depth via processCardRecursively, this strips
   // the internal keys from nested cards too.
-  return stripInternalKeys(translated.card);
+  return stripInternalKeys(visibility.card);
 }
 
 export function importDashboard(dashboard: Record<string, unknown>): Record<string, unknown> {

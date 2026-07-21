@@ -6,7 +6,7 @@ import {
   importDashboard,
   migrateLegacyCard,
 } from '../../src/services/yamlConversionService';
-import type { CardModWarning } from '../../src/services/cardModTranslator';
+import type { ExportWarning } from '../../src/services/exportWarnings';
 
 describe('yaml conversion service', () => {
   it('imports upstream swipe-card into HAVDM internal fields and generated slides', () => {
@@ -427,7 +427,7 @@ describe('yaml conversion service', () => {
   // these keys).
   describe('card-mod translate (B6) — export options', () => {
     it('strips TRANSLATE keys and records a plain-language warning when card-mod is unavailable', () => {
-      const warnings: CardModWarning[] = [];
+      const warnings: ExportWarning[] = [];
       const exported = exportCard(
         {
           type: 'horizontal-stack',
@@ -479,7 +479,7 @@ describe('yaml conversion service', () => {
     });
 
     it('collects warnings from NESTED cards through exportDashboard', () => {
-      const warnings: CardModWarning[] = [];
+      const warnings: ExportWarning[] = [];
       exportDashboard(
         {
           title: 'D',
@@ -499,6 +499,81 @@ describe('yaml conversion service', () => {
       );
       expect(warnings.length).toBeGreaterThanOrEqual(1);
       expect(warnings.some((w) => w.cardType === 'markdown')).toBe(true);
+    });
+  });
+
+  // Slice B6b — the TRANSLATE→HA-native-`visibility` path (visibility_conditions +
+  // visibility_operator -> native `visibility`), exercised directly through
+  // exportCard / exportDashboard. RED-BEFORE-GREEN: confirmed red when the B6b src
+  // is reverted in the same checkout (on main the visibility keys pass through).
+  describe('visibility translate (B6b) — export options', () => {
+    it('approximates entity_exists to state_not unavailable + records a warning', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportCard(
+        {
+          type: 'markdown',
+          content: 'x',
+          visibility_conditions: [{ condition: 'entity_exists', entity: 'light.a' }],
+        },
+        { warnings },
+      );
+      expect(exported.visibility).toEqual([
+        { condition: 'state', entity: 'light.a', state_not: ['unavailable', 'unknown'] },
+      ]);
+      expect(exported).not.toHaveProperty('visibility_conditions');
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toMatchObject({
+        category: 'visibility',
+        cardType: 'markdown',
+        reason: 'visibility-approximated',
+      });
+      expect(warnings[0].message.toLowerCase()).toContain('exist');
+    });
+
+    it('appends translated conditions to an existing native visibility (merge, not clobber)', () => {
+      const exported = exportCard({
+        type: 'markdown',
+        content: 'x',
+        visibility: [{ condition: 'user', users: ['abc'] }],
+        visibility_conditions: [{ condition: 'state_equals', entity: 'light.a', value: 'on' }],
+      });
+      expect(exported.visibility).toEqual([
+        { condition: 'user', users: ['abc'] },
+        { condition: 'state', entity: 'light.a', state: 'on' },
+      ]);
+    });
+
+    it('leaves cards without visibility keys unchanged', () => {
+      const exported = exportCard({ type: 'markdown', content: 'x' });
+      expect(exported).not.toHaveProperty('visibility');
+    });
+
+    it('collects visibility warnings from NESTED cards through exportDashboard', () => {
+      const warnings: ExportWarning[] = [];
+      exportDashboard(
+        {
+          title: 'D',
+          views: [
+            {
+              title: 'V',
+              cards: [
+                {
+                  type: 'vertical-stack',
+                  cards: [
+                    {
+                      type: 'markdown',
+                      content: 'n',
+                      visibility_conditions: [{ condition: 'entity_exists', entity: 'light.a' }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        { warnings },
+      );
+      expect(warnings.some((w) => w.category === 'visibility')).toBe(true);
     });
   });
 });
