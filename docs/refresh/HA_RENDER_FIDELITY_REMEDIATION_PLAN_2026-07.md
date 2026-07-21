@@ -85,12 +85,20 @@ badge, which today matches only `custom:popup-card`.
 
 ### Phase 1 — Build the export boundary
 
-1.1 Global HAVDM-only strip-set applied to **every** card on export.
-1.2 Make `sanitizeForHA` recurse into nested `cards[]`.
+**Detailed design:**
+[`HA_EXPORT_BOUNDARY_DESIGN_2026-07.md`](./HA_EXPORT_BOUNDARY_DESIGN_2026-07.md).
+
+1.1 Global HAVDM-only strip-set applied to **every** card on export (hybrid
+denylist derived from `BaseCard`/`Phase6CardContracts`, not a full allowlist).
+1.2 Make the strip recurse — fold it into `exportCard`, which
+`processCardRecursively` already applies at every depth; extend the recursion
+set to the containers it currently misses.
 1.3 Route Save/Save As and Live Preview through the same boundary.
-1.4 Namespace HAVDM internals (`layout` → `_havdm_layout`) — also fixes
-Mushroom's real `layout` option being destroyed by the name collision.
-1.5 Validate against `ha-dashboard-schema.json` before deploy.
+1.4 Namespace HAVDM internals (`layout` → `_havdm_layout`) + a value-shape
+import migration — also fixes Mushroom's real `layout` option being destroyed by
+the name collision.
+1.5 Warn-only validation self-check now; strict HA-fidelity schema deferred (the
+current schema blesses the invented keys, so it can't be the gate as-is).
 
 ### Phase 2 — Type correctness
 
@@ -100,9 +108,13 @@ Mushroom's real `layout` option being destroyed by the name collision.
 
 ### Phase 3 — Capability inventory (WS-FID-INV)
 
+**Detailed design:**
+[`HA_CAPABILITY_INVENTORY_DESIGN_2026-07.md`](./HA_CAPABILITY_INVENTORY_DESIGN_2026-07.md).
+
 3.1 Add a `lovelace/resources` client; build the resource-file → element-name
 map (a file defines many elements; the list gives files, not elements).
-3.2 Persist the inventory as an offline-editable **capability profile**.
+3.2 Persist the inventory as an offline-editable **capability profile** (never a
+live query — preserves standalone operation).
 3.3 Three-state palette: **Available / Not Available / HAVDM-only**.
 3.4 Built-in cards keyed by **HA version**, not resources (logbook→Activity,
 alarm-panel `arm_*`, etc.).
@@ -147,9 +159,9 @@ user actually has, and therefore which per-card fixes matter first.
 
 | Item                                                         | State                               |
 | ------------------------------------------------------------ | ----------------------------------- |
-| `gap: '8'` string bug (one instance of the type-drift class) | **Fixed — PR #37 (open, unmerged)** |
+| `gap: '8'` string bug (one instance of the type-drift class) | **Fixed — PR #37 merged** (8833f3e) |
 | Four-part fidelity audit                                     | **Complete, filed to MemPalace**    |
-| This plan                                                    | **Draft — this document**           |
+| This plan + two design docs                                  | **Draft — this PR**                 |
 | Phase 0–4                                                    | **Not started**                     |
 
 ---
