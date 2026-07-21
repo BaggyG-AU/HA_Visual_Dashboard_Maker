@@ -6,6 +6,7 @@ import {
   importDashboard,
   migrateLegacyCard,
 } from '../../src/services/yamlConversionService';
+import type { CardModWarning } from '../../src/services/cardModTranslator';
 
 describe('yaml conversion service', () => {
   it('imports upstream swipe-card into HAVDM internal fields and generated slides', () => {
@@ -416,5 +417,88 @@ describe('yaml conversion service', () => {
     expect((exported as Record<string, unknown>).calendar_entities).toBeUndefined();
     expect((exported as Record<string, unknown>).on_date_select).toBeUndefined();
     expect((exported as Record<string, unknown>).events).toBeUndefined();
+  });
+
+  // Slice B6 — the TRANSLATE→card-mod path exercised directly through exportCard /
+  // exportDashboard: the capability-gate default (assume present), the strip+warn
+  // branch, the collision guard, and merge-not-clobber. RED-BEFORE-GREEN: the
+  // strip/translate assertions were confirmed red when the B6 src is reverted in
+  // the same checkout (on main exportCard has no options param and never touches
+  // these keys).
+  describe('card-mod translate (B6) — export options', () => {
+    it('strips TRANSLATE keys and records a plain-language warning when card-mod is unavailable', () => {
+      const warnings: CardModWarning[] = [];
+      const exported = exportCard(
+        {
+          type: 'horizontal-stack',
+          gap: 12,
+          align_items: 'center',
+          style: 'background: blue;',
+          cards: [],
+        },
+        { cardModAvailable: false, warnings },
+      );
+      expect(exported).not.toHaveProperty('card_mod');
+      expect(exported).not.toHaveProperty('gap');
+      expect(exported).not.toHaveProperty('align_items');
+      expect(exported).not.toHaveProperty('style');
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toMatchObject({
+        cardType: 'horizontal-stack',
+        reason: 'card-mod-unavailable',
+      });
+      expect(warnings[0].keys).toEqual(expect.arrayContaining(['gap', 'align_items', 'style']));
+      expect(warnings[0].message).toContain('card-mod');
+    });
+
+    it('emits a card_mod block by default (card-mod assumed present)', () => {
+      const exported = exportCard({ type: 'markdown', content: 'x', style: 'color: red;' });
+      const cardMod = exported.card_mod as { style: string } | undefined;
+      expect(cardMod?.style).toContain('ha-card {');
+      expect(cardMod?.style).toContain('color: red;');
+      expect(exported).not.toHaveProperty('style');
+    });
+
+    it('merges the generated CSS into an existing string card_mod, not clobbering it', () => {
+      const exported = exportCard({
+        type: 'markdown',
+        content: 'x',
+        style: 'background: green;',
+        card_mod: { style: 'ha-card { color: white; }' },
+      });
+      const cardMod = exported.card_mod as { style: string };
+      expect(cardMod.style).toContain('color: white;'); // pre-existing preserved
+      expect(cardMod.style).toContain('background: green;'); // ours appended
+      expect(exported).not.toHaveProperty('style');
+    });
+
+    it('does not translate a string `gap` on a non-expander card (numeric collision guard)', () => {
+      const exported = exportCard({ type: 'custom:some-card', gap: '1rem', cards: [] });
+      expect(exported.gap).toBe('1rem');
+      expect(exported).not.toHaveProperty('card_mod');
+    });
+
+    it('collects warnings from NESTED cards through exportDashboard', () => {
+      const warnings: CardModWarning[] = [];
+      exportDashboard(
+        {
+          title: 'D',
+          views: [
+            {
+              title: 'V',
+              cards: [
+                {
+                  type: 'vertical-stack',
+                  cards: [{ type: 'markdown', content: 'n', style: 'background: red;' }],
+                },
+              ],
+            },
+          ],
+        },
+        { cardModAvailable: false, warnings },
+      );
+      expect(warnings.length).toBeGreaterThanOrEqual(1);
+      expect(warnings.some((w) => w.cardType === 'markdown')).toBe(true);
+    });
   });
 });
