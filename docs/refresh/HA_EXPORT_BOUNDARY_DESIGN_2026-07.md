@@ -351,12 +351,38 @@ would approve exactly the keys HA rejects.
 
 Staged approach:
 
-1. **Now:** a warn-only structural gate (the hand-rolled checks in
-   `DeployDialog.tsx:88-103`, plus "no `_havdm_*` / no bare `layout` survived the
-   boundary" as a self-check assertion).
+1. **Now — implemented (B8):** a warn-only structural gate, plus the "no
+   `_havdm_*` / no bare geometry `layout` / no `visibility_conditions` / no
+   phantom card type survived the boundary" self-check assertion.
 2. **Later:** a strict HA-fidelity schema, most credibly **derived from the
    capability inventory + per-card known-key sets** (Phase 4), since HA does not
    publish machine-readable per-card schemas.
+
+### 8.1 Implemented (B8)
+
+- **`src/services/exportSelfCheck.ts`** (`selfCheckHaConfig`) — a warn-only
+  recursive scan of the HA-bound output for any HAVDM-only artefact that should
+  have been handled: surviving `_havdm_*` / `_isSpacer` / `_expanderDepth` /
+  `icon_color_mode` keys, a bare geometry `layout` (`{x|y|w|h}`; a string
+  `layout` is Mushroom's real option and is not flagged), `visibility_conditions`
+  / `visibility_operator`, or a `CANVAS_ONLY_CARD_TYPES` type. On a correct
+  boundary it returns `[]`; anything it finds is a boundary **bug**, surfaced as
+  a `self-check` / `leaked-internal` warning. The card-mod TRANSLATE keys are
+  deliberately not flagged (a string `gap` is expander-card's real option).
+- **`yamlService.sanitizeForHAWithReport(config) → { config, warnings }`** —
+  threads the warnings accumulator through `exportDashboard` (collecting the
+  B6/B6b/B7 warnings) then appends the self-check. `sanitizeForHA` delegates and
+  returns just the config (backward-compatible).
+- **`src/services/exportWarningSummary.ts`** (`summarizeExportWarnings`) —
+  UI-agnostic, plain-language grouping used by both surfaces. Only _actionable_
+  outcomes carry a warning (a successful card-mod/visibility translation is
+  silent), so the summary lists styling that couldn't be applied, approximated
+  rules, placeholder substitutions, and leaks.
+- **Surfaced** in `DeployDialog` (a summary `Alert` on the config step — `warning`
+  type when the self-check found a leak, otherwise `info`) and in
+  **`serializeForHA`**, which prepends the summary as a `#`-comment header to the
+  exported YAML (generalising and replacing the old popup-only comment, which B7
+  made dead by substituting popup-cards with placeholders before serialisation).
 
 **Decision (ratified 2026-07-21):** **two-schema split** — a permissive _editor_
 schema (drives Monaco) and a strict _fidelity_ schema (drives the deploy gate).
@@ -403,7 +429,7 @@ sets + the TRANSLATE/STRIP/CANVAS classification (§3).
 | B6    | TRANSLATE→card-mod: layout keys + `style` → `card_mod` (§6.1) — **DONE**          | B2         |
 | B6b   | TRANSLATE→native: `visibility_conditions` → HA `visibility` (§6b) — **DONE**      | B2         |
 | B7    | CANVAS-ONLY card types → native "Card Not Available" placeholder (§6a) — **DONE** | B2         |
-| B8    | Warn-only validation self-check                                                   | B2         |
+| B8    | Warn-only validation self-check + surface warnings (§8.1) — **DONE**              | B2         |
 
 B0 is independently shippable and unblocks everything else. B6/B6b/B7 are the
 "superset translation" layer; they are what makes this a translating boundary

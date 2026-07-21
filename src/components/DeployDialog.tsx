@@ -8,6 +8,8 @@ import {
 } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 import { logger } from '../services/logger';
+import { summarizeExportWarnings } from '../services/exportWarningSummary';
+import type { ExportWarning } from '../services/exportWarnings';
 import type { DashboardConfig } from '../types/dashboard';
 
 const { Text } = Typography;
@@ -25,6 +27,12 @@ interface DeployDialogProps {
    */
   dashboardConfig: DashboardConfig | null;
   dashboardTitle?: string;
+  /**
+   * Warnings the export boundary raised while producing `dashboardConfig`
+   * (card-mod / visibility / placeholder / self-check — slice B8). Surfaced as a
+   * plain-language pre-deploy summary so the user sees what was adjusted.
+   */
+  warnings?: ExportWarning[];
 }
 
 interface DeployStatus {
@@ -47,7 +55,9 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
   onClose,
   dashboardConfig,
   dashboardTitle,
+  warnings,
 }) => {
+  const exportSummary = summarizeExportWarnings(warnings ?? []);
   const [form] = Form.useForm();
   const [deployStatus, setDeployStatus] = useState<DeployStatus>({
     step: 0,
@@ -238,6 +248,24 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
             showIcon
             style={{ marginBottom: '16px' }}
           />
+
+          {exportSummary.total > 0 && (
+            <Alert
+              data-testid="export-summary"
+              message="This design was adjusted for Home Assistant"
+              description={
+                <ul style={{ margin: 0, paddingLeft: '18px' }}>
+                  {exportSummary.lines.map((line, index) => (
+                    <li key={index}>{line}</li>
+                  ))}
+                </ul>
+              }
+              type={exportSummary.hasLeaks ? 'warning' : 'info'}
+              showIcon
+              icon={exportSummary.hasLeaks ? <WarningOutlined /> : undefined}
+              style={{ marginBottom: '16px' }}
+            />
+          )}
 
           <Form.Item
             label="Dashboard Title"

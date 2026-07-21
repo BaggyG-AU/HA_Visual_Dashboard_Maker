@@ -823,4 +823,67 @@ describe('yamlService', () => {
       expect(String(cards[0].content)).toBe('real');
     });
   });
+
+  // Slice B8: the boundary now REPORTS what it did. sanitizeForHAWithReport
+  // returns the collected card-mod/visibility/placeholder warnings + a warn-only
+  // self-check; serializeForHA prepends a plain-language comment summary.
+  //
+  // RED-BEFORE-GREEN: the report method + the comment prepend do not exist on
+  // main (confirmed by reverting src/services/yamlService.ts in the same
+  // checkout — sanitizeForHAWithReport is undefined and serializeForHA emits no
+  // summary comment).
+  describe('export report + warning comment (B8)', () => {
+    const config: DashboardConfig = {
+      title: 'Report',
+      views: [
+        {
+          title: 'V',
+          path: 'v',
+          cards: [
+            // phantom type -> placeholder warning
+            { type: 'custom:native-graph-card', entity: 'sensor.x' },
+            // entity_exists -> visibility-approximated warning
+            {
+              type: 'markdown',
+              content: 'x',
+              visibility_conditions: [{ condition: 'entity_exists', entity: 'light.a' }],
+            },
+          ],
+        } as unknown as DashboardConfig['views'][number],
+      ],
+    } as unknown as DashboardConfig;
+
+    it('sanitizeForHAWithReport returns the collected warnings (fails on main)', () => {
+      const report = yamlService.sanitizeForHAWithReport(config);
+      expect(report.config).toBeTruthy();
+      const reasons = report.warnings.map((w) => w.reason);
+      expect(reasons).toContain('canvas-only-type');
+      expect(reasons).toContain('visibility-approximated');
+    });
+
+    it('serializeForHA prepends a plain-language summary comment when the boundary adjusted anything (fails on main)', () => {
+      const yaml = yamlService.serializeForHA(config);
+      expect(yaml).toContain('# Home Assistant export summary');
+      expect(yaml.split('\n')[0].startsWith('#')).toBe(true);
+      // still valid YAML — the comment parses away, real content survives
+      const parsed = yamlService.parseDashboard(yaml);
+      expect(parsed.success).toBe(true);
+      expect(parsed.data?.title).toBe('Report');
+    });
+
+    it('serializeForHA adds NO comment for a clean config', () => {
+      const clean: DashboardConfig = {
+        title: 'Clean',
+        views: [
+          {
+            title: 'V',
+            path: 'v',
+            cards: [{ type: 'markdown', content: 'hi' }],
+          } as unknown as DashboardConfig['views'][number],
+        ],
+      } as unknown as DashboardConfig;
+      const yaml = yamlService.serializeForHA(clean);
+      expect(yaml).not.toContain('# Home Assistant export summary');
+    });
+  });
 });
