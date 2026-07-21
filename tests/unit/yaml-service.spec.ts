@@ -278,4 +278,130 @@ describe('yamlService', () => {
       expect(card).toHaveProperty('slides_per_view');
     });
   });
+
+  // Slices B2 + B3 of the export-boundary work: the STRIP class of the export
+  // contract (haExportContract.ts) is folded into exportCard, which the
+  // recursive export pass applies at every depth, and the spacer filter moves
+  // out of sanitizeForHA's top-level-only .filter into that recursive pass.
+  //
+  // RED-BEFORE-GREEN: every assertion here that is marked "fails on main" was
+  // confirmed to fail when only src/services/yamlConversionService.ts +
+  // src/services/yamlService.ts are reverted to their pre-B2 state in the same
+  // checkout — see the PR notes. On main today: nested STRIP keys survive, the
+  // recursion misses custom containers, and nested spacers leak.
+  describe('export boundary (B2/B3): recursive STRIP + nested spacer removal', () => {
+    const nestedConfig: DashboardConfig = {
+      title: 'Nested Deploy',
+      views: [
+        {
+          title: 'V',
+          path: 'v',
+          cards: [
+            {
+              type: 'vertical-stack',
+              cards: [
+                {
+                  type: 'markdown',
+                  content: 'inner',
+                  _havdm_layout: { x: 0, y: 0, w: 2, h: 2 },
+                  icon_color_mode: 'state',
+                  _expanderDepth: 1,
+                },
+                { type: 'spacer' },
+                { type: 'entities', entities: [], _isSpacer: true },
+                {
+                  // A custom container the pre-B2 hard-coded recursion list MISSES.
+                  type: 'custom:vertical-stack-in-card',
+                  cards: [
+                    {
+                      type: 'markdown',
+                      content: 'deep',
+                      _havdm_layout: { x: 1 },
+                      icon_color_mode: 'entity',
+                    },
+                  ],
+                },
+                {
+                  // Mushroom's REAL layout option — must survive (B5 boundary).
+                  type: 'custom:mushroom-template-card',
+                  layout: 'horizontal',
+                },
+              ],
+            },
+          ],
+        } as unknown as DashboardConfig['views'][number],
+      ],
+    } as unknown as DashboardConfig;
+
+    const stackOf = (config: DashboardConfig) =>
+      yamlService.sanitizeForHA(config).views[0]?.cards?.[0] as unknown as {
+        cards: Record<string, unknown>[];
+      };
+
+    it('strips STRIP-class keys from a NESTED card (fails on main)', () => {
+      const inner = stackOf(nestedConfig).cards;
+      const markdown = inner.find((c) => c.content === 'inner');
+      expect(markdown).toBeDefined();
+      expect(markdown).not.toHaveProperty('_havdm_layout');
+      expect(markdown).not.toHaveProperty('icon_color_mode');
+      expect(markdown).not.toHaveProperty('_expanderDepth');
+      // Real content is untouched.
+      expect(markdown?.content).toBe('inner');
+    });
+
+    it('recurses into custom containers the old allowlist missed (fails on main)', () => {
+      const inner = stackOf(nestedConfig).cards;
+      const stackInCard = inner.find((c) => c.type === 'custom:vertical-stack-in-card') as {
+        cards: Record<string, unknown>[];
+      };
+      expect(stackInCard).toBeDefined();
+      const deep = stackInCard.cards[0];
+      expect(deep).not.toHaveProperty('_havdm_layout');
+      expect(deep).not.toHaveProperty('icon_color_mode');
+      expect(deep.content).toBe('deep');
+    });
+
+    it('removes NESTED spacer cards, not just top-level ones (fails on main)', () => {
+      const inner = stackOf(nestedConfig).cards;
+      expect(inner.some((c) => c.type === 'spacer')).toBe(false);
+      expect(inner.some((c) => c._isSpacer === true)).toBe(false);
+      // markdown, custom:vertical-stack-in-card, mushroom — both spacers gone.
+      expect(inner).toHaveLength(3);
+    });
+
+    it("preserves Mushroom's real layout: 'horizontal' (does not clobber it)", () => {
+      const inner = stackOf(nestedConfig).cards;
+      const mushroom = inner.find((c) => c.type === 'custom:mushroom-template-card');
+      expect(mushroom).toBeDefined();
+      expect(mushroom?.layout).toBe('horizontal');
+    });
+
+    it('applies the STRIP at the TOP level too (fails on main)', () => {
+      const topLevel: DashboardConfig = {
+        title: 'Top',
+        views: [
+          {
+            title: 'V',
+            path: 'v',
+            cards: [
+              {
+                type: 'markdown',
+                content: 'top',
+                icon_color_mode: 'state',
+                _expanderDepth: 0,
+              },
+            ],
+          } as unknown as DashboardConfig['views'][number],
+        ],
+      } as unknown as DashboardConfig;
+
+      const card = yamlService.sanitizeForHA(topLevel).views[0]?.cards?.[0] as Record<
+        string,
+        unknown
+      >;
+      expect(card).not.toHaveProperty('icon_color_mode');
+      expect(card).not.toHaveProperty('_expanderDepth');
+      expect(card.content).toBe('top');
+    });
+  });
 });
