@@ -120,6 +120,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('menu:save-file-as', callback);
     return () => ipcRenderer.removeListener('menu:save-file-as', callback);
   },
+  onMenuExportForHA: (callback: () => void) => {
+    ipcRenderer.on('menu:export-for-ha', callback);
+    return () => ipcRenderer.removeListener('menu:export-for-ha', callback);
+  },
   onMenuToggleTheme: (callback: () => void) => {
     ipcRenderer.on('menu:toggle-theme', callback);
     return () => ipcRenderer.removeListener('menu:toggle-theme', callback);
@@ -234,6 +238,7 @@ export interface ElectronAPI {
   onMenuOpenFile: (callback: () => void) => () => void;
   onMenuSaveFile: (callback: () => void) => () => void;
   onMenuSaveFileAs: (callback: () => void) => () => void;
+  onMenuExportForHA: (callback: () => void) => () => void;
   onMenuToggleTheme: (callback: () => void) => () => void;
   onMenuShowAbout: (callback: () => void) => () => void;
   onMenuOpenRecentFile: (callback: (filePath: string) => void) => () => void;

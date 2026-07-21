@@ -78,6 +78,14 @@ export function createApplicationMenu(mainWindow: BrowserWindow): Menu {
             mainWindow.webContents.send('menu:save-file-as');
           },
         },
+        {
+          // Save keeps HAVDM-internal keys so files round-trip back into the
+          // editor; this action writes the HA-ready (sanitised) YAML instead.
+          label: 'Export for Home Assistant...',
+          click: () => {
+            mainWindow.webContents.send('menu:export-for-ha');
+          },
+        },
         { type: 'separator' },
         {
           label: 'Recent Files',

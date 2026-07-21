@@ -427,6 +427,27 @@ const App: React.FC = () => {
     }
   };
 
+  // Export for Home Assistant: writes the HA-ready (sanitised) YAML to a file.
+  // Distinct from Save, which keeps HAVDM-internal keys so the file round-trips
+  // back into the editor (design §7). Does NOT mark the document clean — the
+  // canonical save target is still the raw file.
+  const handleExportForHA = async () => {
+    if (!config) {
+      message.warning('No dashboard loaded to export');
+      return;
+    }
+
+    try {
+      const yamlContent = yamlService.serializeForHA(config);
+      const success = await fileService.saveFileAs(yamlContent, 'dashboard-ha.yaml');
+      if (success) {
+        message.success('Exported for Home Assistant successfully!');
+      }
+    } catch (error) {
+      message.error(`Failed to export for Home Assistant: ${(error as Error).message}`);
+    }
+  };
+
   const handleSave = async () => {
     if (!config) {
       message.warning('No dashboard loaded to save');
@@ -1256,8 +1277,12 @@ const App: React.FC = () => {
     try {
       message.loading({ content: 'Creating temporary dashboard...', key: 'livepreview' });
 
-      // Create temporary dashboard in HA via IPC
-      const result = await window.electronAPI.haWsCreateTempDashboard(config);
+      // Create temporary dashboard in HA via IPC. Live Preview is an HA-bound
+      // route, so send the sanitised config (HAVDM-internal keys removed) — the
+      // preview then shows what HA will actually render (B4).
+      const result = await window.electronAPI.haWsCreateTempDashboard(
+        yamlService.sanitizeForHA(config),
+      );
       if (!result.success || !result.tempPath) {
         throw new Error(result.error || 'Failed to create temp dashboard');
       }
@@ -1470,6 +1495,7 @@ const App: React.FC = () => {
     const handleMenuOpenFile = () => handleOpenFile();
     const handleMenuSave = () => handleSave();
     const handleMenuSaveFileAs = () => handleSaveFile();
+    const handleMenuExportForHA = () => handleExportForHA();
     const handleMenuToggleTheme = () => handleToggleTheme();
     const handleMenuShowAbout = () => handleShowAbout();
     const handleMenuOpenRecentFile = (filePath: string) => handleOpenRecentFile(filePath);
@@ -1477,6 +1503,7 @@ const App: React.FC = () => {
     const unsubOpenFile = window.electronAPI.onMenuOpenFile(handleMenuOpenFile);
     const unsubSaveFile = window.electronAPI.onMenuSaveFile(handleMenuSave);
     const unsubSaveFileAs = window.electronAPI.onMenuSaveFileAs(handleMenuSaveFileAs);
+    const unsubExportForHA = window.electronAPI.onMenuExportForHA(handleMenuExportForHA);
     const unsubToggleTheme = window.electronAPI.onMenuToggleTheme(handleMenuToggleTheme);
     const unsubShowAbout = window.electronAPI.onMenuShowAbout(handleMenuShowAbout);
     const unsubOpenRecentFile = window.electronAPI.onMenuOpenRecentFile(handleMenuOpenRecentFile);
@@ -1486,6 +1513,7 @@ const App: React.FC = () => {
       unsubOpenFile();
       unsubSaveFile();
       unsubSaveFileAs();
+      unsubExportForHA();
       unsubToggleTheme();
       unsubShowAbout();
       unsubOpenRecentFile();
