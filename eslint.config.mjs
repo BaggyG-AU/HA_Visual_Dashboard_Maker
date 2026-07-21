@@ -73,6 +73,20 @@ export default tseslint.config(
       // burning down the ~106 `any`s is its own piece of work, not this one.
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': 'warn',
+
+      // Ban `<Input type="number">` (antd) — its onChange emits e.target.value,
+      // which is ALWAYS a string, so HA numeric keys drift to quoted strings in
+      // exported YAML (e.g. `line_width: '3'`). Use antd's <InputNumber>, which
+      // parses to a real number. Phase 2 (PropertiesPanel type-drift class).
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "JSXOpeningElement[name.name='Input'] JSXAttribute[name.name='type'][value.value='number']",
+          message:
+            'Use <InputNumber> instead of <Input type="number">: antd Input emits string values, which drift HA numeric keys to quoted strings in exported YAML. See Phase 2.',
+        },
+      ],
     },
   },
 

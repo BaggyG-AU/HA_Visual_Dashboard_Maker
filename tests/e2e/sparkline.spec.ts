@@ -73,7 +73,12 @@ test.describe('Sparkline Mini-graphs', () => {
 
       expect(yaml).toContain('type: custom:mini-graph-card');
       expect(yaml).toContain('hours_to_show: 168');
-      expect(yaml).toMatch(/line_width:\s*'?3'?/);
+      // Strict: line_width must be a NUMBER, not a quoted string. The old regex
+      // (/line_width:\s*'?3'?/) tolerated the `line_width: '3'` string-drift the
+      // `<Input type="number">` bug produced. Phase 2 makes the field emit a
+      // real number via <InputNumber>.
+      expect(yaml).toContain('line_width: 3');
+      expect(yaml).not.toMatch(/line_width:\s*'/);
       expect(yaml).toContain('height: 64');
       expect(yaml).toContain('fill: true');
       expect(yaml).toContain('extrema: true');

@@ -52,10 +52,10 @@ export class GaugeProDSL {
     needle?: boolean;
   }): Promise<void> {
     if (typeof config.min === 'number') {
-      await this.fillInputByTestId('ha-gauge-min', config.min);
+      await this.fillNumber('ha-gauge-min', config.min);
     }
     if (typeof config.max === 'number') {
-      await this.fillInputByTestId('ha-gauge-max', config.max);
+      await this.fillNumber('ha-gauge-max', config.max);
     }
     if (typeof config.unit === 'string') {
       const unitInput = this.window.getByTestId('ha-gauge-unit');
@@ -104,13 +104,6 @@ export class GaugeProDSL {
     }
     await control.fill(String(value));
     await control.blur();
-  }
-
-  private async fillInputByTestId(testId: string, value: number): Promise<void> {
-    const input = this.window.getByTestId(testId);
-    await expect(input).toBeVisible();
-    await input.fill(String(value));
-    await input.blur();
   }
 
   private async setSwitch(testId: string, enabled: boolean): Promise<void> {
