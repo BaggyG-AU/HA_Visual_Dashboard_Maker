@@ -4,6 +4,7 @@ import type { TabsCardConfig, TabbedCardAttributes } from '../types/tabs';
 import { STRIP_KEYS } from './haExportContract';
 import { translateToCardMod } from './cardModTranslator';
 import { translateVisibility } from './visibilityTranslator';
+import { substituteCanvasOnlyCard } from './canvasPlaceholderTranslator';
 import type { ExportWarning } from './exportWarnings';
 
 const SWIPE_KNOWN_PARAMETER_KEYS = new Set([
@@ -710,18 +711,29 @@ export function exportCard(
   card: Record<string, unknown>,
   options: ExportCardOptions = {},
 ): Record<string, unknown> {
+  // Slice B7: CANVAS-ONLY phantom card TYPES (haExportContract
+  // CANVAS_ONLY_CARD_TYPES) are substituted with a native `markdown` "Card Not
+  // Available" placeholder holding the slot. Runs FIRST so the rest of the
+  // pipeline sees a plain markdown card and the phantom container's design-time
+  // children are dropped (the placeholder has no nested `cards`).
+  const placeholder = substituteCanvasOnlyCard(card);
+  if (options.warnings && placeholder.warnings.length > 0) {
+    options.warnings.push(...placeholder.warnings);
+  }
+  const source = placeholder.card;
+
   let exported: Record<string, unknown>;
 
-  if (card.type === 'custom:swipe-card') {
-    exported = exportSwipeCard(card);
-  } else if (card.type === 'custom:expander-card') {
-    exported = exportExpanderCard(card);
-  } else if (card.type === 'custom:tabbed-card') {
-    exported = exportTabbedCard(card);
-  } else if (card.type === 'calendar') {
-    exported = exportCalendarCard(card);
+  if (source.type === 'custom:swipe-card') {
+    exported = exportSwipeCard(source);
+  } else if (source.type === 'custom:expander-card') {
+    exported = exportExpanderCard(source);
+  } else if (source.type === 'custom:tabbed-card') {
+    exported = exportTabbedCard(source);
+  } else if (source.type === 'calendar') {
+    exported = exportCalendarCard(source);
   } else {
-    exported = { ...card };
+    exported = { ...source };
   }
 
   // Slice B6: TRANSLATE the card-mod class (haExportContract CARD_MOD_KEYS) into

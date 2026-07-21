@@ -167,3 +167,35 @@ export const HA_VISIBILITY_KEYS: readonly string[] = keysForAction('ha-visibilit
 
 /** Canvas-only behavioural keys with no HA target. Phase 4. */
 export const CANVAS_KEYS: readonly string[] = keysForAction('canvas');
+
+// ---------------------------------------------------------------------------
+// Canvas-only card TYPES — slice B7
+// ---------------------------------------------------------------------------
+
+/**
+ * Phantom card **types** that render on the HAVDM canvas but do not exist as
+ * deployable Home Assistant cards. On export each is substituted with a native
+ * `markdown` "Card Not Available" placeholder that holds its slot (slice B7,
+ * design §6a; vision `drawer_havdm_decisions_d4f0886c7035390d30c1d1a7` answers
+ * 3 + 9). This is the profile-independent "known-nonexistent" set from the
+ * capability inventory (`HA_CAPABILITY_INVENTORY_DESIGN_2026-07.md` §5) — it is
+ * NEVER deployable regardless of the instance.
+ *
+ *  - `custom:popup-card` / `custom:native-graph-card` — HAVDM inventions.
+ *  - `custom:card-mod` — a styling key surfaced as a card; not a real card type.
+ *  - `custom:multiple-entity-row` / `custom:fold-entity-row` /
+ *    `custom:slider-entity-row` — real HACS entity ROWS, not deployable as
+ *    standalone top-level cards.
+ *
+ * `spacer` is deliberately EXCLUDED: it is an invisible HAVDM layout device and
+ * is already dropped entirely on export (slice B3), not replaced with a visible
+ * placeholder.
+ */
+export const CANVAS_ONLY_CARD_TYPES: readonly string[] = [
+  'custom:popup-card',
+  'custom:native-graph-card',
+  'custom:card-mod',
+  'custom:multiple-entity-row',
+  'custom:fold-entity-row',
+  'custom:slider-entity-row',
+];

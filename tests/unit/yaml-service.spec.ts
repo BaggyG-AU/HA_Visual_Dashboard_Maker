@@ -743,4 +743,84 @@ describe('yamlService', () => {
       expect(inner).not.toHaveProperty('visibility_conditions');
     });
   });
+
+  // Slice B7: CANVAS-ONLY phantom card TYPES (haExportContract
+  // CANVAS_ONLY_CARD_TYPES) are substituted on export with a native `markdown`
+  // "Card Not Available" placeholder that holds the slot (view_layout /
+  // grid_options / layout_options carried over) — NOT `type: spacer`.
+  //
+  // RED-BEFORE-GREEN: every "fails on main" assertion was confirmed red when the
+  // B7 src (src/services/canvasPlaceholderTranslator.ts + the exportCard wiring)
+  // is reverted in the same checkout — on main the phantom type passes through
+  // and would deploy as an unknown-card error tile.
+  describe('canvas-only placeholder (B7)', () => {
+    const cardsOf = (cfg: DashboardConfig) =>
+      yamlService.sanitizeForHA(cfg).views[0]?.cards as unknown as Record<string, unknown>[];
+
+    const wrap = (cards: Record<string, unknown>[]): DashboardConfig =>
+      ({
+        title: 'Phantom',
+        views: [{ title: 'V', path: 'v', cards } as unknown as DashboardConfig['views'][number]],
+      }) as unknown as DashboardConfig;
+
+    it('substitutes custom:popup-card with a markdown placeholder holding the slot (fails on main)', () => {
+      const card = cardsOf(
+        wrap([
+          {
+            type: 'custom:popup-card',
+            view_layout: { grid_area: 'a' },
+            popup: { cards: [{ type: 'markdown', content: 'inside' }] },
+          },
+        ]),
+      )[0];
+      expect(card.type).toBe('markdown');
+      expect(String(card.content)).toContain('Card Not Available');
+      // slot-holding geometry preserved
+      expect(card.view_layout).toEqual({ grid_area: 'a' });
+      // the phantom type + its design-time children are gone
+      expect(card).not.toHaveProperty('popup');
+    });
+
+    it('substitutes custom:native-graph-card (fails on main)', () => {
+      const card = cardsOf(wrap([{ type: 'custom:native-graph-card', entity: 'sensor.x' }]))[0];
+      expect(card.type).toBe('markdown');
+      expect(String(card.content)).toContain('Card Not Available');
+    });
+
+    it('substitutes an entity-row offered as a standalone card (fails on main)', () => {
+      const card = cardsOf(wrap([{ type: 'custom:multiple-entity-row', entity: 'sensor.x' }]))[0];
+      expect(card.type).toBe('markdown');
+      expect(String(card.content)).toContain('Card Not Available');
+    });
+
+    it('substitutes a NESTED phantom card (recursion) (fails on main)', () => {
+      const stack = cardsOf(
+        wrap([
+          {
+            type: 'vertical-stack',
+            cards: [
+              { type: 'markdown', content: 'real' },
+              { type: 'custom:popup-card', popup: { cards: [] } },
+            ],
+          },
+        ]),
+      )[0] as { cards: Record<string, unknown>[] };
+      expect(stack.cards[0].type).toBe('markdown');
+      expect(String(stack.cards[0].content)).toBe('real');
+      expect(stack.cards[1].type).toBe('markdown');
+      expect(String(stack.cards[1].content)).toContain('Card Not Available');
+    });
+
+    it('leaves a REAL custom card untouched (not substituted)', () => {
+      const card = cardsOf(wrap([{ type: 'custom:mushroom-entity-card', entity: 'light.a' }]))[0];
+      expect(card.type).toBe('custom:mushroom-entity-card');
+    });
+
+    it('still DROPS spacer cards (B3), does not turn them into placeholders', () => {
+      const cards = cardsOf(wrap([{ type: 'markdown', content: 'real' }, { type: 'spacer' }]));
+      expect(cards).toHaveLength(1);
+      expect(cards[0].type).toBe('markdown');
+      expect(String(cards[0].content)).toBe('real');
+    });
+  });
 });

@@ -264,6 +264,29 @@ slot** (WYSIWYG geometry preserved) and displays **"Card Not Available"**.
 Applies on every HA-bound route. The pre-deploy summary lists which cards were
 substituted (consistent with the "author-with-banner" palette policy).
 
+### 6a.1 Implemented (B7)
+
+`src/services/canvasPlaceholderTranslator.ts` (`substituteCanvasOnlyCard`),
+plugged into `exportCard` **first** (before the per-card exporters and the
+card-mod/visibility translates), so it applies at every depth via
+`processCardRecursively` and a phantom **container** collapses to the placeholder
+(its design-time children are dropped).
+
+- **Phantom-type set** — `CANVAS_ONLY_CARD_TYPES` in `haExportContract.ts`:
+  `custom:popup-card`, `custom:native-graph-card`, `custom:card-mod`,
+  `custom:multiple-entity-row`, `custom:fold-entity-row`,
+  `custom:slider-entity-row`. This is the profile-independent "known-nonexistent"
+  set (capability inventory §5) — never deployable regardless of the instance.
+- **`spacer` is excluded** — it is dropped entirely by slice B3 (an invisible
+  layout device), not turned into a visible placeholder.
+- **Placeholder** = a native `markdown` card, content a plain-language
+  "⚠️ Card Not Available" heading + the card's friendly type + why, carrying over
+  `view_layout` / `grid_options` / `layout_options` to hold the slot.
+- Records an `ExportWarning` (`category: 'placeholder'`, reason
+  `canvas-only-type`) into the shared accumulator (surfaced by B8).
+- Entity-rows used **inside** an `entities` list are untouched — only standalone
+  _card_ usage is substituted.
+
 ---
 
 ## 6b. `visibility_conditions` — TRANSLATE to native `visibility` (implemented)
@@ -369,18 +392,18 @@ sets + the TRANSLATE/STRIP/CANVAS classification (§3).
 
 ## 10. Sequenced slices (maps to plan Phase 0–1)
 
-| Slice | Change                                                                        | Depends on |
-| ----- | ----------------------------------------------------------------------------- | ---------- |
-| B0    | Remove `DeployDialog` re-import; deploy the object — **DONE (PR #39)**        | —          |
-| B1    | `haExportContract.ts` + `KEY_ACTION` map + type guard — **DONE (PR #40)**     | —          |
-| B2    | Fold STRIP into `exportCard`; generic recursion — **DONE**                    | B1         |
-| B3    | Move spacer filter into the recursive pass — **DONE (folded into B2)**        | B2         |
-| B4    | Route Save/Live-Preview through `serializeForHA` — **DONE (PR #43)**          | B2         |
-| B5    | Rename `layout` → `_havdm_layout` + import migration shim — **DONE (PR #44)** | B2         |
-| B6    | TRANSLATE→card-mod: layout keys + `style` → `card_mod` (§6.1) — **DONE**      | B2         |
-| B6b   | TRANSLATE→native: `visibility_conditions` → HA `visibility` (§6b) — **DONE**  | B2         |
-| B7    | CANVAS-ONLY card types → native "Card Not Available" placeholder (§6a)        | B2         |
-| B8    | Warn-only validation self-check                                               | B2         |
+| Slice | Change                                                                            | Depends on |
+| ----- | --------------------------------------------------------------------------------- | ---------- |
+| B0    | Remove `DeployDialog` re-import; deploy the object — **DONE (PR #39)**            | —          |
+| B1    | `haExportContract.ts` + `KEY_ACTION` map + type guard — **DONE (PR #40)**         | —          |
+| B2    | Fold STRIP into `exportCard`; generic recursion — **DONE**                        | B1         |
+| B3    | Move spacer filter into the recursive pass — **DONE (folded into B2)**            | B2         |
+| B4    | Route Save/Live-Preview through `serializeForHA` — **DONE (PR #43)**              | B2         |
+| B5    | Rename `layout` → `_havdm_layout` + import migration shim — **DONE (PR #44)**     | B2         |
+| B6    | TRANSLATE→card-mod: layout keys + `style` → `card_mod` (§6.1) — **DONE**          | B2         |
+| B6b   | TRANSLATE→native: `visibility_conditions` → HA `visibility` (§6b) — **DONE**      | B2         |
+| B7    | CANVAS-ONLY card types → native "Card Not Available" placeholder (§6a) — **DONE** | B2         |
+| B8    | Warn-only validation self-check                                                   | B2         |
 
 B0 is independently shippable and unblocks everything else. B6/B6b/B7 are the
 "superset translation" layer; they are what makes this a translating boundary
