@@ -340,17 +340,19 @@ describe('yaml conversion service', () => {
     const exportedSwipe = exportedVertical[0];
     const exportedConditional = exportedVertical[1];
     const exportedTabbed = exportedConditional.card as Record<string, unknown>;
-    const exportedPopup = (exportedTabbed.tabs as Array<Record<string, unknown>>)[0].card as Record<
-      string,
-      unknown
-    >;
+    const exportedTabCard = (exportedTabbed.tabs as Array<Record<string, unknown>>)[0]
+      .card as Record<string, unknown>;
 
     expect(exportedSwipe.type).toBe('custom:swipe-card');
     expect((exportedSwipe.parameters as Record<string, unknown>).slidesPerView).toBe(1);
     expect(exportedTabbed.options).toEqual({ defaultTabIndex: 0 });
-    expect(exportedPopup.popup).toMatchObject({
-      cards: [{ type: 'markdown', content: 'Popup child' }],
-    });
+    // B7: the deeply-nested custom:popup-card (a phantom type) is substituted with
+    // a native "Card Not Available" markdown placeholder — proving the B7
+    // substitution reaches every depth, and its design-time popup content is
+    // intentionally dropped.
+    expect(exportedTabCard.type).toBe('markdown');
+    expect(String(exportedTabCard.content)).toContain('Card Not Available');
+    expect(exportedTabCard).not.toHaveProperty('popup');
   });
 
   it('preserves unknown properties and handles empty/missing/null edge cases', () => {
@@ -574,6 +576,63 @@ describe('yaml conversion service', () => {
         { warnings },
       );
       expect(warnings.some((w) => w.category === 'visibility')).toBe(true);
+    });
+  });
+
+  // Slice B7 — canvas-only phantom card TYPES -> markdown "Card Not Available"
+  // placeholder, exercised directly through exportCard / exportDashboard.
+  // RED-BEFORE-GREEN: confirmed red when the B7 src is reverted in the same
+  // checkout (on main the phantom type passes through unchanged).
+  describe('canvas-only placeholder (B7) — export options', () => {
+    it('replaces a phantom type with a markdown placeholder + records a warning', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportCard(
+        { type: 'custom:native-graph-card', entity: 'sensor.x', grid_options: { columns: 6 } },
+        { warnings },
+      );
+      expect(exported.type).toBe('markdown');
+      expect(String(exported.content)).toContain('Card Not Available');
+      // slot-holding key carried over
+      expect(exported.grid_options).toEqual({ columns: 6 });
+      // original phantom fields dropped
+      expect(exported).not.toHaveProperty('entity');
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toMatchObject({
+        category: 'placeholder',
+        cardType: 'custom:native-graph-card',
+        reason: 'canvas-only-type',
+      });
+    });
+
+    it('leaves a real deployable card unchanged (no placeholder, no warning)', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportCard({ type: 'custom:apexcharts-card', series: [] }, { warnings });
+      expect(exported.type).toBe('custom:apexcharts-card');
+      expect(warnings).toHaveLength(0);
+    });
+
+    it('collects placeholder warnings from NESTED phantom cards through exportDashboard', () => {
+      const warnings: ExportWarning[] = [];
+      exportDashboard(
+        {
+          title: 'D',
+          views: [
+            {
+              title: 'V',
+              cards: [
+                {
+                  type: 'vertical-stack',
+                  cards: [{ type: 'custom:popup-card', popup: { cards: [] } }],
+                },
+              ],
+            },
+          ],
+        },
+        { warnings },
+      );
+      expect(
+        warnings.some((w) => w.category === 'placeholder' && w.cardType === 'custom:popup-card'),
+      ).toBe(true);
     });
   });
 });

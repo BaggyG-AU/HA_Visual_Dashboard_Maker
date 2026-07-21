@@ -9,8 +9,8 @@
  * visual-first; MemPalace `drawer_havdm_decisions_d4f0886c7035390d30c1d1a7`).
  */
 
-/** Which TRANSLATE step raised the warning. */
-export type ExportWarningCategory = 'card-mod' | 'visibility';
+/** Which TRANSLATE / substitution step raised the warning. */
+export type ExportWarningCategory = 'card-mod' | 'visibility' | 'placeholder';
 
 /** Why the translation was imperfect. */
 export type ExportWarningReason =
@@ -18,7 +18,9 @@ export type ExportWarningReason =
   | 'card-mod-unavailable'
   | 'existing-object-style'
   // visibility (B6b)
-  | 'visibility-approximated';
+  | 'visibility-approximated'
+  // canvas-only placeholder (B7)
+  | 'canvas-only-type';
 
 export interface ExportWarning {
   /** Which TRANSLATE step raised this. */
