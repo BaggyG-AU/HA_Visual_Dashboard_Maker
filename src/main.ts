@@ -407,6 +407,11 @@ import { haWebSocketService } from './services/haWebSocketService';
 // Credentials service
 import { credentialsService } from './services/credentialsService';
 
+// Phase 3 capability inventory (I3)
+import { capabilityProfileService } from './services/capabilityProfileService';
+import { resolveCapability } from './services/capability/capabilityResolver';
+import { buildCapabilityProfile, type CardOverride } from './services/capability/capabilityProfile';
+
 // Connect to HA WebSocket
 ipcMain.handle('ha:ws:connect', async (event, url: string, token: string) => {
   try {
@@ -531,6 +536,49 @@ ipcMain.handle('ha:ws:getHacsRepositories', async () => {
     return { success: false, error: (error as Error).message };
   }
 });
+
+// --- Phase 3 capability profile (I3) — persisted, offline-editable ----------
+
+// Capture the capability profile from the live instance and persist it. Call
+// after a successful connect (READ-ONLY reads only). HACS-absent is tolerated.
+ipcMain.handle('capability:capture', async () => {
+  try {
+    const resources = await haWebSocketService.getResources();
+    const haVersion = haWebSocketService.getHaVersion();
+    let hacsRepos: Awaited<ReturnType<typeof haWebSocketService.getHacsRepositories>> = [];
+    try {
+      hacsRepos = await haWebSocketService.getHacsRepositories();
+    } catch {
+      // HACS not installed / command unknown — presence still resolves from resources.
+    }
+    const resolved = resolveCapability(resources, hacsRepos);
+    const existing = capabilityProfileService.getProfile();
+    const profile = buildCapabilityProfile(
+      resolved,
+      { haVersion, capturedAt: new Date().toISOString() },
+      existing.userOverrides,
+    );
+    capabilityProfileService.saveProfile(profile);
+    return { success: true, profile };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Read the persisted profile (or the permissive never-connected default). This is
+// what the palette resolves against — never a live query at render time.
+ipcMain.handle('capability:getProfile', async () => {
+  return { profile: capabilityProfileService.getProfile() };
+});
+
+// Set or clear (override === null) a manual per-card override.
+ipcMain.handle(
+  'capability:setOverride',
+  async (_event, cardType: string, override: CardOverride | null) => {
+    const profile = capabilityProfileService.setOverride(cardType, override);
+    return { profile };
+  },
+);
 
 // Create temporary dashboard
 ipcMain.handle('ha:ws:createTempDashboard', async (event, config: any) => {
