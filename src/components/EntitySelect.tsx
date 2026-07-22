@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Select, Tag, Typography, Space, Alert } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
-import { haConnectionService } from '../services/haConnectionService';
+import { loadPickerEntities, type EntitySourceKind } from '../services/entityPickerSource';
 import { logger } from '../services/logger';
 import { HAEntity } from '../types/homeassistant';
 
@@ -34,23 +34,22 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
   'data-testid': dataTestId,
 }) => {
   const [entities, setEntities] = useState<HAEntity[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<HAEntity | null>(null);
+  const [source, setSource] = useState<EntitySourceKind>('none');
 
-  // Load entities from Home Assistant
+  // Load entities: live when connected, else the persisted offline cache so
+  // cards can be configured without a live HA connection.
   useEffect(() => {
     const loadEntities = async () => {
-      if (!haConnectionService.isConnected()) {
-        return;
-      }
-
       setLoading(true);
       setError(null);
 
       try {
-        const fetchedEntities = await haConnectionService.fetchEntities();
-        setEntities(fetchedEntities);
+        const { entities: loaded, source: loadedSource } = await loadPickerEntities();
+        setEntities(loaded);
+        setSource(loadedSource);
       } catch (err) {
         setError((err as Error).message);
         logger.error('Failed to load entities', err);
@@ -215,30 +214,6 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
     return null;
   };
 
-  // Show warning if not connected to HA
-  if (!haConnectionService.isConnected()) {
-    return (
-      <div>
-        <Select
-          value={value}
-          onChange={handleChange}
-          placeholder={placeholder}
-          allowClear={allowClear}
-          style={{ width: '100%' }}
-          data-testid={dataTestId}
-        />
-        <Alert
-          message="Not Connected"
-          description="Connect to Home Assistant to enable entity autocomplete and validation."
-          type="warning"
-          icon={<WarningOutlined />}
-          showIcon
-          style={{ marginTop: '8px', fontSize: '12px' }}
-        />
-      </div>
-    );
-  }
-
   // Show error if failed to load entities
   if (error) {
     return (
@@ -255,6 +230,31 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
           message="Failed to Load Entities"
           description={error}
           type="error"
+          showIcon
+          style={{ marginTop: '8px', fontSize: '12px' }}
+        />
+      </div>
+    );
+  }
+
+  // No live connection AND no cached entities → prompt to connect. (When a cache
+  // exists we fall through and offer it, so cards can be configured offline.)
+  if (!loading && source === 'none') {
+    return (
+      <div>
+        <Select
+          value={value}
+          onChange={handleChange}
+          placeholder={placeholder}
+          allowClear={allowClear}
+          style={{ width: '100%' }}
+          data-testid={dataTestId}
+        />
+        <Alert
+          message="Not Connected"
+          description="Connect to Home Assistant to enable entity autocomplete and validation."
+          type="warning"
+          icon={<WarningOutlined />}
           showIcon
           style={{ marginTop: '8px', fontSize: '12px' }}
         />
@@ -287,6 +287,14 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
         }}
         data-testid={dataTestId}
       />
+      {source === 'cached' && (
+        <Alert
+          message="Offline — showing cached entities from your last connection"
+          type="info"
+          showIcon
+          style={{ marginTop: '8px', fontSize: '12px' }}
+        />
+      )}
       {renderEntityPreview()}
     </div>
   );
