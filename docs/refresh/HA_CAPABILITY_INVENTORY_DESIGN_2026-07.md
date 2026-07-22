@@ -11,9 +11,11 @@
 
 HAVDM should offer a card only when the user's Home Assistant instance can
 actually render it. A card whose backing resource is not installed is shown
-**"Not Available"** and its editor is disabled. A card that exists nowhere
-upstream is shown **"HAVDM-only"** (never deployable). Everything else is
-**"Available"**.
+**"Not Available"** — but it stays **authorable**, with a "won't render on your
+instance" hint and a pointer to install it (via HACS); the editor is **not**
+hard-disabled (ratified vision answer 8 — friendly to users mid-install). A card
+that exists nowhere upstream is shown **"HAVDM-only"** (never deployable).
+Everything else is **"Available"**.
 
 This replaces _assertion_ (a static registry claiming what exists) with
 _observation_ (what the instance reports).
@@ -142,8 +144,9 @@ For a given card type, in priority order:
    palette says so and offers canvas-preview only. _(D-FID-1: keep and fix — the
    "fix" for these is a correct re-implementation, not deletion.)_
 2. **Not Available**: `isCustom` card whose element is absent from
-   `installedElements` (and not force-available). Editor disabled; a one-click
-   "how to install" pointer to the HACS repo.
+   `installedElements` (and not force-available). Stays **authorable** (the
+   editor is **not** disabled — vision answer 8); the palette shows a "won't
+   render on your instance" hint and a pointer to install it via HACS.
 3. **Available**: HA built-in (subject to the §3.3 version matrix), or a custom
    element present in the profile, or `force-available`.
 

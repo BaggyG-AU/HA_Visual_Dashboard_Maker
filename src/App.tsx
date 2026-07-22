@@ -1043,6 +1043,10 @@ const App: React.FC = () => {
       // Fetch and cache entities in the background
       fetchAndCacheEntities();
 
+      // Capture the capability inventory in the background (Phase 3) so the
+      // palette can resolve card availability offline. Fire-and-forget.
+      captureCapabilityProfile();
+
       // Fetch themes in the background
       fetchThemes();
     } catch (error) {
@@ -1061,6 +1065,20 @@ const App: React.FC = () => {
     } catch (error) {
       logger.error('Failed to fetch entities', error);
       // Don't show error to user - this is a background operation
+    }
+  };
+
+  const captureCapabilityProfile = async () => {
+    try {
+      const result = await window.electronAPI.capabilityCapture();
+      if (result.success) {
+        logger.info(
+          `Captured capability profile: ${result.profile?.installedElements.length ?? 0} custom elements`,
+        );
+      }
+    } catch (error) {
+      // Background operation — don't surface to the user.
+      logger.error('Failed to capture capability profile', error);
     }
   };
 

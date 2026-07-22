@@ -10,7 +10,11 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { cardRegistry, CardCategory, CardTypeMetadata } from '../services/cardRegistry';
-import { CANVAS_ONLY_CARD_TYPES } from '../services/haExportContract';
+import { resolveCardState } from '../services/capability/cardAvailability';
+import {
+  defaultCapabilityProfile,
+  type CapabilityProfile,
+} from '../services/capability/capabilityProfile';
 
 interface CardPaletteProps {
   onCardAdd: (cardType: string) => void;
@@ -57,6 +61,28 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
   const previousActiveKeysRef = useRef<string[] | null>(null);
+  const [profile, setProfile] = useState<CapabilityProfile>(defaultCapabilityProfile());
+
+  // Load the persisted capability profile once. This is the OFFLINE source of
+  // truth for card availability — never a live query at render time (standalone
+  // principle). Absent electronAPI (e.g. unit tests) keeps the permissive default.
+  useEffect(() => {
+    let cancelled = false;
+    const api = window.electronAPI;
+    if (api?.capabilityGetProfile) {
+      api
+        .capabilityGetProfile()
+        .then((res) => {
+          if (!cancelled && res?.profile) setProfile(res.profile);
+        })
+        .catch(() => {
+          /* keep the permissive default */
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Get all cards and group by category
   const allCards = cardRegistry.getAll();
@@ -180,79 +206,102 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
               },
               children: (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {cards.map((card) => (
-                    <Tooltip key={card.type} title={card.description} placement="right">
-                      <div
-                        data-testid={`palette-card-${card.type}`}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, card.type)}
-                        onDoubleClick={() => handleCardClick(card.type)}
-                        style={{
-                          padding: '12px',
-                          background: '#1f1f1f',
-                          borderRadius: '6px',
-                          cursor: 'grab',
-                          border: '1px solid #434343',
-                          transition: 'all 0.2s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = '#2a2a2a';
-                          e.currentTarget.style.borderColor = config.color;
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = '#1f1f1f';
-                          e.currentTarget.style.borderColor = '#434343';
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ color: config.color, fontSize: '16px' }}>
-                            {config.icon}
-                          </span>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ color: 'white', fontSize: '13px', fontWeight: 500 }}>
-                              {card.name}
-                            </div>
-                            <div
-                              style={{
-                                color: '#888',
-                                fontSize: '11px',
-                                marginTop: '2px',
-                              }}
-                            >
-                              {card.type}
-                            </div>
-                          </div>
-                          {card.isCustom && (
-                            <Badge
-                              count="Custom"
-                              style={{
-                                backgroundColor: '#722ed1',
-                                fontSize: '10px',
-                                height: '18px',
-                                lineHeight: '18px',
-                              }}
-                            />
-                          )}
-                          {CANVAS_ONLY_CARD_TYPES.includes(card.type) && (
-                            <Tooltip
-                              title="HAVDM canvas-only card — on deploy it becomes a 'Card Not Available' placeholder in Home Assistant"
-                              placement="top"
-                            >
-                              <Badge
-                                count="HAVDM-only"
+                  {cards.map((card) => {
+                    const availability = resolveCardState(
+                      card.type,
+                      { isCustom: card.isCustom },
+                      profile,
+                    );
+                    return (
+                      <Tooltip key={card.type} title={card.description} placement="right">
+                        <div
+                          data-testid={`palette-card-${card.type}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, card.type)}
+                          onDoubleClick={() => handleCardClick(card.type)}
+                          style={{
+                            padding: '12px',
+                            background: '#1f1f1f',
+                            borderRadius: '6px',
+                            cursor: 'grab',
+                            border: '1px solid #434343',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#2a2a2a';
+                            e.currentTarget.style.borderColor = config.color;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#1f1f1f';
+                            e.currentTarget.style.borderColor = '#434343';
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: config.color, fontSize: '16px' }}>
+                              {config.icon}
+                            </span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ color: 'white', fontSize: '13px', fontWeight: 500 }}>
+                                {card.name}
+                              </div>
+                              <div
                                 style={{
-                                  backgroundColor: '#d46b08',
+                                  color: '#888',
+                                  fontSize: '11px',
+                                  marginTop: '2px',
+                                }}
+                              >
+                                {card.type}
+                              </div>
+                            </div>
+                            {card.isCustom && (
+                              <Badge
+                                count="Custom"
+                                style={{
+                                  backgroundColor: '#722ed1',
                                   fontSize: '10px',
                                   height: '18px',
                                   lineHeight: '18px',
                                 }}
                               />
-                            </Tooltip>
-                          )}
+                            )}
+                            {availability === 'havdm-only' && (
+                              <Tooltip
+                                title="HAVDM canvas-only card — on deploy it becomes a 'Card Not Available' placeholder in Home Assistant"
+                                placement="top"
+                              >
+                                <Badge
+                                  count="HAVDM-only"
+                                  style={{
+                                    backgroundColor: '#d46b08',
+                                    fontSize: '10px',
+                                    height: '18px',
+                                    lineHeight: '18px',
+                                  }}
+                                />
+                              </Tooltip>
+                            )}
+                            {availability === 'not-available' && (
+                              <Tooltip
+                                title="Not installed on your Home Assistant — this card won't render until you install it (via HACS). You can still design with it."
+                                placement="top"
+                              >
+                                <Badge
+                                  count="Not Available"
+                                  style={{
+                                    backgroundColor: '#8c8c8c',
+                                    fontSize: '10px',
+                                    height: '18px',
+                                    lineHeight: '18px',
+                                  }}
+                                />
+                              </Tooltip>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </Tooltip>
-                  ))}
+                      </Tooltip>
+                    );
+                  })}
                 </div>
               ),
             };
