@@ -2,6 +2,8 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 import { contextBridge, ipcRenderer } from 'electron';
+import type { LovelaceResource } from './services/haWebSocketService';
+import type { InstalledHacsRepository } from './services/capability/hacsRepositories';
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -69,6 +71,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('ha:ws:getDashboardConfig', urlPath),
   haWsClose: () => ipcRenderer.invoke('ha:ws:close'),
   haWsIsConnected: () => ipcRenderer.invoke('ha:ws:isConnected'),
+  // Phase 3 capability inventory (I0/I1) — READ-ONLY
+  haWsGetHaVersion: () => ipcRenderer.invoke('ha:ws:getHaVersion'),
+  haWsGetResources: () => ipcRenderer.invoke('ha:ws:getResources'),
+  haWsGetHacsRepositories: () => ipcRenderer.invoke('ha:ws:getHacsRepositories'),
   haWsCreateTempDashboard: (config: any) => ipcRenderer.invoke('ha:ws:createTempDashboard', config),
   haWsUpdateTempDashboard: (tempPath: string, config: any) =>
     ipcRenderer.invoke('ha:ws:updateTempDashboard', tempPath, config),
@@ -196,6 +202,18 @@ export interface ElectronAPI {
   ) => Promise<{ success: boolean; config?: any; error?: string }>;
   haWsClose: () => Promise<{ success: boolean; error?: string }>;
   haWsIsConnected: () => Promise<{ connected: boolean }>;
+  // Phase 3 capability inventory (I0/I1) — READ-ONLY
+  haWsGetHaVersion: () => Promise<{ haVersion: string | null }>;
+  haWsGetResources: () => Promise<{
+    success: boolean;
+    resources?: LovelaceResource[];
+    error?: string;
+  }>;
+  haWsGetHacsRepositories: () => Promise<{
+    success: boolean;
+    repositories?: InstalledHacsRepository[];
+    error?: string;
+  }>;
   haWsCreateTempDashboard: (
     config: any,
   ) => Promise<{ success: boolean; tempPath?: string; error?: string }>;

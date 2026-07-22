@@ -1,10 +1,29 @@
 import WebSocket from 'ws';
 import { logger } from './logger';
+import {
+  selectInstalledHacsRepositories,
+  type HacsRepositoryRaw,
+  type InstalledHacsRepository,
+} from './capability/hacsRepositories';
 
 interface WebSocketMessage {
   id?: number;
   type: string;
   [key: string]: any;
+}
+
+/**
+ * One entry from the `lovelace/resources` WebSocket command — a dashboard
+ * resource Home Assistant loads into the frontend. Slice **I0** of the Phase 3
+ * capability inventory (design:
+ * `docs/refresh/HA_CAPABILITY_INVENTORY_DESIGN_2026-07.md` §2/§3.1). Verified
+ * live 2026-07-22: `url` is `/hacsfiles/<folder>/<file>.js?hacstag=<opaque>`, so
+ * the folder segment (case-insensitive) is the join key to installed elements.
+ */
+export interface LovelaceResource {
+  id: string;
+  url: string;
+  type: string; // 'module' | 'css' | 'js'
 }
 
 interface DashboardListItem {
@@ -46,6 +65,8 @@ export class HAWebSocketService {
   private entitySubscriptionId: number | null = null;
   private entityStateCallbacks: Set<(entities: EntityStates) => void> = new Set();
   private currentEntityStates: EntityStates = {};
+  /** HA version reported by the `auth_ok` frame; null until authenticated (I0). */
+  private haVersion: string | null = null;
 
   /**
    * Connect to Home Assistant WebSocket API
@@ -113,7 +134,10 @@ export class HAWebSocketService {
             access_token: token,
           });
         } else if (message.type === 'auth_ok') {
-          logger.info('Authentication successful');
+          // The auth_ok frame carries the HA version — the only place the WS API
+          // surfaces it. Capture it for the capability inventory (I0).
+          this.haVersion = typeof message.ha_version === 'string' ? message.ha_version : null;
+          logger.info(`Authentication successful (HA ${this.haVersion ?? 'unknown'})`);
           succeed();
         } else if (message.type === 'auth_invalid') {
           logger.error('Authentication failed', message);
@@ -246,6 +270,51 @@ export class HAWebSocketService {
   }
 
   /**
+   * Home Assistant version reported by the last successful `auth_ok` frame, or
+   * null if not authenticated. Slice **I0** of the Phase 3 capability inventory —
+   * built-in card quirks are keyed off this (design §3.3). READ-ONLY.
+   */
+  getHaVersion(): string | null {
+    return this.haVersion;
+  }
+
+  /**
+   * Fetch the installed Lovelace resources (`lovelace/resources`). Slice **I0** —
+   * the frontend resource list is HAVDM's presence signal for custom cards
+   * (design §2/§3.1). READ-ONLY: this is a plain query, never a write, so it is
+   * safe against a VPP-enrolled instance.
+   */
+  async getResources(): Promise<LovelaceResource[]> {
+    const result = await this.sendAndWait<LovelaceResource[]>({
+      type: 'lovelace/resources',
+    });
+
+    const count = Array.isArray(result) ? result.length : 0;
+    logger.debug(`Fetched ${count} lovelace resources`);
+    return Array.isArray(result) ? result : [];
+  }
+
+  /**
+   * Fetch installed HACS repositories with their versions, reduced from the full
+   * HACS store (`hacs/repositories/list` returns ~3300 items). Slice **I1** — the
+   * version source for the capability inventory (design §3.2). READ-ONLY.
+   *
+   * Throws if HACS is not installed (the command is unknown); callers treat that
+   * as "no version data" and fall back to presence from {@link getResources}.
+   */
+  async getHacsRepositories(): Promise<InstalledHacsRepository[]> {
+    const raw = await this.sendAndWait<HacsRepositoryRaw[]>({
+      type: 'hacs/repositories/list',
+    });
+
+    const installed = selectInstalledHacsRepositories(raw);
+    logger.info(
+      `HACS: ${installed.length} installed repositories (of ${Array.isArray(raw) ? raw.length : 0})`,
+    );
+    return installed;
+  }
+
+  /**
    * Close the WebSocket connection
    */
   close(): void {
@@ -253,6 +322,7 @@ export class HAWebSocketService {
       this.ws.close();
       this.ws = null;
     }
+    this.haVersion = null;
   }
 
   /**

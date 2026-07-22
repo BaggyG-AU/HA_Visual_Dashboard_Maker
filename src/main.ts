@@ -504,6 +504,34 @@ ipcMain.handle('ha:ws:isConnected', async () => {
   return { connected: haWebSocketService.isConnected() };
 });
 
+// --- Phase 3 capability inventory (I0/I1) — READ-ONLY probes ---------------
+
+// HA version captured from the auth_ok frame
+ipcMain.handle('ha:ws:getHaVersion', async () => {
+  return { haVersion: haWebSocketService.getHaVersion() };
+});
+
+// Installed Lovelace resources (frontend presence signal, I0)
+ipcMain.handle('ha:ws:getResources', async () => {
+  try {
+    const resources = await haWebSocketService.getResources();
+    return { success: true, resources };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
+// Installed HACS repositories + versions (I1). Fails gracefully when HACS is
+// absent — the command is unknown there, and callers fall back to presence.
+ipcMain.handle('ha:ws:getHacsRepositories', async () => {
+  try {
+    const repositories = await haWebSocketService.getHacsRepositories();
+    return { success: true, repositories };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
 // Create temporary dashboard
 ipcMain.handle('ha:ws:createTempDashboard', async (event, config: any) => {
   try {
