@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Select, Tag, Typography, Space, Alert } from 'antd';
 import { WarningOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { haConnectionService } from '../services/haConnectionService';
+import { loadPickerEntities, type EntitySourceKind } from '../services/entityPickerSource';
 import { logger } from '../services/logger';
 import { HAEntity } from '../types/homeassistant';
 
 const { Text } = Typography;
+
+// Stable empty default so omitting `value` does not create a new array each
+// render (which, with the value-dependent validation effect, would re-render
+// without end).
+const EMPTY_VALUE: string[] = [];
 
 interface EntityMultiSelectProps {
   value?: string[];
@@ -25,33 +30,29 @@ interface EntityMultiSelectProps {
  * - Visual feedback for invalid entities
  */
 export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
-  value = [],
+  value = EMPTY_VALUE,
   onChange,
   placeholder = 'Select entities',
   filterDomains,
   dataTestId,
 }) => {
   const [entities, setEntities] = useState<HAEntity[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [validationMap, setValidationMap] = useState<Map<string, HAEntity | null>>(new Map());
+  const [source, setSource] = useState<EntitySourceKind>('none');
 
-  // Check connection status (must be before any conditional returns)
-  const isConnected = haConnectionService.isConnected();
-
-  // Load entities from Home Assistant
+  // Load entities: live when connected, else the persisted offline cache so
+  // cards can be configured without a live HA connection.
   useEffect(() => {
     const loadEntities = async () => {
-      if (!isConnected) {
-        return;
-      }
-
       setLoading(true);
       setError(null);
 
       try {
-        const fetchedEntities = await haConnectionService.fetchEntities();
-        setEntities(fetchedEntities);
+        const { entities: loaded, source: loadedSource } = await loadPickerEntities();
+        setEntities(loaded);
+        setSource(loadedSource);
       } catch (err) {
         setError((err as Error).message);
         logger.error('Failed to load entities', err);
@@ -61,7 +62,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
     };
 
     loadEntities();
-  }, [isConnected]);
+  }, []);
 
   // Validate all selected entities
   useEffect(() => {
@@ -218,30 +219,6 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
     );
   };
 
-  // Show warning if not connected to HA
-  if (!isConnected) {
-    return (
-      <div data-testid={dataTestId}>
-        <Select
-          mode="multiple"
-          value={safeValue}
-          onChange={handleChange}
-          placeholder={placeholder}
-          disabled
-          style={{ width: '100%' }}
-        />
-        <Alert
-          message="Not Connected"
-          description="Connect to Home Assistant to enable entity autocomplete and validation."
-          type="warning"
-          icon={<WarningOutlined />}
-          showIcon
-          style={{ marginTop: '8px', fontSize: '12px' }}
-        />
-      </div>
-    );
-  }
-
   // Show error if failed to load entities
   if (error) {
     return (
@@ -257,6 +234,31 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
           message="Failed to Load Entities"
           description={error}
           type="error"
+          showIcon
+          style={{ marginTop: '8px', fontSize: '12px' }}
+        />
+      </div>
+    );
+  }
+
+  // No live connection AND no cached entities → prompt to connect. (When a cache
+  // exists we fall through and offer it, so cards can be configured offline.)
+  if (!loading && source === 'none') {
+    return (
+      <div data-testid={dataTestId}>
+        <Select
+          mode="multiple"
+          value={safeValue}
+          onChange={handleChange}
+          placeholder={placeholder}
+          disabled
+          style={{ width: '100%' }}
+        />
+        <Alert
+          message="Not Connected"
+          description="Connect to Home Assistant to enable entity autocomplete and validation."
+          type="warning"
+          icon={<WarningOutlined />}
           showIcon
           style={{ marginTop: '8px', fontSize: '12px' }}
         />
@@ -313,6 +315,14 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
           },
         }}
       />
+      {source === 'cached' && (
+        <Alert
+          message="Offline — showing cached entities from your last connection"
+          type="info"
+          showIcon
+          style={{ marginTop: '8px', fontSize: '12px' }}
+        />
+      )}
       {renderValidation()}
     </div>
   );
