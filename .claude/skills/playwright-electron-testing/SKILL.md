@@ -3,35 +3,31 @@ name: playwright-electron-testing
 description: Implement reliable Playwright end-to-end tests for Electron + React + TypeScript apps. Focus on robust selectors, Monaco editor interactions, storage/profile isolation, React hydration timing, and multi-window Electron launch fixtures.
 ---
 
-## ⚠️ CRITICAL RULE: NEVER RUN TESTS
+## ⚠️ CRITICAL RULE: TEST-CYCLE BUDGET — 3 ROUNDS, THEN STOP
 
-**YOU MUST NEVER RUN TEST COMMANDS.**
+You **may** run tests, but you are capped at **three rounds per authorization**,
+to prevent endless test→fix→test loops:
 
-The user will ALWAYS run tests themselves and provide you with the results.
+1. **Round 1 — run.** Run the suite (headless under Xvfb — see the
+   `headless-electron-testing` guidance; full run → background + poll).
+2. **Round 2 — remediate.** Fix the failures.
+3. **Round 3 — run + report.** Run the suite once more, then **REPORT** the
+   result to the user.
 
-**FORBIDDEN Commands:**
+**Then STOP.** Do **not** start another test→remediate→test cycle. If the results
+still need work, say so and **ask the user to authorize another cycle** — do not
+loop on your own. The budget **resets** only when the user authorizes a new cycle.
 
-- ❌ `npm run test`
-- ❌ `npm run test:e2e`
-- ❌ `npm test`
-- ❌ `npx playwright test`
-- ❌ Any command that executes tests
+Notes:
 
-**Your Role:**
-
-- ✅ Write test files
-- ✅ Refactor test files
-- ✅ Analyze test results provided by the user
-- ✅ Suggest test commands for the user to run
-- ❌ NEVER execute test commands yourself
-
-**If you need test results:**
-
-1. Tell the user which command to run
-2. Wait for them to provide the output
-3. Analyze the results they give you
-
-This is NON-NEGOTIABLE. Breaking this rule wastes time and resources.
+- A single quick red-before-green check while _writing_ a fix (run one new test to
+  see it fail on base, then pass) is part of authoring, not the remediate loop —
+  but stay economical; don't let it become a back-door loop.
+- "Run" means a validation run of the relevant suite/spec. Prefer the narrowest
+  scope that proves the point; reserve the full ~14–19 min electron-e2e for
+  deploy/canvas/UI-render or `PropertiesPanel` changes.
+- Always run tests **headless under Xvfb** on this WSL2 host so windows don't
+  steal focus (`npm run test:e2e:headless`).
 
 ---
 
