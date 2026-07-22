@@ -4,6 +4,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { LovelaceResource } from './services/haWebSocketService';
 import type { InstalledHacsRepository } from './services/capability/hacsRepositories';
+import type { CapabilityProfile, CardOverride } from './services/capability/capabilityProfile';
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -75,6 +76,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   haWsGetHaVersion: () => ipcRenderer.invoke('ha:ws:getHaVersion'),
   haWsGetResources: () => ipcRenderer.invoke('ha:ws:getResources'),
   haWsGetHacsRepositories: () => ipcRenderer.invoke('ha:ws:getHacsRepositories'),
+  // Phase 3 capability profile (I3) — persisted, offline-editable
+  capabilityCapture: () => ipcRenderer.invoke('capability:capture'),
+  capabilityGetProfile: () => ipcRenderer.invoke('capability:getProfile'),
+  capabilitySetOverride: (cardType: string, override: CardOverride | null) =>
+    ipcRenderer.invoke('capability:setOverride', cardType, override),
   haWsCreateTempDashboard: (config: any) => ipcRenderer.invoke('ha:ws:createTempDashboard', config),
   haWsUpdateTempDashboard: (tempPath: string, config: any) =>
     ipcRenderer.invoke('ha:ws:updateTempDashboard', tempPath, config),
@@ -214,6 +220,17 @@ export interface ElectronAPI {
     repositories?: InstalledHacsRepository[];
     error?: string;
   }>;
+  // Phase 3 capability profile (I3) — persisted, offline-editable
+  capabilityCapture: () => Promise<{
+    success: boolean;
+    profile?: CapabilityProfile;
+    error?: string;
+  }>;
+  capabilityGetProfile: () => Promise<{ profile: CapabilityProfile }>;
+  capabilitySetOverride: (
+    cardType: string,
+    override: CardOverride | null,
+  ) => Promise<{ profile: CapabilityProfile }>;
   haWsCreateTempDashboard: (
     config: any,
   ) => Promise<{ success: boolean; tempPath?: string; error?: string }>;
