@@ -5,6 +5,7 @@ import { STRIP_KEYS } from './haExportContract';
 import { translateToCardMod } from './cardModTranslator';
 import { translateVisibility } from './visibilityTranslator';
 import { substituteCanvasOnlyCard } from './canvasPlaceholderTranslator';
+import { stripCanvasKeys } from './canvasKeyStripper';
 import type { ExportWarning } from './exportWarnings';
 
 const SWIPE_KNOWN_PARAMETER_KEYS = new Set([
@@ -749,16 +750,23 @@ export function exportCard(
   // `visibility` array. No capability gate (native HA feature).
   const visibility = translateVisibility(cardMod.card);
 
+  // Phase 4 PR-1: CANVAS-ONLY behavioural keys (CANVAS_KEYS) are stripped AND
+  // warned about (strip+warn) — design-time features HA has no mechanism for.
+  // Runs after the TRANSLATE steps and before the silent STRIP, so a warning is
+  // raised for what the user set before it is removed.
+  const canvas = stripCanvasKeys(visibility.card);
+
   if (options.warnings) {
     if (cardMod.warnings.length > 0) options.warnings.push(...cardMod.warnings);
     if (visibility.warnings.length > 0) options.warnings.push(...visibility.warnings);
+    if (canvas.warnings.length > 0) options.warnings.push(...canvas.warnings);
   }
 
   // Slice B2: the global STRIP runs last, after the per-card canonical
   // exporters, so nothing they pass through leaks. Because exportDashboard
   // applies exportCard at every depth via processCardRecursively, this strips
   // the internal keys from nested cards too.
-  return stripInternalKeys(visibility.card);
+  return stripInternalKeys(canvas.card);
 }
 
 export function importDashboard(dashboard: Record<string, unknown>): Record<string, unknown> {

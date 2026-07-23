@@ -10,7 +10,11 @@
  *
  * Flags, per card at every depth:
  *  - `_havdm_*` keys and the STRIP-class internals (`_isSpacer`,
- *    `_expanderDepth`, `icon_color_mode`) — should have been removed (B2).
+ *    `_expanderDepth`, `icon_color_mode`, `icon_color_states`,
+ *    `icon_color_attribute`, `smart_defaults`) — should have been removed
+ *    silently (B2 + Phase 4 PR-1).
+ *  - the CANVAS-class behavioural keys (`attribute_display`, `multi_entity_mode`,
+ *    `sound`, `haptic`, …) — should have been stripped + warned (Phase 4 PR-1).
  *  - a bare `layout` that is a geometry object (`{x|y|w|h}`) — should have been
  *    renamed to `_havdm_layout` on import then stripped (B5); a STRING `layout`
  *    (Mushroom's real option) is fine and NOT flagged.
@@ -25,17 +29,30 @@
  */
 import type { DashboardConfig } from '../types/dashboard';
 import type { ExportWarning } from './exportWarnings';
-import { CANVAS_ONLY_CARD_TYPES } from './haExportContract';
+import {
+  CANVAS_ONLY_CARD_TYPES,
+  STRIP_KEYS,
+  CANVAS_KEYS,
+  HA_VISIBILITY_KEYS,
+} from './haExportContract';
 
 const CANVAS_ONLY_TYPE_SET = new Set<string>(CANVAS_ONLY_CARD_TYPES);
 
-/** STRIP-class internals that must never survive the boundary. */
+/**
+ * HAVDM-only keys that must never survive the boundary — derived from the export
+ * contract so this stays in sync automatically:
+ *  - STRIP keys (silent internal/derived bookkeeping — B2 + Phase 4 PR-1),
+ *  - CANVAS keys (design-time behavioural features — Phase 4 PR-1),
+ *  - the ha-visibility condition keys (should have been translated to native
+ *    `visibility` — B6b).
+ * The card-mod TRANSLATE keys (`gap`/`style`/…) are deliberately NOT included:
+ * a string `gap` is `custom:expander-card`'s real option and legitimately
+ * survives. `_havdm_*` keys are caught by the prefix check in `scanCard`.
+ */
 const LEAKED_INTERNAL_KEYS = new Set<string>([
-  '_isSpacer',
-  '_expanderDepth',
-  'icon_color_mode',
-  'visibility_conditions',
-  'visibility_operator',
+  ...STRIP_KEYS,
+  ...CANVAS_KEYS,
+  ...HA_VISIBILITY_KEYS,
 ]);
 
 const GEOMETRY_KEYS = ['x', 'y', 'w', 'h'] as const;

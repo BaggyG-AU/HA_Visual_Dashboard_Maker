@@ -17,8 +17,15 @@
  * The four actions:
  *  - `'card-mod'`      TRANSLATE → card-mod CSS (layout/style keys).
  *  - `'ha-visibility'` TRANSLATE → HA-native `visibility` (condition keys).
- *  - `'strip'`         internal bookkeeping with no HA meaning — remove silently.
- *  - `'canvas'`        design-time-only behavioural feature with no HA target.
+ *  - `'strip'`         internal/derived bookkeeping with no HA meaning — removed
+ *                      silently on export.
+ *  - `'canvas'`        design-time-only behavioural feature with no HA target —
+ *                      removed on export AND surfaced to the user with a
+ *                      plain-language warning (Phase 4 PR-1: the user chose
+ *                      strip+warn; MemPalace `drawer_havdm_decisions_f16bbd74d5c870fb482ee8b1`).
+ *                      The removal is done by `stripCanvasKeys`
+ *                      (`canvasKeyStripper.ts`); the silent `'strip'` removal by
+ *                      `stripInternalKeys` (`yamlConversionService.ts`).
  */
 import type { BaseCard } from '../types/dashboard';
 import type { Phase6CardContracts } from '../types/phase6';
@@ -57,13 +64,22 @@ export const KEY_ACTION = {
   visibility_conditions: 'ha-visibility',
   visibility_operator: 'ha-visibility',
 
-  // --- STRIP — internal bookkeeping, no HA meaning --------------------------
+  // --- STRIP — internal/derived bookkeeping, no HA meaning ------------------
   _havdm_layout: 'strip',
   _isSpacer: 'strip',
   _expanderDepth: 'strip',
   icon_color_mode: 'strip',
+  // Derived/internal styling the user does not consciously "set" as a feature —
+  // removed silently on export (Phase 4 PR-1). `icon_color_states` /
+  // `icon_color_attribute` are HAVDM's per-state icon-colour abstraction (real
+  // cards do this via templates); `smart_defaults` is an authoring hint.
+  icon_color_states: 'strip',
+  icon_color_attribute: 'strip',
+  smart_defaults: 'strip',
 
   // --- CANVAS-ONLY — design-time behaviour with no HA mechanism -------------
+  // Removed on export AND warned about (strip+warn) — these are features a user
+  // actively configures on the HAVDM canvas that Home Assistant cannot honour.
   attribute_display: 'canvas',
   attribute_display_layout: 'canvas',
   multi_entity_mode: 'canvas',
@@ -73,6 +89,7 @@ export const KEY_ACTION = {
   state_styles: 'canvas',
   state_icons: 'canvas',
   sound: 'canvas',
+  haptic: 'canvas',
 } as const satisfies Record<string, KeyAction>;
 
 /** The literal union of every classified key. */
@@ -115,26 +132,20 @@ type HaNativeKey =
   | 'grid_options'
   | 'layout_options';
 
-/**
- * HAVDM-only fields whose export classification is intentionally deferred to a
- * later slice — parked here (rather than force-classified in `KEY_ACTION`) so
- * the guard stays green without pre-empting a decision the design defers:
- *  - `haptic` / `icon_color_states` / `icon_color_attribute` / `smart_defaults`
- *    — behavioural HAVDM inventions with no HA target; their per-key export
- *    handling is Phase 4 (design §3, CANVAS-ONLY "per-key confirm in Phase 4").
- *
- * (The internal grid-geometry key was renamed `layout` → `_havdm_layout` in
- * slice B5; `_havdm_layout` is classified `'strip'` in `KEY_ACTION`, and bare
- * `layout` is now solely Mushroom's real `'horizontal' | 'vertical'` option — no
- * longer a `BaseCard` field, so it needs no entry here.)
- */
-type DeferredClassificationKey =
-  'haptic' | 'icon_color_states' | 'icon_color_attribute' | 'smart_defaults';
+// (The four keys previously deferred here — `haptic` / `icon_color_states` /
+// `icon_color_attribute` / `smart_defaults` — were classified in `KEY_ACTION` in
+// Phase 4 PR-1: `haptic` is `'canvas'` (strip+warn), the other three are
+// `'strip'` (silent). No classification is deferred any more.
+//
+// (The internal grid-geometry key was renamed `layout` → `_havdm_layout` in
+// slice B5; `_havdm_layout` is classified `'strip'`, and bare `layout` is now
+// solely Mushroom's real `'horizontal' | 'vertical'` option — no longer a
+// `BaseCard` field, so it needs no entry here.)
 
-/** Any card field that is neither classified, HA-native, nor deferred. */
+/** Any card field that is neither classified nor HA-native. */
 type UnclassifiedCardKey = Exclude<
   keyof BaseCard | keyof Phase6CardContracts,
-  ClassifiedKey | HaNativeKey | DeferredClassificationKey
+  ClassifiedKey | HaNativeKey
 >;
 
 /** Compile-time assertion helper: errors unless `T` is exactly `never`. */
@@ -143,7 +154,7 @@ type AssertNever<T extends never> = T;
 /**
  * COMPLETENESS GUARD. If this line errors, a `BaseCard` / `Phase6CardContracts`
  * field is unclassified. Fix it by adding the field to `KEY_ACTION` (with its
- * action) or to `HaNativeKey` / `DeferredClassificationKey` above.
+ * action) or to `HaNativeKey` above.
  */
 export type _AllCardKeysClassified = AssertNever<UnclassifiedCardKey>;
 
@@ -165,7 +176,12 @@ export const CARD_MOD_KEYS: readonly string[] = keysForAction('card-mod');
 /** Keys that translate to HA-native `visibility`. Slice **B6b**. */
 export const HA_VISIBILITY_KEYS: readonly string[] = keysForAction('ha-visibility');
 
-/** Canvas-only behavioural keys with no HA target. Phase 4. */
+/**
+ * Canvas-only behavioural keys with no HA target — removed on export and
+ * surfaced with a plain-language warning (strip+warn). Consumed by
+ * `stripCanvasKeys` (`canvasKeyStripper.ts`), wired into `exportCard` in
+ * Phase 4 PR-1.
+ */
 export const CANVAS_KEYS: readonly string[] = keysForAction('canvas');
 
 // ---------------------------------------------------------------------------
