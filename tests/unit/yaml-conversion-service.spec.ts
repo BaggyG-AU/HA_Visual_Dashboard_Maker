@@ -635,4 +635,123 @@ describe('yaml conversion service', () => {
       ).toBe(true);
     });
   });
+
+  // Phase 4 PR-1 — canvas-only behavioural keys are stripped on export, with a
+  // plain-language warning for the ones a user actively configures. Exercised
+  // through the stable exportCard / exportDashboard API. RED-BEFORE-GREEN:
+  // confirmed red when the PR-1 src is reverted in the same checkout (on the base
+  // commit exportCard leaves these keys on the card and raises no canvas-key
+  // warning).
+  describe('canvas-only behavioural-key strip+warn (Phase 4 PR-1)', () => {
+    it('strips the behavioural keys and records ONE warning naming them', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportCard(
+        {
+          type: 'custom:button-card',
+          entity: 'light.a',
+          sound: { enabled: true },
+          multi_entity_mode: 'aggregate',
+          aggregate_function: 'sum',
+          trigger_animations: [{ trigger: 'state', animation: 'pulse' }],
+          state_icons: { on: 'mdi:flash' },
+        },
+        { warnings },
+      );
+      // Real key survives; every canvas key is gone.
+      expect(exported.entity).toBe('light.a');
+      for (const key of [
+        'sound',
+        'multi_entity_mode',
+        'aggregate_function',
+        'trigger_animations',
+        'state_icons',
+      ]) {
+        expect(exported).not.toHaveProperty(key);
+      }
+      // Exactly one canvas-key warning, listing all the dropped keys.
+      const canvasWarnings = warnings.filter((w) => w.category === 'canvas-key');
+      expect(canvasWarnings).toHaveLength(1);
+      expect(canvasWarnings[0]).toMatchObject({
+        category: 'canvas-key',
+        cardType: 'custom:button-card',
+        reason: 'canvas-behavioural',
+      });
+      expect(canvasWarnings[0].keys).toEqual(
+        expect.arrayContaining([
+          'sound',
+          'multi_entity_mode',
+          'aggregate_function',
+          'trigger_animations',
+          'state_icons',
+        ]),
+      );
+    });
+
+    it('strips haptic (now a canvas key) and warns', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportCard(
+        { type: 'button', entity: 'light.a', haptic: { enabled: true, pattern: 'light' } },
+        { warnings },
+      );
+      expect(exported).not.toHaveProperty('haptic');
+      expect(warnings.some((w) => w.category === 'canvas-key' && w.keys.includes('haptic'))).toBe(
+        true,
+      );
+    });
+
+    it('silently strips the derived/internal keys (no canvas-key warning)', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportCard(
+        {
+          type: 'custom:button-card',
+          entity: 'light.a',
+          icon_color_states: { on: '#fff', off: '#000' },
+          icon_color_attribute: 'rgb_color',
+          smart_defaults: true,
+        },
+        { warnings },
+      );
+      for (const key of ['icon_color_states', 'icon_color_attribute', 'smart_defaults']) {
+        expect(exported).not.toHaveProperty(key);
+      }
+      expect(warnings.filter((w) => w.category === 'canvas-key')).toHaveLength(0);
+    });
+
+    it('leaves a card with no canvas keys unchanged and raises no warning', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportCard({ type: 'markdown', content: 'x' }, { warnings });
+      expect(exported).toEqual({ type: 'markdown', content: 'x' });
+      expect(warnings).toHaveLength(0);
+    });
+
+    it('strips canvas keys from NESTED cards through exportDashboard', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportDashboard(
+        {
+          title: 'D',
+          views: [
+            {
+              title: 'V',
+              cards: [
+                {
+                  type: 'vertical-stack',
+                  cards: [
+                    { type: 'custom:button-card', entity: 'light.a', sound: { enabled: true } },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        { warnings },
+      );
+      const views = exported.views as Array<Record<string, unknown>>;
+      const topCard = (views[0].cards as Array<Record<string, unknown>>)[0];
+      const nested = (topCard.cards as Array<Record<string, unknown>>)[0];
+      expect(nested).not.toHaveProperty('sound');
+      expect(
+        warnings.some((w) => w.category === 'canvas-key' && w.cardType === 'custom:button-card'),
+      ).toBe(true);
+    });
+  });
 });

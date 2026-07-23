@@ -10,7 +10,8 @@
  */
 
 /** Which TRANSLATE / substitution / validation step raised the warning. */
-export type ExportWarningCategory = 'card-mod' | 'visibility' | 'placeholder' | 'self-check';
+export type ExportWarningCategory =
+  'card-mod' | 'visibility' | 'placeholder' | 'canvas-key' | 'self-check';
 
 /** Why the translation was imperfect. */
 export type ExportWarningReason =
@@ -21,6 +22,8 @@ export type ExportWarningReason =
   | 'visibility-approximated'
   // canvas-only placeholder (B7)
   | 'canvas-only-type'
+  // canvas-only behavioural key strip (Phase 4 PR-1)
+  | 'canvas-behavioural'
   // validation self-check (B8)
   | 'leaked-internal';
 

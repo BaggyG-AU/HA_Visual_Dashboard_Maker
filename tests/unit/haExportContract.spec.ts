@@ -46,14 +46,18 @@ describe('haExportContract — KEY_ACTION classification registry', () => {
     expect(KEY_ACTION.visibility_operator).toBe('ha-visibility');
   });
 
-  it('classifies the STRIP (internal-bookkeeping) keys', () => {
+  it('classifies the STRIP (internal/derived-bookkeeping) keys', () => {
     expect(KEY_ACTION._havdm_layout).toBe('strip');
     expect(KEY_ACTION._isSpacer).toBe('strip');
     expect(KEY_ACTION._expanderDepth).toBe('strip');
     expect(KEY_ACTION.icon_color_mode).toBe('strip');
+    // Phase 4 PR-1: the derived/internal styling keys, silently stripped.
+    expect(KEY_ACTION.icon_color_states).toBe('strip');
+    expect(KEY_ACTION.icon_color_attribute).toBe('strip');
+    expect(KEY_ACTION.smart_defaults).toBe('strip');
   });
 
-  it('classifies the CANVAS-only behavioural keys', () => {
+  it('classifies the CANVAS-only behavioural keys (strip + warn)', () => {
     for (const key of [
       'attribute_display',
       'attribute_display_layout',
@@ -64,15 +68,17 @@ describe('haExportContract — KEY_ACTION classification registry', () => {
       'state_styles',
       'state_icons',
       'sound',
+      // Phase 4 PR-1: haptic joined the canvas class (behavioural, no HA target).
+      'haptic',
     ]) {
       expect(KEY_ACTION[key as keyof typeof KEY_ACTION]).toBe('canvas');
     }
   });
 
-  it('does NOT classify HA-real / deferred keys (they pass through untouched)', () => {
-    // `layout` (bare) is deferred to B5; the HA-real extras stay untouched. If
-    // any of these ever appears in the map it would silently change deploy
-    // output, so guard against it explicitly.
+  it('does NOT classify HA-real keys (they pass through untouched)', () => {
+    // The HA-real extras stay untouched. If any of these ever appears in the map
+    // it would silently change deploy output, so guard against it explicitly.
+    // (`bare` layout is disambiguated by value-shape on import — B5.)
     for (const key of [
       'layout',
       'view_layout',
@@ -80,7 +86,6 @@ describe('haExportContract — KEY_ACTION classification registry', () => {
       'grid_options',
       'layout_options',
       'icon_color',
-      'haptic',
       'tap_action',
     ]) {
       expect(KEY_ACTION).not.toHaveProperty(key);
@@ -89,9 +94,17 @@ describe('haExportContract — KEY_ACTION classification registry', () => {
 });
 
 describe('haExportContract — derived key sets', () => {
-  it('STRIP_KEYS is exactly the four internal-bookkeeping keys', () => {
+  it('STRIP_KEYS is exactly the seven internal/derived-bookkeeping keys', () => {
     expect([...STRIP_KEYS].sort()).toEqual(
-      ['_expanderDepth', '_havdm_layout', '_isSpacer', 'icon_color_mode'].sort(),
+      [
+        '_expanderDepth',
+        '_havdm_layout',
+        '_isSpacer',
+        'icon_color_mode',
+        'icon_color_states',
+        'icon_color_attribute',
+        'smart_defaults',
+      ].sort(),
     );
   });
 
@@ -125,6 +138,7 @@ describe('haExportContract — derived key sets', () => {
         'attribute_display',
         'attribute_display_layout',
         'batch_actions',
+        'haptic',
         'multi_entity_mode',
         'sound',
         'state_icons',
