@@ -27,6 +27,9 @@ export type ExportWarningReason =
   // per-card schema approximation — a lossy translation to a real card's schema
   // (Phase 4 PR-4: slider-button-card advanced-slider keys with no HA equivalent)
   | 'schema-approximated'
+  // a required key the real card needs is missing, so the card will not function
+  // (Phase 4 PR-5: bubble-card pop-up with no `hash` — HA cannot open it)
+  | 'missing-required-key'
   // validation self-check (B8)
   | 'leaked-internal';
 

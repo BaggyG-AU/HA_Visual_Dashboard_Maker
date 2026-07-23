@@ -40,6 +40,7 @@ import {
   type BackgroundConfig,
 } from '../utils/backgroundStyle';
 import { formatActionLabel, resolveAllCardActions } from '../services/smartActions';
+import { normalizeBubbleHash } from '../services/bubbleCardHash';
 import { logger } from '../services/logger';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import {
@@ -1392,6 +1393,21 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           }
           return tab;
         });
+      }
+    }
+    if (updatedCard.type === 'custom:bubble-card') {
+      // Phase 4 PR-5: `hash` is only meaningful for a pop-up bubble, and Home
+      // Assistant matches it raw against the URL hash (which always carries a
+      // leading '#'), so normalize the prefix. Drop the key entirely on any other
+      // card_type so a hash left over from a previous pop-up selection never leaks
+      // onto a button/cover/separator bubble.
+      const typed = updatedCard as { card_type?: string; hash?: unknown };
+      if (typed.card_type === 'pop-up') {
+        if (typeof typed.hash === 'string') {
+          typed.hash = normalizeBubbleHash(typed.hash);
+        }
+      } else if ('hash' in typed) {
+        delete typed.hash;
       }
     }
     const styleValue = (values.style as string | undefined) ?? '';
@@ -5342,6 +5358,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     help={<span style={{ color: '#666' }}>Type of bubble card</span>}
                   >
                     <Select
+                      data-testid="bubble-card-type-select"
                       placeholder="Select card type"
                       options={[
                         { value: 'button', label: 'Button' },
@@ -5352,6 +5369,38 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                         { value: 'separator', label: 'Separator' },
                       ]}
                     />
+                  </Form.Item>
+
+                  {/* Phase 4 PR-5: `hash` is required only for the pop-up card_type
+                      (Home Assistant opens the pop-up by matching this against the URL
+                      hash). Shown conditionally so button/cover/separator bubbles are
+                      not asked for an irrelevant field. */}
+                  <Form.Item
+                    noStyle
+                    shouldUpdate={(prev, curr) => prev.card_type !== curr.card_type}
+                  >
+                    {({ getFieldValue }) =>
+                      getFieldValue('card_type') === 'pop-up' ? (
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Hash</span>}
+                          name="hash"
+                          rules={[
+                            {
+                              required: true,
+                              message: 'Hash is required for pop-up cards (e.g. #kitchen)',
+                            },
+                          ]}
+                          help={
+                            <span style={{ color: '#666' }}>
+                              URL hash that opens this pop-up (e.g. #kitchen). A leading # is added
+                              automatically.
+                            </span>
+                          }
+                        >
+                          <Input data-testid="bubble-hash-input" placeholder="#kitchen" />
+                        </Form.Item>
+                      ) : null
+                    }
                   </Form.Item>
 
                   <Form.Item label={<span style={{ color: 'white' }}>Entity</span>} name="entity">

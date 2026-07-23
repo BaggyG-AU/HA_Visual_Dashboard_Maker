@@ -716,6 +716,29 @@ const sliderButtonLossyWarning = (source: Record<string, unknown>): ExportWarnin
   };
 };
 
+// Phase 4 PR-5: a bubble-card `card_type: 'pop-up'` needs a `hash` (e.g.
+// `#kitchen`) — Home Assistant opens the pop-up by matching that hash against the
+// URL hash, so without one the pop-up can never open. The form marks the field
+// required, but an empty value can still reach export, so raise one honest,
+// plain-language warning at the boundary. Returns `null` for any bubble card that
+// is not a pop-up, or a pop-up that already carries a non-empty hash.
+const bubblePopupMissingHashWarning = (source: Record<string, unknown>): ExportWarning | null => {
+  if (source.card_type !== 'pop-up') return null;
+  const hash = source.hash;
+  const hasHash = typeof hash === 'string' && hash.trim() !== '';
+  if (hasHash) return null;
+  return {
+    category: 'card-schema',
+    cardType: 'custom:bubble-card',
+    keys: ['hash'],
+    reason: 'missing-required-key',
+    message:
+      `This bubble-card pop-up has no hash, so Home Assistant cannot open it. Add a ` +
+      `hash (for example #kitchen) in the card settings — it is what a button or ` +
+      `navigation action targets to open the pop-up.`,
+  };
+};
+
 const migrateLegacyAccordion = (inputCard: Record<string, unknown>): Record<string, unknown> => {
   const sections = Array.isArray(inputCard.sections) ? inputCard.sections : [];
   const cards = sections
@@ -992,6 +1015,12 @@ export function exportCard(
     if (source.type === 'custom:slider-button-card') {
       const sliderWarning = sliderButtonLossyWarning(source);
       if (sliderWarning) options.warnings.push(sliderWarning);
+    }
+    // Phase 4 PR-5: honest notice when a bubble-card pop-up is missing the `hash`
+    // Home Assistant needs to open it.
+    if (source.type === 'custom:bubble-card') {
+      const hashWarning = bubblePopupMissingHashWarning(source);
+      if (hashWarning) options.warnings.push(hashWarning);
     }
   }
 
