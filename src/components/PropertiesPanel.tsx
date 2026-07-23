@@ -4094,7 +4094,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Primary Unit</span>}
-                    name={['value_texts', 'primary_unit']}
+                    name={['value_texts', 'primary', 'unit_of_measurement']}
                   >
                     <Input data-testid="gauge-pro-primary-unit" placeholder="%" />
                   </Form.Item>
@@ -5488,8 +5488,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 </>
               )}
 
-              {(card.type === 'custom:power-flow-card' ||
-                card.type === 'custom:power-flow-card-plus') && (
+              {/* Phase 4 PR-7: power-flow-card (ulic75) and power-flow-card-plus
+                  (flixlix) are DIFFERENT cards with different schemas, so their
+                  forms are split. Only power-flow-card-plus requires a battery
+                  state-of-charge entity. */}
+              {card.type === 'custom:power-flow-card' && (
                 <>
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Grid Entity</span>}
@@ -5531,7 +5534,99 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
                   <Alert
                     title="Complex Entity Configuration"
-                    description="Power Flow cards support many entity configurations including individual devices. Use the YAML editor to configure individual appliances, state_of_charge sensors, display options, and advanced settings."
+                    description="power-flow-card supports many entity configurations including individual devices. Use the YAML editor to configure individual appliances, battery_charge, display options, and advanced settings."
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: '16px' }}
+                  />
+                </>
+              )}
+
+              {card.type === 'custom:power-flow-card-plus' && (
+                <>
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Grid Entity</span>}
+                    name={['entities', 'grid', 'entity']}
+                    help={
+                      <span style={{ color: '#666' }}>Entity showing grid power consumption</span>
+                    }
+                  >
+                    <EntitySelect placeholder="Select grid entity" filterDomains={['sensor']} />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Solar Entity</span>}
+                    name={['entities', 'solar', 'entity']}
+                    help={
+                      <span style={{ color: '#666' }}>Entity showing solar power production</span>
+                    }
+                  >
+                    <EntitySelect placeholder="Select solar entity" filterDomains={['sensor']} />
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Battery Entity</span>}
+                    name={['entities', 'battery', 'entity']}
+                    help={<span style={{ color: '#666' }}>Entity showing battery power</span>}
+                  >
+                    <EntitySelect placeholder="Select battery entity" filterDomains={['sensor']} />
+                  </Form.Item>
+
+                  {/* flixlix power-flow-card-plus REQUIRES a battery state-of-charge
+                      entity whenever a battery is configured. */}
+                  <Form.Item
+                    noStyle
+                    shouldUpdate={(prev, curr) =>
+                      prev.entities?.battery?.entity !== curr.entities?.battery?.entity
+                    }
+                  >
+                    {({ getFieldValue }) => {
+                      const hasBattery = Boolean(getFieldValue(['entities', 'battery', 'entity']));
+                      return (
+                        <Form.Item
+                          label={<span style={{ color: 'white' }}>Battery State of Charge</span>}
+                          name={['entities', 'battery', 'state_of_charge']}
+                          rules={
+                            hasBattery
+                              ? [
+                                  {
+                                    required: true,
+                                    message:
+                                      'power-flow-card-plus requires a state-of-charge entity when a battery is configured',
+                                  },
+                                ]
+                              : []
+                          }
+                          help={
+                            <span style={{ color: '#666' }}>
+                              Battery percentage entity — required by power-flow-card-plus when a
+                              battery is set
+                            </span>
+                          }
+                        >
+                          <EntitySelect
+                            data-testid="power-flow-plus-soc"
+                            placeholder="Select battery % (state of charge)"
+                            filterDomains={['sensor']}
+                          />
+                        </Form.Item>
+                      );
+                    }}
+                  </Form.Item>
+
+                  <Form.Item
+                    label={<span style={{ color: 'white' }}>Home Entity</span>}
+                    name={['entities', 'home', 'entity']}
+                    help={
+                      <span style={{ color: '#666' }}>Entity showing home power consumption</span>
+                    }
+                  >
+                    <EntitySelect placeholder="Select home entity" filterDomains={['sensor']} />
+                  </Form.Item>
+
+                  <Alert
+                    title="Complex Entity Configuration"
+                    description="power-flow-card-plus supports many entity configurations including individual devices. Use the YAML editor to configure individual appliances, display options, and advanced settings."
                     type="info"
                     showIcon
                     style={{ marginBottom: '16px' }}

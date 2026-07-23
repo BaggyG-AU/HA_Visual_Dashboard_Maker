@@ -755,6 +755,30 @@ const bubblePopupMissingHashWarning = (source: Record<string, unknown>): ExportW
   };
 };
 
+// Phase 4 PR-7: power-flow-card-plus (flixlix) REQUIRES a battery `state_of_charge`
+// entity whenever a battery is configured — without it the battery leg does not
+// render. power-flow-card (ulic75) uses a different, optional key, so this check is
+// scoped to -plus only. Returns null when there is no battery, or the SoC is set.
+const powerFlowPlusMissingSocWarning = (source: Record<string, unknown>): ExportWarning | null => {
+  const entities = source.entities as Record<string, unknown> | undefined;
+  const battery = entities?.battery as Record<string, unknown> | undefined;
+  const hasBattery = typeof battery?.entity === 'string' && battery.entity.trim() !== '';
+  if (!hasBattery) return null;
+  const soc = battery?.state_of_charge;
+  const hasSoc = typeof soc === 'string' && soc.trim() !== '';
+  if (hasSoc) return null;
+  return {
+    category: 'card-schema',
+    cardType: 'custom:power-flow-card-plus',
+    keys: ['entities.battery.state_of_charge'],
+    reason: 'missing-required-key',
+    message:
+      `This power-flow-card-plus has a battery but no state-of-charge entity, which the ` +
+      `card requires — the battery will not render. Add the battery's percentage ` +
+      `(state of charge) sensor in the card settings.`,
+  };
+};
+
 const migrateLegacyAccordion = (inputCard: Record<string, unknown>): Record<string, unknown> => {
   const sections = Array.isArray(inputCard.sections) ? inputCard.sections : [];
   const cards = sections
@@ -1037,6 +1061,12 @@ export function exportCard(
     if (source.type === 'custom:bubble-card') {
       const hashWarning = bubblePopupMissingHashWarning(source);
       if (hashWarning) options.warnings.push(hashWarning);
+    }
+    // Phase 4 PR-7: honest notice when a power-flow-card-plus battery is missing
+    // its required state_of_charge entity.
+    if (source.type === 'custom:power-flow-card-plus') {
+      const socWarning = powerFlowPlusMissingSocWarning(source);
+      if (socWarning) options.warnings.push(socWarning);
     }
   }
 

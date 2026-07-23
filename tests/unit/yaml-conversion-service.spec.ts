@@ -818,6 +818,57 @@ describe('yaml conversion service', () => {
     });
   });
 
+  // Phase 4 PR-7 — power-flow-card-plus (flixlix) REQUIRES a battery state_of_charge
+  // entity; without it the battery leg does not render. Scoped to -plus only
+  // (power-flow-card [ulic75] uses a different, optional key). RED-BEFORE-GREEN:
+  // confirmed red when the PR-7 exporter change is reverted (base has no power-flow
+  // warning branch, so no warning is pushed).
+  describe('power-flow-card-plus battery state_of_charge warning (Phase 4 PR-7)', () => {
+    it('warns when a power-flow-card-plus battery has no state_of_charge', () => {
+      const warnings: ExportWarning[] = [];
+      exportCard(
+        { type: 'custom:power-flow-card-plus', entities: { battery: { entity: 'sensor.batt' } } },
+        { warnings },
+      );
+      const missing = warnings.filter((w) => w.reason === 'missing-required-key');
+      expect(missing).toHaveLength(1);
+      expect(missing[0]).toMatchObject({
+        cardType: 'custom:power-flow-card-plus',
+        keys: ['entities.battery.state_of_charge'],
+      });
+    });
+
+    it('does NOT warn when state_of_charge is present', () => {
+      const warnings: ExportWarning[] = [];
+      exportCard(
+        {
+          type: 'custom:power-flow-card-plus',
+          entities: { battery: { entity: 'sensor.batt', state_of_charge: 'sensor.soc' } },
+        },
+        { warnings },
+      );
+      expect(warnings.filter((w) => w.reason === 'missing-required-key')).toHaveLength(0);
+    });
+
+    it('does NOT warn when there is no battery configured', () => {
+      const warnings: ExportWarning[] = [];
+      exportCard(
+        { type: 'custom:power-flow-card-plus', entities: { grid: { entity: 'sensor.grid' } } },
+        { warnings },
+      );
+      expect(warnings.filter((w) => w.reason === 'missing-required-key')).toHaveLength(0);
+    });
+
+    it('does NOT warn for power-flow-card (ulic75) missing a state_of_charge', () => {
+      const warnings: ExportWarning[] = [];
+      exportCard(
+        { type: 'custom:power-flow-card', entities: { battery: { entity: 'sensor.batt' } } },
+        { warnings },
+      );
+      expect(warnings.filter((w) => w.reason === 'missing-required-key')).toHaveLength(0);
+    });
+  });
+
   // Slice B6 — the TRANSLATE→card-mod path exercised directly through exportCard /
   // exportDashboard: the capability-gate default (assume present), the strip+warn
   // branch, the collision guard, and merge-not-clobber. RED-BEFORE-GREEN: the

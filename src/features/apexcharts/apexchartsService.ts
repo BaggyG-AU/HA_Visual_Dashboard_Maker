@@ -172,7 +172,10 @@ export const normalizeApexChartsCardConfig = (
     ...card,
     header: {
       ...(card.header || {}),
-      show: card.header?.show !== false,
+      // Phase 4 PR-7: upstream apexcharts-card defaults header.show to FALSE
+      // (v1.0.0). Match it so the HAVDM canvas preview reflects what Home Assistant
+      // renders by default — the header appears only when explicitly enabled.
+      show: card.header?.show === true,
     },
     graph_span: card.graph_span || DEFAULT_GRAPH_SPAN,
     graph_span_seconds: graphSpanSeconds,

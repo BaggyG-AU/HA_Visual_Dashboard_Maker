@@ -16,6 +16,14 @@ export interface GaugeCardProConfig extends BaseCard {
   gradient?: boolean;
   segments?: GaugeCardProSegment[];
   value_texts?: {
+    // Phase 4 PR-7: upstream gauge-card-pro (benjamin-dcs) nests the primary unit
+    // under value_texts.primary.unit_of_measurement. `primary_unit` (a flat,
+    // never-valid HAVDM shape) is retained only so configs authored before PR-7
+    // still resolve a unit on the canvas.
+    primary?: {
+      unit_of_measurement?: string;
+    };
+    /** @deprecated pre-PR-7 flat shape — read-only fallback, never emitted anew. */
     primary_unit?: string;
   };
 }
