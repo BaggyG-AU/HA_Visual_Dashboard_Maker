@@ -127,7 +127,7 @@ describe('yaml conversion service', () => {
     expect((exported.cards as Array<Record<string, unknown>>)[0].background).toBeUndefined();
   });
 
-  it('imports and exports expander-card with kebab/camel mappings and strips _expanderDepth on export', () => {
+  it('imports and exports expander-card with kebab/camel mappings, strips _expanderDepth + invented icon keys, and emits gap+expanded-gap on export', () => {
     const upstream = {
       type: 'custom:expander-card',
       title: 'Section',
@@ -146,6 +146,7 @@ describe('yaml conversion service', () => {
     };
 
     const imported = importCard(upstream);
+    // The icons remain HAVDM canvas concepts on import (ExpanderPanel renders them).
     expect(imported).toMatchObject({
       titleCard: { type: 'markdown', content: 'Header' },
       titleCardButtonOverlay: true,
@@ -157,7 +158,25 @@ describe('yaml conversion service', () => {
     });
 
     const exported = exportCard({ ...imported, _expanderDepth: 2 });
-    expect(exported).toMatchObject(upstream);
+    // Phase 4 PR-6: the invented icon keys are STRIPPED on export; the open `gap`
+    // is emitted under BOTH `gap` (Alia5) and `expanded-gap` (MelleD v7.1.10+).
+    expect(exported).toMatchObject({
+      type: 'custom:expander-card',
+      title: 'Section',
+      'title-card': { type: 'markdown', content: 'Header' },
+      'title-card-button-overlay': true,
+      cards: [{ type: 'button', entity: 'switch.tv' }],
+      expanded: true,
+      gap: '0.5em',
+      'expanded-gap': '0.5em',
+      padding: '8px',
+      clear: true,
+      'overlay-margin': '1em',
+      'child-padding': '4px',
+      'button-background': 'rgba(0,0,0,0.3)',
+    });
+    expect(exported).not.toHaveProperty('expanded-icon');
+    expect(exported).not.toHaveProperty('collapsed-icon');
     expect((exported as Record<string, unknown>)._expanderDepth).toBeUndefined();
   });
 
@@ -734,6 +753,68 @@ describe('yaml conversion service', () => {
       const warnings: ExportWarning[] = [];
       exportCard({ type: 'custom:bubble-card', card_type: 'button' }, { warnings });
       expect(warnings.filter((w) => w.category === 'card-schema')).toHaveLength(0);
+    });
+  });
+
+  // Phase 4 PR-6 — expander-card: `expanded-icon`/`collapsed-icon` exist in NEITHER
+  // fork (Alia5 or MelleD, verified read-only) so they are stripped on export
+  // (the HAVDM canvas keeps them). HAVDM's single `gap` is the OPEN child gap; the
+  // forks read the open gap under different keys, so export emits BOTH `gap`
+  // (Alia5) and `expanded-gap` (MelleD v7.1.10+), and import prefers `expanded-gap`.
+  // RED-BEFORE-GREEN: confirmed red when the PR-6 exporter change is reverted in
+  // the same checkout (base emits the icon keys and no `expanded-gap`).
+  describe('expander-card icon strip + gap/expanded-gap (Phase 4 PR-6)', () => {
+    it('strips the invented expanded-icon/collapsed-icon on export', () => {
+      const exported = exportCard({
+        type: 'custom:expander-card',
+        title: 'S',
+        'expanded-icon': 'mdi:plus',
+        'collapsed-icon': 'mdi:minus',
+        expandedIcon: 'mdi:plus',
+        collapsedIcon: 'mdi:minus',
+        cards: [],
+      });
+      expect(exported).not.toHaveProperty('expanded-icon');
+      expect(exported).not.toHaveProperty('collapsed-icon');
+      expect(exported).not.toHaveProperty('expandedIcon');
+      expect(exported).not.toHaveProperty('collapsedIcon');
+      expect(exported.type).toBe('custom:expander-card');
+    });
+
+    it('emits the open gap under both gap and expanded-gap', () => {
+      const exported = exportCard({
+        type: 'custom:expander-card',
+        gap: '0.6em',
+        cards: [],
+      });
+      expect(exported.gap).toBe('0.6em');
+      expect(exported['expanded-gap']).toBe('0.6em');
+    });
+
+    it('emits neither gap key when the card carries no gap', () => {
+      const exported = exportCard({ type: 'custom:expander-card', cards: [] });
+      expect(exported).not.toHaveProperty('gap');
+      expect(exported).not.toHaveProperty('expanded-gap');
+    });
+
+    it('imports a MelleD expander preferring expanded-gap as the open gap', () => {
+      const imported = importCard({
+        type: 'custom:expander-card',
+        gap: '0em',
+        'expanded-gap': '0.6em',
+        cards: [],
+      });
+      // HAVDM's single `gap` takes the OPEN value (expanded-gap), not the closed one.
+      expect(imported.gap).toBe('0.6em');
+    });
+
+    it('imports an Alia5 expander using gap as the open gap when no expanded-gap', () => {
+      const imported = importCard({
+        type: 'custom:expander-card',
+        gap: '0.5em',
+        cards: [],
+      });
+      expect(imported.gap).toBe('0.5em');
     });
   });
 

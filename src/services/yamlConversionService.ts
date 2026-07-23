@@ -50,6 +50,7 @@ const EXPANDER_KNOWN_KEYS = new Set([
   'expanded-icon',
   'collapsed-icon',
   'gap',
+  'expanded-gap',
   'padding',
   'clear',
   'overlay-margin',
@@ -377,6 +378,11 @@ const importExpanderCard = (inputCard: Record<string, unknown>): Record<string, 
   overlayMargin: inputCard['overlay-margin'],
   childPadding: inputCard['child-padding'],
   buttonBackground: inputCard['button-background'],
+  // Phase 4 PR-6: HAVDM has a single `gap` = the OPEN child gap. A MelleD
+  // v7.1.10+ card carries the open gap in `expanded-gap` (its `gap` is the
+  // closed-state gap), so prefer `expanded-gap` when present; fall back to `gap`
+  // for an Alia5 card (where `gap` already means the open gap).
+  ...(typeof inputCard['expanded-gap'] === 'string' ? { gap: inputCard['expanded-gap'] } : {}),
 });
 
 const exportExpanderCard = (inputCard: Record<string, unknown>): Record<string, unknown> => {
@@ -385,11 +391,17 @@ const exportExpanderCard = (inputCard: Record<string, unknown>): Record<string, 
   const titleCard = inputCard.titleCard ?? inputCard['title-card'];
   const titleCardButtonOverlay =
     inputCard.titleCardButtonOverlay ?? inputCard['title-card-button-overlay'];
-  const expandedIcon = inputCard.expandedIcon ?? inputCard['expanded-icon'];
-  const collapsedIcon = inputCard.collapsedIcon ?? inputCard['collapsed-icon'];
   const overlayMargin = inputCard.overlayMargin ?? inputCard['overlay-margin'];
   const childPadding = inputCard.childPadding ?? inputCard['child-padding'];
   const buttonBackground = inputCard.buttonBackground ?? inputCard['button-background'];
+
+  // Phase 4 PR-6: `expanded-icon`/`collapsed-icon` exist in NEITHER expander-card
+  // fork (Alia5 or MelleD, both verified read-only 2026-07-23) — they are
+  // HAVDM canvas-only concepts (ExpanderPanel.tsx renders them). They are STRIPPED
+  // on export (omitted from `passthrough` via EXPANDER_KNOWN_KEYS and not re-emitted
+  // here); the HAVDM canvas keeps them (D-FID-1 keep-and-fix). HAVDM's defaults
+  // chevron-up/chevron-down already match HA's default rotating `icon`.
+  const gap = typeof inputCard.gap === 'string' ? inputCard.gap : undefined;
 
   return {
     ...passthrough,
@@ -401,9 +413,13 @@ const exportExpanderCard = (inputCard: Record<string, unknown>): Record<string, 
       : {}),
     ...(Array.isArray(inputCard.cards) ? { cards: inputCard.cards } : {}),
     ...(typeof inputCard.expanded === 'boolean' ? { expanded: inputCard.expanded } : {}),
-    ...(typeof expandedIcon === 'string' ? { 'expanded-icon': expandedIcon } : {}),
-    ...(typeof collapsedIcon === 'string' ? { 'collapsed-icon': collapsedIcon } : {}),
-    ...(typeof inputCard.gap === 'string' ? { gap: inputCard.gap } : {}),
+    // HAVDM's single `gap` is the OPEN child gap (default 0.6em). The two forks
+    // read the open gap under DIFFERENT keys — Alia5 uses `gap`, MelleD v7.1.10+
+    // uses `expanded-gap` (its own `gap` became the closed-state gap). The target
+    // fork can't be detected at export (expander-card is often not installed and
+    // no capability profile is threaded here), so emit BOTH: the open-gap intent
+    // then lands correctly on whichever fork the user has.
+    ...(gap !== undefined ? { gap, 'expanded-gap': gap } : {}),
     ...(typeof inputCard.padding === 'string' ? { padding: inputCard.padding } : {}),
     ...(typeof inputCard.clear === 'boolean' ? { clear: inputCard.clear } : {}),
     ...(typeof overlayMargin === 'string' ? { 'overlay-margin': overlayMargin } : {}),
