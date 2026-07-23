@@ -32,9 +32,16 @@ const CANVAS_ONLY_TYPE_SET = new Set<string>(CANVAS_ONLY_CARD_TYPES);
 /** Keys copied onto the placeholder so it holds the original card's slot. */
 const SLOT_KEYS = ['view_layout', 'grid_options', 'layout_options'] as const;
 
-/** `custom:popup-card` → `popup`; `custom:multiple-entity-row` → `multiple-entity-row`. */
+/**
+ * `custom:popup-card` → `popup`; `custom:multiple-entity-row` →
+ * `multiple-entity-row`; `custom:havdm-progress-ring` → `progress-ring` (the
+ * `havdm-` namespace prefix is an internal marker, not user-facing).
+ */
 const friendlyTypeName = (type: string): string =>
-  type.replace(/^custom:/, '').replace(/-card$/, '');
+  type
+    .replace(/^custom:/, '')
+    .replace(/^havdm-/, '')
+    .replace(/-card$/, '');
 
 const buildPlaceholderContent = (type: string): string => {
   const friendly = friendlyTypeName(type);

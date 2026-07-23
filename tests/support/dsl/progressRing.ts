@@ -17,7 +17,7 @@ export class ProgressRingDSL {
   }
 
   async addProgressRingCard(): Promise<void> {
-    await this.palette.addCard('custom:modern-circular-gauge');
+    await this.palette.addCard('custom:havdm-progress-ring');
   }
 
   async verifyRendered(): Promise<void> {

@@ -485,7 +485,7 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
         />
       );
       break;
-    case 'custom:modern-circular-gauge':
+    case 'custom:havdm-progress-ring':
       renderedCard = (
         <ProgressRingCardRenderer
           card={card as React.ComponentProps<typeof ProgressRingCardRenderer>['card']}

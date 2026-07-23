@@ -1,7 +1,7 @@
 import { test } from '@playwright/test';
 import { close, launchWithDSL } from '../support';
 
-const SINGLE_RING_YAML = `type: custom:modern-circular-gauge
+const SINGLE_RING_YAML = `type: custom:havdm-progress-ring
 title: Single Ring
 thickness: 14
 rings:
@@ -12,7 +12,7 @@ rings:
     color: '#4fa3ff'
 `;
 
-const NESTED_RING_YAML = `type: custom:modern-circular-gauge
+const NESTED_RING_YAML = `type: custom:havdm-progress-ring
 title: Nested Rings
 thickness: 12
 rings:

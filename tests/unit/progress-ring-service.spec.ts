@@ -10,7 +10,7 @@ import {
 import type { ProgressRingCardConfig } from '../../src/features/progress-ring/types';
 
 const makeCard = (overrides: Partial<ProgressRingCardConfig> = {}): ProgressRingCardConfig => ({
-  type: 'custom:modern-circular-gauge',
+  type: 'custom:havdm-progress-ring',
   rings: [
     {
       entity: 'sensor.progress',

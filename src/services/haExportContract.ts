@@ -202,6 +202,11 @@ export const CANVAS_KEYS: readonly string[] = keysForAction('canvas');
  *  - `custom:multiple-entity-row` / `custom:fold-entity-row` /
  *    `custom:slider-entity-row` — real HACS entity ROWS, not deployable as
  *    standalone top-level cards.
+ *  - `custom:havdm-progress-ring` — HAVDM's "Progress Ring" visualization
+ *    (Phase 4 PR-3). It used to squat on the real `custom:modern-circular-gauge`
+ *    type string with a 100%-invented config that the real card rejects; it now
+ *    carries its own HAVDM-namespaced type and deploys as a placeholder, freeing
+ *    the real `custom:modern-circular-gauge` string for a future real-card entry.
  *
  * `spacer` is deliberately EXCLUDED: it is an invisible HAVDM layout device and
  * is already dropped entirely on export (slice B3), not replaced with a visible
@@ -214,4 +219,5 @@ export const CANVAS_ONLY_CARD_TYPES: readonly string[] = [
   'custom:multiple-entity-row',
   'custom:fold-entity-row',
   'custom:slider-entity-row',
+  'custom:havdm-progress-ring',
 ];

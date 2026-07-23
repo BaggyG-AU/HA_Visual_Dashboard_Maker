@@ -543,6 +543,54 @@ describe('yaml conversion service', () => {
     });
   });
 
+  // Phase 4 PR-3 — HAVDM's "Progress Ring" no longer squats on the real
+  // custom:modern-circular-gauge type string: it is the HAVDM-only phantom
+  // custom:havdm-progress-ring, migrated by value shape on import and substituted
+  // with a placeholder on export. RED-BEFORE-GREEN: confirmed red when the PR-3
+  // src is reverted in the same checkout (on the base commit the legacy type is
+  // not migrated and exports as custom:modern-circular-gauge unchanged).
+  describe('Progress Ring phantom (Phase 4 PR-3)', () => {
+    it('migrates a legacy Progress Ring (modern-circular-gauge + rings) to the phantom type on import', () => {
+      const imported = importCard({
+        type: 'custom:modern-circular-gauge',
+        title: 'Energy',
+        rings: [{ entity: 'sensor.e', min: 0, max: 100 }],
+      });
+      expect(imported.type).toBe('custom:havdm-progress-ring');
+      expect(imported.rings).toEqual([{ entity: 'sensor.e', min: 0, max: 100 }]);
+    });
+
+    it('leaves a REAL modern-circular-gauge (top-level entity, no rings) untouched on import', () => {
+      const imported = importCard({
+        type: 'custom:modern-circular-gauge',
+        entity: 'sensor.e',
+        min: 0,
+        max: 100,
+      });
+      expect(imported.type).toBe('custom:modern-circular-gauge');
+    });
+
+    it('substitutes the phantom Progress Ring with a Card Not Available placeholder on export', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportCard(
+        {
+          type: 'custom:havdm-progress-ring',
+          rings: [{ entity: 'sensor.e' }],
+          grid_options: { columns: 6 },
+        },
+        { warnings },
+      );
+      expect(exported.type).toBe('markdown');
+      expect(String(exported.content)).toContain('Card Not Available');
+      // friendly name strips the havdm- namespace prefix
+      expect(String(exported.content)).toContain('progress-ring');
+      // slot-holding key carried over; invented config dropped
+      expect(exported.grid_options).toEqual({ columns: 6 });
+      expect(exported).not.toHaveProperty('rings');
+      expect(warnings.some((w) => w.category === 'placeholder')).toBe(true);
+    });
+  });
+
   // Slice B6 — the TRANSLATE→card-mod path exercised directly through exportCard /
   // exportDashboard: the capability-gate default (assume present), the strip+warn
   // branch, the collision guard, and merge-not-clobber. RED-BEFORE-GREEN: the

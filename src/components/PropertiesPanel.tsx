@@ -4399,7 +4399,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 </>
               )}
 
-              {card.type === 'custom:modern-circular-gauge' && (
+              {card.type === 'custom:havdm-progress-ring' && (
                 <>
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Start Angle</span>}
@@ -6202,7 +6202,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 'custom:native-graph-card',
                 'custom:gauge-card-pro',
                 'custom:slider-button-card',
-                'custom:modern-circular-gauge',
+                'custom:havdm-progress-ring',
                 'custom:bubble-card',
                 'custom:better-thermostat-ui-card',
                 'custom:power-flow-card',
