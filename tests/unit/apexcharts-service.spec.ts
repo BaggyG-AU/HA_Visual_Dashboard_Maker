@@ -97,4 +97,20 @@ describe('apexchartsService', () => {
     expect(first[0].x).toBeLessThan(first[first.length - 1].x);
     expect(first[0].y).toBeGreaterThanOrEqual(0);
   });
+
+  // Phase 4 PR-7 — apexcharts-card defaults header.show to FALSE upstream (v1.0.0).
+  // The canvas normalizer now matches it: the header is hidden unless explicitly
+  // enabled. RED-BEFORE-GREEN: confirmed red when the apexchartsService change is
+  // reverted (base defaults header.show to true).
+  it('defaults header.show to false when not specified (matches upstream)', () => {
+    const normalized = normalizeApexChartsCardConfig(makeCard({ header: { title: 'X' } }));
+    expect(normalized.header.show).toBe(false);
+  });
+
+  it('keeps header.show true when explicitly enabled', () => {
+    const normalized = normalizeApexChartsCardConfig(
+      makeCard({ header: { title: 'X', show: true } }),
+    );
+    expect(normalized.header.show).toBe(true);
+  });
 });

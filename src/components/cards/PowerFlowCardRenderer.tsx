@@ -39,8 +39,13 @@ interface PowerFlowCardConfig {
   clickable_entities?: boolean;
   display_zero_lines?: boolean;
   use_new_flow_rate_model?: boolean;
+  // power-flow-card (ulic75) decimal/threshold keys
   w_decimals?: number;
   kw_decimals?: number;
+  // power-flow-card-plus (flixlix) decimal/threshold keys (Phase 4 PR-7)
+  base_decimals?: number;
+  kilo_decimals?: number;
+  kilo_threshold?: number;
   min_flow_rate?: number;
   max_flow_rate?: number;
   max_expected_power?: number;
@@ -86,15 +91,22 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
     water: 8.2, // L/min
   };
 
-  const formatPower = (watts: number): string => {
-    const kw_decimals = card.kw_decimals ?? 1;
-    const w_decimals = card.w_decimals ?? 0;
-    const threshold = card.watt_threshold ?? 1000;
+  // Phase 4 PR-7: power-flow-card (ulic75) and power-flow-card-plus (flixlix) are
+  // different cards that name these keys differently. ulic75 uses
+  // w_decimals/kw_decimals/watt_threshold (defaults 0/1/1000). flixlix renamed
+  // them base_decimals/kilo_decimals/kilo_threshold (defaults 1/1/0; a 0 threshold
+  // means always display in kW). Read the right names per card type so the canvas
+  // preview honours whichever card the user placed.
+  const isPlus = card.type === 'custom:power-flow-card-plus';
+  const baseDecimals = (isPlus ? card.base_decimals : card.w_decimals) ?? (isPlus ? 1 : 0);
+  const kiloDecimals = (isPlus ? card.kilo_decimals : card.kw_decimals) ?? 1;
+  const wattThreshold = (isPlus ? card.kilo_threshold : card.watt_threshold) ?? (isPlus ? 0 : 1000);
 
-    if (Math.abs(watts) >= threshold) {
-      return `${(watts / 1000).toFixed(kw_decimals)} kW`;
+  const formatPower = (watts: number): string => {
+    if (Math.abs(watts) >= wattThreshold) {
+      return `${(watts / 1000).toFixed(kiloDecimals)} kW`;
     }
-    return `${watts.toFixed(w_decimals)} W`;
+    return `${watts.toFixed(baseDecimals)} W`;
   };
   const backgroundStyle = getCardBackgroundStyle(
     card.style,
@@ -453,7 +465,7 @@ export const PowerFlowCardRenderer: React.FC<PowerFlowCardRendererProps> = ({
           •
         </Text>
         <Text type="secondary" style={{ fontSize: '9px' }}>
-          Threshold: {card.watt_threshold || 1000}W
+          Threshold: {wattThreshold}W
         </Text>
         {card.use_new_flow_rate_model && (
           <>

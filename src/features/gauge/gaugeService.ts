@@ -129,7 +129,7 @@ export const normalizeGaugeCardProConfig = (
     max,
     value,
     percentage,
-    unit: card.value_texts?.primary_unit || '',
+    unit: card.value_texts?.primary?.unit_of_measurement ?? card.value_texts?.primary_unit ?? '',
     needle: typeof card.needle === 'boolean' ? card.needle : false,
     gradient: Boolean(card.gradient),
     header: card.header,

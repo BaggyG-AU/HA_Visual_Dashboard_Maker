@@ -67,4 +67,33 @@ describe('gaugeService', () => {
 
     expect(normalized.activeColor).toBe('#808080');
   });
+
+  // Phase 4 PR-7 — gauge-card-pro nests the primary unit under
+  // value_texts.primary.unit_of_measurement (upstream benjamin-dcs). The pre-PR-7
+  // flat value_texts.primary_unit is read only as a back-compat fallback.
+  // RED-BEFORE-GREEN: confirmed red when the gaugeService change is reverted (base
+  // reads only primary_unit, so the nested-path cases resolve to '').
+  it('resolves the primary unit from value_texts.primary.unit_of_measurement', () => {
+    const normalized = normalizeGaugeCardProConfig(
+      makeCard({ value_texts: { primary: { unit_of_measurement: 'psi' } } }),
+      50,
+    );
+    expect(normalized.unit).toBe('psi');
+  });
+
+  it('falls back to the deprecated flat value_texts.primary_unit', () => {
+    const normalized = normalizeGaugeCardProConfig(
+      makeCard({ value_texts: { primary_unit: '%' } }),
+      50,
+    );
+    expect(normalized.unit).toBe('%');
+  });
+
+  it('prefers the nested unit over the deprecated flat one', () => {
+    const normalized = normalizeGaugeCardProConfig(
+      makeCard({ value_texts: { primary: { unit_of_measurement: 'kPa' }, primary_unit: '%' } }),
+      50,
+    );
+    expect(normalized.unit).toBe('kPa');
+  });
 });

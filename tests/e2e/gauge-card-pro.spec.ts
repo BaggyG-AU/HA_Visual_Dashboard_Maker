@@ -67,7 +67,9 @@ test.describe('Gauge Alignment', () => {
       expect(yaml).toContain('type: custom:gauge-card-pro');
       expect(yaml).toContain('min: 5');
       expect(yaml).toContain('max: 95');
-      expect(yaml).toContain('primary_unit: psi');
+      // Phase 4 PR-7: the primary unit now nests under
+      // value_texts.primary.unit_of_measurement (upstream gauge-card-pro shape).
+      expect(yaml).toContain('unit_of_measurement: psi');
       expect(yaml).toContain('needle: false');
       expect(yaml).toContain('gradient: false');
       expect(yaml).toContain('label: Low Band');
