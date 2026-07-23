@@ -145,6 +145,47 @@ const ALARM_ARM_ACTION_BY_STATE: Record<string, string> = {
   arm_custom_bypass: 'arm_custom_bypass',
 };
 
+// custom:slider-button-card (custom-cards/slider-button-card, verified against
+// its README): the ONLY correct top-level key HAVDM emits is `entity`. HAVDM's
+// "advanced slider" form writes a richer, invented flat schema. On export the one
+// key with a real target — `orientation` → the real `slider.direction` — is
+// translated, `show_value` maps to the real `show_state`, and the rest are
+// dropped (HAVDM-only). `haptic` / `sound` are already stripped+warned by PR-1.
+const SLIDER_BUTTON_HAVDM_ONLY_KEYS = new Set([
+  'min',
+  'max',
+  'step',
+  'precision',
+  'orientation',
+  'show_markers',
+  'show_value',
+  'commit_on_release',
+  'animate_fill',
+  'zones',
+]);
+
+// The real `slider.direction` values; HAVDM's `orientation` is a flattened,
+// renamed stand-in. Vertical fills bottom-to-top by convention.
+const SLIDER_DIRECTION_BY_ORIENTATION: Record<string, string> = {
+  horizontal: 'left-right',
+  vertical: 'bottom-top',
+};
+
+// The invented slider keys with NO real slider-button-card equivalent — dropped
+// silently by the exporter, but WARNED about here so the fidelity loss is honest
+// (the real card derives its range from the entity itself). `orientation` /
+// `show_value` are TRANSLATED, not lost, so they are not in this list.
+const SLIDER_BUTTON_LOSSY_KEYS = [
+  'min',
+  'max',
+  'step',
+  'precision',
+  'show_markers',
+  'commit_on_release',
+  'animate_fill',
+  'zones',
+] as const;
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -641,6 +682,40 @@ const exportAlarmPanelCard = (inputCard: Record<string, unknown>): Record<string
   return result;
 };
 
+const exportSliderButtonCard = (inputCard: Record<string, unknown>): Record<string, unknown> => {
+  const passthrough = omitKeys(inputCard, SLIDER_BUTTON_HAVDM_ONLY_KEYS);
+
+  const direction =
+    typeof inputCard.orientation === 'string'
+      ? SLIDER_DIRECTION_BY_ORIENTATION[inputCard.orientation]
+      : undefined;
+  const existingSlider = isRecord(inputCard.slider) ? inputCard.slider : {};
+
+  return {
+    ...passthrough,
+    type: 'custom:slider-button-card',
+    ...(direction ? { slider: { ...existingSlider, direction } } : {}),
+    ...(typeof inputCard.show_value === 'boolean' ? { show_state: inputCard.show_value } : {}),
+  };
+};
+
+// One plain-language warning for the invented advanced-slider keys that have no
+// real slider-button-card equivalent, or `null` when the card carries none.
+const sliderButtonLossyWarning = (source: Record<string, unknown>): ExportWarning | null => {
+  const dropped = SLIDER_BUTTON_LOSSY_KEYS.filter((key) => key in source);
+  if (dropped.length === 0) return null;
+  return {
+    category: 'card-schema',
+    cardType: 'custom:slider-button-card',
+    keys: [...dropped],
+    reason: 'schema-approximated',
+    message:
+      `The advanced-slider settings (${dropped.join(', ')}) have no equivalent in the ` +
+      `real Home Assistant slider-button-card, so they were dropped on export. The ` +
+      `slider deploys using the entity's own range.`,
+  };
+};
+
 const migrateLegacyAccordion = (inputCard: Record<string, unknown>): Record<string, unknown> => {
   const sections = Array.isArray(inputCard.sections) ? inputCard.sections : [];
   const cards = sections
@@ -876,6 +951,15 @@ export function exportCard(
     exported = exportLogbookCard(source);
   } else if (source.type === 'alarm-panel') {
     exported = exportAlarmPanelCard(source);
+  } else if (source.type === 'custom:slider-button-card') {
+    exported = exportSliderButtonCard(source);
+  } else if (source.type === 'custom:mushroom-switch-card') {
+    // Phase 4 PR-4: custom:mushroom-switch-card does NOT exist upstream (verified
+    // against lovelace-mushroom v5.1.1). Switch entities belong on the real
+    // custom:mushroom-entity-card, which auto-detects the switch domain — so remap
+    // the type on export. The HAVDM form fields (entity/name/icon/icon_color/
+    // layout) are all valid mushroom-entity-card keys; keep them.
+    exported = { ...source, type: 'custom:mushroom-entity-card' };
   } else {
     exported = { ...source };
   }
@@ -903,6 +987,12 @@ export function exportCard(
     if (cardMod.warnings.length > 0) options.warnings.push(...cardMod.warnings);
     if (visibility.warnings.length > 0) options.warnings.push(...visibility.warnings);
     if (canvas.warnings.length > 0) options.warnings.push(...canvas.warnings);
+    // Phase 4 PR-4: honest notice for the advanced-slider keys dropped when a
+    // slider-button-card is approximated to the real card's schema.
+    if (source.type === 'custom:slider-button-card') {
+      const sliderWarning = sliderButtonLossyWarning(source);
+      if (sliderWarning) options.warnings.push(sliderWarning);
+    }
   }
 
   // Slice B2: the global STRIP runs last, after the per-card canonical

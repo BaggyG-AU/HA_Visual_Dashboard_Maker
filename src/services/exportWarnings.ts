@@ -11,7 +11,7 @@
 
 /** Which TRANSLATE / substitution / validation step raised the warning. */
 export type ExportWarningCategory =
-  'card-mod' | 'visibility' | 'placeholder' | 'canvas-key' | 'self-check';
+  'card-mod' | 'visibility' | 'placeholder' | 'canvas-key' | 'card-schema' | 'self-check';
 
 /** Why the translation was imperfect. */
 export type ExportWarningReason =
@@ -24,6 +24,9 @@ export type ExportWarningReason =
   | 'canvas-only-type'
   // canvas-only behavioural key strip (Phase 4 PR-1)
   | 'canvas-behavioural'
+  // per-card schema approximation — a lossy translation to a real card's schema
+  // (Phase 4 PR-4: slider-button-card advanced-slider keys with no HA equivalent)
+  | 'schema-approximated'
   // validation self-check (B8)
   | 'leaked-internal';
 
