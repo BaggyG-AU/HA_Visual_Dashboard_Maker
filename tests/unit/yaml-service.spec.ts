@@ -941,4 +941,42 @@ describe('yamlService', () => {
       expect((sanitized.views[0] as any).sections).toBeUndefined();
     });
   });
+
+  describe('sanitizeForHA — real HA view types (Tier 3)', () => {
+    const viewConfig = (view: Record<string, unknown>): DashboardConfig =>
+      ({
+        title: 'D',
+        views: [{ title: 'V', path: 'v', cards: [], ...view }],
+      }) as unknown as DashboardConfig;
+
+    it('preserves a panel view type (was silently flattened to masonry)', () => {
+      const sanitized = yamlService.sanitizeForHA(viewConfig({ type: 'panel' }));
+      expect(sanitized.views[0].type).toBe('panel');
+    });
+
+    it('preserves a sidebar view type', () => {
+      const sanitized = yamlService.sanitizeForHA(viewConfig({ type: 'sidebar' }));
+      expect(sanitized.views[0].type).toBe('sidebar');
+    });
+
+    it('preserves a layout-card custom:*-layout view type AND its layout config', () => {
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({ type: 'custom:vertical-layout', layout: { width: 400, max_cols: 2 } }),
+      );
+      const view = sanitized.views[0] as any;
+      expect(view.type).toBe('custom:vertical-layout');
+      expect(view.layout).toEqual({ width: 400, max_cols: 2 });
+    });
+
+    it('still strips HAVDM internal custom:grid-layout scaffold (type + layout)', () => {
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({
+          type: 'custom:grid-layout',
+          layout: { grid_template_columns: 'repeat(12, 1fr)' },
+        }),
+      );
+      expect(sanitized.views[0]).not.toHaveProperty('type');
+      expect(sanitized.views[0]).not.toHaveProperty('layout');
+    });
+  });
 });

@@ -221,3 +221,24 @@ export const CANVAS_ONLY_CARD_TYPES: readonly string[] = [
   'custom:slider-entity-row',
   'custom:havdm-progress-ring',
 ];
+
+/**
+ * HAVDM-internal VIEW types — stamped by HAVDM on the views it generates, NOT
+ * real Home Assistant view types. HAVDM's canvas is a 12-column / 56px-row grid,
+ * and every view it creates (the App.tsx blank dashboard + every
+ * dashboardGeneratorService template) carries `type: 'custom:grid-layout'` plus
+ * a `repeat(12, 1fr)` / `repeat(auto-fill, 56px)` `layout` as the scaffold for
+ * that canvas. Those are HAVDM-internal and MUST be stripped on export so the
+ * view deploys as its real HA type (masonry by default) — per-card geometry
+ * already rides as `_havdm_layout` (STRIP class) and is removed separately.
+ *
+ * The export boundary (yamlService.sanitizeForHAWithReport) preserves any view
+ * `type` NOT in this set: masonry, panel, sidebar, sections, or a layout-card
+ * `custom:*-layout` the user authored or imported. Before this denylist those
+ * real types were blanket-stripped and silently flattened to masonry on deploy.
+ *
+ * ⚠ KNOWN LIMITATION: a user's REAL layout-card `custom:grid-layout` view is
+ * indistinguishable from HAVDM's scaffold and is therefore also stripped.
+ * First-class layout-card grid support is future canvas work.
+ */
+export const HAVDM_INTERNAL_VIEW_TYPES: ReadonlySet<string> = new Set(['custom:grid-layout']);

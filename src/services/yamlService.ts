@@ -2,6 +2,7 @@ import * as yaml from 'js-yaml';
 import { DashboardConfig, ViewSection, YAMLParseResult } from '../types/dashboard';
 import { logger } from './logger';
 import { exportDashboard, importDashboard } from './yamlConversionService';
+import { HAVDM_INTERNAL_VIEW_TYPES } from './haExportContract';
 import { selfCheckHaConfig } from './exportSelfCheck';
 import { summarizeExportWarnings } from './exportWarningSummary';
 import type { ExportWarning } from './exportWarnings';
@@ -153,17 +154,30 @@ class YAMLService {
             }) || [],
         };
 
+        // Preserve the view's REAL Home Assistant type (masonry, panel, sidebar,
+        // sections, a layout-card custom:*-layout). HAVDM stamps its internal
+        // canvas-grid scaffold type (custom:grid-layout — see
+        // HAVDM_INTERNAL_VIEW_TYPES) on every view it generates; that, and its
+        // paired `layout`, is HAVDM-internal and must be stripped so the view
+        // deploys as its real HA type. Any other type is user-authored/imported
+        // and was silently flattened to masonry before this denylist.
+        const viewType = typeof view.type === 'string' ? view.type : undefined;
+        if (viewType && !HAVDM_INTERNAL_VIEW_TYPES.has(viewType)) {
+          cleanView.type = viewType;
+          // HAVDM only ever pairs a view `layout` with its internal
+          // custom:grid-layout scaffold, so a non-internal view's `layout` is
+          // the user's real layout-card config — carry it through.
+          if (view.layout !== undefined) {
+            cleanView.layout = view.layout;
+          }
+        }
+
         // HA "sections" view: its cards live under `sections[].cards`, not the
-        // top-level `cards`. The allowlist above would drop `type` and
-        // `sections`, deploying the view EMPTY (validation still passes because
-        // `cards: []` is valid). Preserve the sections surface so the view
-        // round-trips. Only a REAL HA sections view opts in — HAVDM-internal
-        // view types (e.g. custom:grid-layout) stay stripped by the allowlist
-        // (see yaml-service.spec: "removes HAVDM-specific view properties").
-        // The per-card export pass (STRIP / translate / spacer-drop at every
-        // depth) descends into each section's cards in exportDashboard below.
-        if (view.type === 'sections') {
-          cleanView.type = 'sections';
+        // top-level `cards` (which stays empty). The rule above already
+        // preserved `type: 'sections'`; here we additionally carry the sections
+        // payload. The per-card export pass (STRIP / translate / spacer-drop at
+        // every depth) descends into each section's cards in exportDashboard.
+        if (viewType === 'sections') {
           const sourceSections: ViewSection[] = Array.isArray(view.sections) ? view.sections : [];
           cleanView.sections = sourceSections.map((section) => {
             const cleanSection: Record<string, unknown> = { ...section };
