@@ -386,6 +386,7 @@ describe('yaml conversion service', () => {
       type: 'calendar',
       title: 'Household',
       entities: ['calendar.home', 'calendar.work'],
+      // legacy HAVDM-emitted initial_view value — still imported for back-compat
       initial_view: 'list',
       extra: 'keep',
     };
@@ -411,7 +412,8 @@ describe('yaml conversion service', () => {
       type: 'calendar',
       title: 'Household',
       entities: ['calendar.home', 'calendar.work'],
-      initial_view: 'list',
+      // exported with the current HA FullCalendar view name
+      initial_view: 'listWeek',
       extra: 'keep',
     });
     expect((exported as Record<string, unknown>).show_week_numbers).toBeUndefined();
@@ -419,6 +421,126 @@ describe('yaml conversion service', () => {
     expect((exported as Record<string, unknown>).calendar_entities).toBeUndefined();
     expect((exported as Record<string, unknown>).on_date_select).toBeUndefined();
     expect((exported as Record<string, unknown>).events).toBeUndefined();
+  });
+
+  // Phase 4 PR-2 — built-in card VALUE fixes: the exported config must use the
+  // values Home Assistant actually accepts. RED-BEFORE-GREEN: confirmed red when
+  // the PR-2 src is reverted in the same checkout (on the base commit calendar
+  // exports initial_view month/list/day, logbook has no exporter so it emits
+  // `entity` and the 7 Timeline keys, and alarm-panel emits armed_* verbatim).
+  describe('built-in value fixes (Phase 4 PR-2)', () => {
+    it('calendar: exports the current HA FullCalendar initial_view names', () => {
+      const cases: Array<['month' | 'week' | 'day', string]> = [
+        ['month', 'dayGridMonth'],
+        ['week', 'listWeek'],
+        ['day', 'dayGridDay'],
+      ];
+      for (const [view, expected] of cases) {
+        const exported = exportCard({
+          type: 'calendar',
+          calendar_entities: ['calendar.home'],
+          view,
+        });
+        expect(exported.initial_view).toBe(expected);
+      }
+    });
+
+    it('calendar: imports the current HA initial_view names back to the internal view', () => {
+      expect(importCard({ type: 'calendar', initial_view: 'dayGridDay' }).view).toBe('day');
+      expect(importCard({ type: 'calendar', initial_view: 'listWeek' }).view).toBe('week');
+      expect(importCard({ type: 'calendar', initial_view: 'dayGridMonth' }).view).toBe('month');
+    });
+
+    it('logbook: exports a required target map from entity and drops the Timeline keys', () => {
+      const exported = exportCard({
+        type: 'logbook',
+        title: 'Timeline',
+        entity: 'light.kitchen',
+        hours_to_show: 48,
+        orientation: 'vertical',
+        group_by: 'day',
+        show_now_marker: true,
+        enable_scrubber: true,
+        max_items: 50,
+        item_density: 'comfortable',
+        truncate_length: 72,
+        selected_timestamp: 123,
+        events: [{ x: 1 }],
+      });
+      expect(exported.type).toBe('logbook');
+      expect(exported.target).toEqual({ entity_id: ['light.kitchen'] });
+      expect(exported.title).toBe('Timeline');
+      expect(exported.hours_to_show).toBe(48);
+      // no top-level entity, and every invented Timeline key gone
+      for (const key of [
+        'entity',
+        'orientation',
+        'group_by',
+        'show_now_marker',
+        'enable_scrubber',
+        'max_items',
+        'item_density',
+        'truncate_length',
+        'selected_timestamp',
+        'events',
+      ]) {
+        expect(exported).not.toHaveProperty(key);
+      }
+    });
+
+    it('logbook: builds target entity_id from an entities[] list', () => {
+      const exported = exportCard({
+        type: 'logbook',
+        entities: ['light.a', 'light.b'],
+      });
+      expect(exported.target).toEqual({ entity_id: ['light.a', 'light.b'] });
+      expect(exported).not.toHaveProperty('entities');
+    });
+
+    it('logbook: re-homes a real HA target map into entity on import (round-trip)', () => {
+      expect(importCard({ type: 'logbook', target: { entity_id: 'light.kitchen' } }).entity).toBe(
+        'light.kitchen',
+      );
+      expect(
+        importCard({ type: 'logbook', target: { entity_id: ['light.a', 'light.b'] } }).entities,
+      ).toEqual(['light.a', 'light.b']);
+    });
+
+    it('alarm-panel: translates armed_* states to arm_* actions and drops disarmed', () => {
+      const exported = exportCard({
+        type: 'alarm-panel',
+        entity: 'alarm_control_panel.home',
+        states: ['armed_home', 'armed_away', 'armed_night', 'disarmed'],
+      });
+      expect(exported.states).toEqual(['arm_home', 'arm_away', 'arm_night']);
+    });
+
+    it('alarm-panel: drops the invalid armed_vacation value', () => {
+      const exported = exportCard({
+        type: 'alarm-panel',
+        entity: 'alarm_control_panel.home',
+        states: ['armed_home', 'armed_vacation'],
+      });
+      expect(exported.states).toEqual(['arm_home']);
+    });
+
+    it('alarm-panel: omits states entirely when nothing maps (HA falls back to its default)', () => {
+      const exported = exportCard({
+        type: 'alarm-panel',
+        entity: 'alarm_control_panel.home',
+        states: ['disarmed'],
+      });
+      expect(exported).not.toHaveProperty('states');
+    });
+
+    it('alarm-panel: leaves already-correct arm_* actions unchanged', () => {
+      const exported = exportCard({
+        type: 'alarm-panel',
+        entity: 'alarm_control_panel.home',
+        states: ['arm_home', 'arm_away'],
+      });
+      expect(exported.states).toEqual(['arm_home', 'arm_away']);
+    });
   });
 
   // Slice B6 — the TRANSLATE→card-mod path exercised directly through exportCard /

@@ -104,6 +104,47 @@ const CALENDAR_HAVDM_ONLY_KEYS = new Set([
   'events',
 ]);
 
+// HA's `logbook` card (the "Activity card") selects what to show via a REQUIRED
+// `target` map (`entity_id` / `device_id` / `area_id`) — it has NO `entity` /
+// `entities` option, and it accepts only `type`, `target`, `title`,
+// `hours_to_show`, `theme`, `state_filter`, `name_detail` (verified against
+// home-assistant.io/dashboards/logbook, HA 2026.7). HAVDM renders its own
+// "Timeline" here and drives it with these HAVDM-only keys, which must NOT reach
+// Home Assistant. `entity` / `entities` are HAVDM-only AS TOP-LEVEL KEYS — their
+// values are re-homed into the `target` map by `exportLogbookCard`.
+const LOGBOOK_HAVDM_ONLY_KEYS = new Set([
+  'entity',
+  'entities',
+  'orientation',
+  'group_by',
+  'show_now_marker',
+  'enable_scrubber',
+  'max_items',
+  'item_density',
+  'truncate_length',
+  'selected_timestamp',
+  'events',
+]);
+
+// HA's `alarm-panel` card `states` option lists the ARM ACTIONS to show as
+// buttons: `arm_home` / `arm_away` / `arm_night` / `arm_custom_bypass` (verified
+// against home-assistant.io/dashboards/alarm-panel, HA 2026.7). HAVDM stores the
+// friendlier `armed_*` entity-state names internally (its renderer keys off
+// them), so export translates them. `disarmed` has no arm-action equivalent (HA
+// always offers disarm) and is dropped silently; anything else unmapped is
+// dropped too.
+const ALARM_ARM_ACTION_BY_STATE: Record<string, string> = {
+  armed_home: 'arm_home',
+  armed_away: 'arm_away',
+  armed_night: 'arm_night',
+  armed_custom_bypass: 'arm_custom_bypass',
+  // already-correct action names pass through unchanged
+  arm_home: 'arm_home',
+  arm_away: 'arm_away',
+  arm_night: 'arm_night',
+  arm_custom_bypass: 'arm_custom_bypass',
+};
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -344,17 +385,28 @@ const tabIconFromAttributes = (attributes: unknown): string | undefined => {
     : undefined;
 };
 
+// HA's calendar card `initial_view` accepts ONLY the FullCalendar view names
+// `dayGridMonth` / `dayGridDay` / `listWeek` (verified against
+// home-assistant.io/dashboards/calendar, HA 2026.7). HAVDM's internal `view` is
+// the friendlier `month` / `week` / `day`. These translate between the two —
+// `viewFromInitialView` also accepts the LEGACY values HAVDM used to emit
+// (`month` / `list` / `day`) so older saved/exported dashboards still import.
 const viewFromInitialView = (value: unknown): 'month' | 'week' | 'day' => {
-  if (value === 'day') return 'day';
-  if (value === 'list') return 'week';
+  if (value === 'dayGridDay' || value === 'day') return 'day';
+  if (value === 'listWeek' || value === 'list' || value === 'week') return 'week';
   return 'month';
 };
 
-const initialViewFromView = (value: unknown): 'month' | 'list' | 'day' => {
-  if (value === 'day') return 'day';
-  if (value === 'week') return 'list';
-  return 'month';
+const initialViewFromView = (value: unknown): 'dayGridMonth' | 'listWeek' | 'dayGridDay' => {
+  if (value === 'day') return 'dayGridDay';
+  if (value === 'week') return 'listWeek';
+  return 'dayGridMonth';
 };
+
+// Normalise any pre-existing `initial_view` (which may carry a legacy value on an
+// imported/older card) to the canonical current HA value.
+const normalizeInitialView = (value: unknown): 'dayGridMonth' | 'listWeek' | 'dayGridDay' =>
+  initialViewFromView(viewFromInitialView(value));
 
 const mergeAttributes = (
   globalAttributes: Record<string, unknown> | undefined,
@@ -510,9 +562,83 @@ const exportCalendarCard = (inputCard: Record<string, unknown>): Record<string, 
     ...(typeof inputCard.view === 'string'
       ? { initial_view: initialViewFromView(inputCard.view) }
       : typeof inputCard.initial_view === 'string'
-        ? { initial_view: inputCard.initial_view }
+        ? { initial_view: normalizeInitialView(inputCard.initial_view) }
         : {}),
   };
+};
+
+const importLogbookCard = (inputCard: Record<string, unknown>): Record<string, unknown> => {
+  const mapped: Record<string, unknown> = { ...inputCard };
+
+  // Re-home a real HA `target: { entity_id }` into HAVDM's `entity` / `entities`
+  // so the Timeline renderer (which reads `entity` / `entities`) shows something.
+  const target = isRecord(inputCard.target) ? inputCard.target : undefined;
+  if (target && !('entity' in mapped) && !('entities' in mapped)) {
+    const entityId = target.entity_id;
+    if (typeof entityId === 'string') {
+      mapped.entity = entityId;
+    } else if (Array.isArray(entityId)) {
+      mapped.entities = entityId.filter((value): value is string => typeof value === 'string');
+    }
+  }
+
+  return mapped;
+};
+
+const exportLogbookCard = (inputCard: Record<string, unknown>): Record<string, unknown> => {
+  const passthrough = omitKeys(inputCard, LOGBOOK_HAVDM_ONLY_KEYS);
+
+  // Collect the entity ids HAVDM stored as `entity` (singular) / `entities`.
+  const entityIds: string[] = [];
+  if (typeof inputCard.entity === 'string' && inputCard.entity.trim().length > 0) {
+    entityIds.push(inputCard.entity);
+  }
+  if (Array.isArray(inputCard.entities)) {
+    inputCard.entities.forEach((value) => {
+      if (typeof value === 'string' && value.trim().length > 0) entityIds.push(value);
+    });
+  }
+
+  // Prefer an existing real `target` (round-tripped from HA); otherwise build one
+  // from the collected entity ids. HA requires `target`, so emit it whenever we
+  // have something to point at.
+  const existingTarget = isRecord(inputCard.target) ? inputCard.target : undefined;
+
+  return {
+    ...passthrough,
+    type: 'logbook',
+    ...(existingTarget
+      ? { target: existingTarget }
+      : entityIds.length > 0
+        ? { target: { entity_id: entityIds } }
+        : {}),
+  };
+};
+
+const exportAlarmPanelCard = (inputCard: Record<string, unknown>): Record<string, unknown> => {
+  const states = inputCard.states;
+  if (!Array.isArray(states)) {
+    return { ...inputCard };
+  }
+
+  const actions: string[] = [];
+  states.forEach((value) => {
+    if (typeof value !== 'string') return;
+    const action = ALARM_ARM_ACTION_BY_STATE[value];
+    if (action && !actions.includes(action)) actions.push(action);
+    // Unmapped values (`disarmed`, `armed_vacation`, anything else) are dropped:
+    // HA's alarm-panel card `states` has no equivalent for them.
+  });
+
+  const result = { ...inputCard };
+  if (actions.length > 0) {
+    result.states = actions;
+  } else {
+    // Nothing maps — omit `states` entirely so HA falls back to its own default
+    // (arm_home, arm_away) rather than receiving an empty/invalid list.
+    delete result.states;
+  }
+  return result;
 };
 
 const migrateLegacyAccordion = (inputCard: Record<string, unknown>): Record<string, unknown> => {
@@ -685,6 +811,10 @@ export function importCard(card: Record<string, unknown>): Record<string, unknow
     return importCalendarCard(migrated);
   }
 
+  if (migrated.type === 'logbook') {
+    return importLogbookCard(migrated);
+  }
+
   return { ...migrated };
 }
 
@@ -733,6 +863,10 @@ export function exportCard(
     exported = exportTabbedCard(source);
   } else if (source.type === 'calendar') {
     exported = exportCalendarCard(source);
+  } else if (source.type === 'logbook') {
+    exported = exportLogbookCard(source);
+  } else if (source.type === 'alarm-panel') {
+    exported = exportAlarmPanelCard(source);
   } else {
     exported = { ...source };
   }
