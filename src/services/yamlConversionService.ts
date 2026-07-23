@@ -1095,6 +1095,21 @@ export function importDashboard(dashboard: Record<string, unknown>): Record<stri
         .map((card) => processCardRecursively(card, importCard));
     }
 
+    // HA "sections" view: apply importCard (legacy-type migration + internal
+    // layout rename) to each section's cards too, mirroring the export
+    // recursion so import/export stay symmetric.
+    if (Array.isArray(nextView.sections)) {
+      nextView.sections = nextView.sections.map((section) => {
+        if (!isRecord(section) || !Array.isArray(section.cards)) return section;
+        const nextSection: Record<string, unknown> = { ...section };
+        nextSection.cards = (section.cards as unknown[])
+          .map((card) => asCardRecord(card))
+          .filter((card): card is Record<string, unknown> => Boolean(card))
+          .map((card) => processCardRecursively(card, importCard));
+        return nextSection;
+      });
+    }
+
     return nextView;
   });
 
@@ -1130,6 +1145,23 @@ export function exportDashboard(
         .filter((card): card is Record<string, unknown> => Boolean(card))
         .filter((card) => !isSpacerCard(card))
         .map((card) => processCardRecursively(card, cardProcessor, { dropCard: isSpacerCard }));
+    }
+
+    // HA "sections" view: cards live under sections[].cards. Run the SAME
+    // per-card export pass (STRIP / translate / spacer-drop at every depth)
+    // over each section's cards so they get identical treatment to top-level
+    // cards. Mirrors the sections preservation in sanitizeForHAWithReport.
+    if (Array.isArray(nextView.sections)) {
+      nextView.sections = nextView.sections.map((section) => {
+        if (!isRecord(section) || !Array.isArray(section.cards)) return section;
+        const nextSection: Record<string, unknown> = { ...section };
+        nextSection.cards = (section.cards as unknown[])
+          .map((card) => asCardRecord(card))
+          .filter((card): card is Record<string, unknown> => Boolean(card))
+          .filter((card) => !isSpacerCard(card))
+          .map((card) => processCardRecursively(card, cardProcessor, { dropCard: isSpacerCard }));
+        return nextSection;
+      });
     }
 
     return nextView;

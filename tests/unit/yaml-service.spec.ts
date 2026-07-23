@@ -886,4 +886,59 @@ describe('yamlService', () => {
       expect(yaml).not.toContain('# Home Assistant export summary');
     });
   });
+
+  describe('sanitizeForHA — sections views (WS4-A)', () => {
+    const sectionsConfig = (): DashboardConfig =>
+      ({
+        title: 'Sections Dashboard',
+        views: [
+          {
+            title: 'Home',
+            path: 'home',
+            type: 'sections',
+            max_columns: 3,
+            sections: [
+              {
+                type: 'grid',
+                title: 'Lights',
+                cards: [{ type: 'entity', entity: 'light.living_room' }],
+              },
+            ],
+          } as unknown as DashboardConfig['views'][number],
+        ],
+      }) as unknown as DashboardConfig;
+
+    it('preserves the sections view type and its section cards (would deploy EMPTY otherwise)', () => {
+      const sanitized = yamlService.sanitizeForHA(sectionsConfig());
+      const view = sanitized.views[0] as any;
+      expect(view.type).toBe('sections');
+      expect(Array.isArray(view.sections)).toBe(true);
+      expect(view.sections[0].cards[0]).toMatchObject({
+        type: 'entity',
+        entity: 'light.living_room',
+      });
+      // the section heading and the view-level layout key survive too
+      expect(view.sections[0].title).toBe('Lights');
+      expect(view.max_columns).toBe(3);
+      // sections views render from `sections`, not a stray top-level empty `cards`
+      expect(view).not.toHaveProperty('cards');
+    });
+
+    it('keeps the narrow scope: a HAVDM-internal view type is still stripped, gains no sections', () => {
+      const cfg = {
+        title: 'D',
+        views: [
+          {
+            title: 'V',
+            path: 'v',
+            type: 'custom:grid-layout',
+            cards: [{ type: 'markdown', content: 'hi' }],
+          },
+        ],
+      } as unknown as DashboardConfig;
+      const sanitized = yamlService.sanitizeForHA(cfg);
+      expect(sanitized.views[0]).not.toHaveProperty('type');
+      expect((sanitized.views[0] as any).sections).toBeUndefined();
+    });
+  });
 });

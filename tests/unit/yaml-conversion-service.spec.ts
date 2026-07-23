@@ -1202,4 +1202,82 @@ describe('yaml conversion service', () => {
       ).toBe(true);
     });
   });
+
+  describe('sections views (WS4-A round-trip)', () => {
+    it('exportDashboard strips a canvas key from a card INSIDE a section', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportDashboard(
+        {
+          title: 'D',
+          views: [
+            {
+              title: 'V',
+              type: 'sections',
+              sections: [
+                {
+                  type: 'grid',
+                  cards: [
+                    { type: 'custom:button-card', entity: 'light.a', sound: { enabled: true } },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        { warnings },
+      );
+      const views = exported.views as Array<Record<string, unknown>>;
+      const sections = views[0].sections as Array<Record<string, unknown>>;
+      const card = (sections[0].cards as Array<Record<string, unknown>>)[0];
+      expect(card).not.toHaveProperty('sound');
+      expect(
+        warnings.some((w) => w.category === 'canvas-key' && w.cardType === 'custom:button-card'),
+      ).toBe(true);
+    });
+
+    it('exportDashboard drops a spacer card from INSIDE a section', () => {
+      const exported = exportDashboard({
+        title: 'D',
+        views: [
+          {
+            title: 'V',
+            type: 'sections',
+            sections: [
+              {
+                type: 'grid',
+                cards: [{ type: 'markdown', content: 'real' }, { type: 'spacer' }],
+              },
+            ],
+          },
+        ],
+      });
+      const views = exported.views as Array<Record<string, unknown>>;
+      const sections = views[0].sections as Array<Record<string, unknown>>;
+      const cards = sections[0].cards as Array<Record<string, unknown>>;
+      expect(cards).toHaveLength(1);
+      expect(cards[0]).toMatchObject({ type: 'markdown', content: 'real' });
+    });
+
+    it('importDashboard applies importCard (internal-layout rename) to cards INSIDE a section', () => {
+      const imported = importDashboard({
+        title: 'D',
+        views: [
+          {
+            title: 'V',
+            type: 'sections',
+            sections: [
+              { type: 'grid', cards: [{ type: 'markdown', layout: { x: 0, y: 0, w: 4, h: 2 } }] },
+            ],
+          },
+        ],
+      });
+      const views = imported.views as Array<Record<string, unknown>>;
+      const sections = views[0].sections as Array<Record<string, unknown>>;
+      const card = (sections[0].cards as Array<Record<string, unknown>>)[0];
+      // migrateInternalLayout renames a geometry `layout` -> `_havdm_layout`;
+      // its presence proves importCard reached the section card.
+      expect(card).toHaveProperty('_havdm_layout');
+      expect(card).not.toHaveProperty('layout');
+    });
+  });
 });
