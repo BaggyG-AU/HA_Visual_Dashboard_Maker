@@ -138,8 +138,20 @@ export const selfCheckHaConfig = (config: DashboardConfig): ExportWarning[] => {
   if (!Array.isArray(views)) return out;
 
   views.forEach((view) => {
-    if (!isRecord(view) || !Array.isArray(view.cards)) return;
-    view.cards.forEach((card) => walkCard(card, out));
+    if (!isRecord(view)) return;
+    if (Array.isArray(view.cards)) {
+      view.cards.forEach((card) => walkCard(card, out));
+    }
+    // Sections view: its cards live under sections[].cards (not the top-level
+    // `cards`). Descend into them so a leaked HAVDM artefact inside a section
+    // is flagged, not silently shipped to Home Assistant.
+    if (Array.isArray(view.sections)) {
+      view.sections.forEach((section) => {
+        if (isRecord(section) && Array.isArray(section.cards)) {
+          section.cards.forEach((card) => walkCard(card, out));
+        }
+      });
+    }
   });
 
   return out;

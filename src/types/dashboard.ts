@@ -354,6 +354,20 @@ export interface LayoutCardConfig {
   };
 }
 
+// A section within an HA "sections" view. Each section is normally a grid
+// (`type: 'grid'`) of cards with an optional heading. HAVDM preserves these
+// verbatim through the export boundary so a Sections view round-trips instead
+// of deploying empty (its cards live here, not on the view's top-level `cards`).
+export interface ViewSection {
+  type?: string; // usually 'grid'
+  title?: string;
+  cards?: Card[];
+  column_span?: number;
+  row_span?: number;
+  visibility?: Condition[];
+  [key: string]: unknown;
+}
+
 // View configuration
 export interface View {
   title?: string;
@@ -365,6 +379,11 @@ export interface View {
   theme?: string;
   background?: string;
   type?: string; // 'masonry', 'custom:layout-card', 'sections', etc.
+  // HA "sections" view (type: 'sections'): cards live under sections[].cards.
+  sections?: ViewSection[];
+  max_columns?: number;
+  dense_section_placement?: boolean;
+  top_margin?: boolean;
   visible?: boolean | Condition[];
   // Layout-card specific properties
   layout_type?: 'grid' | 'masonry' | 'horizontal' | 'vertical';

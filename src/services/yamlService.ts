@@ -1,5 +1,5 @@
 import * as yaml from 'js-yaml';
-import { DashboardConfig, YAMLParseResult } from '../types/dashboard';
+import { DashboardConfig, ViewSection, YAMLParseResult } from '../types/dashboard';
 import { logger } from './logger';
 import { exportDashboard, importDashboard } from './yamlConversionService';
 import { selfCheckHaConfig } from './exportSelfCheck';
@@ -152,6 +152,48 @@ class YAMLService {
               return cleanCard;
             }) || [],
         };
+
+        // HA "sections" view: its cards live under `sections[].cards`, not the
+        // top-level `cards`. The allowlist above would drop `type` and
+        // `sections`, deploying the view EMPTY (validation still passes because
+        // `cards: []` is valid). Preserve the sections surface so the view
+        // round-trips. Only a REAL HA sections view opts in — HAVDM-internal
+        // view types (e.g. custom:grid-layout) stay stripped by the allowlist
+        // (see yaml-service.spec: "removes HAVDM-specific view properties").
+        // The per-card export pass (STRIP / translate / spacer-drop at every
+        // depth) descends into each section's cards in exportDashboard below.
+        if (view.type === 'sections') {
+          cleanView.type = 'sections';
+          const sourceSections: ViewSection[] = Array.isArray(view.sections) ? view.sections : [];
+          cleanView.sections = sourceSections.map((section) => {
+            const cleanSection: Record<string, unknown> = { ...section };
+            if (Array.isArray(section.cards)) {
+              cleanSection.cards = section.cards.map((card) => {
+                const cleanCard: Record<string, unknown> = { ...card };
+                Object.keys(cleanCard).forEach((key) => {
+                  if (cleanCard[key] === undefined || cleanCard[key] === null) {
+                    delete cleanCard[key];
+                  }
+                });
+                return cleanCard;
+              });
+            }
+            Object.keys(cleanSection).forEach((key) => {
+              if (cleanSection[key] === undefined || cleanSection[key] === null) {
+                delete cleanSection[key];
+              }
+            });
+            return cleanSection;
+          });
+          // Sections views render from `sections`, not the top-level `cards`;
+          // drop the (empty) placeholder array the allowlist created.
+          delete cleanView.cards;
+          // Carry the sections-view layout keys (undefined ones are pruned by
+          // the null/undefined sweep below).
+          cleanView.max_columns = view.max_columns;
+          cleanView.dense_section_placement = view.dense_section_placement;
+          cleanView.top_margin = view.top_margin;
+        }
 
         // Remove undefined/null properties from view
         Object.keys(cleanView).forEach((key) => {

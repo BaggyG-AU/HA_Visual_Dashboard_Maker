@@ -67,4 +67,20 @@ describe('exportSelfCheck (B8 warn-only validation)', () => {
     expect(out).toHaveLength(1);
     expect(out[0].keys).toContain('_havdm_layout');
   });
+
+  it('detects leaks in cards INSIDE a sections view (sections[].cards recursion)', () => {
+    const out = selfCheckHaConfig({
+      title: 'T',
+      views: [
+        {
+          title: 'V',
+          path: 'v',
+          type: 'sections',
+          sections: [{ type: 'grid', cards: [{ type: 'markdown', _havdm_layout: { x: 0 } }] }],
+        },
+      ],
+    } as unknown as DashboardConfig);
+    expect(out).toHaveLength(1);
+    expect(out[0].keys).toContain('_havdm_layout');
+  });
 });
