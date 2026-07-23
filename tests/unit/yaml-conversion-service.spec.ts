@@ -591,6 +591,104 @@ describe('yaml conversion service', () => {
     });
   });
 
+  // Phase 4 PR-4 — custom-card export translators: slider-button-card's
+  // advanced-slider schema is approximated to the real card, and the nonexistent
+  // custom:mushroom-switch-card is remapped to the real custom:mushroom-entity-card.
+  // RED-BEFORE-GREEN: confirmed red when the PR-4 src is reverted in the same
+  // checkout (on the base commit both hit the {...source} fall-through — the
+  // invented slider keys leak and mushroom-switch keeps its nonexistent type).
+  describe('custom export translators (Phase 4 PR-4)', () => {
+    it('slider-button: translates orientation to slider.direction and maps show_value', () => {
+      const horizontal = exportCard({
+        type: 'custom:slider-button-card',
+        entity: 'input_number.level',
+        orientation: 'horizontal',
+        show_value: true,
+      });
+      expect(horizontal.type).toBe('custom:slider-button-card');
+      expect(horizontal.entity).toBe('input_number.level');
+      expect(horizontal.slider).toEqual({ direction: 'left-right' });
+      expect(horizontal.show_state).toBe(true);
+      expect(horizontal).not.toHaveProperty('orientation');
+      expect(horizontal).not.toHaveProperty('show_value');
+
+      const vertical = exportCard({
+        type: 'custom:slider-button-card',
+        entity: 'input_number.level',
+        orientation: 'vertical',
+      });
+      expect(vertical.slider).toEqual({ direction: 'bottom-top' });
+    });
+
+    it('slider-button: strips the invented advanced-slider keys and records ONE schema warning', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportCard(
+        {
+          type: 'custom:slider-button-card',
+          entity: 'input_number.level',
+          min: 0,
+          max: 100,
+          step: 5,
+          precision: 0,
+          show_markers: true,
+          commit_on_release: false,
+          animate_fill: true,
+          zones: [{ from: 0, to: 30, color: '#f00' }],
+        },
+        { warnings },
+      );
+      for (const key of [
+        'min',
+        'max',
+        'step',
+        'precision',
+        'show_markers',
+        'commit_on_release',
+        'animate_fill',
+        'zones',
+      ]) {
+        expect(exported).not.toHaveProperty(key);
+      }
+      const schemaWarnings = warnings.filter((w) => w.category === 'card-schema');
+      expect(schemaWarnings).toHaveLength(1);
+      expect(schemaWarnings[0]).toMatchObject({
+        cardType: 'custom:slider-button-card',
+        reason: 'schema-approximated',
+      });
+      expect(schemaWarnings[0].keys).toEqual(expect.arrayContaining(['zones', 'min', 'max']));
+    });
+
+    it('slider-button: emits no slider object and no warning when there is nothing to translate', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportCard(
+        { type: 'custom:slider-button-card', entity: 'switch.a' },
+        { warnings },
+      );
+      expect(exported).not.toHaveProperty('slider');
+      expect(warnings.filter((w) => w.category === 'card-schema')).toHaveLength(0);
+    });
+
+    it('mushroom-switch: remaps the nonexistent type to the real mushroom-entity-card', () => {
+      const exported = exportCard({
+        type: 'custom:mushroom-switch-card',
+        entity: 'switch.fan',
+        name: 'Fan',
+        icon: 'mdi:fan',
+        icon_color: 'blue',
+        layout: 'horizontal',
+      });
+      expect(exported.type).toBe('custom:mushroom-entity-card');
+      // the valid mushroom-entity keys are preserved
+      expect(exported).toMatchObject({
+        entity: 'switch.fan',
+        name: 'Fan',
+        icon: 'mdi:fan',
+        icon_color: 'blue',
+        layout: 'horizontal',
+      });
+    });
+  });
+
   // Slice B6 — the TRANSLATE→card-mod path exercised directly through exportCard /
   // exportDashboard: the capability-gate default (assume present), the strip+warn
   // branch, the collision guard, and merge-not-clobber. RED-BEFORE-GREEN: the
