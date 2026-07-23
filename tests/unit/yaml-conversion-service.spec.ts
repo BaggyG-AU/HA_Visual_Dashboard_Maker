@@ -689,6 +689,54 @@ describe('yaml conversion service', () => {
     });
   });
 
+  // Phase 4 PR-5 — bubble-card pop-up `hash`: a pop-up needs a hash for Home
+  // Assistant to open it, so an empty-hash pop-up raises one honest card-schema
+  // warning at export. A present hash passes through untouched (bubble has no
+  // per-card exporter; it falls through {...source}). RED-BEFORE-GREEN: confirmed
+  // red when the PR-5 src is reverted in the same checkout (on the base commit
+  // exportCard has no bubble warning branch, so no warning is pushed).
+  describe('bubble-card pop-up hash warning (Phase 4 PR-5)', () => {
+    it('warns when a pop-up bubble-card has no hash', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportCard(
+        { type: 'custom:bubble-card', card_type: 'pop-up', name: 'Kitchen' },
+        { warnings },
+      );
+      const schemaWarnings = warnings.filter((w) => w.category === 'card-schema');
+      expect(schemaWarnings).toHaveLength(1);
+      expect(schemaWarnings[0]).toMatchObject({
+        cardType: 'custom:bubble-card',
+        reason: 'missing-required-key',
+        keys: ['hash'],
+      });
+      // the card type is not otherwise altered
+      expect(exported.type).toBe('custom:bubble-card');
+    });
+
+    it('warns when a pop-up bubble-card hash is blank/whitespace', () => {
+      const warnings: ExportWarning[] = [];
+      exportCard({ type: 'custom:bubble-card', card_type: 'pop-up', hash: '   ' }, { warnings });
+      expect(warnings.filter((w) => w.reason === 'missing-required-key')).toHaveLength(1);
+    });
+
+    it('does NOT warn when a pop-up bubble-card carries a hash', () => {
+      const warnings: ExportWarning[] = [];
+      const exported = exportCard(
+        { type: 'custom:bubble-card', card_type: 'pop-up', hash: '#kitchen' },
+        { warnings },
+      );
+      expect(warnings.filter((w) => w.category === 'card-schema')).toHaveLength(0);
+      // a valid hash survives export untouched
+      expect(exported.hash).toBe('#kitchen');
+    });
+
+    it('does NOT warn for a non-pop-up bubble-card without a hash', () => {
+      const warnings: ExportWarning[] = [];
+      exportCard({ type: 'custom:bubble-card', card_type: 'button' }, { warnings });
+      expect(warnings.filter((w) => w.category === 'card-schema')).toHaveLength(0);
+    });
+  });
+
   // Slice B6 — the TRANSLATE→card-mod path exercised directly through exportCard /
   // exportDashboard: the capability-gate default (assume present), the strip+warn
   // branch, the collision guard, and merge-not-clobber. RED-BEFORE-GREEN: the
