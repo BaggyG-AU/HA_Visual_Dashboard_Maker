@@ -571,11 +571,12 @@ class CardRegistry {
         requiredProps: ['entity'],
       },
       {
-        type: 'custom:modern-circular-gauge',
-        name: 'Modern Circular Gauge',
+        type: 'custom:havdm-progress-ring',
+        name: 'Progress Ring',
         category: 'custom',
         icon: 'DashboardOutlined',
-        description: 'Progress ring visualization with single or nested gauges',
+        description:
+          'HAVDM progress-ring visualization with single or nested rings (design-only — deploys as a "Card Not Available" placeholder, not a Home Assistant card)',
         isCustom: true,
         source: 'hacs',
         defaultProps: {

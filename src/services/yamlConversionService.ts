@@ -769,6 +769,15 @@ export function migrateLegacyCard(card: Record<string, unknown>): Record<string,
     return migrateLegacyAccordion(card);
   }
 
+  // Phase 4 PR-3: HAVDM's "Progress Ring" used to squat on the real
+  // `custom:modern-circular-gauge` type string. It is now the HAVDM-only phantom
+  // `custom:havdm-progress-ring`. Disambiguate BY VALUE SHAPE — only a card
+  // carrying HAVDM's invented `rings` array is our Progress Ring; a genuine
+  // modern-circular-gauge (top-level `entity`, no `rings`) is left untouched.
+  if (card.type === 'custom:modern-circular-gauge' && Array.isArray(card.rings)) {
+    return { ...card, type: 'custom:havdm-progress-ring' };
+  }
+
   return { ...card };
 }
 

@@ -31,7 +31,7 @@ export interface ProgressRingConfig {
 }
 
 export interface ProgressRingCardConfig extends BaseCard {
-  type: 'custom:modern-circular-gauge';
+  type: 'custom:havdm-progress-ring';
   title?: string;
   rings?: ProgressRingConfig[];
   thickness?: number;
@@ -67,7 +67,7 @@ export interface NormalizedProgressRingConfig {
 }
 
 export interface NormalizedProgressRingCardConfig {
-  type: 'custom:modern-circular-gauge';
+  type: 'custom:havdm-progress-ring';
   title?: string;
   rings: NormalizedProgressRingConfig[];
   startAngle: number;

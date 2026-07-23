@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { close, launchWithDSL } from '../support';
 
-const BASE_YAML = `type: custom:modern-circular-gauge
+const BASE_YAML = `type: custom:havdm-progress-ring
 title: Energy Progress
 thickness: 12
 start_angle: 0
@@ -89,7 +89,7 @@ test.describe('Progress Ring', () => {
       await properties.switchTab('YAML');
       const yaml = await yamlEditor.getEditorContent();
 
-      expect(yaml).toContain('type: custom:modern-circular-gauge');
+      expect(yaml).toContain('type: custom:havdm-progress-ring');
       expect(yaml).toContain('start_angle: 135');
       expect(yaml).toContain('direction: counter-clockwise');
       expect(yaml).toContain('thickness: 18');

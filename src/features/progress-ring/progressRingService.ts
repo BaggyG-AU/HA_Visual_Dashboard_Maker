@@ -158,7 +158,7 @@ export const normalizeProgressRingCard = (
     .filter((ring): ring is NormalizedProgressRingConfig => Boolean(ring));
 
   return {
-    type: 'custom:modern-circular-gauge',
+    type: 'custom:havdm-progress-ring',
     title: card.title,
     rings,
     startAngle: clamp(toFiniteNumber(card.start_angle, DEFAULT_START_ANGLE), -360, 360),
