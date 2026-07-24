@@ -59,6 +59,8 @@ import {
   addCardToSection,
   removeSectionCards,
   insertCardsIntoSection,
+  moveSectionCard,
+  setSectionCardGridOptions,
 } from './utils/sectionsLayout';
 import { HAEntityProvider, useHAEntities } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
@@ -1296,6 +1298,51 @@ const App: React.FC = () => {
     );
   };
 
+  // Tier 4 slice 4.3b: drag a card to reorder within a section or move it to
+  // another section. Selection follows the card to its new (section, index).
+  const handleSectionCardMove = (
+    from: { sectionIndex: number; cardIndex: number },
+    to: { sectionIndex: number; cardIndex: number },
+  ) => {
+    if (!config || selectedViewIndex === null) return;
+    const currentView = config.views[selectedViewIndex];
+    const nextView = moveSectionCard(currentView, from, to);
+    if (nextView === currentView) return;
+
+    const updatedViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
+    updateConfig({ ...config, views: updatedViews });
+
+    // Where the card landed: within a section it shifts left when moved past its
+    // old slot; across sections it inserts at (clamped) target index.
+    const landed = resolveViewCards(nextView, to.sectionIndex);
+    let landedIndex = Math.min(Math.max(0, to.cardIndex), Math.max(0, landed.length - 1));
+    if (from.sectionIndex === to.sectionIndex && from.cardIndex < to.cardIndex) {
+      landedIndex = Math.min(to.cardIndex, landed.length - 1);
+    }
+    setSelectedSectionCard(selectedViewIndex, to.sectionIndex, landedIndex);
+  };
+
+  // Tier 4 slice 4.3b: commit a drag-resize (grid_options columns/rows) for one
+  // section card. SectionsCanvas live-previews during the drag and calls this
+  // once on mouseup, so this is a single, undoable edit.
+  const handleSectionCardResize = (
+    address: { sectionIndex: number; cardIndex: number },
+    gridOptions: { columns?: number; rows?: number },
+  ) => {
+    if (!config || selectedViewIndex === null) return;
+    const currentView = config.views[selectedViewIndex];
+    const nextView = setSectionCardGridOptions(
+      currentView,
+      address.sectionIndex,
+      address.cardIndex,
+      gridOptions,
+    );
+    if (nextView === currentView) return;
+
+    const updatedViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
+    updateConfig({ ...config, views: updatedViews });
+  };
+
   const handleOpenConnectionDialog = () => {
     setSettingsTab('connection');
     setSettingsVisible(true);
@@ -2235,6 +2282,8 @@ const App: React.FC = () => {
                           selectedCardIndex={selectedCardIndex}
                           selectedCardIndices={selectedCardIndices}
                           selectedSectionIndex={selectedSectionIndex}
+                          onSectionCardMove={handleSectionCardMove}
+                          onSectionCardResize={handleSectionCardResize}
                           onCardSelect={handleCardSelect}
                           onLayoutChange={handleLayoutChange}
                           onCardDrop={handleCardDrop}
@@ -2265,6 +2314,8 @@ const App: React.FC = () => {
                                   onCardCopy={handleCardCopy}
                                   onCardPaste={handleCardPaste}
                                   onCardDelete={handleCardDelete}
+                                  onSectionCardMove={handleSectionCardMove}
+                                  onSectionCardResize={handleSectionCardResize}
                                   canPaste={clipboard.cards !== null}
                                 />
                               </div>

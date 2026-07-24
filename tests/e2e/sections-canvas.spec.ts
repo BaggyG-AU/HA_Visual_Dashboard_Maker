@@ -185,4 +185,126 @@ test.describe('Sections view canvas (Tier 4)', () => {
       await close(ctx);
     }
   });
+
+  // --- Tier 4 slice 4.3b: drag-to-move + drag-to-resize -----------------------
+
+  // Drive HTML5 drag-and-drop by dispatching the real event sequence. The move
+  // source is tracked in a component ref (set synchronously in onDragStart), so
+  // a dispatched dragstart -> drop is deterministic — no flaky mouse-based drag.
+  const dispatchCardDrag = (ctx: Ctx, sourceSelector: string, targetSelector: string) =>
+    ctx.window.evaluate(
+      ({ sourceSelector: src, targetSelector: dst }) => {
+        const source = document.querySelector(src);
+        const target = document.querySelector(dst);
+        if (!source || !target) throw new Error(`drag selectors not found: ${src} -> ${dst}`);
+        const dataTransfer = new DataTransfer();
+        const fire = (el: Element, type: string) =>
+          el.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer }));
+        fire(source, 'dragstart');
+        fire(target, 'dragover');
+        fire(target, 'drop');
+        fire(source, 'dragend');
+      },
+      { sourceSelector, targetSelector },
+    );
+
+  test('drag-reorders cards within a section', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+      const section0 = window.getByTestId('sections-canvas-section-0');
+      await expect(section0.getByTestId('canvas-card')).toHaveCount(2);
+      // Section 0 starts [SEC-ORIGINAL, button]; the first card holds SEC-ORIGINAL.
+      await expect(section0.getByTestId('canvas-card').nth(0)).toContainText('SEC-ORIGINAL');
+
+      // Drag card (0,0) onto card (0,1): it moves to the end of the section.
+      await dispatchCardDrag(
+        ctx,
+        '[data-testid="section-card-body-0-0"]',
+        '[data-testid="canvas-card"][data-section-index="0"][data-card-index="1"]',
+      );
+
+      await expect(section0.getByTestId('canvas-card').nth(0)).not.toContainText('SEC-ORIGINAL');
+      await expect(section0.getByTestId('canvas-card').nth(1)).toContainText('SEC-ORIGINAL');
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  test('drag-moves a card between sections', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+      await expect(window.getByTestId('canvas-card')).toHaveCount(3);
+
+      // Drag card (0,0)=SEC-ORIGINAL and drop on the section-1 container (append).
+      await dispatchCardDrag(
+        ctx,
+        '[data-testid="section-card-body-0-0"]',
+        '[data-testid="sections-canvas-section-1"]',
+      );
+
+      await expect(
+        window.getByTestId('sections-canvas-section-0').getByTestId('canvas-card'),
+      ).toHaveCount(1);
+      await expect(
+        window.getByTestId('sections-canvas-section-1').getByTestId('canvas-card'),
+      ).toHaveCount(2);
+      await expect(window.getByTestId('sections-canvas-section-1')).toContainText('SEC-ORIGINAL');
+      await expect(window.getByTestId('sections-canvas-section-0')).not.toContainText(
+        'SEC-ORIGINAL',
+      );
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  test('drag-resizes a card, writing grid_options.columns', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { canvas, window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+
+      // A card with no grid_options spans the full 12 columns.
+      const targetCard = window
+        .getByTestId('sections-canvas-section-0')
+        .getByTestId('canvas-card')
+        .nth(0);
+      await expect(targetCard).toHaveAttribute('data-grid-columns', '12');
+
+      // Select it so the resize handles render.
+      await canvas.selectCard(0);
+      const handle = window.getByTestId('section-resize-columns-0-0');
+      await expect(handle).toBeVisible();
+
+      // Drag the right-edge handle left by ~40% of the section width -> narrower span.
+      const section = await window.getByTestId('sections-canvas-section-0').boundingBox();
+      const box = await handle.boundingBox();
+      if (!section || !box) throw new Error('missing bounding boxes');
+      const startX = box.x + box.width / 2;
+      const startY = box.y + box.height / 2;
+      await window.mouse.move(startX, startY);
+      await window.mouse.down();
+      await window.mouse.move(startX - section.width * 0.4, startY, { steps: 8 });
+      await window.mouse.up();
+
+      // Span shrank below full width, and the change persisted to grid_options.
+      await expect
+        .poll(async () => Number(await targetCard.getAttribute('data-grid-columns')))
+        .toBeLessThan(12);
+      await expect
+        .poll(async () => Number(await targetCard.getAttribute('data-grid-columns')))
+        .toBeGreaterThanOrEqual(1);
+    } finally {
+      await close(ctx);
+    }
+  });
 });
