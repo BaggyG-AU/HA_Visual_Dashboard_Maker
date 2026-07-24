@@ -61,6 +61,11 @@ import {
   insertCardsIntoSection,
   moveSectionCard,
   setSectionCardGridOptions,
+  addSection,
+  removeSection,
+  moveSection,
+  setSectionTitle,
+  setViewMaxColumns,
 } from './utils/sectionsLayout';
 import { HAEntityProvider, useHAEntities } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
@@ -1343,6 +1348,79 @@ const App: React.FC = () => {
     updateConfig({ ...config, views: updatedViews });
   };
 
+  // --- Tier 4 slice 4.4: SECTION-level authoring ------------------------------
+  // Each mirrors the card handlers: guard -> pure helper -> ref-equal skip ->
+  // updateConfig (ONE undo entry). Structural ops (add/remove/move) reindex the
+  // sections, so they reset the card selection to avoid a stale
+  // (sectionIndex, cardIndex); title/max_columns don't reindex and leave it.
+  const handleSectionAdd = (atIndex?: number) => {
+    if (!config || selectedViewIndex === null) return;
+    const currentView = config.views[selectedViewIndex];
+    const nextView = addSection(currentView, atIndex);
+    if (nextView === currentView) return;
+
+    const updatedViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
+    updateConfig({ ...config, views: updatedViews });
+
+    // Select the new section (no card) so a subsequent Add-card targets it.
+    const sections = Array.isArray(nextView.sections) ? nextView.sections : [];
+    const newIndex =
+      atIndex === undefined
+        ? sections.length - 1
+        : Math.min(Math.max(0, atIndex), sections.length - 1);
+    setSelectedSectionCard(selectedViewIndex, newIndex, null);
+    message.success('Section added');
+  };
+
+  const handleSectionRemove = (sectionIndex: number) => {
+    if (!config || selectedViewIndex === null) return;
+    const currentView = config.views[selectedViewIndex];
+    const nextView = removeSection(currentView, sectionIndex);
+    if (nextView === currentView) return;
+
+    const updatedViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
+    updateConfig({ ...config, views: updatedViews });
+
+    // Removing reindexes the rest — drop the card selection. Undo restores the
+    // whole section (cards included) in one step.
+    setSelectedSectionCard(selectedViewIndex, null, null);
+    message.success('Section deleted — press Ctrl+Z to undo');
+  };
+
+  const handleSectionMove = (fromIndex: number, toIndex: number) => {
+    if (!config || selectedViewIndex === null) return;
+    const currentView = config.views[selectedViewIndex];
+    const nextView = moveSection(currentView, fromIndex, toIndex);
+    if (nextView === currentView) return;
+
+    const updatedViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
+    updateConfig({ ...config, views: updatedViews });
+
+    // Reordering reindexes sections — clear the card selection.
+    setSelectedSectionCard(selectedViewIndex, null, null);
+  };
+
+  const handleSectionTitleChange = (sectionIndex: number, title: string) => {
+    if (!config || selectedViewIndex === null) return;
+    const currentView = config.views[selectedViewIndex];
+    const nextView = setSectionTitle(currentView, sectionIndex, title);
+    if (nextView === currentView) return;
+
+    const updatedViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
+    updateConfig({ ...config, views: updatedViews });
+    // Renaming does not reindex — leave the selection untouched.
+  };
+
+  const handleViewMaxColumnsChange = (maxColumns: number) => {
+    if (!config || selectedViewIndex === null) return;
+    const currentView = config.views[selectedViewIndex];
+    const nextView = setViewMaxColumns(currentView, maxColumns);
+    if (nextView === currentView) return;
+
+    const updatedViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
+    updateConfig({ ...config, views: updatedViews });
+  };
+
   const handleOpenConnectionDialog = () => {
     setSettingsTab('connection');
     setSettingsVisible(true);
@@ -2284,6 +2362,11 @@ const App: React.FC = () => {
                           selectedSectionIndex={selectedSectionIndex}
                           onSectionCardMove={handleSectionCardMove}
                           onSectionCardResize={handleSectionCardResize}
+                          onSectionAdd={handleSectionAdd}
+                          onSectionRemove={handleSectionRemove}
+                          onSectionMove={handleSectionMove}
+                          onSectionTitleChange={handleSectionTitleChange}
+                          onViewMaxColumnsChange={handleViewMaxColumnsChange}
                           onCardSelect={handleCardSelect}
                           onLayoutChange={handleLayoutChange}
                           onCardDrop={handleCardDrop}
@@ -2316,6 +2399,11 @@ const App: React.FC = () => {
                                   onCardDelete={handleCardDelete}
                                   onSectionCardMove={handleSectionCardMove}
                                   onSectionCardResize={handleSectionCardResize}
+                                  onSectionAdd={handleSectionAdd}
+                                  onSectionRemove={handleSectionRemove}
+                                  onSectionMove={handleSectionMove}
+                                  onSectionTitleChange={handleSectionTitleChange}
+                                  onViewMaxColumnsChange={handleViewMaxColumnsChange}
                                   canPaste={clipboard.cards !== null}
                                 />
                               </div>

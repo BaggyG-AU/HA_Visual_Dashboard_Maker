@@ -245,3 +245,96 @@ export const setSectionCardGridOptions = (
   const nextCards = cards.map((c, i) => (i === cardIndex ? nextCard : c));
   return replaceSectionCards(view, sectionIndex, nextCards);
 };
+
+// --- Tier 4 slice 4.4: SECTION-level authoring -------------------------------
+// Section-level twins of the card helpers above: same immutable,
+// reference-equal-on-no-op contract, so App handlers stay thin and every
+// operation is one undoable edit. The canvas wiring is covered by e2e.
+
+/**
+ * Append (default) or insert an empty grid section into a sections view. A new
+ * section is a bare `{ type: 'grid', cards: [] }` — HA auto-adds a heading CARD
+ * to new sections, but HAVDM has no heading-card renderer yet, so a new section
+ * starts empty and untitled (its heading is set later via setSectionTitle).
+ * `atIndex` is clamped to [0, length]; omitted appends. Existing sections are
+ * carried through reference-equal. Always returns a NEW View.
+ */
+export const addSection = (view: View, atIndex?: number): View => {
+  const sections = Array.isArray(view.sections) ? view.sections : [];
+  const newSection: ViewSection = { type: 'grid', cards: [] };
+  const insertAt =
+    atIndex === undefined
+      ? sections.length
+      : Math.min(Math.max(0, Math.floor(atIndex)), sections.length);
+  const nextSections = sections.slice();
+  nextSections.splice(insertAt, 0, newSection);
+  return { ...view, sections: nextSections };
+};
+
+/**
+ * Remove the section at `sectionIndex`. Out-of-range returns the input view
+ * unchanged (reference-equal); surviving sections are carried reference-equal.
+ * Returns a NEW View (possibly with an empty `sections` array when the last
+ * section is removed).
+ */
+export const removeSection = (view: View, sectionIndex: number): View => {
+  const sections = view.sections;
+  if (!Array.isArray(sections) || !sections[sectionIndex]) return view;
+  return { ...view, sections: sections.filter((_, i) => i !== sectionIndex) };
+};
+
+/**
+ * Move a section from one index to another (the section drag-reorder write
+ * path). Splices the section out and reinserts it at the clamped target index. A
+ * no-op (same index) or an out-of-range source returns the input view unchanged
+ * (reference-equal). Returns a NEW View otherwise.
+ */
+export const moveSection = (view: View, fromIndex: number, toIndex: number): View => {
+  const sections = view.sections;
+  if (!Array.isArray(sections) || !sections[fromIndex]) return view;
+  if (fromIndex === toIndex) return view;
+  const next = sections.slice();
+  const [moved] = next.splice(fromIndex, 1);
+  const insertAt = Math.min(Math.max(0, Math.floor(toIndex)), next.length);
+  next.splice(insertAt, 0, moved);
+  return { ...view, sections: next };
+};
+
+/**
+ * Set (or clear) a section's heading title. A non-empty string sets
+ * `section.title`; an empty string REMOVES the key so an untitled section
+ * round-trips clean. A no-op (title already equal, or already absent and
+ * cleared) or an out-of-range section returns the input view unchanged
+ * (reference-equal). Sibling sections are carried reference-equal.
+ */
+export const setSectionTitle = (view: View, sectionIndex: number, title: string): View => {
+  const sections = view.sections;
+  if (!Array.isArray(sections) || !sections[sectionIndex]) return view;
+  const section = sections[sectionIndex];
+  const current = typeof section.title === 'string' ? section.title : undefined;
+  const nextTitle = title === '' ? undefined : title;
+  if (current === nextTitle) return view;
+
+  let nextSection: ViewSection;
+  if (nextTitle === undefined) {
+    nextSection = { ...section };
+    delete (nextSection as { title?: string }).title;
+  } else {
+    nextSection = { ...section, title: nextTitle };
+  }
+  const nextSections = sections.map((s, i) => (i === sectionIndex ? nextSection : s));
+  return { ...view, sections: nextSections };
+};
+
+/**
+ * Set a sections view's `max_columns` (view-level), clamped to >= 1. A no-op
+ * (already equal) or a non-finite input returns the input view unchanged
+ * (reference-equal); otherwise only the view-level key changes and the
+ * `sections` array is carried through by reference. Returns a NEW View.
+ */
+export const setViewMaxColumns = (view: View, maxColumns: number): View => {
+  if (!Number.isFinite(maxColumns)) return view;
+  const clamped = Math.max(1, Math.floor(maxColumns));
+  if (view.max_columns === clamped) return view;
+  return { ...view, max_columns: clamped };
+};

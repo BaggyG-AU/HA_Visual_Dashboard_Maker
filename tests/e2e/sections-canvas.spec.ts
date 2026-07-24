@@ -43,7 +43,9 @@ test.describe('Sections view canvas (Tier 4)', () => {
       await loadSections(ctx);
 
       await expect(ctx.window.getByTestId('sections-canvas')).toBeVisible();
-      await expect(ctx.window.getByTestId('section-heading-0')).toContainText('Lights');
+      // Slice 4.4: the section heading is now an editable field (its value is the
+      // section title), not a static text div.
+      await expect(ctx.window.getByTestId('section-title-input-0')).toHaveValue('Lights');
       // section 0 has 2 cards + section 1 has 1 => 3 canvas cards render
       await expect(ctx.window.getByTestId('canvas-card')).toHaveCount(3);
     } finally {
@@ -368,6 +370,120 @@ test.describe('Sections view canvas (Tier 4)', () => {
       await expect
         .poll(async () => Number(await targetCard.getAttribute('data-grid-rows')))
         .toBe(rowsBefore + 1);
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  // --- Tier 4 slice 4.4: section authoring ------------------------------------
+
+  test('adds a new empty section via the toolbar', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+      await expect(window.getByTestId('sections-canvas-section-0')).toBeVisible();
+      await expect(window.getByTestId('sections-canvas-section-1')).toBeVisible();
+      await expect(window.getByTestId('sections-canvas-section-2')).toHaveCount(0);
+
+      await window.getByTestId('section-add-button').click();
+
+      // A new empty section is appended.
+      await expect(window.getByTestId('sections-canvas-section-2')).toBeVisible();
+      await expect(window.getByTestId('section-empty-2')).toBeVisible();
+      // Existing sections are untouched.
+      await expect(window.getByTestId('section-title-input-0')).toHaveValue('Lights');
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  test('deletes a section via the toolbar', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+      await expect(window.getByTestId('sections-canvas-section-1')).toBeVisible();
+      await expect(window.getByTestId('sections-canvas')).toContainText('Second section card');
+
+      await window.getByTestId('section-delete-1').click();
+
+      // Section 1 and its card are gone; section 0 (Lights) survives.
+      await expect(window.getByTestId('sections-canvas-section-1')).toHaveCount(0);
+      await expect(window.getByTestId('sections-canvas')).not.toContainText('Second section card');
+      await expect(window.getByTestId('section-title-input-0')).toHaveValue('Lights');
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  test('renames a section heading, persisting section.title', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+      // Section 1 starts untitled.
+      const input = window.getByTestId('section-title-input-1');
+      await expect(input).toHaveValue('');
+
+      await input.fill('Climate');
+      await input.press('Enter');
+
+      // The committed title survives (falls back to the model after the draft
+      // clears, so seeing 'Climate' proves the write landed on section.title).
+      await expect(window.getByTestId('section-title-input-1')).toHaveValue('Climate');
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  test('drag-reorders whole sections', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+      // Order starts [Lights, <untitled>]; the untitled section holds the
+      // "Second section card" markdown.
+      await expect(window.getByTestId('section-title-input-0')).toHaveValue('Lights');
+
+      // Drag section 0's handle onto the section-1 container -> [<untitled>, Lights].
+      await dispatchCardDrag(
+        ctx,
+        '[data-testid="section-drag-handle-0"]',
+        '[data-testid="sections-canvas-section-1"]',
+      );
+
+      await expect(window.getByTestId('section-title-input-0')).toHaveValue('');
+      await expect(window.getByTestId('section-title-input-1')).toHaveValue('Lights');
+      await expect(window.getByTestId('sections-canvas-section-1')).toContainText('SEC-ORIGINAL');
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  test('changes the view max_columns from the toolbar', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+      const grid = window.getByTestId('sections-canvas-grid');
+      await expect(grid).toHaveAttribute('data-max-columns', '3'); // fixture max_columns: 3
+
+      const maxInput = window.getByTestId('section-max-columns').locator('input');
+      await maxInput.fill('5');
+      await maxInput.press('Enter');
+
+      await expect(grid).toHaveAttribute('data-max-columns', '5');
     } finally {
       await close(ctx);
     }

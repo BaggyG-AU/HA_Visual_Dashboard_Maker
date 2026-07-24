@@ -49,6 +49,13 @@ interface SplitViewEditorProps {
     gridOptions: { columns?: number; rows?: number },
   ) => void;
 
+  /** Tier 4 slice 4.4: sections-view section-level authoring */
+  onSectionAdd?: (atIndex?: number) => void;
+  onSectionRemove?: (sectionIndex: number) => void;
+  onSectionMove?: (fromIndex: number, toIndex: number) => void;
+  onSectionTitleChange?: (sectionIndex: number, title: string) => void;
+  onViewMaxColumnsChange?: (maxColumns: number) => void;
+
   /** Whether paste is available */
   canPaste: boolean;
 }
@@ -77,6 +84,11 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
   onCardDelete,
   onSectionCardMove,
   onSectionCardResize,
+  onSectionAdd,
+  onSectionRemove,
+  onSectionMove,
+  onSectionTitleChange,
+  onViewMaxColumnsChange,
   canPaste,
 }) => {
   const { config, updateConfig } = useDashboardStore();
@@ -353,6 +365,11 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
                 onCardDelete={onCardDelete}
                 onSectionCardMove={onSectionCardMove}
                 onSectionCardResize={onSectionCardResize}
+                onSectionAdd={onSectionAdd}
+                onSectionRemove={onSectionRemove}
+                onSectionMove={onSectionMove}
+                onSectionTitleChange={onSectionTitleChange}
+                onViewMaxColumnsChange={onViewMaxColumnsChange}
                 canPaste={canPaste}
               />
             </div>
