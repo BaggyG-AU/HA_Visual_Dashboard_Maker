@@ -53,7 +53,13 @@ import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
 import { getCardSizeConstraints } from './utils/cardSizingContract';
-import { resolveViewCards, updateSectionCard } from './utils/sectionsLayout';
+import {
+  resolveViewCards,
+  updateSectionCard,
+  addCardToSection,
+  removeSectionCards,
+  insertCardsIntoSection,
+} from './utils/sectionsLayout';
 import { HAEntityProvider, useHAEntities } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
 import { SettingsDialog } from './components/SettingsDialog';
@@ -204,13 +210,23 @@ const App: React.FC = () => {
     logger.debug('[remap-debug]', label, { ...buildRemapDebugState(), ...extra });
   };
 
-  // Clipboard state for cut/copy/paste operations
+  // Clipboard state for cut/copy/paste operations.
+  // Tier 4 slice 4.3a: `sourceSectionIndex` is null for a flat-canvas cut and a
+  // number when the cut came from a Sections view, so the paste knows which
+  // section to remove the originals from.
   const [clipboard, setClipboard] = useState<{
     cards: CardWithInternalLayout[] | null;
     isCut: boolean;
     sourceViewIndex: number | null;
     sourceCardIndices: number[];
-  }>({ cards: null, isCut: false, sourceViewIndex: null, sourceCardIndices: [] });
+    sourceSectionIndex: number | null;
+  }>({
+    cards: null,
+    isCut: false,
+    sourceViewIndex: null,
+    sourceCardIndices: [],
+    sourceSectionIndex: null,
+  });
 
   // Dashboard store
   const {
@@ -234,8 +250,10 @@ const App: React.FC = () => {
     setSelectedView,
     setSelectedCard,
     setSelectedSectionCard,
+    setSelectedSectionCards,
     setSelectedCards,
     selectCardWithMode,
+    selectSectionCardWithMode,
     undo,
     redo,
     isBatching,
@@ -585,12 +603,22 @@ const App: React.FC = () => {
   ) => {
     if (selectedViewIndex === null) return;
 
-    // Tier 4: a section-view card carries its sectionIndex. Single-select only
-    // this slice (multi-select/range within sections is deferred), so route
-    // straight to the section setter. A null sectionIndex/cardIndex falls
-    // through to the flat path below, which also resets selectedSectionIndex.
+    // Tier 4: a section-view card carries its sectionIndex. Route to the
+    // section-addressed setter, which supports ctrl/shift multi-select WITHIN
+    // one section (4.3a). A null sectionIndex/cardIndex falls through to the
+    // flat path below, which also resets selectedSectionIndex.
     if (options?.sectionIndex != null && cardIndex !== null) {
-      setSelectedSectionCard(selectedViewIndex, options.sectionIndex, cardIndex);
+      const sectionCards = resolveViewCards(
+        config?.views?.[selectedViewIndex],
+        options.sectionIndex,
+      );
+      selectSectionCardWithMode(
+        selectedViewIndex,
+        options.sectionIndex,
+        cardIndex,
+        options.mode ?? 'replace',
+        sectionCards.length,
+      );
       return;
     }
 
@@ -749,6 +777,35 @@ const App: React.FC = () => {
     const currentView = config.views[selectedViewIndex];
     const usingLayoutCard = isLayoutCardGrid(currentView);
 
+    // Tier 4 slice 4.3a: in a sections view, cards live in an ORDERED LIST under
+    // `section.cards` with no {x,y,w,h} geometry, so the card is appended to the
+    // target section and carries no `_havdm_layout`. Target = the section the
+    // user last selected in; default to the first section otherwise.
+    if (currentView.type === 'sections') {
+      const sections = Array.isArray(currentView.sections) ? currentView.sections : [];
+      if (sections.length === 0) {
+        message.warning('This sections view has no sections to add a card to');
+        return;
+      }
+      const targetSection =
+        selectedSectionIndex !== null && sections[selectedSectionIndex] ? selectedSectionIndex : 0;
+
+      const sectionCard = { ...baseCard } as Card;
+      if (['entities', 'glance'].includes(cardType)) {
+        (sectionCard as Record<string, unknown>).title = `New ${cardMetadata.name}`;
+      }
+
+      const nextView = addCardToSection(currentView, targetSection, sectionCard);
+      const nextViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
+      updateConfig({ ...config, views: nextViews });
+
+      const appendedIndex = resolveViewCards(nextView, targetSection).length - 1;
+      setSelectedSectionCard(selectedViewIndex, targetSection, appendedIndex);
+
+      message.success(`Added ${cardMetadata.name} card to section ${targetSection + 1}`);
+      return;
+    }
+
     // Palette adds arrive without coordinates. Defaulting them to (0, 0) stacks
     // every card at the origin, so the stored layout disagrees with what the
     // vertical compactor actually renders — and the next drag stop then persists
@@ -904,11 +961,48 @@ const App: React.FC = () => {
   };
 
   // Clipboard operations
+  // Tier 4 slice 4.3a: shared cut/copy for a Sections view. Reads the selected
+  // section's cards, so it is correct for both single- and multi-select (which
+  // is confined to one section by selectSectionCardWithMode).
+  const copySectionCards = ({ isCut }: { isCut: boolean }) => {
+    if (!config || selectedViewIndex === null || selectedSectionIndex === null) return;
+
+    const currentView = config.views[selectedViewIndex];
+    const sectionCards = resolveViewCards(currentView, selectedSectionIndex);
+    const selectedIndices = resolveSelectedIndices(sectionCards.length);
+    if (selectedIndices.length === 0) {
+      message.warning('No card selected');
+      return;
+    }
+
+    const picked = selectedIndices
+      .map((index) => sectionCards[index])
+      .filter((card): card is CardWithInternalLayout => Boolean(card))
+      .map((card) => ({ ...card }));
+
+    setClipboard({
+      cards: picked,
+      isCut,
+      sourceViewIndex: selectedViewIndex,
+      sourceCardIndices: selectedIndices,
+      sourceSectionIndex: selectedSectionIndex,
+    });
+
+    const verb = isCut ? 'cut' : 'copied';
+    message.info(
+      picked.length > 1
+        ? `${picked.length} cards ${verb} to clipboard`
+        : `Card ${verb} to clipboard`,
+    );
+  };
+
   const handleCardCut = () => {
-    // Tier 4: cut/copy/paste/delete operate on the flat `view.cards` array;
-    // within a Sections view (single-select this slice) they are deferred.
+    // Tier 4 slice 4.3a: inside a Sections view, cut/copy operate on the
+    // selected section's cards. The clipboard payload is section-agnostic — a
+    // paste lands in whichever section is selected then, which is what makes
+    // cut+paste a move between sections.
     if (selectedSectionIndex !== null) {
-      message.info('Not available in a Sections view yet');
+      copySectionCards({ isCut: true });
       return;
     }
     if (!config || selectedViewIndex === null) {
@@ -937,6 +1031,7 @@ const App: React.FC = () => {
       isCut: true,
       sourceViewIndex: selectedViewIndex,
       sourceCardIndices: selectedIndices,
+      sourceSectionIndex: null,
     });
 
     message.info(
@@ -948,7 +1043,7 @@ const App: React.FC = () => {
 
   const handleCardCopy = () => {
     if (selectedSectionIndex !== null) {
-      message.info('Not available in a Sections view yet');
+      copySectionCards({ isCut: false });
       return;
     }
     if (!config || selectedViewIndex === null) {
@@ -977,6 +1072,7 @@ const App: React.FC = () => {
       isCut: false,
       sourceViewIndex: selectedViewIndex,
       sourceCardIndices: selectedIndices,
+      sourceSectionIndex: null,
     });
 
     message.info(
@@ -987,8 +1083,73 @@ const App: React.FC = () => {
   };
 
   const handleCardPaste = () => {
+    // Tier 4 slice 4.3a: paste into the selected section. Geometry is dropped —
+    // sections are an ordered list — and a cut's originals are removed from
+    // their source section, which is what makes cut+paste a move.
     if (selectedSectionIndex !== null) {
-      message.info('Not available in a Sections view yet');
+      if (!clipboard.cards || clipboard.cards.length === 0) {
+        message.warning('Clipboard is empty');
+        return;
+      }
+      if (!config || selectedViewIndex === null) {
+        message.warning('Please select a view first');
+        return;
+      }
+
+      const targetSection = selectedSectionIndex;
+      const pasted = clipboard.cards.map((clipboardCard) => {
+        const { _havdm_layout: _layout, ...cardWithoutLayout } = clipboardCard;
+        void _layout;
+        return { ...cardWithoutLayout } as Card;
+      });
+
+      const currentView = config.views[selectedViewIndex];
+      let nextView = insertCardsIntoSection(currentView, targetSection, pasted);
+
+      const isMoveWithinThisView =
+        clipboard.isCut &&
+        clipboard.sourceViewIndex === selectedViewIndex &&
+        clipboard.sourceSectionIndex !== null;
+      if (isMoveWithinThisView) {
+        nextView = removeSectionCards(
+          nextView,
+          clipboard.sourceSectionIndex as number,
+          clipboard.sourceCardIndices,
+        );
+      }
+
+      const nextViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
+      updateConfig({ ...config, views: nextViews });
+
+      if (clipboard.isCut) {
+        setClipboard({
+          cards: null,
+          isCut: false,
+          sourceViewIndex: null,
+          sourceCardIndices: [],
+          sourceSectionIndex: null,
+        });
+      }
+
+      // Select what landed: it sits at the end of the target section, after any
+      // cut originals were removed.
+      const landedCards = resolveViewCards(nextView, targetSection);
+      const startIndex = landedCards.length - pasted.length;
+      setSelectedSectionCards(
+        selectedViewIndex,
+        targetSection,
+        Array.from({ length: pasted.length }, (_, offset) => startIndex + offset),
+      );
+
+      message.success(
+        clipboard.isCut
+          ? pasted.length > 1
+            ? `${pasted.length} cards moved`
+            : 'Card moved'
+          : pasted.length > 1
+            ? `${pasted.length} cards pasted`
+            : 'Card pasted',
+      );
       return;
     }
     if (!clipboard.cards || clipboard.cards.length === 0) {
@@ -1044,7 +1205,13 @@ const App: React.FC = () => {
 
     // Clear clipboard if it was a cut operation
     if (clipboard.isCut) {
-      setClipboard({ cards: null, isCut: false, sourceViewIndex: null, sourceCardIndices: [] });
+      setClipboard({
+        cards: null,
+        isCut: false,
+        sourceViewIndex: null,
+        sourceCardIndices: [],
+        sourceSectionIndex: null,
+      });
       message.success(pastedCards.length > 1 ? `${pastedCards.length} cards moved` : 'Card moved');
     } else {
       message.success(
@@ -1067,8 +1234,33 @@ const App: React.FC = () => {
   };
 
   const handleCardDelete = () => {
+    // Tier 4 slice 4.3a: delete the selected card(s) from the selected section.
     if (selectedSectionIndex !== null) {
-      message.info('Not available in a Sections view yet');
+      if (!config || selectedViewIndex === null) {
+        message.warning('No card selected');
+        return;
+      }
+
+      const currentView = config.views[selectedViewIndex];
+      const sectionCards = resolveViewCards(currentView, selectedSectionIndex);
+      const selectedIndices = resolveSelectedIndices(sectionCards.length);
+      if (selectedIndices.length === 0) {
+        message.warning('No card selected');
+        return;
+      }
+
+      const nextView = removeSectionCards(currentView, selectedSectionIndex, selectedIndices);
+      if (nextView === currentView) return;
+
+      const nextViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
+      updateConfig({ ...config, views: nextViews });
+
+      // Keep the section context, drop the card selection.
+      setSelectedSectionCard(selectedViewIndex, selectedSectionIndex, null);
+
+      message.success(
+        selectedIndices.length > 1 ? `${selectedIndices.length} cards deleted` : 'Card deleted',
+      );
       return;
     }
     if (!config || selectedViewIndex === null) {

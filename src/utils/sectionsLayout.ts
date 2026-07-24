@@ -65,8 +65,71 @@ export const updateSectionCard = (
   if (!cards[cardIndex]) return view;
 
   const nextCards = cards.map((card, i) => (i === cardIndex ? updatedCard : card));
+  return replaceSectionCards(view, sectionIndex, nextCards);
+};
+
+/**
+ * Immutably swap one section's `cards` array, returning a NEW View. Sibling
+ * sections are carried through reference-equal so React can skip them.
+ */
+const replaceSectionCards = (view: View, sectionIndex: number, nextCards: Card[]): View => {
+  const sections = view.sections as ViewSection[];
   const nextSections = sections.map((s, i) =>
     i === sectionIndex ? { ...s, cards: nextCards } : s,
   );
   return { ...view, sections: nextSections };
+};
+
+/**
+ * Read a section's cards, or null when the section does not exist. Callers use
+ * the null to return the input view unchanged (reference-equal no-op).
+ */
+const sectionCardsAt = (view: View, sectionIndex: number): Card[] | null => {
+  const sections = view.sections;
+  if (!Array.isArray(sections) || !sections[sectionIndex]) return null;
+  const cards = sections[sectionIndex].cards;
+  return Array.isArray(cards) ? cards : [];
+};
+
+/**
+ * Append a card to a section (Tier 4, slice 4.3a). Sections are an ORDERED LIST
+ * — unlike the flat canvas there is no {x,y,w,h} geometry, so a new card simply
+ * goes at the end and carries no `_havdm_layout`. Out-of-range section returns
+ * the input view unchanged (reference-equal).
+ */
+export const addCardToSection = (view: View, sectionIndex: number, card: Card): View => {
+  const cards = sectionCardsAt(view, sectionIndex);
+  if (cards === null) return view;
+  return replaceSectionCards(view, sectionIndex, [...cards, card]);
+};
+
+/**
+ * Remove cards at the given indices from a section (delete / the cut half of a
+ * move). Out-of-range and duplicate indices are ignored; a no-op index list or
+ * an out-of-range section returns the input view unchanged (reference-equal).
+ */
+export const removeSectionCards = (view: View, sectionIndex: number, indices: number[]): View => {
+  const cards = sectionCardsAt(view, sectionIndex);
+  if (cards === null) return view;
+
+  const doomed = new Set(indices.filter((i) => Number.isInteger(i) && i >= 0 && i < cards.length));
+  if (doomed.size === 0) return view;
+
+  return replaceSectionCards(
+    view,
+    sectionIndex,
+    cards.filter((_, i) => !doomed.has(i)),
+  );
+};
+
+/**
+ * Append several cards to a section, in order (the paste half of a move). An
+ * empty card list or an out-of-range section returns the input view unchanged
+ * (reference-equal).
+ */
+export const insertCardsIntoSection = (view: View, sectionIndex: number, cards: Card[]): View => {
+  if (cards.length === 0) return view;
+  const existing = sectionCardsAt(view, sectionIndex);
+  if (existing === null) return view;
+  return replaceSectionCards(view, sectionIndex, [...existing, ...cards]);
 };

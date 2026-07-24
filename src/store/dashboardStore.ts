@@ -36,6 +36,19 @@ interface DashboardActions {
     mode?: SelectionMode,
     cardCount?: number,
   ) => void;
+  selectSectionCardWithMode: (
+    viewIndex: number | null,
+    sectionIndex: number,
+    cardIndex: number | null,
+    mode?: SelectionMode,
+    cardCount?: number,
+  ) => void;
+  setSelectedSectionCards: (
+    viewIndex: number | null,
+    sectionIndex: number,
+    cardIndices: number[],
+    primaryCardIndex?: number | null,
+  ) => void;
   markDirty: () => void;
   markClean: () => void;
   clearDashboard: () => void;
@@ -184,9 +197,9 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   },
 
   // Tier 4: select a single card inside an HA "sections" view, addressed by
-  // (sectionIndex, cardIndex). Single-select only this slice — multi-select /
-  // range / clipboard within sections are deferred. A null cardIndex keeps the
-  // section context but clears the card (e.g. deselect within the section).
+  // (sectionIndex, cardIndex). A null cardIndex keeps the section context but
+  // clears the card (e.g. deselect within the section). For modifier-driven
+  // multi-select within a section, see selectSectionCardWithMode.
   setSelectedSectionCard: (
     viewIndex: number | null,
     sectionIndex: number | null,
@@ -256,6 +269,77 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       selectedCardIndices: nextSelection.selectedCardIndices,
       selectionAnchorCardIndex: nextSelection.anchorCardIndex,
       selectedSectionIndex: null,
+    });
+  },
+
+  // Tier 4 slice 4.3a: multi-select WITHIN one section. `selectedSectionIndex`
+  // is a single scalar, so a selection cannot span two sections — clicking into
+  // a different section always starts a fresh selection there, whatever the
+  // modifier. Within one section this reuses the same resolveSelectionState the
+  // flat canvas uses, so ctrl/shift behave identically.
+  selectSectionCardWithMode: (
+    viewIndex: number | null,
+    sectionIndex: number,
+    cardIndex: number | null,
+    mode: SelectionMode = 'replace',
+    cardCount?: number,
+  ) => {
+    if (viewIndex === null || cardIndex === null) {
+      set({
+        selectedViewIndex: viewIndex,
+        selectedSectionIndex: sectionIndex,
+        selectedCardIndex: null,
+        selectedCardIndices: [],
+        selectionAnchorCardIndex: null,
+      });
+      return;
+    }
+
+    const current = get();
+    const sameSection = current.selectedSectionIndex === sectionIndex;
+    const nextSelection = resolveSelectionState({
+      previous: sameSection
+        ? {
+            selectedCardIndex: current.selectedCardIndex,
+            selectedCardIndices: current.selectedCardIndices,
+            anchorCardIndex: current.selectionAnchorCardIndex,
+          }
+        : { selectedCardIndex: null, selectedCardIndices: [], anchorCardIndex: null },
+      clickedCardIndex: cardIndex,
+      mode: sameSection ? mode : 'replace',
+      cardCount,
+    });
+
+    set({
+      selectedViewIndex: viewIndex,
+      selectedSectionIndex: sectionIndex,
+      selectedCardIndex: nextSelection.selectedCardIndex,
+      selectedCardIndices: nextSelection.selectedCardIndices,
+      selectionAnchorCardIndex: nextSelection.anchorCardIndex,
+    });
+  },
+
+  // Tier 4 slice 4.3a: select several cards within ONE section at once (e.g.
+  // the cards a multi-card paste just landed). The section-view twin of
+  // setSelectedCards, which resets selectedSectionIndex to null.
+  setSelectedSectionCards: (
+    viewIndex: number | null,
+    sectionIndex: number,
+    cardIndices: number[],
+    primaryCardIndex: number | null = null,
+  ) => {
+    const normalized = normalizeCardIndices(cardIndices);
+    const nextPrimary =
+      primaryCardIndex !== null && normalized.includes(primaryCardIndex)
+        ? primaryCardIndex
+        : (normalized[0] ?? null);
+
+    set({
+      selectedViewIndex: viewIndex,
+      selectedSectionIndex: sectionIndex,
+      selectedCardIndex: nextPrimary,
+      selectedCardIndices: normalized,
+      selectionAnchorCardIndex: nextPrimary,
     });
   },
 
