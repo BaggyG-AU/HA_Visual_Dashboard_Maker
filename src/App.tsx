@@ -66,6 +66,8 @@ import {
   moveSection,
   setSectionTitle,
   setViewMaxColumns,
+  convertViewToSections,
+  buildSectionsView,
 } from './utils/sectionsLayout';
 import { HAEntityProvider, useHAEntities } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
@@ -1421,6 +1423,32 @@ const App: React.FC = () => {
     updateConfig({ ...config, views: updatedViews });
   };
 
+  // Tier 4 slice 4.5: convert the current non-sections view into a Sections view.
+  // Flat cards are MIGRATED into one starter section (never destroyed), then the
+  // canvas flips to SectionsCanvas. Card indices don't survive the flat->section
+  // move, so reset the selection.
+  const handleConvertToSections = () => {
+    if (!config || selectedViewIndex === null) return;
+    const currentView = config.views[selectedViewIndex];
+    const nextView = convertViewToSections(currentView);
+    if (nextView === currentView) return;
+
+    const updatedViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
+    updateConfig({ ...config, views: updatedViews });
+    setSelectedSectionCard(selectedViewIndex, null, null);
+    message.success('View converted to a Sections view');
+  };
+
+  // Tier 4 slice 4.5: start a brand-new dashboard whose single view is a blank
+  // Sections view (the "Sections" starter template in the New Dashboard dialog).
+  const createNewSectionsDashboard = () => {
+    const dashboard = { title: 'New Dashboard', views: [buildSectionsView()] };
+    const yamlContent = yamlService.serializeDashboard(dashboard);
+    loadDashboard(yamlContent, null);
+    setSourceDashboard(null);
+    message.success('New Sections dashboard created!');
+  };
+
   const handleOpenConnectionDialog = () => {
     setSettingsTab('connection');
     setSettingsVisible(true);
@@ -2367,6 +2395,7 @@ const App: React.FC = () => {
                           onSectionMove={handleSectionMove}
                           onSectionTitleChange={handleSectionTitleChange}
                           onViewMaxColumnsChange={handleViewMaxColumnsChange}
+                          onConvertToSections={handleConvertToSections}
                           onCardSelect={handleCardSelect}
                           onLayoutChange={handleLayoutChange}
                           onCardDrop={handleCardDrop}
@@ -2404,6 +2433,7 @@ const App: React.FC = () => {
                                   onSectionMove={handleSectionMove}
                                   onSectionTitleChange={handleSectionTitleChange}
                                   onViewMaxColumnsChange={handleViewMaxColumnsChange}
+                                  onConvertToSections={handleConvertToSections}
                                   canPaste={clipboard.cards !== null}
                                 />
                               </div>
@@ -2482,6 +2512,7 @@ const App: React.FC = () => {
           visible={newDashboardDialogVisible}
           onClose={() => setNewDashboardDialogVisible(false)}
           onCreateBlank={createNewDashboard}
+          onCreateSections={createNewSectionsDashboard}
           onCreateFromTemplate={handleCreateFromTemplate}
           onCreateFromEntityType={handleCreateFromEntityType}
           isConnected={isConnected}

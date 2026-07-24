@@ -338,3 +338,51 @@ export const setViewMaxColumns = (view: View, maxColumns: number): View => {
   if (view.max_columns === clamped) return view;
   return { ...view, max_columns: clamped };
 };
+
+// --- Tier 4 slice 4.5: view-type authoring (create / convert to sections) -----
+
+/** HA's Sections view default width (max_columns) when we don't have one. */
+const SECTIONS_DEFAULT_MAX_COLUMNS = 4;
+
+/**
+ * Build a blank HA "sections" view (the New-Sections-dashboard template). One
+ * empty grid section, HA's default max_columns, and a title/path (default
+ * Home/home). This is what "create a Sections view" produces.
+ */
+export const buildSectionsView = (opts: { title?: string; path?: string } = {}): View => ({
+  title: opts.title ?? 'Home',
+  path: opts.path ?? 'home',
+  type: 'sections',
+  max_columns: SECTIONS_DEFAULT_MAX_COLUMNS,
+  sections: [{ type: 'grid', cards: [] }],
+});
+
+/**
+ * Convert a non-sections view into a Sections view (slice 4.5, the FR-026
+ * conversion). VISUAL-FIRST + "never silently destroy user data": the view's flat
+ * `cards` are MIGRATED verbatim into ONE starter grid section (their content is
+ * preserved; only the layout container changes), then the flat `cards` is
+ * emptied so the sections payload is canonical. The internal custom:grid-layout
+ * scaffold (`layout` / `layout_type`) is dropped — it is meaningless for a real
+ * sections view (and only ever the HAVDM canvas scaffold on a HAVDM-created
+ * view). An existing `max_columns` is kept; otherwise defaulted. Already a
+ * sections view -> returned unchanged (reference-equal). Conversion is
+ * ONE-DIRECTIONAL here (-> sections); geometry is NOT translated (migrated cards
+ * fall back to the full-width span-12 default and are re-sized with the section
+ * card tools).
+ */
+export const convertViewToSections = (view: View): View => {
+  if (view.type === 'sections') return view;
+  const flatCards = Array.isArray(view.cards) ? view.cards : [];
+  const next: View = {
+    ...view,
+    type: 'sections',
+    cards: [],
+    sections: [{ type: 'grid', cards: flatCards }],
+    max_columns:
+      typeof view.max_columns === 'number' ? view.max_columns : SECTIONS_DEFAULT_MAX_COLUMNS,
+  };
+  delete next.layout;
+  delete next.layout_type;
+  return next;
+};

@@ -56,6 +56,9 @@ interface SplitViewEditorProps {
   onSectionTitleChange?: (sectionIndex: number, title: string) => void;
   onViewMaxColumnsChange?: (maxColumns: number) => void;
 
+  /** Tier 4 slice 4.5: convert the current non-sections view to a sections view */
+  onConvertToSections?: () => void;
+
   /** Whether paste is available */
   canPaste: boolean;
 }
@@ -89,6 +92,7 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
   onSectionMove,
   onSectionTitleChange,
   onViewMaxColumnsChange,
+  onConvertToSections,
   canPaste,
 }) => {
   const { config, updateConfig } = useDashboardStore();
@@ -370,6 +374,7 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
                 onSectionMove={onSectionMove}
                 onSectionTitleChange={onSectionTitleChange}
                 onViewMaxColumnsChange={onViewMaxColumnsChange}
+                onConvertToSections={onConvertToSections}
                 canPaste={canPaste}
               />
             </div>

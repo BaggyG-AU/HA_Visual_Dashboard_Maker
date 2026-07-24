@@ -17,6 +17,8 @@ import {
   moveSection,
   setSectionTitle,
   setViewMaxColumns,
+  convertViewToSections,
+  buildSectionsView,
 } from '../../src/utils/sectionsLayout';
 import { getCardSizeConstraints } from '../../src/utils/cardSizingContract';
 import type { Card, View, ViewSection } from '../../src/types/dashboard';
@@ -560,6 +562,87 @@ describe('sectionsLayout', () => {
     it('returns the input view unchanged for a no-op', () => {
       const v = sectionsView();
       expect(setViewMaxColumns(v, 3)).toBe(v); // already 3
+    });
+  });
+
+  // --- Tier 4 slice 4.5: view-type authoring (create/convert to sections) -----
+
+  describe('buildSectionsView', () => {
+    it('builds a blank sections view with one empty grid section and default max_columns', () => {
+      const v = buildSectionsView();
+      expect(v.type).toBe('sections');
+      expect(v.max_columns).toBe(4);
+      expect(v.sections).toEqual([{ type: 'grid', cards: [] }]);
+      expect(v.title).toBe('Home');
+      expect(v.path).toBe('home');
+    });
+
+    it('honours a supplied title and path', () => {
+      const v = buildSectionsView({ title: 'Kitchen', path: 'kitchen' });
+      expect(v.title).toBe('Kitchen');
+      expect(v.path).toBe('kitchen');
+    });
+  });
+
+  describe('convertViewToSections', () => {
+    it('migrates flat cards into one starter grid section, preserving them', () => {
+      const view = {
+        title: 'Home',
+        path: 'home',
+        type: 'custom:grid-layout',
+        layout: { grid_template_columns: 'repeat(12, 1fr)' },
+        cards: [
+          { type: 'markdown', content: 'a' },
+          { type: 'button', entity: 'light.x' },
+        ],
+      } as unknown as View;
+      const next = convertViewToSections(view);
+
+      expect(next).not.toBe(view);
+      expect(next.type).toBe('sections');
+      expect(next.cards).toEqual([]); // flat cards emptied (sections is now canonical)
+      const sections = next.sections as ViewSection[];
+      expect(sections).toHaveLength(1);
+      expect(sections[0].type).toBe('grid');
+      expect(sections[0].cards).toEqual([
+        { type: 'markdown', content: 'a' },
+        { type: 'button', entity: 'light.x' },
+      ]);
+      // original untouched
+      expect(view.type).toBe('custom:grid-layout');
+      expect(view.cards).toHaveLength(2);
+    });
+
+    it('drops the internal custom:grid-layout scaffold (layout/layout_type) and defaults max_columns', () => {
+      const view = {
+        type: 'masonry',
+        layout: { grid_template_columns: 'x' },
+        layout_type: 'grid',
+        cards: [],
+      } as unknown as View;
+      const next = convertViewToSections(view);
+      expect('layout' in next).toBe(false);
+      expect('layout_type' in next).toBe(false);
+      expect(next.max_columns).toBe(4);
+    });
+
+    it('preserves an existing max_columns', () => {
+      const view = { type: 'masonry', max_columns: 3, cards: [] } as unknown as View;
+      expect(convertViewToSections(view).max_columns).toBe(3);
+    });
+
+    it('is a no-op (reference-equal) when the view is already a sections view', () => {
+      const view = {
+        type: 'sections',
+        sections: [{ type: 'grid', cards: [] }],
+      } as unknown as View;
+      expect(convertViewToSections(view)).toBe(view);
+    });
+
+    it('treats a view with no cards array as an empty starter section', () => {
+      const view = { type: 'masonry' } as unknown as View;
+      const sections = convertViewToSections(view).sections as ViewSection[];
+      expect(sections[0].cards).toEqual([]);
     });
   });
 });
