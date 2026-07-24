@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Slider } from 'antd';
+import { Input, InputNumber, Slider } from 'antd';
 import type { Card, View } from '../types/dashboard';
 import type { SelectionMode } from '../utils/bulkSelection';
 import { BaseCard } from './BaseCard';
@@ -37,12 +37,21 @@ interface SectionsCanvasProps {
     gridOptions: { columns?: number; rows?: number },
   ) => void;
   canPaste?: boolean;
+  // Tier 4 slice 4.4: section-level authoring (add/remove/reorder sections, edit
+  // section heading, set the view's max_columns). All optional so non-authoring
+  // callers/tests render read-only exactly as before.
+  onSectionAdd?: (atIndex?: number) => void;
+  onSectionRemove?: (sectionIndex: number) => void;
+  onSectionMove?: (fromIndex: number, toIndex: number) => void;
+  onSectionTitleChange?: (sectionIndex: number, title: string) => void;
+  onViewMaxColumnsChange?: (maxColumns: number) => void;
 }
 
 /** HA's section grid cell is ~56px tall with an 8px gap. */
 const SECTION_ROW_HEIGHT = 56;
 const SECTION_GRID_GAP = 8;
 const DRAG_MIME = 'application/x-havdm-section-card';
+const SECTION_DRAG_MIME = 'application/x-havdm-section';
 
 /**
  * Renders a Home Assistant "sections" view on the canvas (Tier 4).
@@ -81,6 +90,11 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
   onCardMove,
   onCardResize,
   canPaste,
+  onSectionAdd,
+  onSectionRemove,
+  onSectionMove,
+  onSectionTitleChange,
+  onViewMaxColumnsChange,
 }) => {
   const sections = Array.isArray(view.sections) ? view.sections : [];
   const columns = sectionsColumnCount(view);
@@ -127,6 +141,14 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
   const dragSourceRef = useRef<SectionCardAddress | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
+  // Section drag-reorder (slice 4.4) runs alongside the card drag but with its
+  // OWN synchronous source ref, so a drop can tell a section-reorder from a
+  // card-move — a section drag takes priority in dropOn. The section drag handle
+  // lives in the section toolbar (outside every card body), so the two gestures
+  // never start together.
+  const sectionDragSourceRef = useRef<number | null>(null);
+  const [sectionDragActive, setSectionDragActive] = useState(false);
+
   const onCardDragStart = (from: SectionCardAddress, event: React.DragEvent): void => {
     dragSourceRef.current = from;
     setDragActive(true);
@@ -140,14 +162,61 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
     setDragActive(false);
   };
 
+  const onSectionDragStart = (sectionIndex: number, event: React.DragEvent): void => {
+    sectionDragSourceRef.current = sectionIndex;
+    setSectionDragActive(true);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData(SECTION_DRAG_MIME, String(sectionIndex));
+    // Never let the section drag also bubble into a card drag/select.
+    event.stopPropagation();
+  };
+
+  const onSectionDragEnd = (): void => {
+    sectionDragSourceRef.current = null;
+    setSectionDragActive(false);
+  };
+
+  // True while EITHER gesture is live; gates every drop target's onDragOver.
+  const dragInProgress = dragActive || sectionDragActive;
+
   const dropOn = (to: SectionCardAddress, event: React.DragEvent): void => {
     event.preventDefault();
     event.stopPropagation();
+    // A section reorder wins whenever a section drag is in progress, wherever the
+    // drop lands (card wrapper or section body) — the target is to.sectionIndex
+    // either way. Card-move is the fallback.
+    const sectionFrom = sectionDragSourceRef.current;
+    if (sectionFrom !== null) {
+      sectionDragSourceRef.current = null;
+      setSectionDragActive(false);
+      if (onSectionMove && sectionFrom !== to.sectionIndex) {
+        onSectionMove(sectionFrom, to.sectionIndex);
+      }
+      return;
+    }
     const from = dragSourceRef.current;
     dragSourceRef.current = null;
     setDragActive(false);
     if (!from || !onCardMove) return;
     onCardMove(from, to);
+  };
+
+  // Section-title editing keeps a LOCAL draft while typing and commits on blur /
+  // Enter, so a rename is ONE undoable edit (not one per keystroke).
+  const [titleDrafts, setTitleDrafts] = useState<Record<number, string>>({});
+  const titleValue = (sectionIndex: number, current: string | undefined): string =>
+    sectionIndex in titleDrafts ? titleDrafts[sectionIndex] : (current ?? '');
+  const onTitleInput = (sectionIndex: number, value: string): void =>
+    setTitleDrafts((drafts) => ({ ...drafts, [sectionIndex]: value }));
+  const commitTitle = (sectionIndex: number): void => {
+    if (!(sectionIndex in titleDrafts)) return;
+    const value = titleDrafts[sectionIndex];
+    setTitleDrafts((drafts) => {
+      const rest = { ...drafts };
+      delete rest[sectionIndex];
+      return rest;
+    });
+    onSectionTitleChange?.(sectionIndex, value);
   };
 
   // --- drag-to-resize (pointer gesture on edge handles) ----------------------
@@ -250,7 +319,52 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
         if (selectedCardIndex !== null) onCardSelect(null, { sectionIndex: null });
       }}
     >
+      {/* View-level authoring toolbar (slice 4.4): add a section + set how many
+          columns the sections view is wide (max_columns). */}
       <div
+        data-testid="sections-canvas-toolbar"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 12,
+          color: '#ddd',
+        }}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          data-testid="section-add-button"
+          onClick={() => onSectionAdd?.()}
+          style={{
+            background: '#1f1f1f',
+            border: '1px solid #434343',
+            color: '#fff',
+            borderRadius: 4,
+            cursor: 'pointer',
+            padding: '4px 12px',
+          }}
+        >
+          + Add section
+        </button>
+        <span style={{ fontSize: 12, color: '#8c8c8c' }}>Columns wide</span>
+        <div data-testid="section-max-columns">
+          <InputNumber
+            size="small"
+            min={1}
+            max={6}
+            value={columns}
+            onChange={(value) => {
+              if (typeof value === 'number' && Number.isFinite(value)) {
+                onViewMaxColumnsChange?.(value);
+              }
+            }}
+          />
+        </div>
+      </div>
+      <div
+        data-testid="sections-canvas-grid"
+        data-max-columns={columns}
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
@@ -281,26 +395,75 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                 gap: SECTION_GRID_GAP,
                 alignContent: 'start',
               }}
-              // Dropping on the section's own area (not a card) appends to the end.
+              // Dropping on the section's own area (not a card) appends a card to
+              // the end, OR reorders a dragged section to this section's slot.
               onDragOver={(event) => {
-                if (dragActive) event.preventDefault();
+                if (dragInProgress) event.preventDefault();
               }}
               onDrop={(event) => dropOn({ sectionIndex: si, cardIndex: cards.length }, event)}
             >
-              {section.title ? (
-                <div
-                  data-testid={`section-heading-${si}`}
+              {/* Per-section authoring header (slice 4.4): drag handle to reorder
+                  the section, an editable heading, and delete. Spans the full grid
+                  width so it never eats a card cell. */}
+              <div
+                data-testid={`section-toolbar-${si}`}
+                style={{
+                  gridColumn: `1 / -1`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  paddingBottom: 2,
+                }}
+                onMouseDown={(event) => event.stopPropagation()}
+              >
+                <span
+                  data-testid={`section-drag-handle-${si}`}
+                  role="button"
+                  aria-label="Reorder section"
+                  title="Drag to reorder section"
+                  draggable
+                  onDragStart={(event) => onSectionDragStart(si, event)}
+                  onDragEnd={onSectionDragEnd}
                   style={{
-                    gridColumn: `1 / -1`,
-                    color: '#fff',
-                    fontWeight: 600,
+                    cursor: 'grab',
+                    color: '#8c8c8c',
                     fontSize: 16,
-                    padding: '4px 2px',
+                    lineHeight: 1,
+                    userSelect: 'none',
+                    padding: '0 2px',
                   }}
                 >
-                  {section.title}
-                </div>
-              ) : null}
+                  ⠿
+                </span>
+                <Input
+                  data-testid={`section-title-input-${si}`}
+                  size="small"
+                  placeholder="Section heading"
+                  value={titleValue(si, section.title)}
+                  onChange={(event) => onTitleInput(si, event.target.value)}
+                  onBlur={() => commitTitle(si)}
+                  onPressEnter={() => commitTitle(si)}
+                  style={{ maxWidth: 220, fontWeight: 600 }}
+                />
+                <button
+                  type="button"
+                  data-testid={`section-delete-${si}`}
+                  aria-label="Delete section"
+                  title="Delete section"
+                  onClick={() => onSectionRemove?.(si)}
+                  style={{
+                    marginLeft: 'auto',
+                    background: 'transparent',
+                    border: '1px solid #434343',
+                    color: '#ff7875',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    padding: '2px 10px',
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
               {cards.map((card, ci) => {
                 const preview = previewFor(si, ci);
                 const cardSpan = preview?.columns ?? sectionCardColumnSpan(card);
@@ -322,9 +485,10 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                       position: 'relative',
                     }}
                     onMouseDownCapture={(event) => rememberMode(si, ci, event)}
-                    // Drop onto a card inserts at that card's position.
+                    // Drop onto a card inserts at that card's position (card move),
+                    // or reorders a dragged section to this card's section.
                     onDragOver={(event) => {
-                      if (dragActive) {
+                      if (dragInProgress) {
                         event.preventDefault();
                         event.stopPropagation();
                       }

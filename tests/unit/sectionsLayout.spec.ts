@@ -12,6 +12,11 @@ import {
   sectionCardColumnSpan,
   sectionCardRowSpan,
   SECTION_GRID_COLUMNS,
+  addSection,
+  removeSection,
+  moveSection,
+  setSectionTitle,
+  setViewMaxColumns,
 } from '../../src/utils/sectionsLayout';
 import { getCardSizeConstraints } from '../../src/utils/cardSizingContract';
 import type { Card, View, ViewSection } from '../../src/types/dashboard';
@@ -422,6 +427,139 @@ describe('sectionsLayout', () => {
       const v = view();
       expect(setSectionCardGridOptions(v, 9, 0, { columns: 3 })).toBe(v);
       expect(setSectionCardGridOptions(v, 0, 9, { columns: 3 })).toBe(v);
+    });
+  });
+
+  // --- Tier 4 slice 4.4: SECTION-level authoring -----------------------------
+
+  describe('addSection', () => {
+    it('appends a new empty grid section by default, immutably', () => {
+      const v = sectionsView();
+      const updated = addSection(v);
+
+      expect(updated).not.toBe(v);
+      expect(v.sections).toHaveLength(2); // original untouched
+      const next = updated.sections as ViewSection[];
+      expect(next).toHaveLength(3);
+      expect(next[2]).toEqual({ type: 'grid', cards: [] });
+      // existing sections carried reference-equal
+      expect(next[0]).toBe(v.sections![0]);
+      expect(next[1]).toBe(v.sections![1]);
+    });
+
+    it('inserts at a given index, clamped to [0, length]', () => {
+      const v = sectionsView();
+      const atFront = addSection(v, 0);
+      expect((atFront.sections as ViewSection[])[0]).toEqual({ type: 'grid', cards: [] });
+      expect((atFront.sections as ViewSection[])[1]).toBe(v.sections![0]);
+
+      const atNegative = addSection(v, -5);
+      expect((atNegative.sections as ViewSection[])[0]).toEqual({ type: 'grid', cards: [] });
+
+      const past = addSection(v, 99);
+      expect((past.sections as ViewSection[])[2]).toEqual({ type: 'grid', cards: [] });
+    });
+
+    it('creates the sections array when the view has none', () => {
+      const v = { type: 'sections' } as unknown as View;
+      const updated = addSection(v);
+      expect(updated.sections).toEqual([{ type: 'grid', cards: [] }]);
+    });
+  });
+
+  describe('removeSection', () => {
+    it('removes the section at the index, leaving siblings intact', () => {
+      const v = sectionsView();
+      const updated = removeSection(v, 0);
+
+      expect(updated).not.toBe(v);
+      expect(v.sections).toHaveLength(2); // original untouched
+      const next = updated.sections as ViewSection[];
+      expect(next).toHaveLength(1);
+      expect(next[0]).toBe(v.sections![1]); // remaining section reference-equal
+    });
+
+    it('returns the input view unchanged for an out-of-range section', () => {
+      const v = sectionsView();
+      expect(removeSection(v, 9)).toBe(v);
+      expect(removeSection(v, -1)).toBe(v);
+    });
+
+    it('can remove the last remaining section (empty sections array)', () => {
+      const v = { type: 'sections', sections: [{ type: 'grid', cards: [] }] } as unknown as View;
+      expect(removeSection(v, 0).sections as ViewSection[]).toEqual([]);
+    });
+  });
+
+  describe('moveSection', () => {
+    it('reorders sections (move first to the end), immutably', () => {
+      const v = sectionsView();
+      const updated = moveSection(v, 0, 1);
+
+      expect(updated).not.toBe(v);
+      const next = updated.sections as ViewSection[];
+      expect(next[0]).toBe(v.sections![1]);
+      expect(next[1]).toBe(v.sections![0]);
+    });
+
+    it('clamps the target index and appends when past the end', () => {
+      const v = sectionsView();
+      const next = moveSection(v, 0, 99).sections as ViewSection[];
+      expect(next[1]).toBe(v.sections![0]);
+    });
+
+    it('returns the input view unchanged for a no-op or out-of-range source', () => {
+      const v = sectionsView();
+      expect(moveSection(v, 1, 1)).toBe(v);
+      expect(moveSection(v, 9, 0)).toBe(v);
+    });
+  });
+
+  describe('setSectionTitle', () => {
+    it('sets a section title immutably, leaving siblings intact', () => {
+      const v = sectionsView();
+      const updated = setSectionTitle(v, 1, 'Climate');
+
+      expect(updated).not.toBe(v);
+      expect((updated.sections as ViewSection[])[1].title).toBe('Climate');
+      expect((updated.sections as ViewSection[])[0]).toBe(v.sections![0]); // sibling ref-equal
+      expect(v.sections![1].title).toBeUndefined(); // original untouched
+    });
+
+    it('removes the title key when set to an empty string', () => {
+      const v = sectionsView(); // section 0 title = 'Lights'
+      const updated = setSectionTitle(v, 0, '');
+      expect('title' in (updated.sections as ViewSection[])[0]).toBe(false);
+    });
+
+    it('returns the input view unchanged for a no-op or out-of-range section', () => {
+      const v = sectionsView();
+      expect(setSectionTitle(v, 0, 'Lights')).toBe(v); // same title
+      expect(setSectionTitle(v, 1, '')).toBe(v); // already untitled -> empty is a no-op
+      expect(setSectionTitle(v, 9, 'x')).toBe(v);
+    });
+  });
+
+  describe('setViewMaxColumns', () => {
+    it('sets max_columns immutably, clamped to >= 1', () => {
+      const v = sectionsView(); // max_columns 3
+      const updated = setViewMaxColumns(v, 5);
+
+      expect(updated).not.toBe(v);
+      expect(updated.max_columns).toBe(5);
+      expect(v.max_columns).toBe(3); // original untouched
+      expect(setViewMaxColumns(v, 0).max_columns).toBe(1);
+      expect(setViewMaxColumns(v, -2).max_columns).toBe(1);
+    });
+
+    it('preserves the sections array reference when only max_columns changes', () => {
+      const v = sectionsView();
+      expect(setViewMaxColumns(v, 6).sections).toBe(v.sections);
+    });
+
+    it('returns the input view unchanged for a no-op', () => {
+      const v = sectionsView();
+      expect(setViewMaxColumns(v, 3)).toBe(v); // already 3
     });
   });
 });
