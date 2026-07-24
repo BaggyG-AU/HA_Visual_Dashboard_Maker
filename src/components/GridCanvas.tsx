@@ -66,6 +66,15 @@ interface GridCanvasProps {
   onCardCopy?: () => void;
   onCardPaste?: () => void;
   onCardDelete?: () => void;
+  // Tier 4 slice 4.3b: sections-view drag-move + drag-resize (no-ops elsewhere).
+  onSectionCardMove?: (
+    from: { sectionIndex: number; cardIndex: number },
+    to: { sectionIndex: number; cardIndex: number },
+  ) => void;
+  onSectionCardResize?: (
+    address: { sectionIndex: number; cardIndex: number },
+    gridOptions: { columns?: number; rows?: number },
+  ) => void;
   canPaste?: boolean;
 }
 
@@ -136,6 +145,8 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   onCardCopy,
   onCardPaste,
   onCardDelete,
+  onSectionCardMove,
+  onSectionCardResize,
   canPaste,
 }) => {
   const cards = view.cards || [];
@@ -231,6 +242,8 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         onCardCopy={onCardCopy}
         onCardPaste={onCardPaste}
         onCardDelete={onCardDelete}
+        onCardMove={onSectionCardMove}
+        onCardResize={onSectionCardResize}
         canPaste={canPaste}
       />
     );

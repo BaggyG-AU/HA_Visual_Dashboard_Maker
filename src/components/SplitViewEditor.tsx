@@ -39,6 +39,16 @@ interface SplitViewEditorProps {
   onCardPaste: () => void;
   onCardDelete: () => void;
 
+  /** Tier 4 slice 4.3b: sections-view drag-move + drag-resize */
+  onSectionCardMove?: (
+    from: { sectionIndex: number; cardIndex: number },
+    to: { sectionIndex: number; cardIndex: number },
+  ) => void;
+  onSectionCardResize?: (
+    address: { sectionIndex: number; cardIndex: number },
+    gridOptions: { columns?: number; rows?: number },
+  ) => void;
+
   /** Whether paste is available */
   canPaste: boolean;
 }
@@ -65,6 +75,8 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
   onCardCopy,
   onCardPaste,
   onCardDelete,
+  onSectionCardMove,
+  onSectionCardResize,
   canPaste,
 }) => {
   const { config, updateConfig } = useDashboardStore();
@@ -339,6 +351,8 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
                 onCardCopy={onCardCopy}
                 onCardPaste={onCardPaste}
                 onCardDelete={onCardDelete}
+                onSectionCardMove={onSectionCardMove}
+                onSectionCardResize={onSectionCardResize}
                 canPaste={canPaste}
               />
             </div>

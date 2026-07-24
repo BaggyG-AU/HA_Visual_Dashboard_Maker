@@ -7,6 +7,10 @@ import {
   addCardToSection,
   removeSectionCards,
   insertCardsIntoSection,
+  moveSectionCard,
+  setSectionCardGridOptions,
+  sectionCardColumnSpan,
+  SECTION_GRID_COLUMNS,
 } from '../../src/utils/sectionsLayout';
 import type { Card, View, ViewSection } from '../../src/types/dashboard';
 
@@ -213,6 +217,177 @@ describe('sectionsLayout', () => {
       const view = sectionsView();
       expect(insertCardsIntoSection(view, 9, [{ type: 'markdown' } as unknown as Card])).toBe(view);
       expect(insertCardsIntoSection(view, 0, [])).toBe(view);
+    });
+  });
+
+  describe('moveSectionCard', () => {
+    const twoSectionView = (): View =>
+      ({
+        type: 'sections',
+        sections: [
+          {
+            type: 'grid',
+            cards: [
+              { type: 'entity', entity: 'a' },
+              { type: 'entity', entity: 'b' },
+              { type: 'entity', entity: 'c' },
+            ],
+          },
+          { type: 'grid', cards: [{ type: 'markdown', content: 'x' }] },
+        ],
+      }) as unknown as View;
+
+    it('reorders WITHIN a section (move first card to the end)', () => {
+      const view = twoSectionView();
+      const updated = moveSectionCard(
+        view,
+        { sectionIndex: 0, cardIndex: 0 },
+        { sectionIndex: 0, cardIndex: 2 },
+      );
+
+      expect(updated).not.toBe(view);
+      expect(view.sections![0].cards).toHaveLength(3); // original untouched
+      expect((updated.sections as ViewSection[])[0].cards).toEqual([
+        { type: 'entity', entity: 'b' },
+        { type: 'entity', entity: 'c' },
+        { type: 'entity', entity: 'a' },
+      ]);
+      // sibling section untouched (reference-equal)
+      expect((updated.sections as ViewSection[])[1]).toBe(view.sections![1]);
+    });
+
+    it('reorders WITHIN a section (move last card before the first)', () => {
+      const view = twoSectionView();
+      const updated = moveSectionCard(
+        view,
+        { sectionIndex: 0, cardIndex: 2 },
+        { sectionIndex: 0, cardIndex: 0 },
+      );
+      expect((updated.sections as ViewSection[])[0].cards).toEqual([
+        { type: 'entity', entity: 'c' },
+        { type: 'entity', entity: 'a' },
+        { type: 'entity', entity: 'b' },
+      ]);
+    });
+
+    it('moves a card BETWEEN sections, inserting at the target index', () => {
+      const view = twoSectionView();
+      const updated = moveSectionCard(
+        view,
+        { sectionIndex: 0, cardIndex: 1 },
+        { sectionIndex: 1, cardIndex: 0 },
+      );
+
+      expect((updated.sections as ViewSection[])[0].cards).toEqual([
+        { type: 'entity', entity: 'a' },
+        { type: 'entity', entity: 'c' },
+      ]);
+      expect((updated.sections as ViewSection[])[1].cards).toEqual([
+        { type: 'entity', entity: 'b' },
+        { type: 'markdown', content: 'x' },
+      ]);
+    });
+
+    it('moves a card BETWEEN sections, appending when the target index is past the end', () => {
+      const view = twoSectionView();
+      const updated = moveSectionCard(
+        view,
+        { sectionIndex: 0, cardIndex: 0 },
+        { sectionIndex: 1, cardIndex: 99 },
+      );
+      expect((updated.sections as ViewSection[])[1].cards).toEqual([
+        { type: 'markdown', content: 'x' },
+        { type: 'entity', entity: 'a' },
+      ]);
+    });
+
+    it('returns the input view unchanged for a no-op (same position) or out-of-range source', () => {
+      const view = twoSectionView();
+      expect(
+        moveSectionCard(view, { sectionIndex: 0, cardIndex: 1 }, { sectionIndex: 0, cardIndex: 1 }),
+      ).toBe(view);
+      expect(
+        moveSectionCard(view, { sectionIndex: 9, cardIndex: 0 }, { sectionIndex: 0, cardIndex: 0 }),
+      ).toBe(view);
+      expect(
+        moveSectionCard(view, { sectionIndex: 0, cardIndex: 9 }, { sectionIndex: 1, cardIndex: 0 }),
+      ).toBe(view);
+      expect(
+        moveSectionCard(view, { sectionIndex: 0, cardIndex: 0 }, { sectionIndex: 9, cardIndex: 0 }),
+      ).toBe(view);
+    });
+  });
+
+  describe('sectionCardColumnSpan', () => {
+    it('defaults a card with no grid_options to a full-width span (SECTION_GRID_COLUMNS)', () => {
+      expect(SECTION_GRID_COLUMNS).toBe(12);
+      expect(sectionCardColumnSpan({ type: 'markdown' } as unknown as Card)).toBe(12);
+    });
+
+    it("treats grid_options.columns === 'full' as a full-width span", () => {
+      expect(
+        sectionCardColumnSpan({ type: 'x', grid_options: { columns: 'full' } } as unknown as Card),
+      ).toBe(12);
+    });
+
+    it('uses a numeric grid_options.columns clamped to [1, 12]', () => {
+      expect(
+        sectionCardColumnSpan({ type: 'x', grid_options: { columns: 6 } } as unknown as Card),
+      ).toBe(6);
+      expect(
+        sectionCardColumnSpan({ type: 'x', grid_options: { columns: 0 } } as unknown as Card),
+      ).toBe(1);
+      expect(
+        sectionCardColumnSpan({ type: 'x', grid_options: { columns: 99 } } as unknown as Card),
+      ).toBe(12);
+    });
+  });
+
+  describe('setSectionCardGridOptions', () => {
+    const view = (): View =>
+      ({
+        type: 'sections',
+        sections: [
+          {
+            type: 'grid',
+            cards: [
+              { type: 'entity', entity: 'a' },
+              { type: 'entity', entity: 'b' },
+            ],
+          },
+          { type: 'grid', cards: [{ type: 'markdown', content: 'x' }] },
+        ],
+      }) as unknown as View;
+
+    it('merges grid_options onto the target card immutably, leaving siblings intact', () => {
+      const v = view();
+      const updated = setSectionCardGridOptions(v, 0, 1, { columns: 6 });
+
+      expect(updated).not.toBe(v);
+      expect(v.sections![0].cards![1]).toEqual({ type: 'entity', entity: 'b' }); // original untouched
+      const target = (updated.sections as ViewSection[])[0].cards![1] as Record<string, unknown>;
+      expect(target.grid_options).toEqual({ columns: 6 });
+      expect(target.type).toBe('entity');
+      // sibling section + sibling card untouched (reference-equal)
+      expect((updated.sections as ViewSection[])[1]).toBe(v.sections![1]);
+      expect((updated.sections as ViewSection[])[0].cards![0]).toBe(v.sections![0].cards![0]);
+    });
+
+    it('merges into an existing grid_options rather than replacing it', () => {
+      const v = {
+        type: 'sections',
+        sections: [{ type: 'grid', cards: [{ type: 'x', grid_options: { columns: 4, rows: 2 } }] }],
+      } as unknown as View;
+      const updated = setSectionCardGridOptions(v, 0, 0, { rows: 5 });
+      expect(
+        ((updated.sections as ViewSection[])[0].cards![0] as Record<string, unknown>).grid_options,
+      ).toEqual({ columns: 4, rows: 5 });
+    });
+
+    it('returns the input view unchanged for an out-of-range section or card', () => {
+      const v = view();
+      expect(setSectionCardGridOptions(v, 9, 0, { columns: 3 })).toBe(v);
+      expect(setSectionCardGridOptions(v, 0, 9, { columns: 3 })).toBe(v);
     });
   });
 });
