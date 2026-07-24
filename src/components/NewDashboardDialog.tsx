@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { Modal, Card, Row, Col, Tooltip } from 'antd';
-import { FileAddOutlined, AppstoreAddOutlined, DatabaseOutlined } from '@ant-design/icons';
+import {
+  FileAddOutlined,
+  AppstoreAddOutlined,
+  DatabaseOutlined,
+  LayoutOutlined,
+} from '@ant-design/icons';
 import { EntityTypeDashboardWizard } from './EntityTypeDashboardWizard';
 
 interface NewDashboardDialogProps {
   visible: boolean;
   onClose: () => void;
   onCreateBlank: () => void;
+  onCreateSections: () => void;
   onCreateFromTemplate: () => void;
   onCreateFromEntityType: (dashboardYaml: string, title: string) => void;
   isConnected: boolean;
@@ -16,6 +22,7 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
   visible,
   onClose,
   onCreateBlank,
+  onCreateSections,
   onCreateFromTemplate,
   onCreateFromEntityType,
   isConnected,
@@ -24,6 +31,11 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
 
   const handleBlankClick = () => {
     onCreateBlank();
+    onClose();
+  };
+
+  const handleSectionsClick = () => {
+    onCreateSections();
     onClose();
   };
 
@@ -60,7 +72,7 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
         </div>
 
         <Row gutter={[16, 16]}>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={6}>
             <Tooltip title="Start from scratch with an empty dashboard. Add cards manually from the palette.">
               <Card
                 hoverable
@@ -81,7 +93,26 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
             </Tooltip>
           </Col>
 
-          <Col xs={24} md={8}>
+          <Col xs={24} md={6}>
+            <Tooltip title="Start with a Home Assistant Sections view (the modern grid layout). Add sections and cards with drag-and-drop authoring.">
+              <Card
+                hoverable
+                onClick={handleSectionsClick}
+                style={{ textAlign: 'center', height: '100%', cursor: 'pointer' }}
+                data-testid="new-dashboard-sections-option"
+              >
+                <div style={{ padding: '20px 0' }}>
+                  <LayoutOutlined style={{ fontSize: 48, color: '#722ed1', marginBottom: 16 }} />
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 600 }}>
+                    Sections View
+                  </h3>
+                  <p style={{ margin: 0, color: '#666', fontSize: 13 }}>HA grid layout (default)</p>
+                </div>
+              </Card>
+            </Tooltip>
+          </Col>
+
+          <Col xs={24} md={6}>
             <Tooltip title="Use a pre-built template as a starting point. Templates include common layouts and card configurations.">
               <Card
                 hoverable
@@ -102,7 +133,7 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
             </Tooltip>
           </Col>
 
-          <Col xs={24} md={8}>
+          <Col xs={24} md={6}>
             <Tooltip
               title={
                 isConnected

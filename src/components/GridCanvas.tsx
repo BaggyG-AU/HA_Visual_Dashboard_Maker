@@ -81,6 +81,8 @@ interface GridCanvasProps {
   onSectionMove?: (fromIndex: number, toIndex: number) => void;
   onSectionTitleChange?: (sectionIndex: number, title: string) => void;
   onViewMaxColumnsChange?: (maxColumns: number) => void;
+  // Tier 4 slice 4.5: convert this (non-sections) view into a sections view.
+  onConvertToSections?: () => void;
   canPaste?: boolean;
 }
 
@@ -158,6 +160,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   onSectionMove,
   onSectionTitleChange,
   onViewMaxColumnsChange,
+  onConvertToSections,
   canPaste,
 }) => {
   const cards = view.cards || [];
@@ -265,6 +268,53 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
     );
   }
 
+  // Tier 4 slice 4.5: offer a one-click conversion of this (non-sections) view
+  // into an HA Sections view so the section-authoring surface (4.1..4.4) is
+  // reachable without importing. Rendered ONLY on the EMPTY-view branch below:
+  // a persistent in-flow banner on a populated flat canvas shifts card geometry
+  // and breaks the position-sensitive layout.visual snapshots. Converting a
+  // POPULATED view is the view-type editor's job (slice 4.6, which reuses
+  // convertViewToSections — cards are preserved either way).
+  const convertBanner = onConvertToSections ? (
+    <div
+      data-testid="convert-to-sections-banner"
+      onMouseDown={(event) => event.stopPropagation()}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 12,
+        padding: '8px 12px',
+        background: '#1f1f1f',
+        border: '1px solid #434343',
+        borderRadius: 6,
+        color: '#ddd',
+      }}
+    >
+      <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+        This empty view uses the Grid layout. Convert it to a Home Assistant Sections view for
+        section-based authoring.
+      </span>
+      <button
+        type="button"
+        data-testid="convert-to-sections-button"
+        onClick={onConvertToSections}
+        style={{
+          marginLeft: 'auto',
+          background: '#177ddc',
+          border: 'none',
+          color: '#fff',
+          borderRadius: 4,
+          cursor: 'pointer',
+          padding: '4px 12px',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        Convert to Sections view
+      </button>
+    </div>
+  ) : null;
+
   if (cards.length === 0) {
     return (
       <div
@@ -272,6 +322,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
+        {convertBanner}
         <GridLayout
           className="layout"
           layout={[]}
