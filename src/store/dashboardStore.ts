@@ -20,6 +20,11 @@ interface DashboardActions {
   endBatchUpdate: () => void;
   setSelectedView: (index: number | null) => void;
   setSelectedCard: (viewIndex: number | null, cardIndex: number | null) => void;
+  setSelectedSectionCard: (
+    viewIndex: number | null,
+    sectionIndex: number | null,
+    cardIndex: number | null,
+  ) => void;
   setSelectedCards: (
     viewIndex: number | null,
     cardIndices: number[],
@@ -45,6 +50,11 @@ type SelectionState = {
   selectedCardIndices: number[];
   selectionAnchorCardIndex: number | null;
   historyNavigationVersion: number;
+  // Tier 4: which section a section-view card selection targets. `null` means
+  // the selection addresses the flat `view.cards` (every non-sections view, and
+  // the default). A number addresses `view.sections[i].cards`. Every flat
+  // selection path resets this to null so non-sections behaviour is unchanged.
+  selectedSectionIndex: number | null;
 };
 
 type DashboardStore = DashboardState & DashboardActions & HistoryState & SelectionState;
@@ -66,6 +76,7 @@ const initialState: DashboardState & HistoryState & SelectionState = {
   selectedCardIndex: null,
   selectedCardIndices: [],
   selectionAnchorCardIndex: null,
+  selectedSectionIndex: null,
   historyNavigationVersion: 0,
   isBatching: false,
   past: [],
@@ -158,12 +169,32 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       selectedCardIndex: null,
       selectedCardIndices: [],
       selectionAnchorCardIndex: null,
+      selectedSectionIndex: null,
     });
   },
 
   setSelectedCard: (viewIndex: number | null, cardIndex: number | null) => {
     set({
       selectedViewIndex: viewIndex,
+      selectedCardIndex: cardIndex,
+      selectedCardIndices: cardIndex === null ? [] : [cardIndex],
+      selectionAnchorCardIndex: cardIndex,
+      selectedSectionIndex: null,
+    });
+  },
+
+  // Tier 4: select a single card inside an HA "sections" view, addressed by
+  // (sectionIndex, cardIndex). Single-select only this slice — multi-select /
+  // range / clipboard within sections are deferred. A null cardIndex keeps the
+  // section context but clears the card (e.g. deselect within the section).
+  setSelectedSectionCard: (
+    viewIndex: number | null,
+    sectionIndex: number | null,
+    cardIndex: number | null,
+  ) => {
+    set({
+      selectedViewIndex: viewIndex,
+      selectedSectionIndex: sectionIndex,
       selectedCardIndex: cardIndex,
       selectedCardIndices: cardIndex === null ? [] : [cardIndex],
       selectionAnchorCardIndex: cardIndex,
@@ -186,6 +217,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       selectedCardIndex: nextPrimary,
       selectedCardIndices: normalized,
       selectionAnchorCardIndex: nextPrimary,
+      selectedSectionIndex: null,
     });
   },
 
@@ -201,6 +233,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         selectedCardIndex: null,
         selectedCardIndices: [],
         selectionAnchorCardIndex: null,
+        selectedSectionIndex: null,
       });
       return;
     }
@@ -222,6 +255,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       selectedCardIndex: nextSelection.selectedCardIndex,
       selectedCardIndices: nextSelection.selectedCardIndices,
       selectionAnchorCardIndex: nextSelection.anchorCardIndex,
+      selectedSectionIndex: null,
     });
   },
 

@@ -5,6 +5,7 @@ import { View, Card } from '../types/dashboard';
 import { getBackgroundLayerStyle } from '../utils/backgroundStyle';
 import { BaseCard } from './BaseCard';
 import { CardContextMenu } from './CardContextMenu';
+import { SectionsCanvas } from './SectionsCanvas';
 import { generateMasonryLayout, getCardSizeConstraints } from '../utils/cardSizingContract';
 import { isLayoutCardGrid, convertLayoutCardToGridLayout } from '../utils/layoutCardParser';
 import { logger } from '../services/logger';
@@ -52,9 +53,12 @@ interface GridCanvasProps {
   view: View;
   selectedCardIndex: number | null;
   selectedCardIndices?: number[];
+  // Tier 4: for an HA "sections" view, which section the current card selection
+  // targets (null = the flat `view.cards`, i.e. every non-sections view).
+  selectedSectionIndex?: number | null;
   onCardSelect: (
     cardIndex: number | null,
-    options?: { mode?: 'replace' | 'toggle' | 'range' },
+    options?: { mode?: 'replace' | 'toggle' | 'range'; sectionIndex?: number | null },
   ) => void;
   onLayoutChange: (layout: Layout) => void;
   onCardDrop?: (cardType: string, x?: number, y?: number) => void;
@@ -124,6 +128,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   view,
   selectedCardIndex,
   selectedCardIndices = [],
+  selectedSectionIndex = null,
   onCardSelect,
   onLayoutChange,
   onCardDrop,
@@ -209,6 +214,21 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
   };
+
+  // Tier 4: an HA "sections" view keeps its cards under `section.cards`, so
+  // `view.cards` is empty and the flat paths below (incl. the empty-view
+  // placeholder) would render it blank. Delegate to SectionsCanvas. Placed after
+  // all hooks above so hook order stays unconditional.
+  if (view.type === 'sections') {
+    return (
+      <SectionsCanvas
+        view={view}
+        selectedSectionIndex={selectedSectionIndex}
+        selectedCardIndex={selectedCardIndex}
+        onCardSelect={onCardSelect}
+      />
+    );
+  }
 
   if (cards.length === 0) {
     return (

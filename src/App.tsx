@@ -53,6 +53,7 @@ import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
 import { getCardSizeConstraints } from './utils/cardSizingContract';
+import { resolveViewCards, updateSectionCard } from './utils/sectionsLayout';
 import { HAEntityProvider, useHAEntities } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
 import { SettingsDialog } from './components/SettingsDialog';
@@ -101,6 +102,10 @@ type DashboardTestApi = {
   canRedo: () => boolean;
   undo: () => void;
   redo: () => void;
+  // Test-only: load a whole-dashboard YAML string (e.g. a `type: sections`
+  // view) without driving the file-open dialog. Mirrors the real load path
+  // (loadDashboard -> importDashboard), so it exercises production parsing.
+  loadYaml: (yaml: string) => void;
 };
 
 interface RemapWatcherProps {
@@ -216,6 +221,7 @@ const App: React.FC = () => {
     selectedViewIndex,
     selectedCardIndex,
     selectedCardIndices,
+    selectedSectionIndex,
     historyNavigationVersion,
     past,
     future,
@@ -227,6 +233,7 @@ const App: React.FC = () => {
     markClean,
     setSelectedView,
     setSelectedCard,
+    setSelectedSectionCard,
     setSelectedCards,
     selectCardWithMode,
     undo,
@@ -572,8 +579,20 @@ const App: React.FC = () => {
   const resolveSelectedIndices = (cardsLength: number): number[] =>
     resolveOperationSelection(selectedCardIndex, selectedCardIndices, cardsLength);
 
-  const handleCardSelect = (cardIndex: number | null, options?: { mode?: SelectionMode }) => {
+  const handleCardSelect = (
+    cardIndex: number | null,
+    options?: { mode?: SelectionMode; sectionIndex?: number | null },
+  ) => {
     if (selectedViewIndex === null) return;
+
+    // Tier 4: a section-view card carries its sectionIndex. Single-select only
+    // this slice (multi-select/range within sections is deferred), so route
+    // straight to the section setter. A null sectionIndex/cardIndex falls
+    // through to the flat path below, which also resets selectedSectionIndex.
+    if (options?.sectionIndex != null && cardIndex !== null) {
+      setSelectedSectionCard(selectedViewIndex, options.sectionIndex, cardIndex);
+      return;
+    }
 
     const currentCards = config?.views?.[selectedViewIndex]?.cards ?? [];
     if (cardIndex === null) {
@@ -786,6 +805,25 @@ const App: React.FC = () => {
     beginBatchUpdate();
 
     const currentView = config.views[selectedViewIndex];
+
+    // Tier 4: write a single card back into its section (sections are
+    // single-select this slice, so no bulk apply).
+    if (selectedSectionIndex !== null) {
+      const nextView = updateSectionCard(
+        currentView,
+        selectedSectionIndex,
+        selectedCardIndex,
+        updatedCard,
+      );
+      if (nextView !== currentView) {
+        const updatedViews = config.views.map((view, i) =>
+          i === selectedViewIndex ? nextView : view,
+        );
+        applyBatchedConfig({ ...config, views: updatedViews });
+      }
+      return;
+    }
+
     if (currentView.cards && currentView.cards[selectedCardIndex]) {
       const targetIndices = resolveSelectedIndices(currentView.cards.length);
       const { cards: updatedCards } = applyBulkCardUpdate(
@@ -805,6 +843,31 @@ const App: React.FC = () => {
     if (!config || selectedViewIndex === null || selectedCardIndex === null) return;
 
     const currentView = config.views[selectedViewIndex];
+
+    // Tier 4: commit a single card back into its section, then re-select it so
+    // the Properties panel refreshes (mirrors the flat re-select dance below).
+    if (selectedSectionIndex !== null) {
+      const nextView = updateSectionCard(
+        currentView,
+        selectedSectionIndex,
+        selectedCardIndex,
+        updatedCard,
+      );
+      if (nextView !== currentView) {
+        const updatedViews = config.views.map((view, i) =>
+          i === selectedViewIndex ? nextView : view,
+        );
+        applyBatchedConfig({ ...config, views: updatedViews });
+        endBatchUpdate();
+        message.success({ content: 'Card updated', key: 'card-updated', duration: 1.5 });
+        const viewIndex = selectedViewIndex;
+        const sectionIndex = selectedSectionIndex;
+        const cardIndex = selectedCardIndex;
+        setSelectedSectionCard(viewIndex, sectionIndex, null);
+        setTimeout(() => setSelectedSectionCard(viewIndex, sectionIndex, cardIndex), 0);
+      }
+      return;
+    }
 
     if (currentView.cards && currentView.cards[selectedCardIndex]) {
       const targetIndices = resolveSelectedIndices(currentView.cards.length);
@@ -842,6 +905,12 @@ const App: React.FC = () => {
 
   // Clipboard operations
   const handleCardCut = () => {
+    // Tier 4: cut/copy/paste/delete operate on the flat `view.cards` array;
+    // within a Sections view (single-select this slice) they are deferred.
+    if (selectedSectionIndex !== null) {
+      message.info('Not available in a Sections view yet');
+      return;
+    }
     if (!config || selectedViewIndex === null) {
       message.warning('No card selected');
       return;
@@ -878,6 +947,10 @@ const App: React.FC = () => {
   };
 
   const handleCardCopy = () => {
+    if (selectedSectionIndex !== null) {
+      message.info('Not available in a Sections view yet');
+      return;
+    }
     if (!config || selectedViewIndex === null) {
       message.warning('No card selected');
       return;
@@ -914,6 +987,10 @@ const App: React.FC = () => {
   };
 
   const handleCardPaste = () => {
+    if (selectedSectionIndex !== null) {
+      message.info('Not available in a Sections view yet');
+      return;
+    }
     if (!clipboard.cards || clipboard.cards.length === 0) {
       message.warning('Clipboard is empty');
       return;
@@ -990,6 +1067,10 @@ const App: React.FC = () => {
   };
 
   const handleCardDelete = () => {
+    if (selectedSectionIndex !== null) {
+      message.info('Not available in a Sections view yet');
+      return;
+    }
     if (!config || selectedViewIndex === null) {
       message.warning('No card selected');
       return;
@@ -1133,6 +1214,9 @@ const App: React.FC = () => {
       redo: () => {
         ignoreNextLayoutChangeRef.current = true;
         useDashboardStore.getState().redo();
+      },
+      loadYaml: (yaml: string) => {
+        useDashboardStore.getState().loadDashboard(yaml, null);
       },
     };
 
@@ -1958,6 +2042,7 @@ const App: React.FC = () => {
                           selectedViewIndex={selectedViewIndex}
                           selectedCardIndex={selectedCardIndex}
                           selectedCardIndices={selectedCardIndices}
+                          selectedSectionIndex={selectedSectionIndex}
                           onCardSelect={handleCardSelect}
                           onLayoutChange={handleLayoutChange}
                           onCardDrop={handleCardDrop}
@@ -1980,6 +2065,7 @@ const App: React.FC = () => {
                                   view={view}
                                   selectedCardIndex={selectedCardIndex}
                                   selectedCardIndices={selectedCardIndices}
+                                  selectedSectionIndex={selectedSectionIndex}
                                   onCardSelect={handleCardSelect}
                                   onLayoutChange={handleLayoutChange}
                                   onCardDrop={handleCardDrop}
@@ -2008,7 +2094,9 @@ const App: React.FC = () => {
               <PropertiesPanel
                 card={
                   config && selectedViewIndex !== null && selectedCardIndex !== null
-                    ? config.views[selectedViewIndex]?.cards?.[selectedCardIndex] || null
+                    ? resolveViewCards(config.views[selectedViewIndex], selectedSectionIndex)[
+                        selectedCardIndex
+                      ] || null
                     : null
                 }
                 cardIndex={selectedCardIndex}
@@ -2135,6 +2223,9 @@ const App: React.FC = () => {
           <div
             data-testid="selection-debug-state"
             data-selected-view={selectedViewIndex === null ? 'null' : String(selectedViewIndex)}
+            data-selected-section={
+              selectedSectionIndex === null ? 'null' : String(selectedSectionIndex)
+            }
             data-selected-card={selectedCardIndex === null ? 'null' : String(selectedCardIndex)}
             data-selected-cards={selectedCardIndices.join(',')}
             data-selected-cards-count={String(selectedCardIndices.length)}
