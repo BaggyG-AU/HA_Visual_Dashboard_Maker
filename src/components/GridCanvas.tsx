@@ -225,7 +225,13 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         view={view}
         selectedSectionIndex={selectedSectionIndex}
         selectedCardIndex={selectedCardIndex}
+        selectedCardIndices={selectedCardIndices}
         onCardSelect={onCardSelect}
+        onCardCut={onCardCut}
+        onCardCopy={onCardCopy}
+        onCardPaste={onCardPaste}
+        onCardDelete={onCardDelete}
+        canPaste={canPaste}
       />
     );
   }

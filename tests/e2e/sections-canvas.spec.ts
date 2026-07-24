@@ -88,4 +88,101 @@ test.describe('Sections view canvas (Tier 4)', () => {
       await close(ctx);
     }
   });
+
+  // --- Tier 4 slice 4.3a: authoring cards inside sections ---------------------
+
+  test('adds a palette card into the selected section', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { canvas, palette, window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+      await expect(window.getByTestId('sections-canvas')).toBeVisible();
+      await expect(window.getByTestId('canvas-card')).toHaveCount(3);
+
+      // Select a card in section 1 so that section — not the default first one —
+      // is the add target.
+      await canvas.selectCard(2);
+      await expect(window.getByTestId('selection-debug-state')).toHaveAttribute(
+        'data-selected-section',
+        '1',
+      );
+
+      await palette.addCard('markdown');
+
+      // The new card landed in section 1, not the flat (empty) view.cards.
+      await expect(window.getByTestId('canvas-card')).toHaveCount(4);
+      await expect(
+        window.getByTestId('sections-canvas-section-1').getByTestId('canvas-card'),
+      ).toHaveCount(2);
+      await expect(
+        window.getByTestId('sections-canvas-section-0').getByTestId('canvas-card'),
+      ).toHaveCount(2);
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  test('deletes multi-selected cards from a section', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { canvas, window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+      await expect(window.getByTestId('canvas-card')).toHaveCount(3);
+
+      // Ctrl-click both cards of section 0 — multi-select is allowed WITHIN a
+      // single section.
+      await canvas.selectCard(0);
+      await canvas.toggleCardSelection(1);
+
+      await ctx.appDSL.deleteSelection();
+
+      // Both section-0 cards are gone; section 1 is untouched.
+      await expect(window.getByTestId('canvas-card')).toHaveCount(1);
+      await expect(window.getByTestId('sections-canvas')).not.toContainText('SEC-ORIGINAL');
+      await expect(window.getByTestId('sections-canvas')).toContainText('Second section card');
+      await expect(window.getByTestId('section-empty-0')).toBeVisible();
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  test('cut and paste moves a card between sections', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { canvas, window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+      await expect(window.getByTestId('canvas-card')).toHaveCount(3);
+
+      // Cut SEC-ORIGINAL out of section 0...
+      await canvas.selectCard(0);
+      await ctx.appDSL.cut();
+
+      // ...select into section 1 and paste: the card moves there.
+      await canvas.selectCard(2);
+      await expect(window.getByTestId('selection-debug-state')).toHaveAttribute(
+        'data-selected-section',
+        '1',
+      );
+      await ctx.appDSL.paste();
+
+      // Card count is unchanged (a move, not a copy) and SEC-ORIGINAL now lives
+      // in section 1.
+      await expect(window.getByTestId('canvas-card')).toHaveCount(3);
+      await expect(window.getByTestId('sections-canvas-section-1')).toContainText('SEC-ORIGINAL');
+      await expect(window.getByTestId('sections-canvas-section-0')).not.toContainText(
+        'SEC-ORIGINAL',
+      );
+      await expect(
+        window.getByTestId('sections-canvas-section-0').getByTestId('canvas-card'),
+      ).toHaveCount(1);
+    } finally {
+      await close(ctx);
+    }
+  });
 });
