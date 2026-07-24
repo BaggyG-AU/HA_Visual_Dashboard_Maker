@@ -307,4 +307,69 @@ test.describe('Sections view canvas (Tier 4)', () => {
       await close(ctx);
     }
   });
+
+  // --- Tier 4 slice 4.3c: 56px row parity + precise-mode sliders --------------
+
+  test('renders cards on the 56px row grid with an estimated row span', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+
+      // Every card now carries a concrete row span (explicit grid_options.rows,
+      // else the content-height estimate) — a positive integer, not blank.
+      const cards = window.getByTestId('sections-canvas-section-0').getByTestId('canvas-card');
+      const count = await cards.count();
+      expect(count).toBeGreaterThan(0);
+      for (let i = 0; i < count; i++) {
+        const rows = Number(await cards.nth(i).getAttribute('data-grid-rows'));
+        expect(rows).toBeGreaterThanOrEqual(1);
+      }
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  test('precise-mode sliders set exact grid_options columns and rows', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { canvas, window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+
+      const targetCard = window
+        .getByTestId('sections-canvas-section-0')
+        .getByTestId('canvas-card')
+        .nth(0);
+      await expect(targetCard).toHaveAttribute('data-grid-columns', '12');
+
+      await canvas.selectCard(0);
+      await expect(window.getByTestId('section-precise-panel-0-0')).toBeVisible();
+
+      // Columns slider: nudge down from full width -> persisted columns < 12.
+      const colSlider = window
+        .getByTestId('section-precise-columns-0-0')
+        .locator('[role="slider"]');
+      await colSlider.focus();
+      await window.keyboard.press('ArrowLeft');
+      await window.keyboard.press('ArrowLeft');
+      await expect
+        .poll(async () => Number(await targetCard.getAttribute('data-grid-columns')))
+        .toBeLessThan(12);
+
+      // Rows slider: nudge up -> persisted rows increases by 1.
+      const rowsBefore = Number(await targetCard.getAttribute('data-grid-rows'));
+      const rowSlider = window.getByTestId('section-precise-rows-0-0').locator('[role="slider"]');
+      await rowSlider.focus();
+      await window.keyboard.press('ArrowRight');
+      await expect
+        .poll(async () => Number(await targetCard.getAttribute('data-grid-rows')))
+        .toBe(rowsBefore + 1);
+    } finally {
+      await close(ctx);
+    }
+  });
 });

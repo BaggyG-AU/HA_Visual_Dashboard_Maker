@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { Slider } from 'antd';
 import type { Card, View } from '../types/dashboard';
 import type { SelectionMode } from '../utils/bulkSelection';
 import { BaseCard } from './BaseCard';
@@ -7,6 +8,7 @@ import {
   sectionsColumnCount,
   sectionColumnSpan,
   sectionCardColumnSpan,
+  sectionCardRowSpan,
   SECTION_GRID_COLUMNS,
 } from '../utils/sectionsLayout';
 
@@ -41,13 +43,6 @@ interface SectionsCanvasProps {
 const SECTION_ROW_HEIGHT = 56;
 const SECTION_GRID_GAP = 8;
 const DRAG_MIME = 'application/x-havdm-section-card';
-
-const readGridRows = (card: Card): number | undefined => {
-  const raw = (card as Record<string, unknown>).grid_options;
-  if (!raw || typeof raw !== 'object') return undefined;
-  const rows = (raw as { rows?: unknown }).rows;
-  return typeof rows === 'number' && Number.isFinite(rows) ? rows : undefined;
-};
 
 /**
  * Renders a Home Assistant "sections" view on the canvas (Tier 4).
@@ -189,7 +184,7 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
       ? (sectionEl.clientWidth + SECTION_GRID_GAP) / SECTION_GRID_COLUMNS
       : 0;
     const startColumns = sectionCardColumnSpan(card);
-    const startRows = readGridRows(card) ?? 1;
+    const startRows = sectionCardRowSpan(card);
     resizeRef.current = {
       address,
       axis,
@@ -277,6 +272,12 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                 gridColumn: `span ${span}`,
                 display: 'grid',
                 gridTemplateColumns: `repeat(${SECTION_GRID_COLUMNS}, minmax(0, 1fr))`,
+                // 4.3c: true HA sections grid — fixed 56px rows + dense packing
+                // so smaller cards backfill gaps (HA's Z-grid default). Dense is
+                // CSS-only: DOM order stays array order, so drag-reorder (which
+                // addresses by array index) is unaffected.
+                gridAutoRows: `${SECTION_ROW_HEIGHT}px`,
+                gridAutoFlow: 'row dense',
                 gap: SECTION_GRID_GAP,
                 alignContent: 'start',
               }}
@@ -303,7 +304,9 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
               {cards.map((card, ci) => {
                 const preview = previewFor(si, ci);
                 const cardSpan = preview?.columns ?? sectionCardColumnSpan(card);
-                const rows = preview?.rows ?? readGridRows(card);
+                // 4.3c: on the true 56px grid a card always spans a whole number
+                // of rows (explicit grid_options.rows, else the content estimate).
+                const rowSpan = preview?.rows ?? sectionCardRowSpan(card);
                 const selected = isSelected(si, ci);
                 return (
                   <div
@@ -312,10 +315,10 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                     data-section-index={si}
                     data-card-index={ci}
                     data-grid-columns={cardSpan}
-                    data-grid-rows={rows ?? ''}
+                    data-grid-rows={rowSpan}
                     style={{
                       gridColumn: `span ${cardSpan}`,
-                      minHeight: rows ? rows * SECTION_ROW_HEIGHT : undefined,
+                      gridRow: `span ${rowSpan}`,
                       position: 'relative',
                     }}
                     onMouseDownCapture={(event) => rememberMode(si, ci, event)}
@@ -328,48 +331,53 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                     }}
                     onDrop={(event) => dropOn({ sectionIndex: si, cardIndex: ci }, event)}
                   >
-                    <CardContextMenu
-                      onCut={() => {
-                        if (!selected) onCardSelect(ci, { sectionIndex: si });
-                        onCardCut?.();
-                      }}
-                      onCopy={() => {
-                        if (!selected) onCardSelect(ci, { sectionIndex: si });
-                        onCardCopy?.();
-                      }}
-                      onPaste={() => {
-                        if (!selected) onCardSelect(ci, { sectionIndex: si });
-                        onCardPaste?.();
-                      }}
-                      onDelete={() => {
-                        if (!selected) onCardSelect(ci, { sectionIndex: si });
-                        onCardDelete?.();
-                      }}
-                      canPaste={canPaste ?? false}
-                    >
-                      {/* Inner element is the drag-MOVE source; the outer wrapper
-                          hosts the resize handles so a resize never starts a move. */}
-                      <div
-                        data-testid={`section-card-body-${si}-${ci}`}
-                        draggable
-                        onDragStart={(event) =>
-                          onCardDragStart({ sectionIndex: si, cardIndex: ci }, event)
-                        }
-                        onDragEnd={onCardDragEnd}
-                        style={{ cursor: 'grab' }}
+                    {/* Content clips to the card's allotted 56px cell (HA-faithful);
+                        the resize handles + precise panel are SIBLINGS of this
+                        clipping wrapper so they are never clipped. */}
+                    <div style={{ height: '100%', overflow: 'hidden' }}>
+                      <CardContextMenu
+                        onCut={() => {
+                          if (!selected) onCardSelect(ci, { sectionIndex: si });
+                          onCardCut?.();
+                        }}
+                        onCopy={() => {
+                          if (!selected) onCardSelect(ci, { sectionIndex: si });
+                          onCardCopy?.();
+                        }}
+                        onPaste={() => {
+                          if (!selected) onCardSelect(ci, { sectionIndex: si });
+                          onCardPaste?.();
+                        }}
+                        onDelete={() => {
+                          if (!selected) onCardSelect(ci, { sectionIndex: si });
+                          onCardDelete?.();
+                        }}
+                        canPaste={canPaste ?? false}
                       >
-                        <BaseCard
-                          card={card}
-                          isSelected={selected}
-                          onClick={(event) =>
-                            onCardSelect(ci, {
-                              sectionIndex: si,
-                              mode: consumeSelectionMode(si, ci, event),
-                            })
+                        {/* Inner element is the drag-MOVE source; the outer wrapper
+                            hosts the resize handles so a resize never starts a move. */}
+                        <div
+                          data-testid={`section-card-body-${si}-${ci}`}
+                          draggable
+                          onDragStart={(event) =>
+                            onCardDragStart({ sectionIndex: si, cardIndex: ci }, event)
                           }
-                        />
-                      </div>
-                    </CardContextMenu>
+                          onDragEnd={onCardDragEnd}
+                          style={{ cursor: 'grab', height: '100%' }}
+                        >
+                          <BaseCard
+                            card={card}
+                            isSelected={selected}
+                            onClick={(event) =>
+                              onCardSelect(ci, {
+                                sectionIndex: si,
+                                mode: consumeSelectionMode(si, ci, event),
+                              })
+                            }
+                          />
+                        </div>
+                      </CardContextMenu>
+                    </div>
 
                     {selected ? (
                       <>
@@ -409,6 +417,68 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                             background: 'transparent',
                           }}
                         />
+                        {/* 4.3c: precise-mode numeric sliders (exact columns/rows). */}
+                        <div
+                          data-testid={`section-precise-panel-${si}-${ci}`}
+                          onMouseDown={(event) => event.stopPropagation()}
+                          style={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            width: 148,
+                            padding: '6px 10px',
+                            background: 'rgba(20,20,20,0.92)',
+                            border: '1px solid #434343',
+                            borderRadius: 6,
+                            zIndex: 5,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2,
+                          }}
+                        >
+                          <div style={{ color: '#bbb', fontSize: 11 }}>Width {cardSpan}/12</div>
+                          <div data-testid={`section-precise-columns-${si}-${ci}`}>
+                            <Slider
+                              min={1}
+                              max={SECTION_GRID_COLUMNS}
+                              value={cardSpan}
+                              onChange={(value) =>
+                                setResizePreview({
+                                  address: { sectionIndex: si, cardIndex: ci },
+                                  columns: value as number,
+                                })
+                              }
+                              onChangeComplete={(value) => {
+                                setResizePreview(null);
+                                onCardResize?.(
+                                  { sectionIndex: si, cardIndex: ci },
+                                  { columns: value as number },
+                                );
+                              }}
+                            />
+                          </div>
+                          <div style={{ color: '#bbb', fontSize: 11 }}>Height {rowSpan}</div>
+                          <div data-testid={`section-precise-rows-${si}-${ci}`}>
+                            <Slider
+                              min={1}
+                              max={20}
+                              value={rowSpan}
+                              onChange={(value) =>
+                                setResizePreview({
+                                  address: { sectionIndex: si, cardIndex: ci },
+                                  rows: value as number,
+                                })
+                              }
+                              onChangeComplete={(value) => {
+                                setResizePreview(null);
+                                onCardResize?.(
+                                  { sectionIndex: si, cardIndex: ci },
+                                  { rows: value as number },
+                                );
+                              }}
+                            />
+                          </div>
+                        </div>
                       </>
                     ) : null}
                   </div>

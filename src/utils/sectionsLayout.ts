@@ -1,4 +1,5 @@
 import type { Card, View, ViewSection } from '../types/dashboard';
+import { getCardSizeConstraints } from './cardSizingContract';
 
 /**
  * Pure helpers for rendering + editing Home Assistant "sections" views on the
@@ -161,6 +162,21 @@ export const sectionCardColumnSpan = (card: Card): number => {
   if (columns === 'full' || columns === undefined) return SECTION_GRID_COLUMNS;
   if (typeof columns !== 'number' || !Number.isFinite(columns)) return SECTION_GRID_COLUMNS;
   return Math.min(Math.max(1, Math.floor(columns)), SECTION_GRID_COLUMNS);
+};
+
+/**
+ * How many 56px grid rows a card spans (Tier 4, slice 4.3c). An explicit numeric
+ * `grid_options.rows` wins (clamped to >= 1); otherwise we fall back to the
+ * per-card content-height ESTIMATE (getCardSizeConstraints().h, already in 56px
+ * units) so a card that never declared rows still gets a sensible fixed height on
+ * the true 56px grid instead of clipping to a single row. Always >= 1.
+ */
+export const sectionCardRowSpan = (card: Card): number => {
+  const rows = readGridOptions(card).rows;
+  if (typeof rows === 'number' && Number.isFinite(rows)) {
+    return Math.max(1, Math.floor(rows));
+  }
+  return Math.max(1, getCardSizeConstraints(card).h);
 };
 
 /**
