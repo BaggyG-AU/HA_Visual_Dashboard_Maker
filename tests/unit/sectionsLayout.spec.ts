@@ -10,8 +10,10 @@ import {
   moveSectionCard,
   setSectionCardGridOptions,
   sectionCardColumnSpan,
+  sectionCardRowSpan,
   SECTION_GRID_COLUMNS,
 } from '../../src/utils/sectionsLayout';
+import { getCardSizeConstraints } from '../../src/utils/cardSizingContract';
 import type { Card, View, ViewSection } from '../../src/types/dashboard';
 
 const sectionsView = (): View =>
@@ -340,6 +342,38 @@ describe('sectionsLayout', () => {
       expect(
         sectionCardColumnSpan({ type: 'x', grid_options: { columns: 99 } } as unknown as Card),
       ).toBe(12);
+    });
+  });
+
+  describe('sectionCardRowSpan', () => {
+    it('uses a numeric grid_options.rows, clamped to >= 1', () => {
+      expect(sectionCardRowSpan({ type: 'x', grid_options: { rows: 3 } } as unknown as Card)).toBe(
+        3,
+      );
+      expect(sectionCardRowSpan({ type: 'x', grid_options: { rows: 0 } } as unknown as Card)).toBe(
+        1,
+      );
+      expect(
+        sectionCardRowSpan({ type: 'x', grid_options: { rows: 2.9 } } as unknown as Card),
+      ).toBe(2);
+    });
+
+    it('falls back to the content-height estimate (getCardSizeConstraints.h) when rows is absent', () => {
+      const card = { type: 'markdown', content: 'a\nb\nc\nd\ne' } as unknown as Card;
+      expect(sectionCardRowSpan(card)).toBe(getCardSizeConstraints(card).h);
+    });
+
+    it("falls back to the estimate when rows is 'auto' or non-numeric", () => {
+      const card = {
+        type: 'entities',
+        entities: ['a', 'b'],
+        grid_options: { rows: 'auto' },
+      } as unknown as Card;
+      expect(sectionCardRowSpan(card)).toBe(getCardSizeConstraints(card).h);
+    });
+
+    it('always returns at least 1', () => {
+      expect(sectionCardRowSpan({ type: 'markdown' } as unknown as Card)).toBeGreaterThanOrEqual(1);
     });
   });
 
