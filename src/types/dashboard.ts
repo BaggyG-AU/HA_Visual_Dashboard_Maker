@@ -385,6 +385,10 @@ export interface View {
   dense_section_placement?: boolean;
   top_margin?: boolean;
   visible?: boolean | Condition[];
+  // Subview navigation model (HA views docs): a subview is hidden from the top
+  // navigation and shows a back button; `back_path` overrides where it returns.
+  subview?: boolean;
+  back_path?: string;
   // Layout-card specific properties
   layout_type?: 'grid' | 'masonry' | 'horizontal' | 'vertical';
   layout?: {
