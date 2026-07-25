@@ -78,6 +78,7 @@ import {
   setViewProps,
   normalizeViewType,
   setViewType,
+  HAVDM_SCAFFOLD_VIEW_FIELDS,
   type ViewPropsPatch,
 } from './utils/viewsLayout';
 import { HAEntityProvider, useHAEntities } from './contexts/HAEntityContext';
@@ -1804,12 +1805,10 @@ const App: React.FC = () => {
         {
           title: 'Home',
           path: 'home',
-          type: 'custom:grid-layout',
-          layout: {
-            grid_template_columns: 'repeat(12, 1fr)',
-            grid_template_rows: 'repeat(auto-fill, 56px)',
-            grid_gap: '8px',
-          },
+          // HAVDM's flat-canvas scaffold, including the `_havdm_scaffold` marker
+          // the export boundary uses to tell it apart from a user's real
+          // layout-card grid view (slice 4.7a).
+          ...HAVDM_SCAFFOLD_VIEW_FIELDS,
           cards: [],
         },
       ],

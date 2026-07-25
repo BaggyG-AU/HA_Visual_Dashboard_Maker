@@ -1,6 +1,7 @@
 import { Card, View } from '../types/dashboard';
 import { LayoutItem } from 'react-grid-layout';
 import { getCardSizeConstraints } from './cardSizingContract';
+import { isHavdmScaffoldView, isLayoutCardViewType } from '../services/haExportContract';
 
 /**
  * Parse layout-card grid configuration and convert to react-grid-layout format
@@ -190,6 +191,36 @@ export const parseLayoutCardConfig = (view: View): GridConfig => {
     templateColumns: view.layout?.grid_template_columns,
     templateRows: view.layout?.grid_template_rows,
   };
+};
+
+/**
+ * How many columns the canvas should render this view on (slice 4.7a).
+ *
+ * HAVDM's flat canvas is a fixed 12-column grid and every view HAVDM creates
+ * carries a matching `repeat(12, 1fr)` scaffold, so HAVDM's own views are
+ * unaffected by this and keep rendering exactly as before. A view the USER
+ * authored or imported can declare any column count, and rendering a 6-column
+ * grid on 12 columns puts every card at half its real width — so honour what
+ * the view actually declares.
+ *
+ * The result is clamped to a renderable 1..24 so a malformed template cannot
+ * produce a zero-column (or absurdly wide) grid.
+ *
+ * ⚠ Scope: only the COLUMN count is honoured. Row height stays at the canvas
+ * default — changing it re-baselines every `layout.visual` snapshot and needs
+ * the card `h` heuristics re-tuned first (see `GRID_CONFIG` in GridCanvas.tsx).
+ */
+export const HAVDM_CANVAS_COLUMNS = 12;
+
+export const getCanvasColumns = (view: View): number => {
+  if (isHavdmScaffoldView(view)) return HAVDM_CANVAS_COLUMNS;
+  if (!isLayoutCardViewType(view.type) && view.layout_type !== 'grid') {
+    return HAVDM_CANVAS_COLUMNS;
+  }
+  if (!view.layout?.grid_template_columns) return HAVDM_CANVAS_COLUMNS;
+  const columns = parseGridColumns(view.layout.grid_template_columns);
+  if (!Number.isFinite(columns)) return HAVDM_CANVAS_COLUMNS;
+  return Math.min(Math.max(1, Math.floor(columns)), 24);
 };
 
 /**

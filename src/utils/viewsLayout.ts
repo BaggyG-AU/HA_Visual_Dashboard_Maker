@@ -1,4 +1,5 @@
 import type { DashboardConfig, View } from '../types/dashboard';
+import { HAVDM_SCAFFOLD_LAYOUT, isHavdmScaffoldView } from '../services/haExportContract';
 
 /**
  * Pure helpers for view-level authoring (Tier 4, slice 4.6a): add / remove /
@@ -13,26 +14,33 @@ import type { DashboardConfig, View } from '../types/dashboard';
  * is covered by e2e; the logic here is directly unit-testable.
  */
 
-/** HAVDM's flat-canvas grid scaffold, mirrored by every view HAVDM creates. */
-const BLANK_VIEW_LAYOUT = {
-  grid_template_columns: 'repeat(12, 1fr)',
-  grid_template_rows: 'repeat(auto-fill, 56px)',
-  grid_gap: '8px',
+/**
+ * The view fields that make a view HAVDM's flat-canvas scaffold. EVERY HAVDM
+ * view-creation site spreads this (`buildBlankView` here,
+ * `App.createNewDashboard`, every `dashboardGeneratorService` template) so the
+ * scaffold has exactly one definition — and, from slice 4.7a, exactly one
+ * marker. Without the marker HAVDM cannot tell its own scaffold from a
+ * layout-card view the user authored, and strips both on export.
+ */
+export const HAVDM_SCAFFOLD_VIEW_FIELDS = {
+  type: 'custom:grid-layout',
+  layout: HAVDM_SCAFFOLD_LAYOUT,
+  _havdm_scaffold: true,
 } as const;
 
 /**
  * Build a blank HAVDM view — the flat 12-column / 56px-row canvas scaffold
- * (`type: 'custom:grid-layout'` + the matching `layout`) that every HAVDM
- * creation flow stamps, so a view added on-canvas renders identically to a
- * brand-new dashboard's view. The scaffold is HAVDM-internal and is stripped on
- * export (Tier 3, `HAVDM_INTERNAL_VIEW_TYPES`), deploying as a real HA masonry
- * view. Defaults to Home/home.
+ * (`type: 'custom:grid-layout'` + the matching `layout` + the internal marker)
+ * that every HAVDM creation flow stamps, so a view added on-canvas renders
+ * identically to a brand-new dashboard's view. The scaffold is HAVDM-internal
+ * and is stripped on export (`isHavdmScaffoldView`), deploying as a real HA
+ * masonry view. Defaults to Home/home.
  */
 export const buildBlankView = (opts: { title?: string; path?: string } = {}): View => ({
   title: opts.title ?? 'Home',
   path: opts.path ?? 'home',
-  type: 'custom:grid-layout',
-  layout: { ...BLANK_VIEW_LAYOUT },
+  ...HAVDM_SCAFFOLD_VIEW_FIELDS,
+  layout: { ...HAVDM_SCAFFOLD_LAYOUT },
   cards: [],
 });
 
@@ -137,33 +145,51 @@ export const STANDARD_VIEW_TYPES = ['masonry', 'sections', 'panel', 'sidebar'] a
 
 /**
  * Normalise a view's raw `type` to the value the type editor should display.
- * The internal `custom:grid-layout` scaffold and an absent type both read as
- * `masonry` (which is what they deploy as). Real HA types pass through. A real
- * layout-card `custom:*-layout` is returned as-is so it stays a current-value
- * option and is never silently converted (first-class layout-card views are 4.7).
+ * HAVDM's internal canvas scaffold and an absent type both read as `masonry`
+ * (which is what they deploy as). Real HA types pass through — including a real
+ * layout-card `custom:*-layout`, which stays a current-value option in the type
+ * editor and is never silently converted.
+ *
+ * ⚠ Slice 4.7a: "the scaffold" is `isHavdmScaffoldView`, NOT the bare
+ * `custom:grid-layout` type string — a user's own layout-card grid view shares
+ * that type and must read as itself.
  */
 export const normalizeViewType = (view: View): string => {
   const t = view.type;
   if (t === 'sections' || t === 'panel' || t === 'sidebar' || t === 'masonry') return t;
-  if (t === undefined || t === 'custom:grid-layout') return 'masonry';
+  if (t === undefined || isHavdmScaffoldView(view)) return 'masonry';
   return t;
 };
 
 /**
- * Set a flat view's `type` (a non-lossy metadata change among masonry/panel/
- * sidebar). Because a plain HA view type does not use `view.layout`, the internal
- * grid scaffold (`layout` / `layout_type`) is dropped so it cannot leak to Home
- * Assistant once the view carries a real, preserved type. Returns the input view
- * unchanged (reference-equal) when the type is already `type` and there is no
- * scaffold to drop. Content (`cards`) is carried through by reference.
- * Structural conversions to/from `sections` are NOT done here — use
- * `convertViewToSections` / `flattenSectionsView`.
+ * Set a flat view's `type` (a metadata change among masonry/panel/sidebar and
+ * the layout-card `custom:*-layout` types). Returns the input view unchanged
+ * (reference-equal) when nothing would change. Content (`cards`) is carried
+ * through by reference. Structural conversions to/from `sections` are NOT done
+ * here — use `convertViewToSections` / `flattenSectionsView`.
+ *
+ * `layout` / `layout_type` handling (slice 4.7a):
+ *  - HAVDM's own canvas scaffold is DROPPED along with its marker. It is
+ *    internal bookkeeping with no meaning in Home Assistant, and leaving it
+ *    behind would leak once the view carries a real, preserved type.
+ *  - A USER's layout-card config is KEPT, even when switching to a standard HA
+ *    type that ignores it, so switching back restores their grid — per FR-026 /
+ *    the product vision, HAVDM never silently destroys user data. The export
+ *    boundary is what declines to deploy it while the type is standard.
  */
 export const setViewType = (view: View, type: string): View => {
-  const hasScaffold = view.layout !== undefined || view.layout_type !== undefined;
-  if (view.type === type && !hasScaffold) return view;
+  const isScaffold = isHavdmScaffoldView(view);
+  const hasScaffoldKeys =
+    isScaffold &&
+    (view.layout !== undefined ||
+      view.layout_type !== undefined ||
+      view._havdm_scaffold !== undefined);
+  if (view.type === type && !hasScaffoldKeys) return view;
   const next: View = { ...view, type };
-  delete next.layout;
-  delete next.layout_type;
+  if (isScaffold) {
+    delete next.layout;
+    delete next.layout_type;
+    delete next._havdm_scaffold;
+  }
   return next;
 };

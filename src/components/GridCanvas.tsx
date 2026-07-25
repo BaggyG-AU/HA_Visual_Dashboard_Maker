@@ -7,7 +7,11 @@ import { BaseCard } from './BaseCard';
 import { CardContextMenu } from './CardContextMenu';
 import { SectionsCanvas } from './SectionsCanvas';
 import { generateMasonryLayout, getCardSizeConstraints } from '../utils/cardSizingContract';
-import { isLayoutCardGrid, convertLayoutCardToGridLayout } from '../utils/layoutCardParser';
+import {
+  isLayoutCardGrid,
+  convertLayoutCardToGridLayout,
+  getCanvasColumns,
+} from '../utils/layoutCardParser';
 import { logger } from '../services/logger';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -186,6 +190,15 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   const layout = useMemo(() => {
     return generateLayout(view, cards);
   }, [view, cards]);
+
+  // Slice 4.7a: a layout-card view the USER authored can declare any column
+  // count, and rendering it on HAVDM's fixed 12 puts every card at the wrong
+  // width. HAVDM's own scaffold views declare 12, so this resolves to the exact
+  // same GRID_CONFIG for them and the canvas is unchanged (layout.visual-safe).
+  const gridConfig = useMemo(() => {
+    const cols = getCanvasColumns(view);
+    return cols === GRID_CONFIG.cols ? GRID_CONFIG : { ...GRID_CONFIG, cols };
+  }, [view]);
 
   const handleLayoutChange = (newLayout: Layout) => {
     onLayoutChange(newLayout);
@@ -374,7 +387,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         className="layout"
         layout={layout}
         width={1200}
-        gridConfig={GRID_CONFIG}
+        gridConfig={gridConfig}
         onDragStop={handleDragStop}
         onResizeStop={handleLayoutChange}
         dragConfig={{ enabled: true, cancel: '.swiper', threshold: DRAG_THRESHOLD }}

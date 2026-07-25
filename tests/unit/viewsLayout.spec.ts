@@ -143,7 +143,9 @@ describe('viewsLayout — setViewProps', () => {
 
 describe('viewsLayout — normalizeViewType (Tier 4, slice 4.6b)', () => {
   it('maps the internal custom:grid-layout scaffold and an absent type to masonry', () => {
-    expect(normalizeViewType(view({ type: 'custom:grid-layout' }))).toBe('masonry');
+    // Slice 4.7a: "the scaffold" is now the MARKED view buildBlankView emits —
+    // a bare `type: custom:grid-layout` is a user's real layout-card view.
+    expect(normalizeViewType(buildBlankView())).toBe('masonry');
     expect(normalizeViewType(view({ type: undefined }))).toBe('masonry');
   });
 
@@ -168,10 +170,9 @@ describe('viewsLayout — normalizeViewType (Tier 4, slice 4.6b)', () => {
 
 describe('viewsLayout — setViewType (Tier 4, slice 4.6b)', () => {
   it('changes a flat view type and drops the internal grid scaffold so it cannot leak to HA', () => {
-    const v = view({
-      type: 'custom:grid-layout',
-      layout: { grid_template_columns: 'repeat(12, 1fr)' },
-    } as Partial<View>);
+    // Slice 4.7a: only the MARKED HAVDM scaffold is discarded on a type change;
+    // a user's real layout-card config is kept (see the 4.7a describe below).
+    const v = { ...buildBlankView(), title: 'V', path: 'v' } as View;
     const next = setViewType(v, 'masonry');
     expect(next.type).toBe('masonry');
     expect(next).not.toHaveProperty('layout');
@@ -191,5 +192,82 @@ describe('viewsLayout — setViewType (Tier 4, slice 4.6b)', () => {
   it('is a reference-equal no-op when the type is unchanged and there is no scaffold to drop', () => {
     const v = view({ type: 'panel' });
     expect(setViewType(v, 'panel')).toBe(v);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tier 4 slice 4.7a — first-class layout-card views
+// ---------------------------------------------------------------------------
+//
+// Before this slice the view-type model keyed off the string
+// `custom:grid-layout`, which HAVDM stamps on its own flat-canvas scaffold. A
+// user's REAL layout-card grid view therefore read as "masonry" in the type
+// editor, and any type change threw away its `layout` / `layout_type`. The
+// scaffold now carries an explicit marker, so the two are distinguishable.
+
+describe('viewsLayout — scaffold marking (Tier 4, slice 4.7a)', () => {
+  it('marks the view it builds as HAVDM-internal so export can tell it apart', () => {
+    const v = buildBlankView();
+    expect(v._havdm_scaffold).toBe(true);
+  });
+});
+
+describe('viewsLayout — normalizeViewType with real layout-card views (slice 4.7a)', () => {
+  it("reports a user's real custom:grid-layout view as itself, not as masonry", () => {
+    const real = view({
+      type: 'custom:grid-layout',
+      layout: { grid_template_columns: 'repeat(6, 1fr)' },
+    } as Partial<View>);
+    expect(normalizeViewType(real)).toBe('custom:grid-layout');
+  });
+
+  it('still reports the marked HAVDM scaffold as masonry (what it deploys as)', () => {
+    expect(normalizeViewType(buildBlankView())).toBe('masonry');
+  });
+
+  it('reports a LEGACY unmarked scaffold as masonry via its exact signature', () => {
+    const { _havdm_scaffold: _marker, ...legacy } = buildBlankView() as View & {
+      _havdm_scaffold?: boolean;
+    };
+    void _marker;
+    expect(normalizeViewType(legacy as View)).toBe('masonry');
+  });
+});
+
+describe('viewsLayout — setViewType with real layout-card views (slice 4.7a)', () => {
+  const realGrid = (): View =>
+    view({
+      type: 'custom:grid-layout',
+      layout_type: 'grid',
+      layout: { grid_template_columns: 'repeat(6, 1fr)', grid_gap: '4px' },
+    } as Partial<View>);
+
+  it("KEEPS a real layout-card view's layout config when switching to a standard type", () => {
+    // FR-026 / "never silently destroy user data": the config stays in HAVDM so
+    // the user can switch back. The export boundary is what declines to deploy
+    // it once the view carries a standard HA type.
+    const next = setViewType(realGrid(), 'masonry');
+    expect(next.type).toBe('masonry');
+    expect(next.layout).toEqual({ grid_template_columns: 'repeat(6, 1fr)', grid_gap: '4px' });
+    expect(next.layout_type).toBe('grid');
+  });
+
+  it('keeps the layout when switching between layout-card types', () => {
+    const next = setViewType(realGrid(), 'custom:vertical-layout');
+    expect(next.type).toBe('custom:vertical-layout');
+    expect(next.layout).toEqual({ grid_template_columns: 'repeat(6, 1fr)', grid_gap: '4px' });
+  });
+
+  it('DROPS the internal scaffold (layout + marker) — it has no meaning in HA', () => {
+    const next = setViewType(buildBlankView(), 'panel') as View & { _havdm_scaffold?: boolean };
+    expect(next.type).toBe('panel');
+    expect(next).not.toHaveProperty('layout');
+    expect(next).not.toHaveProperty('layout_type');
+    expect(next._havdm_scaffold).toBeUndefined();
+  });
+
+  it('is a reference-equal no-op for a real layout-card view whose type is unchanged', () => {
+    const v = realGrid();
+    expect(setViewType(v, 'custom:grid-layout')).toBe(v);
   });
 });

@@ -6,6 +6,10 @@
  */
 
 import { DashboardConfig } from '../types/dashboard';
+// Every generated view carries HAVDM's flat-canvas scaffold — including the
+// `_havdm_scaffold` marker that lets the export boundary strip it without also
+// destroying a user's real layout-card grid view (slice 4.7a).
+import { HAVDM_SCAFFOLD_VIEW_FIELDS } from '../utils/viewsLayout';
 
 export interface Entity {
   entity_id: string;
@@ -168,12 +172,7 @@ class DashboardGeneratorService {
         {
           title: 'Lights',
           path: 'lights',
-          type: 'custom:grid-layout',
-          layout: {
-            grid_template_columns: 'repeat(12, 1fr)',
-            grid_template_rows: 'repeat(auto-fill, 56px)',
-            grid_gap: '8px',
-          },
+          ...HAVDM_SCAFFOLD_VIEW_FIELDS,
           cards,
         },
       ],
@@ -207,12 +206,7 @@ class DashboardGeneratorService {
         {
           title: 'Cameras',
           path: 'surveillance',
-          type: 'custom:grid-layout',
-          layout: {
-            grid_template_columns: 'repeat(12, 1fr)',
-            grid_template_rows: 'repeat(auto-fill, 56px)',
-            grid_gap: '8px',
-          },
+          ...HAVDM_SCAFFOLD_VIEW_FIELDS,
           cards,
         },
       ],
@@ -244,12 +238,7 @@ class DashboardGeneratorService {
         {
           title: 'Energy',
           path: 'power',
-          type: 'custom:grid-layout',
-          layout: {
-            grid_template_columns: 'repeat(12, 1fr)',
-            grid_template_rows: 'repeat(auto-fill, 56px)',
-            grid_gap: '8px',
-          },
+          ...HAVDM_SCAFFOLD_VIEW_FIELDS,
           cards,
         },
       ],
@@ -310,12 +299,7 @@ class DashboardGeneratorService {
         {
           title: 'Environment',
           path: 'climate',
-          type: 'custom:grid-layout',
-          layout: {
-            grid_template_columns: 'repeat(12, 1fr)',
-            grid_template_rows: 'repeat(auto-fill, 56px)',
-            grid_gap: '8px',
-          },
+          ...HAVDM_SCAFFOLD_VIEW_FIELDS,
           cards,
         },
       ],
@@ -369,12 +353,7 @@ class DashboardGeneratorService {
         {
           title: 'House Status',
           path: 'presence',
-          type: 'custom:grid-layout',
-          layout: {
-            grid_template_columns: 'repeat(12, 1fr)',
-            grid_template_rows: 'repeat(auto-fill, 56px)',
-            grid_gap: '8px',
-          },
+          ...HAVDM_SCAFFOLD_VIEW_FIELDS,
           cards,
         },
       ],
@@ -405,12 +384,7 @@ class DashboardGeneratorService {
         {
           title: 'Openings',
           path: 'covers',
-          type: 'custom:grid-layout',
-          layout: {
-            grid_template_columns: 'repeat(12, 1fr)',
-            grid_template_rows: 'repeat(auto-fill, 56px)',
-            grid_gap: '8px',
-          },
+          ...HAVDM_SCAFFOLD_VIEW_FIELDS,
           cards,
         },
       ],
@@ -493,12 +467,7 @@ class DashboardGeneratorService {
         {
           title: 'Security',
           path: 'security',
-          type: 'custom:grid-layout',
-          layout: {
-            grid_template_columns: 'repeat(12, 1fr)',
-            grid_template_rows: 'repeat(auto-fill, 56px)',
-            grid_gap: '8px',
-          },
+          ...HAVDM_SCAFFOLD_VIEW_FIELDS,
           cards,
         },
       ],
@@ -537,12 +506,7 @@ class DashboardGeneratorService {
         {
           title: 'Rooms',
           path: 'rooms',
-          type: 'custom:grid-layout',
-          layout: {
-            grid_template_columns: 'repeat(12, 1fr)',
-            grid_template_rows: 'repeat(auto-fill, 56px)',
-            grid_gap: '8px',
-          },
+          ...HAVDM_SCAFFOLD_VIEW_FIELDS,
           cards,
         },
       ],
@@ -573,12 +537,7 @@ class DashboardGeneratorService {
         {
           title: 'Entertainment',
           path: 'media',
-          type: 'custom:grid-layout',
-          layout: {
-            grid_template_columns: 'repeat(12, 1fr)',
-            grid_template_rows: 'repeat(auto-fill, 56px)',
-            grid_gap: '8px',
-          },
+          ...HAVDM_SCAFFOLD_VIEW_FIELDS,
           cards,
         },
       ],

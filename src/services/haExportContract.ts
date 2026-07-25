@@ -222,23 +222,94 @@ export const CANVAS_ONLY_CARD_TYPES: readonly string[] = [
   'custom:havdm-progress-ring',
 ];
 
+// ---------------------------------------------------------------------------
+// HAVDM's canvas scaffold vs. a REAL layout-card view — Tier 4, slice 4.7a
+// ---------------------------------------------------------------------------
+
 /**
- * HAVDM-internal VIEW types — stamped by HAVDM on the views it generates, NOT
- * real Home Assistant view types. HAVDM's canvas is a 12-column / 56px-row grid,
- * and every view it creates (the App.tsx blank dashboard + every
- * dashboardGeneratorService template) carries `type: 'custom:grid-layout'` plus
- * a `repeat(12, 1fr)` / `repeat(auto-fill, 56px)` `layout` as the scaffold for
- * that canvas. Those are HAVDM-internal and MUST be stripped on export so the
- * view deploys as its real HA type (masonry by default) — per-card geometry
- * already rides as `_havdm_layout` (STRIP class) and is removed separately.
+ * The view `type` HAVDM stamps on its own flat-canvas scaffold. HAVDM's canvas
+ * is a 12-column / 56px-row grid, and every view it creates (`buildBlankView`,
+ * `App.createNewDashboard`, every `dashboardGeneratorService` template) carries
+ * this type plus {@link HAVDM_SCAFFOLD_LAYOUT} to describe it. It is
+ * HAVDM-internal and must be stripped on export so the view deploys as its real
+ * HA type (masonry) — per-card geometry rides as `_havdm_layout` (STRIP class)
+ * and is removed separately.
  *
- * The export boundary (yamlService.sanitizeForHAWithReport) preserves any view
- * `type` NOT in this set: masonry, panel, sidebar, sections, or a layout-card
- * `custom:*-layout` the user authored or imported. Before this denylist those
- * real types were blanket-stripped and silently flattened to masonry on deploy.
- *
- * ⚠ KNOWN LIMITATION: a user's REAL layout-card `custom:grid-layout` view is
- * indistinguishable from HAVDM's scaffold and is therefore also stripped.
- * First-class layout-card grid support is future canvas work.
+ * ⚠ It is ALSO a real Home Assistant layout-card view type. The type string
+ * alone therefore cannot tell HAVDM's scaffold from a view the user authored or
+ * imported — that is what {@link isHavdmScaffoldView} is for. Never branch on
+ * this set directly at the export boundary.
  */
 export const HAVDM_INTERNAL_VIEW_TYPES: ReadonlySet<string> = new Set(['custom:grid-layout']);
+
+/**
+ * The view key that marks a view as HAVDM's own canvas scaffold rather than a
+ * layout-card view the user means to deploy. Stamped by every HAVDM view
+ * creation site; dropped by the export boundary's view allowlist.
+ */
+export const HAVDM_SCAFFOLD_MARKER = '_havdm_scaffold' as const;
+
+/**
+ * The exact `layout` block every HAVDM creation site stamps alongside
+ * {@link HAVDM_INTERNAL_VIEW_TYPES}. It is the single definition of the canvas
+ * scaffold — `buildBlankView` builds from it and {@link isHavdmScaffoldView}
+ * matches against it.
+ */
+export const HAVDM_SCAFFOLD_LAYOUT = {
+  grid_template_columns: 'repeat(12, 1fr)',
+  grid_template_rows: 'repeat(auto-fill, 56px)',
+  grid_gap: '8px',
+} as const;
+
+/**
+ * The layout-card view types whose `layout` / `layout_type` carry real meaning
+ * in Home Assistant and must therefore survive the export boundary. Home
+ * Assistant's own view types (masonry / panel / sidebar / sections) ignore
+ * those keys, so exporting them there would be noise at best.
+ */
+export const isLayoutCardViewType = (type: string | undefined): boolean =>
+  typeof type === 'string' && /^custom:[a-z0-9-]+-layout$/.test(type);
+
+/** Shallow structural equality over plain string-keyed objects. */
+const sameLayout = (a: Record<string, unknown>, b: Record<string, unknown>): boolean => {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  return aKeys.length === bKeys.length && aKeys.every((key) => a[key] === b[key]);
+};
+
+/**
+ * Is this view HAVDM's internal canvas scaffold (as opposed to a layout-card
+ * view the user authored or imported)?
+ *
+ * This is the disambiguator that resolves the slice-4.7a data-loss bug. Before
+ * it, the export boundary keyed off the `custom:grid-layout` type string alone,
+ * so a user's real layout-card grid view was indistinguishable from the
+ * scaffold and had its `type` + `layout` silently destroyed on deploy.
+ *
+ * Two signals, in order:
+ *  1. The explicit {@link HAVDM_SCAFFOLD_MARKER}, stamped by every HAVDM view
+ *     creation site. Authoritative — it stays correct even if a later slice
+ *     lets the user retune the canvas grid.
+ *  2. A LEGACY fallback for dashboards saved before the marker existed: the
+ *     type matches AND the `layout` is byte-identical to
+ *     {@link HAVDM_SCAFFOLD_LAYOUT} AND there is no real `layout_type`. Every
+ *     HAVDM creation site has always emitted exactly that signature, and HAVDM
+ *     has never produced a `custom:grid-layout` view without it — so this
+ *     claims all pre-marker scaffolds and (short of an exact collision) nothing
+ *     else. Without it, every already-saved dashboard would suddenly start
+ *     deploying `custom:grid-layout`, which needs layout-card installed.
+ *
+ * Anything else is the user's, and is preserved.
+ */
+export const isHavdmScaffoldView = (view: {
+  type?: string;
+  layout?: Record<string, unknown>;
+  layout_type?: string;
+  [HAVDM_SCAFFOLD_MARKER]?: boolean;
+}): boolean => {
+  if (view[HAVDM_SCAFFOLD_MARKER] === true) return true;
+  if (!view.type || !HAVDM_INTERNAL_VIEW_TYPES.has(view.type)) return false;
+  if (view.layout_type !== undefined) return false;
+  if (!view.layout || typeof view.layout !== 'object') return false;
+  return sameLayout(view.layout, HAVDM_SCAFFOLD_LAYOUT);
+};
