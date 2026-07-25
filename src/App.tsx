@@ -69,12 +69,15 @@ import {
   setViewMaxColumns,
   convertViewToSections,
   buildSectionsView,
+  flattenSectionsView,
 } from './utils/sectionsLayout';
 import {
   addView,
   removeView,
   moveView,
   setViewProps,
+  normalizeViewType,
+  setViewType,
   type ViewPropsPatch,
 } from './utils/viewsLayout';
 import { HAEntityProvider, useHAEntities } from './contexts/HAEntityContext';
@@ -1479,20 +1482,48 @@ const App: React.FC = () => {
     setViewSettingsOpen(true);
   };
 
-  const handleViewPropsChange = (patch: ViewPropsPatch) => {
+  // Slice 4.6b: commit the view-settings form — identity props AND (if changed)
+  // the view TYPE, in ONE undo step. Type changes to/from `sections` are
+  // structural conversions that PRESERVE cards (convert-to / convert-away);
+  // flat<->flat is a metadata change. The type control never offers HAVDM's
+  // internal custom:grid-layout (Tier 3) — it is normalised to masonry.
+  const handleViewSettingsSave = (change: { patch: ViewPropsPatch; type: string }) => {
     if (!config || selectedViewIndex === null) {
       setViewSettingsOpen(false);
       return;
     }
-    const currentView = config.views[selectedViewIndex];
-    const nextView = setViewProps(currentView, patch);
-    if (nextView !== currentView) {
-      const updatedViews = config.views.map((view, i) =>
-        i === selectedViewIndex ? nextView : view,
-      );
-      updateConfig({ ...config, views: updatedViews });
-      message.success('View updated');
+    const index = selectedViewIndex;
+    const currentView = config.views[index];
+    const curType = normalizeViewType(currentView);
+
+    // 1) identity props, then 2) the type change (if any).
+    let nextView = setViewProps(currentView, change.patch);
+    if (change.type !== curType) {
+      if (change.type === 'sections') {
+        nextView = convertViewToSections(nextView);
+      } else if (curType === 'sections') {
+        nextView = flattenSectionsView(nextView, change.type);
+      } else {
+        nextView = setViewType(nextView, change.type);
+      }
     }
+
+    if (nextView === currentView) {
+      setViewSettingsOpen(false);
+      return;
+    }
+
+    const updatedViews = config.views.map((view, i) => (i === index ? nextView : view));
+    updateConfig({ ...config, views: updatedViews });
+
+    // A change in "sections-ness" reindexes card addressing (flat <-> section) —
+    // reset the selection so a stale (sectionIndex, cardIndex) can't linger.
+    const wasSections = curType === 'sections';
+    const isSections = normalizeViewType(nextView) === 'sections';
+    if (wasSections !== isSections) {
+      setSelectedSectionCard(index, null, null);
+    }
+    message.success('View updated');
     setViewSettingsOpen(false);
   };
 
@@ -2650,7 +2681,7 @@ const App: React.FC = () => {
           viewIndex={selectedViewIndex}
           viewCount={config?.views.length ?? 0}
           onClose={() => setViewSettingsOpen(false)}
-          onSubmit={handleViewPropsChange}
+          onSubmit={handleViewSettingsSave}
           onDelete={handleRemoveView}
           onMove={handleMoveView}
         />
