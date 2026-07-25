@@ -5,6 +5,9 @@ import {
   removeView,
   moveView,
   setViewProps,
+  normalizeViewType,
+  setViewType,
+  STANDARD_VIEW_TYPES,
 } from '../../src/utils/viewsLayout';
 import type { DashboardConfig, View } from '../../src/types/dashboard';
 
@@ -135,5 +138,58 @@ describe('viewsLayout — setViewProps', () => {
     expect(setViewProps(v, { title: 'Home', panel: true })).toBe(v);
     // clearing an already-absent key is also a no-op
     expect(setViewProps(v, { icon: '' })).toBe(v);
+  });
+});
+
+describe('viewsLayout — normalizeViewType (Tier 4, slice 4.6b)', () => {
+  it('maps the internal custom:grid-layout scaffold and an absent type to masonry', () => {
+    expect(normalizeViewType(view({ type: 'custom:grid-layout' }))).toBe('masonry');
+    expect(normalizeViewType(view({ type: undefined }))).toBe('masonry');
+  });
+
+  it('passes real HA view types through unchanged', () => {
+    expect(normalizeViewType(view({ type: 'masonry' }))).toBe('masonry');
+    expect(normalizeViewType(view({ type: 'sections' }))).toBe('sections');
+    expect(normalizeViewType(view({ type: 'panel' }))).toBe('panel');
+    expect(normalizeViewType(view({ type: 'sidebar' }))).toBe('sidebar');
+  });
+
+  it('keeps a real layout-card custom:*-layout as-is (never silently normalised)', () => {
+    expect(normalizeViewType(view({ type: 'custom:vertical-layout' }))).toBe(
+      'custom:vertical-layout',
+    );
+  });
+
+  it('never offers the internal scaffold type as a standard choice', () => {
+    expect(STANDARD_VIEW_TYPES).toEqual(['masonry', 'sections', 'panel', 'sidebar']);
+    expect(STANDARD_VIEW_TYPES).not.toContain('custom:grid-layout');
+  });
+});
+
+describe('viewsLayout — setViewType (Tier 4, slice 4.6b)', () => {
+  it('changes a flat view type and drops the internal grid scaffold so it cannot leak to HA', () => {
+    const v = view({
+      type: 'custom:grid-layout',
+      layout: { grid_template_columns: 'repeat(12, 1fr)' },
+    } as Partial<View>);
+    const next = setViewType(v, 'masonry');
+    expect(next.type).toBe('masonry');
+    expect(next).not.toHaveProperty('layout');
+    expect(next).not.toHaveProperty('layout_type');
+  });
+
+  it('swaps between real flat types (masonry -> panel)', () => {
+    expect(setViewType(view({ type: 'masonry' }), 'panel').type).toBe('panel');
+  });
+
+  it('carries cards through by reference', () => {
+    const cards = [{ type: 'button' }] as View['cards'];
+    const v = view({ type: 'masonry', cards });
+    expect(setViewType(v, 'panel').cards).toBe(cards);
+  });
+
+  it('is a reference-equal no-op when the type is unchanged and there is no scaffold to drop', () => {
+    const v = view({ type: 'panel' });
+    expect(setViewType(v, 'panel')).toBe(v);
   });
 });

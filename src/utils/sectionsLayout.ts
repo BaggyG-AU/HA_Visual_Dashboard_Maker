@@ -386,3 +386,32 @@ export const convertViewToSections = (view: View): View => {
   delete next.layout_type;
   return next;
 };
+
+/**
+ * The inverse of {@link convertViewToSections} (slice 4.6b): flatten a Sections
+ * view back into a flat (`targetType`, default masonry) view. VISUAL-FIRST +
+ * "never silently destroy user data": every section's cards are concatenated
+ * into the flat `view.cards` in order (PRESERVED), and each section HEADING —
+ * which has no flat equivalent, since HAVDM has no heading-card renderer — is
+ * preserved as a `## Title` markdown card prepended to that section's cards
+ * (rather than dropped). The sections payload and its view-level layout keys
+ * (`sections` / `max_columns` / `dense_section_placement`) are removed. A
+ * non-sections view is returned unchanged (reference-equal). Identity props
+ * (title/path/icon/panel/…) are carried through.
+ */
+export const flattenSectionsView = (view: View, targetType: string = 'masonry'): View => {
+  if (view.type !== 'sections') return view;
+  const sections = Array.isArray(view.sections) ? view.sections : [];
+  const flatCards: Card[] = [];
+  for (const section of sections) {
+    if (typeof section.title === 'string' && section.title.length > 0) {
+      flatCards.push({ type: 'markdown', content: `## ${section.title}` } as Card);
+    }
+    if (Array.isArray(section.cards)) flatCards.push(...section.cards);
+  }
+  const next: View = { ...view, type: targetType, cards: flatCards };
+  delete next.sections;
+  delete next.max_columns;
+  delete next.dense_section_placement;
+  return next;
+};

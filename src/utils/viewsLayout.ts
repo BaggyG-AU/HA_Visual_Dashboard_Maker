@@ -124,3 +124,46 @@ export const setViewProps = (view: View, patch: ViewPropsPatch): View => {
   });
   return changed ? next : view;
 };
+
+// --- Tier 4 slice 4.6b: view-TYPE editing --------------------------------------
+
+/**
+ * The real Home Assistant view types HAVDM offers in the type editor. HAVDM's
+ * internal `custom:grid-layout` canvas scaffold is deliberately EXCLUDED — it is
+ * stripped to masonry on export (Tier 3, `HAVDM_INTERNAL_VIEW_TYPES`), so the
+ * editor never lets a user pick it; a scaffold view reads as `masonry` here.
+ */
+export const STANDARD_VIEW_TYPES = ['masonry', 'sections', 'panel', 'sidebar'] as const;
+
+/**
+ * Normalise a view's raw `type` to the value the type editor should display.
+ * The internal `custom:grid-layout` scaffold and an absent type both read as
+ * `masonry` (which is what they deploy as). Real HA types pass through. A real
+ * layout-card `custom:*-layout` is returned as-is so it stays a current-value
+ * option and is never silently converted (first-class layout-card views are 4.7).
+ */
+export const normalizeViewType = (view: View): string => {
+  const t = view.type;
+  if (t === 'sections' || t === 'panel' || t === 'sidebar' || t === 'masonry') return t;
+  if (t === undefined || t === 'custom:grid-layout') return 'masonry';
+  return t;
+};
+
+/**
+ * Set a flat view's `type` (a non-lossy metadata change among masonry/panel/
+ * sidebar). Because a plain HA view type does not use `view.layout`, the internal
+ * grid scaffold (`layout` / `layout_type`) is dropped so it cannot leak to Home
+ * Assistant once the view carries a real, preserved type. Returns the input view
+ * unchanged (reference-equal) when the type is already `type` and there is no
+ * scaffold to drop. Content (`cards`) is carried through by reference.
+ * Structural conversions to/from `sections` are NOT done here — use
+ * `convertViewToSections` / `flattenSectionsView`.
+ */
+export const setViewType = (view: View, type: string): View => {
+  const hasScaffold = view.layout !== undefined || view.layout_type !== undefined;
+  if (view.type === type && !hasScaffold) return view;
+  const next: View = { ...view, type };
+  delete next.layout;
+  delete next.layout_type;
+  return next;
+};

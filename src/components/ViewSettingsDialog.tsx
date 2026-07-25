@@ -1,19 +1,45 @@
 import React from 'react';
-import { Modal, Form, Input, Switch, Button, Space, Typography, Divider } from 'antd';
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  Switch,
+  Button,
+  Space,
+  Typography,
+  Divider,
+  Alert,
+} from 'antd';
 import { DeleteOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import type { View } from '../types/dashboard';
-import type { ViewPropsPatch } from '../utils/viewsLayout';
+import { normalizeViewType, STANDARD_VIEW_TYPES, type ViewPropsPatch } from '../utils/viewsLayout';
 
 const { Text } = Typography;
+
+/** Human labels for the real HA view types offered in the type editor. */
+const VIEW_TYPE_LABELS: Record<string, string> = {
+  masonry: 'Masonry',
+  sections: 'Sections',
+  panel: 'Panel',
+  sidebar: 'Sidebar',
+};
 
 interface ViewSettingsFormValues {
   title?: string;
   path?: string;
   icon?: string;
+  viewType?: string;
   panel?: boolean;
   subview?: boolean;
   back_path?: string;
   visibleInNav?: boolean;
+}
+
+/** What Save emits: the identity patch plus the chosen (normalised) view type. */
+export interface ViewSettingsChange {
+  patch: ViewPropsPatch;
+  type: string;
 }
 
 interface ViewSettingsDialogProps {
@@ -24,8 +50,8 @@ interface ViewSettingsDialogProps {
   viewIndex: number | null;
   viewCount: number;
   onClose: () => void;
-  /** Commit an identity-property patch (title/path/icon/panel/subview/back_path/visible). */
-  onSubmit: (patch: ViewPropsPatch) => void;
+  /** Commit the identity-property patch + chosen view type (the parent orchestrates any conversion). */
+  onSubmit: (change: ViewSettingsChange) => void;
   /** Delete this view (the parent decides on confirmation + selection fix-up). */
   onDelete: () => void;
   /** Reorder this view one slot left (-1) or right (+1). */
@@ -60,15 +86,46 @@ export const ViewSettingsDialog: React.FC<ViewSettingsDialogProps> = ({
   // leave a conditional `visible` untouched.
   const visibleIsConditional = Array.isArray(view?.visible);
 
+  // The current (normalised) view type — custom:grid-layout reads as masonry.
+  const currentType = view ? normalizeViewType(view) : 'masonry';
+
+  // The type options: the four real HA types, plus the current type if it is a
+  // real layout-card (custom:*-layout) so it stays selectable and is never
+  // silently converted (first-class layout-card views are a later slice).
+  const typeOptions = [
+    ...(STANDARD_VIEW_TYPES as readonly string[]).map((t) => ({
+      value: t,
+      label: VIEW_TYPE_LABELS[t] ?? t,
+    })),
+    ...((STANDARD_VIEW_TYPES as readonly string[]).includes(currentType)
+      ? []
+      : [{ value: currentType, label: `Custom layout (${currentType})` }]),
+  ];
+
   const initialValues: ViewSettingsFormValues = {
     title: view?.title ?? '',
     path: view?.path ?? '',
     icon: view?.icon ?? '',
+    viewType: currentType,
     panel: view?.panel ?? false,
     subview: view?.subview ?? false,
     back_path: view?.back_path ?? '',
     visibleInNav: view?.visible === false ? false : true,
   };
+
+  // A live warning for structural (potentially lossy) type changes. The visible
+  // warning + an explicit Save is the FR-026 confirmation — never a silent loss.
+  const pendingType = (Form.useWatch('viewType', form) as string | undefined) ?? currentType;
+  let typeChangeWarning: string | null = null;
+  if (pendingType !== currentType) {
+    if (pendingType === 'sections') {
+      typeChangeWarning =
+        'Converting to Sections moves all cards into one section; card positions reset to full width. Cards are preserved.';
+    } else if (currentType === 'sections') {
+      typeChangeWarning =
+        'Converting away from Sections flattens all cards into a single list (preserved). Each section heading becomes a Markdown card.';
+    }
+  }
 
   const handleSave = () => {
     const values = form.getFieldsValue();
@@ -88,7 +145,7 @@ export const ViewSettingsDialog: React.FC<ViewSettingsDialogProps> = ({
       // `visible: false` (hidden from navigation).
       patch.visible = values.visibleInNav ? undefined : false;
     }
-    onSubmit(patch);
+    onSubmit({ patch, type: values.viewType ?? currentType });
   };
 
   const canMoveLeft = viewIndex !== null && viewIndex > 0;
@@ -139,6 +196,23 @@ export const ViewSettingsDialog: React.FC<ViewSettingsDialogProps> = ({
         <Form.Item label="Icon" name="icon" help="Material Design Icon, e.g. mdi:home.">
           <Input placeholder="mdi:home" data-testid="view-settings-icon" />
         </Form.Item>
+
+        <Form.Item
+          label="View type"
+          name="viewType"
+          help="How Home Assistant lays this view out. Sections is the modern grid; masonry/panel/sidebar are flat layouts."
+        >
+          <Select options={typeOptions} data-testid="view-settings-type" />
+        </Form.Item>
+        {typeChangeWarning && (
+          <Alert
+            type="warning"
+            showIcon
+            message={typeChangeWarning}
+            style={{ marginBottom: 16 }}
+            data-testid="view-settings-type-warning"
+          />
+        )}
 
         <Divider style={{ margin: '12px 0' }} />
 

@@ -19,6 +19,7 @@ import {
   setViewMaxColumns,
   convertViewToSections,
   buildSectionsView,
+  flattenSectionsView,
 } from '../../src/utils/sectionsLayout';
 import { getCardSizeConstraints } from '../../src/utils/cardSizingContract';
 import type { Card, View, ViewSection } from '../../src/types/dashboard';
@@ -643,6 +644,78 @@ describe('sectionsLayout', () => {
       const view = { type: 'masonry' } as unknown as View;
       const sections = convertViewToSections(view).sections as ViewSection[];
       expect(sections[0].cards).toEqual([]);
+    });
+  });
+
+  // Slice 4.6b: the inverse of convertViewToSections — flatten a sections view
+  // back to a flat view. Cards are PRESERVED; section headings are preserved as
+  // markdown cards (user chose "never silently destroy user data").
+  describe('flattenSectionsView', () => {
+    it("concatenates every section's cards into flat view.cards (preserved, in order)", () => {
+      const view = {
+        title: 'Home',
+        type: 'sections',
+        max_columns: 3,
+        sections: [
+          { type: 'grid', cards: [{ type: 'button', entity: 'light.a' }] },
+          { type: 'grid', cards: [{ type: 'button', entity: 'light.b' }] },
+        ],
+      } as unknown as View;
+      const next = flattenSectionsView(view);
+      expect(next.cards).toEqual([
+        { type: 'button', entity: 'light.a' },
+        { type: 'button', entity: 'light.b' },
+      ]);
+    });
+
+    it('preserves each section heading as a "## Title" markdown card prepended to that section', () => {
+      const view = {
+        type: 'sections',
+        sections: [
+          { type: 'grid', title: 'Lights', cards: [{ type: 'button', entity: 'light.a' }] },
+          { type: 'grid', cards: [{ type: 'button', entity: 'light.b' }] },
+        ],
+      } as unknown as View;
+      const cards = flattenSectionsView(view).cards as Array<Record<string, unknown>>;
+      expect(cards[0]).toEqual({ type: 'markdown', content: '## Lights' });
+      expect(cards[1]).toEqual({ type: 'button', entity: 'light.a' });
+      expect(cards[2]).toEqual({ type: 'button', entity: 'light.b' });
+    });
+
+    it('sets the target type (default masonry) and drops sections/max_columns', () => {
+      const view = {
+        type: 'sections',
+        max_columns: 4,
+        dense_section_placement: true,
+        sections: [{ type: 'grid', cards: [] }],
+      } as unknown as View;
+      const asMasonry = flattenSectionsView(view);
+      expect(asMasonry.type).toBe('masonry');
+      expect(asMasonry).not.toHaveProperty('sections');
+      expect(asMasonry).not.toHaveProperty('max_columns');
+      expect(asMasonry).not.toHaveProperty('dense_section_placement');
+      expect(flattenSectionsView(view, 'panel').type).toBe('panel');
+    });
+
+    it('carries the view identity props through (title/path/icon/panel)', () => {
+      const view = {
+        title: 'Home',
+        path: 'home',
+        icon: 'mdi:home',
+        panel: true,
+        type: 'sections',
+        sections: [{ type: 'grid', cards: [] }],
+      } as unknown as View;
+      const next = flattenSectionsView(view);
+      expect(next.title).toBe('Home');
+      expect(next.path).toBe('home');
+      expect(next.icon).toBe('mdi:home');
+      expect(next.panel).toBe(true);
+    });
+
+    it('is a reference-equal no-op for a non-sections view', () => {
+      const view = { type: 'masonry', cards: [] } as unknown as View;
+      expect(flattenSectionsView(view)).toBe(view);
     });
   });
 });
