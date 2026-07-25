@@ -200,7 +200,11 @@ describe('yamlService', () => {
           {
             title: 'Test View',
             path: 'test',
-            type: 'custom:grid-layout', // HAVDM-specific
+            // The HAVDM canvas scaffold. Slice 4.7a: identified by its marker
+            // (a BARE `type: custom:grid-layout` is a user's real layout-card
+            // view now, and is preserved).
+            type: 'custom:grid-layout',
+            _havdm_scaffold: true,
             cards: [
               {
                 type: 'markdown',
@@ -932,6 +936,7 @@ describe('yamlService', () => {
             title: 'V',
             path: 'v',
             type: 'custom:grid-layout',
+            _havdm_scaffold: true, // slice 4.7a: what makes it HAVDM-internal
             cards: [{ type: 'markdown', content: 'hi' }],
           },
         ],
@@ -972,11 +977,103 @@ describe('yamlService', () => {
       const sanitized = yamlService.sanitizeForHA(
         viewConfig({
           type: 'custom:grid-layout',
-          layout: { grid_template_columns: 'repeat(12, 1fr)' },
+          _havdm_scaffold: true, // slice 4.7a: the marker is what makes it internal
+          layout: {
+            grid_template_columns: 'repeat(12, 1fr)',
+            grid_template_rows: 'repeat(auto-fill, 56px)',
+            grid_gap: '8px',
+          },
         }),
       );
       expect(sanitized.views[0]).not.toHaveProperty('type');
       expect(sanitized.views[0]).not.toHaveProperty('layout');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Tier 4 slice 4.7a — first-class layout-card views
+  // -------------------------------------------------------------------------
+  //
+  // Tier 3 preserved every view type EXCEPT `custom:grid-layout`, because that
+  // is the string HAVDM stamps on its own flat-canvas scaffold. The cost was a
+  // silent data-loss bug: a user's REAL layout-card grid view carries the same
+  // type and had its `type` + `layout` destroyed on export. The scaffold is now
+  // identified by an explicit marker (with an exact-signature fallback for
+  // dashboards saved before the marker existed), so a real one survives.
+  describe('sanitizeForHA — first-class layout-card views (Tier 4, slice 4.7a)', () => {
+    const viewConfig = (view: Record<string, unknown>): DashboardConfig =>
+      ({
+        title: 'D',
+        views: [{ title: 'V', path: 'v', cards: [], ...view }],
+      }) as unknown as DashboardConfig;
+
+    const HAVDM_SCAFFOLD = {
+      grid_template_columns: 'repeat(12, 1fr)',
+      grid_template_rows: 'repeat(auto-fill, 56px)',
+      grid_gap: '8px',
+    };
+
+    it("PRESERVES a user's real custom:grid-layout view and its layout (was silently destroyed)", () => {
+      const layout = {
+        grid_template_columns: 'repeat(6, 1fr)',
+        grid_template_rows: 'repeat(auto-fill, 30px)',
+        grid_gap: '4px',
+      };
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({ type: 'custom:grid-layout', layout }),
+      );
+      const view = sanitized.views[0] as any;
+      expect(view.type).toBe('custom:grid-layout');
+      expect(view.layout).toEqual(layout);
+    });
+
+    it("preserves a real grid view that has NO layout block (HA's layout-card defaults)", () => {
+      const sanitized = yamlService.sanitizeForHA(viewConfig({ type: 'custom:grid-layout' }));
+      expect((sanitized.views[0] as any).type).toBe('custom:grid-layout');
+    });
+
+    it('preserves `layout_type` for a layout-card view (was always stripped)', () => {
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({ type: 'custom:vertical-layout', layout_type: 'vertical' }),
+      );
+      expect((sanitized.views[0] as any).layout_type).toBe('vertical');
+    });
+
+    it('strips the MARKED HAVDM scaffold (type + layout + the marker itself)', () => {
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({
+          type: 'custom:grid-layout',
+          _havdm_scaffold: true,
+          layout: { ...HAVDM_SCAFFOLD },
+        }),
+      );
+      const view = sanitized.views[0] as any;
+      expect(view).not.toHaveProperty('type');
+      expect(view).not.toHaveProperty('layout');
+      expect(view).not.toHaveProperty('_havdm_scaffold');
+    });
+
+    it('strips a LEGACY unmarked scaffold, matched by its exact signature', () => {
+      // Dashboards saved before the marker existed must not suddenly start
+      // deploying `custom:grid-layout` (layout-card may not even be installed).
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({ type: 'custom:grid-layout', layout: { ...HAVDM_SCAFFOLD } }),
+      );
+      expect(sanitized.views[0]).not.toHaveProperty('type');
+      expect(sanitized.views[0]).not.toHaveProperty('layout');
+    });
+
+    it('does NOT deploy a leftover layout on a view whose type is a standard HA type', () => {
+      // setViewType keeps a real layout-card config in HAVDM so the user can
+      // switch back; the boundary is what declines to deploy it (HA masonry has
+      // no `layout`).
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({ type: 'masonry', layout_type: 'grid', layout: { ...HAVDM_SCAFFOLD } }),
+      );
+      const view = sanitized.views[0] as any;
+      expect(view.type).toBe('masonry');
+      expect(view).not.toHaveProperty('layout');
+      expect(view).not.toHaveProperty('layout_type');
     });
   });
 

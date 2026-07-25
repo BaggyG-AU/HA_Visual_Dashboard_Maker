@@ -400,6 +400,13 @@ export interface View {
     mediaquery?: Record<string, any>;
     [key: string]: any;
   };
+  // HAVDM-internal (slice 4.7a). Marks a view as HAVDM's own flat-canvas
+  // scaffold — `type: 'custom:grid-layout'` + the 12-col/56px `layout` — rather
+  // than a layout-card view the user authored or imported. Those two are
+  // otherwise indistinguishable, and the export boundary must strip the former
+  // while preserving the latter. Dropped on export by the view allowlist; see
+  // `isHavdmScaffoldView` (`services/haExportContract.ts`).
+  _havdm_scaffold?: boolean;
 }
 
 export interface BadgeConfig {

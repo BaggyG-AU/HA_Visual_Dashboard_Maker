@@ -2,7 +2,7 @@ import * as yaml from 'js-yaml';
 import { DashboardConfig, ViewSection, YAMLParseResult } from '../types/dashboard';
 import { logger } from './logger';
 import { exportDashboard, importDashboard } from './yamlConversionService';
-import { HAVDM_INTERNAL_VIEW_TYPES } from './haExportContract';
+import { isHavdmScaffoldView, isLayoutCardViewType } from './haExportContract';
 import { selfCheckHaConfig } from './exportSelfCheck';
 import { summarizeExportWarnings } from './exportWarningSummary';
 import type { ExportWarning } from './exportWarnings';
@@ -160,19 +160,30 @@ class YAMLService {
 
         // Preserve the view's REAL Home Assistant type (masonry, panel, sidebar,
         // sections, a layout-card custom:*-layout). HAVDM stamps its internal
-        // canvas-grid scaffold type (custom:grid-layout — see
-        // HAVDM_INTERNAL_VIEW_TYPES) on every view it generates; that, and its
-        // paired `layout`, is HAVDM-internal and must be stripped so the view
-        // deploys as its real HA type. Any other type is user-authored/imported
-        // and was silently flattened to masonry before this denylist.
+        // canvas-grid scaffold on every view it generates; that, and its paired
+        // `layout`, is HAVDM-internal and must be stripped so the view deploys
+        // as its real HA type.
+        //
+        // ⚠ Slice 4.7a: the scaffold is identified by `isHavdmScaffoldView`, NOT
+        // by its `custom:grid-layout` type string. That string is ALSO a real
+        // layout-card view type, so keying off it destroyed a user's own
+        // layout-card grid config on every deploy. The marker (with an exact
+        // legacy-signature fallback) tells the two apart. `_havdm_scaffold`
+        // itself never reaches HA — the view allowlist above does not copy it.
         const viewType = typeof view.type === 'string' ? view.type : undefined;
-        if (viewType && !HAVDM_INTERNAL_VIEW_TYPES.has(viewType)) {
+        if (viewType && !isHavdmScaffoldView(view)) {
           cleanView.type = viewType;
-          // HAVDM only ever pairs a view `layout` with its internal
-          // custom:grid-layout scaffold, so a non-internal view's `layout` is
-          // the user's real layout-card config — carry it through.
-          if (view.layout !== undefined) {
-            cleanView.layout = view.layout;
+          // `layout` / `layout_type` only mean anything to layout-card. HA's own
+          // view types ignore them, and HAVDM keeps a user's layout-card config
+          // around after a type change so they can switch back (setViewType) —
+          // so gate on the TYPE, not on the key's presence.
+          if (isLayoutCardViewType(viewType)) {
+            if (view.layout !== undefined) {
+              cleanView.layout = view.layout;
+            }
+            if (view.layout_type !== undefined) {
+              cleanView.layout_type = view.layout_type;
+            }
           }
         }
 

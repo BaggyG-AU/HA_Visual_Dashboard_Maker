@@ -14,6 +14,7 @@ import {
 import { DeleteOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import type { View } from '../types/dashboard';
 import { normalizeViewType, STANDARD_VIEW_TYPES, type ViewPropsPatch } from '../utils/viewsLayout';
+import { isLayoutCardViewType } from '../services/haExportContract';
 
 const { Text } = Typography;
 
@@ -86,12 +87,13 @@ export const ViewSettingsDialog: React.FC<ViewSettingsDialogProps> = ({
   // leave a conditional `visible` untouched.
   const visibleIsConditional = Array.isArray(view?.visible);
 
-  // The current (normalised) view type — custom:grid-layout reads as masonry.
+  // The current (normalised) view type — HAVDM's canvas scaffold reads as
+  // masonry. Slice 4.7a: a user's REAL custom:grid-layout view reads as itself.
   const currentType = view ? normalizeViewType(view) : 'masonry';
 
   // The type options: the four real HA types, plus the current type if it is a
   // real layout-card (custom:*-layout) so it stays selectable and is never
-  // silently converted (first-class layout-card views are a later slice).
+  // silently converted.
   const typeOptions = [
     ...(STANDARD_VIEW_TYPES as readonly string[]).map((t) => ({
       value: t,
@@ -124,6 +126,13 @@ export const ViewSettingsDialog: React.FC<ViewSettingsDialogProps> = ({
     } else if (currentType === 'sections') {
       typeChangeWarning =
         'Converting away from Sections flattens all cards into a single list (preserved). Each section heading becomes a Markdown card.';
+    } else if (isLayoutCardViewType(currentType) && !isLayoutCardViewType(pendingType)) {
+      // Slice 4.7a: leaving a layout-card view for a standard HA type. The grid
+      // config is KEPT in HAVDM (switch back and it returns) but Home Assistant
+      // ignores it on this type, so it will not be deployed. Saying so is the
+      // FR-026 confirmation — nothing is destroyed silently.
+      typeChangeWarning =
+        'This view uses a layout-card grid. Home Assistant ignores that grid on the new type, so it will not be deployed — the configuration is kept in HAVDM if you switch back.';
     }
   }
 
