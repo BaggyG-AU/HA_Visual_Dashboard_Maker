@@ -979,4 +979,30 @@ describe('yamlService', () => {
       expect(sanitized.views[0]).not.toHaveProperty('layout');
     });
   });
+
+  // Slice 4.6a: the view-properties editor can set `subview` / `back_path`
+  // (HA's subview navigation model, FR-002 / F-HA-004). They must survive the
+  // export boundary or editing them is meaningless.
+  describe('sanitizeForHA — subview navigation keys (Tier 4, slice 4.6a)', () => {
+    const viewConfig = (view: Record<string, unknown>): DashboardConfig =>
+      ({
+        title: 'D',
+        views: [{ title: 'V', path: 'v', cards: [], ...view }],
+      }) as unknown as DashboardConfig;
+
+    it('preserves subview + back_path (were stripped before 4.6a)', () => {
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({ subview: true, back_path: '/lovelace/0' }),
+      );
+      const view = sanitized.views[0] as Record<string, unknown>;
+      expect(view.subview).toBe(true);
+      expect(view.back_path).toBe('/lovelace/0');
+    });
+
+    it('drops subview/back_path when absent (no undefined keys leak)', () => {
+      const sanitized = yamlService.sanitizeForHA(viewConfig({}));
+      expect(sanitized.views[0]).not.toHaveProperty('subview');
+      expect(sanitized.views[0]).not.toHaveProperty('back_path');
+    });
+  });
 });

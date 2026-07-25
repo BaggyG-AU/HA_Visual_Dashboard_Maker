@@ -132,6 +132,10 @@ class YAMLService {
           badges: view.badges,
           panel: view.panel,
           visible: view.visible,
+          // Subview navigation model (slice 4.6a). Undefined ones are pruned by
+          // the null/undefined sweep below.
+          subview: view.subview,
+          back_path: view.back_path,
           cards:
             view.cards?.map((card) => {
               // Create a clean copy. The HAVDM grid geometry is now the internal

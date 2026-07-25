@@ -30,6 +30,7 @@ import {
   AppstoreAddOutlined,
   SettingOutlined,
   SwapOutlined,
+  PlusOutlined,
 } from '@ant-design/icons';
 import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
@@ -69,11 +70,19 @@ import {
   convertViewToSections,
   buildSectionsView,
 } from './utils/sectionsLayout';
+import {
+  addView,
+  removeView,
+  moveView,
+  setViewProps,
+  type ViewPropsPatch,
+} from './utils/viewsLayout';
 import { HAEntityProvider, useHAEntities } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
 import { SettingsDialog } from './components/SettingsDialog';
 import { ThemePreviewPanel } from './components/ThemePreviewPanel';
 import { NewDashboardDialog } from './components/NewDashboardDialog';
+import { ViewSettingsDialog } from './components/ViewSettingsDialog';
 import { useThemeStore } from './store/themeStore';
 import { themeService } from './services/themeService';
 import { useEditorModeStore, EditorMode } from './store/editorModeStore';
@@ -194,6 +203,7 @@ const App: React.FC = () => {
   );
   const [verboseUIDebug, setVerboseUIDebug] = useState<boolean>(false);
   const [newDashboardDialogVisible, setNewDashboardDialogVisible] = useState<boolean>(false);
+  const [viewSettingsOpen, setViewSettingsOpen] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [livePreviewMode, setLivePreviewMode] = useState<boolean>(false);
   const [tempDashboardPath, setTempDashboardPath] = useState<string | null>(null);
@@ -1449,6 +1459,92 @@ const App: React.FC = () => {
     message.success('New Sections dashboard created!');
   };
 
+  // --- Tier 4 slice 4.6a: VIEW-level authoring ------------------------------
+  // Add / remove / reorder VIEWS and edit a view's identity properties. Same
+  // guard -> pure helper -> ref-equal skip -> updateConfig (one undo) ->
+  // selection fix-up shape as the section handlers. View mutations route through
+  // setSelectedView, which resets card/section selection.
+
+  const handleAddView = () => {
+    if (!config) return;
+    const nextConfig = addView(config);
+    if (nextConfig === config) return;
+    updateConfig(nextConfig);
+    setSelectedView(nextConfig.views.length - 1); // select + focus the new view
+    message.success('View added');
+  };
+
+  const handleOpenViewSettings = () => {
+    if (!config || selectedViewIndex === null) return;
+    setViewSettingsOpen(true);
+  };
+
+  const handleViewPropsChange = (patch: ViewPropsPatch) => {
+    if (!config || selectedViewIndex === null) {
+      setViewSettingsOpen(false);
+      return;
+    }
+    const currentView = config.views[selectedViewIndex];
+    const nextView = setViewProps(currentView, patch);
+    if (nextView !== currentView) {
+      const updatedViews = config.views.map((view, i) =>
+        i === selectedViewIndex ? nextView : view,
+      );
+      updateConfig({ ...config, views: updatedViews });
+      message.success('View updated');
+    }
+    setViewSettingsOpen(false);
+  };
+
+  const handleRemoveView = () => {
+    if (!config || selectedViewIndex === null) return;
+    if (config.views.length <= 1) {
+      message.warning('A dashboard must have at least one view');
+      return;
+    }
+    const index = selectedViewIndex;
+    const view = config.views[index];
+    const hasContent =
+      (view.cards?.length ?? 0) > 0 ||
+      (Array.isArray(view.sections) &&
+        view.sections.some((section) => (section.cards?.length ?? 0) > 0));
+
+    const doRemove = () => {
+      const nextConfig = removeView(config, index);
+      if (nextConfig === config) return;
+      updateConfig(nextConfig);
+      // The removed index is gone — clamp selection to a surviving view.
+      setSelectedView(Math.min(index, nextConfig.views.length - 1));
+      setViewSettingsOpen(false);
+      message.success('View deleted — press Ctrl+Z to undo');
+    };
+
+    if (hasContent) {
+      Modal.confirm({
+        title: 'Delete this view?',
+        content:
+          'This view contains cards. Deleting it removes them from the dashboard. You can undo with Ctrl+Z.',
+        okText: 'Delete',
+        cancelText: 'Cancel',
+        okButtonProps: { danger: true },
+        onOk: doRemove,
+      });
+    } else {
+      doRemove();
+    }
+  };
+
+  const handleMoveView = (direction: -1 | 1) => {
+    if (!config || selectedViewIndex === null) return;
+    const from = selectedViewIndex;
+    const to = from + direction;
+    if (to < 0 || to >= config.views.length) return;
+    const nextConfig = moveView(config, from, to);
+    if (nextConfig === config) return;
+    updateConfig(nextConfig);
+    setSelectedView(to); // follow the moved view
+  };
+
   const handleOpenConnectionDialog = () => {
     setSettingsTab('connection');
     setSettingsVisible(true);
@@ -2396,6 +2492,8 @@ const App: React.FC = () => {
                           onSectionTitleChange={handleSectionTitleChange}
                           onViewMaxColumnsChange={handleViewMaxColumnsChange}
                           onConvertToSections={handleConvertToSections}
+                          onAddView={handleAddView}
+                          onOpenViewSettings={handleOpenViewSettings}
                           onCardSelect={handleCardSelect}
                           onLayoutChange={handleLayoutChange}
                           onCardDrop={handleCardDrop}
@@ -2409,6 +2507,33 @@ const App: React.FC = () => {
                         <Tabs
                           activeKey={selectedViewIndex?.toString() || '0'}
                           onChange={(key) => setSelectedView(parseInt(key))}
+                          tabBarExtraContent={{
+                            right: (
+                              <Space size="small">
+                                <Tooltip title="Add a new view to this dashboard">
+                                  <Button
+                                    size="small"
+                                    icon={<PlusOutlined />}
+                                    onClick={handleAddView}
+                                    data-testid="view-add-button"
+                                  >
+                                    Add view
+                                  </Button>
+                                </Tooltip>
+                                <Tooltip title="Edit this view's title, path, type and layout">
+                                  <Button
+                                    size="small"
+                                    icon={<SettingOutlined />}
+                                    onClick={handleOpenViewSettings}
+                                    disabled={selectedViewIndex === null}
+                                    data-testid="view-settings-button"
+                                  >
+                                    Edit view
+                                  </Button>
+                                </Tooltip>
+                              </Space>
+                            ),
+                          }}
                           items={config.views.map((view, index) => ({
                             key: index.toString(),
                             label: view.title || view.path || `View ${index + 1}`,
@@ -2516,6 +2641,18 @@ const App: React.FC = () => {
           onCreateFromTemplate={handleCreateFromTemplate}
           onCreateFromEntityType={handleCreateFromEntityType}
           isConnected={isConnected}
+        />
+        <ViewSettingsDialog
+          open={viewSettingsOpen}
+          view={
+            config && selectedViewIndex !== null ? (config.views[selectedViewIndex] ?? null) : null
+          }
+          viewIndex={selectedViewIndex}
+          viewCount={config?.views.length ?? 0}
+          onClose={() => setViewSettingsOpen(false)}
+          onSubmit={handleViewPropsChange}
+          onDelete={handleRemoveView}
+          onMove={handleMoveView}
         />
         <EntityRemappingModal
           visible={remapModalVisible}

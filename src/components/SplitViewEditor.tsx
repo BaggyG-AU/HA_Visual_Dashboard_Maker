@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Button, Space, Tooltip, message } from 'antd';
-import { CheckOutlined, RollbackOutlined, SyncOutlined } from '@ant-design/icons';
+import { Alert, Button, Select, Space, Tooltip, message } from 'antd';
+import {
+  CheckOutlined,
+  PlusOutlined,
+  RollbackOutlined,
+  SettingOutlined,
+  SyncOutlined,
+} from '@ant-design/icons';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 import { GridCanvas } from './GridCanvas';
@@ -59,6 +65,10 @@ interface SplitViewEditorProps {
   /** Tier 4 slice 4.5: convert the current non-sections view to a sections view */
   onConvertToSections?: () => void;
 
+  /** Tier 4 slice 4.6a: view-level authoring (split mode has no view tabs) */
+  onAddView?: () => void;
+  onOpenViewSettings?: () => void;
+
   /** Whether paste is available */
   canPaste: boolean;
 }
@@ -93,9 +103,11 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
   onSectionTitleChange,
   onViewMaxColumnsChange,
   onConvertToSections,
+  onAddView,
+  onOpenViewSettings,
   canPaste,
 }) => {
-  const { config, updateConfig } = useDashboardStore();
+  const { config, updateConfig, setSelectedView } = useDashboardStore();
 
   const {
     syncStatus,
@@ -282,6 +294,40 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
         }}
       >
         <Space>
+          {/* Split mode has no view tabs — a compact view switcher + manage
+              controls (Tier 4 slice 4.6a). */}
+          {config.views.length > 0 && (
+            <Select
+              size="small"
+              value={selectedViewIndex ?? 0}
+              onChange={(index) => setSelectedView(index)}
+              style={{ minWidth: 140 }}
+              data-testid="split-view-selector"
+              options={config.views.map((view, index) => ({
+                value: index,
+                label: view.title || view.path || `View ${index + 1}`,
+              }))}
+            />
+          )}
+          <Tooltip title="Add a new view to this dashboard">
+            <Button
+              size="small"
+              icon={<PlusOutlined />}
+              onClick={onAddView}
+              aria-label="Add view"
+              data-testid="split-view-add-button"
+            />
+          </Tooltip>
+          <Tooltip title="Edit this view's title, path, type and layout">
+            <Button
+              size="small"
+              icon={<SettingOutlined />}
+              onClick={onOpenViewSettings}
+              disabled={selectedViewIndex === null}
+              aria-label="Edit view"
+              data-testid="split-view-settings-button"
+            />
+          </Tooltip>
           {syncStatus === 'synced' && (
             <span style={{ color: '#52c41a', fontSize: '12px' }}>
               <CheckOutlined /> Synced
