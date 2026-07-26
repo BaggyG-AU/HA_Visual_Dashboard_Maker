@@ -25,6 +25,7 @@ interface AppSettings {
   soundsEnabled?: boolean;
   soundsVolume?: number;
   entityMappings?: { from: string; to: string }[];
+  vcsRepoRoots?: string[];
 }
 
 export type LoggingLevel = 'off' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
@@ -261,6 +262,24 @@ class SettingsService {
 
   clearEntityMappings(): void {
     this.store.set('entityMappings', []);
+  }
+
+  // Version control (WS3 Phase 7 slice E). The designated repository roots are
+  // the ONLY directories the vcs:* IPC handlers will act on — see
+  // docs/governance/phases/phase-7-slice-e-command-contract.md §6. Stored as
+  // realpath'd absolute paths, set only via the native directory dialog.
+  getVcsRepoRoots(): string[] {
+    return this.store.get('vcsRepoRoots', []);
+  }
+
+  addVcsRepoRoot(root: string): void {
+    const existing = this.getVcsRepoRoots();
+    if (existing.includes(root)) return;
+    this.store.set('vcsRepoRoots', [...existing, root]);
+  }
+
+  clearVcsRepoRoots(): void {
+    this.store.set('vcsRepoRoots', []);
   }
 
   // Reset UI state (non-destructive to dashboards)

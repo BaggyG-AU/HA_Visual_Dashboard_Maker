@@ -23,21 +23,22 @@ the current discipline as its own PR.
 
 ## 1) Slice Status Board
 
-| Slice | Title                                     | Status                      | Commit    | Reached main via   | Date       |
-| ----- | ----------------------------------------- | --------------------------- | --------- | ------------------ | ---------- |
-| A     | Preset Marketplace foundations            | ✅ Delivered                | `8a3597e` | PR #23 (`863a44c`) | 2026-02-17 |
-| B     | Theme Manager expansion                   | ✅ Delivered                | `536e3c1` | PR #23 (`863a44c`) | 2026-02-17 |
-| C     | Card Duplication & Cloning                | ⚠ **PARTIALLY WITHDRAWN**   | see §3    | amendment-02       | 2026-07-26 |
-| D     | Bulk Operations & multi-select safety     | ✅ Delivered                | `f17be4d` | PR #23 (`863a44c`) | 2026-02-17 |
-| E     | Version Control Integration boundaries    | ⬜ Not started (greenfield) | —         | —                  | —          |
-| F     | Import/Export Enhancements & hardening    | ✅ Delivered                | `7c1752d` | PR #80 (`128e8c4`) | 2026-07-26 |
-| G     | Dashboard Analytics                       | 🚫 **WITHDRAWN**            | —         | amendment-01 §1.2  | 2026-07-26 |
-| H     | Plugin System Architecture scaffold       | 🚫 **WITHDRAWN**            | —         | amendment-01 §1.3  | 2026-07-26 |
-| I     | Medium Gate packaging & release readiness | ⬜ Not started              | —         | —                  | —          |
+| Slice | Title                                     | Status                    | Commit    | Reached main via   | Date       |
+| ----- | ----------------------------------------- | ------------------------- | --------- | ------------------ | ---------- |
+| A     | Preset Marketplace foundations            | ✅ Delivered              | `8a3597e` | PR #23 (`863a44c`) | 2026-02-17 |
+| B     | Theme Manager expansion                   | ✅ Delivered              | `536e3c1` | PR #23 (`863a44c`) | 2026-02-17 |
+| C     | Card Duplication & Cloning                | ⚠ **PARTIALLY WITHDRAWN** | see §3    | amendment-02       | 2026-07-26 |
+| D     | Bulk Operations & multi-select safety     | ✅ Delivered              | `f17be4d` | PR #23 (`863a44c`) | 2026-02-17 |
+| E     | Version Control Integration boundaries    | ⚠ **READ-ONLY delivered** | see §3    | PR #83             | 2026-07-26 |
+| F     | Import/Export Enhancements & hardening    | ✅ Delivered              | `7c1752d` | PR #80 (`128e8c4`) | 2026-07-26 |
+| G     | Dashboard Analytics                       | 🚫 **WITHDRAWN**          | —         | amendment-01 §1.2  | 2026-07-26 |
+| H     | Plugin System Architecture scaffold       | 🚫 **WITHDRAWN**          | —         | amendment-01 §1.3  | 2026-07-26 |
+| I     | Medium Gate packaging & release readiness | ⬜ Not started            | —         | —                  | —          |
 
-**Phase 7 Definition of Done is NOT met.** Outstanding: Slice E
-(implementation), Slice I (gate). Slice C was resolved 2026-07-26 by
-amendment-02 — action withdrawn, guarantee delivered.
+**Phase 7 Definition of Done is NOT met.** Outstanding: **Slice I (gate)** only.
+Slice C was resolved 2026-07-26 by amendment-02 (action withdrawn, guarantee
+delivered); Slice E landed read-only the same day, with `commitFiles` deferred as
+a stated deferral (see §3).
 
 ---
 
@@ -209,13 +210,60 @@ amendment-02: **action withdrawn, guarantee delivered.**
   form store. The test is **unskipped and passing**. Recorded in
   `docs/testing/SKIPPED_TESTS_REGISTER.md` "Resolved" table.
 
-### Slice E — Version Control Integration boundaries ⬜
+### Slice E — Version Control Integration boundaries ⚠ READ-ONLY DELIVERED
 
-Not started. Greenfield: `src/services/versionControlService.ts` does not exist.
-Command contract narrowed before implementation, as the slice's own Operator
+Implemented against `docs/governance/phases/phase-7-slice-e-command-contract.md`,
+which was narrowed and signed off BEFORE any code, as the slice's own Operator
 Decision Tree requires ("if any IPC command scope is unclear, stop and narrow
-command contract first") — see
-`docs/governance/phases/phase-7-slice-e-command-contract.md`.
+command contract first").
+
+**Scope delivered — six READ operations.** `isRepo`, `status`, `branch`, `log`,
+`diffFile`, `showAtRev`, plus three repo-designation channels
+(`listRepoRoots` / `designateRepoRoot` / `clearRepoRoots`).
+
+⚠ **`commitFiles` (contract operation 7) is DEFERRED, not delivered** — the
+contract's own §5 and §11 recommendation, accepted at sign-off: committing from a
+dashboard editor is a meaningful escalation of blast radius, and a read-only
+surface is useful on its own. Everything touching a remote or rewriting history
+was out of scope by contract. **This is the only respect in which slice E is
+narrower than blueprint §12's "safe additive git workflow integration"**, and it
+is a stated deferral rather than a silent gap. Adding the write later is additive:
+one channel, one argv builder, one confirmation surface.
+
+- Source: `src/services/versionControlService.ts` (new — the PURE half: argv
+  builders, validators, parsers; ⚠ must never import `electron`,
+  `node:child_process` or `node:fs`, which is what makes the security logic
+  testable without an Electron host), `src/main.ts` (the nine handlers and the
+  execution envelope), `src/preload.ts` (nine typed members — one channel PER
+  OPERATION, never a generic `vcs:exec`, so operation dispatch never crosses to
+  the renderer's side of the boundary), `src/components/VersionControlDialog.tsx`
+  (new — portal modal, mounted only while open), `src/menu.ts`,
+  `src/services/settingsService.ts` (`vcsRepoRoots`).
+- Tests, all three required layers: `tests/unit/version-control-service.spec.ts`
+  (70), `tests/integration/version-control.spec.ts` (10),
+  `tests/e2e/version-control.spec.ts` (4). Unit 801 → 871.
+- ⚠ **Not red-before-green** — a new module has nothing to fail against on base.
+  The coverage earns its place by asserting REJECTIONS: `HEAD~3`, `@{upstream}`,
+  `a..b`, `^`, uppercase hex, a 41-char id, `../outside`, `/etc/passwd`,
+  `C:\…`, a UNC path, `.git/config`, an embedded NUL, a sibling directory
+  sharing the root's name prefix, and every `GIT_*` variable including one
+  invented by the test. A validation layer is worth what its refusals are worth.
+- ⭐ **The UI entry is a MENU item, not a toolbar button.** A persistent in-flow
+  element above the canvas shifts the boundingBox clip
+  `tests/e2e/layout.visual.spec.ts` captures; a native Electron menu is not in
+  the DOM at all. `layout.visual` 3/3 confirms it.
+- Security posture actually implemented: `execFile` with an argv array and no
+  `shell` option anywhere; argv built only in main; `realpath` on both the root
+  and the file before the containment check, so a symlink cannot escape the
+  tree; user-supplied paths always after a `--` separator; `rev` restricted to
+  hex-or-`HEAD`; every `GIT_*` key dropped from the child env with
+  `GIT_TERMINAL_PROMPT=0` / `GIT_OPTIONAL_LOCKS=0` forced; 10 s timeout; 5 MB
+  output cap; one git invocation in flight per repo root; git-absent reported as
+  a first-class state rather than an error.
+- ⚠ Repo designation is the gate that makes containment meaningful: without it,
+  "is the file inside repoRoot?" is trivially satisfied by a renderer supplying
+  both halves. Roots are set ONLY via the native directory dialog and stored
+  realpath'd; the renderer cannot designate a path, only request the prompt.
 
 ### Slice F — Import/Export Enhancements & conversion hardening ✅
 
@@ -250,8 +298,15 @@ Never started. Withdrawn by amendment-01 §1.3. No code to remove.
 
 ### Slice I — Medium Gate packaging & release readiness ⬜
 
-Not started. Blocked on Slice E's delivery. (Slice C's disposition, previously
-also blocking, was resolved by amendment-02 on 2026-07-26.)
+Not started, and **no longer blocked** — Slice C (amendment-02) and Slice E
+(read-only) both landed 2026-07-26. This is the last outstanding slice in the
+phase. Its prep checklist is §5 below.
+
+⚠ Two things slice I must record explicitly rather than trip over: the 8 known
+e2e failures (accepted-known, not gate failures) and the load-sensitive
+`tests/integration/entity-browser.spec.ts:380` flake. It must also carry the
+`commitFiles` deferral into the Go/No-Go rationale, since blueprint §12 described
+Slice E more broadly than what shipped.
 
 ---
 
@@ -262,13 +317,16 @@ also blocking, was resolved by amendment-02 on 2026-07-26.)
 | `npm run typecheck`    | 0 errors                                 |
 | `npm run lint`         | 0 errors / 147 warnings                  |
 | `npm run format:check` | clean                                    |
-| `npm run test:unit`    | 801 passed (71 files)                    |
+| `npm run test:unit`    | 871 passed (72 files)                    |
 | `npm run package`      | OK                                       |
-| `electron-e2e`         | 240 passed / 8 failed / 2 skipped (Xvfb) |
-| `electron-integration` | 159 passed / 0 failed / 19 skipped       |
+| `electron-e2e`         | 244 passed / 8 failed / 2 skipped (Xvfb) |
+| `electron-integration` | 169 passed / 0 failed / 19 skipped       |
 
 Unit count history: 773 (pre-slice-F) → 785 (slice F, `7c1752d`) → 801 (Slice C
-state-safety, +16 in `tests/unit/card-clone.spec.ts`).
+state-safety, +16 in `tests/unit/card-clone.spec.ts`) → 871 (Slice E, +70 in
+`tests/unit/version-control-service.spec.ts`). e2e 240 → 244 (+4 in
+`tests/e2e/version-control.spec.ts`); integration 159 → 169 (+10 in
+`tests/integration/version-control.spec.ts`).
 
 ⚠ **NEW known integration flake, first observed 2026-07-26** during the Slice C
 state-safety run: `tests/integration/entity-browser.spec.ts:380` ("should insert
@@ -303,7 +361,7 @@ Slice I must confirm the register is current at gate time.
 ## 5) Medium Gate Prep Checklist (blueprint §18 item 8)
 
 - [x] Slice C disposition decided — amendment-02: action withdrawn, guarantee delivered
-- [ ] Slice E delivered with its three required test layers
+- [x] Slice E delivered with its three required test layers (read-only; `commitFiles` deferred — §3)
 - [x] `tools/checks` corrected so the gate's first command checks what CI checks
 - [x] Version progression resolved and recorded (amendment-01 §2)
 - [x] Slice A–F evidence assembled (this document, §3)

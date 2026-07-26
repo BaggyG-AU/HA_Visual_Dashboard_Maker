@@ -5,6 +5,25 @@ import started from 'electron-squirrel-startup';
 import { createApplicationMenu } from './menu';
 import { settingsService, LoggingLevel } from './services/settingsService';
 import { logger, loggerDefaults } from './services/logger';
+import {
+  buildBranchArgv,
+  buildDiffFileArgv,
+  buildGitEnv,
+  buildIsRepoArgv,
+  buildLogArgv,
+  buildShowAtRevArgv,
+  buildStatusArgv,
+  GIT_MAX_OUTPUT_BYTES,
+  GIT_TIMEOUT_MS,
+  isContainedPath,
+  isSafeRepoRelativePath,
+  isValidLogDepth,
+  isValidRev,
+  parseBranchOutput,
+  parseIsRepoOutput,
+  parseLogOutput,
+  parseStatusPorcelainZ,
+} from './services/versionControlService';
 
 const isE2ETestMode = process.env.E2E === '1' || process.env.PLAYWRIGHT_TEST === '1';
 
@@ -814,6 +833,265 @@ ipcMain.handle('credentials:delete', async (event, id: string) => {
 ipcMain.handle('credentials:isEncryptionAvailable', async () => {
   return { available: credentialsService.isEncryptionAvailable() };
 });
+
+// ===== Version control (WS3 Phase 7 slice E) =====
+//
+// Implements docs/governance/phases/phase-7-slice-e-command-contract.md.
+// READ-ONLY: six operations, no `commitFiles` in this slice.
+//
+// ⚠ THE THREE RULES THAT MAKE THIS SAFE, all enforced here in main:
+//   1. The renderer names an OPERATION from a closed set — one channel each. It
+//      never supplies a command, a flag, or an argv element that is not a
+//      validated path/rev/depth. Every argv is built by versionControlService.
+//   2. NO SHELL, EVER. execFile with an argument array; `shell` is never set.
+//   3. The repo root must be one the user DESIGNATED in-app, and every file
+//      path must resolve (after realpath, so symlinks cannot escape) to
+//      somewhere strictly inside it.
+
+/** Serialises git invocations per repo root — bounded, non-blocking polling. */
+const gitQueues = new Map<string, Promise<unknown>>();
+
+const runGitQueued = <T>(repoRoot: string, task: () => Promise<T>): Promise<T> => {
+  const previous = gitQueues.get(repoRoot) ?? Promise.resolve();
+  const next = previous.catch(() => undefined).then(task);
+  gitQueues.set(
+    repoRoot,
+    next.catch(() => undefined),
+  );
+  return next;
+};
+
+type GitRunResult = { success: true; stdout: string } | { success: false; error: string };
+
+const runGit = async (repoRoot: string, argv: string[]): Promise<GitRunResult> => {
+  const { execFile } = await import('node:child_process');
+  return runGitQueued(repoRoot, () => {
+    return new Promise<GitRunResult>((resolve) => {
+      execFile(
+        'git',
+        argv,
+        {
+          cwd: repoRoot,
+          // No `shell` option — the default is false. A string is never handed
+          // to /bin/sh, cmd.exe or PowerShell anywhere in this path.
+          timeout: GIT_TIMEOUT_MS,
+          maxBuffer: GIT_MAX_OUTPUT_BYTES,
+          windowsHide: true,
+          env: buildGitEnv(process.env as Record<string, string | undefined>),
+        },
+        (error, stdout, stderr) => {
+          if (error) {
+            const err = error as NodeJS.ErrnoException & { killed?: boolean; code?: unknown };
+            if (err.code === 'ENOENT') {
+              // git absent is a first-class state, not a crash.
+              resolve({ success: false, error: 'GIT_NOT_AVAILABLE' });
+              return;
+            }
+            if (err.killed) {
+              resolve({ success: false, error: `git timed out after ${GIT_TIMEOUT_MS}ms` });
+              return;
+            }
+            if (/maxBuffer/i.test(err.message)) {
+              resolve({ success: false, error: 'git output exceeded the size limit' });
+              return;
+            }
+            // A non-zero exit is an error, never a silent success.
+            resolve({ success: false, error: (stderr || err.message).trim() });
+            return;
+          }
+          resolve({ success: true, stdout });
+        },
+      );
+    });
+  });
+};
+
+/** Resolve + validate a repo root against the user's designated list. */
+const resolveDesignatedRepoRoot = async (
+  repoRoot: unknown,
+): Promise<{ ok: true; root: string } | { ok: false; error: string }> => {
+  if (typeof repoRoot !== 'string' || repoRoot.length === 0) {
+    return { ok: false, error: 'repoRoot must be a non-empty string' };
+  }
+  if (!path.isAbsolute(repoRoot)) {
+    return { ok: false, error: 'repoRoot must be an absolute path' };
+  }
+
+  let real: string;
+  try {
+    real = await fs.realpath(repoRoot);
+    const stat = await fs.stat(real);
+    if (!stat.isDirectory()) return { ok: false, error: 'repoRoot is not a directory' };
+  } catch {
+    return { ok: false, error: 'repoRoot does not exist' };
+  }
+
+  // ⚠ Without this check, "is the file inside repoRoot?" is trivially satisfied
+  // by a renderer that supplies both halves.
+  const designated = settingsService.getVcsRepoRoots();
+  const isDesignated = designated.some((entry) => entry === real || entry === repoRoot);
+  if (!isDesignated) {
+    return { ok: false, error: 'repoRoot has not been designated in the app' };
+  }
+
+  return { ok: true, root: real };
+};
+
+/** Resolve a renderer-supplied path to a repo-relative path inside the root. */
+const resolveContainedRelativePath = async (
+  realRoot: string,
+  filePath: unknown,
+): Promise<{ ok: true; relative: string } | { ok: false; error: string }> => {
+  if (typeof filePath !== 'string' || filePath.length === 0) {
+    return { ok: false, error: 'file must be a non-empty string' };
+  }
+  if (filePath.includes('\0')) {
+    return { ok: false, error: 'file contains a NUL byte' };
+  }
+
+  const absolute = path.resolve(realRoot, filePath);
+  let real: string;
+  try {
+    real = await fs.realpath(absolute);
+    const stat = await fs.stat(real);
+    if (!stat.isFile()) return { ok: false, error: 'file is not a regular file' };
+  } catch {
+    return { ok: false, error: 'file does not exist' };
+  }
+
+  // Symlinks are resolved on BOTH sides before comparing, so a link pointing
+  // out of the tree fails here rather than reaching git.
+  if (!isContainedPath(realRoot, real)) {
+    return { ok: false, error: 'file is outside the designated repository' };
+  }
+
+  const relative = path.relative(realRoot, real).split(path.sep).join('/');
+  if (!isSafeRepoRelativePath(relative)) {
+    return { ok: false, error: 'file resolves to an unsafe repository path' };
+  }
+
+  return { ok: true, relative };
+};
+
+ipcMain.handle('vcs:listRepoRoots', async () => {
+  return { success: true, roots: settingsService.getVcsRepoRoots() };
+});
+
+ipcMain.handle('vcs:designateRepoRoot', async () => {
+  // The user picks the repository through the native dialog — the renderer
+  // cannot designate a path, only ask that the user be prompted.
+  const result = await dialog.showOpenDialog({
+    title: 'Select a git repository',
+    properties: ['openDirectory'],
+  });
+  if (result.canceled || result.filePaths.length === 0) {
+    return { success: false, canceled: true };
+  }
+
+  const chosen = result.filePaths[0];
+  let real: string;
+  try {
+    real = await fs.realpath(chosen);
+  } catch {
+    return { success: false, error: 'Selected directory could not be resolved' };
+  }
+
+  const check = await runGit(real, buildIsRepoArgv());
+  if (!check.success) {
+    return {
+      success: false,
+      error:
+        check.error === 'GIT_NOT_AVAILABLE'
+          ? 'git is not available on this system'
+          : 'Selected directory is not a git repository',
+    };
+  }
+  if (!parseIsRepoOutput(check.stdout)) {
+    return { success: false, error: 'Selected directory is not a git repository' };
+  }
+
+  settingsService.addVcsRepoRoot(real);
+  return { success: true, root: real };
+});
+
+ipcMain.handle('vcs:clearRepoRoots', async () => {
+  settingsService.clearVcsRepoRoots();
+  return { success: true };
+});
+
+ipcMain.handle('vcs:isRepo', async (_event, repoRoot: unknown) => {
+  const resolved = await resolveDesignatedRepoRoot(repoRoot);
+  if (!resolved.ok) return { success: false, error: resolved.error };
+
+  const result = await runGit(resolved.root, buildIsRepoArgv());
+  if (!result.success) return { success: false, error: result.error };
+  return { success: true, isRepo: parseIsRepoOutput(result.stdout) };
+});
+
+ipcMain.handle('vcs:status', async (_event, repoRoot: unknown) => {
+  const resolved = await resolveDesignatedRepoRoot(repoRoot);
+  if (!resolved.ok) return { success: false, error: resolved.error };
+
+  const result = await runGit(resolved.root, buildStatusArgv());
+  if (!result.success) return { success: false, error: result.error };
+  return { success: true, entries: parseStatusPorcelainZ(result.stdout) };
+});
+
+ipcMain.handle('vcs:branch', async (_event, repoRoot: unknown) => {
+  const resolved = await resolveDesignatedRepoRoot(repoRoot);
+  if (!resolved.ok) return { success: false, error: resolved.error };
+
+  const result = await runGit(resolved.root, buildBranchArgv());
+  if (!result.success) return { success: false, error: result.error };
+  return { success: true, ...parseBranchOutput(result.stdout) };
+});
+
+ipcMain.handle('vcs:log', async (_event, repoRoot: unknown, filePath: unknown, depth: unknown) => {
+  const resolved = await resolveDesignatedRepoRoot(repoRoot);
+  if (!resolved.ok) return { success: false, error: resolved.error };
+
+  const file = await resolveContainedRelativePath(resolved.root, filePath);
+  if (!file.ok) return { success: false, error: file.error };
+
+  if (!isValidLogDepth(depth)) {
+    return { success: false, error: 'depth must be an integer between 1 and 100' };
+  }
+
+  const result = await runGit(resolved.root, buildLogArgv(file.relative, depth));
+  if (!result.success) return { success: false, error: result.error };
+  return { success: true, commits: parseLogOutput(result.stdout) };
+});
+
+ipcMain.handle('vcs:diffFile', async (_event, repoRoot: unknown, filePath: unknown) => {
+  const resolved = await resolveDesignatedRepoRoot(repoRoot);
+  if (!resolved.ok) return { success: false, error: resolved.error };
+
+  const file = await resolveContainedRelativePath(resolved.root, filePath);
+  if (!file.ok) return { success: false, error: file.error };
+
+  const result = await runGit(resolved.root, buildDiffFileArgv(file.relative));
+  if (!result.success) return { success: false, error: result.error };
+  return { success: true, diff: result.stdout, path: file.relative };
+});
+
+ipcMain.handle(
+  'vcs:showAtRev',
+  async (_event, repoRoot: unknown, filePath: unknown, rev: unknown) => {
+    const resolved = await resolveDesignatedRepoRoot(repoRoot);
+    if (!resolved.ok) return { success: false, error: resolved.error };
+
+    const file = await resolveContainedRelativePath(resolved.root, filePath);
+    if (!file.ok) return { success: false, error: file.error };
+
+    if (!isValidRev(rev)) {
+      return { success: false, error: 'rev must be a hex object id or HEAD' };
+    }
+
+    const result = await runGit(resolved.root, buildShowAtRevArgv(file.relative, rev));
+    if (!result.success) return { success: false, error: result.error };
+    return { success: true, content: result.stdout };
+  },
+);
 
 // ===== End IPC Handlers =====
 

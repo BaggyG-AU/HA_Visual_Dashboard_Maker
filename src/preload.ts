@@ -115,6 +115,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
   credentialsDelete: (id: string) => ipcRenderer.invoke('credentials:delete', id),
   credentialsIsEncryptionAvailable: () => ipcRenderer.invoke('credentials:isEncryptionAvailable'),
 
+  // Version control (WS3 Phase 7 slice E) — READ-ONLY.
+  // ⚠ One channel PER OPERATION, deliberately. A single generic `vcs:exec`
+  // taking a command name would move operation dispatch onto the renderer's
+  // side of the boundary, which is exactly what the command contract forbids.
+  vcsListRepoRoots: () => ipcRenderer.invoke('vcs:listRepoRoots'),
+  vcsDesignateRepoRoot: () => ipcRenderer.invoke('vcs:designateRepoRoot'),
+  vcsClearRepoRoots: () => ipcRenderer.invoke('vcs:clearRepoRoots'),
+  vcsIsRepo: (repoRoot: string) => ipcRenderer.invoke('vcs:isRepo', repoRoot),
+  vcsStatus: (repoRoot: string) => ipcRenderer.invoke('vcs:status', repoRoot),
+  vcsBranch: (repoRoot: string) => ipcRenderer.invoke('vcs:branch', repoRoot),
+  vcsLog: (repoRoot: string, filePath: string, depth: number) =>
+    ipcRenderer.invoke('vcs:log', repoRoot, filePath, depth),
+  vcsDiffFile: (repoRoot: string, filePath: string) =>
+    ipcRenderer.invoke('vcs:diffFile', repoRoot, filePath),
+  vcsShowAtRev: (repoRoot: string, filePath: string, rev: string) =>
+    ipcRenderer.invoke('vcs:showAtRev', repoRoot, filePath, rev),
+
   // Test-only APIs (only available when NODE_ENV=test)
   testSeedEntityCache: (entities: any[]) => ipcRenderer.invoke('test:seedEntityCache', entities),
   testClearEntityCache: () => ipcRenderer.invoke('test:clearEntityCache'),
@@ -139,6 +156,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onMenuToggleTheme: (callback: () => void) => {
     ipcRenderer.on('menu:toggle-theme', callback);
     return () => ipcRenderer.removeListener('menu:toggle-theme', callback);
+  },
+  onMenuVersionControl: (callback: () => void) => {
+    ipcRenderer.on('menu:version-control', callback);
+    return () => ipcRenderer.removeListener('menu:version-control', callback);
   },
   onMenuShowAbout: (callback: () => void) => {
     ipcRenderer.on('menu:show-about', callback);
@@ -268,6 +289,46 @@ export interface ElectronAPI {
   credentialsMarkAsUsed: (id: string) => Promise<{ success: boolean; error?: string }>;
   credentialsDelete: (id: string) => Promise<{ success: boolean; error?: string }>;
   credentialsIsEncryptionAvailable: () => Promise<{ available: boolean }>;
+
+  // Version control (WS3 Phase 7 slice E) — READ-ONLY, six operations.
+  vcsListRepoRoots: () => Promise<{ success: boolean; roots?: string[]; error?: string }>;
+  vcsDesignateRepoRoot: () => Promise<{
+    success: boolean;
+    root?: string;
+    canceled?: boolean;
+    error?: string;
+  }>;
+  vcsClearRepoRoots: () => Promise<{ success: boolean }>;
+  vcsIsRepo: (repoRoot: string) => Promise<{ success: boolean; isRepo?: boolean; error?: string }>;
+  vcsStatus: (repoRoot: string) => Promise<{
+    success: boolean;
+    entries?: { code: string; path: string; originalPath?: string }[];
+    error?: string;
+  }>;
+  vcsBranch: (repoRoot: string) => Promise<{
+    success: boolean;
+    branch?: string;
+    detached?: boolean;
+    error?: string;
+  }>;
+  vcsLog: (
+    repoRoot: string,
+    filePath: string,
+    depth: number,
+  ) => Promise<{
+    success: boolean;
+    commits?: { hash: string; author: string; date: string; subject: string }[];
+    error?: string;
+  }>;
+  vcsDiffFile: (
+    repoRoot: string,
+    filePath: string,
+  ) => Promise<{ success: boolean; diff?: string; path?: string; error?: string }>;
+  vcsShowAtRev: (
+    repoRoot: string,
+    filePath: string,
+    rev: string,
+  ) => Promise<{ success: boolean; content?: string; error?: string }>;
   testSeedEntityCache: (entities: any[]) => Promise<{ success: boolean; error?: string }>;
   testClearEntityCache: () => Promise<{ success: boolean; error?: string }>;
   onMenuOpenFile: (callback: () => void) => () => void;
@@ -275,6 +336,7 @@ export interface ElectronAPI {
   onMenuSaveFileAs: (callback: () => void) => () => void;
   onMenuExportForHA: (callback: () => void) => () => void;
   onMenuToggleTheme: (callback: () => void) => () => void;
+  onMenuVersionControl: (callback: () => void) => () => void;
   onMenuShowAbout: (callback: () => void) => () => void;
   onMenuOpenRecentFile: (callback: (filePath: string) => void) => () => void;
 }
