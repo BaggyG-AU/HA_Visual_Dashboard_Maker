@@ -12,8 +12,12 @@
       "Bash(npx prettier --check *)",
       "Bash(npm run package)",
       "Bash(npx playwright test *)",
+      "Bash(npx vitest run *)",
       "Bash(bash tools/feature-start *)",
-      "mcp__mempalace__*"
+      "mcp__mempalace__*",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:www.home-assistant.io)",
+      "WebFetch(domain:github.com)"
     ],
     "ask": [
       "mcp__mempalace__mempalace_delete_drawer",
