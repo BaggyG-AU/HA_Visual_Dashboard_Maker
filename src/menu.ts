@@ -88,6 +88,17 @@ export function createApplicationMenu(mainWindow: BrowserWindow): Menu {
         },
         { type: 'separator' },
         {
+          // WS3 slice E. Deliberately a MENU item rather than a toolbar button:
+          // any persistent in-flow element above the canvas shifts the
+          // boundingBox clip tests/e2e/layout.visual.spec.ts captures, and a
+          // menu lives outside the DOM entirely.
+          label: 'Version Control...',
+          click: () => {
+            mainWindow.webContents.send('menu:version-control');
+          },
+        },
+        { type: 'separator' },
+        {
           label: 'Recent Files',
           submenu: recentFilesMenuItems,
         },

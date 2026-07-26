@@ -97,6 +97,7 @@ import { SettingsDialog } from './components/SettingsDialog';
 import { ThemePreviewPanel } from './components/ThemePreviewPanel';
 import { NewDashboardDialog } from './components/NewDashboardDialog';
 import { ViewSettingsDialog } from './components/ViewSettingsDialog';
+import { VersionControlDialog } from './components/VersionControlDialog';
 import { useThemeStore } from './store/themeStore';
 import { themeService } from './services/themeService';
 import { useEditorModeStore, EditorMode } from './store/editorModeStore';
@@ -218,6 +219,10 @@ const App: React.FC = () => {
   const [verboseUIDebug, setVerboseUIDebug] = useState<boolean>(false);
   const [newDashboardDialogVisible, setNewDashboardDialogVisible] = useState<boolean>(false);
   const [viewSettingsOpen, setViewSettingsOpen] = useState<boolean>(false);
+  // WS3 slice E. Opened from the File > Version Control... menu item — a menu,
+  // not a toolbar button, so nothing is added to the in-flow layout above the
+  // canvas (which would shift layout.visual's boundingBox clip).
+  const [versionControlOpen, setVersionControlOpen] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [livePreviewMode, setLivePreviewMode] = useState<boolean>(false);
   const [tempDashboardPath, setTempDashboardPath] = useState<string | null>(null);
@@ -2142,6 +2147,9 @@ const App: React.FC = () => {
     const unsubToggleTheme = window.electronAPI.onMenuToggleTheme(handleMenuToggleTheme);
     const unsubShowAbout = window.electronAPI.onMenuShowAbout(handleMenuShowAbout);
     const unsubOpenRecentFile = window.electronAPI.onMenuOpenRecentFile(handleMenuOpenRecentFile);
+    const unsubVersionControl = window.electronAPI.onMenuVersionControl(() =>
+      setVersionControlOpen(true),
+    );
 
     // Cleanup listeners when component unmounts
     return () => {
@@ -2152,6 +2160,7 @@ const App: React.FC = () => {
       unsubToggleTheme();
       unsubShowAbout();
       unsubOpenRecentFile();
+      unsubVersionControl();
     };
   }, []);
 
@@ -2706,6 +2715,17 @@ const App: React.FC = () => {
             onSubmit={handleViewSettingsSave}
             onDelete={handleRemoveView}
             onMove={handleMoveView}
+          />
+        )}
+        {/* WS3 slice E. Same mount-only-while-open rule as ViewSettingsDialog
+            above: this dialog holds per-open state (repo, branch, status, diff)
+            and `destroyOnHidden` alone would keep the component — and that
+            state — alive across closes. */}
+        {versionControlOpen && (
+          <VersionControlDialog
+            open={versionControlOpen}
+            onClose={() => setVersionControlOpen(false)}
+            currentFilePath={filePath}
           />
         )}
         <EntityRemappingModal

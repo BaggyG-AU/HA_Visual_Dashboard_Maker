@@ -2,7 +2,19 @@ Phase Name: Phase 7 – Ecosystem & Future Growth
 Document Type: Slice E pre-implementation command contract
 Blueprint: docs/governance/phases/phase-7-ecosystem-future-growth-blueprint.md (§13, Slice E)
 Date: 2026-07-26
-Status: **DESIGN ONLY — not yet approved for implementation**
+Status: **APPROVED AND IMPLEMENTED (read-only) — 2026-07-26, PR #83**
+
+> Operations 1–6 (all reads) are implemented as specified. **Operation 7
+> `commitFiles` is DEFERRED** — the §5 / §11-question-1 recommendation, accepted
+> at sign-off. §5's "ship operations 1–6 read-only and defer the write" is
+> therefore the path taken, and the rest of this document should be read as the
+> live contract for what exists, with §5 describing work not yet done.
+> §11's other three questions were resolved as: a single designated repository
+> (§6 as written); the UI is a portal modal opened from a **menu item** rather
+> than a toolbar button, because a persistent in-flow element above the canvas
+> would shift the boundingBox clip `tests/e2e/layout.visual.spec.ts` captures;
+> and `diffFile` headlines the currently-open dashboard file rather than being a
+> general repo browser.
 
 # Slice E — Version Control Integration: Command Contract
 
