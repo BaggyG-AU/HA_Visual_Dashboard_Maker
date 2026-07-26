@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
+# Mirrors the blocking CI job (.github/workflows/ci.yml) so a local gate run and
+# a PR gate check the same things, in the same order.
+#
+# `npm run package` (CI's build step) is deliberately NOT here: the e2e
+# globalSetup packages the app when it needs to, and starting a separate
+# concurrent build while an e2e run is live is banned. Slice-level gates run
+# `npm run package` as their own explicit step.
+#
+# `npm ci` is deliberately NOT here either — it deletes and reinstalls
+# node_modules, which is a bootstrap step, not a check.
+#
+# History: typecheck was commented out and format:check absent until the WS3
+# scope-amendment slice (2026-07-26). See
+# docs/governance/phases/phase-7-ecosystem-future-growth-amendment-01.md §3.
+
 npm run lint
-#npm run typecheck
-npm ci
+npm run format:check
+npm run typecheck
 npm run test:unit
