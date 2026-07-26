@@ -7,8 +7,11 @@ import {
   setViewProps,
   normalizeViewType,
   setViewType,
+  setViewGrid,
+  convertViewToLayoutCard,
   STANDARD_VIEW_TYPES,
 } from '../../src/utils/viewsLayout';
+import { isHavdmScaffoldView } from '../../src/services/haExportContract';
 import type { DashboardConfig, View } from '../../src/types/dashboard';
 
 const view = (over: Partial<View> = {}): View => ({ title: 'V', path: 'v', cards: [], ...over });
@@ -269,5 +272,121 @@ describe('viewsLayout — setViewType with real layout-card views (slice 4.7a)',
   it('is a reference-equal no-op for a real layout-card view whose type is unchanged', () => {
     const v = realGrid();
     expect(setViewType(v, 'custom:grid-layout')).toBe(v);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tier 4 slice 4.7b — the layout-card EDITOR half
+// ---------------------------------------------------------------------------
+//
+// 4.7a made a user's layout-card view survive the export boundary. 4.7b lets
+// them AUTHOR one: edit the grid (setViewGrid) and turn an ordinary view into a
+// real layout-card view (convertViewToLayoutCard).
+
+describe('viewsLayout — setViewGrid (Tier 4, slice 4.7b)', () => {
+  const realGrid = (): View =>
+    view({
+      type: 'custom:grid-layout',
+      layout_type: 'grid',
+      layout: { grid_template_columns: 'repeat(6, 1fr)', grid_gap: '4px' },
+    } as Partial<View>);
+
+  it('sets the three grid template keys', () => {
+    const next = setViewGrid(realGrid(), {
+      grid_template_columns: 'repeat(4, 1fr)',
+      grid_template_rows: 'repeat(auto-fill, 30px)',
+      grid_gap: '12px',
+    });
+    expect(next.layout).toEqual({
+      grid_template_columns: 'repeat(4, 1fr)',
+      grid_template_rows: 'repeat(auto-fill, 30px)',
+      grid_gap: '12px',
+    });
+  });
+
+  it('preserves layout keys it does not manage (named areas, media queries)', () => {
+    // "Translate where possible, honestly mark what cannot" — the editor must
+    // never destroy layout-card features it has no UI for.
+    const v = view({
+      type: 'custom:grid-layout',
+      layout: {
+        grid_template_columns: 'repeat(6, 1fr)',
+        grid_template_areas: '"a b" "c c"',
+        mediaquery: { '(max-width: 800px)': { grid_template_columns: '1fr' } },
+      },
+    } as Partial<View>);
+    const next = setViewGrid(v, { grid_template_columns: 'repeat(3, 1fr)' });
+    expect(next.layout?.grid_template_columns).toBe('repeat(3, 1fr)');
+    expect(next.layout?.grid_template_areas).toBe('"a b" "c c"');
+    expect(next.layout?.mediaquery).toEqual({
+      '(max-width: 800px)': { grid_template_columns: '1fr' },
+    });
+  });
+
+  it('round-trips a non-repeat() template verbatim (a numeric stepper would destroy this)', () => {
+    const next = setViewGrid(realGrid(), { grid_template_columns: '1fr 2fr 1fr' });
+    expect(next.layout?.grid_template_columns).toBe('1fr 2fr 1fr');
+  });
+
+  it('clears a key when given an empty string or undefined', () => {
+    const next = setViewGrid(realGrid(), { grid_gap: '' });
+    expect(next.layout).not.toHaveProperty('grid_gap');
+  });
+
+  it('is a reference-equal no-op when nothing changes', () => {
+    const v = realGrid();
+    expect(setViewGrid(v, { grid_template_columns: 'repeat(6, 1fr)' })).toBe(v);
+    expect(setViewGrid(v, {})).toBe(v);
+  });
+
+  it('carries cards through by reference', () => {
+    const cards = [{ type: 'button' }] as View['cards'];
+    const v = view({ type: 'custom:grid-layout', layout: {}, cards } as Partial<View>);
+    expect(setViewGrid(v, { grid_gap: '8px' }).cards).toBe(cards);
+  });
+});
+
+describe('viewsLayout — convertViewToLayoutCard (Tier 4, slice 4.7b)', () => {
+  it('promotes a plain masonry view into a real layout-card grid view', () => {
+    const next = convertViewToLayoutCard(view({ type: 'masonry' }));
+    expect(next.type).toBe('custom:grid-layout');
+    expect(next.layout_type).toBe('grid');
+    expect(next.layout?.grid_template_columns).toBeTruthy();
+  });
+
+  it('CLEARS the HAVDM scaffold marker so the promoted view is no longer stripped on export', () => {
+    // The whole point: a promoted view must deploy as custom:grid-layout. If the
+    // marker survived, isHavdmScaffoldView would still claim it and the export
+    // boundary would destroy the very grid the user just asked for.
+    const next = convertViewToLayoutCard(buildBlankView()) as View & { _havdm_scaffold?: boolean };
+    expect(next._havdm_scaffold).toBeUndefined();
+    expect(isHavdmScaffoldView(next)).toBe(false);
+  });
+
+  it("adopts the scaffold's own 12-col geometry so the canvas does not jump on convert", () => {
+    const next = convertViewToLayoutCard(buildBlankView());
+    expect(next.layout?.grid_template_columns).toBe('repeat(12, 1fr)');
+  });
+
+  it('keeps an existing user grid rather than overwriting it', () => {
+    const v = view({
+      type: 'masonry',
+      layout: { grid_template_columns: 'repeat(5, 1fr)' },
+    } as Partial<View>);
+    expect(convertViewToLayoutCard(v).layout?.grid_template_columns).toBe('repeat(5, 1fr)');
+  });
+
+  it('carries cards through by reference', () => {
+    const cards = [{ type: 'button' }] as View['cards'];
+    expect(convertViewToLayoutCard(view({ type: 'masonry', cards })).cards).toBe(cards);
+  });
+
+  it('is a reference-equal no-op for a view that is already a real layout-card grid', () => {
+    const v = view({
+      type: 'custom:grid-layout',
+      layout_type: 'grid',
+      layout: { grid_template_columns: 'repeat(6, 1fr)' },
+    } as Partial<View>);
+    expect(convertViewToLayoutCard(v)).toBe(v);
   });
 });

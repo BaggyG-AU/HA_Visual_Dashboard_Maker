@@ -11,6 +11,7 @@ import {
   isLayoutCardGrid,
   convertLayoutCardToGridLayout,
   getCanvasColumns,
+  getCanvasRowHeight,
 } from '../utils/layoutCardParser';
 import { logger } from '../services/logger';
 import 'react-grid-layout/css/styles.css';
@@ -193,11 +194,18 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
 
   // Slice 4.7a: a layout-card view the USER authored can declare any column
   // count, and rendering it on HAVDM's fixed 12 puts every card at the wrong
-  // width. HAVDM's own scaffold views declare 12, so this resolves to the exact
-  // same GRID_CONFIG for them and the canvas is unchanged (layout.visual-safe).
+  // width. Slice 4.7b extends the same idea to the declared ROW HEIGHT, which is
+  // what makes a `grid_row: 1 / 5` span mean what the user wrote.
+  //
+  // Both helpers return the canvas defaults for HAVDM's own scaffold views and
+  // for every plain HA view, so this resolves to the EXACT SAME GRID_CONFIG
+  // object for them and the canvas stays pixel-identical (layout.visual-safe).
   const gridConfig = useMemo(() => {
     const cols = getCanvasColumns(view);
-    return cols === GRID_CONFIG.cols ? GRID_CONFIG : { ...GRID_CONFIG, cols };
+    const rowHeight = getCanvasRowHeight(view);
+    return cols === GRID_CONFIG.cols && rowHeight === GRID_CONFIG.rowHeight
+      ? GRID_CONFIG
+      : { ...GRID_CONFIG, cols, rowHeight };
   }, [view]);
 
   const handleLayoutChange = (newLayout: Layout) => {
@@ -278,6 +286,41 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         onViewMaxColumnsChange={onViewMaxColumnsChange}
         canPaste={canPaste}
       />
+    );
+  }
+
+  // Tier 4 slice 4.7b: a STRATEGY view has no cards of its own — Home Assistant
+  // generates them at render time. The empty-view placeholder below would invite
+  // the user to drag cards onto it, which is exactly the wrong affordance: those
+  // cards cannot coexist with the strategy, and until 4.7b the export boundary
+  // silently replaced the whole generated view with `cards: []`. Say what the
+  // view actually is instead. Placed after all hooks so hook order stays
+  // unconditional, and after the sections branch (the two are mutually
+  // exclusive in practice).
+  if (view.strategy && cards.length === 0) {
+    return (
+      <div
+        data-testid="strategy-view-placeholder"
+        style={{
+          height: '100%',
+          padding: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#141414',
+        }}
+      >
+        <div style={{ textAlign: 'center', color: '#8c8c8c', maxWidth: 520 }}>
+          <div style={{ color: '#ddd', fontSize: 16, marginBottom: 8 }}>
+            Home Assistant generates this view
+          </div>
+          <div style={{ fontSize: 13, lineHeight: 1.6 }}>
+            It uses the strategy <code>{view.strategy.type}</code>, so its cards are built by Home
+            Assistant when the dashboard loads. HAVDM preserves the strategy exactly as written and
+            deploys it unchanged.
+          </div>
+        </div>
+      </div>
     );
   }
 

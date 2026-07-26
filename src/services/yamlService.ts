@@ -136,6 +136,16 @@ class YAMLService {
           // the null/undefined sweep below.
           subview: view.subview,
           back_path: view.back_path,
+          // ⚠ Slice 4.7b: a view STRATEGY must survive. Home Assistant generates
+          // a strategy view's cards at render time, so the view legitimately has
+          // no `cards` of its own — and this allowlist previously dropped
+          // `strategy` while forcing `cards: []` below, deploying the view as
+          // `{title, path, cards: []}`. The user's entire generated view came
+          // back BLANK. Import always kept the strategy in memory (a plain
+          // spread in `yamlConversionService.importDashboard`), so HAVDM held
+          // the config and then wrote nothing over it. Same class as the 4.7a
+          // custom:grid-layout collision; larger blast radius.
+          strategy: view.strategy,
           cards:
             view.cards?.map((card) => {
               // Create a clean copy. The HAVDM grid geometry is now the internal
@@ -155,7 +165,11 @@ class YAMLService {
               });
 
               return cleanCard;
-            }) || [],
+              // A strategy view has no cards of its own — HA generates them.
+              // Emitting `cards: []` there is not merely noise, it is the
+              // destructive half of the 4.7b bug: it overwrites the generated
+              // view with an empty one. Undefined is pruned by the sweep below.
+            }) || (view.strategy ? undefined : []),
         };
 
         // Preserve the view's REAL Home Assistant type (masonry, panel, sidebar,
@@ -236,6 +250,14 @@ class YAMLService {
       background: config.background,
       theme: config.theme,
     };
+
+    // Slice 4.7b: a DASHBOARD-level strategy generates the entire dashboard.
+    // The allowlist above reduces the config to title/views/background/theme, so
+    // without this the whole thing was dropped on deploy. Only set the key when
+    // one is present, so a normal dashboard gains no empty `strategy:`.
+    if (config.strategy !== undefined) {
+      (sanitized as DashboardConfig).strategy = config.strategy;
+    }
 
     const exported = exportDashboard(sanitized as unknown as Record<string, unknown>, {
       warnings,

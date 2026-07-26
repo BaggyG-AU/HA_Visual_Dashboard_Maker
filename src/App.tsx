@@ -78,9 +78,13 @@ import {
   setViewProps,
   normalizeViewType,
   setViewType,
+  setViewGrid,
+  convertViewToLayoutCard,
   HAVDM_SCAFFOLD_VIEW_FIELDS,
   type ViewPropsPatch,
+  type ViewGridPatch,
 } from './utils/viewsLayout';
+import { isLayoutCardViewType } from './services/haExportContract';
 import { HAEntityProvider, useHAEntities } from './contexts/HAEntityContext';
 import { ThemeSelector } from './components/ThemeSelector';
 import { SettingsDialog } from './components/SettingsDialog';
@@ -1488,7 +1492,11 @@ const App: React.FC = () => {
   // structural conversions that PRESERVE cards (convert-to / convert-away);
   // flat<->flat is a metadata change. The type control never offers HAVDM's
   // internal custom:grid-layout (Tier 3) — it is normalised to masonry.
-  const handleViewSettingsSave = (change: { patch: ViewPropsPatch; type: string }) => {
+  const handleViewSettingsSave = (change: {
+    patch: ViewPropsPatch;
+    type: string;
+    grid?: ViewGridPatch;
+  }) => {
     if (!config || selectedViewIndex === null) {
       setViewSettingsOpen(false);
       return;
@@ -1504,9 +1512,21 @@ const App: React.FC = () => {
         nextView = convertViewToSections(nextView);
       } else if (curType === 'sections') {
         nextView = flattenSectionsView(nextView, change.type);
+      } else if (isLayoutCardViewType(change.type) && !isLayoutCardViewType(curType)) {
+        // Slice 4.7b: converting INTO a real layout-card view. This clears the
+        // HAVDM scaffold marker — without that the export boundary would still
+        // treat the view as internal and destroy the grid the user just asked
+        // for, reintroducing the 4.7a data-loss bug.
+        nextView = convertViewToLayoutCard(nextView);
       } else {
         nextView = setViewType(nextView, change.type);
       }
+    }
+
+    // 3) the grid patch, applied AFTER any conversion so it edits the view's
+    // final layout rather than one that is about to be replaced.
+    if (change.grid) {
+      nextView = setViewGrid(nextView, change.grid);
     }
 
     if (nextView === currentView) {
@@ -2672,18 +2692,30 @@ const App: React.FC = () => {
           onCreateFromEntityType={handleCreateFromEntityType}
           isConnected={isConnected}
         />
-        <ViewSettingsDialog
-          open={viewSettingsOpen}
-          view={
-            config && selectedViewIndex !== null ? (config.views[selectedViewIndex] ?? null) : null
-          }
-          viewIndex={selectedViewIndex}
-          viewCount={config?.views.length ?? 0}
-          onClose={() => setViewSettingsOpen(false)}
-          onSubmit={handleViewSettingsSave}
-          onDelete={handleRemoveView}
-          onMove={handleMoveView}
-        />
+        {/* Mounted only while open (slice 4.7b). `destroyOnHidden` destroys the
+            Modal's DOM but NOT this component, so the antd form instance created
+            by `Form.useForm()` inside it survived every close — and a field
+            re-registering on the next open reads the retained store value in
+            preference to `initialValues`. The dialog therefore reopened showing
+            whatever was typed the FIRST time it was opened, and saving again
+            wrote those stale values back over the user's edit. Mounting per open
+            gives a fresh form instance and is the root-cause fix. */}
+        {viewSettingsOpen && (
+          <ViewSettingsDialog
+            open={viewSettingsOpen}
+            view={
+              config && selectedViewIndex !== null
+                ? (config.views[selectedViewIndex] ?? null)
+                : null
+            }
+            viewIndex={selectedViewIndex}
+            viewCount={config?.views.length ?? 0}
+            onClose={() => setViewSettingsOpen(false)}
+            onSubmit={handleViewSettingsSave}
+            onDelete={handleRemoveView}
+            onMove={handleMoveView}
+          />
+        )}
         <EntityRemappingModal
           visible={remapModalVisible}
           missingEntities={missingEntities}

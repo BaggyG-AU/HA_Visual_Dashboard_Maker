@@ -1102,4 +1102,82 @@ describe('yamlService', () => {
       expect(sanitized.views[0]).not.toHaveProperty('back_path');
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Tier 4 slice 4.7b — view/dashboard `strategy:` preservation
+  // -------------------------------------------------------------------------
+  //
+  // A strategy view has NO `cards` — Home Assistant generates them at render
+  // time from the strategy config. The export boundary's view allowlist did not
+  // carry `strategy`, AND it forced `cards: view.cards?.map(...) || []`, so a
+  // strategy view deployed as `{title, path, cards: []}`: the strategy was
+  // destroyed and the view came back BLANK. Import kept the strategy in memory
+  // (a plain spread), so HAVDM held the user's config and then wrote nothing
+  // over it. Same class as the 4.7a custom:grid-layout collision, but the loss
+  // is the view's entire generated CONTENT rather than its grid geometry.
+  describe('sanitizeForHA — strategy views (Tier 4, slice 4.7b)', () => {
+    const viewConfig = (view: Record<string, unknown>): DashboardConfig =>
+      ({
+        title: 'D',
+        views: [{ title: 'V', path: 'v', ...view }],
+      }) as unknown as DashboardConfig;
+
+    it("PRESERVES a view-level strategy (was silently destroyed, blanking the user's view)", () => {
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({ strategy: { type: 'original-states' } }),
+      );
+      const view = sanitized.views[0] as Record<string, unknown>;
+      expect(view.strategy).toEqual({ type: 'original-states' });
+    });
+
+    it('preserves a strategy with its own options', () => {
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({
+          strategy: {
+            type: 'custom:area-dashboard',
+            options: { areas: ['kitchen', 'lounge'], hide_empty: true },
+          },
+        }),
+      );
+      const view = sanitized.views[0] as Record<string, unknown>;
+      expect(view.strategy).toEqual({
+        type: 'custom:area-dashboard',
+        options: { areas: ['kitchen', 'lounge'], hide_empty: true },
+      });
+    });
+
+    it('does NOT force an empty cards array onto a strategy view (HA generates its cards)', () => {
+      // The forced `cards: []` is the destructive half of the bug: even with the
+      // strategy preserved, an empty `cards` key alongside it is wrong config.
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({ strategy: { type: 'original-states' } }),
+      );
+      expect(sanitized.views[0]).not.toHaveProperty('cards');
+    });
+
+    it('still emits cards for a normal (non-strategy) view', () => {
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({ cards: [{ type: 'markdown', content: 'Hi' }] }),
+      );
+      const view = sanitized.views[0] as Record<string, unknown>;
+      expect(Array.isArray(view.cards)).toBe(true);
+      expect((view.cards as unknown[]).length).toBe(1);
+    });
+
+    it('preserves a DASHBOARD-level strategy (the whole config was reduced to title/views)', () => {
+      const config = {
+        title: 'D',
+        strategy: { type: 'original-states' },
+        views: [],
+      } as unknown as DashboardConfig;
+      const sanitized = yamlService.sanitizeForHA(config) as unknown as Record<string, unknown>;
+      expect(sanitized.strategy).toEqual({ type: 'original-states' });
+    });
+
+    it('leaves a strategy-free dashboard untouched (no empty strategy key leaks)', () => {
+      const sanitized = yamlService.sanitizeForHA(viewConfig({ cards: [] }));
+      expect(sanitized).not.toHaveProperty('strategy');
+      expect(sanitized.views[0]).not.toHaveProperty('strategy');
+    });
+  });
 });

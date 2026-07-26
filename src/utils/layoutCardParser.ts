@@ -108,19 +108,28 @@ const parseGridPosition = (position?: string): { start?: number; end?: number; s
 export const parseViewLayout = (
   card: Card,
   index: number,
+  rowHeight: number = HAVDM_CANVAS_ROW_HEIGHT,
 ): { x: number; y: number; w: number; h: number } => {
   const viewLayout = card.view_layout;
 
   if (!viewLayout) {
-    // No view_layout - use auto-positioning
+    // No view_layout - use auto-positioning.
+    //
+    // ⚠ Slice 4.7b: `getCardSizeConstraints` returns row SPANS tuned for the
+    // canvas's 150px row. In a real layout-card view rendering at a smaller
+    // declared row height, those spans would make the card several times too
+    // short, so scale them to preserve roughly the intended PIXEL height. Cards
+    // that declare their own `view_layout` are never touched — those spans are
+    // the user's, expressed in their own grid's units.
     const constraints = getCardSizeConstraints(card);
+    const scale = HAVDM_CANVAS_ROW_HEIGHT / rowHeight;
     const col = index % 2;
     const row = Math.floor(index / 2);
     return {
       x: col * 6,
-      y: row * 4,
+      y: Math.round(row * 4 * scale),
       w: constraints.w,
-      h: constraints.h,
+      h: Math.max(1, Math.round(constraints.h * scale)),
     };
   }
 
@@ -206,11 +215,24 @@ export const parseLayoutCardConfig = (view: View): GridConfig => {
  * The result is clamped to a renderable 1..24 so a malformed template cannot
  * produce a zero-column (or absurdly wide) grid.
  *
- * ⚠ Scope: only the COLUMN count is honoured. Row height stays at the canvas
- * default — changing it re-baselines every `layout.visual` snapshot and needs
- * the card `h` heuristics re-tuned first (see `GRID_CONFIG` in GridCanvas.tsx).
+ * ⚠ Scope: the ROW HEIGHT is handled by its sibling {@link getCanvasRowHeight}
+ * (slice 4.7b), on exactly the same terms. Neither ever moves a HAVDM scaffold
+ * view; the global `GRID_CONFIG.rowHeight` 150 -> 56 change for
+ * Home-Assistant-Sections parity remains deferred (see `GRID_CONFIG` in
+ * GridCanvas.tsx).
  */
 export const HAVDM_CANVAS_COLUMNS = 12;
+
+/**
+ * The canvas's own row height, and the fallback for every view whose row height
+ * HAVDM does not honour. Must stay in sync with `GRID_CONFIG.rowHeight` in
+ * `components/GridCanvas.tsx`.
+ */
+export const HAVDM_CANVAS_ROW_HEIGHT = 150;
+
+/** Row-height bounds that keep a card visible, clickable and draggable. */
+const MIN_CANVAS_ROW_HEIGHT = 8;
+const MAX_CANVAS_ROW_HEIGHT = 300;
 
 export const getCanvasColumns = (view: View): number => {
   if (isHavdmScaffoldView(view)) return HAVDM_CANVAS_COLUMNS;
@@ -224,14 +246,57 @@ export const getCanvasColumns = (view: View): number => {
 };
 
 /**
+ * How tall the canvas should render one grid row for this view (slice 4.7b).
+ *
+ * The exact mirror of {@link getCanvasColumns}, and scoped just as narrowly: a
+ * layout-card grid declaring `repeat(auto-fill, 30px)` means one row is 30px,
+ * and rendering it on the canvas's 150px row makes every card five times too
+ * tall — the user's `grid_row: 1 / 5` spans stop meaning anything. HAVDM's own
+ * scaffold and every plain HA view keep the canvas default, so this can never
+ * move a view HAVDM created.
+ *
+ * ⚠ SCOPE — this is NOT the global `GRID_CONFIG.rowHeight` 150 -> 56 change that
+ * `components/GridCanvas.tsx` documents for Home-Assistant-Sections parity. That
+ * one moves EVERY view including HAVDM's own, re-baselines every
+ * `tests/e2e/layout.visual.spec.ts` snapshot, and needs the card `h` heuristics
+ * in `cardSizingContract.ts` re-tuned first. It stays deferred; note the
+ * scaffold DECLARES 56px yet has always RENDERED at 150, so honouring the
+ * scaffold's own declaration here would silently BE that change.
+ *
+ * Only pixel row heights can be honoured — `1fr` / `auto` / `minmax(...)` have
+ * no fixed height and react-grid-layout needs a number, so those fall back to
+ * the canvas default. The result is clamped to a range that stays draggable.
+ */
+export const getCanvasRowHeight = (view: View): number => {
+  if (isHavdmScaffoldView(view)) return HAVDM_CANVAS_ROW_HEIGHT;
+  if (!isLayoutCardViewType(view.type) && view.layout_type !== 'grid') {
+    return HAVDM_CANVAS_ROW_HEIGHT;
+  }
+  const template = view.layout?.grid_template_rows || view.layout?.grid_auto_rows;
+  if (!template) return HAVDM_CANVAS_ROW_HEIGHT;
+
+  const raw = parseGridRows(template);
+  const match = raw.match(/^(\d+(?:\.\d+)?)px$/);
+  if (!match) return HAVDM_CANVAS_ROW_HEIGHT;
+
+  const px = Number.parseFloat(match[1]);
+  if (!Number.isFinite(px) || px <= 0) return HAVDM_CANVAS_ROW_HEIGHT;
+  return Math.min(Math.max(MIN_CANVAS_ROW_HEIGHT, Math.round(px)), MAX_CANVAS_ROW_HEIGHT);
+};
+
+/**
  * Convert layout-card grid to react-grid-layout
  */
 export const convertLayoutCardToGridLayout = (view: View): LayoutItem[] => {
   const cards = view.cards || [];
   parseLayoutCardConfig(view);
+  // Slice 4.7b: cards without their own `view_layout` fall back to heuristics
+  // tuned for the canvas's default row, so they need to know what row height
+  // this view actually renders at.
+  const rowHeight = getCanvasRowHeight(view);
 
   return cards.map((card, index) => {
-    const { x, y, w, h } = parseViewLayout(card, index);
+    const { x, y, w, h } = parseViewLayout(card, index, rowHeight);
 
     return {
       i: `card-${index}`,
