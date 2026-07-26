@@ -27,7 +27,7 @@
  *                      (`canvasKeyStripper.ts`); the silent `'strip'` removal by
  *                      `stripInternalKeys` (`yamlConversionService.ts`).
  */
-import type { BaseCard } from '../types/dashboard';
+import type { BaseCard, View } from '../types/dashboard';
 import type { Phase6CardContracts } from '../types/phase6';
 
 export type KeyAction = 'card-mod' | 'ha-visibility' | 'strip' | 'canvas';
@@ -183,6 +183,108 @@ export const HA_VISIBILITY_KEYS: readonly string[] = keysForAction('ha-visibilit
  * Phase 4 PR-1.
  */
 export const CANVAS_KEYS: readonly string[] = keysForAction('canvas');
+
+// ---------------------------------------------------------------------------
+// VIEW-key contract — WS3 slice F
+// ---------------------------------------------------------------------------
+//
+// The card contract above is safe-by-default: `KEY_ACTION` names the internal
+// keys, `stripInternalKeys` removes them, and every other key PASSES THROUGH to
+// Home Assistant. The view path used to be the exact opposite — `cleanView` in
+// `yamlService.ts` was an ALLOWLIST, so any HA view key HAVDM did not happen to
+// model was silently dropped on export.
+//
+// That asymmetry, not any one missing key, is what produced three separate
+// silent data-loss bugs, each found by accident rather than by design:
+//   - slice 4.6a — `subview` / `back_path` stripped, so editing them could not
+//     round-trip.
+//   - slice 4.7a — `layout` / `layout_type` destroyed, wiping a user's real
+//     layout-card grid on every deploy.
+//   - slice 4.7b — `strategy` destroyed AND replaced with `cards: []`, blanking
+//     the entire generated view.
+// Home Assistant's own `header` (2024.11+) was queued up as the fourth.
+//
+// Views now use the card path's posture. The protection is three-layered, as it
+// is for cards: this classification, the compile-time completeness guard below,
+// and the runtime self-check in `exportSelfCheck.ts`.
+
+/**
+ * HAVDM-internal VIEW keys — bookkeeping with no Home Assistant meaning, removed
+ * on export. Mirrors {@link KEY_ACTION} for views. Only `'strip'` is meaningful
+ * today; the action shape is kept so a future view key can translate rather than
+ * disappear, exactly as card keys can.
+ */
+export const VIEW_KEY_ACTION = {
+  /** Slice 4.7a: marks HAVDM's own flat-canvas scaffold. See {@link isHavdmScaffoldView}. */
+  _havdm_scaffold: 'strip',
+} as const satisfies Record<string, KeyAction>;
+
+/** VIEW keys removed on export. Consumed by `cleanView` in `yamlService.ts`. */
+export const VIEW_STRIP_KEYS: readonly string[] = Object.entries(VIEW_KEY_ACTION)
+  .filter(([, action]) => action === 'strip')
+  .map(([key]) => key);
+
+/**
+ * The prefix every HAVDM-internal key carries. Because the view path passes
+ * unknown keys THROUGH, an internal key nobody remembered to classify would
+ * otherwise leak straight to Home Assistant — so the prefix is a structural
+ * backstop rather than a naming convention.
+ */
+export const HAVDM_INTERNAL_KEY_PREFIX = '_havdm_';
+
+/**
+ * Is this view key HAVDM's own bookkeeping (rather than something Home Assistant
+ * should receive)? True for anything classified in {@link VIEW_KEY_ACTION} and
+ * for anything carrying {@link HAVDM_INTERNAL_KEY_PREFIX}.
+ */
+export const isHavdmInternalViewKey = (key: string): boolean =>
+  key.startsWith(HAVDM_INTERNAL_KEY_PREFIX) || key in VIEW_KEY_ACTION;
+
+/**
+ * View fields that Home Assistant itself accepts and that therefore cross the
+ * boundary unchanged. Listed explicitly so the guard below can prove every
+ * modelled field is accounted for — HAVDM does not need to enumerate HA's whole
+ * view schema (unknown keys pass through), but it DOES need to have made a
+ * deliberate decision about every field it models itself.
+ */
+type HaNativeViewKey =
+  | 'title'
+  | 'path'
+  | 'icon'
+  | 'badges'
+  | 'cards'
+  | 'panel'
+  | 'theme'
+  | 'background'
+  | 'type'
+  | 'sections'
+  | 'max_columns'
+  | 'dense_section_placement'
+  | 'top_margin'
+  | 'visible'
+  | 'subview'
+  | 'back_path'
+  | 'layout_type'
+  | 'layout'
+  | 'strategy';
+
+/** Any `View` field that is neither classified as internal nor HA-native. */
+type UnclassifiedViewKey = Exclude<keyof View, keyof typeof VIEW_KEY_ACTION | HaNativeViewKey>;
+
+/**
+ * COMPLETENESS GUARD — the view mirror of {@link _AllCardKeysClassified}.
+ *
+ * If this line errors, a field was added to `View` without deciding what the
+ * export boundary should do with it. Fix it by adding the field to
+ * {@link VIEW_KEY_ACTION} (HAVDM-internal, gets stripped) or to
+ * `HaNativeViewKey` above (real HA config, passes through).
+ *
+ * ⚠ This is the mechanism that makes the 4.6a / 4.7a / 4.7b data-loss class
+ * structurally unrepeatable. Do not weaken it by widening `View` with an index
+ * signature — that would make `keyof View` a `string` and silently satisfy the
+ * guard forever.
+ */
+export type _AllViewKeysClassified = AssertNever<UnclassifiedViewKey>;
 
 // ---------------------------------------------------------------------------
 // Canvas-only card TYPES — slice B7

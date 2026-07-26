@@ -1180,4 +1180,130 @@ describe('yamlService', () => {
       expect(sanitized.views[0]).not.toHaveProperty('strategy');
     });
   });
+
+  // -------------------------------------------------------------------------
+  // WS3 Slice F — the view path becomes safe-by-default
+  // -------------------------------------------------------------------------
+  //
+  // `cleanView` was an ALLOWLIST: any Home Assistant view key HAVDM did not
+  // happen to model was silently dropped on export. The card path has always
+  // been the opposite — classify the internals, pass everything else through —
+  // and that asymmetry is the direct cause of three separate data-loss bugs
+  // (subview/back_path in 4.6a, layout/layout_type in 4.7a, strategy in 4.7b),
+  // each found by accident rather than by design.
+  //
+  // The view path now mirrors the card path. These tests pin BOTH directions:
+  // unknown HA keys must survive, and HAVDM internals must still never leak.
+  describe('sanitizeForHA — unknown HA view keys pass through (WS3 slice F)', () => {
+    const viewConfig = (view: Record<string, unknown>): DashboardConfig =>
+      ({
+        title: 'D',
+        views: [{ title: 'V', path: 'v', cards: [], ...view }],
+      }) as unknown as DashboardConfig;
+
+    it("preserves HA's view-level `header` (2024.11+), which HAVDM does not model", () => {
+      const header = { badges_position: 'top', layout: 'responsive' };
+      const sanitized = yamlService.sanitizeForHA(viewConfig({ header }));
+      expect((sanitized.views[0] as Record<string, unknown>).header).toEqual(header);
+    });
+
+    it('preserves a view key Home Assistant has not invented yet', () => {
+      // The whole point of the flip: HAVDM should not have to be taught each new
+      // HA view key before it stops destroying it.
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({ some_future_ha_view_key: { nested: ['value'] } }),
+      );
+      expect((sanitized.views[0] as Record<string, unknown>).some_future_ha_view_key).toEqual({
+        nested: ['value'],
+      });
+    });
+
+    it('still strips HAVDM-internal view keys (nothing leaks the other way)', () => {
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({
+          type: 'custom:grid-layout',
+          _havdm_scaffold: true,
+          _havdm_some_future_internal: 'x',
+          layout: {
+            grid_template_columns: 'repeat(12, 1fr)',
+            grid_template_rows: 'repeat(auto-fill, 56px)',
+            grid_gap: '8px',
+          },
+        }),
+      );
+      const view = sanitized.views[0] as Record<string, unknown>;
+      expect(view).not.toHaveProperty('_havdm_scaffold');
+      expect(view).not.toHaveProperty('_havdm_some_future_internal');
+    });
+
+    it('preserves an unknown DASHBOARD-level key too', () => {
+      const config = {
+        title: 'D',
+        views: [],
+        some_future_dashboard_key: 42,
+      } as unknown as DashboardConfig;
+      const sanitized = yamlService.sanitizeForHA(config) as unknown as Record<string, unknown>;
+      expect(sanitized.some_future_dashboard_key).toBe(42);
+    });
+
+    it('strips a HAVDM-internal DASHBOARD-level key', () => {
+      const config = {
+        title: 'D',
+        views: [],
+        _havdm_internal_thing: 'nope',
+      } as unknown as DashboardConfig;
+      const sanitized = yamlService.sanitizeForHA(config) as unknown as Record<string, unknown>;
+      expect(sanitized).not.toHaveProperty('_havdm_internal_thing');
+    });
+
+    it('round-trips a DASHBOARD-level strategy through parseDashboard (the import side)', () => {
+      // ⚠ Found while implementing slice F: slice 4.7b taught the EXPORT side to
+      // carry a dashboard-level `strategy`, but `parseDashboard` had the very
+      // same allowlist on the IMPORT side and dropped it before it ever reached
+      // the config. 4.7b's unit test passed only because it built the config
+      // object directly instead of loading YAML. Both halves are needed or the
+      // key never survives opening the file.
+      const yamlText = [
+        'title: D',
+        'strategy:',
+        '  type: original-states',
+        'views:',
+        '  - title: V',
+        '    path: v',
+        '    cards: []',
+      ].join('\n');
+      const parsed = yamlService.parseDashboard(yamlText);
+      expect(parsed.success).toBe(true);
+      expect((parsed.data as unknown as Record<string, unknown>).strategy).toEqual({
+        type: 'original-states',
+      });
+    });
+
+    it('preserves an unknown top-level key through parseDashboard', () => {
+      const yamlText = ['title: D', 'some_future_top_key: 7', 'views: []'].join('\n');
+      const parsed = yamlService.parseDashboard(yamlText);
+      expect((parsed.data as unknown as Record<string, unknown>).some_future_top_key).toBe(7);
+    });
+
+    it('does not regress the keys earlier slices had to fix by hand', () => {
+      // subview/back_path (4.6a), layout/layout_type (4.7a), strategy (4.7b).
+      // Under the new rule these are preserved because they are simply not
+      // internal — not because each was individually allowlisted.
+      const sanitized = yamlService.sanitizeForHA(
+        viewConfig({
+          type: 'custom:grid-layout',
+          layout_type: 'grid',
+          layout: { grid_template_columns: 'repeat(6, 1fr)' },
+          subview: true,
+          back_path: '/lovelace/0',
+        }),
+      );
+      const view = sanitized.views[0] as Record<string, unknown>;
+      expect(view.type).toBe('custom:grid-layout');
+      expect(view.layout_type).toBe('grid');
+      expect(view.layout).toEqual({ grid_template_columns: 'repeat(6, 1fr)' });
+      expect(view.subview).toBe(true);
+      expect(view.back_path).toBe('/lovelace/0');
+    });
+  });
 });

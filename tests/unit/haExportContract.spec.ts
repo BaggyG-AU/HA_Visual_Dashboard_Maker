@@ -8,6 +8,9 @@ import {
   HAVDM_SCAFFOLD_LAYOUT,
   isHavdmScaffoldView,
   isLayoutCardViewType,
+  VIEW_KEY_ACTION,
+  VIEW_STRIP_KEYS,
+  isHavdmInternalViewKey,
   type KeyAction,
 } from '../../src/services/haExportContract';
 import type { View } from '../../src/types/dashboard';
@@ -261,5 +264,64 @@ describe('haExportContract — isLayoutCardViewType (Tier 4, slice 4.7a)', () =>
     }
     expect(isLayoutCardViewType(undefined)).toBe(false);
     expect(isLayoutCardViewType('custom:popup-card')).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// WS3 Slice F — the VIEW-key contract
+// ---------------------------------------------------------------------------
+//
+// The card path has always been safe-by-default: `KEY_ACTION` classifies the
+// HAVDM-internal keys, `stripInternalKeys` removes them, and everything else
+// PASSES THROUGH. The view path was the opposite — `cleanView` was an allowlist,
+// so any Home Assistant view key HAVDM did not happen to model vanished on
+// export. That asymmetry caused three separate silent data-loss bugs, each found
+// by accident: `subview`/`back_path` (slice 4.6a), `layout`/`layout_type`
+// (4.7a), and `strategy` (4.7b, which blanked the whole view).
+//
+// Slice F gives views the card path's posture, so the bug class cannot recur.
+
+describe('haExportContract — VIEW_KEY_ACTION (WS3 slice F)', () => {
+  it('classifies every HAVDM-internal view key as strip', () => {
+    for (const key of VIEW_STRIP_KEYS) {
+      expect(VIEW_KEY_ACTION[key as keyof typeof VIEW_KEY_ACTION]).toBe('strip');
+    }
+  });
+
+  it('strips the slice-4.7a scaffold marker', () => {
+    expect(VIEW_STRIP_KEYS).toContain('_havdm_scaffold');
+  });
+
+  it('treats every `_havdm_`-prefixed key as internal, even unclassified ones', () => {
+    // The prefix rule is the backstop for an internal key someone forgets to
+    // classify. Without it, flipping the view path to pass-through would leak
+    // HAVDM bookkeeping straight to Home Assistant.
+    expect(isHavdmInternalViewKey('_havdm_scaffold')).toBe(true);
+    expect(isHavdmInternalViewKey('_havdm_something_invented_tomorrow')).toBe(true);
+  });
+
+  it('does NOT treat real Home Assistant view keys as internal', () => {
+    for (const key of [
+      'title',
+      'path',
+      'icon',
+      'type',
+      'cards',
+      'sections',
+      'badges',
+      'panel',
+      'visible',
+      'subview',
+      'back_path',
+      'strategy',
+      'header',
+      'max_columns',
+      'theme',
+      'background',
+      'layout',
+      'layout_type',
+    ]) {
+      expect(isHavdmInternalViewKey(key)).toBe(false);
+    }
   });
 });

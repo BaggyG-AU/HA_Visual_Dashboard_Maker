@@ -34,9 +34,13 @@ import {
   STRIP_KEYS,
   CANVAS_KEYS,
   HA_VISIBILITY_KEYS,
+  VIEW_STRIP_KEYS,
 } from './haExportContract';
 
 const CANVAS_ONLY_TYPE_SET = new Set<string>(CANVAS_ONLY_CARD_TYPES);
+
+/** VIEW/DASHBOARD-level HAVDM internals that must never survive (slice F). */
+const VIEW_STRIP_KEY_SET = new Set<string>(VIEW_STRIP_KEYS);
 
 /**
  * HAVDM-only keys that must never survive the boundary — derived from the export
@@ -129,16 +133,61 @@ const walkCard = (card: unknown, out: ExportWarning[]): void => {
 };
 
 /**
+ * Flag HAVDM-internal keys surviving at the VIEW or DASHBOARD level (slice F).
+ *
+ * `scanCard` covers cards; this covers their containers, which used to be
+ * rebuilt from an allowlist and are now pass-through. Only the `_havdm_` prefix
+ * and the classified view-strip keys are flagged — a view key this function does
+ * not recognise is assumed to be real Home Assistant config, which is exactly
+ * the posture that stops the boundary destroying it.
+ */
+const scanViewLevelKeys = (
+  container: Record<string, unknown>,
+  level: 'view' | 'dashboard',
+  out: ExportWarning[],
+): void => {
+  const leaked = Object.keys(container).filter(
+    (key) => key.startsWith('_havdm') || VIEW_STRIP_KEY_SET.has(key),
+  );
+  if (leaked.length === 0) return;
+
+  out.push({
+    category: 'self-check',
+    cardType: level,
+    keys: leaked,
+    reason: 'leaked-internal',
+    message:
+      `HAVDM-internal ${level} ${leaked.length === 1 ? 'key' : 'keys'} ` +
+      `${leaked.map((k) => `"${k}"`).join(', ')} reached the Home Assistant ` +
+      `export — this is an export-boundary bug. Home Assistant will ignore ` +
+      `${leaked.length === 1 ? 'it' : 'them'}, but ${leaked.length === 1 ? 'it does' : 'they do'} ` +
+      `not belong in your dashboard.`,
+  });
+};
+
+/**
  * Scan an HA-bound dashboard config for surviving HAVDM-only artefacts. Returns
  * a (usually empty) list of `self-check` warnings. Never throws; never blocks.
  */
 export const selfCheckHaConfig = (config: DashboardConfig): ExportWarning[] => {
   const out: ExportWarning[] = [];
+
+  // ⭐ WS3 slice F: scan the DASHBOARD level too. It became pass-through in this
+  // slice, so an unclassified internal key here would now reach Home Assistant
+  // rather than being dropped by an allowlist.
+  scanViewLevelKeys(config as unknown as Record<string, unknown>, 'dashboard', out);
+
   const views = (config as unknown as { views?: unknown }).views;
   if (!Array.isArray(views)) return out;
 
   views.forEach((view) => {
     if (!isRecord(view)) return;
+    // ⭐ WS3 slice F: the VIEW's own keys, not just its cards. Before this slice
+    // the view path was an allowlist, so a leaked internal view key was
+    // impossible by construction and there was nothing to check. Views now pass
+    // unknown keys THROUGH — which is what stops HA keys being destroyed — so
+    // this is the runtime backstop for an internal key nobody classified.
+    scanViewLevelKeys(view, 'view', out);
     if (Array.isArray(view.cards)) {
       view.cards.forEach((card) => walkCard(card, out));
     }

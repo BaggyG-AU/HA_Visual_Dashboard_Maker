@@ -2,7 +2,11 @@ import * as yaml from 'js-yaml';
 import { DashboardConfig, ViewSection, YAMLParseResult } from '../types/dashboard';
 import { logger } from './logger';
 import { exportDashboard, importDashboard } from './yamlConversionService';
-import { isHavdmScaffoldView, isLayoutCardViewType } from './haExportContract';
+import {
+  isHavdmScaffoldView,
+  isLayoutCardViewType,
+  isHavdmInternalViewKey,
+} from './haExportContract';
 import { selfCheckHaConfig } from './exportSelfCheck';
 import { summarizeExportWarnings } from './exportWarningSummary';
 import type { ExportWarning } from './exportWarnings';
@@ -33,8 +37,17 @@ class YAMLService {
 
       const imported = importDashboard(data as Record<string, unknown>) as Record<string, unknown>;
 
-      // Basic validation passed
+      // ⭐ WS3 slice F: pass-through on the IMPORT side too.
+      //
+      // This was an allowlist of `title` / `views` / `background` / `theme`, the
+      // mirror image of the export-side one — so a dashboard-level key HAVDM did
+      // not model was destroyed at LOAD time, before the user ever saw it.
+      // ⚠ That silently defeated half of slice 4.7b: the export boundary was
+      // taught to carry a dashboard-level `strategy`, but this dropped it first,
+      // so it could never survive opening the file. 4.7b's unit test missed it
+      // by constructing the config object directly rather than parsing YAML.
       const dashboardConfig: DashboardConfig = {
+        ...(imported as unknown as DashboardConfig),
         title: imported.title as string | undefined,
         views: imported.views as DashboardConfig['views'],
         background: imported.background as string | undefined,
@@ -119,33 +132,42 @@ class YAMLService {
     warnings: ExportWarning[];
   } {
     const warnings: ExportWarning[] = [];
+
+    // ⭐ WS3 slice F: the DASHBOARD level is pass-through for the same reason the
+    // view level is. It used to be an allowlist of `title` / `views` /
+    // `background` / `theme`, which is why a dashboard-level `strategy:` was
+    // dropped wholesale (slice 4.7b) — and why any other top-level key Home
+    // Assistant supports would have been too. `views` is replaced below.
+    const sanitizedTop: Record<string, unknown> = {};
+    Object.keys(config).forEach((key) => {
+      if (isHavdmInternalViewKey(key)) return;
+      sanitizedTop[key] = (config as unknown as Record<string, unknown>)[key];
+    });
+
     const sanitized: DashboardConfig = {
+      ...(sanitizedTop as unknown as DashboardConfig),
       title: config.title,
       views: config.views.map((view) => {
-        // Create clean view object, removing HAVDM-specific properties
-        const cleanView: any = {
-          title: view.title,
-          path: view.path,
-          icon: view.icon,
-          theme: view.theme,
-          background: view.background,
-          badges: view.badges,
-          panel: view.panel,
-          visible: view.visible,
-          // Subview navigation model (slice 4.6a). Undefined ones are pruned by
-          // the null/undefined sweep below.
-          subview: view.subview,
-          back_path: view.back_path,
-          // ⚠ Slice 4.7b: a view STRATEGY must survive. Home Assistant generates
-          // a strategy view's cards at render time, so the view legitimately has
-          // no `cards` of its own — and this allowlist previously dropped
-          // `strategy` while forcing `cards: []` below, deploying the view as
-          // `{title, path, cards: []}`. The user's entire generated view came
-          // back BLANK. Import always kept the strategy in memory (a plain
-          // spread in `yamlConversionService.importDashboard`), so HAVDM held
-          // the config and then wrote nothing over it. Same class as the 4.7a
-          // custom:grid-layout collision; larger blast radius.
-          strategy: view.strategy,
+        // ⭐ WS3 slice F: the view boundary is SAFE-BY-DEFAULT, mirroring the card
+        // path (`exportCard` -> `stripInternalKeys`). Start from the user's own
+        // view and remove only HAVDM's bookkeeping; every other key — including
+        // Home Assistant view keys HAVDM does not model, like `header` — passes
+        // through untouched.
+        //
+        // This replaced an ALLOWLIST that rebuilt the view from a fixed set of
+        // fields. That allowlist, not any single missing key, is what caused
+        // three separate silent data-loss bugs: `subview`/`back_path` (4.6a),
+        // `layout`/`layout_type` (4.7a) and `strategy` (4.7b, which blanked the
+        // whole view). Each was found by accident. The compile-time guard
+        // `_AllViewKeysClassified` in `haExportContract.ts` is what stops a
+        // fourth from appearing silently.
+        const cleanView: any = {};
+        Object.keys(view).forEach((key) => {
+          if (isHavdmInternalViewKey(key)) return;
+          cleanView[key] = (view as unknown as Record<string, unknown>)[key];
+        });
+
+        Object.assign(cleanView, {
           cards:
             view.cards?.map((card) => {
               // Create a clean copy. The HAVDM grid geometry is now the internal
@@ -170,7 +192,7 @@ class YAMLService {
               // destructive half of the 4.7b bug: it overwrites the generated
               // view with an empty one. Undefined is pruned by the sweep below.
             }) || (view.strategy ? undefined : []),
-        };
+        });
 
         // Preserve the view's REAL Home Assistant type (masonry, panel, sidebar,
         // sections, a layout-card custom:*-layout). HAVDM stamps its internal
@@ -183,22 +205,27 @@ class YAMLService {
         // layout-card view type, so keying off it destroyed a user's own
         // layout-card grid config on every deploy. The marker (with an exact
         // legacy-signature fallback) tells the two apart. `_havdm_scaffold`
-        // itself never reaches HA — the view allowlist above does not copy it.
+        // itself never reaches HA — the internal-key filter above drops it.
+        //
+        // ⭐ WS3 slice F inverted this block. Under the allowlist it ADDED
+        // `type` / `layout` / `layout_type` back; under pass-through they are
+        // already present, so the job is to REMOVE the ones that must not
+        // deploy. The rules themselves are unchanged.
         const viewType = typeof view.type === 'string' ? view.type : undefined;
-        if (viewType && !isHavdmScaffoldView(view)) {
-          cleanView.type = viewType;
-          // `layout` / `layout_type` only mean anything to layout-card. HA's own
-          // view types ignore them, and HAVDM keeps a user's layout-card config
-          // around after a type change so they can switch back (setViewType) —
-          // so gate on the TYPE, not on the key's presence.
-          if (isLayoutCardViewType(viewType)) {
-            if (view.layout !== undefined) {
-              cleanView.layout = view.layout;
-            }
-            if (view.layout_type !== undefined) {
-              cleanView.layout_type = view.layout_type;
-            }
-          }
+        if (!viewType || isHavdmScaffoldView(view)) {
+          // HAVDM's internal canvas scaffold: drop the type and its paired grid
+          // so the view deploys as its real HA type (masonry).
+          delete cleanView.type;
+          delete cleanView.layout;
+          delete cleanView.layout_type;
+        } else if (!isLayoutCardViewType(viewType)) {
+          // A real HA view type. `layout` / `layout_type` only mean anything to
+          // layout-card; HA's own view types ignore them, and HAVDM keeps a
+          // user's layout-card config around after a type change so they can
+          // switch back (`setViewType`) — so gate on the TYPE, not on the key's
+          // presence, and keep the config in HAVDM while declining to deploy it.
+          delete cleanView.layout;
+          delete cleanView.layout_type;
         }
 
         // HA "sections" view: its cards live under `sections[].cards`, not the
@@ -229,13 +256,11 @@ class YAMLService {
             return cleanSection;
           });
           // Sections views render from `sections`, not the top-level `cards`;
-          // drop the (empty) placeholder array the allowlist created.
+          // drop the (empty) placeholder array.
           delete cleanView.cards;
-          // Carry the sections-view layout keys (undefined ones are pruned by
-          // the null/undefined sweep below).
-          cleanView.max_columns = view.max_columns;
-          cleanView.dense_section_placement = view.dense_section_placement;
-          cleanView.top_margin = view.top_margin;
+          // NOTE (slice F): `max_columns` / `dense_section_placement` /
+          // `top_margin` used to be re-added here because the allowlist had
+          // dropped them. Pass-through carries them already.
         }
 
         // Remove undefined/null properties from view
@@ -251,13 +276,14 @@ class YAMLService {
       theme: config.theme,
     };
 
-    // Slice 4.7b: a DASHBOARD-level strategy generates the entire dashboard.
-    // The allowlist above reduces the config to title/views/background/theme, so
-    // without this the whole thing was dropped on deploy. Only set the key when
-    // one is present, so a normal dashboard gains no empty `strategy:`.
-    if (config.strategy !== undefined) {
-      (sanitized as DashboardConfig).strategy = config.strategy;
-    }
+    // Prune top-level undefined/null so an absent `background`/`theme` does not
+    // deploy as an empty key (the allowlist relied on the same sweep).
+    Object.keys(sanitized).forEach((key) => {
+      const value = (sanitized as unknown as Record<string, unknown>)[key];
+      if (value === undefined || value === null) {
+        delete (sanitized as unknown as Record<string, unknown>)[key];
+      }
+    });
 
     const exported = exportDashboard(sanitized as unknown as Record<string, unknown>, {
       warnings,
