@@ -44,9 +44,26 @@ Copy code
 
 | Location | Purpose |
 |--------|---------|
-| `claude/` | Feature development, refactors, unit/integration work |
+| `claude/` | Feature development, refactors, unit/integration work, UAT round generation |
 | `codex/` | Playwright E2E defect fixing and test hardening |
 | `shared/` | Non-negotiable rules that apply to *all* AI work |
+
+---
+
+## Named prompts
+
+| Prompt | Purpose | Governed by |
+|---|---|---|
+| `claude/feature-development.md` | Feature and refactor work on a `feature/<name>` branch | `shared/ai_rules.md` |
+| `claude/architecture-review.md` | Read-only architecture assessment | `shared/ai_rules.md` |
+| `claude/refactor-safe.md` | Bounded refactors with regression protection | `shared/ai_rules.md` |
+| `claude/uat-plan-and-matrix.md` | Generates a UAT test plan + interactive HTML matrix for a release round | `docs/testing/UAT_STRATEGY.md` |
+| `codex/playwright-fix.md` | Playwright E2E stabilization on a `test/<name>` branch | `shared/ai_rules.md` |
+
+⚠ `claude/uat-plan-and-matrix.md` produces **docs-only** artifacts — it must never
+touch `src/`. It derives every round-specific value (test IDs, groups, counts,
+prior-round results) from the repository at runtime, which is what lets it be
+reused unedited round after round.
 
 ---
 

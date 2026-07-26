@@ -30,6 +30,12 @@ This repo has multiple automated test layers:
 
 Not every rule in this document applies equally to every layer. When a rule is E2E-only or Integration-only, it is labeled explicitly.
 
+⚠ **This document governs the AUTOMATED layers only.** The human layer — User
+Acceptance Testing — is governed by **`docs/testing/UAT_STRATEGY.md`**, which
+defines the UAT loop, test types, severity rubric, regression mandate and the
+bounded live-Home-Assistant policy. UAT is a release gate, not a test layer: no
+rule in this document applies to it, and no UAT rule applies here.
+
 ---
 
 ## CORE PRINCIPLES
@@ -412,6 +418,21 @@ Instead:
 ## SKIPPED TESTS REGISTER (source of truth)
 
 All skipped tests are tracked in `docs/testing/SKIPPED_TESTS_REGISTER.md`. Keep that file updated whenever a test is skipped or unskipped.
+
+## USER ACCEPTANCE TESTING (source of truth)
+
+UAT is governed by `docs/testing/UAT_STRATEGY.md`, not by this document. It is a
+**human** gate run against the **packaged** application by the project owner, and
+it is a precondition of any stable release
+(`docs/governance/phases/phase-7-ecosystem-future-growth-amendment-03.md` §3).
+
+- Rounds are generated with `prompts/claude/uat-plan-and-matrix.md`.
+- Artifacts live under `docs/testing/uat/{plans,matrices,reports,sessions,archives}/`.
+- ⚠ **The agent never marks a UAT test.** Automated suites prove the code does
+  what it was told; UAT proves it was told the right thing. An agent marking its
+  own work as accepted is the automated suite with extra steps.
+- ⚠ A UAT defect that failed a test with no automated coverage **must** gain that
+  coverage in its fix (`UAT_STRATEGY.md` §7).
 
 ## Monaco / YAML Editor Verification (Properties Panel)
 
