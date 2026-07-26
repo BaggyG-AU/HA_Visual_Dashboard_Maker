@@ -6,6 +6,7 @@ import {
   resolveSelectionState,
   type SelectionMode,
 } from '../utils/bulkSelection';
+import { deepClone } from '../utils/deepClone';
 
 interface HistoryState {
   past: DashboardConfig[];
@@ -72,12 +73,10 @@ type SelectionState = {
 
 type DashboardStore = DashboardState & DashboardActions & HistoryState & SelectionState;
 
-const cloneConfig = (config: DashboardConfig): DashboardConfig => {
-  if (typeof structuredClone === 'function') {
-    return structuredClone(config) as DashboardConfig;
-  }
-  return JSON.parse(JSON.stringify(config)) as DashboardConfig;
-};
+// Extracted to src/utils/deepClone.ts in WS3 slice C so the clipboard boundary
+// can reuse the same guarantee instead of reimplementing it. Behaviour is
+// unchanged: structuredClone when available, JSON round-trip otherwise.
+const cloneConfig = (config: DashboardConfig): DashboardConfig => deepClone(config);
 
 const initialState: DashboardState & HistoryState & SelectionState = {
   config: null,

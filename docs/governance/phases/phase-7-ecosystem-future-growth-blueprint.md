@@ -204,12 +204,15 @@ Governance Mode: HARD MODE++
 
 ## 12) Ordered Feature Slice Plan
 
-> **AMENDED 2026-07-26 — see `phase-7-ecosystem-future-growth-amendment-01.md`.**
-> Slices G and H are **WITHDRAWN**. The executable order is A, B, C, D, E, F, I.
+> **AMENDED 2026-07-26 — see `phase-7-ecosystem-future-growth-amendment-01.md`
+> and `-amendment-02.md`.** Slices G and H are **WITHDRAWN**. Slice C is
+> **PARTIALLY WITHDRAWN** — its duplicate/clone action is withdrawn as redundant
+> with cut/copy/paste; its state-safety guarantee is delivered against the
+> existing clipboard path. The executable order is A, B, C, D, E, F, I.
 
 - Slice A: Preset Marketplace foundations (model, service contract, browsing/import seams).
 - Slice B: Theme Manager expansion (save/load/theme package import-export and per-view overrides).
-- Slice C: Card Duplication and Cloning workflows.
+- Slice C: Card Duplication and Cloning workflows. — **PARTIALLY WITHDRAWN (amendment-02)**
 - Slice D: Bulk Operations and multi-select mutation safety.
 - Slice E: Version Control Integration boundaries (safe additive git workflow integration).
 - Slice F: Import/Export Enhancements and conversion hardening.
@@ -1040,10 +1043,12 @@ Versioning Rules:
 
 ## 17) Phase Definition of Done
 
-> **AMENDED 2026-07-26 — see `phase-7-ecosystem-future-growth-amendment-01.md` §1.7.**
-> The first bullet below is superseded by: "**All six scoped Phase 7 feature
-> slices (A–F) delivered within scoped boundaries. Slices G and H are withdrawn
-> by amendment-01.**" Every other bullet stands unchanged.
+> **AMENDED 2026-07-26 — see `phase-7-ecosystem-future-growth-amendment-01.md` §1.7
+> and `-amendment-02.md` §4.** The first bullet below is superseded by: "**All six
+> scoped Phase 7 feature slices (A–F) delivered within scoped boundaries. Slices G
+> and H are withdrawn by amendment-01. Slice C's duplicate/clone action is
+> withdrawn by amendment-02; its state-safety guarantee is delivered.**" Every
+> other bullet stands unchanged.
 
 - All eight Phase 7 feature slices delivered within scoped boundaries.
 - No unresolved P0/P1 regressions introduced by phase work.
@@ -1141,7 +1146,7 @@ Stop Conditions During Audit:
 
 1. `feat(phase-7): add preset marketplace foundations with remapping integration`
 2. `feat(phase-7): expand theme manager save-load-import-export workflows`
-3. `feat(phase-7): implement card duplication and cross-view cloning`
+3. ~~`feat(phase-7): implement card duplication and cross-view cloning`~~ -> replaced by `fix(clipboard): deep-clone cards at the clipboard boundary` (**amendment-02**)
 4. `feat(phase-7): add multi-select bulk operations with history-safe updates`
 5. `feat(phase-7): introduce bounded version-control integration surfaces`
 6. `feat(phase-7): harden import-export conversion and validation flows`

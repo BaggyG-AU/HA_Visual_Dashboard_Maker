@@ -55,6 +55,12 @@ import { haConnectionService } from './services/haConnectionService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
 import { getCardSizeConstraints } from './utils/cardSizingContract';
 import {
+  cloneCardsForClipboard,
+  prepareCardsForFlatPaste,
+  prepareCardsForSectionPaste,
+  type CardWithInternalLayout,
+} from './utils/cardClipboard';
+import {
   resolveViewCards,
   updateSectionCard,
   addCardToSection,
@@ -112,9 +118,9 @@ import {
 } from './utils/bulkSelection';
 
 const { Header, Content, Sider } = Layout;
-type CardWithInternalLayout = Card & {
-  _havdm_layout?: { x: number; y: number; w: number; h: number };
-};
+// `CardWithInternalLayout` now lives in src/utils/cardClipboard.ts alongside the
+// clipboard transforms that consume it (WS3 slice C), and is re-exported into
+// this module's scope by the import above.
 
 type TestThemeData = {
   themes?: Record<string, unknown>;
@@ -1002,10 +1008,11 @@ const App: React.FC = () => {
       return;
     }
 
-    const picked = selectedIndices
-      .map((index) => sectionCards[index])
-      .filter((card): card is CardWithInternalLayout => Boolean(card))
-      .map((card) => ({ ...card }));
+    const picked = cloneCardsForClipboard(
+      selectedIndices
+        .map((index) => sectionCards[index])
+        .filter((card): card is CardWithInternalLayout => Boolean(card)),
+    );
 
     setClipboard({
       cards: picked,
@@ -1089,10 +1096,11 @@ const App: React.FC = () => {
       return;
     }
 
-    const cardsToCopy = selectedIndices
-      .map((index) => currentView.cards?.[index])
-      .filter((card): card is CardWithInternalLayout => Boolean(card))
-      .map((card) => ({ ...card }));
+    const cardsToCopy = cloneCardsForClipboard(
+      selectedIndices
+        .map((index) => currentView.cards?.[index])
+        .filter((card): card is CardWithInternalLayout => Boolean(card)),
+    );
 
     setClipboard({
       cards: cardsToCopy,
@@ -1124,11 +1132,7 @@ const App: React.FC = () => {
       }
 
       const targetSection = selectedSectionIndex;
-      const pasted = clipboard.cards.map((clipboardCard) => {
-        const { _havdm_layout: _layout, ...cardWithoutLayout } = clipboardCard;
-        void _layout;
-        return { ...cardWithoutLayout } as Card;
-      });
+      const pasted = prepareCardsForSectionPaste(clipboard.cards);
 
       const currentView = config.views[selectedViewIndex];
       let nextView = insertCardsIntoSection(currentView, targetSection, pasted);
@@ -1192,19 +1196,7 @@ const App: React.FC = () => {
     const currentView = config.views[selectedViewIndex];
 
     // Create new cards from clipboard (remove old geometry, will get new position)
-    const pastedCards = clipboard.cards.map((clipboardCard) => {
-      const { _havdm_layout: _layout, ...cardWithoutLayout } = clipboardCard;
-      void _layout;
-      return {
-        ...cardWithoutLayout,
-        _havdm_layout: {
-          x: 0,
-          y: Infinity, // Place at bottom
-          w: clipboardCard._havdm_layout?.w || 6,
-          h: clipboardCard._havdm_layout?.h || 4,
-        },
-      };
-    });
+    const pastedCards = prepareCardsForFlatPaste(clipboard.cards);
 
     // Build updated views immutably
     let updatedViews = config.views.map((view, i) => {

@@ -1,7 +1,8 @@
 Phase Name: Phase 7 – Ecosystem & Future Growth
 Document Type: Phase Tracking (blueprint §18)
 Blueprint: docs/governance/phases/phase-7-ecosystem-future-growth-blueprint.md
-Amendments: docs/governance/phases/phase-7-ecosystem-future-growth-amendment-01.md
+Amendments: docs/governance/phases/phase-7-ecosystem-future-growth-amendment-01.md,
+docs/governance/phases/phase-7-ecosystem-future-growth-amendment-02.md
 Last Updated: 2026-07-26
 Package Version: 0.7.5-beta.10
 
@@ -26,7 +27,7 @@ the current discipline as its own PR.
 | ----- | ----------------------------------------- | --------------------------- | --------- | ------------------ | ---------- |
 | A     | Preset Marketplace foundations            | ✅ Delivered                | `8a3597e` | PR #23 (`863a44c`) | 2026-02-17 |
 | B     | Theme Manager expansion                   | ✅ Delivered                | `536e3c1` | PR #23 (`863a44c`) | 2026-02-17 |
-| C     | Card Duplication & Cloning                | ❌ **NOT DELIVERED**        | —         | —                  | —          |
+| C     | Card Duplication & Cloning                | ⚠ **PARTIALLY WITHDRAWN**   | see §3    | amendment-02       | 2026-07-26 |
 | D     | Bulk Operations & multi-select safety     | ✅ Delivered                | `f17be4d` | PR #23 (`863a44c`) | 2026-02-17 |
 | E     | Version Control Integration boundaries    | ⬜ Not started (greenfield) | —         | —                  | —          |
 | F     | Import/Export Enhancements & hardening    | ✅ Delivered                | `7c1752d` | PR #80 (`128e8c4`) | 2026-07-26 |
@@ -34,8 +35,9 @@ the current discipline as its own PR.
 | H     | Plugin System Architecture scaffold       | 🚫 **WITHDRAWN**            | —         | amendment-01 §1.3  | 2026-07-26 |
 | I     | Medium Gate packaging & release readiness | ⬜ Not started              | —         | —                  | —          |
 
-**Phase 7 Definition of Done is NOT met.** Outstanding: Slice C (decision
-required), Slice E (implementation), Slice I (gate).
+**Phase 7 Definition of Done is NOT met.** Outstanding: Slice E
+(implementation), Slice I (gate). Slice C was resolved 2026-07-26 by
+amendment-02 — action withdrawn, guarantee delivered.
 
 ---
 
@@ -88,20 +90,35 @@ Slice C, it post-dates the Slice C claim by five months, and it does not supply
 Slice C's required per-card duplicate action, cross-view clone action, clone
 utility, or any of its three required test layers.
 
-**Consequence for the gate.** Slice I cannot return GO against a Definition of
-Done that includes Slice C while Slice C is undelivered. Two ways to clear it,
-both requiring a project-owner decision:
+⚠ **CORRECTION (2026-07-26).** As first written, this section claimed "the
+clipboard paste path already deep-copies". **That was wrong.** Both the copy
+side (`.map((card) => ({ ...card }))`) and the paste side
+(`{ ...cardWithoutLayout }`) were **shallow** spreads, and
+`dashboardStore.updateConfig` stores the incoming config as-is — it deep-clones
+only the _previous_ config onto the undo stack. So pasted cards shared their
+nested branches by reference with their source. The error is recorded here
+rather than silently overwritten, because it materially understated the case for
+delivering Slice C's state-safety half.
 
-1. **Deliver Slice C** as scoped — a duplicate/clone action with deep-copy
-   isolation, deterministic undo, and the three required test layers. Sizing
-   note: `dashboardStore.ts` already has the batching/history primitives and
-   `cloneConfig`, and the clipboard paste path already deep-copies, so this is
-   smaller than a greenfield slice.
-2. **Withdraw Slice C by a further amendment**, on the argument that cut/copy/
-   paste (4.3a) already covers the user need, with the rationale filed the same
-   way G and H were in amendment-01.
+**RESOLVED 2026-07-26 by amendment-02** — see
+`docs/governance/phases/phase-7-ecosystem-future-growth-amendment-02.md`. The
+disposition is a split, not a straight keep-or-drop:
 
-Not resolved here. This document records the fact; the decision is the owner's.
+- The **duplicate/clone UI action** is **WITHDRAWN** as redundant with the
+  cut/copy/paste delivered by WS4-A Tier 4 slice 4.3a. A dedicated Duplicate
+  button adds one keystroke over the existing path and would put a new
+  persistent affordance on the card action surface, shifting the boundingBox
+  clip `tests/e2e/layout.visual.spec.ts` captures.
+- The **state-safety guarantee** ("avoid shared references", "deep-copy mutable
+  nested configuration branches") is **DELIVERED** against the existing
+  clipboard path: `src/utils/deepClone.ts` and `src/utils/cardClipboard.ts`
+  (new), wired into all four clipboard sites in `src/App.tsx`, with
+  `tests/unit/card-clone.spec.ts` (16 tests, the file name the slice prompt
+  specifies).
+
+⚠ Severity was and remains **an unguarded hazard, not a demonstrated bug**: no
+in-place mutation of nested card config exists in `src/`, so the aliasing never
+had to surface. No user-visible defect was reproduced and none is claimed.
 
 ### Finding 2 — `tools/checks` under-reported (fixed in this slice)
 
@@ -145,9 +162,29 @@ Detail in amendment-01 §2.
   `tests/e2e/theme-manager.spec.ts`, DSL `tests/support/dsl/themeManager.ts`.
 - All three required test layers present. ✅
 
-### Slice C — Card Duplication & Cloning ❌
+### Slice C — Card Duplication & Cloning ⚠ PARTIALLY WITHDRAWN
 
-No implementation, no tests, no commit. See Finding 1.
+Never implemented as scoped (see Finding 1). Resolved 2026-07-26 by
+amendment-02: **action withdrawn, guarantee delivered.**
+
+- Withdrawn: the per-card Duplicate action and cross-view Clone action —
+  redundant with cut/copy/paste (WS4-A Tier 4 slice 4.3a).
+- Delivered: the State Safety Rules half. `src/utils/deepClone.ts` (extracted
+  from `dashboardStore`'s private `cloneConfig`, which now delegates to it) and
+  `src/utils/cardClipboard.ts` (`cloneCardsForClipboard`,
+  `prepareCardsForSectionPaste`, `prepareCardsForFlatPaste`, plus the
+  `CardWithInternalLayout` type moved out of `App.tsx`). All four clipboard
+  sites in `src/App.tsx` now route through them.
+- Tests: `tests/unit/card-clone.spec.ts`, 16 tests. ⚠ **NOT red-before-green** —
+  the transforms are new pure modules, so on base the spec fails with an
+  unresolved import, not a behavioural failure. There was no pre-existing
+  testable seam; the extraction _is_ the fix. The spec carries a
+  characterisation block that pins the old shallow-spread semantics and
+  demonstrates the aliasing, so the hazard is proven in the suite rather than
+  only asserted in prose.
+- Integration/E2E coverage of "duplicate and clone flows" does not attach: no
+  such flow was built. The clipboard flows the change touches are covered by
+  `tests/e2e/bulk-operations.spec.ts` and the existing view/sections specs.
 
 ### Slice D — Bulk Operations & multi-select mutation safety ✅
 
@@ -213,21 +250,39 @@ Never started. Withdrawn by amendment-01 §1.3. No code to remove.
 
 ### Slice I — Medium Gate packaging & release readiness ⬜
 
-Not started. Blocked on Slice C's disposition and Slice E's delivery.
+Not started. Blocked on Slice E's delivery. (Slice C's disposition, previously
+also blocking, was resolved by amendment-02 on 2026-07-26.)
 
 ---
 
-## 4) Gate Baseline (main = `128e8c4`, verified 2026-07-26)
+## 4) Gate Baseline (verified 2026-07-26)
 
 | Gate                   | Result                                   |
 | ---------------------- | ---------------------------------------- |
 | `npm run typecheck`    | 0 errors                                 |
 | `npm run lint`         | 0 errors / 147 warnings                  |
 | `npm run format:check` | clean                                    |
-| `npm run test:unit`    | 785 passed (70 files)                    |
+| `npm run test:unit`    | 801 passed (71 files)                    |
 | `npm run package`      | OK                                       |
 | `electron-e2e`         | 240 passed / 8 failed / 2 skipped (Xvfb) |
 | `electron-integration` | 159 passed / 0 failed / 19 skipped       |
+
+Unit count history: 773 (pre-slice-F) → 785 (slice F, `7c1752d`) → 801 (Slice C
+state-safety, +16 in `tests/unit/card-clone.spec.ts`).
+
+⚠ **NEW known integration flake, first observed 2026-07-26** during the Slice C
+state-safety run: `tests/integration/entity-browser.spec.ts:380` ("should insert
+entity ID into Dashboard YAML editor") failed at 5.6 s under full-suite load
+with `locator.check: Clicking the checkbox did not change its state` at
+`tests/support/dsl/entityBrowser.ts:250` — an antd radio reporting the click
+landed while the control's state did not change. **Passes isolated**: a targeted
+`entity-browser.spec.ts` run gave 24 passed / 0 failed, with the specific test
+green at 14.5 s. This is the documented antd-interaction flake family, not a
+regression — the Slice C change touches the clipboard transforms, a deep-clone
+helper and the store's history-snapshot delegate, none of which has a path to an
+entity-browser table radio. The integration baseline remains **159 passed / 0
+failed / 19 skipped when green**; this spec is now load-sensitive. Slice I should
+expect it and re-run isolated rather than treating it as a gate failure.
 
 The 8 e2e failures are the documented known set: 7 stable-known
 (`advanced-slider.visual:16`, `apexcharts.visual:26`, `attribute-display:95`,
@@ -247,7 +302,7 @@ Slice I must confirm the register is current at gate time.
 
 ## 5) Medium Gate Prep Checklist (blueprint §18 item 8)
 
-- [ ] Slice C disposition decided (deliver, or withdraw by amendment-02) — **Finding 1**
+- [x] Slice C disposition decided — amendment-02: action withdrawn, guarantee delivered
 - [ ] Slice E delivered with its three required test layers
 - [x] `tools/checks` corrected so the gate's first command checks what CI checks
 - [x] Version progression resolved and recorded (amendment-01 §2)
