@@ -177,6 +177,101 @@ export const normalizeViewType = (view: View): string => {
  *    the product vision, HAVDM never silently destroys user data. The export
  *    boundary is what declines to deploy it while the type is standard.
  */
+// --- Tier 4 slice 4.7b: the layout-card EDITOR half ----------------------------
+
+/** The layout-card grid keys the view-level grid editor can set. */
+export type ViewGridPatch = Partial<{
+  grid_template_columns: string;
+  grid_template_rows: string;
+  grid_gap: string;
+}>;
+
+/**
+ * Edit a layout-card view's grid (slice 4.7b). Slice 4.7a made a user's grid
+ * SURVIVE the export boundary; this is what lets them AUTHOR one.
+ *
+ * Values are carried as raw CSS strings rather than parsed into numbers. That is
+ * deliberate: `repeat(6, 1fr)`, `1fr 2fr 1fr`, `minmax(100px, 1fr)` and
+ * media-query-driven templates are all valid layout-card grids, and a numeric
+ * column-count stepper would silently rewrite the ones it could not model. Per
+ * the product vision HAVDM translates where it can and never destroys what it
+ * cannot — so the editor round-trips the string and the CANVAS provides the
+ * visual feedback by re-rendering at the declared column count and row height.
+ *
+ * Layout keys this editor does not manage (`grid_template_areas`, `mediaquery`,
+ * layout-card's own `width`/`max_cols`, …) are carried through untouched. A
+ * patch value of `undefined` or `''` REMOVES that key, so clearing a field
+ * round-trips clean instead of deploying `grid_gap: ''`. Returns the input view
+ * (reference-equal) when nothing changes; `cards` is carried by reference.
+ */
+export const setViewGrid = (view: View, patch: ViewGridPatch): View => {
+  const currentLayout = view.layout ?? {};
+  const nextLayout: Record<string, unknown> = { ...currentLayout };
+  let changed = false;
+
+  (Object.keys(patch) as (keyof ViewGridPatch)[]).forEach((key) => {
+    const value = patch[key];
+    if (value === undefined || value === '') {
+      if (key in nextLayout) {
+        delete nextLayout[key];
+        changed = true;
+      }
+    } else if (nextLayout[key] !== value) {
+      nextLayout[key] = value;
+      changed = true;
+    }
+  });
+
+  if (!changed) return view;
+  return { ...view, layout: nextLayout as View['layout'] };
+};
+
+/**
+ * The grid a view gets when the user converts it INTO a layout-card view
+ * (slice 4.7b). Matches the canvas's own 12-column geometry so converting does
+ * not make the canvas jump — but it is the USER's grid from that moment on, and
+ * carries no scaffold marker.
+ */
+const DEFAULT_LAYOUT_CARD_GRID = {
+  grid_template_columns: 'repeat(12, 1fr)',
+  grid_template_rows: 'repeat(auto-fill, 56px)',
+  grid_gap: '8px',
+} as const;
+
+/**
+ * Convert an ordinary view into a REAL layout-card grid view (slice 4.7b) — the
+ * inverse of the type change 4.7a warns about, and the action that makes the
+ * grid editor reachable at all.
+ *
+ * ⚠ The critical step is clearing `_havdm_scaffold`. HAVDM's own views carry
+ * that marker and `type: 'custom:grid-layout'` already; if the marker survived a
+ * conversion, `isHavdmScaffoldView` would still claim the view and the export
+ * boundary would destroy the very grid the user just asked for — reintroducing
+ * the 4.7a bug through the front door.
+ *
+ * An existing `layout` is KEPT rather than overwritten (a user who already has a
+ * grid config, e.g. after switching away and back, gets it honoured). A view
+ * that is already a real layout-card grid is returned reference-equal.
+ */
+export const convertViewToLayoutCard = (view: View): View => {
+  const alreadyLayoutCard =
+    !isHavdmScaffoldView(view) &&
+    view.type === 'custom:grid-layout' &&
+    view.layout_type === 'grid' &&
+    view.layout?.grid_template_columns !== undefined;
+  if (alreadyLayoutCard) return view;
+
+  const next: View = {
+    ...view,
+    type: 'custom:grid-layout',
+    layout_type: 'grid',
+    layout: { ...DEFAULT_LAYOUT_CARD_GRID, ...(view.layout ?? {}) },
+  };
+  // From here the grid is the user's, not HAVDM's bookkeeping.
+  delete next._havdm_scaffold;
+  return next;
+};
+
 export const setViewType = (view: View, type: string): View => {
   const isScaffold = isHavdmScaffoldView(view);
   const hasScaffoldKeys =

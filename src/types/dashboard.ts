@@ -354,6 +354,17 @@ export interface LayoutCardConfig {
   };
 }
 
+/**
+ * A Home Assistant view/dashboard strategy (slice 4.7b). The cards are generated
+ * by HA at render time from `type` + the strategy's own options, so a strategy
+ * view legitimately has NO `cards` of its own. HAVDM has no strategy editor — it
+ * preserves the block verbatim, including options it does not understand.
+ */
+export interface ViewStrategy {
+  type: string;
+  [key: string]: unknown;
+}
+
 // A section within an HA "sections" view. Each section is normally a grid
 // (`type: 'grid'`) of cards with an optional heading. HAVDM preserves these
 // verbatim through the export boundary so a Sections view round-trips instead
@@ -400,6 +411,12 @@ export interface View {
     mediaquery?: Record<string, any>;
     [key: string]: any;
   };
+  /**
+   * A Home Assistant view strategy (slice 4.7b). HA generates this view's cards
+   * at render time, so a strategy view has no `cards` of its own and HAVDM shows
+   * it as a read-only, generated view rather than an empty one.
+   */
+  strategy?: ViewStrategy;
   // HAVDM-internal (slice 4.7a). Marks a view as HAVDM's own flat-canvas
   // scaffold — `type: 'custom:grid-layout'` + the 12-col/56px `layout` — rather
   // than a layout-card view the user authored or imported. Those two are
@@ -422,6 +439,13 @@ export interface DashboardConfig {
   views: View[];
   background?: string;
   theme?: string;
+  /**
+   * A dashboard-level Home Assistant strategy (slice 4.7b). HA generates the
+   * whole dashboard from this at render time. HAVDM does not author strategies;
+   * it must simply carry one through untouched, or deploying replaces the
+   * user's generated dashboard with nothing.
+   */
+  strategy?: ViewStrategy;
 }
 
 // Dashboard state for the application

@@ -27,10 +27,14 @@ Fetch the live state drawer `drawer_havdm_state_a15b0af78e0814cfd19cf627` with
 defines the expected pass range, the stable-known failures, and the two flaky
 families. That drawer supersedes everything below.
 
-Fallback snapshot (as of 2026-07-26, main = PR #77) — use ONLY if MemPalace is
-unreachable, and say so in your report:
+Fallback snapshot (as of 2026-07-26, main = PR #77 + slice 4.7b) — use ONLY if
+MemPalace is unreachable, and say so in your report:
 
-- Expected electron-e2e result: ~205–236 passed / 7–11 failed / 2 skipped.
+- Expected electron-e2e result: ~205–241 passed / 7–11 failed / 2 skipped.
+  (The pass count grows as each slice adds tests: 225 → 232 → 233 → 236 → 241
+  across 4.5 → 4.6a → 4.6b → 4.7a → 4.7b. A count ABOVE the range is normal
+  after a slice lands; a count BELOW it is worth a look. The known-failure
+  lists below are unchanged by 4.7b.)
 - STABLE-KNOWN (fail on both backends, expected): advanced-slider.visual:16,
   apexcharts.visual:26, attribute-display:95, calendar.spec:29,
   card-background.visual:8, popup.visual:20, tabs.visual:33.

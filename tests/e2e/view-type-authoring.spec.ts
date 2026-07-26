@@ -112,7 +112,18 @@ test.describe('View-type authoring (Tier 4, slice 4.6b)', () => {
     }
   });
 
-  test('the type control offers the real HA types and NEVER the internal custom:grid-layout', async ({
+  // ⚠ SEMANTIC FLIP (Tier 4, slice 4.7b) — this test previously asserted the
+  // type control NEVER offers custom:grid-layout, which was the correct 4.6b
+  // rule: back then the only meaning of that string was HAVDM's internal canvas
+  // scaffold, and offering it would have let a user "choose" a type that the
+  // export boundary immediately stripped.
+  //
+  // 4.7a made a real layout-card view first-class, and 4.7b adds the conversion
+  // action that turns an ordinary view INTO one — so custom:grid-layout is now a
+  // legitimate, explicitly-labelled choice. What must STILL hold is that the
+  // scaffold itself reads as "Masonry" and is never silently presented as a
+  // layout-card view. That is asserted below, alongside the new option.
+  test('the type control offers the real HA types plus an explicit layout-card conversion', async ({
     page,
   }) => {
     void page;
@@ -132,10 +143,12 @@ test.describe('View-type authoring (Tier 4, slice 4.6b)', () => {
       const options = window.locator(
         '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option',
       );
-      await expect(options).toHaveCount(4);
+      await expect(options).toHaveCount(5);
       const texts = (await options.allInnerTexts()).map((t) => t.trim());
-      expect(texts).toEqual(['Masonry', 'Sections', 'Panel', 'Sidebar']);
-      expect(texts.join(' ')).not.toMatch(/grid-layout/i);
+      expect(texts.slice(0, 4)).toEqual(['Masonry', 'Sections', 'Panel', 'Sidebar']);
+      // NEW in 4.7b: the layout-card grid is offered as an explicit conversion
+      // target, labelled with the raw type so the user can see what deploys.
+      expect(texts[4]).toBe('Layout card grid (custom:grid-layout)');
     } finally {
       await close(ctx);
     }

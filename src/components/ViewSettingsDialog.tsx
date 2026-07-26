@@ -13,7 +13,12 @@ import {
 } from 'antd';
 import { DeleteOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import type { View } from '../types/dashboard';
-import { normalizeViewType, STANDARD_VIEW_TYPES, type ViewPropsPatch } from '../utils/viewsLayout';
+import {
+  normalizeViewType,
+  STANDARD_VIEW_TYPES,
+  type ViewPropsPatch,
+  type ViewGridPatch,
+} from '../utils/viewsLayout';
 import { isLayoutCardViewType } from '../services/haExportContract';
 
 const { Text } = Typography;
@@ -26,6 +31,16 @@ const VIEW_TYPE_LABELS: Record<string, string> = {
   sidebar: 'Sidebar',
 };
 
+/**
+ * The layout-card grid type the editor offers as a conversion target (slice
+ * 4.7b). Deliberately NOT added to `STANDARD_VIEW_TYPES` — that constant is the
+ * set of real Home Assistant BUILT-IN view types, and layout-card is a HACS
+ * custom card that may not be installed. The label carries the raw type string
+ * so the user can see exactly what will deploy.
+ */
+const LAYOUT_CARD_GRID_TYPE = 'custom:grid-layout';
+const LAYOUT_CARD_GRID_LABEL = 'Layout card grid (custom:grid-layout)';
+
 interface ViewSettingsFormValues {
   title?: string;
   path?: string;
@@ -35,12 +50,19 @@ interface ViewSettingsFormValues {
   subview?: boolean;
   back_path?: string;
   visibleInNav?: boolean;
+  gridTemplateColumns?: string;
+  gridTemplateRows?: string;
+  gridGap?: string;
 }
 
-/** What Save emits: the identity patch plus the chosen (normalised) view type. */
+/**
+ * What Save emits: the identity patch, the chosen (normalised) view type, and —
+ * for a layout-card view — the grid patch (slice 4.7b).
+ */
 export interface ViewSettingsChange {
   patch: ViewPropsPatch;
   type: string;
+  grid?: ViewGridPatch;
 }
 
 interface ViewSettingsDialogProps {
@@ -91,18 +113,30 @@ export const ViewSettingsDialog: React.FC<ViewSettingsDialogProps> = ({
   // masonry. Slice 4.7a: a user's REAL custom:grid-layout view reads as itself.
   const currentType = view ? normalizeViewType(view) : 'masonry';
 
-  // The type options: the four real HA types, plus the current type if it is a
-  // real layout-card (custom:*-layout) so it stays selectable and is never
-  // silently converted.
+  // The type options: the four real HA types, the layout-card grid type (slice
+  // 4.7b — choosing it CONVERTS this view into a real layout-card view), plus
+  // the current type if it is some other real layout-card (custom:*-layout) so
+  // it stays selectable and is never silently converted.
   const typeOptions = [
     ...(STANDARD_VIEW_TYPES as readonly string[]).map((t) => ({
       value: t,
       label: VIEW_TYPE_LABELS[t] ?? t,
     })),
-    ...((STANDARD_VIEW_TYPES as readonly string[]).includes(currentType)
+    { value: LAYOUT_CARD_GRID_TYPE, label: LAYOUT_CARD_GRID_LABEL },
+    ...((STANDARD_VIEW_TYPES as readonly string[]).includes(currentType) ||
+    currentType === LAYOUT_CARD_GRID_TYPE
       ? []
       : [{ value: currentType, label: `Custom layout (${currentType})` }]),
   ];
+
+  // Slice 4.7b: the grid fields are raw CSS strings, so any layout-card grid —
+  // `1fr 2fr 1fr`, `minmax(...)`, named areas — round-trips instead of being
+  // rewritten by a numeric control that could not model it.
+  const initialGrid = {
+    gridTemplateColumns: view?.layout?.grid_template_columns ?? '',
+    gridTemplateRows: view?.layout?.grid_template_rows ?? '',
+    gridGap: view?.layout?.grid_gap ?? '',
+  };
 
   const initialValues: ViewSettingsFormValues = {
     title: view?.title ?? '',
@@ -113,6 +147,7 @@ export const ViewSettingsDialog: React.FC<ViewSettingsDialogProps> = ({
     subview: view?.subview ?? false,
     back_path: view?.back_path ?? '',
     visibleInNav: view?.visible === false ? false : true,
+    ...initialGrid,
   };
 
   // A live warning for structural (potentially lossy) type changes. The visible
@@ -133,8 +168,19 @@ export const ViewSettingsDialog: React.FC<ViewSettingsDialogProps> = ({
       // FR-026 confirmation — nothing is destroyed silently.
       typeChangeWarning =
         'This view uses a layout-card grid. Home Assistant ignores that grid on the new type, so it will not be deployed — the configuration is kept in HAVDM if you switch back.';
+    } else if (!isLayoutCardViewType(currentType) && isLayoutCardViewType(pendingType)) {
+      // Slice 4.7b: converting INTO a real layout-card view. layout-card is a
+      // HACS custom card, not a built-in HA view type — if it is not installed
+      // the view will not render at all. HAVDM cannot verify that from here, so
+      // it must be said plainly before the user saves.
+      typeChangeWarning =
+        'This converts the view into a real layout-card view and deploys it as custom:grid-layout. Home Assistant needs the layout-card custom card installed, or this view will not render.';
     }
   }
+
+  // The grid editor applies to any layout-card view — the one being edited, or
+  // the one the user is about to convert this into.
+  const showGridEditor = isLayoutCardViewType(pendingType);
 
   const handleSave = () => {
     const values = form.getFieldsValue();
@@ -154,7 +200,29 @@ export const ViewSettingsDialog: React.FC<ViewSettingsDialogProps> = ({
       // `visible: false` (hidden from navigation).
       patch.visible = values.visibleInNav ? undefined : false;
     }
-    onSubmit({ patch, type: values.viewType ?? currentType });
+
+    const nextType = values.viewType ?? currentType;
+
+    // Slice 4.7b: only emit a grid patch for a layout-card view, and only for
+    // fields the user actually touched. An empty field means "leave this alone"
+    // UNLESS it had a value on open — that is a deliberate clear. Omitting empty
+    // untouched fields is what stops a fresh conversion from immediately wiping
+    // the default grid it was just given.
+    let grid: ViewGridPatch | undefined;
+    if (isLayoutCardViewType(nextType)) {
+      const next: ViewGridPatch = {};
+      const apply = (key: keyof ViewGridPatch, value: string | undefined, initial: string) => {
+        const trimmed = (value ?? '').trim();
+        if (trimmed) next[key] = trimmed;
+        else if (initial) next[key] = '';
+      };
+      apply('grid_template_columns', values.gridTemplateColumns, initialGrid.gridTemplateColumns);
+      apply('grid_template_rows', values.gridTemplateRows, initialGrid.gridTemplateRows);
+      apply('grid_gap', values.gridGap, initialGrid.gridGap);
+      if (Object.keys(next).length > 0) grid = next;
+    }
+
+    onSubmit({ patch, type: nextType, grid });
   };
 
   const canMoveLeft = viewIndex !== null && viewIndex > 0;
@@ -221,6 +289,43 @@ export const ViewSettingsDialog: React.FC<ViewSettingsDialogProps> = ({
             style={{ marginBottom: 16 }}
             data-testid="view-settings-type-warning"
           />
+        )}
+
+        {showGridEditor && (
+          <div data-testid="view-settings-grid-editor">
+            {/* antd v6: section titles are placed with `titlePlacement`; the v5
+                `orientation="left"` now means the divider's own axis. */}
+            <Divider style={{ margin: '12px 0' }} titlePlacement="start">
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                Layout-card grid
+              </Text>
+            </Divider>
+            <Form.Item
+              label="Columns"
+              name="gridTemplateColumns"
+              help="CSS grid-template-columns, e.g. repeat(12, 1fr) or 1fr 2fr 1fr. The canvas renders this column count."
+            >
+              <Input
+                placeholder="repeat(12, 1fr)"
+                data-testid="view-settings-grid-columns"
+                autoComplete="off"
+              />
+            </Form.Item>
+            <Form.Item
+              label="Row height"
+              name="gridTemplateRows"
+              help="CSS grid-template-rows, e.g. repeat(auto-fill, 56px). A pixel row height is mirrored on the canvas."
+            >
+              <Input
+                placeholder="repeat(auto-fill, 56px)"
+                data-testid="view-settings-grid-rows"
+                autoComplete="off"
+              />
+            </Form.Item>
+            <Form.Item label="Gap" name="gridGap" help="CSS grid-gap, e.g. 8px.">
+              <Input placeholder="8px" data-testid="view-settings-grid-gap" autoComplete="off" />
+            </Form.Item>
+          </div>
         )}
 
         <Divider style={{ margin: '12px 0' }} />
