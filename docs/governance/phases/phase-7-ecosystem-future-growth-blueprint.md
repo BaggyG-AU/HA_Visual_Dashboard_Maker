@@ -204,14 +204,17 @@ Governance Mode: HARD MODE++
 
 ## 12) Ordered Feature Slice Plan
 
+> **AMENDED 2026-07-26 — see `phase-7-ecosystem-future-growth-amendment-01.md`.**
+> Slices G and H are **WITHDRAWN**. The executable order is A, B, C, D, E, F, I.
+
 - Slice A: Preset Marketplace foundations (model, service contract, browsing/import seams).
 - Slice B: Theme Manager expansion (save/load/theme package import-export and per-view overrides).
 - Slice C: Card Duplication and Cloning workflows.
 - Slice D: Bulk Operations and multi-select mutation safety.
 - Slice E: Version Control Integration boundaries (safe additive git workflow integration).
 - Slice F: Import/Export Enhancements and conversion hardening.
-- Slice G: Dashboard Analytics instrumentation.
-- Slice H: Plugin System Architecture scaffold and security envelope.
+- Slice G: Dashboard Analytics instrumentation. — **WITHDRAWN (amendment-01)**
+- Slice H: Plugin System Architecture scaffold and security envelope. — **WITHDRAWN (amendment-01)**
 - Slice I: Medium Gate packaging and release-readiness evidence.
 
 ## 13) Codex-Ready Feature Prompts (Per Slice)
@@ -1037,6 +1040,11 @@ Versioning Rules:
 
 ## 17) Phase Definition of Done
 
+> **AMENDED 2026-07-26 — see `phase-7-ecosystem-future-growth-amendment-01.md` §1.7.**
+> The first bullet below is superseded by: "**All six scoped Phase 7 feature
+> slices (A–F) delivered within scoped boundaries. Slices G and H are withdrawn
+> by amendment-01.**" Every other bullet stands unchanged.
+
 - All eight Phase 7 feature slices delivered within scoped boundaries.
 - No unresolved P0/P1 regressions introduced by phase work.
 - Required unit/integration/e2e gates pass with evidence.
@@ -1127,14 +1135,18 @@ Stop Conditions During Audit:
 
 - Commit sequence plan:
 
+> **AMENDED 2026-07-26 — see `phase-7-ecosystem-future-growth-amendment-01.md` §1.7.**
+> Items 7 and 8 are removed with slices G and H. The remaining sequence is
+> items 1–6 and 9.
+
 1. `feat(phase-7): add preset marketplace foundations with remapping integration`
 2. `feat(phase-7): expand theme manager save-load-import-export workflows`
 3. `feat(phase-7): implement card duplication and cross-view cloning`
 4. `feat(phase-7): add multi-select bulk operations with history-safe updates`
 5. `feat(phase-7): introduce bounded version-control integration surfaces`
 6. `feat(phase-7): harden import-export conversion and validation flows`
-7. `feat(phase-7): add dashboard analytics instrumentation and controls`
-8. `feat(phase-7): scaffold plugin architecture with capability boundaries`
+7. ~~`feat(phase-7): add dashboard analytics instrumentation and controls`~~ — **WITHDRAWN (amendment-01)**
+8. ~~`feat(phase-7): scaffold plugin architecture with capability boundaries`~~ — **WITHDRAWN (amendment-01)**
 9. `chore(phase-7): run medium gate, finalize packaging evidence`
 
 - Per-commit self-review checklist:
