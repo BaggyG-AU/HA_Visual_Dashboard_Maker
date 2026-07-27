@@ -416,11 +416,18 @@ someone who has not read the source.
 2. Type `button` into **Search cards...**.
 3. Clear the search and type `zzzz`.
 4. Clear the search again and hover any card to read its tooltip.
+5. Find a HACS card — for example **Button Card**, **Mushroom Light** or
+   **ApexCharts** — and look at how the palette marks it as a custom card.
 
 **Expected:**
 
-- Six categories are present: **Layout**, **Sensors & Display**, **Controls**,
-  **Media**, **Information**, **Custom Cards**.
+- Five categories are present: **Layout**, **Sensors & Display**, **Controls**,
+  **Media**, **Information**.
+- ⭐ Cards are filed by **what they do**, not by where they came from. There is
+  no "Custom Cards" category — a custom card sits with the built-in cards that
+  do the same job, and carries a **Custom** badge instead.
+- ⭐ No single category holds most of the palette; the counts on the category
+  headers are of comparable size rather than one bucket holding the majority.
 - Searching `button` narrows the list to button-like cards.
 - Searching `zzzz` yields an empty result without an error or a blank sidebar.
 - Tooltips describe what the card is in plain language.
@@ -1427,7 +1434,7 @@ flagged in the palette — including the `native-graph-card` regression, not jus
 
 **Steps:**
 
-1. From **Custom Cards** in the palette, add the **Popup Card (HAVDM-only)**.
+1. From **Layout** in the palette, add the **Popup Card (HAVDM-only)**.
 2. Look at how the palette marked it before you added it.
 3. Note the card's position and size on the canvas.
 4. Choose **File → Export for Home Assistant...** and save as
@@ -1463,7 +1470,8 @@ comprehensible to a non-expert.
 
 **Steps:**
 
-1. Open **Custom Cards** in the palette.
+1. Open **Sensors & Display** in the palette. (Custom cards are filed by what
+   they do and carry a **Custom** badge — there is no "Custom Cards" category.)
 2. Hover a card that is marked as not installed and read the tooltip.
 3. Hover a card marked HAVDM canvas-only and read that tooltip.
 4. Add a not-installed card to the canvas anyway.
@@ -1945,7 +1953,9 @@ fixtures. They have never queried a real HACS installation.
 
 **Steps:**
 
-1. While connected, open **Custom Cards** in the Card Palette.
+1. While connected, expand the Card Palette categories. (Custom cards are filed
+   by what they do — **Layout**, **Sensors & Display**, **Controls**, **Media**
+   — and carry a **Custom** badge, so there is no "Custom Cards" category.)
 2. Find a card you know **is** installed on the instance — for example
    Bubble Card, apexcharts, mushroom, button-card, card-mod or mini-graph-card.
 3. Find a card you know is **not** installed — for example layout-card,

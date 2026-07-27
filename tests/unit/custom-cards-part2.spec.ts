@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { cardRegistry } from '../../src/services/cardRegistry';
+import { cardRegistry, type CardCategory } from '../../src/services/cardRegistry';
 
 describe('Custom Cards Part 2 - Registry Validation', () => {
   describe('Card-mod', () => {
@@ -23,7 +23,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
       const meta = cardRegistry.get('custom:card-mod');
       expect(meta).toBeTruthy();
       expect(meta?.name).toBe('Card Mod');
-      expect(meta?.category).toBe('custom');
+      expect(meta?.category).toBe('layout');
       expect(meta?.source).toBe('hacs');
       expect(meta?.isCustom).toBe(true);
     });
@@ -39,7 +39,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
       const meta = cardRegistry.get('custom:auto-entities');
       expect(meta).toBeTruthy();
       expect(meta?.name).toBe('Auto Entities');
-      expect(meta?.category).toBe('custom');
+      expect(meta?.category).toBe('layout');
       expect(meta?.source).toBe('hacs');
       expect(meta?.isCustom).toBe(true);
     });
@@ -63,7 +63,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
       const meta = cardRegistry.get('custom:vertical-stack-in-card');
       expect(meta).toBeTruthy();
       expect(meta?.name).toBe('Vertical Stack in Card');
-      expect(meta?.category).toBe('custom');
+      expect(meta?.category).toBe('layout');
       expect(meta?.source).toBe('hacs');
       expect(meta?.isCustom).toBe(true);
     });
@@ -85,7 +85,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
       const meta = cardRegistry.get('custom:button-card');
       expect(meta).toBeTruthy();
       expect(meta?.name).toBe('Button Card');
-      expect(meta?.category).toBe('custom');
+      expect(meta?.category).toBe('control');
       expect(meta?.source).toBe('hacs');
       expect(meta?.isCustom).toBe(true);
     });
@@ -110,7 +110,7 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
           const meta = cardRegistry.get(type);
           expect(meta).toBeTruthy();
           expect(meta?.name).toBe(name);
-          expect(meta?.category).toBe('custom');
+          expect(meta?.category).toBe('media');
           expect(meta?.source).toBe('hacs');
           expect(meta?.isCustom).toBe(true);
         });
@@ -206,24 +206,39 @@ describe('Custom Cards Part 2 - Registry Validation', () => {
   });
 
   describe('Card Category Filtering', () => {
-    it('should return all new cards when filtering by custom category', () => {
-      const customCategoryCards = cardRegistry.getByCategory('custom');
-      const customTypes = customCategoryCards.map((c) => c.type);
+    // These cards used to sit together in a single `custom` bucket. They are now
+    // categorised by what they DO, with `isCustom` carrying the "this is a custom
+    // card" signal instead — see the palette recategorisation. The assertion is
+    // per-card and functional so it keeps pinning placement, rather than merely
+    // asserting the old bucket no longer exists.
+    const expectedPlacement: Record<string, string> = {
+      'custom:card-mod': 'layout',
+      'custom:auto-entities': 'layout',
+      'custom:vertical-stack-in-card': 'layout',
+      'custom:button-card': 'control',
+      'custom:surveillance-card': 'media',
+      'custom:frigate-card': 'media',
+      'custom:camera-card': 'media',
+      'custom:webrtc-camera': 'media',
+    };
 
-      const expectedCustomCards = [
-        'custom:card-mod',
-        'custom:auto-entities',
-        'custom:vertical-stack-in-card',
-        'custom:button-card',
-        'custom:surveillance-card',
-        'custom:frigate-card',
-        'custom:camera-card',
-        'custom:webrtc-camera',
-      ];
+    it('files each Part 2 card under its functional category, not "custom"', () => {
+      for (const [type, category] of Object.entries(expectedPlacement)) {
+        const meta = cardRegistry.get(type);
+        expect(meta, `${type} should be registered`).toBeTruthy();
+        expect(meta?.category, `${type} should be categorised ${category}`).toBe(category);
+        expect(cardRegistry.getByCategory(category as CardCategory).map((c) => c.type)).toContain(
+          type,
+        );
+      }
+    });
 
-      expectedCustomCards.forEach((type) => {
-        expect(customTypes).toContain(type);
-      });
+    it('still marks every Part 2 card as custom via the isCustom tag', () => {
+      // The category moved; the "custom" signal did not. This is the half of the
+      // change that keeps the palette's "Custom" badge on these cards.
+      for (const type of Object.keys(expectedPlacement)) {
+        expect(cardRegistry.get(type)?.isCustom, `${type} should remain isCustom`).toBe(true);
+      }
     });
   });
 });

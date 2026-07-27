@@ -22,7 +22,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Place button card and open its properties
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -109,7 +109,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
 
       // Add a button card that has a color field
       await palette.expectVisible();
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
 
       // Wait for card to appear on canvas
@@ -141,7 +141,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -172,7 +172,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -198,7 +198,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -233,7 +233,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -269,7 +269,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -303,7 +303,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -346,7 +346,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -377,7 +377,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -411,7 +411,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -450,7 +450,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -484,7 +484,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -514,7 +514,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -544,7 +544,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -591,7 +591,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await appDSL.waitUntilReady();
       await dashboard.createNew();
 
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -641,7 +641,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
@@ -671,7 +671,7 @@ test.describe('Color Picker - PropertiesPanel Integration', () => {
       await dashboard.createNew();
 
       // Add button card
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
