@@ -32,6 +32,7 @@ import { ColorPickerInput } from './ColorPickerInput';
 import { BackgroundCustomizer } from './BackgroundCustomizer';
 import { haConnectionService } from '../services/haConnectionService';
 import { createDebouncedCommit, DebouncedCommit } from '../utils/debouncedCommit';
+import { mergeFormValuesIntoCard } from '../utils/mergeFormValuesIntoCard';
 import { extractStyleColor, upsertStyleColor } from '../utils/styleBackground';
 import {
   applyBackgroundConfigToStyle,
@@ -1364,7 +1365,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     isUpdatingFromForm.current = true;
 
     const values = form.getFieldsValue(true);
-    const updatedCard = { ...cardRef.current, ...values } as Card;
+    // ⚠ NOT a plain `{ ...cardRef.current, ...values }` spread. getFieldsValue
+    // returns every key the form store has ever held — including ones
+    // applyCardValuesToForm "cleared", which antd keeps with the value
+    // undefined. Spreading those re-attached another card's keys to this one.
+    // See src/utils/mergeFormValuesIntoCard.ts for the full account.
+    const updatedCard = mergeFormValuesIntoCard(cardRef.current ?? ({} as Card), values) as Card;
     if (updatedCard.type === 'custom:swipe-card') {
       const typed = updatedCard as { slides?: unknown; cards?: unknown; parameters?: unknown };
       if (Array.isArray(typed.slides) && typed.slides.length > 0) {
