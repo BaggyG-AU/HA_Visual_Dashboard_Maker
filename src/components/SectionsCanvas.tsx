@@ -316,6 +316,10 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
       onMouseDown={(event) => {
         const target = event.target as HTMLElement | null;
         if (target?.closest('[data-testid="canvas-card"]')) return;
+        // Same guard as GridCanvas: the card context menu renders inside this
+        // container, and clicking one of its items must not be read as clicking
+        // empty canvas — that cleared the selection the action needed.
+        if (target?.closest('.ant-dropdown')) return;
         if (selectedCardIndex !== null) onCardSelect(null, { sectionIndex: null });
       }}
     >
@@ -500,22 +504,17 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                         clipping wrapper so they are never clipped. */}
                     <div style={{ height: '100%', overflow: 'hidden' }}>
                       <CardContextMenu
-                        onCut={() => {
+                        // ⚠ Select on OPEN, not inside each item handler — the
+                        // action handlers read a selection that has not been
+                        // committed yet if both happen in one tick. Same fix as
+                        // GridCanvas; see CardContextMenuProps.onOpen.
+                        onOpen={() => {
                           if (!selected) onCardSelect(ci, { sectionIndex: si });
-                          onCardCut?.();
                         }}
-                        onCopy={() => {
-                          if (!selected) onCardSelect(ci, { sectionIndex: si });
-                          onCardCopy?.();
-                        }}
-                        onPaste={() => {
-                          if (!selected) onCardSelect(ci, { sectionIndex: si });
-                          onCardPaste?.();
-                        }}
-                        onDelete={() => {
-                          if (!selected) onCardSelect(ci, { sectionIndex: si });
-                          onCardDelete?.();
-                        }}
+                        onCut={() => onCardCut?.()}
+                        onCopy={() => onCardCopy?.()}
+                        onPaste={() => onCardPaste?.()}
+                        onDelete={() => onCardDelete?.()}
                         canPaste={canPaste ?? false}
                       >
                         {/* Inner element is the drag-MOVE source; the outer wrapper
