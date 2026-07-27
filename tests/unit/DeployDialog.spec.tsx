@@ -54,6 +54,30 @@ describe('DeployDialog (B0: deploy the object, no re-parse)', () => {
     };
   });
 
+  // ⚠ EXPLICIT TEST TIMEOUT — required, and the reason is product behaviour.
+  //
+  // `DeployDialog.tsx` paces its deploy steps with deliberate
+  // `await new Promise((resolve) => setTimeout(resolve, 500))` calls labelled
+  // "Wait a bit for visual feedback" (currently three; TWO of them run before
+  // `haWsSaveDashboardConfig` is reached). So ~1000 ms of this test's runtime is
+  // irreducible product pacing, not test overhead, and it cannot be removed
+  // without changing what the user sees during a deploy.
+  //
+  // Measured runtime of this test: ~2.2 s isolated on an idle machine, ~3.0–3.3 s
+  // isolated on a loaded one. Under a full `npm run test:unit` run — where jsdom
+  // render cost rises with suite-wide `environment` overhead — it exceeded
+  // vitest's 5000 ms DEFAULT and failed four consecutive times, while continuing
+  // to pass isolated every time. Diagnosed 2026-07-27 during the Phase 7 Medium
+  // Gate; see `phase-7-ecosystem-future-growth-medium-gate.md` → Residual Risk.
+  //
+  // 15000 ms is ~4.5x the worst isolated measurement and ~3x the runtime at which
+  // it actually failed. It is NOT a round number chosen to make a red test green:
+  // it is sized so the inner `waitFor(…, { timeout: 5000 })` below can genuinely
+  // expire and report *what* did not happen, instead of the whole test dying at
+  // the budget boundary with a bare "Test timed out in 5000ms".
+  //
+  // Per TESTING_STANDARDS.md §6 this test uses NO `waitForTimeout`-style sleep for
+  // synchronisation — every wait here is state-based.
   it('sends the sanitised config object to Home Assistant unchanged (bar title)', async () => {
     render(
       <DeployDialog
@@ -82,7 +106,7 @@ describe('DeployDialog (B0: deploy the object, no re-parse)', () => {
     // Title comes from the form, everything else from the config object.
     expect(deployedConfig.title).toBe('My Dashboard');
     expect(deployedConfig.views).toHaveLength(1);
-  });
+  }, 15000);
 
   it('errors clearly when there is no config to deploy', async () => {
     render(
