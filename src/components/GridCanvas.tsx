@@ -419,6 +419,14 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         const target = event.target as HTMLElement | null;
         if (!target) return;
         if (target.closest('[data-testid="canvas-card"]')) return;
+        // ⚠⚠ A click inside the card CONTEXT MENU is not a click on empty
+        // canvas. antd renders the dropdown popup inside this container, so
+        // without this guard choosing Cut/Copy/Paste/Delete cleared the very
+        // selection the action was about to operate on — the action then reported
+        // "No card selected" and did nothing. Second half of the v1.0.0 UAT
+        // round-1 defect CANVAS-06, whose Expected is "Delete removes only the
+        // card you right-clicked".
+        if (target.closest('.ant-dropdown')) return;
         if (selectedCardIndex !== null || selectedCardIndices.length > 0) {
           onCardSelect(null, { mode: 'replace' });
         }
@@ -489,30 +497,20 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
                   }}
                 >
                   <CardContextMenu
-                    onCut={() => {
+                    // ⚠ Selection happens on OPEN, not inside each item handler.
+                    // The old code selected and acted in the same tick, so the
+                    // action read a selection React had not committed yet and
+                    // Delete silently did nothing on an unselected card. See the
+                    // note on CardContextMenuProps.onOpen.
+                    onOpen={() => {
                       if (!selectedCardSet.has(index)) {
                         onCardSelect(index, { mode: 'replace' });
                       }
-                      onCardCut?.();
                     }}
-                    onCopy={() => {
-                      if (!selectedCardSet.has(index)) {
-                        onCardSelect(index, { mode: 'replace' });
-                      }
-                      onCardCopy?.();
-                    }}
-                    onPaste={() => {
-                      if (!selectedCardSet.has(index)) {
-                        onCardSelect(index, { mode: 'replace' });
-                      }
-                      onCardPaste?.();
-                    }}
-                    onDelete={() => {
-                      if (!selectedCardSet.has(index)) {
-                        onCardSelect(index, { mode: 'replace' });
-                      }
-                      onCardDelete?.();
-                    }}
+                    onCut={() => onCardCut?.()}
+                    onCopy={() => onCardCopy?.()}
+                    onPaste={() => onCardPaste?.()}
+                    onDelete={() => onCardDelete?.()}
                     canPaste={canPaste ?? false}
                   >
                     <BaseCard

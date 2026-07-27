@@ -144,7 +144,13 @@ type DashboardTestApi = {
   // Test-only: load a whole-dashboard YAML string (e.g. a `type: sections`
   // view) without driving the file-open dialog. Mirrors the real load path
   // (loadDashboard -> importDashboard), so it exercises production parsing.
-  loadYaml: (yaml: string) => void;
+  //
+  // `filePath` is optional and defaults to null, which is the "never saved
+  // anywhere" state. Passing one puts the app in the FILE-BACKED state, where
+  // Save writes straight through `createBackup` + `writeFile` instead of opening
+  // a native save dialog — the only way to assert the whole menu -> save path in
+  // an automated test, since native dialogs are not automatable here.
+  loadYaml: (yaml: string, filePath?: string | null) => void;
 };
 
 interface RemapWatcherProps {
@@ -1705,8 +1711,8 @@ const App: React.FC = () => {
         ignoreNextLayoutChangeRef.current = true;
         useDashboardStore.getState().redo();
       },
-      loadYaml: (yaml: string) => {
-        useDashboardStore.getState().loadDashboard(yaml, null);
+      loadYaml: (yaml: string, filePath: string | null = null) => {
+        useDashboardStore.getState().loadDashboard(yaml, filePath);
       },
     };
 
@@ -2130,15 +2136,54 @@ const App: React.FC = () => {
     loadSounds();
   }, []);
 
+  // ⚠⚠ The menu listeners below subscribe ONCE, deliberately — re-subscribing on
+  // every render would churn IPC listeners. The cost is that anything those
+  // callbacks close over is frozen at FIRST render, and at first render the app
+  // is on the welcome screen with `config === null` and `isDarkTheme` at its
+  // startup value.
+  //
+  // That cost was being paid: File > Save As... and File > Export for Home
+  // Assistant... hit the `if (!config)` guard forever and reported "No dashboard
+  // loaded" no matter what was on the canvas (UAT v1.0.0 FILE-06, EXPORT-01 —
+  // and EXPORT-01 cascaded into four more cards being skipped "Can't export").
+  // View > Toggle Theme computed `!isDarkTheme` from the frozen value, so every
+  // press produced the same result and the theme never toggled back (SHELL-03).
+  // The toolbar buttons and the Ctrl+S shortcut were unaffected, because those
+  // rebind every render — which is exactly why the same operation appeared to
+  // work or fail depending on how it was invoked.
+  //
+  // Route through a ref refreshed on every render so the one-time subscription
+  // always calls the CURRENT handler. Same idiom as PropertiesPanel's cardRef /
+  // onChangeRef (src/components/PropertiesPanel.tsx).
+  const menuHandlersRef = useRef({
+    handleOpenFile,
+    handleSave,
+    handleSaveFile,
+    handleExportForHA,
+    handleToggleTheme,
+    handleShowAbout,
+    handleOpenRecentFile,
+  });
+  menuHandlersRef.current = {
+    handleOpenFile,
+    handleSave,
+    handleSaveFile,
+    handleExportForHA,
+    handleToggleTheme,
+    handleShowAbout,
+    handleOpenRecentFile,
+  };
+
   // Set up menu event listeners
   useEffect(() => {
-    const handleMenuOpenFile = () => handleOpenFile();
-    const handleMenuSave = () => handleSave();
-    const handleMenuSaveFileAs = () => handleSaveFile();
-    const handleMenuExportForHA = () => handleExportForHA();
-    const handleMenuToggleTheme = () => handleToggleTheme();
-    const handleMenuShowAbout = () => handleShowAbout();
-    const handleMenuOpenRecentFile = (filePath: string) => handleOpenRecentFile(filePath);
+    const handleMenuOpenFile = () => menuHandlersRef.current.handleOpenFile();
+    const handleMenuSave = () => menuHandlersRef.current.handleSave();
+    const handleMenuSaveFileAs = () => menuHandlersRef.current.handleSaveFile();
+    const handleMenuExportForHA = () => menuHandlersRef.current.handleExportForHA();
+    const handleMenuToggleTheme = () => menuHandlersRef.current.handleToggleTheme();
+    const handleMenuShowAbout = () => menuHandlersRef.current.handleShowAbout();
+    const handleMenuOpenRecentFile = (filePath: string) =>
+      menuHandlersRef.current.handleOpenRecentFile(filePath);
 
     const unsubOpenFile = window.electronAPI.onMenuOpenFile(handleMenuOpenFile);
     const unsubSaveFile = window.electronAPI.onMenuSaveFile(handleMenuSave);
