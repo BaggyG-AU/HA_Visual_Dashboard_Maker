@@ -55,10 +55,28 @@ import {
   toAnimationTiming,
 } from '../services/triggerAnimationService';
 
-interface BaseCardProps {
+// ⚠⚠ The `...rest` and `ref` here are LOAD-BEARING, not boilerplate.
+//
+// BaseCard is wrapped by `CardContextMenu` in both GridCanvas and
+// SectionsCanvas. antd's Dropdown implements `trigger={['contextMenu']}` by
+// React.cloneElement-ing its child with an `onContextMenu` handler and a ref.
+// BaseCard used to destructure exactly { card, isSelected, onClick } and spread
+// nothing, so BOTH were silently discarded — no error, no warning, and
+// right-click simply did nothing on any card in either canvas.
+//
+// That is the v1.0.0 UAT round-1 defect CANVAS-06, and it also blocked the
+// stated method of CLIP-01, CLIP-02 and CLIP-03, all of which tell the tester to
+// "right-click and choose Copy/Cut/Paste".
+//
+// ⭐ A wrapper that injects props by cloneElement is a CONTRACT on its child.
+// Keep this component transparent to unknown props or the contract breaks again.
+interface BaseCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick'> {
   card: Card;
   isSelected?: boolean;
   onClick?: (event?: React.MouseEvent<HTMLElement>) => void;
+  // React 19 passes `ref` as an ordinary prop to function components, so no
+  // forwardRef is needed — but it must still be accepted and attached.
+  ref?: React.Ref<HTMLDivElement>;
 }
 
 const VISIBILITY_TRANSITION_MS = 250;
@@ -84,7 +102,13 @@ const isTestEnv = (): boolean => {
  * BaseCard component - routes to the appropriate card renderer
  * Supported cards get their specific renderer, unsupported cards get a placeholder
  */
-export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, onClick }) => {
+export const BaseCard: React.FC<BaseCardProps> = ({
+  card,
+  isSelected = false,
+  onClick,
+  ref,
+  ...rest
+}) => {
   const { entities } = useHAEntities();
   const isVisible = evaluateVisibilityConditions(card.visibility_conditions, entities);
   const [shouldRender, setShouldRender] = useState(isVisible);
@@ -175,6 +199,17 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
     };
   }, [pendingTriggerAnimation]);
 
+  // wrapperRef drives the trigger animations; the incoming `ref` is antd
+  // Dropdown's positioning anchor. Both need the same node, so fan out.
+  const attachWrapper = (node: HTMLDivElement | null) => {
+    wrapperRef.current = node;
+    if (typeof ref === 'function') {
+      ref(node);
+    } else if (ref) {
+      (ref as React.RefObject<HTMLDivElement | null>).current = node;
+    }
+  };
+
   if (!shouldRender) {
     return null;
   }
@@ -194,11 +229,15 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
 
   if (isSpacer) {
     return (
+      // `{...rest}` first so our own attributes win on conflict, while anything
+      // antd injects (onContextMenu, aria-*, className) still reaches the DOM.
       <div
+        {...rest}
+        ref={attachWrapper}
         data-testid="conditional-visibility-wrapper"
         data-visible={isVisible ? 'true' : 'false'}
         data-trigger-animation-active={activeAnimationKey ? 'true' : 'false'}
-        style={transitionStyle}
+        style={{ ...transitionStyle, ...rest.style }}
       >
         <div
           style={{
@@ -653,12 +692,15 @@ export const BaseCard: React.FC<BaseCardProps> = ({ card, isSelected = false, on
   }
 
   return (
+    // `{...rest}` first — see the note on BaseCardProps. This is what makes the
+    // CardContextMenu wrapper's onContextMenu actually reach a DOM node.
     <div
-      ref={wrapperRef}
+      {...rest}
+      ref={attachWrapper}
       data-testid="conditional-visibility-wrapper"
       data-visible={isVisible ? 'true' : 'false'}
       data-trigger-animation-active={activeAnimationKey ? 'true' : 'false'}
-      style={{ ...transitionStyle, ...spacingStyle }}
+      style={{ ...transitionStyle, ...spacingStyle, ...rest.style }}
     >
       {renderedCard}
     </div>
