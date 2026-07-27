@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Card } from '../types/dashboard';
+import { Card, SpacerCard } from '../types/dashboard';
 import { EntitiesCardRenderer } from './cards/EntitiesCardRenderer';
 import { ButtonCardRenderer } from './cards/ButtonCardRenderer';
 import { GlanceCardRenderer } from './cards/GlanceCardRenderer';
@@ -224,8 +224,25 @@ export const BaseCard: React.FC<BaseCardProps> = ({
   };
   const spacingStyle = resolveCardSpacingStyles(card);
 
-  // Check if this is a spacer card
-  const isSpacer = card.type === 'spacer' || '_isSpacer' in card;
+  // Check if this is a spacer card.
+  //
+  // ⚠ This was `'_isSpacer' in card` — a PRESENCE check where a TRUTHINESS check
+  // is meant. antd's form store keeps a key it has "cleared" (its value becomes
+  // undefined, the key stays), so a card that had merely been edited after a
+  // spacer was selected carried `_isSpacer: undefined` and rendered as an empty
+  // spacer. That is the v1.0.0 UAT round-1 defect behind CLIP-01, CLIP-02,
+  // CLIP-04 and PROPS-01. The leak itself is fixed in mergeFormValuesIntoCard;
+  // this predicate is fixed because it should never have been presence-based.
+  //
+  // ⭐ `src/services/yamlConversionService.ts` has always used the correct form
+  // (`card._isSpacer === true`). Matching it here makes the two agree.
+  //
+  // ⚠ The cast is load-bearing, not laziness: `_isSpacer` is declared on
+  // `SpacerCard` alone, and `Card` is a union, so a bare `card._isSpacer` does
+  // not typecheck. The whole point of this line is to interrogate a card whose
+  // `type` says it is NOT a spacer, so the narrow cast is the honest expression
+  // of the question. `Partial<SpacerCard>` keeps the property's real type.
+  const isSpacer = card.type === 'spacer' || (card as Partial<SpacerCard>)._isSpacer === true;
 
   if (isSpacer) {
     return (
