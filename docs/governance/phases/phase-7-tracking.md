@@ -24,18 +24,18 @@ the current discipline as its own PR.
 
 ## 1) Slice Status Board
 
-| Slice | Title                                  | Status                    | Commit    | Reached main via   | Date       |
-| ----- | -------------------------------------- | ------------------------- | --------- | ------------------ | ---------- |
-| A     | Preset Marketplace foundations         | ✅ Delivered              | `8a3597e` | PR #23 (`863a44c`) | 2026-02-17 |
-| B     | Theme Manager expansion                | ✅ Delivered              | `536e3c1` | PR #23 (`863a44c`) | 2026-02-17 |
-| C     | Card Duplication & Cloning             | ⚠ **PARTIALLY WITHDRAWN** | see §3    | amendment-02       | 2026-07-26 |
-| D     | Bulk Operations & multi-select safety  | ✅ Delivered              | `f17be4d` | PR #23 (`863a44c`) | 2026-02-17 |
-| E     | Version Control Integration boundaries | ⚠ **READ-ONLY delivered** | see §3    | PR #83             | 2026-07-26 |
-| F     | Import/Export Enhancements & hardening | ✅ Delivered              | `7c1752d` | PR #80 (`128e8c4`) | 2026-07-26 |
-| G     | Dashboard Analytics                    | 🚫 **WITHDRAWN**          | —         | amendment-01 §1.2  | 2026-07-26 |
-| H     | Plugin System Architecture scaffold    | 🚫 **WITHDRAWN**          | —         | amendment-01 §1.3  | 2026-07-26 |
-| I     | Medium Gate — technical readiness ONLY | ✅ **GO** (88/100)        | `bea460c` | PR #85 (`34d61a3`) | 2026-07-27 |
-| J     | UAT round, then the `1.0.0` release    | 🔄 **In progress**        | —         | —                  | —          |
+| Slice | Title                                  | Status                      | Commit    | Reached main via   | Date       |
+| ----- | -------------------------------------- | --------------------------- | --------- | ------------------ | ---------- |
+| A     | Preset Marketplace foundations         | ✅ Delivered                | `8a3597e` | PR #23 (`863a44c`) | 2026-02-17 |
+| B     | Theme Manager expansion                | ✅ Delivered                | `536e3c1` | PR #23 (`863a44c`) | 2026-02-17 |
+| C     | Card Duplication & Cloning             | ⚠ **PARTIALLY WITHDRAWN**   | see §3    | amendment-02       | 2026-07-26 |
+| D     | Bulk Operations & multi-select safety  | ✅ Delivered                | `f17be4d` | PR #23 (`863a44c`) | 2026-02-17 |
+| E     | Version Control Integration boundaries | ⚠ **READ-ONLY delivered**   | see §3    | PR #83             | 2026-07-26 |
+| F     | Import/Export Enhancements & hardening | ✅ Delivered                | `7c1752d` | PR #80 (`128e8c4`) | 2026-07-26 |
+| G     | Dashboard Analytics                    | 🚫 **WITHDRAWN**            | —         | amendment-01 §1.2  | 2026-07-26 |
+| H     | Plugin System Architecture scaffold    | 🚫 **WITHDRAWN**            | —         | amendment-01 §1.3  | 2026-07-26 |
+| I     | Medium Gate — technical readiness ONLY | ✅ **GO** (88/100)          | `bea460c` | PR #85 (`34d61a3`) | 2026-07-27 |
+| J     | UAT round, then the `1.0.0` release    | 🔄 **Round 1 NOT ACCEPTED** | —         | —                  | 2026-07-27 |
 
 **Phase 7 Definition of Done is NOT met.** Outstanding: **Slice J (UAT +
 release)** only. Slice C was resolved 2026-07-26 by amendment-02 (action
@@ -375,6 +375,35 @@ group 11 so the round ends with the instance back as it started, and the matrix
 blocks the summary report until teardown is confirmed. Everything else in §4
 stands unchanged.
 
+#### Round 1 — executed 2026-07-27, result **NOT ACCEPTED**
+
+Run by the project owner against the Windows x64 packaged app. Artifacts
+committed verbatim:
+`docs/testing/uat/sessions/uat_session_v1.0.0_2026-07-27.json` and
+`docs/testing/uat/reports/uat_summary_v1.0.0_2026-07-27.md`.
+
+| Total | Pass | Fail | Skip | Untested |
+| ----- | ---- | ---- | ---- | -------- |
+| 66    | 30   | 28   | 8    | 0        |
+
+Defects by severity: **22 High · 5 Medium · 1 Low · 0 unrated.**
+
+⛔ **Amendment-03 §3.1 criterion 1 is zero open High. The round therefore fails
+mechanically and `package.json` stays at `0.7.5-beta.10`.** Criteria 3 (Lows
+recorded) and 5 (nothing Untested) are met; criteria 2 and 4 remain outstanding.
+
+⭐ **The finding worth keeping is the gap itself.** Slice I's Medium Gate returned
+**GO at 88/100** over 871 unit + 169 integration + 245 e2e — 1,285 automated
+tests, every gate passing — and the first human pass over the same build found
+22 High defects. That is amendment-03's argument demonstrated rather than
+asserted: **automated tests prove the code does what it was told; UAT proves it
+was told the right thing.** The gate was not wrong; it was answering a different
+question, and §1's own text already said so.
+
+⚠ 8 of the 28 failures are **cascades, not independent defects** — 4 EXPORT cards
+and 3 THEME cards were Skipped as blocked, and several Highs share one cause. The
+deduplicated defect list is the triage deliverable, not the raw failure count.
+
 ---
 
 ## 4) Gate Baseline (verified 2026-07-26)
@@ -517,13 +546,38 @@ document) require a green automated baseline before the round opens.
 - [x] HTML matrix generated to
       `docs/testing/uat/matrices/uat_matrix_v1.0.0_2026-07-27.html` —
       `npm run verify:uat-matrix` 63/63, re-verified after the Windows re-point
-- [ ] UAT round executed against the **packaged Windows** app by the project owner
-- [ ] ⚠ Any temporary Home Assistant dashboard **deleted** (UAT_STRATEGY §10)
-- [ ] Session JSON committed to `docs/testing/uat/sessions/`
-- [ ] Summary report committed to `docs/testing/uat/reports/`
+- [x] UAT round executed against the **packaged Windows** app by the project owner
+      — 2026-07-27, all 66 cards given a verdict. **Result: 30 pass / 28 fail /
+      8 skip / 0 untested**; 22 High, 5 Medium, 1 Low
+- [ ] ⚠ Any temporary Home Assistant dashboard **deleted** (UAT_STRATEGY §10) —
+      **PARTIAL, and this is an open finding.** HA-09's throwaway
+      `havdm-uat-temp` is confirmed **gone**. But a read-only
+      `lovelace/dashboards/list` against `ha.home.local` on 2026-07-27 still
+      returns **`temp-dashboard-editor-1785138319094`** ("New Dashboard
+      (Editing)", created 17:45:19 AEST — inside the sitting, 49 minutes before
+      the summary was generated), which is HA-08's Live Preview temporary
+      dashboard. A second, older leak — **`temp-dashboard-editor-1766729930446`**
+      ("Home Overview (Editing)", 2025-12-26) — predates this round entirely, so
+      the leak is not a one-off. Both match the shape
+      `temp-dashboard-editor-${Date.now()}` / `"<title> (Editing)"` built by
+      `src/services/haWebSocketService.ts:390`. ⚠ HA-08 was marked **Pass** with
+      teardown confirmed; per `docs/testing/UAT_STRATEGY.md` §2 the agent does
+      **not** re-mark a UAT test, so this is recorded as a finding for the owner
+      to score. Neither dashboard has been deleted by the agent.
+- [x] Session JSON committed to `docs/testing/uat/sessions/` —
+      `uat_session_v1.0.0_2026-07-27.json`, verbatim (1,269,968 bytes, 10
+      embedded screenshots). This is the input to round 2's previous-round dots
+- [x] Summary report committed to `docs/testing/uat/reports/` —
+      `uat_summary_v1.0.0_2026-07-27.md`, verbatim (the 18:34 regeneration, which
+      differs from the 18:00 download only in its `Generated:` timestamp)
 - [ ] Defects triaged; every uncovered failure has gained automated coverage (§7)
 - [ ] Pass bar met — amendment-03 §3.1: zero open High, no Untested, every Fail
-      rated, Mediums fixed or accepted in writing
+      rated, Mediums fixed or accepted in writing.
+      ⛔ **NOT MET — the round is NOT ACCEPTED.** Criterion 1 fails on **22 open
+      High**. Criteria 2 and 4 are outstanding (5 Mediums need written acceptance
+      or fixes; 6 failures sit on `auto_covered: false` cards). Criteria 3 and 5
+      are met — 1 Low recorded, 0 Untested. **The version therefore stays at
+      `0.7.5-beta.10`** and the two items below remain blocked
 - [ ] Version bump to `1.0.0` applied — `package.json`, `docs/RELEASES.md`,
       `docs/releases/RELEASE_NOTES_v1.0.0.md`
 - [ ] Annotated `v1.0.0` tag cut on the merge commit, after merge, on owner
