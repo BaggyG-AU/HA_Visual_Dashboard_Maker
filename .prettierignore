@@ -15,6 +15,16 @@ package-lock.json
 # would silently change what those tests verify.
 tests/fixtures/
 
+# UAT round artifacts are produced by the TESTER, not by us, and
+# `docs/testing/UAT_STRATEGY.md` §12 requires them committed verbatim. The
+# session JSON is the input to the next round's previous-round dots (§8), so
+# rewriting it would rewrite the evidence a regression is detected against.
+# The matrices are NOT listed here — those are ours, and are deliberately
+# formatted before `npm run verify:uat-matrix` re-checks the committed file.
+docs/testing/uat/sessions/
+docs/testing/uat/reports/
+docs/testing/uat/archives/
+
 # Generated / vendored
 *.min.js
 *.min.css
