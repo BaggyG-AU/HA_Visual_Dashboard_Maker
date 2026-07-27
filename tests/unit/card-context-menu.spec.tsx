@@ -25,22 +25,11 @@ import { CardContextMenu } from '../../src/components/CardContextMenu';
 import { HAEntityProvider } from '../../src/contexts/HAEntityContext';
 import type { Card } from '../../src/types/dashboard';
 
-// ⚠ DELIBERATE, TEMPORARY DUPLICATION. antd v6 mounts
-// @rc-component/resize-observer inside the dropdown and several card renderers,
-// and jsdom has no ResizeObserver. The permanent home for this is the shared
-// tests/unit/setup.ts, where it lands in the RC1 PR (the spacer-key-leak fix) —
-// but that PR and this one are BOTH branched off main under the non-stacked
-// discipline, so adding it to the shared file here would hand the second merge a
-// conflict on identical lines. Guarded, so it becomes an inert no-op the moment
-// the shared polyfill exists. Remove this block once RC1 is on main.
-if (typeof globalThis !== 'undefined' && !('ResizeObserver' in globalThis)) {
-  class ResizeObserverStub {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  }
-  (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = ResizeObserverStub;
-}
+// The jsdom ResizeObserver polyfill this file needs now lives in the shared
+// tests/unit/setup.ts. It used to be duplicated here, guarded, because that
+// shared file and this spec arrived in two different non-stacked PRs and
+// identical lines in the same file would have handed the second merge a
+// conflict. Both are on main, so the local copy is gone.
 
 const BUTTON_CARD = { type: 'button', name: 'UAT Button' } as Card;
 
