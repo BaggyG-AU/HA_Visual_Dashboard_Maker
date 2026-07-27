@@ -374,6 +374,43 @@ out under full-suite load (~5.2–5.7 s vs ~3.2 s isolated); passes 4/4 isolated
 (2 e2e + 1 integration `describe.skip`), each with a reason and revisit trigger.
 Slice I must confirm the register is current at gate time.
 
+### 4.1) Medium Gate run — executed 2026-07-27 on `main` = `6e63c2d`
+
+Full results and the Go/No-Go are in
+`docs/governance/phases/phase-7-ecosystem-future-growth-medium-gate.md`.
+
+| Gate                   | Medium Gate result                                | vs baseline  |
+| ---------------------- | ------------------------------------------------- | ------------ |
+| `./tools/checks`       | exit 0                                            | held         |
+| `npm run lint`         | 0 errors / 147 warnings                           | held         |
+| `npm run format:check` | clean                                             | held         |
+| `npm run typecheck`    | 0 errors                                          | held         |
+| `npm run test:unit`    | 871 passed (72 files)                             | held         |
+| `npm run package`      | OK                                                | held         |
+| `electron-e2e`         | **245 passed / 7 failed / 2 skipped** (47.0 min)  | **improved** |
+| `electron-integration` | **169 passed / 0 failed / 19 skipped** (27.8 min) | held         |
+
+⭐ The e2e failing set was diffed line-for-line against the 7 stable-known and is
+**identical**. `multi-entity.spec:71` (Family B) **passed** at 23.6 s, which is
+precisely the 244 → 245 / 8 → 7 delta — load-sensitivity confirmed, not breakage.
+
+⭐ The load-sensitive `tests/integration/entity-browser.spec.ts:380` **passed in
+the full-suite run** at 11.8 s, so no isolated re-run was needed. It also did not
+recur in the slice E run — two consecutive clean full-suite runs.
+
+⚠ **The `DeployDialog.spec` unit flake changed character during this session.**
+871/871 on both gate executions, then it failed 4 consecutive full-suite runs
+once the machine had run both Electron suites and a package build — while passing
+isolated 3/3 at 3050–3281 ms against its 5000 ms timeout. Proven not a
+regression: reverting to a tree identical to `6e63c2d` in the same checkout still
+reproduced it. Root cause is full-suite `environment` overhead rising ~15%
+(163 s → 187 s) and eating the spec's ~1.8 s margin. **Follow-up work, not a gate
+blocker** — see the Medium Gate report's Residual Risk.
+
+**Result: GO** (technical readiness), confidence 88/100. ⚠ Per amendment-03 §3
+this GO is **necessary but not sufficient** for v1.0.0 — an accepted UAT round
+(slice J) is also required, and **this gate applies no version bump**.
+
 ---
 
 ## 5) Medium Gate Prep Checklist (blueprint §18 item 8)
