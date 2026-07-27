@@ -937,9 +937,12 @@
             'Type <code>button</code> into "Search cards...".',
             'Clear the search and type <code>zzzz</code>.',
             'Clear the search again and hover any card to read its tooltip.',
+            'Find a HACS card — for example <strong>Button Card</strong>, <strong>Mushroom Light</strong> or <strong>ApexCharts</strong> — and look at how the palette marks it as a custom card.',
           ],
           expects: [
-            'Six categories are present: Layout, Sensors &amp; Display, Controls, Media, Information, Custom Cards.',
+            'Five categories are present: Layout, Sensors &amp; Display, Controls, Media, Information.',
+            '⭐ Cards are filed by <em>what they do</em>, not by where they came from. There is no "Custom Cards" category — a custom card sits with the built-in cards that do the same job, and carries a <strong>Custom</strong> badge instead.',
+            '⭐ No single category holds most of the palette; the counts on the category headers are of comparable size rather than one bucket holding the majority.',
             'Searching <code>button</code> narrows the list to button-like cards.',
             'Searching <code>zzzz</code> yields an empty result without an error or a blank sidebar.',
             'Tooltips describe what the card is, in plain language.',
@@ -1671,7 +1674,7 @@
           auto_note:
             '<code>tests/unit/CardPalette.canvasOnly.spec.tsx</code> proves every canvas-only type is flagged in the palette — including the native-graph-card regression, not just popup-card. It cannot tell you what the <em>exported</em> file does with one.',
           steps: [
-            'From <strong>Custom Cards</strong> in the palette, add the <strong>Popup Card (HAVDM-only)</strong>.',
+            'From <strong>Layout</strong> in the palette, add the <strong>Popup Card (HAVDM-only)</strong>.',
             'Look at how the palette marked it before you added it.',
             "Note the card's position and size on the canvas.",
             'Choose File &rarr; Export for Home Assistant... and save as <code>uat-canvas-only.yaml</code>.',
@@ -1694,7 +1697,7 @@
           auto_note:
             '<code>tests/unit/CardPalette.availability.spec.tsx</code> and <code>tests/unit/capabilityProfile.spec.ts</code> prove the availability logic and its permissive never-connected default. They cannot judge whether the marking is comprehensible to a non-expert.',
           steps: [
-            'Open <strong>Custom Cards</strong> in the palette.',
+            'Open <strong>Sensors &amp; Display</strong> in the palette. (Custom cards are filed by what they do and carry a <strong>Custom</strong> badge — there is no "Custom Cards" category.)',
             'Hover a card that is marked as not installed and read the tooltip.',
             'Hover a card marked HAVDM canvas-only and read that tooltip.',
             'Add a not-installed card to the canvas anyway.',
@@ -2106,7 +2109,7 @@
           auto_note:
             '<code>tests/unit/hacsRepositories.spec.ts</code> and <code>tests/unit/capabilityProfile.spec.ts</code> prove the HACS repository parsing and the capability profile resolution against fixtures. They have never queried a real HACS installation.',
           steps: [
-            'While connected, open <strong>Custom Cards</strong> in the Card Palette.',
+            'While connected, expand the Card Palette categories. (Custom cards are filed by what they do — <strong>Layout</strong>, <strong>Sensors &amp; Display</strong>, <strong>Controls</strong>, <strong>Media</strong> — and carry a <strong>Custom</strong> badge, so there is no "Custom Cards" category.)',
             'Find a card you know <strong>is</strong> installed — Bubble Card, apexcharts, mushroom, button-card, card-mod or mini-graph-card.',
             'Find a card you know is <strong>not</strong> installed — layout-card, expander/accordion, gauge-card-pro or power-flow-card.',
             'Compare how the two are marked.',

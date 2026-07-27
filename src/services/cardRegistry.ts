@@ -428,7 +428,7 @@ class CardRegistry {
       {
         type: 'custom:mini-graph-card',
         name: 'Sparkline (Mini Graph)',
-        category: 'custom',
+        category: 'sensor',
         icon: 'LineChartOutlined',
         description: 'Compact sparkline trend card (HACS mini-graph-card)',
         isCustom: true,
@@ -452,7 +452,7 @@ class CardRegistry {
       {
         type: 'custom:apexcharts-card',
         name: 'ApexCharts',
-        category: 'custom',
+        category: 'sensor',
         icon: 'AreaChartOutlined',
         description: 'Advanced charting (HACS) with safe editor defaults',
         isCustom: true,
@@ -488,7 +488,7 @@ class CardRegistry {
       {
         type: 'custom:native-graph-card',
         name: 'Native Graph',
-        category: 'custom',
+        category: 'sensor',
         icon: 'LineChartOutlined',
         description: 'Native Recharts visualization with line/bar/area/pie modes',
         isCustom: true,
@@ -516,7 +516,7 @@ class CardRegistry {
       {
         type: 'custom:gauge-card-pro',
         name: 'Gauge Card Pro',
-        category: 'custom',
+        category: 'sensor',
         icon: 'DashboardOutlined',
         description: 'HACS Gauge Card Pro with segments, gradient, and needle modes',
         isCustom: true,
@@ -542,7 +542,7 @@ class CardRegistry {
       {
         type: 'custom:slider-button-card',
         name: 'Slider Button Card',
-        category: 'custom',
+        category: 'control',
         icon: 'SlidersOutlined',
         description: 'Upstream-aligned slider button card with HAVDM advanced slider controls',
         isCustom: true,
@@ -573,7 +573,7 @@ class CardRegistry {
       {
         type: 'custom:havdm-progress-ring',
         name: 'Progress Ring',
-        category: 'custom',
+        category: 'sensor',
         icon: 'DashboardOutlined',
         description:
           'HAVDM progress-ring visualization with single or nested rings (design-only — deploys as a "Card Not Available" placeholder, not a Home Assistant card)',
@@ -603,7 +603,7 @@ class CardRegistry {
       {
         type: 'custom:button-card',
         name: 'Button Card',
-        category: 'custom',
+        category: 'control',
         icon: 'BorderOutlined',
         description: 'Advanced button card (HACS)',
         isCustom: true,
@@ -614,7 +614,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-entity-card',
         name: 'Mushroom Entity',
-        category: 'custom',
+        category: 'sensor',
         icon: 'AppstoreOutlined',
         description: 'Mushroom style entity (HACS)',
         isCustom: true,
@@ -625,7 +625,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-light-card',
         name: 'Mushroom Light',
-        category: 'custom',
+        category: 'control',
         icon: 'BulbOutlined',
         description: 'Mushroom style light (HACS)',
         isCustom: true,
@@ -636,7 +636,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-climate-card',
         name: 'Mushroom Climate',
-        category: 'custom',
+        category: 'control',
         icon: 'FireOutlined',
         description: 'Mushroom style thermostat (HACS)',
         isCustom: true,
@@ -647,7 +647,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-cover-card',
         name: 'Mushroom Cover',
-        category: 'custom',
+        category: 'control',
         icon: 'BorderOutlined',
         description: 'Mushroom style cover (HACS)',
         isCustom: true,
@@ -658,7 +658,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-fan-card',
         name: 'Mushroom Fan',
-        category: 'custom',
+        category: 'control',
         icon: 'BorderOutlined',
         description: 'Mushroom style fan (HACS)',
         isCustom: true,
@@ -669,7 +669,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-switch-card',
         name: 'Mushroom Switch',
-        category: 'custom',
+        category: 'control',
         icon: 'PoweroffOutlined',
         description: 'Mushroom style switch (HACS)',
         isCustom: true,
@@ -680,7 +680,7 @@ class CardRegistry {
       {
         type: 'custom:bubble-card',
         name: 'Bubble Card',
-        category: 'custom',
+        category: 'control',
         icon: 'BorderOutlined',
         description: 'Bubble style card with sub-buttons (HACS v3.1.0+)',
         isCustom: true,
@@ -691,7 +691,7 @@ class CardRegistry {
       {
         type: 'custom:better-thermostat-ui-card',
         name: 'Better Thermostat',
-        category: 'custom',
+        category: 'control',
         icon: 'FireOutlined',
         description: 'Enhanced thermostat (HACS)',
         isCustom: true,
@@ -702,7 +702,7 @@ class CardRegistry {
       {
         type: 'custom:power-flow-card',
         name: 'Power Flow',
-        category: 'custom',
+        category: 'sensor',
         icon: 'ThunderboltOutlined',
         description: 'Energy flow visualization (HACS)',
         isCustom: true,
@@ -713,7 +713,7 @@ class CardRegistry {
       {
         type: 'custom:power-flow-card-plus',
         name: 'Power Flow Plus',
-        category: 'custom',
+        category: 'sensor',
         icon: 'ThunderboltOutlined',
         description: 'Advanced energy flow visualization (HACS)',
         isCustom: true,
@@ -724,7 +724,7 @@ class CardRegistry {
       {
         type: 'custom:webrtc-camera',
         name: 'WebRTC Camera',
-        category: 'custom',
+        category: 'media',
         icon: 'VideoCameraOutlined',
         description: 'Low-latency camera streaming (HACS)',
         isCustom: true,
@@ -735,7 +735,7 @@ class CardRegistry {
       {
         type: 'custom:surveillance-card',
         name: 'Surveillance Card',
-        category: 'custom',
+        category: 'media',
         icon: 'VideoCameraOutlined',
         description: 'Multi-camera surveillance view (HACS)',
         isCustom: true,
@@ -746,7 +746,7 @@ class CardRegistry {
       {
         type: 'custom:frigate-card',
         name: 'Frigate Card',
-        category: 'custom',
+        category: 'media',
         icon: 'VideoCameraOutlined',
         description: 'Advanced Frigate NVR integration (HACS)',
         isCustom: true,
@@ -757,7 +757,7 @@ class CardRegistry {
       {
         type: 'custom:camera-card',
         name: 'Camera Card',
-        category: 'custom',
+        category: 'media',
         icon: 'VideoCameraOutlined',
         description: 'Enhanced camera card with PTZ controls (HACS)',
         isCustom: true,
@@ -770,7 +770,7 @@ class CardRegistry {
       {
         type: 'custom:card-mod',
         name: 'Card Mod',
-        category: 'custom',
+        category: 'layout',
         icon: 'FormatPainterOutlined',
         description: 'Add custom CSS styling to any card (HACS)',
         isCustom: true,
@@ -781,7 +781,7 @@ class CardRegistry {
       {
         type: 'custom:auto-entities',
         name: 'Auto Entities',
-        category: 'custom',
+        category: 'layout',
         icon: 'ThunderboltOutlined',
         description: 'Automatically populate entities based on filters (HACS)',
         isCustom: true,
@@ -792,7 +792,7 @@ class CardRegistry {
       {
         type: 'custom:vertical-stack-in-card',
         name: 'Vertical Stack in Card',
-        category: 'custom',
+        category: 'layout',
         icon: 'BorderVerticleOutlined',
         description: 'Stack cards vertically in single bordered container (HACS)',
         isCustom: true,
@@ -803,7 +803,7 @@ class CardRegistry {
       {
         type: 'custom:mini-media-player',
         name: 'Mini Media Player',
-        category: 'custom',
+        category: 'media',
         icon: 'PlayCircleOutlined',
         description: 'Minimalistic media player card (HACS)',
         isCustom: true,
@@ -814,7 +814,7 @@ class CardRegistry {
       {
         type: 'custom:multiple-entity-row',
         name: 'Multiple Entity Row',
-        category: 'custom',
+        category: 'sensor',
         icon: 'UnorderedListOutlined',
         description: 'Show multiple entities on single row (HACS)',
         isCustom: true,
@@ -827,7 +827,7 @@ class CardRegistry {
       {
         type: 'custom:fold-entity-row',
         name: 'Fold Entity Row',
-        category: 'custom',
+        category: 'layout',
         icon: 'MenuFoldOutlined',
         description: 'Collapsible rows in entities cards (HACS)',
         isCustom: true,
@@ -838,7 +838,7 @@ class CardRegistry {
       {
         type: 'custom:slider-entity-row',
         name: 'Slider Entity Row',
-        category: 'custom',
+        category: 'control',
         icon: 'SlidersFilled',
         description: 'Add sliders to entities cards (HACS)',
         isCustom: true,
@@ -849,7 +849,7 @@ class CardRegistry {
       {
         type: 'custom:battery-state-card',
         name: 'Battery State Card',
-        category: 'custom',
+        category: 'sensor',
         icon: 'ThunderboltOutlined',
         description: 'Track battery states across devices (HACS)',
         isCustom: true,
@@ -860,7 +860,7 @@ class CardRegistry {
       {
         type: 'custom:simple-swipe-card',
         name: 'Simple Swipe Card',
-        category: 'custom',
+        category: 'layout',
         icon: 'SwapOutlined',
         description: 'Swipe through cards with touch gestures (HACS)',
         isCustom: true,
@@ -871,7 +871,7 @@ class CardRegistry {
       {
         type: 'custom:decluttering-card',
         name: 'Decluttering Card',
-        category: 'custom',
+        category: 'layout',
         icon: 'FileProtectOutlined',
         description: 'Reusable card templates (HACS)',
         isCustom: true,
@@ -884,7 +884,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-chips-card',
         name: 'Mushroom Chips',
-        category: 'custom',
+        category: 'control',
         icon: 'AppstoreOutlined',
         description: 'Compact chip-style controls (HACS)',
         isCustom: true,
@@ -895,7 +895,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-title-card',
         name: 'Mushroom Title',
-        category: 'custom',
+        category: 'information',
         icon: 'FontSizeOutlined',
         description: 'Section headers with icons (HACS)',
         isCustom: true,
@@ -906,7 +906,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-template-card',
         name: 'Mushroom Template',
-        category: 'custom',
+        category: 'information',
         icon: 'CodeOutlined',
         description: 'Custom templated displays (HACS)',
         isCustom: true,
@@ -917,7 +917,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-select-card',
         name: 'Mushroom Select',
-        category: 'custom',
+        category: 'control',
         icon: 'SelectOutlined',
         description: 'Input select controls (HACS)',
         isCustom: true,
@@ -928,7 +928,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-number-card',
         name: 'Mushroom Number',
-        category: 'custom',
+        category: 'control',
         icon: 'NumberOutlined',
         description: 'Number input controls (HACS)',
         isCustom: true,
@@ -939,7 +939,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-person-card',
         name: 'Mushroom Person',
-        category: 'custom',
+        category: 'sensor',
         icon: 'UserOutlined',
         description: 'Person/presence display (HACS)',
         isCustom: true,
@@ -950,7 +950,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-media-player-card',
         name: 'Mushroom Media Player',
-        category: 'custom',
+        category: 'media',
         icon: 'PlayCircleOutlined',
         description: 'Media player control (HACS)',
         isCustom: true,
@@ -961,7 +961,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-lock-card',
         name: 'Mushroom Lock',
-        category: 'custom',
+        category: 'control',
         icon: 'LockOutlined',
         description: 'Lock controls (HACS)',
         isCustom: true,
@@ -972,7 +972,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-alarm-control-panel-card',
         name: 'Mushroom Alarm',
-        category: 'custom',
+        category: 'control',
         icon: 'SafetyOutlined',
         description: 'Alarm panel controls (HACS)',
         isCustom: true,
@@ -983,7 +983,7 @@ class CardRegistry {
       {
         type: 'custom:mushroom-vacuum-card',
         name: 'Mushroom Vacuum',
-        category: 'custom',
+        category: 'control',
         icon: 'BorderOutlined',
         description: 'Vacuum controls (HACS)',
         isCustom: true,

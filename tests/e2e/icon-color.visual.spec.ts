@@ -11,7 +11,7 @@ test.describe('Icon Color visual regression', () => {
       await appDSL.waitUntilReady();
       await dashboard.createNew();
 
-      await palette.expandCategory('Custom');
+      await palette.expandCategory('Controls');
       await palette.addCard('custom:button-card');
       await canvas.expectCardCount(1);
       await canvas.selectCard(0);
