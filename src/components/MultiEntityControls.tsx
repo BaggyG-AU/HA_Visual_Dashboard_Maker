@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import { Alert, Button, Card, Select, Space, Tag, Typography } from 'antd';
+import { Alert, Button, Card, Select, Space, Tag, Typography, theme } from 'antd';
 import { DeleteOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import { useHAEntities } from '../contexts/HAEntityContext';
 import {
@@ -70,6 +70,7 @@ export const MultiEntityControls: React.FC<MultiEntityControlsProps> = ({
   batchActions = ['turn_on', 'turn_off', 'toggle'],
   onBatchActionsChange,
 }) => {
+  const { token } = theme.useToken();
   const { entities } = useHAEntities();
   const entityOptions = useMemo(() => {
     return Object.values(entities)
@@ -148,7 +149,10 @@ export const MultiEntityControls: React.FC<MultiEntityControlsProps> = ({
         data-testid="multi-entity-list"
       >
         {uniqueEntities.length === 0 && (
-          <Text style={{ color: '#666', fontSize: 12 }} data-testid="multi-entity-empty">
+          <Text
+            style={{ color: token.colorTextTertiary, fontSize: 12 }}
+            data-testid="multi-entity-empty"
+          >
             Add entities to enable multi-entity behavior.
           </Text>
         )}
@@ -161,7 +165,10 @@ export const MultiEntityControls: React.FC<MultiEntityControlsProps> = ({
             <Card
               key={`${entityId}-${index}`}
               size="small"
-              style={{ background: '#141414', borderColor: '#2a2a2a' }}
+              style={{
+                background: token.colorBgContainer,
+                borderColor: token.colorBorderSecondary,
+              }}
               data-testid={`multi-entity-item-${testIdEntity}`}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
@@ -188,7 +195,7 @@ export const MultiEntityControls: React.FC<MultiEntityControlsProps> = ({
                     onDragStart={(event) => {
                       event.dataTransfer.setData('text/plain', String(index));
                     }}
-                    style={{ color: '#888', cursor: 'grab', fontSize: 12 }}
+                    style={{ color: token.colorTextSecondary, cursor: 'grab', fontSize: 12 }}
                     aria-label={`Drag to reorder ${entityId}`}
                     data-testid={`multi-entity-drag-${testIdEntity}`}
                   >

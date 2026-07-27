@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { theme } from 'antd';
 import { Card, SpacerCard } from '../types/dashboard';
 import { EntitiesCardRenderer } from './cards/EntitiesCardRenderer';
 import { ButtonCardRenderer } from './cards/ButtonCardRenderer';
@@ -109,6 +110,10 @@ export const BaseCard: React.FC<BaseCardProps> = ({
   ref,
   ...rest
 }) => {
+  // Only the spacer branch below styles itself by hand — every other branch
+  // delegates to a card renderer, which is deliberately left alone so it keeps
+  // looking like the Home Assistant card it mimics.
+  const { token } = theme.useToken();
   const { entities } = useHAEntities();
   const isVisible = evaluateVisibilityConditions(card.visibility_conditions, entities);
   const [shouldRender, setShouldRender] = useState(isVisible);
@@ -259,14 +264,14 @@ export const BaseCard: React.FC<BaseCardProps> = ({
         <div
           style={{
             height: '100%',
-            border: isSelected ? '2px dashed #00d9ff' : '1px dashed #434343',
+            border: isSelected ? '2px dashed #00d9ff' : `1px dashed ${token.colorBorder}`,
             backgroundColor: isSelected ? 'rgba(0, 217, 255, 0.05)' : 'transparent',
             cursor: 'pointer',
             borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#666',
+            color: token.colorTextTertiary,
             fontSize: '12px',
             transition: 'all 0.3s ease',
           }}

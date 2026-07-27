@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Divider, InputNumber, Select, Space, Typography } from 'antd';
+import { Divider, InputNumber, Select, Space, Typography, theme } from 'antd';
+import type { GlobalToken } from 'antd';
 import type { FormInstance } from 'antd/es/form';
 import { Form } from 'antd';
 import {
@@ -27,17 +28,17 @@ const sideLabels: Array<{ side: SpacingSide; label: string }> = [
   { side: 'left', label: 'Left' },
 ];
 
-const renderBoxModel = (label: string) => (
+const renderBoxModel = (label: string, token: GlobalToken) => (
   <div
     style={{
-      border: '1px solid #434343',
+      border: `1px solid ${token.colorBorder}`,
       borderRadius: 8,
       padding: 8,
       marginBottom: 8,
-      background: '#101010',
+      background: token.colorBgContainer,
     }}
   >
-    <div style={{ border: '1px dashed #595959', borderRadius: 6, padding: 8 }}>
+    <div style={{ border: `1px dashed ${token.colorBorder}`, borderRadius: 6, padding: 8 }}>
       <div
         style={{
           border: '1px solid #00d9ff55',
@@ -55,6 +56,7 @@ const renderBoxModel = (label: string) => (
 );
 
 export const SpacingControls: React.FC<SpacingControlsProps> = ({ form, onProgrammaticChange }) => {
+  const { token } = theme.useToken();
   const marginValue = Form.useWatch('card_margin', { form, preserve: true });
   const paddingValue = Form.useWatch('card_padding', { form, preserve: true });
   const draftValuesRef = useRef<{ card_margin: unknown; card_padding: unknown }>({
@@ -132,12 +134,12 @@ export const SpacingControls: React.FC<SpacingControlsProps> = ({ form, onProgra
         <Text strong style={{ color: 'white' }}>
           {title}
         </Text>
-        {renderBoxModel(title)}
+        {renderBoxModel(title, token)}
 
         <Form.Item
           label={<span style={{ color: 'white' }}>Mode</span>}
           help={
-            <span style={{ color: '#666' }}>
+            <span style={{ color: token.colorTextTertiary }}>
               Apply one value to all sides or set each side independently
             </span>
           }
@@ -156,7 +158,9 @@ export const SpacingControls: React.FC<SpacingControlsProps> = ({ form, onProgra
         <Form.Item
           label={<span style={{ color: 'white' }}>Preset</span>}
           help={
-            <span style={{ color: '#666' }}>Choose a preset token or switch to custom values</span>
+            <span style={{ color: token.colorTextTertiary }}>
+              Choose a preset token or switch to custom values
+            </span>
           }
         >
           <Select
@@ -177,7 +181,7 @@ export const SpacingControls: React.FC<SpacingControlsProps> = ({ form, onProgra
         {mode === 'all' ? (
           <Form.Item
             label={<span style={{ color: 'white' }}>All Sides (px)</span>}
-            help={<span style={{ color: '#666' }}>Range: 0 to 64</span>}
+            help={<span style={{ color: token.colorTextTertiary }}>Range: 0 to 64</span>}
           >
             <div data-testid={`${testIdPrefix}-all-field`}>
               <InputNumber
@@ -223,7 +227,7 @@ export const SpacingControls: React.FC<SpacingControlsProps> = ({ form, onProgra
       </Text>
       {renderSection('Margin', 'card_margin', marginValue, 'spacing-margin')}
       {renderSection('Padding', 'card_padding', paddingValue, 'spacing-padding')}
-      <Text style={{ color: '#666', fontSize: 12 }}>
+      <Text style={{ color: token.colorTextTertiary, fontSize: 12 }}>
         Presets are stored as tokens in YAML. Custom values are exported as numbers or per-side
         objects.
       </Text>

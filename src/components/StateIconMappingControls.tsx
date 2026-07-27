@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Alert, Button, Card, Input, Select, Space, Typography } from 'antd';
+import { Alert, Button, Card, Input, Select, Space, Typography, theme } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { StateIconsMap } from '../types/stateIcons';
 import { IconSelect } from './IconSelect';
@@ -89,6 +89,7 @@ export const StateIconMappingControls: React.FC<StateIconMappingControlsProps> =
   onChange,
   entityId,
 }) => {
+  const { token } = theme.useToken();
   const { getEntity } = useHAEntities();
   const rows = useMemo(() => parseRows(value), [value]);
   const defaults = useMemo(() => parseDefault(value), [value]);
@@ -175,7 +176,10 @@ export const StateIconMappingControls: React.FC<StateIconMappingControlsProps> =
         />
       )}
 
-      <Card size="small" style={{ marginTop: 12, background: '#111', borderColor: '#303030' }}>
+      <Card
+        size="small"
+        style={{ marginTop: 12, background: '#111', borderColor: token.colorBorderSecondary }}
+      >
         <Space
           align="center"
           size="middle"
@@ -223,7 +227,7 @@ export const StateIconMappingControls: React.FC<StateIconMappingControlsProps> =
           >
             <Space direction="vertical" style={{ width: '100%' }} size="small">
               <Space style={{ width: '100%', justifyContent: 'space-between' }} align="center">
-                <Text style={{ color: '#ddd' }}>Mapping #{index + 1}</Text>
+                <Text style={{ color: token.colorText }}>Mapping #{index + 1}</Text>
                 <Button
                   danger
                   type="text"

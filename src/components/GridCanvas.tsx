@@ -1,4 +1,5 @@
 import React, { useMemo, useRef } from 'react';
+import { theme } from 'antd';
 import GridLayout, { getCompactor } from 'react-grid-layout';
 import type { Layout, LayoutItem } from 'react-grid-layout';
 import { View, Card } from '../types/dashboard';
@@ -168,6 +169,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   onConvertToSections,
   canPaste,
 }) => {
+  const { token } = theme.useToken();
   const cards = view.cards || [];
   const selectedCardSet = useMemo(() => new Set(selectedCardIndices), [selectedCardIndices]);
   const pendingSelectionModeRef = useRef<{ index: number; mode: 'toggle' | 'range' } | null>(null);
@@ -307,11 +309,11 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#141414',
+          backgroundColor: token.colorBgContainer,
         }}
       >
-        <div style={{ textAlign: 'center', color: '#8c8c8c', maxWidth: 520 }}>
-          <div style={{ color: '#ddd', fontSize: 16, marginBottom: 8 }}>
+        <div style={{ textAlign: 'center', color: token.colorTextSecondary, maxWidth: 520 }}>
+          <div style={{ color: token.colorText, fontSize: 16, marginBottom: 8 }}>
             Home Assistant generates this view
           </div>
           <div style={{ fontSize: 13, lineHeight: 1.6 }}>
@@ -341,13 +343,13 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         gap: 12,
         marginBottom: 12,
         padding: '8px 12px',
-        background: '#1f1f1f',
-        border: '1px solid #434343',
+        background: token.colorBgElevated,
+        border: `1px solid ${token.colorBorder}`,
         borderRadius: 6,
-        color: '#ddd',
+        color: token.colorText,
       }}
     >
-      <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+      <span style={{ fontSize: 12, color: token.colorTextSecondary }}>
         This empty view uses the Grid layout. Convert it to a Home Assistant Sections view for
         section-based authoring.
       </span>
@@ -359,7 +361,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
           marginLeft: 'auto',
           background: '#177ddc',
           border: 'none',
-          color: '#fff',
+          color: token.colorText,
           borderRadius: 4,
           cursor: 'pointer',
           padding: '4px 12px',
@@ -388,7 +390,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
           resizeConfig={{ enabled: false }}
           compactor={COMPACTOR}
           style={{
-            backgroundColor: '#141414',
+            backgroundColor: token.colorBgContainer,
             minHeight: 'calc(100% - 32px)',
             display: 'flex',
             alignItems: 'center',
@@ -398,7 +400,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
           <div
             key="empty-message"
             style={{
-              color: '#666',
+              color: token.colorTextTertiary,
               fontSize: '16px',
               textAlign: 'center',
               width: '100%',
@@ -445,7 +447,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         resizeConfig={{ enabled: true }}
         compactor={COMPACTOR}
         style={{
-          backgroundColor: '#141414',
+          backgroundColor: token.colorBgContainer,
           minHeight: '100%',
         }}
       >

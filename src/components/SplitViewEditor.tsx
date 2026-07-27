@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Button, Select, Space, Tooltip, message } from 'antd';
+import { Alert, Button, Select, Space, Tooltip, message, theme } from 'antd';
 import {
   CheckOutlined,
   PlusOutlined,
@@ -107,6 +107,7 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
   onOpenViewSettings,
   canPaste,
 }) => {
+  const { token } = theme.useToken();
   const { config, updateConfig, setSelectedView } = useDashboardStore();
 
   const {
@@ -267,7 +268,7 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
 
   if (!config || selectedViewIndex === null) {
     return (
-      <div style={{ padding: '24px', color: '#888' }}>
+      <div style={{ padding: '24px', color: token.colorTextSecondary }}>
         <Alert
           title="No Dashboard Loaded"
           description="Please load or create a dashboard to use split view mode."
@@ -286,8 +287,8 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
       <div
         style={{
           padding: '8px 16px',
-          background: '#1f1f1f',
-          borderBottom: '1px solid #434343',
+          background: token.colorBgElevated,
+          borderBottom: `1px solid ${token.colorBorder}`,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -399,7 +400,12 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
           {/* Left Pane: Visual Canvas */}
           <Allotment.Pane minSize={400}>
             <div
-              style={{ height: '100%', overflow: 'auto', padding: '16px', background: '#141414' }}
+              style={{
+                height: '100%',
+                overflow: 'auto',
+                padding: '16px',
+                background: token.colorBgContainer,
+              }}
             >
               <GridCanvas
                 view={currentView}
