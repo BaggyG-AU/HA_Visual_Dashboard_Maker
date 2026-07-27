@@ -4,7 +4,7 @@ Blueprint: docs/governance/phases/phase-7-ecosystem-future-growth-blueprint.md
 Amendments: docs/governance/phases/phase-7-ecosystem-future-growth-amendment-01.md,
 docs/governance/phases/phase-7-ecosystem-future-growth-amendment-02.md,
 docs/governance/phases/phase-7-ecosystem-future-growth-amendment-03.md
-Last Updated: 2026-07-27
+Last Updated: 2026-07-27 (slice J — UAT plan + matrix; board and checklists reconciled)
 Package Version: 0.7.5-beta.10
 
 # Phase 7 Tracking — Slice Status Board & Gate Evidence
@@ -34,13 +34,23 @@ the current discipline as its own PR.
 | F     | Import/Export Enhancements & hardening | ✅ Delivered              | `7c1752d` | PR #80 (`128e8c4`) | 2026-07-26 |
 | G     | Dashboard Analytics                    | 🚫 **WITHDRAWN**          | —         | amendment-01 §1.2  | 2026-07-26 |
 | H     | Plugin System Architecture scaffold    | 🚫 **WITHDRAWN**          | —         | amendment-01 §1.3  | 2026-07-26 |
-| I     | Medium Gate — technical readiness ONLY | ⬜ Not started            | —         | —                  | —          |
-| J     | UAT round, then the `1.0.0` release    | ⬜ Not started            | —         | —                  | —          |
+| I     | Medium Gate — technical readiness ONLY | ✅ **GO** (88/100)        | `bea460c` | PR #85 (`34d61a3`) | 2026-07-27 |
+| J     | UAT round, then the `1.0.0` release    | 🔄 **In progress**        | —         | —                  | —          |
 
-**Phase 7 Definition of Done is NOT met.** Outstanding: **Slice I (gate)** and
-**Slice J (UAT + release)**. Slice C was resolved 2026-07-26 by amendment-02
-(action withdrawn, guarantee delivered); Slice E landed read-only the same day,
-with `commitFiles` deferred as a stated deferral (see §3).
+**Phase 7 Definition of Done is NOT met.** Outstanding: **Slice J (UAT +
+release)** only. Slice C was resolved 2026-07-26 by amendment-02 (action
+withdrawn, guarantee delivered); Slice E landed read-only the same day, with
+`commitFiles` deferred as a stated deferral (see §3); Slice I returned **GO** on
+2026-07-27 (§4.1), applying no version bump.
+
+⚠ **This board and the §5 / §6 checklists were reconciled on 2026-07-27**, in the
+first slice J PR. They had drifted out of step with §4.1's recorded GO because PR
+#85 deliberately confined its edit to a single hunk to avoid overlapping PR #84's
+hunks in this same file. That successfully avoided a merge conflict and equally
+successfully left the board unreconciled. ⭐ **When two non-stacked PRs edit the
+same governance document, avoiding the conflict does not avoid the inconsistency
+— it defers it.** Worth reconciling deliberately in the next PR that touches the
+file rather than waiting to be caught by a reader.
 
 ⚠ **Slice I was split on 2026-07-27 by amendment-03.** Slice I is now the Medium
 Gate alone and applies **no version bump**. The `0.7.5-beta.10` → `1.0.0` bump
@@ -303,28 +313,67 @@ Never started. Withdrawn by amendment-01 §1.2. No code to remove.
 
 Never started. Withdrawn by amendment-01 §1.3. No code to remove.
 
-### Slice I — Medium Gate (technical readiness only) ⬜
+### Slice I — Medium Gate (technical readiness only) ✅ GO
 
-Not started, and **no longer blocked** — Slice C (amendment-02) and Slice E
-(read-only) both landed 2026-07-26. Its prep checklist is §5 below.
+- Commit `bea460c`, PR #85, merged `34d61a3` (2026-07-27).
+- Artifact:
+  `docs/governance/phases/phase-7-ecosystem-future-growth-medium-gate.md`.
+- **Result: GO, confidence 88/100. NO version bump applied**, per amendment-03.
+- Full evidence in §4.1. All five prep items in §5 completed; the 7 known e2e
+  failures were recorded as **accepted-known open debt** rather than reclassified
+  as a clean sheet, the `entity-browser.spec.ts:380` flake passed in the
+  full-suite run, and the `commitFiles` deferral was **ruled** GO-compatible with
+  reasons rather than glossed.
+- ⚠ Per amendment-03 §3 this GO is **necessary but not sufficient** for v1.0.0.
 
-⚠ **Narrowed by amendment-03 (2026-07-27): slice I applies NO version bump.** It
-produces `docs/governance/phases/phase-7-ecosystem-future-growth-medium-gate.md`
-with an explicit Go/No-Go, a confidence score and residual risk — and stops
-there.
+### Slice J — UAT round, then the `1.0.0` release 🔄
 
-### Slice J — UAT round, then the `1.0.0` release ⬜
+Added by amendment-03 (2026-07-27). Executes a full-product UAT round against the
+**packaged application** per `docs/testing/UAT_STRATEGY.md`, and applies the
+`0.7.5-beta.10` → `1.0.0` bump only on an accepted outcome (amendment-03 §3.1).
+Its checklist is §6 below.
 
-Added by amendment-03 (2026-07-27). Runs after slice I returns GO. Executes a
-full-product UAT round against the **packaged application** per
-`docs/testing/UAT_STRATEGY.md`, and applies the `0.7.5-beta.10` → `1.0.0` bump
-only on an accepted outcome (amendment-03 §3.1). Its checklist is §6 below.
+**Round v1.0.0 — plan and matrix generated 2026-07-27** on `7c49ae0`:
 
-⚠ Two things slice I must record explicitly rather than trip over: the 8 known
-e2e failures (accepted-known, not gate failures) and the load-sensitive
-`tests/integration/entity-browser.spec.ts:380` flake. It must also carry the
-`commitFiles` deferral into the Go/No-Go rationale, since blueprint §12 described
-Slice E more broadly than what shipped.
+- `docs/testing/uat/plans/uat_plan_v1.0.0_2026-07-27.md` — the source of truth.
+- `docs/testing/uat/matrices/uat_matrix_v1.0.0_2026-07-27.html` — copied from
+  `uat_matrix_template.html`, which was **not** modified.
+  `npm run verify:uat-matrix` → **63 assertions, 0 failed**.
+- **Scope: full product**, decided by the project owner. 66 cards in 11 groups:
+  41 gate, 9 interaction, 8 edge, 8 fidelity. 57 carry `auto_covered: true` with
+  an `auto_note` naming a real spec; 9 are the only evidence for their behaviour.
+- All 9 `needsHA` cards sit in group 11, the final group, so a sitting without a
+  Home Assistant instance can complete every other group and Skip that one
+  cleanly.
+- `PREV` is `{}` — this is round 1.
+
+⚠ **The live-HA envelope was widened once, on explicit owner authorisation
+(2026-07-27), and the reason is worth recording.** Amendment-03 §4 enumerates the
+permitted sequence as `haWsCreateTempDashboard` → `haWsUpdateTempDashboard` →
+`haWsDeployDashboard` → `haWsDeleteTempDashboard`. Tracing those calls to the UI
+showed the envelope does not map cleanly onto the product:
+
+- **Live Preview** enter/exit is exactly the temp-dashboard path (card HA-08).
+  Fully inside §4.
+- **"Deploy to Production"** inside Live Preview calls `haWsDeployDashboard`
+  against **the production dashboard the design was downloaded from**
+  (`src/App.tsx`, `handleDeployFromLivePreview`). That is a production write and
+  is **forbidden**. Card HA-08 names the button and tells the tester not to press
+  it.
+- The **Deploy dialog's "Create New Dashboard"** mode calls `haWsCreateDashboard`
+  then `haWsSaveDashboardConfig` against the **newly created** path — not an
+  existing user dashboard, so not literally forbidden, but not one of the four
+  enumerated calls either. HAVDM also exposes no delete-dashboard UI
+  (`haWsDeleteDashboard` exists in `src/preload.ts` but is wired to nothing), so
+  teardown happens in Home Assistant's own Settings → Dashboards page.
+
+⭐ Because the deploy path is the single most valuable thing a v1.0.0 UAT can
+verify and no automated layer covers it, the owner authorised **one throwaway
+dashboard at url key `havdm-uat-temp`** (card HA-09), created through that dialog
+and deleted by the tester as a numbered step. Both write-cards run **last** in
+group 11 so the round ends with the instance back as it started, and the matrix
+blocks the summary report until teardown is confirmed. Everything else in §4
+stands unchanged.
 
 ---
 
@@ -420,11 +469,16 @@ this GO is **necessary but not sufficient** for v1.0.0 — an accepted UAT round
 - [x] `tools/checks` corrected so the gate's first command checks what CI checks
 - [x] Version progression resolved and recorded (amendment-01 §2)
 - [x] Slice A–F evidence assembled (this document, §3)
-- [ ] Full `electron-e2e` + `electron-integration` runs captured with artifact paths
-- [ ] Known-failure set re-confirmed and explicitly accepted or resolved
-- [ ] `docs/testing/SKIPPED_TESTS_REGISTER.md` confirmed current
-- [ ] YAML round-trip and IPC/preload compatibility validated (§19 requirement 4)
-- [ ] Go/No-Go decision written to
+- [x] Full `electron-e2e` + `electron-integration` runs captured with artifact paths
+      — e2e 245/7/2 (47.0 min), integration 169/0/19 (27.8 min); §4.1
+- [x] Known-failure set re-confirmed and explicitly accepted or resolved — the 7
+      stable-known accepted as open debt carried into v1.0.0, failing set diffed
+      line-for-line and identical
+- [x] `docs/testing/SKIPPED_TESTS_REGISTER.md` confirmed current — 3 skips
+- [x] YAML round-trip and IPC/preload compatibility validated (§19 requirement 4)
+      — `electronAPI` member-name-set diff `8a3597e^` → `6e63c2d`: 0 removed, 17
+      added, so the surface is provably additive
+- [x] Go/No-Go decision written to
       `docs/governance/phases/phase-7-ecosystem-future-growth-medium-gate.md`
 - [x] ~~Version bump to `1.0.0` applied~~ — **MOVED to slice J by amendment-03.**
       Slice I applies no version bump.
@@ -439,10 +493,15 @@ document) require a green automated baseline before the round opens.
 - [x] UAT framework established — `docs/testing/UAT_STRATEGY.md`,
       `prompts/claude/uat-plan-and-matrix.md`,
       `docs/testing/uat/matrices/uat_matrix_template.html`
-- [ ] Slice I returned **GO**
-- [ ] `npm run package` succeeds and the packaged app launches
-- [ ] UAT test plan written to `docs/testing/uat/plans/`
-- [ ] HTML matrix generated to `docs/testing/uat/matrices/`
+- [x] Slice I returned **GO** — 88/100, 2026-07-27, §4.1
+- [x] `npm run package` succeeds — re-verified 2026-07-27 on `7c49ae0`, exit 0.
+      ⚠ That the packaged app **launches** is UAT card SHELL-01, marked by the
+      tester, not by the agent
+- [x] UAT test plan written to `docs/testing/uat/plans/uat_plan_v1.0.0_2026-07-27.md`
+      — full-product scope, 66 cards in 11 groups
+- [x] HTML matrix generated to
+      `docs/testing/uat/matrices/uat_matrix_v1.0.0_2026-07-27.html` —
+      `npm run verify:uat-matrix` 63/63
 - [ ] UAT round executed against the **packaged** app by the project owner
 - [ ] ⚠ Any temporary Home Assistant dashboard **deleted** (UAT_STRATEGY §10)
 - [ ] Session JSON committed to `docs/testing/uat/sessions/`
