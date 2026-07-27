@@ -7,7 +7,11 @@ YAML editor, import/export fidelity, themes and presets, version control, and
 the Home Assistant connection — with Phase 7's delivered surfaces (A–F) covered
 in depth. Out of scope: withdrawn slices G (analytics) and H (plugin scaffold),
 and the deferred `commitFiles` version-control write.
-**Build under test:** packaged app from `npm run package` at commit `7c49ae0`
+**Build under test:** **Windows x64** packaged app —
+`out/HA Visual Dashboard Maker-win32-x64/HA Visual Dashboard Maker.exe`, built from
+`main`. The source tree is unchanged since `7c49ae0`: every commit since has been
+docs-only, so the binary is equivalent regardless of which of those commits it was
+built from.
 **Automated baseline:** unit 871 · integration 169 · e2e 245 passed / 7 known-fail
 **Governed by:** `docs/testing/UAT_STRATEGY.md`,
 `docs/governance/phases/phase-7-ecosystem-future-growth-amendment-03.md`
@@ -54,9 +58,28 @@ cosmetic, wording, a missing convenience with a working alternative.
 - [ ] All milestone PRs merged — #86 merged, no open PRs
 - [ ] `docs/testing/SKIPPED_TESTS_REGISTER.md` current — 3 documented skips
 
-Launch the packaged binary from `out/HA Visual Dashboard Maker-linux-x64/`. **Do
-not test a dev build** — proving the packaged artifact works is one of the three
+**This round runs on Windows.** Launch
+`out/HA Visual Dashboard Maker-win32-x64/HA Visual Dashboard Maker.exe`. **Do not
+test a dev build** — proving the packaged artifact works is one of the three
 reasons this round exists.
+
+The build is produced from WSL with
+`npx electron-forge package --platform=win32 --arch=x64`. Copy the whole
+`HA Visual Dashboard Maker-win32-x64` folder to a real Windows drive before
+testing — running it in place over `\\wsl.localhost` works but is noticeably
+slower to start, and startup responsiveness is something SHELL-01 asks you to
+judge.
+
+⚠ **Two Windows-only prerequisites, so you do not log false defects:**
+
+- **Group 10 needs `git` installed and on Windows' `PATH`.** Without it every
+  version-control card fails for an environmental reason rather than a product
+  one. If git genuinely is absent, VCS-01 still has a correct answer — the panel
+  should say so plainly instead of erroring, and slice E treats git-absent as a
+  first-class state. Note which situation you are in.
+- **Group 11 needs `ha.home.local` to resolve from Windows.** If it does not,
+  use the IP `192.168.1.70` in the connection dialog instead. A hostname that
+  will not resolve is a network fact about your machine, not a HAVDM defect.
 
 ### ⚠ Live Home Assistant rules — read before Group 11
 
@@ -87,11 +110,11 @@ thing you do.
 
 #### SHELL-01: The packaged application launches and presents the welcome screen
 
-| Field          | Value                                          |
-| -------------- | ---------------------------------------------- |
-| Type           | interaction                                    |
-| Auto covered   | Y (`tests/e2e/app-launch.spec.ts`)             |
-| Pre-conditions | The packaged app has never been run this round |
+| Field          | Value                                                           |
+| -------------- | --------------------------------------------------------------- |
+| Type           | interaction                                                     |
+| Auto covered   | Y (`tests/e2e/app-launch.spec.ts`)                              |
+| Pre-conditions | The Windows build copied to a local drive; never run this round |
 
 **Automated coverage confirms:**
 `tests/e2e/app-launch.spec.ts` asserts the window opens at the right dimensions,
@@ -101,7 +124,8 @@ the artifact a user installs.
 
 **Steps:**
 
-1. Launch the packaged binary from `out/HA Visual Dashboard Maker-linux-x64/`.
+1. Launch `HA Visual Dashboard Maker.exe` from the copied
+   `HA Visual Dashboard Maker-win32-x64` folder.
 2. Wait for the window to finish painting.
 3. Read the window title bar and the header.
 4. Look at the left sidebar and the connection badge in the top right.
@@ -160,7 +184,7 @@ real native menu in a packaged window.
 2. Press `Ctrl+T`.
 3. Read the confirmation message that appears.
 4. Press `Ctrl+T` again, then once more so a theme change is the last thing you did.
-5. Close the application completely and relaunch it from `out/`.
+5. Close the application completely and relaunch `HA Visual Dashboard Maker.exe`.
 
 **Expected:**
 
@@ -1642,13 +1666,18 @@ judge whether a preset is worth importing once you see it.
 ⭐ Slice E shipped six **read** operations. There is deliberately no commit,
 stage, push or pull. A control that would write is a defect, not a gap.
 
+⚠ **Windows: this group needs `git` installed and on `PATH`.** Without it the
+cards below fail for an environmental reason, not a product one — except VCS-01,
+which has a correct answer either way: HAVDM treats git-absent as a first-class
+state and should say so plainly rather than erroring. Record which case you are in.
+
 #### VCS-01: The Version Control dialog opens and explains itself
 
-| Field          | Value                                   |
-| -------------- | --------------------------------------- |
-| Type           | gate                                    |
-| Auto covered   | Y (`tests/e2e/version-control.spec.ts`) |
-| Pre-conditions | App launched                            |
+| Field          | Value                                    |
+| -------------- | ---------------------------------------- |
+| Type           | gate                                     |
+| Auto covered   | Y (`tests/e2e/version-control.spec.ts`)  |
+| Pre-conditions | App launched. ⚠ `git` on Windows' `PATH` |
 
 **Automated coverage confirms:**
 `tests/e2e/version-control.spec.ts` proves the panel is inert until opened, then
@@ -1673,11 +1702,11 @@ judge whether the explanation is convincing.
 
 #### VCS-02: Designate a repository and read its branch and status
 
-| Field          | Value                                                         |
-| -------------- | ------------------------------------------------------------- |
-| Type           | gate                                                          |
-| Auto covered   | Y (`tests/integration/version-control.spec.ts`)               |
-| Pre-conditions | A git repository on disk with at least one uncommitted change |
+| Field          | Value                                                                                                                                                          |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Type           | gate                                                                                                                                                           |
+| Auto covered   | Y (`tests/integration/version-control.spec.ts`)                                                                                                                |
+| Pre-conditions | A git repository on a **Windows-visible** path with at least one uncommitted change. A repo under `\\wsl.localhost` works but is slow; a local clone is better |
 
 **Automated coverage confirms:**
 `tests/integration/version-control.spec.ts` proves validation failures return
@@ -1772,12 +1801,12 @@ without it.
 
 #### HA-01: Connect to Home Assistant
 
-| Field          | Value                                        |
-| -------------- | -------------------------------------------- |
-| Type           | interaction                                  |
-| Auto covered   | Y (`tests/e2e/ha-connection.spec.ts`)        |
-| Needs HA       | **Yes**                                      |
-| Pre-conditions | HA URL and a long-lived access token to hand |
+| Field          | Value                                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Type           | interaction                                                                                                       |
+| Auto covered   | Y (`tests/e2e/ha-connection.spec.ts`)                                                                             |
+| Needs HA       | **Yes**                                                                                                           |
+| Pre-conditions | HA URL and a long-lived access token to hand. Use `192.168.1.70` if `ha.home.local` does not resolve from Windows |
 
 **Automated coverage confirms:**
 `tests/e2e/ha-connection.spec.ts` drives the connection dialog against a mock.
