@@ -2,8 +2,9 @@ Phase Name: Phase 7 – Ecosystem & Future Growth
 Document Type: Phase Tracking (blueprint §18)
 Blueprint: docs/governance/phases/phase-7-ecosystem-future-growth-blueprint.md
 Amendments: docs/governance/phases/phase-7-ecosystem-future-growth-amendment-01.md,
-docs/governance/phases/phase-7-ecosystem-future-growth-amendment-02.md
-Last Updated: 2026-07-26
+docs/governance/phases/phase-7-ecosystem-future-growth-amendment-02.md,
+docs/governance/phases/phase-7-ecosystem-future-growth-amendment-03.md
+Last Updated: 2026-07-27
 Package Version: 0.7.5-beta.10
 
 # Phase 7 Tracking — Slice Status Board & Gate Evidence
@@ -23,22 +24,28 @@ the current discipline as its own PR.
 
 ## 1) Slice Status Board
 
-| Slice | Title                                     | Status                    | Commit    | Reached main via   | Date       |
-| ----- | ----------------------------------------- | ------------------------- | --------- | ------------------ | ---------- |
-| A     | Preset Marketplace foundations            | ✅ Delivered              | `8a3597e` | PR #23 (`863a44c`) | 2026-02-17 |
-| B     | Theme Manager expansion                   | ✅ Delivered              | `536e3c1` | PR #23 (`863a44c`) | 2026-02-17 |
-| C     | Card Duplication & Cloning                | ⚠ **PARTIALLY WITHDRAWN** | see §3    | amendment-02       | 2026-07-26 |
-| D     | Bulk Operations & multi-select safety     | ✅ Delivered              | `f17be4d` | PR #23 (`863a44c`) | 2026-02-17 |
-| E     | Version Control Integration boundaries    | ⚠ **READ-ONLY delivered** | see §3    | PR #83             | 2026-07-26 |
-| F     | Import/Export Enhancements & hardening    | ✅ Delivered              | `7c1752d` | PR #80 (`128e8c4`) | 2026-07-26 |
-| G     | Dashboard Analytics                       | 🚫 **WITHDRAWN**          | —         | amendment-01 §1.2  | 2026-07-26 |
-| H     | Plugin System Architecture scaffold       | 🚫 **WITHDRAWN**          | —         | amendment-01 §1.3  | 2026-07-26 |
-| I     | Medium Gate packaging & release readiness | ⬜ Not started            | —         | —                  | —          |
+| Slice | Title                                  | Status                    | Commit    | Reached main via   | Date       |
+| ----- | -------------------------------------- | ------------------------- | --------- | ------------------ | ---------- |
+| A     | Preset Marketplace foundations         | ✅ Delivered              | `8a3597e` | PR #23 (`863a44c`) | 2026-02-17 |
+| B     | Theme Manager expansion                | ✅ Delivered              | `536e3c1` | PR #23 (`863a44c`) | 2026-02-17 |
+| C     | Card Duplication & Cloning             | ⚠ **PARTIALLY WITHDRAWN** | see §3    | amendment-02       | 2026-07-26 |
+| D     | Bulk Operations & multi-select safety  | ✅ Delivered              | `f17be4d` | PR #23 (`863a44c`) | 2026-02-17 |
+| E     | Version Control Integration boundaries | ⚠ **READ-ONLY delivered** | see §3    | PR #83             | 2026-07-26 |
+| F     | Import/Export Enhancements & hardening | ✅ Delivered              | `7c1752d` | PR #80 (`128e8c4`) | 2026-07-26 |
+| G     | Dashboard Analytics                    | 🚫 **WITHDRAWN**          | —         | amendment-01 §1.2  | 2026-07-26 |
+| H     | Plugin System Architecture scaffold    | 🚫 **WITHDRAWN**          | —         | amendment-01 §1.3  | 2026-07-26 |
+| I     | Medium Gate — technical readiness ONLY | ⬜ Not started            | —         | —                  | —          |
+| J     | UAT round, then the `1.0.0` release    | ⬜ Not started            | —         | —                  | —          |
 
-**Phase 7 Definition of Done is NOT met.** Outstanding: **Slice I (gate)** only.
-Slice C was resolved 2026-07-26 by amendment-02 (action withdrawn, guarantee
-delivered); Slice E landed read-only the same day, with `commitFiles` deferred as
-a stated deferral (see §3).
+**Phase 7 Definition of Done is NOT met.** Outstanding: **Slice I (gate)** and
+**Slice J (UAT + release)**. Slice C was resolved 2026-07-26 by amendment-02
+(action withdrawn, guarantee delivered); Slice E landed read-only the same day,
+with `commitFiles` deferred as a stated deferral (see §3).
+
+⚠ **Slice I was split on 2026-07-27 by amendment-03.** Slice I is now the Medium
+Gate alone and applies **no version bump**. The `0.7.5-beta.10` → `1.0.0` bump
+moved to the new slice J, and is conditional on **both** a Medium Gate GO **and**
+an accepted UAT round per amendment-03 §3.1. See §6 below.
 
 ---
 
@@ -296,11 +303,22 @@ Never started. Withdrawn by amendment-01 §1.2. No code to remove.
 
 Never started. Withdrawn by amendment-01 §1.3. No code to remove.
 
-### Slice I — Medium Gate packaging & release readiness ⬜
+### Slice I — Medium Gate (technical readiness only) ⬜
 
 Not started, and **no longer blocked** — Slice C (amendment-02) and Slice E
-(read-only) both landed 2026-07-26. This is the last outstanding slice in the
-phase. Its prep checklist is §5 below.
+(read-only) both landed 2026-07-26. Its prep checklist is §5 below.
+
+⚠ **Narrowed by amendment-03 (2026-07-27): slice I applies NO version bump.** It
+produces `docs/governance/phases/phase-7-ecosystem-future-growth-medium-gate.md`
+with an explicit Go/No-Go, a confidence score and residual risk — and stops
+there.
+
+### Slice J — UAT round, then the `1.0.0` release ⬜
+
+Added by amendment-03 (2026-07-27). Runs after slice I returns GO. Executes a
+full-product UAT round against the **packaged application** per
+`docs/testing/UAT_STRATEGY.md`, and applies the `0.7.5-beta.10` → `1.0.0` bump
+only on an accepted outcome (amendment-03 §3.1). Its checklist is §6 below.
 
 ⚠ Two things slice I must record explicitly rather than trip over: the 8 known
 e2e failures (accepted-known, not gate failures) and the load-sensitive
@@ -408,4 +426,31 @@ this GO is **necessary but not sufficient** for v1.0.0 — an accepted UAT round
 - [ ] YAML round-trip and IPC/preload compatibility validated (§19 requirement 4)
 - [ ] Go/No-Go decision written to
       `docs/governance/phases/phase-7-ecosystem-future-growth-medium-gate.md`
-- [ ] Version bump to `1.0.0` applied — only on GO, only at the packaging milestone
+- [x] ~~Version bump to `1.0.0` applied~~ — **MOVED to slice J by amendment-03.**
+      Slice I applies no version bump.
+
+---
+
+## 6) UAT & Release Checklist (slice J — amendment-03)
+
+Governed by `docs/testing/UAT_STRATEGY.md`. Prerequisites (§3.1 of that
+document) require a green automated baseline before the round opens.
+
+- [x] UAT framework established — `docs/testing/UAT_STRATEGY.md`,
+      `prompts/claude/uat-plan-and-matrix.md`,
+      `docs/testing/uat/matrices/uat_matrix_template.html`
+- [ ] Slice I returned **GO**
+- [ ] `npm run package` succeeds and the packaged app launches
+- [ ] UAT test plan written to `docs/testing/uat/plans/`
+- [ ] HTML matrix generated to `docs/testing/uat/matrices/`
+- [ ] UAT round executed against the **packaged** app by the project owner
+- [ ] ⚠ Any temporary Home Assistant dashboard **deleted** (UAT_STRATEGY §10)
+- [ ] Session JSON committed to `docs/testing/uat/sessions/`
+- [ ] Summary report committed to `docs/testing/uat/reports/`
+- [ ] Defects triaged; every uncovered failure has gained automated coverage (§7)
+- [ ] Pass bar met — amendment-03 §3.1: zero open High, no Untested, every Fail
+      rated, Mediums fixed or accepted in writing
+- [ ] Version bump to `1.0.0` applied — `package.json`, `docs/RELEASES.md`,
+      `docs/releases/RELEASE_NOTES_v1.0.0.md`
+- [ ] Annotated `v1.0.0` tag cut on the merge commit, after merge, on owner
+      authorisation

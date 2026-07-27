@@ -209,6 +209,11 @@ Governance Mode: HARD MODE++
 > **PARTIALLY WITHDRAWN** — its duplicate/clone action is withdrawn as redundant
 > with cut/copy/paste; its state-safety guarantee is delivered against the
 > existing clipboard path. The executable order is A, B, C, D, E, F, I.
+>
+> **FURTHER AMENDED 2026-07-27 — see `-amendment-03.md`.** Slice I is **split**:
+> slice I is now the Medium Gate alone (technical readiness, **no version
+> bump**), and a new **Slice J** carries the UAT round and the release. The
+> executable order is **A, B, C, D, E, F, I, J**.
 
 - Slice A: Preset Marketplace foundations (model, service contract, browsing/import seams).
 - Slice B: Theme Manager expansion (save/load/theme package import-export and per-view overrides).
@@ -218,7 +223,10 @@ Governance Mode: HARD MODE++
 - Slice F: Import/Export Enhancements and conversion hardening.
 - Slice G: Dashboard Analytics instrumentation. — **WITHDRAWN (amendment-01)**
 - Slice H: Plugin System Architecture scaffold and security envelope. — **WITHDRAWN (amendment-01)**
-- Slice I: Medium Gate packaging and release-readiness evidence.
+- Slice I: Medium Gate packaging and release-readiness evidence. — **NARROWED to
+  the Medium Gate only; no version bump (amendment-03)**
+- Slice J: UAT round, then the `1.0.0` release on an accepted outcome. —
+  **ADDED (amendment-03)**
 
 ## 13) Codex-Ready Feature Prompts (Per Slice)
 
@@ -1035,6 +1043,14 @@ Versioning Rules:
 
 ## 16) Versioning Strategy (BETA + STABLE SUPPORT)
 
+> **AMENDED 2026-07-26 — see `-amendment-01.md` §2.** `INITIATION_VERSION:
+0.7.7-beta.0` was never applied and is **superseded**. The progression is
+> `0.7.5-beta.10` → **`1.0.0`**, classification **Major (1.x.y)**.
+>
+> **FURTHER AMENDED 2026-07-27 — see `-amendment-03.md` §2/§3.** The designated
+> packaging milestone moves from slice I to **slice J**, and the bump is
+> conditional on **both** a Medium Gate GO **and** an accepted UAT round.
+
 - `CURRENT_VERSION` check: `package.json` reports `0.7.5-beta.10`; validated.
 - `INITIATION_VERSION` check: `0.7.7-beta.0` is greater than current and follows valid pre-release bump behavior.
 - Bump classification: Beta patch-line progression with prerelease reset (`0.7.5-beta.10 -> 0.7.7-beta.0`).
@@ -1049,6 +1065,11 @@ Versioning Rules:
 > and H are withdrawn by amendment-01. Slice C's duplicate/clone action is
 > withdrawn by amendment-02; its state-safety guarantee is delivered.**" Every
 > other bullet stands unchanged.
+>
+> **FURTHER AMENDED 2026-07-27 — see `-amendment-03.md` §6.** One bullet is
+> ADDED: "**A UAT round is executed against the packaged application and
+> accepted per `-amendment-03.md` §3.1 before the phase version bump is
+> applied.**"
 
 - All eight Phase 7 feature slices delivered within scoped boundaries.
 - No unresolved P0/P1 regressions introduced by phase work.
@@ -1143,6 +1164,10 @@ Stop Conditions During Audit:
 > **AMENDED 2026-07-26 — see `phase-7-ecosystem-future-growth-amendment-01.md` §1.7.**
 > Items 7 and 8 are removed with slices G and H. The remaining sequence is
 > items 1–6 and 9.
+>
+> **FURTHER AMENDED 2026-07-27 — see `-amendment-03.md` §6.** Item 9 is split
+> into 9 (gate evidence) and a new item 10 (UAT round + release). The sequence
+> is items 1–6, 9 and 10.
 
 1. `feat(phase-7): add preset marketplace foundations with remapping integration`
 2. `feat(phase-7): expand theme manager save-load-import-export workflows`
@@ -1152,7 +1177,10 @@ Stop Conditions During Audit:
 6. `feat(phase-7): harden import-export conversion and validation flows`
 7. ~~`feat(phase-7): add dashboard analytics instrumentation and controls`~~ — **WITHDRAWN (amendment-01)**
 8. ~~`feat(phase-7): scaffold plugin architecture with capability boundaries`~~ — **WITHDRAWN (amendment-01)**
-9. `chore(phase-7): run medium gate, finalize packaging evidence`
+9. `chore(phase-7): run medium gate, finalize gate evidence` (**amendment-03** —
+   narrowed; the version bump moves to item 10)
+10. `chore(phase-7): execute v1.0.0 UAT round and cut the release`
+    (**ADDED by amendment-03**)
 
 - Per-commit self-review checklist:
 
