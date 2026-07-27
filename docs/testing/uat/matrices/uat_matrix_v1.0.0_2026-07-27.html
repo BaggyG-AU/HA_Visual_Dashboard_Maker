@@ -10,6 +10,11 @@
   Source of truth: docs/testing/uat/plans/uat_plan_v1.0.0_2026-07-27.md
   If this matrix and that plan disagree, the plan is right.
 
+  ⚠ THIS ROUND RUNS ON WINDOWS. Launch the packaged
+      out/HA Visual Dashboard Maker-win32-x64/HA Visual Dashboard Maker.exe
+  copied to a local Windows drive. Group 10 needs git on PATH; group 11
+  needs ha.home.local to resolve (or use 192.168.1.70).
+
   ⚠ Group 11 writes to a live Home Assistant instance. Read the live-HA
   rules in the plan before starting it. Two cards name a button you must
   NOT press, and two cards carry a numbered teardown step.
@@ -689,7 +694,8 @@
       const ROUND_ID = 'v1.0.0';
       const ROUND_KEY = 'v1_0_0';
       const ROUND_NAME = 'First stable release';
-      const BUILD_UNDER_TEST = 'packaged app @ 7c49ae0 — launch from out/';
+      const BUILD_UNDER_TEST =
+        'Windows x64 packaged app — HA Visual Dashboard Maker.exe (source tree unchanged since 7c49ae0)';
 
       const REPO = 'BaggyG-AU/HA_Visual_Dashboard_Maker';
       const PLAN_PATH = `docs/testing/uat/plans/uat_plan_${ROUND_ID}_2026-07-27.md`;
@@ -715,7 +721,7 @@
           auto_note:
             '<code>tests/e2e/app-launch.spec.ts</code> asserts the window opens at the right dimensions, the main UI mounts and no critical console errors appear — but it drives a <em>development</em> build, so it has never once launched the artifact a user installs. You are checking the packaged binary.',
           steps: [
-            'Launch the packaged binary from <code>out/HA Visual Dashboard Maker-linux-x64/</code>.',
+            'Launch <code>HA Visual Dashboard Maker.exe</code> from the copied <code>HA Visual Dashboard Maker-win32-x64</code> folder.',
             'Wait for the window to finish painting.',
             'Read the window title bar and the header.',
             'Look at the left sidebar and the connection badge at the top right.',
@@ -762,7 +768,7 @@
             'Press <strong>Ctrl+T</strong>.',
             'Read the confirmation message that appears.',
             'Press Ctrl+T twice more, so a theme change is the last thing you did.',
-            'Close the application completely and relaunch it from <code>out/</code>.',
+            'Close the application completely and relaunch <code>HA Visual Dashboard Maker.exe</code>.',
           ],
           expects: [
             'The interface switches between light and dark on each press, immediately.',
@@ -1852,6 +1858,7 @@
             'Before a repository is chosen it explains what the panel is for and offers a repository-selection control.',
             'It states on screen that it never writes to your repository.',
             'Closing and re-opening starts fresh rather than showing stale state.',
+            '⚠ <strong>Windows:</strong> if <code>git</code> is not on your <code>PATH</code>, the panel should say so plainly rather than erroring — HAVDM treats git-absent as a first-class state. That is a Pass, not a Fail; note it.',
           ],
         },
         {
@@ -1864,7 +1871,7 @@
             '<code>tests/integration/version-control.spec.ts</code> proves validation failures return typed errors and never reach git, and that the version-control write surface is empty. It cannot run the native folder picker.',
           steps: [
             'In the Version Control dialog, click the repository-selection control.',
-            'In the native folder dialog, choose a git repository directory.',
+            'In the native folder dialog, choose a git repository directory. ⚠ Prefer a repository on a local Windows drive; one under <code>\\\\wsl.localhost</code> works but is slow.',
             'Read the repository path, branch name and working-tree status shown.',
             'Make a change to a file in that repository outside HAVDM, then click the refresh control.',
           ],
@@ -1925,7 +1932,7 @@
             '<code>tests/e2e/ha-connection.spec.ts</code> drives the connection dialog against a mock. <strong>No automated layer in HAVDM has ever connected to a real Home Assistant instance</strong> — this card is the first real evidence that the connection path works.',
           steps: [
             'Click <strong>Connect to HA</strong>.',
-            'Enter the Home Assistant URL and a long-lived access token.',
+            'Enter the Home Assistant URL and a long-lived access token. ⚠ If <code>ha.home.local</code> does not resolve from Windows, use <code>http://192.168.1.70:8123</code> — that is a network fact about your machine, not a HAVDM defect.',
             'Tick the option to save the connection and name it, e.g. <code>UAT HA</code>.',
             'Connect, and read the badge in the header.',
             'Click <strong>Disconnect</strong>, then reconnect using the saved-connection dropdown.',

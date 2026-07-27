@@ -4,7 +4,7 @@ Blueprint: docs/governance/phases/phase-7-ecosystem-future-growth-blueprint.md
 Amendments: docs/governance/phases/phase-7-ecosystem-future-growth-amendment-01.md,
 docs/governance/phases/phase-7-ecosystem-future-growth-amendment-02.md,
 docs/governance/phases/phase-7-ecosystem-future-growth-amendment-03.md
-Last Updated: 2026-07-27 (slice J — UAT plan + matrix; board and checklists reconciled)
+Last Updated: 2026-07-27 (slice J — UAT plan + matrix re-pointed at the Windows x64 build)
 Package Version: 0.7.5-beta.10
 
 # Phase 7 Tracking — Slice Status Board & Gate Evidence
@@ -497,12 +497,27 @@ document) require a green automated baseline before the round opens.
 - [x] `npm run package` succeeds — re-verified 2026-07-27 on `7c49ae0`, exit 0.
       ⚠ That the packaged app **launches** is UAT card SHELL-01, marked by the
       tester, not by the agent
+- [x] **Target platform decided: Windows x64**, at the owner's direction
+      2026-07-27. Built from WSL with
+      `npx electron-forge package --platform=win32 --arch=x64` (exit 0), output
+      `out/HA Visual Dashboard Maker-win32-x64/HA Visual Dashboard Maker.exe`,
+      confirmed `PE32+ executable (GUI) x86-64, for MS Windows`.
+      ⭐ Cross-packaging works because HAVDM has **no native runtime
+      dependencies** — every production dependency is pure JS, so there is
+      nothing to rebuild per platform.
+      ⚠ `npm run make --platform=win32` (the Squirrel installer) does **not**
+      build from WSL: `electron-winstaller` fails with "You must install both
+      Mono and Wine on non-Windows". The portable folder needs neither.
 - [x] UAT test plan written to `docs/testing/uat/plans/uat_plan_v1.0.0_2026-07-27.md`
-      — full-product scope, 66 cards in 11 groups
+      — full-product scope, 66 cards in 11 groups. **Re-pointed at the Windows
+      artifact 2026-07-27**, with two Windows-only preconditions added so
+      environmental failures are not logged as product defects: group 10 needs
+      `git` on `PATH`, and group 11 needs `ha.home.local` to resolve (fall back
+      to `192.168.1.70`).
 - [x] HTML matrix generated to
       `docs/testing/uat/matrices/uat_matrix_v1.0.0_2026-07-27.html` —
-      `npm run verify:uat-matrix` 63/63
-- [ ] UAT round executed against the **packaged** app by the project owner
+      `npm run verify:uat-matrix` 63/63, re-verified after the Windows re-point
+- [ ] UAT round executed against the **packaged Windows** app by the project owner
 - [ ] ⚠ Any temporary Home Assistant dashboard **deleted** (UAT_STRATEGY §10)
 - [ ] Session JSON committed to `docs/testing/uat/sessions/`
 - [ ] Summary report committed to `docs/testing/uat/reports/`
