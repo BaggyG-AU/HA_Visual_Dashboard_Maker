@@ -27,14 +27,18 @@ Fetch the live state drawer `drawer_havdm_state_a15b0af78e0814cfd19cf627` with
 defines the expected pass range, the stable-known failures, and the two flaky
 families. That drawer supersedes everything below.
 
-Fallback snapshot (as of 2026-07-26, main = PR #77 + slice 4.7b) — use ONLY if
-MemPalace is unreachable, and say so in your report:
+Fallback snapshot (as of 2026-07-27, main = `6e63c2d`, Phase 7 Medium Gate) —
+use ONLY if MemPalace is unreachable, and say so in your report:
 
-- Expected electron-e2e result: ~205–241 passed / 7–11 failed / 2 skipped.
-  (The pass count grows as each slice adds tests: 225 → 232 → 233 → 236 → 241
-  across 4.5 → 4.6a → 4.6b → 4.7a → 4.7b. A count ABOVE the range is normal
-  after a slice lands; a count BELOW it is worth a look. The known-failure
-  lists below are unchanged by 4.7b.)
+- Expected electron-e2e result: **~240–246 passed / 7–9 failed / 2 skipped**,
+  254 tests total.
+  (The pass count grows as each slice adds tests: 225 → 232 → 233 → 236 → 240
+  → 244 → 245 across 4.5 → 4.6a → 4.6b → 4.7a → 4.7b → slice E → the Medium
+  Gate run. A count ABOVE the range is normal after a slice lands; a count
+  BELOW it is worth a look.)
+- The **Medium Gate run on `6e63c2d` was 245 / 7 / 2** — the 7 stable-known
+  only. `multi-entity.spec:71` passed there, which is why the failure count can
+  legitimately be 7 rather than 8.
 - STABLE-KNOWN (fail on both backends, expected): advanced-slider.visual:16,
   apexcharts.visual:26, attribute-display:95, calendar.spec:29,
   card-background.visual:8, popup.visual:20, tabs.visual:33.
