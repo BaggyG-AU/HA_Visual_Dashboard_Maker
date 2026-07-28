@@ -10,9 +10,13 @@ export class PresetMarketplaceDSL {
     await expect(button).toBeVisible();
     await button.click();
 
-    const modalWrap = this.window.locator('.ant-modal-wrap:visible').filter({
-      hasText: 'Browse Home Assistant Dashboards',
-    });
+    // ⚠ No longer filtered on the modal TITLE. RC5 retitled it
+    // "Browse Dashboards & Presets" (the dialog is no longer HA-only), and a DSL
+    // that matches on prose breaks every time the prose is improved.
+    // ⚠ Do NOT assert on getByTestId('dashboard-browser-modal') either — antd
+    // puts that attribute on the `.ant-modal-root` wrapper, which is always
+    // reported hidden. The visible node is `.ant-modal-wrap`.
+    const modalWrap = this.window.locator('.ant-modal-wrap:visible').first();
     await expect(modalWrap).toBeVisible();
 
     const presetTab = modalWrap.getByRole('tab', { name: /Preset Marketplace/i });

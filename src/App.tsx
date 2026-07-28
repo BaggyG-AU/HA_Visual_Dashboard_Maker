@@ -392,6 +392,30 @@ const App: React.FC = () => {
   // Ref for canvas container to apply theme
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * ⭐⭐ RC5: the canvas surface colours for the SELECTED Home Assistant theme.
+   *
+   * `applyThemeToElement` below publishes the theme as ~30 CSS custom properties
+   * on the canvas element, but HAVDM has no `var(--…)` consumers anywhere in
+   * `src/` — so selecting a theme was invisible. These two values are read
+   * directly by the canvas `<Content>` style, giving the theme a real outcome.
+   *
+   * ⚠ `undefined` whenever no theme is selected (the default, and the state
+   * every visual baseline is captured in), so the canvas falls back to RC4's
+   * antd tokens and no snapshot can move.
+   */
+  const { canvasThemeBackground, canvasThemeText } = useMemo(() => {
+    if (!currentTheme) {
+      return { canvasThemeBackground: undefined, canvasThemeText: undefined };
+    }
+
+    const colors = themeService.getThemeColors(currentTheme, darkMode);
+    return {
+      canvasThemeBackground: colors.primaryBackground || undefined,
+      canvasThemeText: colors.primaryText || undefined,
+    };
+  }, [currentTheme, darkMode]);
+
   // Apply theme to canvas when theme or mode changes
   useEffect(() => {
     const container = canvasContainerRef.current;
@@ -1797,10 +1821,14 @@ const App: React.FC = () => {
   };
 
   const handleOpenDashboardBrowser = () => {
-    if (!isConnected) {
-      message.warning('Please connect to Home Assistant first');
-      return;
-    }
+    // ⚠ RC5: the `if (!isConnected) { warn; return; }` guard that used to live
+    // here was a THIRD gate, behind the two `disabled={!isConnected}` props on
+    // the buttons that call this. Removing only the props left the dialog still
+    // refusing to open — the browser hosts the Preset Marketplace, which is
+    // entirely LOCAL content. The HA Dashboards tab inside handles the
+    // disconnected case on its own with a "Not Connected" alert.
+    // ⭐ A handler reachable from more than one control is separate wiring from
+    // those controls, and needs its own evidence.
     setDashboardBrowserVisible(true);
   };
 
@@ -2379,7 +2407,11 @@ const App: React.FC = () => {
               </Space>
             </div>
             <Space>
-              {isConnected && <ThemeSelector onRefreshThemes={fetchThemes} />}
+              {/* ⭐ RC5: NOT gated on isConnected. Themes are local content —
+                  HAVDM ships built-in themes, so the selector is useful with no
+                  Home Assistant at all. Connecting merely ADDS that instance's
+                  themes (see BUILT_IN_THEMES in src/features/theme-manager). */}
+              <ThemeSelector onRefreshThemes={fetchThemes} isConnected={isConnected} />
               <Badge
                 status={isConnected ? 'success' : 'default'}
                 text={isConnected ? 'Connected' : 'Not Connected'}
@@ -2432,9 +2464,23 @@ const App: React.FC = () => {
                   // isDarkTheme — the canvas stayed black in light mode (UAT
                   // SHELL-03, HA-06). antd's dark colorBgContainer IS #141414, so
                   // the dark theme renders identically; only light changes.
-                  background: token.colorBgContainer,
+                  // ⭐⭐ RC5: a SELECTED theme now wins over the antd token, so
+                  // picking a theme has a visible outcome (UAT THEME-01/THEME-03
+                  // both Expect "the canvas visibly reflects it"). Before this,
+                  // themeService.applyThemeToElement set ~30 CSS custom
+                  // properties on this very element and NOTHING in src/ read a
+                  // single one — `grep -rn "var(--" src/` returned 0. The picker
+                  // worked; the pipeline dead-ended here.
+                  // ⚠ SCOPE: the canvas SURFACE only. Card renderers stay on
+                  // their own colours by design — per THE VISION a renderer that
+                  // mimics HA is being faithful, and re-theming them would move
+                  // the visual baselines RC4 deliberately kept still.
+                  // ⚠ Both fall back to the RC4 token when no theme is selected,
+                  // which is every snapshot run (currentTheme === null), so the
+                  // 51 visual baselines cannot move.
+                  background: canvasThemeBackground ?? token.colorBgContainer,
                   borderRadius: 8,
-                  color: token.colorText,
+                  color: canvasThemeText ?? token.colorText,
                 }}
               >
                 {error && (
@@ -2476,15 +2522,21 @@ const App: React.FC = () => {
                         <Tooltip
                           title={
                             isConnected
-                              ? 'Browse and download dashboards from Home Assistant'
-                              : 'Connect to Home Assistant to browse dashboards'
+                              ? 'Browse Home Assistant dashboards and the built-in preset marketplace'
+                              : 'Browse the built-in preset marketplace — connect to Home Assistant to also list its dashboards'
                           }
                         >
+                          {/* ⭐ RC5: NOT gated on isConnected. This opens the
+                              DashboardBrowser, whose Preset Marketplace tab is
+                              entirely LOCAL (PRESET_MARKETPLACE_SEED). Gating it
+                              made all four THEME UAT cards unrunnable. The HA
+                              Dashboards tab inside degrades on its own with a
+                              "Not Connected" alert. */}
                           <Button
                             size="large"
                             icon={<AppstoreOutlined />}
                             onClick={handleOpenDashboardBrowser}
-                            disabled={!isConnected}
+                            data-testid="welcome-browse-dashboards"
                           >
                             Browse HA Dashboards
                           </Button>
@@ -2546,11 +2598,20 @@ const App: React.FC = () => {
                             Open
                           </Button>
                         </Tooltip>
-                        <Tooltip title="Download a dashboard from your Home Assistant instance">
+                        <Tooltip
+                          title={
+                            isConnected
+                              ? 'Download a dashboard from Home Assistant, or import a built-in preset'
+                              : 'Import a built-in preset — connect to Home Assistant to also download its dashboards'
+                          }
+                        >
+                          {/* ⭐ RC5: NOT gated on isConnected — same reason as the
+                              welcome-screen button above. ⚠ Deploy below IS still
+                              gated and must stay that way. */}
                           <Button
                             icon={<DownloadOutlined />}
                             onClick={handleOpenDashboardBrowser}
-                            disabled={!isConnected}
+                            data-testid="toolbar-download"
                           >
                             Download
                           </Button>
@@ -2586,6 +2647,7 @@ const App: React.FC = () => {
                             icon={<CloudUploadOutlined />}
                             onClick={handleOpenDeployDialog}
                             disabled={!isConnected}
+                            data-testid="toolbar-deploy"
                           >
                             Deploy
                           </Button>
@@ -2739,7 +2801,16 @@ const App: React.FC = () => {
                 onCancel={handlePropertiesCancel}
                 onOpenEntityBrowser={handleOpenEntityBrowser}
               />
-              {isConnected && <ThemePreviewPanel />}
+              {/* ⭐ RC5: gated on a SELECTED THEME, not on isConnected — a
+                  built-in theme previews perfectly well offline.
+                  ⚠ It must NOT render unconditionally: its no-theme branch is an
+                  antd <Empty>, and rendering that permanently put a second
+                  `.ant-empty` in the DOM, breaking three integration tests that
+                  locate `.ant-empty` globally (entity-browser.spec.ts:295,
+                  entity-caching.spec.ts:72 and :348) with a strict-mode
+                  violation. Showing an empty "Theme Preview" card forever was
+                  also just clutter. */}
+              {currentTheme && <ThemePreviewPanel />}
             </Sider>
           </Layout>
         </Layout>

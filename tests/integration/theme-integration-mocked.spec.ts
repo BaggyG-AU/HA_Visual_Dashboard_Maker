@@ -59,7 +59,15 @@ test.describe('Theme Integration - Mocked IPC', () => {
       await simulateHADisconnection(ctx.window, ctx.app);
       await ctx.window.evaluate(() => (window as any).__testThemeApi?.setConnected(false));
 
-      await expect(ctx.window.getByTestId('theme-selector')).toHaveCount(0);
+      // ⚠ BEHAVIOUR INTENTIONALLY INVERTED BY RC5. This previously asserted
+      // `toHaveCount(0)` — it pinned the defect that made UAT THEME-01/02/03
+      // unrunnable. Themes are LOCAL content, so the selector SURVIVES a
+      // disconnect and keeps offering HAVDM's built-in themes.
+      // (The HA-only refresh action is asserted disabled in
+      // tests/integration/theme-integration.spec.ts, where the dropdown that
+      // hosts it is already open — it lives in the Select's popupRender and is
+      // only in the DOM while that dropdown is open.)
+      await expect(ctx.window.getByTestId('theme-selector')).toBeVisible();
     } finally {
       await close(ctx);
     }
