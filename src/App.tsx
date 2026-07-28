@@ -54,6 +54,7 @@ import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
 import { getCardSizeConstraints } from './utils/cardSizingContract';
+import { shouldHandleGlobalShortcut } from './utils/keyboardShortcuts';
 import {
   cloneCardsForClipboard,
   prepareCardsForFlatPaste,
@@ -2316,12 +2317,19 @@ const App: React.FC = () => {
   // Keyboard shortcuts for card operations
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Only handle keyboard shortcuts when a card is selected and not in an input field
+      // CANVAS-07: this used to bail out of EVERY shortcut whenever focus was in
+      // any input, which meant Ctrl+Z from the Card Palette search box undid a
+      // character of the search term instead of the card the user had just
+      // deleted — while the header's Undo button, which has no such guard,
+      // restored it correctly from the same focus state.
+      //
+      // Undo/redo are application-level history commands and now pass through
+      // from fields that opt in with `data-shortcut-passthrough` (a transient
+      // filter, not an edited document). Ctrl+S, Ctrl+C/X/V and Delete remain
+      // guarded in ALL text fields. See src/utils/keyboardShortcuts.ts.
       const target = event.target as HTMLElement;
-      const isInputField =
-        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
-      if (isInputField) {
+      if (!shouldHandleGlobalShortcut(event, target)) {
         return;
       }
 

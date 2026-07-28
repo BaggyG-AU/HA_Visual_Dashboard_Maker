@@ -10,6 +10,7 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { cardRegistry, CardCategory, CardTypeMetadata } from '../services/cardRegistry';
+import { SHORTCUT_PASSTHROUGH_ATTR } from '../utils/keyboardShortcuts';
 import { resolveCardState } from '../services/capability/cardAvailability';
 import {
   defaultCapabilityProfile,
@@ -164,6 +165,10 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
         <h3 style={{ color: token.colorText, marginBottom: '12px', marginTop: 0 }}>Card Palette</h3>
         <Input
           data-testid="card-search"
+          // CANVAS-07: this box is a transient FILTER, not an edited document,
+          // so Ctrl+Z here must undo the user's last CARD action rather than a
+          // character of their search term. See src/utils/keyboardShortcuts.ts.
+          {...{ [SHORTCUT_PASSTHROUGH_ATTR]: '' }}
           placeholder="Search cards..."
           prefix={<SearchOutlined style={{ color: token.colorTextTertiary }} />}
           value={searchTerm}
