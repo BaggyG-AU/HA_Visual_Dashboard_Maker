@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import { Alert, Divider, Input, InputNumber, Select, Typography } from 'antd';
+import { Alert, Divider, Input, InputNumber, Select, Typography, theme } from 'antd';
 import type {
   AttributeDisplayItem,
   AttributeDisplayLayout,
@@ -37,6 +37,7 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
   onLayoutChange,
   entityId,
 }) => {
+  const { token } = theme.useToken();
   const { getEntity, isLoading } = useHAEntities();
   const entity = entityId ? getEntity(entityId) : null;
   const attributes = entity?.attributes || {};
@@ -139,7 +140,9 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
       </Text>
 
       <div style={{ marginTop: '8px' }}>
-        <Text style={{ color: '#888', fontSize: '12px' }}>Select attributes to display</Text>
+        <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
+          Select attributes to display
+        </Text>
       </div>
 
       <Select
@@ -154,7 +157,7 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
       />
 
       <div style={{ marginTop: '12px' }}>
-        <Text style={{ color: '#888', fontSize: '12px' }}>Layout</Text>
+        <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>Layout</Text>
         <Select
           value={layout}
           onChange={(next) => onLayoutChange?.(next)}
@@ -170,7 +173,9 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
 
       <div style={{ marginTop: '12px' }} data-testid="attribute-display-selected-list">
         {value.length === 0 && (
-          <Text style={{ color: '#666', fontSize: '12px' }}>No attributes selected.</Text>
+          <Text style={{ color: token.colorTextTertiary, fontSize: '12px' }}>
+            No attributes selected.
+          </Text>
         )}
 
         {value.map((item, index) => {
@@ -185,7 +190,7 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
               style={{
                 marginTop: '12px',
                 padding: '12px',
-                border: '1px solid #2a2a2a',
+                border: `1px solid ${token.colorBorderSecondary}`,
                 borderRadius: '8px',
                 background: '#111',
               }}
@@ -212,7 +217,12 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
                 </Text>
                 <div>
                   <Text
-                    style={{ color: '#666', cursor: 'grab', fontSize: '12px', marginRight: '12px' }}
+                    style={{
+                      color: token.colorTextTertiary,
+                      cursor: 'grab',
+                      fontSize: '12px',
+                      marginRight: '12px',
+                    }}
                     draggable
                     onDragStart={(event) => {
                       event.dataTransfer.setData('text/plain', String(index));
@@ -232,7 +242,7 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
               </div>
 
               <div style={{ marginTop: '8px' }}>
-                <Text style={{ color: '#888', fontSize: '11px' }}>Label</Text>
+                <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>Label</Text>
                 <Input
                   value={item.label ?? ''}
                   placeholder="Optional label"
@@ -242,7 +252,7 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
               </div>
 
               <div style={{ marginTop: '8px' }}>
-                <Text style={{ color: '#888', fontSize: '11px' }}>Format</Text>
+                <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>Format</Text>
                 <Select
                   value={formatType}
                   onChange={(nextType: AttributeFormatType) => {
@@ -269,7 +279,9 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
               {formatType === 'number' && (
                 <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                   <div style={{ flex: 1 }}>
-                    <Text style={{ color: '#888', fontSize: '11px' }}>Precision</Text>
+                    <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>
+                      Precision
+                    </Text>
                     <InputNumber
                       min={0}
                       max={6}
@@ -292,7 +304,7 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
                     />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <Text style={{ color: '#888', fontSize: '11px' }}>Unit</Text>
+                    <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>Unit</Text>
                     <Input
                       value={item.format?.unit ?? ''}
                       placeholder="e.g. %"
@@ -311,7 +323,9 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
               {formatType === 'boolean' && (
                 <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                   <div style={{ flex: 1 }}>
-                    <Text style={{ color: '#888', fontSize: '11px' }}>True label</Text>
+                    <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>
+                      True label
+                    </Text>
                     <Input
                       value={item.format?.trueLabel ?? ''}
                       placeholder="On"
@@ -329,7 +343,9 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
                     />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <Text style={{ color: '#888', fontSize: '11px' }}>False label</Text>
+                    <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>
+                      False label
+                    </Text>
                     <Input
                       value={item.format?.falseLabel ?? ''}
                       placeholder="Off"
@@ -351,7 +367,9 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
 
               {formatType === 'string' && (
                 <div style={{ marginTop: '8px' }}>
-                  <Text style={{ color: '#888', fontSize: '11px' }}>Max length</Text>
+                  <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>
+                    Max length
+                  </Text>
                   <InputNumber
                     min={5}
                     max={120}
@@ -374,7 +392,7 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
 
               {formatType === 'timestamp' && (
                 <div style={{ marginTop: '8px' }}>
-                  <Text style={{ color: '#888', fontSize: '11px' }}>Mode</Text>
+                  <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>Mode</Text>
                   <Select
                     value={item.format?.timestampMode ?? 'relative'}
                     onChange={(next) =>
@@ -394,7 +412,7 @@ export const AttributeDisplayControls: React.FC<AttributeDisplayControlsProps> =
               )}
 
               <div style={{ marginTop: '10px' }}>
-                <Text style={{ color: '#888', fontSize: '11px' }}>Preview</Text>
+                <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>Preview</Text>
                 <div
                   style={{
                     marginTop: '4px',

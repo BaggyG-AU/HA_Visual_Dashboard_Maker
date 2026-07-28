@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Select, Tag, Typography, Space, Alert } from 'antd';
+import { Select, Tag, Typography, Space, Alert, theme } from 'antd';
 import { WarningOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { loadPickerEntities, type EntitySourceKind } from '../services/entityPickerSource';
 import { logger } from '../services/logger';
@@ -36,6 +36,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
   filterDomains,
   dataTestId,
 }) => {
+  const { token } = theme.useToken();
   const [entities, setEntities] = useState<HAEntity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -176,7 +177,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
           message={`${invalidEntities.length} Invalid ${invalidEntities.length === 1 ? 'Entity' : 'Entities'}`}
           description={
             <div style={{ marginTop: '8px' }}>
-              <Text style={{ fontSize: '12px', color: '#666' }}>
+              <Text style={{ fontSize: '12px', color: token.colorTextTertiary }}>
                 The following entities do not exist:
               </Text>
               <div style={{ marginTop: '4px' }}>
@@ -184,7 +185,9 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
                   <div key={id} style={{ marginTop: '4px' }}>
                     <Space>
                       <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
-                      <Text style={{ fontSize: '11px', color: '#ccc' }}>{id}</Text>
+                      <Text style={{ fontSize: '11px', color: token.colorTextSecondary }}>
+                        {id}
+                      </Text>
                     </Space>
                   </div>
                 ))}
@@ -310,7 +313,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
         styles={{
           popup: {
             root: {
-              backgroundColor: '#1f1f1f',
+              backgroundColor: token.colorBgElevated,
             },
           },
         }}

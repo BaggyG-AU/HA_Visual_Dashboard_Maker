@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Select, Tag, Typography, Space, Alert } from 'antd';
+import { Select, Tag, Typography, Space, Alert, theme } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { loadPickerEntities, type EntitySourceKind } from '../services/entityPickerSource';
 import { logger } from '../services/logger';
@@ -33,6 +33,7 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
   filterDomains,
   'data-testid': dataTestId,
 }) => {
+  const { token } = theme.useToken();
   const [entities, setEntities] = useState<HAEntity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,9 +122,16 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
     if (loading) {
       return (
         <div
-          style={{ marginTop: '8px', padding: '8px', background: '#1f1f1f', borderRadius: '4px' }}
+          style={{
+            marginTop: '8px',
+            padding: '8px',
+            background: token.colorBgElevated,
+            borderRadius: '4px',
+          }}
         >
-          <Text style={{ color: '#888', fontSize: '12px' }}>Loading entities...</Text>
+          <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
+            Loading entities...
+          </Text>
         </div>
       );
     }
@@ -156,8 +164,8 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
           style={{
             marginTop: '8px',
             padding: '12px',
-            background: '#1f1f1f',
-            border: '1px solid #2a2a2a',
+            background: token.colorBgElevated,
+            border: `1px solid ${token.colorBorderSecondary}`,
             borderRadius: '4px',
           }}
         >
@@ -170,13 +178,15 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
             </Space>
 
             <div>
-              <Text style={{ color: '#888', fontSize: '11px' }}>Friendly Name:</Text>
+              <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>
+                Friendly Name:
+              </Text>
               <br />
-              <Text style={{ color: '#fff', fontSize: '12px' }}>{friendlyName}</Text>
+              <Text style={{ color: token.colorText, fontSize: '12px' }}>{friendlyName}</Text>
             </div>
 
             <div>
-              <Text style={{ color: '#888', fontSize: '11px' }}>Domain:</Text>
+              <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>Domain:</Text>
               <br />
               <Tag color="blue" style={{ fontSize: '10px' }}>
                 {domain}
@@ -184,7 +194,9 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
             </div>
 
             <div>
-              <Text style={{ color: '#888', fontSize: '11px' }}>Current State:</Text>
+              <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>
+                Current State:
+              </Text>
               <br />
               <Tag color="green" style={{ fontSize: '11px' }}>
                 {selectedEntity.state}
@@ -193,16 +205,16 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
 
             {selectedEntity.attributes.unit_of_measurement && (
               <div>
-                <Text style={{ color: '#888', fontSize: '11px' }}>Unit:</Text>
+                <Text style={{ color: token.colorTextSecondary, fontSize: '11px' }}>Unit:</Text>
                 <br />
-                <Text style={{ color: '#fff', fontSize: '12px' }}>
+                <Text style={{ color: token.colorText, fontSize: '12px' }}>
                   {selectedEntity.attributes.unit_of_measurement}
                 </Text>
               </div>
             )}
 
             <div>
-              <Text style={{ color: '#666', fontSize: '10px' }}>
+              <Text style={{ color: token.colorTextTertiary, fontSize: '10px' }}>
                 Last updated: {new Date(selectedEntity.last_updated).toLocaleString()}
               </Text>
             </div>
@@ -281,7 +293,7 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
         styles={{
           popup: {
             root: {
-              backgroundColor: '#1f1f1f',
+              backgroundColor: token.colorBgElevated,
             },
           },
         }}

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Collapse, Input, Badge, Tooltip } from 'antd';
+import { Collapse, Input, Badge, Tooltip, theme } from 'antd';
 import {
   AppstoreOutlined,
   DashboardOutlined,
@@ -58,6 +58,9 @@ const categoryConfig: Record<
 };
 
 export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
+  // Correct here (unlike in App.tsx, which renders the ConfigProvider itself):
+  // this component is a CHILD of the provider, so useToken sees the active theme.
+  const { token } = theme.useToken();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
   const previousActiveKeysRef = useRef<string[] | null>(null);
@@ -158,11 +161,11 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
       style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
     >
       <div style={{ padding: '16px', paddingBottom: '12px' }}>
-        <h3 style={{ color: 'white', marginBottom: '12px', marginTop: 0 }}>Card Palette</h3>
+        <h3 style={{ color: token.colorText, marginBottom: '12px', marginTop: 0 }}>Card Palette</h3>
         <Input
           data-testid="card-search"
           placeholder="Search cards..."
-          prefix={<SearchOutlined style={{ color: '#666' }} />}
+          prefix={<SearchOutlined style={{ color: token.colorTextTertiary }} />}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ marginBottom: '12px' }}
@@ -190,7 +193,7 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
               label: (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ color: config.color }}>{config.icon}</span>
-                  <span style={{ color: 'white', fontWeight: 500 }}>{config.label}</span>
+                  <span style={{ color: token.colorText, fontWeight: 500 }}>{config.label}</span>
                   <Badge
                     count={cards.length}
                     style={{
@@ -201,7 +204,7 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
                 </div>
               ),
               style: {
-                borderBottom: '1px solid #434343',
+                borderBottom: `1px solid ${token.colorBorder}`,
                 marginBottom: '4px',
               },
               children: (
@@ -221,19 +224,19 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
                           onDoubleClick={() => handleCardClick(card.type)}
                           style={{
                             padding: '12px',
-                            background: '#1f1f1f',
+                            background: token.colorBgElevated,
                             borderRadius: '6px',
                             cursor: 'grab',
-                            border: '1px solid #434343',
+                            border: `1px solid ${token.colorBorder}`,
                             transition: 'all 0.2s ease',
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#2a2a2a';
+                            e.currentTarget.style.background = token.colorBgTextHover;
                             e.currentTarget.style.borderColor = config.color;
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#1f1f1f';
-                            e.currentTarget.style.borderColor = '#434343';
+                            e.currentTarget.style.background = token.colorBgElevated;
+                            e.currentTarget.style.borderColor = token.colorBorder;
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -241,12 +244,18 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
                               {config.icon}
                             </span>
                             <div style={{ flex: 1 }}>
-                              <div style={{ color: 'white', fontSize: '13px', fontWeight: 500 }}>
+                              <div
+                                style={{
+                                  color: token.colorText,
+                                  fontSize: '13px',
+                                  fontWeight: 500,
+                                }}
+                              >
                                 {card.name}
                               </div>
                               <div
                                 style={{
-                                  color: '#888',
+                                  color: token.colorTextSecondary,
                                   fontSize: '11px',
                                   marginTop: '2px',
                                 }}
@@ -312,8 +321,8 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
       <div
         style={{
           padding: '12px 16px',
-          borderTop: '1px solid #434343',
-          color: '#666',
+          borderTop: `1px solid ${token.colorBorder}`,
+          color: token.colorTextTertiary,
           fontSize: '11px',
         }}
       >

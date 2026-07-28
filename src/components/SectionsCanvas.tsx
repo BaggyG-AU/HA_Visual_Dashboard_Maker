@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Input, InputNumber, Slider } from 'antd';
+import { Input, InputNumber, Slider, theme } from 'antd';
 import type { Card, View } from '../types/dashboard';
 import type { SelectionMode } from '../utils/bulkSelection';
 import { BaseCard } from './BaseCard';
@@ -96,6 +96,7 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
   onSectionTitleChange,
   onViewMaxColumnsChange,
 }) => {
+  const { token } = theme.useToken();
   const sections = Array.isArray(view.sections) ? view.sections : [];
   const columns = sectionsColumnCount(view);
   const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -312,7 +313,12 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
   return (
     <div
       data-testid="sections-canvas"
-      style={{ height: '100%', overflow: 'auto', padding: 16, backgroundColor: '#141414' }}
+      style={{
+        height: '100%',
+        overflow: 'auto',
+        padding: 16,
+        backgroundColor: token.colorBgContainer,
+      }}
       onMouseDown={(event) => {
         const target = event.target as HTMLElement | null;
         if (target?.closest('[data-testid="canvas-card"]')) return;
@@ -332,7 +338,7 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
           alignItems: 'center',
           gap: 12,
           marginBottom: 12,
-          color: '#ddd',
+          color: token.colorText,
         }}
         onMouseDown={(event) => event.stopPropagation()}
       >
@@ -341,9 +347,9 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
           data-testid="section-add-button"
           onClick={() => onSectionAdd?.()}
           style={{
-            background: '#1f1f1f',
-            border: '1px solid #434343',
-            color: '#fff',
+            background: token.colorBgElevated,
+            border: `1px solid ${token.colorBorder}`,
+            color: token.colorText,
             borderRadius: 4,
             cursor: 'pointer',
             padding: '4px 12px',
@@ -351,7 +357,7 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
         >
           + Add section
         </button>
-        <span style={{ fontSize: 12, color: '#8c8c8c' }}>Columns wide</span>
+        <span style={{ fontSize: 12, color: token.colorTextSecondary }}>Columns wide</span>
         <div data-testid="section-max-columns">
           <InputNumber
             size="small"
@@ -430,7 +436,7 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                   onDragEnd={onSectionDragEnd}
                   style={{
                     cursor: 'grab',
-                    color: '#8c8c8c',
+                    color: token.colorTextSecondary,
                     fontSize: 16,
                     lineHeight: 1,
                     userSelect: 'none',
@@ -458,7 +464,7 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                   style={{
                     marginLeft: 'auto',
                     background: 'transparent',
-                    border: '1px solid #434343',
+                    border: `1px solid ${token.colorBorder}`,
                     color: '#ff7875',
                     borderRadius: 4,
                     cursor: 'pointer',
@@ -591,7 +597,7 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                             width: 148,
                             padding: '6px 10px',
                             background: 'rgba(20,20,20,0.92)',
-                            border: '1px solid #434343',
+                            border: `1px solid ${token.colorBorder}`,
                             borderRadius: 6,
                             zIndex: 5,
                             display: 'flex',
@@ -599,7 +605,9 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                             gap: 2,
                           }}
                         >
-                          <div style={{ color: '#bbb', fontSize: 11 }}>Width {cardSpan}/12</div>
+                          <div style={{ color: token.colorTextSecondary, fontSize: 11 }}>
+                            Width {cardSpan}/12
+                          </div>
                           <div data-testid={`section-precise-columns-${si}-${ci}`}>
                             <Slider
                               min={1}
@@ -620,7 +628,9 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                               }}
                             />
                           </div>
-                          <div style={{ color: '#bbb', fontSize: 11 }}>Height {rowSpan}</div>
+                          <div style={{ color: token.colorTextSecondary, fontSize: 11 }}>
+                            Height {rowSpan}
+                          </div>
                           <div data-testid={`section-precise-rows-${si}-${ci}`}>
                             <Slider
                               min={1}
@@ -652,7 +662,7 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                   data-testid={`section-empty-${si}`}
                   style={{
                     gridColumn: `1 / -1`,
-                    color: '#8c8c8c',
+                    color: token.colorTextSecondary,
                     fontStyle: 'italic',
                     padding: 8,
                   }}
@@ -664,7 +674,10 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
           );
         })}
         {sections.length === 0 ? (
-          <div data-testid="sections-canvas-empty" style={{ color: '#8c8c8c', padding: 16 }}>
+          <div
+            data-testid="sections-canvas-empty"
+            style={{ color: token.colorTextSecondary, padding: 16 }}
+          >
             This sections view has no sections.
           </div>
         ) : null}

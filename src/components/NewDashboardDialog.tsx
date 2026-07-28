@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Card, Row, Col, Tooltip } from 'antd';
+import { Modal, Card, Row, Col, Tooltip, theme } from 'antd';
 import {
   FileAddOutlined,
   AppstoreAddOutlined,
@@ -27,6 +27,7 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
   onCreateFromEntityType,
   isConnected,
 }) => {
+  const { token } = theme.useToken();
   const [showEntityTypeWizard, setShowEntityTypeWizard] = useState(false);
 
   const handleBlankClick = () => {
@@ -66,7 +67,7 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
         rootClassName="new-dashboard-dialog"
       >
         <div style={{ marginBottom: 24 }}>
-          <p style={{ fontSize: 14, color: '#666' }}>
+          <p style={{ fontSize: 14, color: token.colorTextSecondary }}>
             Choose how you want to create your dashboard:
           </p>
         </div>
@@ -85,7 +86,7 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
                   <h3 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 600 }}>
                     Blank Dashboard
                   </h3>
-                  <p style={{ margin: 0, color: '#666', fontSize: 13 }}>
+                  <p style={{ margin: 0, color: token.colorTextSecondary, fontSize: 13 }}>
                     Start with an empty canvas
                   </p>
                 </div>
@@ -106,7 +107,9 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
                   <h3 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 600 }}>
                     Sections View
                   </h3>
-                  <p style={{ margin: 0, color: '#666', fontSize: 13 }}>HA grid layout (default)</p>
+                  <p style={{ margin: 0, color: token.colorTextSecondary, fontSize: 13 }}>
+                    HA grid layout (default)
+                  </p>
                 </div>
               </Card>
             </Tooltip>
@@ -127,7 +130,9 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
                   <h3 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 600 }}>
                     From Template
                   </h3>
-                  <p style={{ margin: 0, color: '#666', fontSize: 13 }}>Use a pre-built layout</p>
+                  <p style={{ margin: 0, color: token.colorTextSecondary, fontSize: 13 }}>
+                    Use a pre-built layout
+                  </p>
                 </div>
               </Card>
             </Tooltip>
@@ -157,14 +162,14 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
                   <h3 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 600 }}>
                     From Entity Type
                   </h3>
-                  <p style={{ margin: 0, color: '#666', fontSize: 13 }}>
+                  <p style={{ margin: 0, color: token.colorTextSecondary, fontSize: 13 }}>
                     Auto-generate from entities
                   </p>
                   {!isConnected && (
                     <p
                       style={{
                         margin: '8px 0 0 0',
-                        color: '#ff4d4f',
+                        color: token.colorError,
                         fontSize: 12,
                         fontWeight: 500,
                       }}
@@ -178,8 +183,10 @@ export const NewDashboardDialog: React.FC<NewDashboardDialogProps> = ({
           </Col>
         </Row>
 
-        <div style={{ marginTop: 24, padding: 12, background: '#f5f5f5', borderRadius: 4 }}>
-          <small style={{ color: '#666' }}>
+        <div
+          style={{ marginTop: 24, padding: 12, background: token.colorFillAlter, borderRadius: 4 }}
+        >
+          <small style={{ color: token.colorTextSecondary }}>
             <strong>Tip:</strong> All dashboard types can be edited after creation. You can always
             add, remove, or modify cards using the card palette and properties panel.
           </small>

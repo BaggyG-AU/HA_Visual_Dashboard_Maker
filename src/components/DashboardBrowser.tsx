@@ -11,6 +11,7 @@ import {
   Empty,
   Tooltip,
   Tabs,
+  theme,
 } from 'antd';
 import {
   DownloadOutlined,
@@ -65,6 +66,7 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
   onClose,
   onDashboardDownload,
 }) => {
+  const { token } = theme.useToken();
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -204,9 +206,9 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '12px 16px',
-          background: '#1a1a1a',
+          background: token.colorFillAlter,
           borderRadius: '8px',
-          border: '1px solid #434343',
+          border: `1px solid ${token.colorBorder}`,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
@@ -432,13 +434,14 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
         style={{
           marginTop: '16px',
           padding: '12px',
-          background: '#1a1a1a',
+          background: token.colorFillAlter,
           borderRadius: '4px',
         }}
       >
-        <Text style={{ color: '#666', fontSize: '11px' }}>
-          <strong style={{ color: '#888' }}>Tip:</strong> Imported dashboards and presets load into
-          the editor. You can make changes and save locally or deploy to Home Assistant.
+        <Text style={{ color: token.colorTextTertiary, fontSize: '11px' }}>
+          <strong style={{ color: token.colorTextSecondary }}>Tip:</strong> Imported dashboards and
+          presets load into the editor. You can make changes and save locally or deploy to Home
+          Assistant.
         </Text>
       </div>
     </Modal>

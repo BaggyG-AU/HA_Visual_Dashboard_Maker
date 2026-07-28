@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, Button, Alert, Steps, Typography, Radio } from 'antd';
+import { Modal, Form, Input, Button, Alert, Steps, Typography, Radio, theme } from 'antd';
 import {
   CloudUploadOutlined,
   CheckCircleOutlined,
@@ -57,6 +57,7 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
   dashboardTitle,
   warnings,
 }) => {
+  const { token } = theme.useToken();
   const exportSummary = summarizeExportWarnings(warnings ?? []);
   const [form] = Form.useForm();
   const [deployStatus, setDeployStatus] = useState<DeployStatus>({
@@ -329,12 +330,12 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
           <div
             style={{
               padding: '16px',
-              background: '#1f1f1f',
+              background: token.colorBgElevated,
               borderRadius: '4px',
               marginBottom: '16px',
             }}
           >
-            <Text style={{ color: '#fff' }}>{deployStatus.message}</Text>
+            <Text style={{ color: token.colorText }}>{deployStatus.message}</Text>
           </div>
 
           {deployStatus.step === 4 && (
@@ -346,7 +347,7 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
                     <div>
                       <Text>Your dashboard has been deployed to Home Assistant.</Text>
                       <br />
-                      <Text style={{ fontSize: '12px', color: '#888' }}>
+                      <Text style={{ fontSize: '12px', color: token.colorTextSecondary }}>
                         You can access it from the Home Assistant sidebar.
                       </Text>
                     </div>
@@ -362,7 +363,13 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
                     <div>
                       <Text>{deployStatus.error}</Text>
                       <br />
-                      <Text style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                      <Text
+                        style={{
+                          fontSize: '12px',
+                          color: token.colorTextTertiary,
+                          marginTop: '8px',
+                        }}
+                      >
                         Please check your connection and try again.
                       </Text>
                     </div>
@@ -454,13 +461,13 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
           style={{
             marginTop: '24px',
             padding: '12px',
-            background: '#1f1f1f',
-            border: '1px solid #434343',
+            background: token.colorBgElevated,
+            border: `1px solid ${token.colorBorder}`,
             borderRadius: '4px',
           }}
         >
-          <Text style={{ color: '#888', fontSize: '12px' }}>
-            <strong style={{ color: '#fff' }}>Note:</strong> This will deploy the dashboard
+          <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
+            <strong style={{ color: token.colorText }}>Note:</strong> This will deploy the dashboard
             configuration directly to your Home Assistant instance. Make sure to test your dashboard
             before deploying to production.
           </Text>

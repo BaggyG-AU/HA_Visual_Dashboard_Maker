@@ -13,6 +13,7 @@ import {
   Tooltip,
   Switch,
   InputNumber,
+  theme,
 } from 'antd';
 import {
   UndoOutlined,
@@ -193,6 +194,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   onCancel: _onCancel,
   onOpenEntityBrowser,
 }) => {
+  const { token } = theme.useToken();
   void _onCancel;
   const [form] = Form.useForm();
   const watchedGap = Form.useWatch('gap', form);
@@ -260,7 +262,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               <Form.Item
                 label={<span style={{ color: 'white' }}>Intensity</span>}
                 name={['haptic', 'intensity']}
-                help={<span style={{ color: '#666' }}>Override global intensity (0-100)</span>}
+                help={
+                  <span style={{ color: token.colorTextTertiary }}>
+                    Override global intensity (0-100)
+                  </span>
+                }
               >
                 <InputNumber
                   min={0}
@@ -309,7 +315,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               <Form.Item
                 label={<span style={{ color: 'white' }}>Volume</span>}
                 name={['sound', 'volume']}
-                help={<span style={{ color: '#666' }}>Override global volume (0-100)</span>}
+                help={
+                  <span style={{ color: token.colorTextTertiary }}>
+                    Override global volume (0-100)
+                  </span>
+                }
               >
                 <InputNumber
                   min={0}
@@ -439,18 +449,20 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {entries.map((entry) => (
             <div key={entry.key} data-testid={`entity-context-preview-${entry.key}`}>
-              <Text strong style={{ color: '#e6e6e6', fontSize: '12px' }}>
+              <Text strong style={{ color: token.colorText, fontSize: '12px' }}>
                 {entry.label}
               </Text>
               <div
                 style={{
                   marginTop: '4px',
                   padding: '8px',
-                  backgroundColor: '#111',
+                  backgroundColor: token.colorBgContainer,
                   borderRadius: '6px',
                 }}
               >
-                <Text style={{ color: '#b7eb8f', fontSize: '12px' }}>{entry.resolved || ' '}</Text>
+                <Text style={{ color: token.colorSuccess, fontSize: '12px' }}>
+                  {entry.resolved || ' '}
+                </Text>
               </div>
               {entry.missing.length > 0 && (
                 <Alert
@@ -678,31 +690,39 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               <div
                 style={{
                   padding: '8px 10px',
-                  background: '#141414',
-                  border: '1px solid #2a2a2a',
+                  background: token.colorBgContainer,
+                  border: `1px solid ${token.colorBorderSecondary}`,
                   borderRadius: 6,
                 }}
                 data-testid={`${testIdPrefix}-smart-defaults-preview`}
               >
-                <div style={{ color: '#bbb', fontSize: 12 }}>
-                  <Text style={{ color: '#bbb', fontSize: 12 }}>
+                <div style={{ color: token.colorTextSecondary, fontSize: 12 }}>
+                  <Text style={{ color: token.colorTextSecondary, fontSize: 12 }}>
                     Tap action used:{' '}
-                    <Text style={{ color: '#fff' }}>{formatActionLabel(resolved.tap.action)}</Text>{' '}
-                    <Text style={{ color: '#666' }}>({sourceLabel(resolved.tap.source)})</Text>
+                    <Text style={{ color: token.colorText }}>
+                      {formatActionLabel(resolved.tap.action)}
+                    </Text>{' '}
+                    <Text style={{ color: token.colorTextTertiary }}>
+                      ({sourceLabel(resolved.tap.source)})
+                    </Text>
                   </Text>
                   <br />
-                  <Text style={{ color: '#bbb', fontSize: 12 }}>
+                  <Text style={{ color: token.colorTextSecondary, fontSize: 12 }}>
                     Hold action used:{' '}
-                    <Text style={{ color: '#fff' }}>{formatActionLabel(resolved.hold.action)}</Text>{' '}
-                    <Text style={{ color: '#666' }}>({sourceLabel(resolved.hold.source)})</Text>
+                    <Text style={{ color: token.colorText }}>
+                      {formatActionLabel(resolved.hold.action)}
+                    </Text>{' '}
+                    <Text style={{ color: token.colorTextTertiary }}>
+                      ({sourceLabel(resolved.hold.source)})
+                    </Text>
                   </Text>
                   <br />
-                  <Text style={{ color: '#bbb', fontSize: 12 }}>
+                  <Text style={{ color: token.colorTextSecondary, fontSize: 12 }}>
                     Double-tap action used:{' '}
-                    <Text style={{ color: '#fff' }}>
+                    <Text style={{ color: token.colorText }}>
                       {formatActionLabel(resolved.double_tap.action)}
                     </Text>{' '}
-                    <Text style={{ color: '#666' }}>
+                    <Text style={{ color: token.colorTextTertiary }}>
                       ({sourceLabel(resolved.double_tap.source)})
                     </Text>
                   </Text>
@@ -1613,7 +1633,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       label={<span style={{ color: 'white' }}>Entities</span>}
                       name="entities"
                       help={
-                        <span style={{ color: '#666' }}>
+                        <span style={{ color: token.colorTextTertiary }}>
                           Select entities from your Home Assistant instance
                         </span>
                       }
@@ -1792,7 +1812,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Entities</span>}
                     name="entities"
                     help={
-                      <span style={{ color: '#666' }}>Select entities to show history for</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Select entities to show history for
+                      </span>
                     }
                   >
                     <EntityMultiSelect placeholder="Select entities" />
@@ -1817,7 +1839,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Calendar Entities</span>}
                     name="calendar_entities"
                     help={
-                      <span style={{ color: '#666' }}>Choose Home Assistant calendar entities</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Choose Home Assistant calendar entities
+                      </span>
                     }
                   >
                     <EntityMultiSelect
@@ -1885,7 +1909,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Entity</span>}
                     name="entity"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Optional event source entity (sensor/calendar/logbook)
                       </span>
                     }
@@ -2004,7 +2028,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Image URL</span>}
                     name="image"
-                    help={<span style={{ color: '#666' }}>Optional if a camera entity is set</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Optional if a camera entity is set
+                      </span>
+                    }
                   >
                     <Input placeholder="/local/images/dashboard.png" />
                   </Form.Item>
@@ -2021,7 +2049,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Camera Image</span>}
                     name="camera_image"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Optional: Select a camera entity for live streaming
                       </span>
                     }
@@ -2033,7 +2061,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Camera View</span>}
                     name="camera_view"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Choose between snapshot or live stream (requires camera_image)
                       </span>
                     }
@@ -2091,7 +2119,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Image URL</span>}
                     name="image"
                     help={
-                      <span style={{ color: '#666' }}>Leave blank when using camera entity</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Leave blank when using camera entity
+                      </span>
                     }
                   >
                     <Input placeholder="/local/images/dashboard.png" />
@@ -2101,7 +2131,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Camera Image</span>}
                     name="camera_image"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Optional: Select a camera entity for live streaming
                       </span>
                     }
@@ -2113,7 +2143,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Camera View</span>}
                     name="camera_view"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Choose between snapshot or live stream (requires camera_image)
                       </span>
                     }
@@ -2159,7 +2189,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Entities</span>}
                     name="entities"
                     help={
-                      <span style={{ color: '#666' }}>Select entities to display over image</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Select entities to display over image
+                      </span>
                     }
                   >
                     <EntityMultiSelect placeholder="Select entities" />
@@ -2325,7 +2357,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Entities</span>}
                     name="entities"
-                    help={<span style={{ color: '#666' }}>Select entities to track on map</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Select entities to track on map
+                      </span>
+                    }
                   >
                     <EntityMultiSelect
                       placeholder="Select entities"
@@ -2356,7 +2392,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>States</span>}
                     name="states"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Alarm states to display (comma-separated)
                       </span>
                     }
@@ -2399,7 +2435,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Entities</span>}
                     name="entities"
                     rules={[{ required: true, message: 'At least one entity is required' }]}
-                    help={<span style={{ color: '#666' }}>Select entities to graph</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Select entities to graph
+                      </span>
+                    }
                   >
                     <EntityMultiSelect
                       data-testid="sparkline-entities"
@@ -2415,7 +2455,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Time Range</span>}
                     name="hours_to_show"
-                    help={<span style={{ color: '#666' }}>Preset sparkline history range</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Preset sparkline history range
+                      </span>
+                    }
                   >
                     <Select
                       data-testid="sparkline-range"
@@ -2444,7 +2488,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Points per Hour</span>}
                     name="points_per_hour"
-                    help={<span style={{ color: '#666' }}>Data point density</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Data point density</span>
+                    }
                   >
                     <InputNumber
                       data-testid="sparkline-points-per-hour"
@@ -2471,7 +2517,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Render Density</span>}
                     name="height"
                     help={
-                      <span style={{ color: '#666' }}>Compact mode helps dense dashboards</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Compact mode helps dense dashboards
+                      </span>
                     }
                   >
                     <Select
@@ -2594,7 +2642,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Use Light Color</span>}
                     name="use_light_color"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Use the light's current color for the icon
                       </span>
                     }
@@ -2620,7 +2668,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           label={<span style={{ color: 'white' }}>Icon Color</span>}
                           name="icon_color"
                           help={
-                            <span style={{ color: '#666' }}>
+                            <span style={{ color: token.colorTextTertiary }}>
                               Overrides icon color when not using the light color
                             </span>
                           }
@@ -2712,7 +2760,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>HVAC Modes</span>}
                     name="hvac_modes"
-                    help={<span style={{ color: '#666' }}>Climate modes to display</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Climate modes to display
+                      </span>
+                    }
                   >
                     <Select
                       mode="multiple"
@@ -2798,7 +2850,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Icon Animation</span>}
                     name="icon_animation"
-                    help={<span style={{ color: '#666' }}>Animate icon when fan is on</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Animate icon when fan is on
+                      </span>
+                    }
                   >
                     <Select
                       placeholder="Select option"
@@ -2893,7 +2949,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Gap Preset</span>}
-                    help={<span style={{ color: '#666' }}>Spacing between stack cards</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Spacing between stack cards
+                      </span>
+                    }
                   >
                     <Select
                       value={resolveGapPreset(watchedGap, DEFAULT_LAYOUT_GAP)}
@@ -2929,7 +2989,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     <Form.Item
                       label={<span style={{ color: 'white' }}>Custom Gap (px)</span>}
                       name="gap"
-                      help={<span style={{ color: '#666' }}>Range: 0 to 64 pixels</span>}
+                      help={
+                        <span style={{ color: token.colorTextTertiary }}>
+                          Range: 0 to 64 pixels
+                        </span>
+                      }
                     >
                       <InputNumber
                         min={0}
@@ -2944,7 +3008,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Align Items</span>}
                     name="align_items"
                     help={
-                      <span style={{ color: '#666' }}>Cross-axis alignment of child cards</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Cross-axis alignment of child cards
+                      </span>
                     }
                   >
                     <Select
@@ -2969,7 +3035,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                         label={<span style={{ color: 'white' }}>Justify Content</span>}
                         name="justify_content"
                         help={
-                          <span style={{ color: '#666' }}>
+                          <span style={{ color: token.colorTextTertiary }}>
                             Main-axis distribution when row has free space
                           </span>
                         }
@@ -2993,7 +3059,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                         label={<span style={{ color: 'white' }}>Wrap</span>}
                         name="wrap"
                         help={
-                          <span style={{ color: '#666' }}>
+                          <span style={{ color: token.colorTextTertiary }}>
                             When wrapping, gap applies between rows and columns
                           </span>
                         }
@@ -3031,7 +3097,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Columns</span>}
                     name="columns"
-                    help={<span style={{ color: '#666' }}>Number of columns in the grid</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Number of columns in the grid
+                      </span>
+                    }
                   >
                     <InputNumber min={1} max={12} style={{ width: '100%' }} placeholder="3" />
                   </Form.Item>
@@ -3039,7 +3109,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Square</span>}
                     name="square"
-                    help={<span style={{ color: '#666' }}>Force square aspect ratio</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Force square aspect ratio
+                      </span>
+                    }
                   >
                     <Select
                       placeholder="Select option"
@@ -3477,12 +3551,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                             key={field.key}
                             style={{
                               padding: '12px',
-                              border: '1px solid #2a2a2a',
+                              border: `1px solid ${token.colorBorderSecondary}`,
                               borderRadius: '8px',
-                              background: '#1a1a1a',
+                              background: token.colorFillAlter,
                             }}
                           >
-                            <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                            <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
                               Slide {index + 1}
                             </Text>
 
@@ -3621,7 +3695,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Entity</span>}
                     name={['conditions', 0, 'entity']}
-                    help={<span style={{ color: '#666' }}>Entity to check condition on</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Entity to check condition on
+                      </span>
+                    }
                   >
                     <EntitySelect data-testid="entity-select" placeholder="Select entity" />
                   </Form.Item>
@@ -3630,7 +3708,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>State</span>}
                     name={['conditions', 0, 'state']}
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Show card when entity matches this state
                       </span>
                     }
@@ -3654,7 +3732,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Graph Span</span>}
                     name="graph_span"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Time span to display (e.g., 1h, 12h, 1d, 1w)
                       </span>
                     }
@@ -3674,7 +3752,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Update Interval</span>}
                     name="update_interval"
-                    help={<span style={{ color: '#666' }}>Refresh cadence used by ApexCharts</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Refresh cadence used by ApexCharts
+                      </span>
+                    }
                   >
                     <Select
                       data-testid="apexcharts-update-interval"
@@ -3773,12 +3855,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                             key={field.key}
                             style={{
                               padding: '12px',
-                              border: '1px solid #2a2a2a',
+                              border: `1px solid ${token.colorBorderSecondary}`,
                               borderRadius: '8px',
-                              background: '#1a1a1a',
+                              background: token.colorFillAlter,
                             }}
                           >
-                            <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                            <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
                               Series {index + 1}
                             </Text>
 
@@ -3967,12 +4049,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                             key={field.key}
                             style={{
                               padding: '12px',
-                              border: '1px solid #2a2a2a',
+                              border: `1px solid ${token.colorBorderSecondary}`,
                               borderRadius: '8px',
-                              background: '#1a1a1a',
+                              background: token.colorFillAlter,
                             }}
                           >
-                            <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                            <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
                               Series {index + 1}
                             </Text>
 
@@ -4139,12 +4221,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                             key={field.key}
                             style={{
                               padding: '12px',
-                              border: '1px solid #2a2a2a',
+                              border: `1px solid ${token.colorBorderSecondary}`,
                               borderRadius: '8px',
-                              background: '#1a1a1a',
+                              background: token.colorFillAlter,
                             }}
                           >
-                            <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                            <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
                               Segment {index + 1}
                             </Text>
 
@@ -4256,7 +4338,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Precision</span>}
                     name="precision"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Decimal precision for rounding and labels
                       </span>
                     }
@@ -4303,7 +4385,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="commit_on_release"
                     valuePropName="checked"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         When enabled, value commits on pointer/key release only
                       </span>
                     }
@@ -4332,12 +4414,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                             key={field.key}
                             style={{
                               padding: '12px',
-                              border: '1px solid #2a2a2a',
+                              border: `1px solid ${token.colorBorderSecondary}`,
                               borderRadius: '8px',
-                              background: '#1a1a1a',
+                              background: token.colorFillAlter,
                             }}
                           >
-                            <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                            <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
                               Zone {index + 1}
                             </Text>
 
@@ -4426,7 +4508,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Start Angle</span>}
                     name="start_angle"
-                    help={<span style={{ color: '#666' }}>Rotation offset in degrees</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Rotation offset in degrees
+                      </span>
+                    }
                   >
                     <InputNumber
                       data-testid="progress-ring-start-angle"
@@ -4514,12 +4600,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                             key={field.key}
                             style={{
                               padding: '12px',
-                              border: '1px solid #2a2a2a',
+                              border: `1px solid ${token.colorBorderSecondary}`,
                               borderRadius: '8px',
-                              background: '#1a1a1a',
+                              background: token.colorFillAlter,
                             }}
                           >
-                            <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                            <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
                               Ring {index + 1}
                             </Text>
 
@@ -4596,8 +4682,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                               />
                             </Form.Item>
 
-                            <Divider style={{ borderColor: '#333', margin: '8px 0' }} />
-                            <Text style={{ color: '#d9d9d9', fontSize: '12px' }}>
+                            <Divider
+                              style={{ borderColor: token.colorBorderSecondary, margin: '8px 0' }}
+                            />
+                            <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
                               Gradient Stroke (optional)
                             </Text>
 
@@ -4634,12 +4722,17 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                     <div
                                       key={stopField.key}
                                       style={{
-                                        border: '1px solid #303030',
+                                        border: `1px solid ${token.colorBorderSecondary}`,
                                         borderRadius: 8,
                                         padding: 8,
                                       }}
                                     >
-                                      <Text style={{ color: '#bfbfbf', fontSize: '11px' }}>
+                                      <Text
+                                        style={{
+                                          color: token.colorTextSecondary,
+                                          fontSize: '11px',
+                                        }}
+                                      >
                                         Gradient Stop {stopIndex + 1}
                                       </Text>
                                       <Form.Item
@@ -4717,8 +4810,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                               )}
                             </Form.List>
 
-                            <Divider style={{ borderColor: '#333', margin: '8px 0' }} />
-                            <Text style={{ color: '#d9d9d9', fontSize: '12px' }}>
+                            <Divider
+                              style={{ borderColor: token.colorBorderSecondary, margin: '8px 0' }}
+                            />
+                            <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
                               Threshold Colors (optional)
                             </Text>
 
@@ -4729,12 +4824,17 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                     <div
                                       key={thresholdField.key}
                                       style={{
-                                        border: '1px solid #303030',
+                                        border: `1px solid ${token.colorBorderSecondary}`,
                                         borderRadius: 8,
                                         padding: 8,
                                       }}
                                     >
-                                      <Text style={{ color: '#bfbfbf', fontSize: '11px' }}>
+                                      <Text
+                                        style={{
+                                          color: token.colorTextSecondary,
+                                          fontSize: '11px',
+                                        }}
+                                      >
                                         Threshold {thresholdIndex + 1}
                                       </Text>
                                       <Form.Item
@@ -5000,12 +5100,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                             key={field.key}
                             style={{
                               padding: '12px',
-                              border: '1px solid #2a2a2a',
+                              border: `1px solid ${token.colorBorderSecondary}`,
                               borderRadius: '8px',
-                              background: '#1a1a1a',
+                              background: token.colorFillAlter,
                             }}
                           >
-                            <Text style={{ color: '#bfbfbf', fontSize: '12px' }}>
+                            <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
                               Tab {index + 1}
                             </Text>
 
@@ -5260,14 +5360,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                   <div
                                     key={key}
                                     style={{
-                                      border: '1px solid #2d2d2d',
+                                      border: `1px solid ${token.colorBorderSecondary}`,
                                       borderRadius: '8px',
                                       padding: '12px',
                                     }}
                                   >
                                     <Text
                                       strong
-                                      style={{ color: '#9aa4b2' }}
+                                      style={{ color: token.colorTextSecondary }}
                                     >{`Action ${index + 1}`}</Text>
 
                                     <Form.Item
@@ -5361,7 +5461,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Card Type</span>}
                     name="card_type"
                     rules={[{ required: true, message: 'Card type is required' }]}
-                    help={<span style={{ color: '#666' }}>Type of bubble card</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Type of bubble card</span>
+                    }
                   >
                     <Select
                       data-testid="bubble-card-type-select"
@@ -5397,7 +5499,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                             },
                           ]}
                           help={
-                            <span style={{ color: '#666' }}>
+                            <span style={{ color: token.colorTextTertiary }}>
                               URL hash that opens this pop-up (e.g. #kitchen). A leading # is added
                               automatically.
                             </span>
@@ -5453,7 +5555,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Disable Window</span>}
                     name="disable_window"
-                    help={<span style={{ color: '#666' }}>Hide window open indicator</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Hide window open indicator
+                      </span>
+                    }
                   >
                     <Select
                       placeholder="Select option"
@@ -5467,7 +5573,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Disable Summer</span>}
                     name="disable_summer"
-                    help={<span style={{ color: '#666' }}>Hide summer mode indicator</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Hide summer mode indicator
+                      </span>
+                    }
                   >
                     <Select
                       placeholder="Select option"
@@ -5481,7 +5591,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Disable Heat</span>}
                     name="disable_heat"
-                    help={<span style={{ color: '#666' }}>Hide heating indicator</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Hide heating indicator</span>
+                    }
                   >
                     <Select
                       placeholder="Select option"
@@ -5504,7 +5616,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Grid Entity</span>}
                     name={['entities', 'grid', 'entity']}
                     help={
-                      <span style={{ color: '#666' }}>Entity showing grid power consumption</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Entity showing grid power consumption
+                      </span>
                     }
                   >
                     <EntitySelect placeholder="Select grid entity" filterDomains={['sensor']} />
@@ -5514,7 +5628,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Solar Entity</span>}
                     name={['entities', 'solar', 'entity']}
                     help={
-                      <span style={{ color: '#666' }}>Entity showing solar power production</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Entity showing solar power production
+                      </span>
                     }
                   >
                     <EntitySelect placeholder="Select solar entity" filterDomains={['sensor']} />
@@ -5523,7 +5639,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Battery Entity</span>}
                     name={['entities', 'battery', 'entity']}
-                    help={<span style={{ color: '#666' }}>Entity showing battery power</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Entity showing battery power
+                      </span>
+                    }
                   >
                     <EntitySelect placeholder="Select battery entity" filterDomains={['sensor']} />
                   </Form.Item>
@@ -5532,7 +5652,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Home Entity</span>}
                     name={['entities', 'home', 'entity']}
                     help={
-                      <span style={{ color: '#666' }}>Entity showing home power consumption</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Entity showing home power consumption
+                      </span>
                     }
                   >
                     <EntitySelect placeholder="Select home entity" filterDomains={['sensor']} />
@@ -5554,7 +5676,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Grid Entity</span>}
                     name={['entities', 'grid', 'entity']}
                     help={
-                      <span style={{ color: '#666' }}>Entity showing grid power consumption</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Entity showing grid power consumption
+                      </span>
                     }
                   >
                     <EntitySelect placeholder="Select grid entity" filterDomains={['sensor']} />
@@ -5564,7 +5688,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Solar Entity</span>}
                     name={['entities', 'solar', 'entity']}
                     help={
-                      <span style={{ color: '#666' }}>Entity showing solar power production</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Entity showing solar power production
+                      </span>
                     }
                   >
                     <EntitySelect placeholder="Select solar entity" filterDomains={['sensor']} />
@@ -5573,7 +5699,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Battery Entity</span>}
                     name={['entities', 'battery', 'entity']}
-                    help={<span style={{ color: '#666' }}>Entity showing battery power</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Entity showing battery power
+                      </span>
+                    }
                   >
                     <EntitySelect placeholder="Select battery entity" filterDomains={['sensor']} />
                   </Form.Item>
@@ -5604,7 +5734,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                               : []
                           }
                           help={
-                            <span style={{ color: '#666' }}>
+                            <span style={{ color: token.colorTextTertiary }}>
                               Battery percentage entity — required by power-flow-card-plus when a
                               battery is set
                             </span>
@@ -5624,7 +5754,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Home Entity</span>}
                     name={['entities', 'home', 'entity']}
                     help={
-                      <span style={{ color: '#666' }}>Entity showing home power consumption</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Entity showing home power consumption
+                      </span>
                     }
                   >
                     <EntitySelect placeholder="Select home entity" filterDomains={['sensor']} />
@@ -5646,7 +5778,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>URL</span>}
                     name="url"
                     rules={[{ required: true, message: 'URL is required' }]}
-                    help={<span style={{ color: '#666' }}>WebRTC stream URL</span>}
+                    help={<span style={{ color: token.colorTextTertiary }}>WebRTC stream URL</span>}
                   >
                     <Input placeholder="rtsp://camera.local/stream" />
                   </Form.Item>
@@ -5654,7 +5786,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Entity</span>}
                     name="entity"
-                    help={<span style={{ color: '#666' }}>Camera entity (optional)</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Camera entity (optional)
+                      </span>
+                    }
                   >
                     <EntitySelect placeholder="Select camera entity" filterDomains={['camera']} />
                   </Form.Item>
@@ -5663,7 +5799,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Poster</span>}
                     name="poster"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Poster image URL (shown before stream loads)
                       </span>
                     }
@@ -5692,7 +5828,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Update Interval</span>}
                     name="update_interval"
-                    help={<span style={{ color: '#666' }}>Update interval in seconds</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Update interval in seconds
+                      </span>
+                    }
                   >
                     <InputNumber placeholder="1" style={{ width: '100%' }} />
                   </Form.Item>
@@ -5712,7 +5852,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Frigate URL</span>}
                     name="frigate_url"
-                    help={<span style={{ color: '#666' }}>URL to your Frigate instance</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        URL to your Frigate instance
+                      </span>
+                    }
                   >
                     <Input placeholder="http://frigate.local:5000" />
                   </Form.Item>
@@ -5744,7 +5888,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Camera View</span>}
                     name="camera_view"
-                    help={<span style={{ color: '#666' }}>Display mode for camera feed</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Display mode for camera feed
+                      </span>
+                    }
                   >
                     <Select
                       placeholder="Select view mode"
@@ -5789,7 +5937,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Title</span>}
                     name="title"
-                    help={<span style={{ color: '#666' }}>Section title text</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Section title text</span>
+                    }
                   >
                     <Input placeholder="Enter title" />
                   </Form.Item>
@@ -5797,7 +5947,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Subtitle</span>}
                     name="subtitle"
-                    help={<span style={{ color: '#666' }}>Optional subtitle text</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Optional subtitle text</span>
+                    }
                   >
                     <Input placeholder="Enter subtitle" />
                   </Form.Item>
@@ -5805,7 +5957,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Alignment</span>}
                     name="alignment"
-                    help={<span style={{ color: '#666' }}>Text alignment</span>}
+                    help={<span style={{ color: token.colorTextTertiary }}>Text alignment</span>}
                   >
                     <Select
                       placeholder="Select alignment"
@@ -5830,7 +5982,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Entity</span>}
                     name="entity"
-                    help={<span style={{ color: '#666' }}>Entity to control</span>}
+                    help={<span style={{ color: token.colorTextTertiary }}>Entity to control</span>}
                   >
                     <EntitySelect data-testid="entity-select" placeholder="Select entity" />
                   </Form.Item>
@@ -5838,7 +5990,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Name</span>}
                     name="name"
-                    help={<span style={{ color: '#666' }}>Override entity name</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Override entity name</span>
+                    }
                   >
                     <Input placeholder="Card name (optional)" />
                   </Form.Item>
@@ -5846,7 +6000,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Icon</span>}
                     name="icon"
-                    help={<span style={{ color: '#666' }}>Override entity icon</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Override entity icon</span>
+                    }
                   >
                     <IconSelect placeholder="Select icon" />
                   </Form.Item>
@@ -5859,7 +6015,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Entity</span>}
                     name="entity"
-                    help={<span style={{ color: '#666' }}>Media player entity</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Media player entity</span>
+                    }
                   >
                     <EntitySelect
                       placeholder="Select media player"
@@ -5870,7 +6028,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Name</span>}
                     name="name"
-                    help={<span style={{ color: '#666' }}>Override entity name</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Override entity name</span>
+                    }
                   >
                     <Input placeholder="Card name (optional)" />
                   </Form.Item>
@@ -5878,7 +6038,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Icon</span>}
                     name="icon"
-                    help={<span style={{ color: '#666' }}>Override entity icon</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Override entity icon</span>
+                    }
                   >
                     <IconSelect placeholder="Select icon" />
                   </Form.Item>
@@ -5886,7 +6048,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Show Source</span>}
                     name="hide_source"
-                    help={<span style={{ color: '#666' }}>Show source selection</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Show source selection</span>
+                    }
                   >
                     <Select
                       placeholder="Select option"
@@ -5900,7 +6064,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Show Volume</span>}
                     name="hide_volume"
-                    help={<span style={{ color: '#666' }}>Show volume slider</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Show volume slider</span>
+                    }
                   >
                     <Select
                       placeholder="Select option"
@@ -5926,7 +6092,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Entity</span>}
                     name="entity"
-                    help={<span style={{ color: '#666' }}>Entity to control with slider</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Entity to control with slider
+                      </span>
+                    }
                   >
                     <EntitySelect data-testid="entity-select" placeholder="Select entity" />
                   </Form.Item>
@@ -5934,7 +6104,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Name</span>}
                     name="name"
-                    help={<span style={{ color: '#666' }}>Override entity name</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Override entity name</span>
+                    }
                   >
                     <Input placeholder="Entity name (optional)" />
                   </Form.Item>
@@ -5942,7 +6114,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Minimum</span>}
                     name="min"
-                    help={<span style={{ color: '#666' }}>Minimum slider value</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Minimum slider value</span>
+                    }
                   >
                     <InputNumber placeholder="0" style={{ width: '100%' }} />
                   </Form.Item>
@@ -5950,7 +6124,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Maximum</span>}
                     name="max"
-                    help={<span style={{ color: '#666' }}>Maximum slider value</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Maximum slider value</span>
+                    }
                   >
                     <InputNumber placeholder="100" style={{ width: '100%' }} />
                   </Form.Item>
@@ -5958,7 +6134,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Step</span>}
                     name="step"
-                    help={<span style={{ color: '#666' }}>Slider step increment</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Slider step increment</span>
+                    }
                   >
                     <InputNumber placeholder="1" style={{ width: '100%' }} />
                   </Form.Item>
@@ -5970,7 +6148,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Title</span>}
                     name="title"
-                    help={<span style={{ color: '#666' }}>Card title</span>}
+                    help={<span style={{ color: token.colorTextTertiary }}>Card title</span>}
                   >
                     <Input placeholder="Battery Levels" />
                   </Form.Item>
@@ -5978,7 +6156,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Entities</span>}
                     name="entities"
-                    help={<span style={{ color: '#666' }}>Battery entities to monitor</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Battery entities to monitor
+                      </span>
+                    }
                   >
                     <EntityMultiSelect placeholder="Select battery entities" />
                   </Form.Item>
@@ -5986,7 +6168,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Sort By Level</span>}
                     name="sort_by_level"
-                    help={<span style={{ color: '#666' }}>Sort entities by battery level</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Sort entities by battery level
+                      </span>
+                    }
                   >
                     <Select
                       placeholder="Select sort order"
@@ -6001,7 +6187,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Collapse</span>}
                     name="collapse"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Number of entities to show (rest are collapsed)
                       </span>
                     }
@@ -6024,7 +6210,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Style (CSS)</span>}
                     name="style"
-                    help={<span style={{ color: '#666' }}>Custom CSS styling for the card</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Custom CSS styling for the card
+                      </span>
+                    }
                   >
                     <Input.TextArea
                       placeholder="ha-card { ... }"
@@ -6036,7 +6226,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Style Color</span>}
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Insert or update the CSS color value within the style block
                       </span>
                     }
@@ -6073,7 +6263,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Title</span>}
                     name="title"
-                    help={<span style={{ color: '#666' }}>Card title (optional)</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Card title (optional)</span>
+                    }
                   >
                     <Input placeholder="Enter title" />
                   </Form.Item>
@@ -6127,7 +6319,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Entity</span>}
                     name="entity"
-                    help={<span style={{ color: '#666' }}>Primary entity</span>}
+                    help={<span style={{ color: token.colorTextTertiary }}>Primary entity</span>}
                   >
                     <EntitySelect data-testid="entity-select" placeholder="Select entity" />
                   </Form.Item>
@@ -6135,7 +6327,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Name</span>}
                     name="name"
-                    help={<span style={{ color: '#666' }}>Override entity name</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Override entity name</span>
+                    }
                   >
                     <Input placeholder="Entity name (optional)" />
                   </Form.Item>
@@ -6143,7 +6337,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Secondary Info</span>}
                     name="secondary_info"
-                    help={<span style={{ color: '#666' }}>Secondary information to display</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Secondary information to display
+                      </span>
+                    }
                   >
                     <Select
                       placeholder="Select secondary info"
@@ -6203,7 +6401,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Template Name</span>}
                     name="template"
-                    help={<span style={{ color: '#666' }}>Name of the template to use</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Name of the template to use
+                      </span>
+                    }
                   >
                     <Input placeholder="template_name" />
                   </Form.Item>
@@ -6254,7 +6456,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Primary Text</span>}
                     name="primary"
-                    help={<span style={{ color: '#666' }}>Primary text (supports templates)</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Primary text (supports templates)
+                      </span>
+                    }
                   >
                     <Input placeholder="Template text" />
                   </Form.Item>
@@ -6263,7 +6469,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Secondary Text</span>}
                     name="secondary"
                     help={
-                      <span style={{ color: '#666' }}>Secondary text (supports templates)</span>
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Secondary text (supports templates)
+                      </span>
                     }
                   >
                     <Input placeholder="Template text" />
@@ -6272,7 +6480,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Icon</span>}
                     name="icon"
-                    help={<span style={{ color: '#666' }}>Icon to display</span>}
+                    help={<span style={{ color: token.colorTextTertiary }}>Icon to display</span>}
                   >
                     <IconSelect placeholder="Select icon" />
                   </Form.Item>
@@ -6372,12 +6580,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 'custom:simple-swipe-card',
                 'custom:decluttering-card',
               ].includes(card.type) && (
-                <div style={{ color: '#888', fontSize: '12px' }}>
-                  <Text style={{ color: '#888' }}>
+                <div style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
+                  <Text style={{ color: token.colorTextSecondary }}>
                     Property editor for {card.type} cards is not yet implemented.
                   </Text>
                   <br />
-                  <Text style={{ color: '#666' }}>
+                  <Text style={{ color: token.colorTextTertiary }}>
                     {['horizontal-stack', 'vertical-stack', 'grid'].includes(card.type)
                       ? 'Layout cards contain other cards. Edit the YAML file directly to configure nested cards.'
                       : 'Edit the YAML file directly to modify this card.'}
@@ -6399,7 +6607,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Color Type</span>}
                     name="color_type"
-                    help={<span style={{ color: '#666' }}>How to color the button</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        How to color the button
+                      </span>
+                    }
                   >
                     <Select
                       placeholder="Select color type"
@@ -6415,7 +6627,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Color</span>}
                     name="color"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         Button color (type 'auto' or pick a custom color)
                       </span>
                     }
@@ -6428,7 +6640,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Icon Color</span>}
-                    help={<span style={{ color: '#666' }}>Configure icon color behavior</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>
+                        Configure icon color behavior
+                      </span>
+                    }
                   >
                     <Space direction="vertical" style={{ width: '100%' }} size="small">
                       <div data-testid="button-card-icon-color-mode">
@@ -6483,7 +6699,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                 name="icon_color_attribute"
                                 label={<span style={{ color: 'white' }}>Attribute</span>}
                                 help={
-                                  <span style={{ color: '#666' }}>
+                                  <span style={{ color: token.colorTextTertiary }}>
                                     Attribute value must be a valid color string
                                   </span>
                                 }
@@ -6519,7 +6735,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <Form.Item
                     label={<span style={{ color: 'white' }}>Size</span>}
                     name="size"
-                    help={<span style={{ color: '#666' }}>Button size percentage</span>}
+                    help={
+                      <span style={{ color: token.colorTextTertiary }}>Button size percentage</span>
+                    }
                   >
                     <Input placeholder="40%" />
                   </Form.Item>
@@ -6584,7 +6802,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     label={<span style={{ color: 'white' }}>Style (CSS)</span>}
                     name="style"
                     help={
-                      <span style={{ color: '#666' }}>
+                      <span style={{ color: token.colorTextTertiary }}>
                         CSS applied to the card (background, color, padding, etc.)
                       </span>
                     }
@@ -6631,7 +6849,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               ref={editorContainerRef}
               style={{
                 height: 'calc(100vh - 280px)',
-                border: '1px solid #434343',
+                border: `1px solid ${token.colorBorder}`,
                 borderRadius: '4px',
                 overflow: 'hidden',
               }}
@@ -6660,7 +6878,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <Title level={4} style={{ color: 'white', marginTop: 0 }}>
           Properties
         </Title>
-        <Text style={{ color: '#888' }}>Select a card to edit its properties</Text>
+        <Text style={{ color: token.colorTextSecondary }}>
+          Select a card to edit its properties
+        </Text>
       </div>
     );
   }
@@ -6712,14 +6932,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       </div>
 
       <div style={{ marginBottom: '12px' }}>
-        <Text strong style={{ color: '#00d9ff' }}>
+        <Text strong style={{ color: token.colorPrimary }}>
           {cardName}
         </Text>
         <br />
-        <Text style={{ color: '#888', fontSize: '12px' }}>{card.type}</Text>
+        <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>{card.type}</Text>
       </div>
 
-      <Divider style={{ margin: '12px 0', borderColor: '#434343' }} />
+      <Divider style={{ margin: '12px 0', borderColor: token.colorBorder }} />
 
       <Tabs activeKey={activeTab} onChange={handleTabChange} items={tabItems} />
     </div>

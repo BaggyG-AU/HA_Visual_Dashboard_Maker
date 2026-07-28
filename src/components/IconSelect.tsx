@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Select, Space, Typography } from 'antd';
+import { Select, Space, Typography, theme } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
@@ -23,6 +23,7 @@ export const IconSelect: React.FC<IconSelectProps> = ({
   allowClear = true,
   'data-testid': testId,
 }) => {
+  const { token } = theme.useToken();
   const [searchText, setSearchText] = useState('');
 
   // Common Home Assistant icons
@@ -137,8 +138,8 @@ export const IconSelect: React.FC<IconSelectProps> = ({
         style={{
           marginTop: '8px',
           padding: '12px',
-          background: '#1f1f1f',
-          border: '1px solid #2a2a2a',
+          background: token.colorBgElevated,
+          border: `1px solid ${token.colorBorderSecondary}`,
           borderRadius: '4px',
           display: 'flex',
           alignItems: 'center',
@@ -153,8 +154,10 @@ export const IconSelect: React.FC<IconSelectProps> = ({
           }}
         />
         <div>
-          <Text style={{ color: '#888', fontSize: '11px', display: 'block' }}>Selected Icon:</Text>
-          <Text style={{ color: '#fff', fontSize: '13px' }}>{value}</Text>
+          <Text style={{ color: token.colorTextSecondary, fontSize: '11px', display: 'block' }}>
+            Selected Icon:
+          </Text>
+          <Text style={{ color: token.colorText, fontSize: '13px' }}>{value}</Text>
         </div>
       </div>
     );
@@ -179,7 +182,7 @@ export const IconSelect: React.FC<IconSelectProps> = ({
         styles={{
           popup: {
             root: {
-              backgroundColor: '#1f1f1f',
+              backgroundColor: token.colorBgElevated,
             },
           },
         }}
@@ -199,11 +202,11 @@ export const IconSelect: React.FC<IconSelectProps> = ({
         style={{
           marginTop: '8px',
           padding: '8px',
-          background: '#1a1a1a',
+          background: token.colorFillAlter,
           borderRadius: '4px',
         }}
       >
-        <Text style={{ color: '#666', fontSize: '11px' }}>
+        <Text style={{ color: token.colorTextTertiary, fontSize: '11px' }}>
           💡 Tip: You can also type custom MDI icon names (e.g., mdi:custom-icon)
         </Text>
       </div>

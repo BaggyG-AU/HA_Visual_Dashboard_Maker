@@ -210,6 +210,36 @@ const nextFreeRow = (cards: Card[]): number =>
 
 const App: React.FC = () => {
   const [isDarkTheme, setIsDarkTheme] = useState<boolean>(true);
+
+  // The algorithm handed to ConfigProvider below. Derived once so the shell's
+  // own hand-styled surfaces can read the SAME tokens antd is about to apply.
+  const themeAlgorithm = isDarkTheme ? theme.darkAlgorithm : theme.defaultAlgorithm;
+
+  // ⚠ theme.useToken() would be wrong HERE: this component renders the
+  // ConfigProvider, so the hook would read the OUTER (default) context and the
+  // shell would stay light while everything inside it went dark. Children of the
+  // provider — CardPalette, PropertiesPanel, the dialogs — use useToken() and are
+  // correct. getDesignToken resolves the same tokens without that ordering trap.
+  const token = useMemo(
+    () => theme.getDesignToken({ algorithm: themeAlgorithm }),
+    [themeAlgorithm],
+  );
+
+  // HAVDM's cyan is product identity, not an antd token, so it is kept rather
+  // than flattened into colorPrimary — but #00d9ff on white is unreadable, so
+  // the light theme gets a darkened cyan of the same hue.
+  const accentColor = isDarkTheme ? '#00d9ff' : '#006d8f';
+
+  // ⭐ Reflect the theme onto the DOM. Before this, `isDarkTheme` fed exactly one
+  // consumer — antd's ConfigProvider — which restyles antd components and nothing
+  // else. Every hand-styled surface was blind to the theme, which is why the
+  // canvas stayed black when you switched to light (UAT SHELL-03, HA-06). This
+  // attribute is what non-antd CSS and the e2e suite key off.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute('data-theme', isDarkTheme ? 'dark' : 'light');
+    return () => root.removeAttribute('data-theme');
+  }, [isDarkTheme]);
   const ignoreNextLayoutChangeRef = useRef<boolean>(false);
   const [deployDialogVisible, setDeployDialogVisible] = useState<boolean>(false);
   const [dashboardBrowserVisible, setDashboardBrowserVisible] = useState<boolean>(false);
@@ -2309,7 +2339,7 @@ const App: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>
+              <div style={{ color: token.colorText, fontSize: '20px', fontWeight: 'bold' }}>
                 HA Visual Dashboard Maker
               </div>
               <Space>
@@ -2353,7 +2383,7 @@ const App: React.FC = () => {
               <Badge
                 status={isConnected ? 'success' : 'default'}
                 text={isConnected ? 'Connected' : 'Not Connected'}
-                style={{ color: '#888' }}
+                style={{ color: token.colorTextSecondary }}
               />
               {isConnected ? (
                 <Button size="small" onClick={handleDisconnect}>
@@ -2383,19 +2413,28 @@ const App: React.FC = () => {
             </Space>
           </Header>
           <Layout>
-            <Sider width={280} theme="dark" style={{ height: '100vh', overflow: 'hidden' }}>
+            <Sider
+              width={280}
+              theme={isDarkTheme ? 'dark' : 'light'}
+              style={{ height: '100vh', overflow: 'hidden' }}
+            >
               <CardPalette onCardAdd={handleCardAdd} />
             </Sider>
             <Layout style={{ padding: '24px' }}>
               <Content
                 ref={canvasContainerRef}
+                data-testid="canvas-surface"
                 style={{
                   padding: 24,
                   margin: 0,
                   minHeight: 280,
-                  background: '#141414',
+                  // ⭐ Was hardcoded '#141414' / 'white', which never consulted
+                  // isDarkTheme — the canvas stayed black in light mode (UAT
+                  // SHELL-03, HA-06). antd's dark colorBgContainer IS #141414, so
+                  // the dark theme renders identically; only light changes.
+                  background: token.colorBgContainer,
                   borderRadius: 8,
-                  color: 'white',
+                  color: token.colorText,
                 }}
               >
                 {error && (
@@ -2410,7 +2449,7 @@ const App: React.FC = () => {
 
                 {!config && !error && (
                   <>
-                    <h1 style={{ color: '#00d9ff' }}>Welcome to HA Visual Dashboard Maker</h1>
+                    <h1 style={{ color: accentColor }}>Welcome to HA Visual Dashboard Maker</h1>
                     <p>Phase 4: Standard Card Support - In Progress</p>
 
                     <div style={{ marginTop: '24px' }}>
@@ -2453,7 +2492,13 @@ const App: React.FC = () => {
                       </Space>
                     </div>
 
-                    <div style={{ marginTop: '32px', color: '#888', fontSize: '14px' }}>
+                    <div
+                      style={{
+                        marginTop: '32px',
+                        color: token.colorTextSecondary,
+                        fontSize: '14px',
+                      }}
+                    >
                       <p>
                         Create a new blank dashboard, open a local YAML file, or browse dashboards
                         from your Home Assistant instance.
@@ -2474,13 +2519,19 @@ const App: React.FC = () => {
                       }}
                     >
                       <div>
-                        <h2 style={{ color: '#00d9ff', margin: 0 }}>
+                        <h2 style={{ color: accentColor, margin: 0 }}>
                           {config.title || 'Dashboard'}
                           {isDirty && (
-                            <span style={{ color: '#ff9800', marginLeft: '8px' }}>*</span>
+                            <span style={{ color: token.colorWarning, marginLeft: '8px' }}>*</span>
                           )}
                         </h2>
-                        <p style={{ color: '#888', fontSize: '12px', margin: '4px 0 0 0' }}>
+                        <p
+                          style={{
+                            color: token.colorTextSecondary,
+                            fontSize: '12px',
+                            margin: '4px 0 0 0',
+                          }}
+                        >
                           {filePath}
                         </p>
                       </div>
@@ -2811,8 +2862,8 @@ const App: React.FC = () => {
               bottom: 8,
               right: 8,
               zIndex: 2000,
-              background: '#1f1f1f',
-              color: '#fff',
+              background: token.colorBgElevated,
+              color: token.colorText,
               padding: '8px 12px',
               border: '1px solid #434343',
               borderRadius: 4,
