@@ -23,11 +23,20 @@ import {
 import { haConnectionService } from '../services/haConnectionService';
 import { logger } from '../services/logger';
 import { PresetMarketplacePanel } from '../features/preset-marketplace/PresetMarketplacePanel';
+import { describeDashboardFetchFailure } from '../utils/dashboardLoadDiagnostics';
 import * as yaml from 'js-yaml';
 
 const { Text } = Typography;
 
 type BrowserTab = 'dashboards' | 'presets';
+
+/**
+ * Home Assistant's default dashboard. It is deliberately ABSENT from
+ * `lovelace/dashboards/list`, so HAVDM synthesises the entry below — and
+ * addresses it with `url_path: null`, which is what `lovelace/config` expects
+ * for the default (HA-03).
+ */
+const DEFAULT_DASHBOARD_ID = 'lovelace';
 
 interface Dashboard {
   id: string;
@@ -119,10 +128,10 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
       const allDashboards: Dashboard[] = [
         // Always include the default dashboard
         {
-          id: 'lovelace',
+          id: DEFAULT_DASHBOARD_ID,
           title: 'Overview',
           icon: 'mdi:view-dashboard',
-          url_path: 'lovelace',
+          url_path: DEFAULT_DASHBOARD_ID,
           require_admin: false,
           show_in_sidebar: true,
         },
@@ -165,12 +174,22 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
 
       // For default dashboard, use null as urlPath
       // For custom dashboards, use the url_path field (NOT the id field)
-      const urlPath = dashboard.id === 'lovelace' ? null : dashboard.url_path;
+      const urlPath = dashboard.id === DEFAULT_DASHBOARD_ID ? null : dashboard.url_path;
 
       // Get dashboard config via WebSocket
       const configResult = await window.electronAPI.haWsGetDashboardConfig(urlPath);
       if (!configResult.success) {
-        throw new Error(configResult.error || 'Failed to get dashboard config');
+        // HA-03: this is the failure the round-1 tester actually hit, and it is
+        // the DEFAULT entry above — the one HAVDM synthesises without ever
+        // checking it exists. Home Assistant answers `config_not_found` for any
+        // dashboard it still generates automatically, and the raw "No config
+        // found." tells a non-expert nothing. Say what happened and what to do.
+        throw new Error(
+          describeDashboardFetchFailure(configResult.error, {
+            isDefault: dashboard.id === DEFAULT_DASHBOARD_ID,
+            title: dashboard.title,
+          }),
+        );
       }
 
       logger.debug(`Downloaded dashboard config for ${dashboard.title}`);
@@ -193,7 +212,10 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
 
       logger.info(`Loaded dashboard into editor: ${dashboard.title}`);
     } catch (err) {
-      setError(`Failed to download dashboard: ${(err as Error).message}`);
+      // HA-03: no "Failed to download dashboard: " prefix any more — the
+      // message from describeDashboardFetchFailure already names the dashboard
+      // and the remedy, and the old prefix turned it into a run-on sentence.
+      setError((err as Error).message);
       logger.error('Failed to download dashboard', err);
     } finally {
       setDownloading(null);
@@ -222,7 +244,7 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
             style={{
               width: '40px',
               height: '40px',
-              background: dashboard.id === 'lovelace' ? '#1890ff' : '#00d9ff',
+              background: dashboard.id === DEFAULT_DASHBOARD_ID ? '#1890ff' : '#00d9ff',
               borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
@@ -245,7 +267,7 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
               <Text strong style={{ fontSize: '15px' }}>
                 {dashboard.title}
               </Text>
-              {dashboard.id === 'lovelace' && (
+              {dashboard.id === DEFAULT_DASHBOARD_ID && (
                 <Tag color="blue" icon={<HomeOutlined />}>
                   Default
                 </Tag>

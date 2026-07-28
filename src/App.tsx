@@ -306,6 +306,11 @@ const App: React.FC = () => {
   const {
     config,
     filePath,
+    // ⚠ HA-03: `error` is a RENDER-scope subscription and is correct for the
+    // JSX below (the banner re-renders when it changes). It is NOT valid inside
+    // an event handler that has just called loadDashboard(): the snapshot React
+    // captured before the handler ran can never observe a failure the handler
+    // itself causes. Handlers must read useDashboardStore.getState().error.
     error,
     isDirty,
     selectedViewIndex,
@@ -505,8 +510,17 @@ const App: React.FC = () => {
         // Opened from a file, not from HA — no known deploy target (Phase 0.2).
         setSourceDashboard(null);
 
-        if (error) {
-          message.error(`Failed to parse dashboard: ${error}`);
+        // ⚠ HA-03: read the store's error FRESH, not the render-scope `error`.
+        // `error` here is the snapshot React captured BEFORE loadDashboard ran,
+        // so it could never see the failure it was testing for: the first bad
+        // file reported "Dashboard loaded", and the NEXT good file reported the
+        // previous file's stale failure. Same stale-closure family as RC2.
+        const loadError = useDashboardStore.getState().error;
+        if (loadError) {
+          message.error({
+            content: `Could not load ${result.filePath} — ${loadError}`,
+            duration: 8,
+          });
         } else {
           message.success(`Dashboard loaded: ${result.filePath}`);
           // Add to recent files
@@ -537,8 +551,13 @@ const App: React.FC = () => {
         // Opened from a file, not from HA — no known deploy target (Phase 0.2).
         setSourceDashboard(null);
 
-        if (error) {
-          message.error(`Failed to parse dashboard: ${error}`);
+        // ⚠ HA-03: read the store's error FRESH — see handleOpenFile above.
+        const loadError = useDashboardStore.getState().error;
+        if (loadError) {
+          message.error({
+            content: `Could not load ${filePath} — ${loadError}`,
+            duration: 8,
+          });
         } else {
           message.success(`Dashboard loaded: ${filePath}`);
           // Add to recent files (moves it to top)
@@ -1842,22 +1861,42 @@ const App: React.FC = () => {
     dashboardId: string,
     source: SourceDashboard | null,
   ) => {
+    // ⭐ HA-03: parse BEFORE loading, and report what actually happened.
+    //
+    // This used to call loadDashboard(), then setSourceDashboard(), then parse a
+    // SECOND time for the remap scan, and then announce success UNCONDITIONALLY.
+    // So a dashboard the parser rejected — a Home Assistant strategy dashboard
+    // has no `views` at all — produced a green "loaded successfully!" toast over
+    // an empty canvas, while still arming the Live-Preview deploy target at the
+    // real HA dashboard. That silent failure IS the HA-03 defect: per THE VISION
+    // a dashboard HAVDM cannot parse must degrade honestly, naming what it could
+    // not handle. One parse now decides everything.
+    const parsed = yamlService.parseDashboard(dashboardYaml);
+    if (!parsed.success || !parsed.data) {
+      message.error({
+        content: `Could not load "${dashboardTitle}" — ${parsed.error ?? 'HAVDM could not read this dashboard.'}`,
+        duration: 8,
+      });
+      return;
+    }
+
     // Load the downloaded dashboard into the editor
     loadDashboard(dashboardYaml, `${dashboardTitle} (${dashboardId})`);
     // Remember the HA source so a later Live-Preview deploy writes back to THIS
     // dashboard. `source` is null for imports with no HA origin (e.g. presets),
     // and source.urlPath is null only for the default 'lovelace' (Phase 0.2).
+    // ⚠ Deliberately AFTER the parse gate — a failed download must never leave a
+    // deploy target armed at a dashboard whose content we could not read.
     setSourceDashboard(source);
-    const parsed = yamlService.parseDashboard(dashboardYaml);
-    if (parsed.success && parsed.data) {
-      const referenced = entityRemappingService.extractEntityIds(parsed.data);
-      const missing = entityRemappingService.detectMissing(referenced, availableEntities);
-      setMissingEntities(missing);
-      setAutoRemapPending(false);
-      if (missing.length > 0) {
-        setRemapModalVisible(true);
-      }
+
+    const referenced = entityRemappingService.extractEntityIds(parsed.data);
+    const missing = entityRemappingService.detectMissing(referenced, availableEntities);
+    setMissingEntities(missing);
+    setAutoRemapPending(false);
+    if (missing.length > 0) {
+      setRemapModalVisible(true);
     }
+
     message.success(`Dashboard "${dashboardTitle}" loaded successfully!`);
   };
 
@@ -1938,9 +1977,16 @@ const App: React.FC = () => {
     loadDashboard(newYaml, filePath);
     setYamlEditorVisible(false);
 
-    // The dashboard will be marked as dirty since it was modified
-    if (error) {
-      message.error(`Failed to apply YAML changes: ${error}`);
+    // ⚠ HA-03: read the store's error FRESH — the third instance of the same
+    // stale-snapshot read. Applying unparseable YAML from the Monaco editor
+    // reported nothing at all, because `error` here was the value from before
+    // loadDashboard() ran.
+    const applyError = useDashboardStore.getState().error;
+    if (applyError) {
+      message.error({
+        content: `Could not apply the YAML changes — ${applyError}`,
+        duration: 8,
+      });
     }
   };
 
@@ -2511,10 +2557,15 @@ const App: React.FC = () => {
                           </Button>
                         </Tooltip>
                         <Tooltip title="Open an existing dashboard YAML file from your computer">
+                          {/* ⚠ testid, not the accessible name: every antd icon
+                              renders role="img" aria-label="<icon>", so this
+                              button's accessible name is "folder-open Open
+                              Local File" and an anchored /^Open/ never matches. */}
                           <Button
                             size="large"
                             icon={<FolderOpenOutlined />}
                             onClick={handleOpenFile}
+                            data-testid="welcome-open-local-file"
                           >
                             Open Local File
                           </Button>
@@ -2594,7 +2645,11 @@ const App: React.FC = () => {
                           </Button>
                         </Tooltip>
                         <Tooltip title="Open an existing dashboard YAML file from your computer">
-                          <Button icon={<FolderOpenOutlined />} onClick={handleOpenFile}>
+                          <Button
+                            icon={<FolderOpenOutlined />}
+                            onClick={handleOpenFile}
+                            data-testid="toolbar-open-file"
+                          >
                             Open
                           </Button>
                         </Tooltip>
