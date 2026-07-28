@@ -1893,17 +1893,25 @@ path, against fixture data. It has never seen a real instance's ~725 entities.
 
 #### HA-03: Download an existing dashboard from Home Assistant
 
-| Field          | Value                                       |
-| -------------- | ------------------------------------------- |
-| Type           | interaction                                 |
-| Auto covered   | Y (`tests/e2e/live-preview-deploy.spec.ts`) |
-| Needs HA       | **Yes** — read-only                         |
-| Pre-conditions | Connected                                   |
+| Field          | Value                                                                                                 |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| Type           | interaction                                                                                           |
+| Auto covered   | Y (`tests/unit/dashboardLoadDiagnostics.spec.ts`, `tests/integration/dashboard-load-honesty.spec.ts`) |
+| Needs HA       | **Yes** — read-only                                                                                   |
+| Pre-conditions | Connected                                                                                             |
 
 **Automated coverage confirms:**
-`tests/e2e/live-preview-deploy.spec.ts` covers the dashboard browser listing,
-metadata and download against a mock. It has never read a real storage-mode
-dashboard.
+`tests/unit/dashboardLoadDiagnostics.spec.ts` pins the plain-language wording of
+every load failure, including the default-dashboard case, and
+`tests/integration/dashboard-load-honesty.spec.ts` drives the real load seam and
+proves a refused dashboard reports the refusal and leaves the canvas intact.
+
+⚠ **Round-1 correction.** This card previously cited
+`tests/e2e/live-preview-deploy.spec.ts` as its coverage. That file is **26 tests
+of `expect(true).toBe(true)` with 85 TODOs and zero real assertions**, so HA-03
+in fact had **no** automated coverage while being marked `auto_covered: Y` —
+which silently exempted it from amendment-03 §7. Neither spec above reads a real
+storage-mode dashboard; that still needs a human.
 
 ⚠ **This card only reads.** Do not save, deploy or modify the dashboard you
 download.
@@ -1912,15 +1920,28 @@ download.
 
 1. Click **Download** (or **Browse HA Dashboards**).
 2. Read the list of dashboards and their metadata.
-3. Choose one and download it.
-4. Look at the canvas, the view tabs and the heading.
-5. Scan the canvas for cards that failed to render.
+3. ⭐ **Try the "Overview" entry tagged _Default_ first.** On most instances
+   Home Assistant still generates this dashboard automatically and stores no
+   copy, so HAVDM cannot download it — the point of this step is to check that
+   it says so clearly.
+4. Now choose a **different** dashboard and download it.
+5. Look at the canvas, the view tabs and the heading.
+6. Scan the canvas for cards that failed to render.
 
 **Expected:**
 
 - Real dashboards from the instance are listed, with titles and any admin-only
   marking.
+- ⭐ **Step 3:** if "Overview" cannot be downloaded, HAVDM says so in plain
+  language — naming the dashboard, explaining that Home Assistant builds it
+  automatically, and telling you to use **"Take control"** in Home Assistant
+  first. A raw Home Assistant error such as _"No config found."_ is a **fail**.
+  ⓘ If your Overview dashboard has already been taken control of, it will simply
+  download like any other — that is also a pass.
 - Downloading one loads it onto the canvas.
+- ⭐ **A dashboard that cannot be loaded is never reported as loaded.** A green
+  "loaded successfully" message over an empty or unchanged canvas is **High**.
+  A refused dashboard must leave whatever was already open untouched.
 - ⭐ Cards that HAVDM cannot render show a **marked** placeholder, not a crash
   and not a blank space. A blank canvas here is **High**.
 - HACS cards installed on the instance (Bubble, apexcharts, mushroom, button-card,

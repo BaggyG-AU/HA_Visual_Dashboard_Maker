@@ -1991,17 +1991,20 @@
           isNew: true,
           needsHA: true,
           auto_note:
-            '<code>tests/e2e/live-preview-deploy.spec.ts</code> covers the dashboard browser listing, metadata and download against a mock. It has never read a real storage-mode dashboard.',
+            '<code>tests/unit/dashboardLoadDiagnostics.spec.ts</code> pins the plain-language wording of every load failure, and <code>tests/integration/dashboard-load-honesty.spec.ts</code> drives the real load seam and proves a refused dashboard reports the refusal and leaves the canvas intact. ⚠ Round-1 correction: this card previously cited <code>tests/e2e/live-preview-deploy.spec.ts</code>, which is 26 placeholder tests with zero real assertions — so HA-03 had no automated coverage while marked auto_covered. Neither new spec reads a real storage-mode dashboard; that still needs a human.',
           steps: [
             'Click <strong>Download</strong> (or Browse HA Dashboards).',
             'Read the list of dashboards and their metadata.',
-            'Choose one and download it. <strong>Do not save, deploy or modify it.</strong>',
+            '⭐ <strong>Try the “Overview” entry tagged <em>Default</em> first.</strong> On most instances Home Assistant still generates this dashboard automatically and stores no copy, so HAVDM cannot download it — this step checks that it says so clearly.',
+            'Now choose a <strong>different</strong> dashboard and download it. <strong>Do not save, deploy or modify it.</strong>',
             'Look at the canvas, the view tabs and the heading.',
             'Scan the canvas for cards that failed to render.',
           ],
           expects: [
             'Real dashboards from the instance are listed, with titles and any admin-only marking.',
+            '⭐ <strong>Step 3:</strong> if “Overview” cannot be downloaded, HAVDM says so in plain language — naming the dashboard, explaining that Home Assistant builds it automatically, and telling you to use <strong>“Take control”</strong> in Home Assistant first. A raw Home Assistant error such as “No config found.” is a <strong>fail</strong>. If your Overview has already been taken control of it will simply download like any other — that is also a pass.',
             'Downloading one loads it onto the canvas.',
+            '⭐ <strong>A dashboard that cannot be loaded is never reported as loaded.</strong> A green “loaded successfully” message over an empty or unchanged canvas is <strong>High</strong>. A refused dashboard must leave whatever was already open untouched.',
             'Cards HAVDM cannot render show a <strong>marked</strong> placeholder, not a crash and not a blank space. A blank canvas here is <strong>High</strong>.',
             'HACS cards installed on the instance — Bubble, apexcharts, mushroom, button-card, card-mod, mini-graph-card and the rest — render as something recognisable.',
             'Nothing is written back to Home Assistant.',

@@ -116,9 +116,23 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         selectionAnchorCardIndex: null,
       });
     } else {
+      // ⭐ HA-03: a dashboard that fails to parse must NOT destroy the one
+      // already open. This used to `set({ config: null, filePath: null })`, so
+      // opening a file HAVDM could not read — a Home Assistant strategy
+      // dashboard has no `views` at all — WIPED the user's current work off the
+      // canvas and left them with nothing, while the caller announced success.
+      //
+      // Per THE VISION, "never silently destroy user data" is structural, and
+      // the owner's ruling on this defect was explicit: refuse, name the
+      // reason, leave the canvas untouched. Fixing it HERE rather than at each
+      // call site covers every entry point at once — file open, recent files,
+      // the HA download, preset import and the YAML editor's Apply, which is
+      // where clobbering hurt most.
+      //
+      // ⚠ `config`/`filePath` are deliberately left as they were: when nothing
+      // was loaded they are already null, so a first-load failure still shows
+      // the error and the welcome screen exactly as before.
       set({
-        config: null,
-        filePath: null,
         isLoading: false,
         error: result.error || 'Failed to parse dashboard',
       });

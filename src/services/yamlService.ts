@@ -8,6 +8,7 @@ import {
   isHavdmInternalViewKey,
 } from './haExportContract';
 import { selfCheckHaConfig } from './exportSelfCheck';
+import { diagnoseDashboardPayload } from '../utils/dashboardLoadDiagnostics';
 import { summarizeExportWarnings } from './exportWarningSummary';
 import type { ExportWarning } from './exportWarnings';
 
@@ -19,19 +20,19 @@ class YAMLService {
     try {
       const data = yaml.load(yamlContent) as any;
 
-      // Validate basic structure
-      if (!data) {
+      // HA-03: name what could not be handled, in plain language.
+      //
+      // This used to answer every unloadable shape with one of two strings —
+      // "Empty or invalid YAML file" or 'Dashboard must contain a "views"
+      // array'. Both are true and neither tells a non-expert anything they can
+      // act on, and the second is actively misleading for the commonest case:
+      // a Home Assistant STRATEGY dashboard legitimately has no `views` at all.
+      // Per THE VISION, a dashboard HAVDM cannot parse must fail HONESTLY.
+      const problem = diagnoseDashboardPayload(data);
+      if (problem) {
         return {
           success: false,
-          error: 'Empty or invalid YAML file',
-        };
-      }
-
-      // Ensure views array exists
-      if (!data.views || !Array.isArray(data.views)) {
-        return {
-          success: false,
-          error: 'Dashboard must contain a "views" array',
+          error: problem,
         };
       }
 
