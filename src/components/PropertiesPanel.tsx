@@ -42,6 +42,7 @@ import {
   type BackgroundConfig,
 } from '../utils/backgroundStyle';
 import { formatActionLabel, resolveAllCardActions } from '../services/smartActions';
+import type { CardActionField } from '../types/actions';
 import { normalizeBubbleHash } from '../services/bubbleCardHash';
 import { logger } from '../services/logger';
 import { useHAEntities } from '../contexts/HAEntityContext';
@@ -51,6 +52,7 @@ import {
   resolveEntityContext,
 } from '../services/entityContext';
 import { AttributeDisplayControls } from './AttributeDisplayControls';
+import { CardActionControls } from './CardActionControls';
 import { ConditionalVisibilityControls } from './ConditionalVisibilityControls';
 import { StateIconMappingControls } from './StateIconMappingControls';
 import { TriggerAnimationControls } from './TriggerAnimationControls';
@@ -183,6 +185,19 @@ const SOUND_EFFECT_OPTIONS = [
   { value: 'toggle-on', label: 'Toggle On' },
   { value: 'toggle-off', label: 'Toggle Off' },
   { value: 'notification', label: 'Notification' },
+];
+
+// The three manual action pickers (PROPS-04). `field` is the real Home Assistant
+// key — `tap_action` / `hold_action` / `double_tap_action` are HaNativeKeys in
+// haExportContract.ts and cross the export boundary unchanged.
+const MANUAL_ACTION_FIELDS: Array<{
+  field: CardActionField;
+  label: string;
+  testIdSuffix: string;
+}> = [
+  { field: 'tap_action', label: 'Tap Action', testIdSuffix: 'tap-action' },
+  { field: 'hold_action', label: 'Hold Action', testIdSuffix: 'hold-action' },
+  { field: 'double_tap_action', label: 'Double-Tap Action', testIdSuffix: 'double-tap-action' },
 ];
 
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
@@ -646,7 +661,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       <div>
         <Divider />
         <Text strong style={{ color: 'white' }}>
-          Smart Default Actions
+          Actions
         </Text>
         <Form.Item
           label={
@@ -658,6 +673,30 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           valuePropName="checked"
         >
           <Switch data-testid={`${testIdPrefix}-smart-defaults-toggle`} />
+        </Form.Item>
+
+        {/* The manual pickers — the PROPS-04 fix. Hidden while Smart Defaults
+            are on, per the owner's ruling; see CardActionControls.tsx for why
+            "Not set" has to exist and why changing type prunes sub-fields. */}
+        <Form.Item noStyle shouldUpdate>
+          {() => {
+            const smartDefaults = form.getFieldValue('smart_defaults') as boolean | undefined;
+            if (smartDefaults === true) return null;
+
+            return (
+              <div data-testid={`${testIdPrefix}-manual-actions`}>
+                {MANUAL_ACTION_FIELDS.map(({ field, label, testIdSuffix }) => (
+                  <Form.Item
+                    key={field}
+                    label={<span style={{ color: 'white' }}>{label}</span>}
+                    name={field}
+                  >
+                    <CardActionControls testIdBase={`${testIdPrefix}-${testIdSuffix}`} />
+                  </Form.Item>
+                ))}
+              </div>
+            );
+          }}
         </Form.Item>
 
         <Form.Item noStyle shouldUpdate>
@@ -726,6 +765,25 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       ({sourceLabel(resolved.double_tap.source)})
                     </Text>
                   </Text>
+
+                  {/* An explicit action ALWAYS outranks a smart default in
+                      resolveCardAction, and the pickers are hidden while the
+                      toggle is on — so without this line a user-defined action
+                      would be in force with no visible control and no
+                      explanation. A hidden setting that still takes effect is
+                      the same defect class PROPS-04 is about. */}
+                  {smartDefaults === true && (tapAction || holdAction || doubleTapAction) && (
+                    <>
+                      <br />
+                      <Text
+                        style={{ color: token.colorTextSecondary, fontSize: 12 }}
+                        data-testid={`${testIdPrefix}-smart-defaults-override-notice`}
+                      >
+                        An action you defined is still in use and wins over the smart default. Turn
+                        Smart Defaults off to edit it.
+                      </Text>
+                    </>
+                  )}
                 </div>
               </div>
             );

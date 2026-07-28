@@ -861,31 +861,41 @@ usable.
 
 #### PROPS-04: Configure a tap action
 
-| Field          | Value                                 |
-| -------------- | ------------------------------------- |
-| Type           | gate                                  |
-| Auto covered   | Y (`tests/e2e/smart-actions.spec.ts`) |
-| Pre-conditions | A Button card selected                |
+| Field          | Value                                                                           |
+| -------------- | ------------------------------------------------------------------------------- |
+| Type           | gate                                                                            |
+| Auto covered   | Y (`tests/e2e/smart-actions.spec.ts`, `tests/unit/CardActionControls.spec.tsx`) |
+| Pre-conditions | A Button card selected. No HA connection required.                              |
 
 **Automated coverage confirms:**
-`tests/e2e/smart-actions.spec.ts` and `tests/unit/smartActions.spec.ts` prove the
-action config reaches the YAML. They cannot judge whether the options presented
-make sense to a dashboard author.
+`tests/e2e/smart-actions.spec.ts` drives the manual pickers from the form and
+asserts the YAML bytes; `tests/unit/CardActionControls.spec.tsx` pins the option
+list, the adaptive sub-fields and the sub-field pruning;
+`tests/unit/smartActions.spec.ts` pins the resolution precedence. None of them
+can judge whether the options presented make sense to a dashboard author.
 
 **Steps:**
 
-1. Select a Button card and find the tap action control.
-2. Read the options offered.
-3. Choose **Toggle**, and check the YAML tab.
-4. Change it to **Navigate** and look at what additional fields appear.
-5. Change it to **Call Service**.
+1. Select a Button card and find the **Actions** section in the Properties panel.
+2. Switch **Use Smart Defaults** **off** — the manual Tap / Hold / Double-Tap
+   pickers appear beneath it.
+3. Read the options offered on **Tap Action**.
+4. Choose **Toggle**, and check the YAML tab.
+5. Change it to **Navigate** and look at what additional fields appear.
+6. Change it to **Call Service**.
+7. Change it back to **Not set (use Smart Defaults)**.
 
 **Expected:**
 
+- With Smart Defaults off, three pickers are offered: Tap, Hold and Double-Tap.
 - Options include None, More Info, Toggle, Call Service, Navigate, URL, Popup.
 - Choosing Toggle writes a toggle tap action into the YAML.
 - Choosing Navigate reveals a navigation-path field; Call Service reveals a
   service field. The form adapts to the choice.
+- Changing the action type does **not** leave the previous type's field behind in
+  the YAML — switching Navigate → Call Service drops `navigation_path`.
+- Choosing **Not set** removes the action from the YAML entirely, so Smart
+  Defaults can apply again. The first choice is not a one-way door.
 - No option leaves the form in a half-configured state with no way to complete it.
 
 #### PROPS-05: Build a conditional-visibility rule and see it previewed
