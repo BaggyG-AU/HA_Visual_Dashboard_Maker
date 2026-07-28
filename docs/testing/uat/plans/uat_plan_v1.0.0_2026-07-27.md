@@ -1554,13 +1554,21 @@ the packaged app.
 
 ### Group 9 — Themes & Preset Marketplace
 
+⭐ **No Home Assistant connection is required for any card in this group.**
+Themes and presets are **local content**. HAVDM ships built-in themes and a
+built-in preset catalog, and both are available with the app never connected.
+Connecting to HA _adds_ that instance's themes alongside the built-ins; it is
+never a precondition. In round 1 all four cards were Skipped because the product
+gated this local content behind a connection — that was the defect (RC5), not the
+environment. **These cards are deliberately NOT `needsHA` and stay in group 9.**
+
 #### THEME-01: Theme Settings applies a theme and a light/dark mode
 
-| Field          | Value                                 |
-| -------------- | ------------------------------------- |
-| Type           | gate                                  |
-| Auto covered   | Y (`tests/e2e/theme-manager.spec.ts`) |
-| Pre-conditions | A dashboard open                      |
+| Field          | Value                                        |
+| -------------- | -------------------------------------------- |
+| Type           | gate                                         |
+| Auto covered   | Y (`tests/e2e/theme-manager.spec.ts`)        |
+| Pre-conditions | A dashboard open. No HA connection required. |
 
 **Automated coverage confirms:**
 `tests/e2e/theme-manager.spec.ts` covers the import/export/load and per-view
@@ -1583,11 +1591,11 @@ override workflows. It cannot judge whether the theme actually looks applied.
 
 #### THEME-02: Save a named theme and load it back
 
-| Field          | Value                                  |
-| -------------- | -------------------------------------- |
-| Type           | gate                                   |
-| Auto covered   | Y (`tests/unit/theme-service.spec.ts`) |
-| Pre-conditions | Theme Settings dialog open             |
+| Field          | Value                                                  |
+| -------------- | ------------------------------------------------------ |
+| Type           | gate                                                   |
+| Auto covered   | Y (`tests/unit/theme-service.spec.ts`)                 |
+| Pre-conditions | Theme Settings dialog open. No HA connection required. |
 
 **Automated coverage confirms:**
 `tests/unit/theme-service.spec.ts` proves the theme storage and retrieval logic.
@@ -1610,11 +1618,11 @@ It cannot tell you whether the manager tab is usable.
 
 #### THEME-03: Per-view theme override
 
-| Field          | Value                                             |
-| -------------- | ------------------------------------------------- |
-| Type           | gate                                              |
-| Auto covered   | Y (`tests/integration/theme-integration.spec.ts`) |
-| Pre-conditions | A dashboard with two views                        |
+| Field          | Value                                                  |
+| -------------- | ------------------------------------------------------ |
+| Type           | gate                                                   |
+| Auto covered   | Y (`tests/integration/theme-integration.spec.ts`)      |
+| Pre-conditions | A dashboard with two views. No HA connection required. |
 
 **Automated coverage confirms:**
 `tests/integration/theme-integration.spec.ts` proves a per-view override is
@@ -1638,11 +1646,11 @@ overridden.
 
 #### THEME-04: Browse, preview and import a preset
 
-| Field          | Value                                      |
-| -------------- | ------------------------------------------ |
-| Type           | gate                                       |
-| Auto covered   | Y (`tests/e2e/preset-marketplace.spec.ts`) |
-| Pre-conditions | A dashboard open                           |
+| Field          | Value                                        |
+| -------------- | -------------------------------------------- |
+| Type           | gate                                         |
+| Auto covered   | Y (`tests/e2e/preset-marketplace.spec.ts`)   |
+| Pre-conditions | A dashboard open. No HA connection required. |
 
 **Automated coverage confirms:**
 `tests/e2e/preset-marketplace.spec.ts` covers the browse → preview → import
@@ -1651,8 +1659,9 @@ judge whether a preset is worth importing once you see it.
 
 **Steps:**
 
-1. Click **Download** / **Browse HA Dashboards** and switch to the **Preset
-   Marketplace** tab.
+1. In the **main toolbar at the top of the window** (not inside Theme Settings),
+   click **Download** — or **Browse HA Dashboards** on the welcome screen — then
+   switch to the **Preset Marketplace** tab in the dialog that opens.
 2. Look at the preset list.
 3. Select a preset and read the preview.
 4. Click the refresh control.
@@ -1832,7 +1841,10 @@ instance** — this card is the first real evidence that the connection path wor
 **Expected:**
 
 - The dialog accepts a URL and a token, with the token masked.
-- On success the badge changes to **Connected** and a theme selector appears.
+- On success the badge changes to **Connected**. ⚠ The theme selector is present
+  in the header whether or not you are connected (RC5 — HAVDM ships built-in
+  themes); what changes on connect is that the instance's own themes join the
+  list.
 - The saved connection appears in the dropdown and reconnects without retyping
   the token.
 - ⭐ A **wrong** token produces a clear error rather than a silent failure or a
@@ -1989,19 +2001,23 @@ list.
 
 **Steps:**
 
-1. While connected, open the theme selector that appears in the header.
+1. While connected, open the theme selector in the header.
 2. Read the list of themes offered.
 3. Select one and look at the canvas.
-4. Click the theme refresh control.
+4. Click the theme refresh control (**Reload Themes from HA**).
 5. Disconnect and look at the header again.
 
 **Expected:**
 
-- Real themes from the Home Assistant instance are listed, not a hard-coded set.
+- Real themes from the Home Assistant instance are listed **in addition to**
+  HAVDM's own built-in themes (the ones prefixed `HAVDM`). Seeing only built-ins
+  while connected means the fetch failed.
 - Selecting one applies it visibly to the canvas.
 - Refresh re-fetches without emptying the list.
-- After disconnecting, the HA theme selector is no longer offered, and the app
-  does not error.
+- ⭐ After disconnecting, the selector **remains** and still offers the built-in
+  themes — it is no longer gated on the connection (RC5). What must go is the
+  instance's own themes, and **Reload Themes from HA** becomes disabled with a
+  tooltip explaining why. The app does not error.
 
 ---
 

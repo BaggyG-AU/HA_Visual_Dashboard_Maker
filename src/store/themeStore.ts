@@ -3,6 +3,7 @@ import { useDashboardStore } from './dashboardStore';
 import { Theme, Themes } from '../types/homeassistant';
 import { themeService } from '../services/themeService';
 import {
+  BUILT_IN_THEMES,
   readPersistedThemeManagerState,
   writePersistedThemeManagerState,
   type SavedThemeRecord,
@@ -96,7 +97,12 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
   // Initial state
   currentThemeName: null,
   currentTheme: null,
-  availableThemes: {},
+  // ⭐ RC5: seeded with HAVDM's own themes so the picker is usable with NO Home
+  // Assistant connection. Was `{}`, populated only by `setAvailableThemes` from
+  // HA, which left THEME-01/02/03 with nothing to select and no theme to save.
+  // ⚠ `baseThemeName` stays null, so `currentTheme` stays null and no theme is
+  // auto-applied — seeding the catalogue changes no pixel until a user picks one.
+  availableThemes: { ...BUILT_IN_THEMES },
   darkMode: true,
   syncWithHA: true,
 
@@ -110,19 +116,26 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
   // Set available themes from HA
   setAvailableThemes: (themes: Themes) => {
     set((state) => {
+      // ⭐ RC5: MERGE, never replace. The built-ins must survive a connection so
+      // the picker keeps working after a later disconnect.
+      // ⚠ HA WINS ON COLLISION — the instance's themes are spread SECOND, so a
+      // user's real HA theme always shadows a built-in of the same name. Never
+      // invert this spread.
+      const mergedThemes = { ...BUILT_IN_THEMES, ...themes.themes };
+
       const nextBaseThemeName = state.syncWithHA ? themes.theme : state.baseThemeName;
-      const nextBaseTheme = resolveThemeByName(nextBaseThemeName, themes.themes, state.savedThemes);
+      const nextBaseTheme = resolveThemeByName(nextBaseThemeName, mergedThemes, state.savedThemes);
 
       const nextState: ThemeStore = {
         ...state,
-        availableThemes: themes.themes,
+        availableThemes: mergedThemes,
         darkMode: themes.darkMode,
         lastHAThemeName: themes.theme,
         baseThemeName: nextBaseThemeName,
         baseTheme: nextBaseTheme,
         ...deriveEffectiveThemeState({
           ...state,
-          availableThemes: themes.themes,
+          availableThemes: mergedThemes,
           darkMode: themes.darkMode,
           lastHAThemeName: themes.theme,
           baseThemeName: nextBaseThemeName,

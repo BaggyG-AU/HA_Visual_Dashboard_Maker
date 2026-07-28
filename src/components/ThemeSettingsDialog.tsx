@@ -11,6 +11,7 @@ import {
   Typography,
   Input,
   message,
+  theme as antdTheme,
 } from 'antd';
 import {
   CodeOutlined,
@@ -22,6 +23,7 @@ import {
 } from '@ant-design/icons';
 import { useThemeStore } from '../store/themeStore';
 import { themeService } from '../services/themeService';
+import { buildThemeOptions } from '../features/theme-manager';
 import * as monaco from 'monaco-editor';
 
 const { Text } = Typography;
@@ -60,6 +62,9 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
     importThemeManager,
     setViewOverride,
   } = useThemeStore();
+
+  // Child of the ConfigProvider, so useToken() is correct here.
+  const { token } = antdTheme.useToken();
 
   const [localThemeName, setLocalThemeName] = useState<string | null>(currentThemeName);
   const [localDarkMode, setLocalDarkMode] = useState(darkMode);
@@ -194,12 +199,12 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
     [activeViewKey, setViewOverride],
   );
 
+  // ⭐ RC5: available (built-ins + any HA themes) UNION saved. Previously read
+  // `availableThemes` alone, which disagreed with `resolveThemeByName` — a saved
+  // theme resolved but could not be selected.
   const themeOptions = useMemo(() => {
-    return Object.keys(availableThemes).map((name) => ({
-      label: name,
-      value: name,
-    }));
-  }, [availableThemes]);
+    return buildThemeOptions(availableThemes, savedThemes);
+  }, [availableThemes, savedThemes]);
 
   const savedThemeOptions = useMemo(() => {
     return Object.keys(savedThemes).map((name) => ({
@@ -208,13 +213,12 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
     }));
   }, [savedThemes]);
 
+  // ⚠ `themeOptions` ALREADY unions the saved themes, so the previous extra
+  // `savedThemeOptions.filter(...)` spread here would now duplicate every one of
+  // them in this list. Do not reinstate it.
   const overrideThemeOptions = useMemo(() => {
-    return [
-      { label: 'No override (use global theme)', value: '__none__' },
-      ...themeOptions,
-      ...savedThemeOptions.filter((option) => !availableThemes[option.value]),
-    ];
-  }, [availableThemes, savedThemeOptions, themeOptions]);
+    return [{ label: 'No override (use global theme)', value: '__none__' }, ...themeOptions];
+  }, [themeOptions]);
 
   // Generate YAML from current theme
   const themeYaml = currentTheme ? themeService.generateThemeCSS(currentTheme, localDarkMode) : '';
@@ -291,7 +295,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                 options={themeOptions}
                 style={{ width: '100%', marginTop: '8px' }}
                 placeholder="Select theme"
-                disabled={Object.keys(availableThemes).length === 0}
+                disabled={themeOptions.length === 0}
               />
             </div>
 
@@ -477,7 +481,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
               ref={cssContainerRef}
               data-testid="theme-settings-css"
               style={{
-                border: '1px solid #434343',
+                border: `1px solid ${token.colorBorder}`,
                 borderRadius: '4px',
                 height: '400px',
                 overflow: 'hidden',
@@ -507,7 +511,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
               ref={jsonContainerRef}
               data-testid="theme-settings-json"
               style={{
-                border: '1px solid #434343',
+                border: `1px solid ${token.colorBorder}`,
                 borderRadius: '4px',
                 height: '400px',
                 overflow: 'hidden',
@@ -519,7 +523,6 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
     ],
     [
       activeViewKey,
-      availableThemes,
       currentOverrideThemeName,
       handleDeleteSavedTheme,
       handleExportThemes,
@@ -536,6 +539,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
       savedThemeOptions,
       selectedSavedTheme,
       themeOptions,
+      token,
     ],
   );
 

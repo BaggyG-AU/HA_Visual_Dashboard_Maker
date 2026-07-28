@@ -73,9 +73,14 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
   const [downloading, setDownloading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<BrowserTab>('dashboards');
 
-  // Load dashboards when dialog opens
+  // Load dashboards when dialog opens.
+  // ⚠ RC5: only when actually connected. This dialog is now reachable offline
+  // (its Preset Marketplace tab is local content), and auto-firing loadDashboards
+  // there greeted every offline user with a red "Not connected to Home Assistant"
+  // error the instant they opened it. The "Not Connected" warning below already
+  // explains the state calmly; an error banner for an expected state is noise.
   useEffect(() => {
-    if (visible && activeTab === 'dashboards') {
+    if (visible && activeTab === 'dashboards' && haConnectionService.isConnected()) {
       void loadDashboards();
     }
   }, [visible, activeTab]);
@@ -380,7 +385,12 @@ export const DashboardBrowser: React.FC<DashboardBrowserProps> = ({
       title={
         <Space>
           <FileTextOutlined />
-          <span>Browse Home Assistant Dashboards</span>
+          {/* ⚠ RC5: retitled. The dialog holds two tabs and only one of them is
+              about Home Assistant — the Preset Marketplace is local content and
+              is now reachable with no connection. The old title claimed HA and
+              is a live suspect for THEME-04's "Cannot find Download or market
+              place" note. No UAT card quotes this string. */}
+          <span>Browse Dashboards &amp; Presets</span>
         </Space>
       }
       open={visible}

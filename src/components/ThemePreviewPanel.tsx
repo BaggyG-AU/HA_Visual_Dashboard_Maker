@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Space, Typography, Tag, Divider, Empty } from 'antd';
+import { Card, Space, Typography, Tag, Divider, Empty, theme } from 'antd';
 import { BgColorsOutlined } from '@ant-design/icons';
 import { useThemeStore } from '../store/themeStore';
 import { themeService } from '../services/themeService';
@@ -12,6 +12,8 @@ const { Text, Title } = Typography;
  */
 export const ThemePreviewPanel: React.FC = () => {
   const { currentTheme, currentThemeName, darkMode } = useThemeStore();
+  // Child of the ConfigProvider, so useToken() is correct here.
+  const { token } = theme.useToken();
 
   if (!currentTheme || !currentThemeName) {
     return (
@@ -49,13 +51,13 @@ export const ThemePreviewPanel: React.FC = () => {
             width: '32px',
             height: '32px',
             backgroundColor: color,
-            border: '1px solid #434343',
+            border: `1px solid ${token.colorBorder}`,
             borderRadius: '4px',
             flexShrink: 0,
           }}
         />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontSize: '12px', color: '#888' }}>{label}</Text>
+          <Text style={{ fontSize: '12px', color: token.colorTextSecondary }}>{label}</Text>
           <div>
             <Text code style={{ fontSize: '11px' }}>
               {color}

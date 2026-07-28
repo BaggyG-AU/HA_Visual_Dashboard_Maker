@@ -1764,7 +1764,8 @@
           auto_note:
             '<code>tests/e2e/theme-manager.spec.ts</code> covers the import, export, load and per-view override workflows. It cannot judge whether the theme actually looks applied.',
           steps: [
-            'Open the Theme Settings dialog.',
+            '⭐ <strong>No Home Assistant connection is required for this card.</strong> Themes are local content and HAVDM ships built-in themes. Connecting to HA <em>adds</em> that instance&rsquo;s themes alongside them; it is never a precondition.',
+            'Open the Theme Settings dialog — the <strong>gear icon</strong> in the header, <strong>Appearance</strong> tab.',
             'On the <strong>Settings</strong> tab, pick a theme from <strong>Active Theme</strong>.',
             'Switch <strong>Mode</strong> between Light and Dark.',
             'Look at the canvas cards as you switch.',
@@ -1786,6 +1787,7 @@
           auto_note:
             '<code>tests/unit/theme-service.spec.ts</code> proves the theme storage and retrieval logic. It cannot tell you whether the manager tab is usable.',
           steps: [
+            '⭐ <strong>No Home Assistant connection is required for this card.</strong> A built-in theme is enough to save, load and delete.',
             'On the <strong>Manager</strong> tab, type <code>UAT Theme</code> into the save-name field and save.',
             'Change the active theme to something clearly different.',
             'Select <code>UAT Theme</code> in Saved Themes and load it.',
@@ -1808,6 +1810,7 @@
           auto_note:
             '<code>tests/integration/theme-integration.spec.ts</code> proves a per-view override is stored and resolved. It cannot tell you whether you can see which view is overridden.',
           steps: [
+            '⭐ <strong>No Home Assistant connection is required for this card.</strong> Two built-in themes are enough to tell an override apart from the global theme.',
             'Select view 1 and set a per-view theme override in Theme Settings.',
             'Switch to view 2.',
             'Switch back to view 1.',
@@ -1829,7 +1832,8 @@
           auto_note:
             '<code>tests/e2e/preset-marketplace.spec.ts</code> covers the browse, preview and import workflow, and <code>tests/unit/preset-service.spec.ts</code> the catalog logic. Neither can judge whether a preset is worth importing once you see it.',
           steps: [
-            'Click <strong>Download</strong> (or Browse HA Dashboards) and switch to the <strong>Preset Marketplace</strong> tab.',
+            '⭐ <strong>No Home Assistant connection is required for this card.</strong> The preset catalogue ships with HAVDM and is read locally.',
+            'In the <strong>main toolbar at the top of the window</strong> — <em>not</em> inside Theme Settings — click <strong>Download</strong>, or <strong>Browse HA Dashboards</strong> on the welcome screen. Then switch to the <strong>Preset Marketplace</strong> tab in the dialog that opens.',
             'Look at the preset list.',
             'Select a preset and read the preview.',
             'Click the refresh control.',
@@ -1943,7 +1947,7 @@
           ],
           expects: [
             'The dialog accepts a URL and a token, with the token masked.',
-            'On success the badge changes to <strong>Connected</strong> and a theme selector appears.',
+            'On success the badge changes to <strong>Connected</strong>. ⚠ The theme selector is present in the header whether or not you are connected (RC5 — HAVDM ships built-in themes); what changes on connect is that the instance&rsquo;s own themes join the list.',
             'The saved connection appears in the dropdown and reconnects without retyping the token.',
             'A wrong token produces a clear error rather than a silent failure or a hang.',
           ],
@@ -2132,17 +2136,17 @@
           auto_note:
             '<code>tests/integration/theme-integration-mocked.spec.ts</code> proves theme fetching and selection against a mocked WebSocket. It has never read a real instance’s theme list.',
           steps: [
-            'While connected, open the theme selector that appears in the header.',
+            'While connected, open the theme selector in the header.',
             'Read the list of themes offered.',
             'Select one and look at the canvas.',
-            'Click the theme refresh control.',
+            'Click the theme refresh control (<strong>Reload Themes from HA</strong>).',
             'Disconnect and look at the header again.',
           ],
           expects: [
-            'Real themes from the Home Assistant instance are listed, not a hard-coded set.',
+            "Real themes from the Home Assistant instance are listed <strong>in addition to</strong> HAVDM's own built-in themes (the ones prefixed <code>HAVDM</code>). Seeing only built-ins while connected means the fetch failed.",
             'Selecting one applies it visibly to the canvas.',
             'Refresh re-fetches without emptying the list.',
-            'After disconnecting, the Home Assistant theme selector is no longer offered, and the app does not error.',
+            '⭐ After disconnecting the selector <strong>remains</strong> and still offers the built-in themes — it is no longer gated on the connection (RC5). What must go is the instance&rsquo;s own themes, and <strong>Reload Themes from HA</strong> becomes disabled with a tooltip explaining why. The app does not error.',
           ],
         },
       ];

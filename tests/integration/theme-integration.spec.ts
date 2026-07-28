@@ -32,11 +32,37 @@ async function connectWithMockThemes(ctx: Awaited<ReturnType<typeof launchWithDS
 }
 
 test.describe('Theme Integration', () => {
-  test('hides theme selector when disconnected', async () => {
+  /**
+   * ⚠ BEHAVIOUR INTENTIONALLY INVERTED BY RC5. This test previously asserted
+   * `getByTestId('theme-selector')).toHaveCount(0)` when disconnected — it
+   * pinned the very defect that made UAT cards THEME-01/02/03 unrunnable, since
+   * themes are LOCAL content and HAVDM now ships built-in ones. The selector is
+   * no longer gated on the connection, so the contract is inverted here rather
+   * than deleted: what must still be gated is the HA-only refresh action.
+   */
+  test('shows the theme selector with built-in themes when disconnected', async () => {
     const ctx = await launchWithDSL();
     try {
       await ctx.appDSL.waitUntilReady();
-      await expect(ctx.window.getByTestId('theme-selector')).toHaveCount(0);
+
+      const selector = ctx.window.getByTestId('theme-selector');
+      await expect(selector).toBeVisible({ timeout: 5000 });
+
+      const select = ctx.window.getByTestId('theme-select');
+      await select.click();
+
+      const options = ctx.window.locator('.ant-select-item-option');
+      await expect(options.first()).toBeVisible({ timeout: 5000 });
+      await expect(
+        options.filter({ hasText: /^HAVDM Default$/ }).first(),
+        'a built-in theme must be selectable with no HA connection',
+      ).toBeVisible({ timeout: 5000 });
+
+      // Still gated: re-fetching from HA is meaningless with no connection, and
+      // a control that silently no-ops is what RC5 exists to stop.
+      await expect(ctx.window.getByTestId('theme-reload-from-ha')).toBeDisabled();
+
+      await ctx.window.keyboard.press('Escape');
     } finally {
       await close(ctx);
     }
