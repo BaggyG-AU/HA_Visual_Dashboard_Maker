@@ -11,6 +11,7 @@ import { configureYamlSchema } from '../monaco-setup';
 import { yamlService } from '../services/yamlService';
 import { ENTITY_CONTEXT_REGEX } from '../services/entityContext';
 import { logger } from '../services/logger';
+import { findCardYamlBlock } from '../utils/yamlCardLocator';
 
 type TestWindow = Window & {
   E2E?: string;
@@ -200,6 +201,8 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const schemaConfiguredRef = useRef(false);
   const contextDecorationsRef = useRef<string[]>([]);
+  /** True only while we are pushing the `value` prop into the model ourselves. */
+  const isApplyingExternalValueRef = useRef(false);
 
   // Configure YAML schema once
   useEffect(() => {
@@ -290,6 +293,17 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
 
       applyContextDecorations();
 
+      // YAML-04 defect B. A write we made ourselves from the `value` prop is
+      // OUR OWN ECHO, not a user edit, and a controlled component must not
+      // report it as one. It used to be reported: SplitViewEditor's
+      // `handleYamlChange` read the echo of its own visual -> YAML sync as a
+      // pending user edit and latched `syncStatus` to 'pending-code', which
+      // then made every LATER visual -> YAML sync take the early return. The
+      // canvas and the YAML pane silently stopped tracking each other for the
+      // rest of the session, and only the manual "Sync from Visual" button —
+      // which never consults `syncStatus` — still worked.
+      if (isApplyingExternalValueRef.current) return;
+
       // Clear existing debounce timer
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
@@ -330,7 +344,15 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
     if (monacoEditorRef.current) {
       const currentValue = monacoEditorRef.current.getValue();
       if (currentValue !== value) {
-        monacoEditorRef.current.setValue(value);
+        // Mark the write as ours so the content listener does not mistake the
+        // resulting change event for a user edit. Monaco fires that event
+        // synchronously from setValue, so the flag only needs to span this call.
+        isApplyingExternalValueRef.current = true;
+        try {
+          monacoEditorRef.current.setValue(value);
+        } finally {
+          isApplyingExternalValueRef.current = false;
+        }
         validateYaml(value);
       }
     }
@@ -386,44 +408,48 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
     if (!model) return;
 
     try {
-      // Parse current YAML to find card position
-      const yaml = editor.getValue();
-      const result = yamlService.parseDashboard(yaml);
-
-      if (!result.success || !result.data) return;
-
       const { viewIndex, cardIndex } = jumpToCard;
-      const view = result.data.views[viewIndex];
-      if (!view || !view.cards || !view.cards[cardIndex]) return;
+      const block = findCardYamlBlock(editor.getValue(), viewIndex, cardIndex);
 
-      // Search for the card in the YAML text
-      // This is a simple approach - we look for the card type line
-      const card = view.cards[cardIndex];
-      const searchText = `type: ${card.type}`;
-
-      // Find all matches and pick the one at the right position
-      const lines = yaml.split('\n');
-      let cardOccurrence = 0;
-      let targetLine = -1;
-
-      for (let i = 0; i < lines.length; i++) {
-        if (lines[i].includes(searchText)) {
-          if (cardOccurrence === cardIndex) {
-            targetLine = i + 1; // Monaco uses 1-based line numbers
-            break;
-          }
-          cardOccurrence++;
+      if (!block) {
+        // YAML-04 fail mode. We could not say where this card is, so say
+        // nothing: collapse any existing selection in place rather than leave
+        // the PREVIOUSLY selected card highlighted. A stale highlight reads as
+        // "the editor highlighted the wrong section", which is exactly what the
+        // round-1 tester reported, and a confidently wrong highlight is worse
+        // than none. Collapsing in place also leaves the viewport alone.
+        const current = editor.getSelection();
+        if (current && !current.isEmpty()) {
+          editor.setSelection(
+            new monaco.Selection(
+              current.startLineNumber,
+              current.startColumn,
+              current.startLineNumber,
+              current.startColumn,
+            ),
+          );
         }
+        return;
       }
 
-      if (targetLine > 0) {
-        // Jump to line and highlight
-        editor.revealLineInCenter(targetLine);
-        editor.setSelection(
-          new monaco.Selection(targetLine, 1, targetLine, lines[targetLine - 1].length + 1),
-        );
-        editor.focus();
-      }
+      // Highlight the card's whole block — the tester's word was "section", and
+      // a single `- type:` line does not show which card is meant when the next
+      // card is one line below.
+      editor.revealLineInCenter(block.startLine);
+      editor.setSelection(
+        new monaco.Selection(
+          block.startLine,
+          1,
+          block.endLine,
+          model.getLineMaxColumn(block.endLine),
+        ),
+      );
+
+      // ⚠ Deliberately NOT editor.focus(). Selecting a card is a CANVAS
+      // gesture; the user has not asked to start typing YAML. Pulling focus
+      // into Monaco put every subsequent Delete / Ctrl+Z behind the text-entry
+      // guard added for CANVAS-07, so the canvas stopped responding to its own
+      // keyboard shortcuts the moment a card was selected.
     } catch (error) {
       logger.error('Failed to jump to card', error);
     }

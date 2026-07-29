@@ -1334,25 +1334,46 @@ dashboard model. It cannot tell you whether the canvas actually redraws.
 
 #### YAML-04: Split view keeps canvas and YAML in step
 
-| Field          | Value                          |
-| -------------- | ------------------------------ |
-| Type           | edge                           |
-| Auto covered   | N                              |
-| Pre-conditions | A dashboard with several cards |
+| Field          | Value                                                              |
+| -------------- | ------------------------------------------------------------------ |
+| Type           | edge                                                               |
+| Auto covered   | Y (`tests/e2e/split-view-yaml-sync.spec.ts`)                       |
+| Pre-conditions | A dashboard with several cards **of at least two different types** |
+
+**Automated coverage confirms:**
+`tests/e2e/split-view-yaml-sync.spec.ts` drives the real Split mode and asserts
+the highlighted YAML block by **line number and content** — selecting a card in a
+mixed-type view highlights that card, a top-level card never resolves to one
+nested inside a `vertical-stack`, focus stays on the canvas, and a palette drop
+reaches the YAML pane with no manual refresh.
+`tests/unit/yamlCardLocator.spec.ts` pins the locator itself, including its
+"return nothing rather than guess" fail mode.
+⚠ Neither can judge whether the two panes are **comfortable to work in** at the
+packaged window size — expectation 1 is still human-only.
 
 **Steps:**
 
 1. Set the Visual/Split control to **Split**.
 2. Look at the layout — canvas on one side, YAML on the other.
-3. Select a card on the canvas and watch the YAML pane.
-4. Move a card on the canvas and watch the YAML pane again.
+3. Select a card on the canvas and watch the YAML pane. ⚠ Use a view whose cards
+   are **not all the same type**, and select the **second and third** cards, not
+   only the first — the round-1 defect was invisible on the first card and on
+   any view whose cards all shared one type.
+4. Move a card on the canvas and watch the YAML pane again. ⚠ **Do not click
+   "Sync from Visual"** — that button is a manual refresh, and the point of this
+   step is that none should be needed.
 5. Switch back to **Visual**.
 
 **Expected:**
 
 - Both panes are visible and usable at the packaged window's size.
-- Selecting a card is reflected in the YAML pane (highlight, scroll, or similar).
-- Moving a card updates the YAML pane without a manual refresh.
+- Selecting a card highlights **that card's** block in the YAML pane, whatever
+  mix of card types the view holds. ⚠ A highlight left sitting on the
+  previously-selected card is a **fail** — the round-1 symptom was a stale
+  highlight, not a missing one.
+- Selecting a card leaves the keyboard focus on the canvas; the cursor does not
+  jump into the YAML editor.
+- Moving a card updates the YAML pane **without** clicking "Sync from Visual".
 - Switching back to Visual keeps every change made in Split mode.
 
 #### YAML-05: Insert an entity id at the cursor from the entity browser
