@@ -491,11 +491,18 @@ feels right, or whether the card lands where you dropped it.
 
 #### CANVAS-04: Resize a card
 
-| Field          | Value                       |
-| -------------- | --------------------------- |
-| Type           | edge                        |
-| Auto covered   | N                           |
-| Pre-conditions | At least one card on a view |
+| Field          | Value                                             |
+| -------------- | ------------------------------------------------- |
+| Type           | edge                                              |
+| Auto covered   | Y (`tests/e2e/canvas-resize-and-nesting.spec.ts`) |
+| Pre-conditions | At least one card on a view                       |
+
+**Automated coverage confirms:**
+`tests/e2e/canvas-resize-and-nesting.spec.ts` asserts the resize handle is the
+**topmost element at its own centre** (the round-1 defect was hit-testing, not
+visibility — the handle was revealed correctly on hover but the card body was
+painted over it) and that a real drag actually widens the card. It cannot tell
+you whether the card's **content** reflows gracefully, which is steps 3–4 below.
 
 **Steps:**
 
@@ -939,20 +946,26 @@ judge whether the rule builder is comprehensible.
 
 #### PROPS-06: Card spacing and layout gap controls
 
-| Field          | Value                              |
-| -------------- | ---------------------------------- |
-| Type           | gate                               |
-| Auto covered   | Y (`tests/e2e/spacing.spec.ts`)    |
-| Pre-conditions | A stack or grid card on the canvas |
+| Field          | Value                                                                          |
+| -------------- | ------------------------------------------------------------------------------ |
+| Type           | gate                                                                           |
+| Auto covered   | Y (`tests/e2e/spacing.spec.ts`, `tests/e2e/canvas-resize-and-nesting.spec.ts`) |
+| Pre-conditions | A stack or grid card on the canvas                                             |
 
 **Automated coverage confirms:**
 `tests/e2e/spacing.spec.ts` and `tests/unit/card-spacing.spec.ts` prove the
-spacing values reach the config. They cannot tell you whether the spacing you
-chose is what you see.
+spacing values reach the config — but they perform **no drags at all**, which is
+why they could not see the round-1 failure, where step 1 itself was impossible.
+`tests/e2e/canvas-resize-and-nesting.spec.ts` now covers step 1: a palette card
+dropped onto a stack must nest **inside** it rather than landing beside it on the
+canvas. None of them can tell you whether the spacing you chose is what you see.
 
 **Steps:**
 
-1. Add a **Vertical Stack** card and put two cards inside it.
+1. Add a **Vertical Stack** card, then drag two cards from the palette **onto the
+   stack itself** to nest them inside it. (Dropping onto empty canvas instead
+   adds them beside the stack — that is the correct behaviour for an empty-canvas
+   drop, not a nesting failure.)
 2. Select the stack and find the layout gap control.
 3. Choose a preset gap and watch the canvas.
 4. Switch to the custom gap field and enter a clearly different value, e.g. `40px`.
