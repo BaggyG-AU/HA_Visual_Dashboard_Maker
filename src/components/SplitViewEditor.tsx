@@ -38,6 +38,8 @@ interface SplitViewEditorProps {
 
   /** Card drop callback */
   onCardDrop: (cardType: string, x: number, y: number) => void;
+  /** PROPS-06: forwarded to GridCanvas so a drop onto a container nests. */
+  onCardDropIntoContainer?: (cardType: string, containerIndex: number) => void;
 
   /** Card operations */
   onCardCut: () => void;
@@ -91,6 +93,7 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
   onCardSelect,
   onLayoutChange,
   onCardDrop,
+  onCardDropIntoContainer,
   onCardCut,
   onCardCopy,
   onCardPaste,
@@ -415,6 +418,7 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
                 onCardSelect={onCardSelect}
                 onLayoutChange={onLayoutChange}
                 onCardDrop={onCardDrop}
+                onCardDropIntoContainer={onCardDropIntoContainer}
                 onCardCut={onCardCut}
                 onCardCopy={onCardCopy}
                 onCardPaste={onCardPaste}

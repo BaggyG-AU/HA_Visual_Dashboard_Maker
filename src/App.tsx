@@ -55,6 +55,7 @@ import { haConnectionService } from './services/haConnectionService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
 import { getCardSizeConstraints } from './utils/cardSizingContract';
 import { shouldHandleGlobalShortcut } from './utils/keyboardShortcuts';
+import { isContainerCard, appendCardToContainer } from './utils/containerCards';
 import {
   cloneCardsForClipboard,
   prepareCardsForFlatPaste,
@@ -973,6 +974,47 @@ const App: React.FC = () => {
 
   const handleCardDrop = (cardType: string, x?: number, y?: number) => {
     handleCardAdd(cardType, x, y);
+  };
+
+  // PROPS-06: a palette card dropped ON a container card nests INTO it.
+  //
+  // Before this, `GridCanvas.handleDrop` had no notion of a container, so a card
+  // dragged onto a Vertical Stack was appended to the view's flat `cards` and
+  // rendered BESIDE the stack — the round-1 tester's exact report. The Properties
+  // panel compounded it by telling the user to "add or edit cards using the
+  // canvas", i.e. documenting the one route that did not work.
+  //
+  // Sections views never reach here: GridCanvas delegates them to SectionsCanvas,
+  // which has had its own nested drop targets since Tier 4 slice 4.3.
+  const handleCardDropIntoContainer = (cardType: string, containerIndex: number) => {
+    if (!config || selectedViewIndex === null) return;
+
+    const cardMetadata = cardRegistry.get(cardType);
+    if (!cardMetadata) {
+      message.error(`Unknown card type: ${cardType}`);
+      return;
+    }
+
+    const currentView = config.views[selectedViewIndex];
+    const container = (currentView.cards || [])[containerIndex];
+    if (!isContainerCard(container)) return;
+
+    const child = {
+      type: cardType,
+      ...(cardMetadata.defaultProps as Record<string, unknown>),
+    } as Card;
+
+    const nextContainer = appendCardToContainer(container, child);
+    if (nextContainer === container) return;
+
+    const nextCards = (currentView.cards || []).map((card, i) =>
+      i === containerIndex ? nextContainer : card,
+    );
+    const updatedViews = config.views.map((view, i) =>
+      i === selectedViewIndex ? { ...view, cards: nextCards } : view,
+    );
+    updateConfig({ ...config, views: updatedViews });
+    message.success(`${cardMetadata.name} added inside the ${container.type} card`);
   };
 
   const handleCardUpdate = (updatedCard: Card) => {
@@ -2769,6 +2811,7 @@ const App: React.FC = () => {
                           onCardSelect={handleCardSelect}
                           onLayoutChange={handleLayoutChange}
                           onCardDrop={handleCardDrop}
+                          onCardDropIntoContainer={handleCardDropIntoContainer}
                           onCardCut={handleCardCut}
                           onCardCopy={handleCardCopy}
                           onCardPaste={handleCardPaste}
@@ -2819,6 +2862,7 @@ const App: React.FC = () => {
                                   onCardSelect={handleCardSelect}
                                   onLayoutChange={handleLayoutChange}
                                   onCardDrop={handleCardDrop}
+                                  onCardDropIntoContainer={handleCardDropIntoContainer}
                                   onCardCut={handleCardCut}
                                   onCardCopy={handleCardCopy}
                                   onCardPaste={handleCardPaste}

@@ -3138,7 +3138,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
                   <Alert
                     title="Nested Cards Configuration"
-                    description="This stack contains other cards. Add or edit cards using the canvas. The cards are stacked in the order they appear in the YAML."
+                    description="This stack contains other cards. Drag a card from the palette onto the stack on the canvas to nest it, or edit the cards array in the YAML editor. The cards are stacked in the order they appear in the YAML."
                     type="info"
                     showIcon
                     style={{ marginBottom: '16px' }}

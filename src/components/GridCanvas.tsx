@@ -15,6 +15,7 @@ import {
   getCanvasRowHeight,
 } from '../utils/layoutCardParser';
 import { logger } from '../services/logger';
+import { isContainerCard } from '../utils/containerCards';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import './GridCanvas.css';
@@ -68,6 +69,8 @@ interface GridCanvasProps {
   ) => void;
   onLayoutChange: (layout: Layout) => void;
   onCardDrop?: (cardType: string, x?: number, y?: number) => void;
+  /** PROPS-06: a palette drop that lands on a container card nests into it. */
+  onCardDropIntoContainer?: (cardType: string, containerIndex: number) => void;
   onCardCut?: () => void;
   onCardCopy?: () => void;
   onCardPaste?: () => void;
@@ -155,6 +158,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   onCardSelect,
   onLayoutChange,
   onCardDrop,
+  onCardDropIntoContainer,
   onCardCut,
   onCardCopy,
   onCardPaste,
@@ -248,6 +252,27 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
       const data = JSON.parse(payload);
       const cardType = data.cardType;
       if (!cardType) return;
+
+      // PROPS-06: a drop that lands ON a container card nests into it rather
+      // than becoming its sibling. This handler previously had no notion of a
+      // container at all, so dragging a card onto a Vertical Stack appended it
+      // to the view's flat `cards` and it appeared BESIDE the stack — which is
+      // exactly what the round-1 tester reported.
+      //
+      // The index comes off the DOM rather than from pointer maths because the
+      // compactor, not this component, decides where a card actually sits.
+      const dropTarget = (e.target as HTMLElement | null)?.closest('[data-card-index]');
+      const rawIndex = dropTarget?.getAttribute('data-card-index');
+      const targetIndex = rawIndex === null || rawIndex === undefined ? null : Number(rawIndex);
+      if (
+        onCardDropIntoContainer &&
+        targetIndex !== null &&
+        Number.isInteger(targetIndex) &&
+        isContainerCard(cards[targetIndex])
+      ) {
+        onCardDropIntoContainer(cardType, targetIndex);
+        return;
+      }
 
       // No explicit position: let the caller place the card below existing
       // content, matching where the vertical compactor renders it. Passing
@@ -455,6 +480,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
           <div key={`card-${index}`} style={{ overflow: 'hidden' }}>
             <div
               data-testid="canvas-card"
+              data-card-index={index}
               style={{ height: '100%', width: '100%', position: 'relative' }}
             >
               {(() => {
