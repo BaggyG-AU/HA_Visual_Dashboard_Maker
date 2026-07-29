@@ -565,16 +565,20 @@ panel that appears is the **right** panel for the card you clicked.
 
 #### CANVAS-07: Undo and redo restore in single, predictable steps
 
-| Field          | Value                                             |
-| -------------- | ------------------------------------------------- |
-| Type           | gate                                              |
-| Auto covered   | Y (`tests/integration/selection-history.spec.ts`) |
-| Pre-conditions | A dashboard with at least two cards               |
+| Field          | Value                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------ |
+| Type           | gate                                                                                       |
+| Auto covered   | Y (`tests/e2e/keyboard-undo-focus.spec.ts`, `tests/integration/selection-history.spec.ts`) |
+| Pre-conditions | A dashboard with at least two cards                                                        |
 
 **Automated coverage confirms:**
 `tests/integration/selection-history.spec.ts` proves the store records one
-history entry per real change and that merely selecting a card records none. It
-cannot tell you how many `Ctrl+Z` presses it **feels** like it takes.
+history entry per real change and that merely selecting a card records none —
+but it drives undo through the store hook, not the keyboard, so it cannot see a
+shortcut that never reaches the app. `tests/e2e/keyboard-undo-focus.spec.ts`
+presses the real `Ctrl+Z` with focus in the Card Palette search box (the round-1
+failure) and checks that Delete still edits text there rather than deleting a
+card. Neither can tell you how many presses it **feels** like it takes.
 
 **Steps:**
 
@@ -583,6 +587,8 @@ cannot tell you how many `Ctrl+Z` presses it **feels** like it takes.
 3. Press `Ctrl+Z` twice more, checking the canvas after each press.
 4. Press `Ctrl+Y` three times, checking after each.
 5. Click a card, click empty canvas, click another card, then press `Ctrl+Z` once.
+6. ⭐ Delete a card. Then click into the **Card Palette search box**, type
+   `button`, and press `Ctrl+Z` **without clicking anywhere else first**.
 
 **Expected:**
 
@@ -591,7 +597,10 @@ cannot tell you how many `Ctrl+Z` presses it **feels** like it takes.
 - Three redo presses restore it fully.
 - ⭐ Step 5: the undo reverses your last **edit**, not a selection — clicking
   around does not consume undo steps.
-- The Undo and Redo toolbar buttons disable when there is nothing left to do.
+- ⭐ Step 6: the deleted **card comes back** and your typed search text is left
+  alone. Search text being edited while the card stays deleted is a **fail**.
+- The Undo and Redo buttons — the two icon buttons in the **header**, beside
+  **Entities** — disable when there is nothing left to do.
 
 ---
 
