@@ -1725,7 +1725,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="entity"
                     rules={[{ required: true, message: 'Entity is required' }]}
                   >
-                    <EntitySelect data-testid="entity-select" placeholder="Select entity" />
+                    <EntitySelect
+                      data-testid="entity-select"
+                      placeholder="Select entity"
+                      cardType={card?.type}
+                    />
                   </Form.Item>
 
                   <Form.Item label={<span style={{ color: 'white' }}>Name</span>} name="name">
@@ -1785,10 +1789,16 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="entity"
                     rules={[{ required: true, message: 'Entity is required' }]}
                   >
+                    {/* `filterDomains` keeps this to sensor-ish domains, but a
+                        gauge cannot render `binary_sensor` at all — it has no
+                        number to point the needle at. `cardType` adds the
+                        numeric requirement on top, which is exactly the owner's
+                        reported case: choosing a gauge's source. */}
                     <EntitySelect
                       data-testid="entity-select"
                       placeholder="Select sensor"
                       filterDomains={['sensor', 'binary_sensor']}
+                      cardType={card?.type}
                     />
                   </Form.Item>
 
@@ -2100,7 +2110,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="entity"
                     rules={[{ required: true, message: 'Entity is required' }]}
                   >
-                    <EntitySelect data-testid="entity-select" placeholder="Select entity" />
+                    <EntitySelect
+                      data-testid="entity-select"
+                      placeholder="Select entity"
+                      cardType={card?.type}
+                    />
                   </Form.Item>
 
                   <Form.Item
@@ -2632,7 +2646,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="entity"
                     rules={[{ required: true, message: 'Entity is required' }]}
                   >
-                    <EntitySelect data-testid="entity-select" placeholder="Select entity" />
+                    <EntitySelect
+                      data-testid="entity-select"
+                      placeholder="Select entity"
+                      cardType={card?.type}
+                    />
                   </Form.Item>
 
                   <Form.Item label={<span style={{ color: 'white' }}>Name</span>} name="name">
@@ -3759,7 +3777,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       </span>
                     }
                   >
-                    <EntitySelect data-testid="entity-select" placeholder="Select entity" />
+                    <EntitySelect
+                      data-testid="entity-select"
+                      placeholder="Select entity"
+                      cardType={card?.type}
+                    />
                   </Form.Item>
 
                   <Form.Item
@@ -6042,7 +6064,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="entity"
                     help={<span style={{ color: token.colorTextTertiary }}>Entity to control</span>}
                   >
-                    <EntitySelect data-testid="entity-select" placeholder="Select entity" />
+                    <EntitySelect
+                      data-testid="entity-select"
+                      placeholder="Select entity"
+                      cardType={card?.type}
+                    />
                   </Form.Item>
 
                   <Form.Item
@@ -6156,7 +6182,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                       </span>
                     }
                   >
-                    <EntitySelect data-testid="entity-select" placeholder="Select entity" />
+                    <EntitySelect
+                      data-testid="entity-select"
+                      placeholder="Select entity"
+                      cardType={card?.type}
+                    />
                   </Form.Item>
 
                   <Form.Item
@@ -6379,7 +6409,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="entity"
                     help={<span style={{ color: token.colorTextTertiary }}>Primary entity</span>}
                   >
-                    <EntitySelect data-testid="entity-select" placeholder="Select entity" />
+                    <EntitySelect
+                      data-testid="entity-select"
+                      placeholder="Select entity"
+                      cardType={card?.type}
+                    />
                   </Form.Item>
 
                   <Form.Item

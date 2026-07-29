@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Select, Tag, Typography, Space, Alert, theme } from 'antd';
+import { Select, Input, Tag, Typography, Space, Alert, theme } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
 import { loadPickerEntities, type EntitySourceKind } from '../services/entityPickerSource';
 import { logger } from '../services/logger';
 import { HAEntity } from '../types/homeassistant';
+import { filterEntitiesForCard, matchesEntityQuery } from '../utils/entityCriteria';
 
 const { Text } = Typography;
 
@@ -13,6 +14,12 @@ interface EntitySelectProps {
   placeholder?: string;
   allowClear?: boolean;
   filterDomains?: string[]; // e.g., ['light', 'switch']
+  /**
+   * The card type this field belongs to. Narrows the offered entities to what
+   * the card can actually render (a gauge to numeric measurements, a light card
+   * to lights). Omit for a general-purpose picker.
+   */
+  cardType?: string;
   'data-testid'?: string;
 }
 
@@ -31,6 +38,7 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
   placeholder = 'Select entity',
   allowClear = true,
   filterDomains,
+  cardType,
   'data-testid': dataTestId,
 }) => {
   const { token } = theme.useToken();
@@ -73,17 +81,26 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
     setSelectedEntity(entity || null);
   }, [value, entities]);
 
-  // Filter entities by domain if specified
+  // Narrow to what this card can actually render, then apply any explicit
+  // domain filter the call site asked for.
+  //
+  // Card-aware filtering is the primary axis of the picker re-engineering: a
+  // gauge can only show a number, so offering it ~725 entities of which a few
+  // dozen qualify is the whole findability problem. `filterEntitiesForCard`
+  // returns the SAME array when the card type is unconstrained, so an
+  // unrecognised or genuinely permissive card costs nothing here.
   const filteredEntities = useMemo(() => {
+    const forCard = cardType ? filterEntitiesForCard(entities, cardType) : entities;
+
     if (!filterDomains || filterDomains.length === 0) {
-      return entities;
+      return forCard;
     }
 
-    return entities.filter((entity) => {
+    return forCard.filter((entity) => {
       const domain = entity.entity_id.split('.')[0];
       return filterDomains.includes(domain);
     });
-  }, [entities, filterDomains]);
+  }, [entities, filterDomains, cardType]);
 
   // Create options for the select component
   const options = useMemo(() => {
@@ -104,7 +121,9 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
             </Text>
           </Space>
         ),
-        searchText: `${entity.entity_id} ${friendlyName}`.toLowerCase(),
+        // Carried so `filterOption` can do multi-token matching against the
+        // whole entity rather than one pre-concatenated string.
+        entity,
       };
     });
   }, [filteredEntities]);
@@ -249,22 +268,29 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
     );
   }
 
-  // No live connection AND no cached entities → prompt to connect. (When a cache
-  // exists we fall through and offer it, so cards can be configured offline.)
+  // No live connection AND no cached entities → there is nothing to autocomplete
+  // FROM, but the user may well know the id they want.
+  //
+  // PROPS-03. This branch used to render an EMPTY `<Select>` with no options and
+  // no search, which is a read-only dead end: a never-connected user could not
+  // enter an entity id at all. That contradicted the card's own pre-condition
+  // ("Works both connected and not") and THE VISION's ruling that the
+  // never-connected default is PERMISSIVE. A plain text field cannot validate
+  // the id, but it lets the work proceed and says plainly why it cannot help.
   if (!loading && source === 'none') {
     return (
       <div>
-        <Select
+        <Input
           value={value}
-          onChange={handleChange}
-          placeholder={placeholder}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="e.g. sensor.living_room_temperature"
           allowClear={allowClear}
           style={{ width: '100%' }}
           data-testid={dataTestId}
         />
         <Alert
-          message="Not Connected"
-          description="Connect to Home Assistant to enable entity autocomplete and validation."
+          title="Not connected — type an entity id manually"
+          description="Connect to Home Assistant, or open a dashboard while connected, to browse and validate entities. Ids typed here are used as-is."
           type="warning"
           icon={<WarningOutlined />}
           showIcon
@@ -284,8 +310,11 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
         loading={loading}
         showSearch
         filterOption={(input, option) => {
-          if (!option?.searchText) return false;
-          return option.searchText.includes(input.toLowerCase());
+          // Multi-token, order-independent. The previous single `includes()`
+          // over one concatenated string forced the user to remember the stored
+          // word order — "battery kia" found nothing for "Kia EV6 Battery Level".
+          if (!option?.entity) return false;
+          return matchesEntityQuery(option.entity, input);
         }}
         options={options}
         style={{ width: '100%' }}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import type { HAEntity } from '../../src/types/homeassistant';
 
 // Disconnected: the inline pickers must fall back to the persisted offline cache
@@ -67,5 +67,37 @@ describe('inline entity pickers — offline cache fallback', () => {
       expect(screen.getByText(/Not Connected/i)).toBeInTheDocument();
     });
     expect(screen.queryByText(/showing cached entities/i)).toBeNull();
+  });
+
+  /**
+   * ⚠⚠ PROPS-03, AND A COVERAGE LESSON WORTH RECORDING. The test directly above
+   * asserts the "Not Connected" hint appears with an empty cache — and it passed
+   * throughout the life of the defect, because the hint was never the problem.
+   * The problem sat one layer down: that branch rendered an EMPTY `<Select>` with
+   * no options and no search, so a never-connected user could not enter an
+   * entity id AT ALL. A spec that asserts the presence of a message beside a
+   * dead end certifies the message and says nothing about the dead end.
+   *
+   * The card's own Expected has always required the permissive behaviour: "A
+   * non-existent id is accepted — HAVDM is permissive when not connected". This
+   * test asserts the part that was actually broken.
+   */
+  it('EntitySelect: disconnected with an EMPTY cache still accepts a hand-typed entity id', async () => {
+    (window as unknown as { electronAPI: unknown }).electronAPI = {
+      getCachedEntities: vi.fn().mockResolvedValue({ success: true, entities: [] }),
+    };
+    const onChange = vi.fn();
+    render(<EntitySelect data-testid="entity-select" onChange={onChange} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Not connected/i)).toBeInTheDocument();
+    });
+
+    // ⭐ The field must be a real text input, not a Select with nothing in it.
+    const field = screen.getByTestId('entity-select') as HTMLInputElement;
+    expect(field.tagName).toBe('INPUT');
+
+    fireEvent.change(field, { target: { value: 'sensor.hand_typed_entity' } });
+    expect(onChange).toHaveBeenCalledWith('sensor.hand_typed_entity');
   });
 });

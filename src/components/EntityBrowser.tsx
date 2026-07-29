@@ -3,6 +3,9 @@ import { Modal, Input, Table, Button, Space, Badge, message, Tabs, Empty, Toolti
 import { SearchOutlined, ReloadOutlined, CheckOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { logger } from '../services/logger';
+import { loadPickerEntities } from '../services/entityPickerSource';
+import { matchesEntityQuery } from '../utils/entityCriteria';
+import type { HAEntity } from '../types/homeassistant';
 
 interface Entity {
   entity_id: string;
@@ -46,14 +49,19 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
     }
   }, [visible]);
 
+  // Prefer the live connection, fall back to the persisted offline cache.
+  //
+  // This used to call `getCachedEntities()` directly, making the browser
+  // CACHE-ONLY: freshly-added entities were invisible until a refresh had
+  // written them to disk, even with a live connection sitting right there. It
+  // was the third of four different ways HAVDM read the same dataset;
+  // `entityPickerSource` is now the single source of truth for all of them.
   const loadCachedEntities = async () => {
     try {
-      const result = await window.electronAPI.getCachedEntities();
-      if (result.success && result.entities) {
-        setEntities(result.entities);
-      }
+      const { entities: loaded } = await loadPickerEntities();
+      setEntities(loaded as unknown as Entity[]);
     } catch (error) {
-      logger.error('Failed to load cached entities', error);
+      logger.error('Failed to load entities', error);
     }
   };
 
@@ -105,15 +113,13 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
 
     if (!searchTerm) return entitiesToFilter;
 
-    const lowerSearch = searchTerm.toLowerCase();
-    return entitiesToFilter.filter((entity) => {
-      return (
-        entity.entity_id.toLowerCase().includes(lowerSearch) ||
-        entity.attributes.friendly_name?.toLowerCase().includes(lowerSearch) ||
-        entity.state.toLowerCase().includes(lowerSearch) ||
-        entity.attributes.device_class?.toLowerCase().includes(lowerSearch)
-      );
-    });
+    // Multi-token and order-independent. Each of these fields used to be tested
+    // with its own single `includes()`, so every token had to appear
+    // contiguously inside ONE field — "kia battery" matched nothing whose
+    // friendly name was "Kia EV6 Battery Level".
+    return entitiesToFilter.filter((entity) =>
+      matchesEntityQuery(entity as unknown as HAEntity, searchTerm),
+    );
   }, [entities, entitiesByDomain, activeTab, searchTerm]);
 
   const columns: ColumnsType<Entity> = [
