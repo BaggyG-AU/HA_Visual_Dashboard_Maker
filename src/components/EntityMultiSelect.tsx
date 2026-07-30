@@ -4,6 +4,11 @@ import { WarningOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-
 import { loadPickerEntities, type EntitySourceKind } from '../services/entityPickerSource';
 import { logger } from '../services/logger';
 import { HAEntity } from '../types/homeassistant';
+import {
+  filterEntitiesByRegistry,
+  groupEntitiesByPlatform,
+  type EntityRegistryIndex,
+} from '../utils/entityRegistry';
 
 const { Text } = Typography;
 
@@ -42,6 +47,7 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [validationMap, setValidationMap] = useState<Map<string, HAEntity | null>>(new Map());
   const [source, setSource] = useState<EntitySourceKind>('none');
+  const [registry, setRegistry] = useState<EntityRegistryIndex | null>(null);
 
   // Load entities: live when connected, else the persisted offline cache so
   // cards can be configured without a live HA connection.
@@ -51,9 +57,14 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
       setError(null);
 
       try {
-        const { entities: loaded, source: loadedSource } = await loadPickerEntities();
+        const {
+          entities: loaded,
+          source: loadedSource,
+          registry: loadedRegistry,
+        } = await loadPickerEntities();
         setEntities(loaded);
         setSource(loadedSource);
+        setRegistry(loadedRegistry);
       } catch (err) {
         setError((err as Error).message);
         logger.error('Failed to load entities', err);
@@ -80,60 +91,85 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
     setValidationMap(newValidationMap);
   }, [value, entities]);
 
-  // Filter entities by domain if specified
-  const filteredEntities = useMemo(() => {
-    if (!filterDomains || filterDomains.length === 0) {
-      return entities;
-    }
-
-    return entities.filter((entity) => {
-      const domain = entity.entity_id.split('.')[0];
-      return filterDomains.includes(domain);
-    });
-  }, [entities, filterDomains]);
-
-  // Create options for the select component
-  const options = useMemo(() => {
-    return filteredEntities.map((entity) => {
-      const domain = entity.entity_id.split('.')[0];
-      const friendlyName = entity.attributes.friendly_name || entity.entity_id;
-
-      return {
-        value: entity.entity_id,
-        label: (
-          <Space>
-            <Tag color="blue" style={{ fontSize: '10px', padding: '0 4px' }}>
-              {domain}
-            </Tag>
-            <span>{friendlyName}</span>
-            <Text type="secondary" style={{ fontSize: '11px' }}>
-              ({entity.entity_id})
-            </Text>
-          </Space>
-        ),
-        searchText: `${entity.entity_id} ${friendlyName}`.toLowerCase(),
-      };
-    });
-  }, [filteredEntities]);
-
   // Ensure value is always an array
   const safeValue = Array.isArray(value) ? value : [];
 
-  // Sort options to show selected entities first
-  const sortedOptions = useMemo(() => {
-    const selected: typeof options = [];
-    const unselected: typeof options = [];
-
-    options.forEach((option) => {
-      if (safeValue.includes(option.value)) {
-        selected.push(option);
-      } else {
-        unselected.push(option);
-      }
+  // Filter entities by domain if specified
+  const filteredEntities = useMemo(() => {
+    // Home Assistant's diagnostic/config marking. ⭐ Everything ALREADY chosen
+    // survives the cut — a multi-select that hid one of its own selections
+    // would show a tag the user could not find again in the list.
+    const forRegistry = filterEntitiesByRegistry(entities, registry, {
+      keepEntityIds: safeValue,
     });
 
-    return [...selected, ...unselected];
-  }, [options, safeValue]);
+    if (!filterDomains || filterDomains.length === 0) {
+      return forRegistry;
+    }
+
+    return forRegistry.filter((entity) => {
+      const domain = entity.entity_id.split('.')[0];
+      return filterDomains.includes(domain);
+    });
+    // `safeValue` is derived from `value`, which is the stable dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entities, filterDomains, registry, value]);
+
+  /** A leaf option. `searchText` is what `filterOption` matches against. */
+  type EntityOption = { value: string; label: React.ReactNode; searchText: string };
+  /** A heading — "Selected", or an integration — with its entities nested underneath. */
+  type EntityOptionGroup = { label: string; title: string; options: EntityOption[] };
+
+  const renderOption = (entity: HAEntity): EntityOption => {
+    const domain = entity.entity_id.split('.')[0];
+    const friendlyName = entity.attributes.friendly_name || entity.entity_id;
+
+    return {
+      value: entity.entity_id,
+      label: (
+        <Space>
+          <Tag color="blue" style={{ fontSize: '10px', padding: '0 4px' }}>
+            {domain}
+          </Tag>
+          <span>{friendlyName}</span>
+          <Text type="secondary" style={{ fontSize: '11px' }}>
+            ({entity.entity_id})
+          </Text>
+        </Space>
+      ),
+      searchText: `${entity.entity_id} ${friendlyName}`.toLowerCase(),
+    };
+  };
+
+  /**
+   * Options for the select, selected entries first.
+   *
+   * ⭐ Selected-first ordering and integration grouping are two different
+   * orderings of the same list, and the selected-first behaviour predates this
+   * slice and is genuinely useful in a multi-select. Rather than drop one for
+   * the other, the selection becomes its own leading group and the remainder is
+   * grouped by integration underneath it.
+   */
+  const sortedOptions = useMemo<(EntityOption | EntityOptionGroup)[]>(() => {
+    const selected = filteredEntities.filter((e) => safeValue.includes(e.entity_id));
+    const unselected = filteredEntities.filter((e) => !safeValue.includes(e.entity_id));
+
+    if (!registry) {
+      return [...selected, ...unselected].map(renderOption);
+    }
+
+    const groups = groupEntitiesByPlatform(unselected, registry).map((group) => ({
+      label: group.label,
+      title: group.platform,
+      options: group.entities.map(renderOption),
+    }));
+
+    return selected.length > 0
+      ? [{ label: 'Selected', title: 'Selected', options: selected.map(renderOption) }, ...groups]
+      : groups;
+    // `safeValue` is derived from `value`, which is the stable dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredEntities, value, registry]);
 
   // Handle entity selection
   const handleChange = (newValue: string[]) => {
@@ -298,8 +334,12 @@ export const EntityMultiSelect: React.FC<EntityMultiSelectProps> = ({
         loading={loading}
         showSearch
         filterOption={(input, option) => {
-          if (!option?.searchText) return false;
-          return option.searchText.includes(input.toLowerCase());
+          const candidate = option as { searchText?: string; options?: unknown[] } | undefined;
+          // A group heading carries no searchText; antd filters its children and
+          // drops it when none survive. Returning false would hide every group.
+          if (candidate?.options) return true;
+          if (!candidate?.searchText) return false;
+          return candidate.searchText.includes(input.toLowerCase());
         }}
         options={sortedOptions}
         tagRender={tagRender}

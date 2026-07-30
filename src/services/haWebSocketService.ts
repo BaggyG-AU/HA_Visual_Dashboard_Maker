@@ -52,6 +52,24 @@ export interface EntityState {
 export type EntityStates = Record<string, EntityState>;
 
 /**
+ * One row of `config/entity_registry/list`, as Home Assistant sends it.
+ *
+ * Deliberately open-ended: the live payload carries ~22 keys per row and HAVDM
+ * narrows it in `src/utils/entityRegistry.ts`. The transport's job is to hand
+ * back what arrived, not to decide what matters.
+ */
+export interface EntityRegistryEntryRaw {
+  entity_id: string;
+  platform: string;
+  entity_category?: string | null;
+  hidden_by?: string | null;
+  disabled_by?: string | null;
+  area_id?: string | null;
+  device_id?: string | null;
+  [key: string]: unknown;
+}
+
+/**
  * Home Assistant WebSocket Service
  * Handles WebSocket connections to Home Assistant for retrieving dashboard configurations
  */
@@ -577,6 +595,34 @@ export class HAWebSocketService {
 
     logger.info(`Fetched ${states.length} entities from Home Assistant`);
     return states;
+  }
+
+  /**
+   * Fetch the entity registry (`config/entity_registry/list`).
+   *
+   * The registry is what makes integration grouping and the diagnostic/config
+   * cut possible — `get_states` carries neither `platform` nor
+   * `entity_category`. READ-ONLY: a plain query, never a write, so it is safe
+   * against the VPP-enrolled reference instance.
+   *
+   * ⚠ WebSocket-only — there is no REST equivalent — and admin-only. A
+   * non-admin token gets `unauthorized` back, which surfaces here as a
+   * rejection. Callers MUST degrade rather than propagate: the registry is
+   * additive metadata, and a picker with no registry must behave exactly as it
+   * did before it existed.
+   *
+   * ⓘ On the reference instance this returns 1397 rows against 725 live states;
+   * 679 rows are `disabled_by` and have no state at all, so a caller joining
+   * from `get_states` never reaches them.
+   */
+  async fetchEntityRegistry(): Promise<EntityRegistryEntryRaw[]> {
+    const result = await this.sendAndWait<EntityRegistryEntryRaw[]>({
+      type: 'config/entity_registry/list',
+    });
+
+    const entries = Array.isArray(result) ? result : [];
+    logger.info(`Fetched ${entries.length} entity registry entries from Home Assistant`);
+    return entries;
   }
 
   /**

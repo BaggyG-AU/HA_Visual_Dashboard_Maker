@@ -1946,52 +1946,75 @@ instance** — this card is the first real evidence that the connection path wor
 
 #### HA-02: Browse, search and select real entities
 
-| Field          | Value                                          |
-| -------------- | ---------------------------------------------- |
-| Type           | gate                                           |
-| Auto covered   | Y (`tests/integration/entity-browser.spec.ts`) |
-| Needs HA       | **Yes**                                        |
-| Pre-conditions | Connected (HA-01)                              |
+| Field          | Value                                                                                                                                                                                     |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Type           | gate                                                                                                                                                                                      |
+| Auto covered   | Y (`tests/integration/entity-browser.spec.ts`, `tests/integration/entity-registry-picker.spec.ts`, `tests/unit/entityRegistry.spec.ts`, `tests/unit/haWebSocketService.registry.spec.ts`) |
+| Needs HA       | **Yes**                                                                                                                                                                                   |
+| Pre-conditions | Connected (HA-01)                                                                                                                                                                         |
 
 **Automated coverage confirms:**
 `tests/integration/entity-browser.spec.ts` covers the browser and its insert
-path, against fixture data. It has never seen a real instance's ~725 entities.
+path against fixture data. `tests/integration/entity-registry-picker.spec.ts`
+adds integration grouping, the diagnostic/config cut, its reversibility and its
+survival across a restart. `tests/unit/haWebSocketService.registry.spec.ts`
+asserts the `config/entity_registry/list` **wire frame** against rows captured
+from a real instance, because an IPC-layer mock cannot see a wrong command name.
+⚠ None of them has seen a real instance's ~725 entities.
 
-⚠ **THIS CARD PASSED IN ROUND 1 AND ITS BEHAVIOUR HAS DELIBERATELY CHANGED.** Two
-things are different, and neither is a regression:
+⚠ **THIS CARD PASSED IN ROUND 1 AND ITS BEHAVIOUR HAS DELIBERATELY CHANGED
+TWICE — once before this round, and again now.** Nothing below is a regression:
 (a) the browser now prefers the **live** connection and falls back to the cached
 list, where it previously read the cache **only** — so a freshly-added entity
 appears without a manual refresh;
 (b) search is now **multi-token and order-independent**, where it previously
-required every word to appear contiguously inside one field.
-**Step 3 has been rewritten to exercise (b) on purpose.** Judge the card against
-the Expected below, not against how round 1 behaved.
+required every word to appear contiguously inside one field;
+(c) ⭐ **NEW: the tab strip has a "Group by: Domain | Integration" switch, and
+entities Home Assistant marks `diagnostic` or `config` are HIDDEN BY DEFAULT**
+behind a "Show diagnostic & config" tick-box.
+**Steps 3, 5 and 7 exercise these on purpose.** Judge the card against the
+Expected below, not against how round 1 behaved.
 
 **Steps:**
 
 1. Click **Entities** in the header.
-2. Read the entity count and the domain filter tabs.
+2. Read the entity count and the domain filter tabs. ⭐ Note the
+   **"Showing N of M"** text beside the tick-box — on a large instance M is much
+   larger than N.
 3. Type `light` into the search box. ⭐ Then type two words from a single
    entity's friendly name **in the wrong order** — e.g. for "Kia EV6 Battery
    Level", type `battery kia`.
 4. Switch to a specific domain tab, e.g. `sensor`.
-5. Select an entity and click the select/confirm button.
-6. Click the refresh control.
+5. ⭐ **NEW: set _Group by_ to _Integration_.** Read the tab strip, then pick one
+   integration's tab.
+6. Select an entity and click the select/confirm button.
+7. ⭐ **NEW: tick _Show diagnostic & config_, then untick it again.**
+8. Click the refresh control.
 
 **Expected:**
 
 - Real entities from the instance are listed, with id, friendly name, state and
   domain.
-- The count is plausible for the instance (hundreds, not a handful).
+- The count is plausible for the instance (hundreds, not a handful). ⓘ It is now
+  **smaller than round 1** because diagnostic and config entities are hidden by
+  default — the "Showing N of M" text must say so rather than leaving the
+  difference unexplained.
 - Search narrows the list responsively even with hundreds of rows.
 - ⭐ Words typed in **any order** still find the entity. `battery kia` must match
   "Kia EV6 Battery Level".
 - Domain tabs filter correctly and show per-domain counts.
+- ⭐ **Grouping by Integration produces one tab per integration**, named readably
+  (e.g. "Bureau Of Meteorology", not `bureau_of_meteorology`) with a count,
+  biggest first — and the `sensor` haystack is visibly broken up. Selecting an
+  integration tab shows only that integration's entities.
+- ⭐ **Ticking "Show diagnostic & config" brings the hidden entities back, and
+  unticking hides them again.** A cut you cannot reverse is a **fail**, and so is
+  an entity that disappears without the count admitting it.
 - Refresh re-fetches without emptying or duplicating the list.
-- ⓘ The tabs are grouped by **domain** (`sensor`, `light`), which on a real
-  instance means the `sensor` tab still holds ~300 rows. Grouping by
-  **integration** is queued as a separate change and is deliberately **not** part
-  of this round — do not fail the card for its absence.
+- ⓘ Entities Home Assistant's registry does not know about — on a typical
+  instance `sun.sun`, `zone.home` and YAML template sensors — must **still be
+  listed**, under "Not in the entity registry" when grouped by integration. Any
+  of them going missing is a **fail**.
 
 #### HA-03: Download an existing dashboard from Home Assistant
 

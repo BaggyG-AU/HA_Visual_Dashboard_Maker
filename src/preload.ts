@@ -57,6 +57,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCachedEntities: () => ipcRenderer.invoke('entities:getCached'),
   cacheEntities: (entities: any[]) => ipcRenderer.invoke('entities:cache', entities),
   clearCachedEntities: () => ipcRenderer.invoke('entities:clear'),
+  getCachedEntityRegistry: () => ipcRenderer.invoke('entities:getCachedRegistry'),
 
   // Home Assistant connection APIs
   getHAConnection: () => ipcRenderer.invoke('ha:getConnection'),
@@ -94,6 +95,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('ha:ws:saveDashboardConfig', urlPath, config),
   haWsDeleteDashboard: (urlPath: string) => ipcRenderer.invoke('ha:ws:deleteDashboard', urlPath),
   haWsFetchEntities: () => ipcRenderer.invoke('ha:ws:fetchEntities'),
+  haWsFetchEntityRegistry: () => ipcRenderer.invoke('ha:ws:fetchEntityRegistry'),
   haWsGetThemes: () => ipcRenderer.invoke('ha:ws:getThemes'),
   haWsSubscribeToThemes: (callback: (themes: any) => void) => {
     const channel = 'ha:ws:themesUpdated';
@@ -135,6 +137,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Test-only APIs (only available when NODE_ENV=test)
   testSeedEntityCache: (entities: any[]) => ipcRenderer.invoke('test:seedEntityCache', entities),
   testClearEntityCache: () => ipcRenderer.invoke('test:clearEntityCache'),
+  testSeedEntityRegistry: (entries: unknown[]) =>
+    ipcRenderer.invoke('test:seedEntityRegistry', entries),
+  testClearEntityRegistry: () => ipcRenderer.invoke('test:clearEntityRegistry'),
 
   // Menu event listeners
   onMenuOpenFile: (callback: () => void) => {
@@ -215,6 +220,11 @@ export interface ElectronAPI {
   getCachedEntities: () => Promise<{ success: boolean; entities?: any[]; error?: string }>;
   cacheEntities: (entities: any[]) => Promise<{ success: boolean; error?: string }>;
   clearCachedEntities: () => Promise<{ success: boolean }>;
+  getCachedEntityRegistry: () => Promise<{
+    success: boolean;
+    entries?: unknown[];
+    error?: string;
+  }>;
   getHAConnection: () => Promise<{ url?: string; token?: string }>;
   setHAConnection: (url: string, token: string) => Promise<{ success: boolean }>;
   clearHAConnection: () => Promise<{ success: boolean }>;
@@ -275,6 +285,11 @@ export interface ElectronAPI {
   ) => Promise<{ success: boolean; error?: string }>;
   haWsDeleteDashboard: (urlPath: string) => Promise<{ success: boolean; error?: string }>;
   haWsFetchEntities: () => Promise<{ success: boolean; entities?: any[]; error?: string }>;
+  haWsFetchEntityRegistry: () => Promise<{
+    success: boolean;
+    entries?: unknown[];
+    error?: string;
+  }>;
   haWsGetThemes: () => Promise<{ success: boolean; themes?: any; error?: string }>;
   haWsSubscribeToThemes: (callback: (themes: any) => void) => () => void;
   credentialsSave: (
@@ -331,6 +346,8 @@ export interface ElectronAPI {
   ) => Promise<{ success: boolean; content?: string; error?: string }>;
   testSeedEntityCache: (entities: any[]) => Promise<{ success: boolean; error?: string }>;
   testClearEntityCache: () => Promise<{ success: boolean; error?: string }>;
+  testSeedEntityRegistry: (entries: unknown[]) => Promise<{ success: boolean; error?: string }>;
+  testClearEntityRegistry: () => Promise<{ success: boolean; error?: string }>;
   onMenuOpenFile: (callback: () => void) => () => void;
   onMenuSaveFile: (callback: () => void) => () => void;
   onMenuSaveFileAs: (callback: () => void) => () => void;

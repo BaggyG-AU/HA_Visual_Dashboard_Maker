@@ -63,6 +63,46 @@ export async function seedEntityCache(
 }
 
 /**
+ * Seed the persisted entity registry via IPC.
+ *
+ * Supplies the `platform` and `entity_category` the pickers use for integration
+ * grouping and the diagnostic/config cut. Rows go through the production
+ * projector in the main process, so a test cannot depend on a field shape the
+ * real `config/entity_registry/list` never sends.
+ */
+export async function seedEntityRegistry(
+  window: Page,
+  entries: Array<Record<string, unknown>>,
+): Promise<void> {
+  await window.evaluate(async (rows) => {
+    const testWindow = window as unknown as Window & {
+      electronAPI: {
+        testSeedEntityRegistry: (payload: unknown[]) => Promise<{ success: boolean }>;
+      };
+    };
+    const result = await testWindow.electronAPI.testSeedEntityRegistry(rows);
+    if (result.success) {
+      console.log('[EntityBrowserDSL] Seeded', rows.length, 'registry entries');
+    }
+  }, entries);
+}
+
+/**
+ * Clear the persisted entity registry via IPC.
+ */
+export async function clearEntityRegistry(window: Page): Promise<void> {
+  await window.evaluate(async () => {
+    const testWindow = window as unknown as Window & {
+      electronAPI: { testClearEntityRegistry: () => Promise<{ success: boolean }> };
+    };
+    const result = await testWindow.electronAPI.testClearEntityRegistry();
+    if (result.success) {
+      console.log('[EntityBrowserDSL] Entity registry cleared');
+    }
+  });
+}
+
+/**
  * Clear the entity cache via IPC
  */
 export async function clearEntityCache(window: Page): Promise<void> {
@@ -273,6 +313,71 @@ export class EntityBrowserDSL {
       await allTab.click();
       await expect(allTab).toHaveClass(/ant-tabs-tab-active/);
     }
+  }
+
+  /**
+   * Switch the tab strip between grouping by domain and by integration.
+   *
+   * ⚠ Asserts the switch actually moved before returning. A setter that can
+   * silently no-op turns every downstream assertion into a test of the wrong
+   * thing — the lesson PROPS-04 paid for.
+   */
+  async setGroupBy(axis: 'Domain' | 'Integration'): Promise<void> {
+    const control = this.window.getByTestId('entity-browser-group-by');
+    await expect(control).toBeVisible();
+    const option = control.locator('.ant-segmented-item', { hasText: axis });
+    await option.click();
+    await expect(option).toHaveClass(/ant-segmented-item-selected/);
+  }
+
+  /** Whether the Integration grouping option is selectable at all. */
+  async isIntegrationGroupingEnabled(): Promise<boolean> {
+    const control = this.window.getByTestId('entity-browser-group-by');
+    const option = control.locator('.ant-segmented-item', { hasText: 'Integration' });
+    return !(await option.evaluate((el) => el.classList.contains('ant-segmented-item-disabled')));
+  }
+
+  /**
+   * Show or hide Home Assistant's diagnostic/config entities.
+   *
+   * ⚠ Asserts the resulting checked state before returning, for the same reason
+   * as {@link setGroupBy}.
+   */
+  async setShowDiagnostic(show: boolean): Promise<void> {
+    const wrapper = this.window.getByTestId('entity-browser-show-diagnostic');
+    await expect(wrapper).toBeVisible();
+    const input = wrapper.locator('input[type="checkbox"]');
+    if ((await input.isChecked()) !== show) {
+      await wrapper.locator('.ant-checkbox-wrapper, label').first().click();
+    }
+    await expect(input).toBeChecked({ checked: show });
+  }
+
+  /** The "Showing N of M (K hidden)" disclosure text. */
+  async getVisibleCountText(): Promise<string> {
+    return (await this.window.getByTestId('entity-browser-visible-count').textContent()) ?? '';
+  }
+
+  /** Every tab label currently in the strip, e.g. `['All (4)', 'sensor (2)']`. */
+  async getTabLabels(): Promise<string[]> {
+    const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
+    return modal.locator('.ant-tabs-tab').allInnerTexts();
+  }
+
+  /**
+   * Every entity id currently rendered in the table body.
+   *
+   * ⚠ Read from the row's `data-row-key` (antd populates it from `rowKey`),
+   * NOT from the first cell — `rowSelection` inserts a radio column, so
+   * `td:first-child` is the radio and returns empty text for every row. That
+   * misread looks exactly like "the table is broken" while the table is fine.
+   */
+  async getRowEntityIds(): Promise<string[]> {
+    const modal = this.window.locator('.ant-modal:has-text("Entity Browser")');
+    const rows = modal.locator('.ant-table-tbody tr.ant-table-row');
+    return (await rows.evaluateAll((els) =>
+      els.map((el) => el.getAttribute('data-row-key') ?? ''),
+    )) as string[];
   }
 
   /**

@@ -5,6 +5,11 @@ import { loadPickerEntities, type EntitySourceKind } from '../services/entityPic
 import { logger } from '../services/logger';
 import { HAEntity } from '../types/homeassistant';
 import { filterEntitiesForCard, matchesEntityQuery } from '../utils/entityCriteria';
+import {
+  filterEntitiesByRegistry,
+  groupEntitiesByPlatform,
+  type EntityRegistryIndex,
+} from '../utils/entityRegistry';
 
 const { Text } = Typography;
 
@@ -47,6 +52,7 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<HAEntity | null>(null);
   const [source, setSource] = useState<EntitySourceKind>('none');
+  const [registry, setRegistry] = useState<EntityRegistryIndex | null>(null);
 
   // Load entities: live when connected, else the persisted offline cache so
   // cards can be configured without a live HA connection.
@@ -56,9 +62,14 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
       setError(null);
 
       try {
-        const { entities: loaded, source: loadedSource } = await loadPickerEntities();
+        const {
+          entities: loaded,
+          source: loadedSource,
+          registry: loadedRegistry,
+        } = await loadPickerEntities();
         setEntities(loaded);
         setSource(loadedSource);
+        setRegistry(loadedRegistry);
       } catch (err) {
         setError((err as Error).message);
         logger.error('Failed to load entities', err);
@@ -92,41 +103,70 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
   const filteredEntities = useMemo(() => {
     const forCard = cardType ? filterEntitiesForCard(entities, cardType) : entities;
 
+    // Home Assistant's own diagnostic/config marking, on top of the card-aware
+    // cut. ⭐ The entity this field is ALREADY set to always survives — hiding
+    // it would leave the picker unable to show its own current value.
+    const forRegistry = filterEntitiesByRegistry(forCard, registry, {
+      keepEntityIds: value ? [value] : undefined,
+    });
+
     if (!filterDomains || filterDomains.length === 0) {
-      return forCard;
+      return forRegistry;
     }
 
-    return forCard.filter((entity) => {
+    return forRegistry.filter((entity) => {
       const domain = entity.entity_id.split('.')[0];
       return filterDomains.includes(domain);
     });
-  }, [entities, filterDomains, cardType]);
+  }, [entities, filterDomains, cardType, registry, value]);
 
-  // Create options for the select component
-  const options = useMemo(() => {
-    return filteredEntities.map((entity) => {
-      const domain = entity.entity_id.split('.')[0];
-      const friendlyName = entity.attributes.friendly_name || entity.entity_id;
+  /** A leaf option. `entity` rides along so `filterOption` can match the whole entity. */
+  type EntityOption = { value: string; label: React.ReactNode; entity: HAEntity };
+  /** An integration heading with its entities nested underneath. */
+  type EntityOptionGroup = { label: string; title: string; options: EntityOption[] };
 
-      return {
-        value: entity.entity_id,
-        label: (
-          <Space>
-            <Tag color="blue" style={{ fontSize: '10px', padding: '0 4px' }}>
-              {domain}
-            </Tag>
-            <span>{friendlyName}</span>
-            <Text type="secondary" style={{ fontSize: '11px' }}>
-              ({entity.entity_id})
-            </Text>
-          </Space>
-        ),
-        // Carried so `filterOption` can do multi-token matching against the
-        // whole entity rather than one pre-concatenated string.
-        entity,
-      };
-    });
-  }, [filteredEntities]);
+  const renderOption = (entity: HAEntity): EntityOption => {
+    const domain = entity.entity_id.split('.')[0];
+    const friendlyName = entity.attributes.friendly_name || entity.entity_id;
+
+    return {
+      value: entity.entity_id,
+      label: (
+        <Space>
+          <Tag color="blue" style={{ fontSize: '10px', padding: '0 4px' }}>
+            {domain}
+          </Tag>
+          <span>{friendlyName}</span>
+          <Text type="secondary" style={{ fontSize: '11px' }}>
+            ({entity.entity_id})
+          </Text>
+        </Space>
+      ),
+      // Carried so `filterOption` can do multi-token matching against the
+      // whole entity rather than one pre-concatenated string.
+      entity,
+    };
+  };
+
+  // Create options for the select component.
+  //
+  // ⭐ With a registry, options are nested under an integration heading — the
+  // "group header" form the owner chose over a flat `<integration>: <entity>`
+  // row prefix, which repeats the same slug down dozens of rows without
+  // discriminating within a group. Without a registry, the flat list is
+  // returned exactly as before.
+  const options = useMemo<(EntityOption | EntityOptionGroup)[]>(() => {
+    if (!registry) {
+      return filteredEntities.map(renderOption);
+    }
+
+    return groupEntitiesByPlatform(filteredEntities, registry).map((group) => ({
+      label: group.label,
+      title: group.platform,
+      options: group.entities.map(renderOption),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredEntities, registry]);
 
   // Handle entity selection
   const handleChange = (newValue: string) => {
@@ -313,8 +353,13 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
           // Multi-token, order-independent. The previous single `includes()`
           // over one concatenated string forced the user to remember the stored
           // word order — "battery kia" found nothing for "Kia EV6 Battery Level".
-          if (!option?.entity) return false;
-          return matchesEntityQuery(option.entity, input);
+          const candidate = option as { entity?: HAEntity; options?: unknown[] } | undefined;
+          // A group heading has no entity of its own; antd filters its children
+          // and drops it when none survive. Returning false here would hide
+          // every group and with it every option under one.
+          if (candidate?.options) return true;
+          if (!candidate?.entity) return false;
+          return matchesEntityQuery(candidate.entity, input);
         }}
         options={options}
         style={{ width: '100%' }}

@@ -153,13 +153,26 @@ function createIsolatedUserDataDir(): string {
   return dir;
 }
 
+export interface LaunchOptions {
+  /**
+   * Relaunch against an EXISTING profile directory instead of a fresh one.
+   *
+   * ⚠ Opt-in only, and isolation is still the default. This exists so a test
+   * can prove something SURVIVES A RESTART — offline persistence is invisible
+   * to a single-process test, because `electron-store` will serve the value it
+   * already has in memory whether or not it ever reached disk. Pair it with
+   * `close(ctx, { keepProfile: true })` on the first leg.
+   */
+  reuseUserDataDir?: string;
+}
+
 /**
  * Launch Electron app with isolated storage
  * This is the ONLY way to launch Electron in tests
  */
-export async function launch(): Promise<ElectronTestContext> {
+export async function launch(options: LaunchOptions = {}): Promise<ElectronTestContext> {
   const mainPath = path.join(__dirname, '../../.vite/build/main.js');
-  const userDataDir = createIsolatedUserDataDir();
+  const userDataDir = options.reuseUserDataDir ?? createIsolatedUserDataDir();
 
   const wslFlags = [
     '--no-sandbox',
@@ -258,13 +271,21 @@ export async function launch(): Promise<ElectronTestContext> {
  * Close Electron app and cleanup isolated storage
  * Never throws - always attempts cleanup even if close fails
  */
-export async function close(ctx: ElectronTestContext): Promise<void> {
+export async function close(
+  ctx: ElectronTestContext,
+  options: { keepProfile?: boolean } = {},
+): Promise<void> {
   // Close Electron app (don't throw on failure)
   try {
     await ctx.app.close();
   } catch (error) {
     console.warn('[electron.ts] Failed to close Electron app:', error);
   }
+
+  // ⚠ `keepProfile` leaves the temp directory on disk for a deliberate relaunch
+  // (see `LaunchOptions.reuseUserDataDir`). The test that asked for it OWNS the
+  // cleanup — close the second leg without the flag and the directory goes.
+  if (options.keepProfile) return;
 
   // Cleanup temp directory (always attempt even if close failed)
   try {
