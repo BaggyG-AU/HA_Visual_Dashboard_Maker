@@ -2851,6 +2851,7 @@ const App: React.FC = () => {
                           onCardPaste={handleCardPaste}
                           onCardDelete={handleCardDelete}
                           canPaste={clipboard.cards !== null}
+                          onOpenEntityBrowser={handleOpenEntityBrowser}
                         />
                       ) : (
                         <Tabs

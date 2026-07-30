@@ -1,18 +1,21 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Button, Select, Space, Tooltip, message, theme } from 'antd';
 import {
   CheckOutlined,
+  DatabaseOutlined,
   PlusOutlined,
   RollbackOutlined,
   SettingOutlined,
   SyncOutlined,
 } from '@ant-design/icons';
+import type * as monaco from 'monaco-editor';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 import { GridCanvas } from './GridCanvas';
 import type { Layout } from 'react-grid-layout';
 import { YamlEditor } from './YamlEditor';
 import { yamlService } from '../services/yamlService';
+import { decideEntityInsertion, NO_CURSOR_REFUSAL } from '../utils/entityInsertion';
 import { useEditorModeStore } from '../store/editorModeStore';
 import { useDashboardStore } from '../store/dashboardStore';
 
@@ -73,6 +76,17 @@ interface SplitViewEditorProps {
 
   /** Whether paste is available */
   canPaste: boolean;
+
+  /**
+   * YAML-05: open the entity browser and insert the chosen id at the cursor.
+   *
+   * Split view is a YAML-authoring surface exactly like the Edit YAML dialog and
+   * the Properties panel's YAML tab, but it was the only one never wired to the
+   * entity browser — so "Insert Entity" simply did not exist here. That is what
+   * failed UAT card YAML-05: the tester was in Split view, and the control they
+   * were told to press was on a different surface.
+   */
+  onOpenEntityBrowser?: (insertCallback: (entityId: string) => void) => void;
 }
 
 /**
@@ -109,9 +123,23 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
   onAddView,
   onOpenViewSettings,
   canPaste,
+  onOpenEntityBrowser,
 }) => {
   const { token } = theme.useToken();
   const { config, updateConfig, setSelectedView } = useDashboardStore();
+
+  /** YAML-05: this pane's Monaco, for cursor-aware entity insertion. */
+  const yamlEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  /** See `decideEntityInsertion` — a never-focused editor reports a phantom caret at (1,1). */
+  const userPlacedCursorRef = useRef(false);
+  const cursorFocusDisposableRef = useRef<monaco.IDisposable | null>(null);
+
+  useEffect(() => {
+    return () => {
+      cursorFocusDisposableRef.current?.dispose();
+      cursorFocusDisposableRef.current = null;
+    };
+  }, []);
 
   const {
     syncStatus,
@@ -260,6 +288,44 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
     message.success('YAML synced from visual view!');
   }, [config, setLastValidYaml, setLastValidConfig, clearPending]);
 
+  /**
+   * YAML-05. Insert the browser's chosen entity id at the cursor in this pane.
+   *
+   * Deliberately identical in behaviour to the Edit YAML dialog and the
+   * Properties panel: the shared `decideEntityInsertion` refuses when the user
+   * has not placed a cursor, rather than falling back to Monaco's phantom (1,1)
+   * caret and silently overwriting the first line.
+   *
+   * The edit goes through `executeEdits`, so `onDidChangeModelContent` fires and
+   * `handleYamlChange` moves `syncStatus` to 'pending-code' — the insert behaves
+   * like any other user edit and Apply YAML lights up. (YAML-04's echo guard
+   * only suppresses writes this component makes from the `value` prop, so it
+   * does not swallow this one.)
+   */
+  const handleInsertEntity = useCallback((entityId: string) => {
+    const editor = yamlEditorRef.current;
+    if (!editor) return;
+
+    const decision = decideEntityInsertion(userPlacedCursorRef.current, editor.getSelection());
+    if (!decision.allowed || !decision.range) {
+      message.warning(decision.refusalReason ?? NO_CURSOR_REFUSAL);
+      return;
+    }
+
+    const id = { major: 1, minor: 1 };
+    const op = { identifier: id, range: decision.range, text: entityId, forceMoveMarkers: true };
+    editor.executeEdits('insert-entity', [op]);
+    editor.focus();
+
+    message.success(`Inserted entity: ${entityId}`);
+  }, []);
+
+  const handleOpenEntityBrowserClick = useCallback(() => {
+    if (onOpenEntityBrowser) {
+      onOpenEntityBrowser(handleInsertEntity);
+    }
+  }, [onOpenEntityBrowser, handleInsertEntity]);
+
   // Card selection → YAML jump
   useEffect(() => {
     if (selectedViewIndex !== null && selectedCardIndex !== null) {
@@ -353,6 +419,18 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
         </Space>
 
         <Space>
+          <Tooltip title="Open entity browser and insert the selected entity ID at the cursor">
+            <Button
+              size="small"
+              data-testid="split-view-insert-entity-button"
+              icon={<DatabaseOutlined />}
+              onClick={handleOpenEntityBrowserClick}
+              disabled={!onOpenEntityBrowser}
+            >
+              Insert Entity
+            </Button>
+          </Tooltip>
+
           <Tooltip title="Apply YAML changes to visual view">
             <Button
               size="small"
@@ -445,6 +523,16 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
                 value={yamlContent}
                 onChange={handleYamlChange}
                 onValidationChange={handleValidationChange}
+                onEditorReady={(editor) => {
+                  yamlEditorRef.current = editor;
+                  // A fresh editor has no cursor the user chose, even though
+                  // Monaco will happily report one at (1,1).
+                  userPlacedCursorRef.current = false;
+                  cursorFocusDisposableRef.current?.dispose();
+                  cursorFocusDisposableRef.current = editor.onDidFocusEditorText(() => {
+                    userPlacedCursorRef.current = true;
+                  });
+                }}
                 height="calc(100vh - 250px)"
                 showValidationAlerts={true}
                 showFormattingControls={true}

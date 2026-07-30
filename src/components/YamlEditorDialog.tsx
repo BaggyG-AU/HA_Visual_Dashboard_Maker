@@ -4,6 +4,7 @@ import { CodeOutlined, CheckOutlined, DatabaseOutlined } from '@ant-design/icons
 import * as monaco from 'monaco-editor';
 import { YamlEditor } from './YamlEditor';
 import { yamlService } from '../services/yamlService';
+import { decideEntityInsertion, NO_CURSOR_REFUSAL } from '../utils/entityInsertion';
 
 type TestWindow = Window & {
   E2E?: string;
@@ -83,6 +84,13 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
   const [isValid, setIsValid] = useState(true);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const monacoEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  /**
+   * Has the user focused the editor text since this dialog opened? Monaco
+   * reports a caret at (1,1) on an editor nobody has touched, so the selection
+   * cannot distinguish "the user chose line 1" from "the user chose nothing".
+   */
+  const userPlacedCursorRef = useRef(false);
+  const cursorFocusDisposableRef = useRef<monaco.IDisposable | null>(null);
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -92,8 +100,18 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
       setValidationError(null);
       setShowConfirmation(false);
       setIsValid(true);
+      // A fresh dialog has no cursor the user chose, even though Monaco will
+      // happily report one.
+      userPlacedCursorRef.current = false;
     }
   }, [visible, dashboardYaml]);
+
+  useEffect(() => {
+    return () => {
+      cursorFocusDisposableRef.current?.dispose();
+      cursorFocusDisposableRef.current = null;
+    };
+  }, []);
 
   // Expose Monaco handles for tests (needed for backward compatibility)
   useEffect(() => {
@@ -221,10 +239,17 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
     const editor = monacoEditorRef.current ?? getTestWindow()?.__monacoEditor;
     if (!editor) return;
 
-    const selection = editor.getSelection() ?? editor.getModel()?.getFullModelRange();
-    if (!selection) return;
+    // A never-focused Monaco still reports a caret at (1,1), so the selection
+    // alone cannot tell us whether the user ever chose a spot. Inserting on that
+    // phantom caret prepends to line 1 and silently overwrites `title:`.
+    const decision = decideEntityInsertion(userPlacedCursorRef.current, editor.getSelection());
+    if (!decision.allowed || !decision.range) {
+      message.warning(decision.refusalReason ?? NO_CURSOR_REFUSAL);
+      return;
+    }
+
     const id = { major: 1, minor: 1 };
-    const op = { identifier: id, range: selection, text: entityId, forceMoveMarkers: true };
+    const op = { identifier: id, range: decision.range, text: entityId, forceMoveMarkers: true };
     editor.executeEdits('insert-entity', [op]);
     editor.focus();
 
@@ -313,6 +338,13 @@ export const YamlEditorDialog: React.FC<YamlEditorDialogProps> = ({
               value={dashboardYaml}
               onEditorReady={(editor) => {
                 monacoEditorRef.current = editor;
+                // A fresh editor has no cursor the user chose, even though
+                // Monaco will happily report one at (1,1).
+                userPlacedCursorRef.current = false;
+                cursorFocusDisposableRef.current?.dispose();
+                cursorFocusDisposableRef.current = editor.onDidFocusEditorText(() => {
+                  userPlacedCursorRef.current = true;
+                });
               }}
               onChange={handleYamlChange}
               onValidationChange={handleValidationChange}
