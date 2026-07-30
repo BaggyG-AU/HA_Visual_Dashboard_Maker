@@ -189,6 +189,17 @@ const RemapWatcher: React.FC<RemapWatcherProps> = ({
   // every render and spins forever.
   const [cachedEntities, setCachedEntities] = useState<EntityState[]>([]);
 
+  // ⚠⚠ DELIBERATELY IGNORES `registry`, AND MUST KEEP DOING SO. Slice 2 added
+  // Home Assistant's entity registry to `loadPickerEntities()` so the pickers
+  // can hide `diagnostic`/`config` entities, and applying that cut HERE looks
+  // like the obvious next improvement. It is a defect.
+  //
+  // This list is "WHAT EXISTS", not "what to offer". It feeds
+  // `entityRemappingService.detectMissing`, which reports every referenced id
+  // absent from it as MISSING — so filtering out diagnostic entities would make
+  // HAVDM tell the user that a dashboard's diagnostic entity has vanished from
+  // their Home Assistant. That is HA-04's false missing-report exactly, and the
+  // HA-03 dishonest-failure family with it.
   useEffect(() => {
     let cancelled = false;
     loadPickerEntities()

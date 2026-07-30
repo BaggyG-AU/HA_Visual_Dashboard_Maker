@@ -219,14 +219,55 @@ export async function mockHAEntities(
   options?: {
     entities?: any[];
     isConnected?: boolean;
+    /**
+     * `config/entity_registry/list` rows. Supplies `platform` (integration
+     * grouping) and `entity_category` (the diagnostic/config cut).
+     *
+     * ⚠ These mocks sit at the **IPC** layer, which cannot see the WebSocket
+     * protocol underneath — a wrong command name would pass here. The wire
+     * frame itself is asserted in `tests/unit/haWebSocketService.registry.spec.ts`
+     * against a payload captured from the live instance. The two halves are
+     * deliberate: this one covers the UI paths, that one covers the seam.
+     */
+    registry?: any[];
   },
 ) {
   const entities = options?.entities ?? [];
   const isConnected = options?.isConnected ?? true;
+  const registry = options?.registry ?? [];
 
   await app.evaluate(
     ({ ipcMain }, mockData) => {
       console.log('[MOCK MAIN] Installing entity IPC handler mocks');
+
+      // Entity registry — live fetch and the persisted copy.
+      ipcMain.removeHandler('ha:ws:fetchEntityRegistry');
+      ipcMain.handle('ha:ws:fetchEntityRegistry', () => {
+        console.log(
+          '[MOCK MAIN] ha:ws:fetchEntityRegistry called, returning',
+          mockData.registry.length,
+          'entries',
+        );
+        return { success: true, entries: mockData.registry };
+      });
+
+      ipcMain.removeHandler('entities:getCachedRegistry');
+      ipcMain.handle('entities:getCachedRegistry', () => {
+        console.log('[MOCK MAIN] entities:getCachedRegistry called');
+        return { success: true, entries: mockData.registry };
+      });
+
+      ipcMain.removeHandler('test:seedEntityRegistry');
+      ipcMain.handle('test:seedEntityRegistry', (event, entries) => {
+        mockData.registry = entries;
+        return { success: true };
+      });
+
+      ipcMain.removeHandler('test:clearEntityRegistry');
+      ipcMain.handle('test:clearEntityRegistry', () => {
+        mockData.registry = [];
+        return { success: true };
+      });
 
       // Mock connection status
       ipcMain.removeHandler('ha:ws:isConnected');
@@ -283,7 +324,7 @@ export async function mockHAEntities(
 
       console.log('[MOCK MAIN] Entity IPC handlers mocked successfully');
     },
-    { entities, isConnected },
+    { entities, isConnected, registry },
   );
 }
 

@@ -332,6 +332,19 @@ ipcMain.handle('entities:cache', async (event, entities: any[]) => {
   }
 });
 
+// Handle getting the cached entity registry (slice 2).
+//
+// Separate from `entities:getCached` so the two caches stay independent — a
+// registry read failing must never take the entity list down with it.
+ipcMain.handle('entities:getCachedRegistry', async () => {
+  try {
+    const entries = settingsService.getCachedEntityRegistry();
+    return { success: true, entries };
+  } catch (error) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
 // Handle clearing recent files
 ipcMain.handle('settings:clearRecentFiles', async () => {
   settingsService.clearRecentFiles();
@@ -422,6 +435,7 @@ ipcMain.handle('ha:fetch', async (event, url: string, token: string) => {
 
 // Home Assistant WebSocket API handlers
 import { haWebSocketService } from './services/haWebSocketService';
+import { projectRegistryEntries } from './utils/entityRegistry';
 
 // Credentials service
 import { credentialsService } from './services/credentialsService';
@@ -660,7 +674,43 @@ ipcMain.handle('ha:ws:fetchEntities', async () => {
     const entities = await haWebSocketService.fetchAllEntities();
     // Cache entities for offline use
     settingsService.setCachedEntities(entities);
+
+    // Refresh the entity registry in the same breath, so one user-visible
+    // "Refresh" keeps both caches in step.
+    //
+    // ⚠ DELIBERATELY NOT AWAITED INTO THE RESULT AND DELIBERATELY SWALLOWED.
+    // `config/entity_registry/list` is admin-only and WebSocket-only; a
+    // non-admin token, or a WebSocket leg that failed while the REST leg
+    // succeeded, must not turn a working entity fetch into a failed one.
+    try {
+      const registry = await haWebSocketService.fetchEntityRegistry();
+      settingsService.setCachedEntityRegistry(projectRegistryEntries(registry));
+    } catch (registryError) {
+      logger.warn(
+        `Entity registry unavailable; pickers will fall back to showing everything: ${(registryError as Error).message}`,
+      );
+    }
+
     return { success: true, entities };
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+});
+
+// Fetch the entity registry on its own, caching the narrowed projection.
+//
+// ⚠ Returns `success: false` rather than throwing so the renderer can degrade
+// to the cache — and then to "no registry at all", which is a fully supported
+// state in which nothing is hidden.
+ipcMain.handle('ha:ws:fetchEntityRegistry', async () => {
+  try {
+    const raw = await haWebSocketService.fetchEntityRegistry();
+    const entries = projectRegistryEntries(raw);
+    settingsService.setCachedEntityRegistry(entries);
+    return { success: true, entries };
   } catch (error) {
     return {
       success: false,
@@ -735,6 +785,30 @@ if (process.env.NODE_ENV === 'test') {
   ipcMain.handle('test:clearEntityCache', async () => {
     try {
       settingsService.setCachedEntities([]);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  // Seed the registry the same way, so a test can exercise integration grouping
+  // and the diagnostic cut without a live Home Assistant.
+  //
+  // ⚠ Seeded through `projectRegistryEntries`, exactly like the production
+  // path, so a test cannot accidentally rely on a field shape the real
+  // `config/entity_registry/list` never produces.
+  ipcMain.handle('test:seedEntityRegistry', async (event, entries: unknown[]) => {
+    try {
+      settingsService.setCachedEntityRegistry(projectRegistryEntries(entries));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  ipcMain.handle('test:clearEntityRegistry', async () => {
+    try {
+      settingsService.setCachedEntityRegistry([]);
       return { success: true };
     } catch (error) {
       return { success: false, error: (error as Error).message };

@@ -54,7 +54,12 @@ import { PresetMarketplaceDSL } from './dsl/presetMarketplace';
 export { launch, close } from './electron';
 
 // Re-export entity cache helpers
-export { seedEntityCache, clearEntityCache } from './dsl/entityBrowser';
+export {
+  seedEntityCache,
+  clearEntityCache,
+  seedEntityRegistry,
+  clearEntityRegistry,
+} from './dsl/entityBrowser';
 
 // Re-export assertion helpers
 export * as yamlAssertions from './assertions/yaml';
@@ -109,8 +114,10 @@ export interface TestContext extends electron.ElectronTestContext {
  * Launch Electron with full DSL context
  * This is the ONLY way to start tests
  */
-export async function launchWithDSL(): Promise<TestContext> {
-  const electronCtx = await electron.launch();
+export async function launchWithDSL(
+  options: Parameters<typeof electron.launch>[0] = {},
+): Promise<TestContext> {
+  const electronCtx = await electron.launch(options);
 
   return {
     ...electronCtx,

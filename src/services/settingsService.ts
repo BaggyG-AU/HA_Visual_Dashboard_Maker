@@ -174,6 +174,25 @@ class SettingsService {
     this.store.set('cachedEntities', []);
   }
 
+  // Entity registry caching (slice 2).
+  //
+  // ⚠ A SEPARATE KEY, deliberately. `cachedEntities` holds `get_states` output
+  // and the offline picker path depends on its shape; widening it in place
+  // would risk the very offline fallback HA-04 and PROPS-03 were about.
+  // Registry rows are stored already narrowed by `projectRegistryEntries` —
+  // 110 KB against the raw payload's 982 KB on the reference instance.
+  getCachedEntityRegistry(): unknown[] {
+    return this.store.get('cachedEntityRegistry', []);
+  }
+
+  setCachedEntityRegistry(entries: unknown[]): void {
+    this.store.set('cachedEntityRegistry', entries);
+  }
+
+  clearCachedEntityRegistry(): void {
+    this.store.set('cachedEntityRegistry', []);
+  }
+
   // Theme preference methods
   getSelectedTheme(): string | undefined {
     return this.store.get('selectedTheme');
