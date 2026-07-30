@@ -1620,18 +1620,22 @@
           auto_covered: true,
           isNew: true,
           auto_note:
-            '<code>tests/integration/entity-browser.spec.ts</code> proves an entity id is inserted into the dashboard YAML editor. It is also the one load-sensitive integration spec in the suite, so a human confirmation here is worth having.',
+            '<code>tests/integration/yaml-entity-insert.spec.ts</code> drives both routes and asserts the id lands on the cursor\'s own line, not merely that it appears somewhere in the document. <code>tests/unit/entityInsertion.spec.ts</code> covers the refusal logic. The round-1 citation (<code>tests/integration/entity-browser.spec.ts</code>) was honest but could not fail: its one insert test places the cursor at the END of the document, where "inserted at the cursor" and "appended at the end" produce identical text. That spec is also the one load-sensitive integration spec in the suite. ROUND-1 NOTE: this card was failed with "the entity browser did not appear" and the screenshot showed the tester was in SPLIT VIEW, which had no entity-insert control at all. Split view now has one and step 6 exercises it. Do not test steps 1-5 from Split view.',
           steps: [
-            "In the Edit YAML dialog, click into the editor and place the cursor inside a card's <code>entity:</code> value.",
-            'Click the entity-insert button in the dialog header.',
-            'Search for and select an entity.',
-            'Look at where the id landed.',
+            'Open the <strong>Edit YAML</strong> dialog from the toolbar. Make sure you are in the dialog — a modal titled "Edit Dashboard YAML" — and <strong>not</strong> in Split view.',
+            '<strong>Without clicking into the editor first</strong>, click <strong>Insert Entity</strong> — the left-most button in the row at the <strong>bottom</strong> of the dialog, beside Cancel and Apply Changes. Pick any entity, then look at the YAML.',
+            "Now click into the editor and place the cursor inside a card's <code>entity:</code> value.",
+            'Click <strong>Insert Entity</strong> again.',
+            'Search for and select an entity, then look at where the id landed.',
+            "Close the dialog, set the Visual/Split control to <strong>Split</strong>, click into the YAML pane to place a cursor, and use that pane's <strong>Insert Entity</strong> button.",
           ],
           expects: [
             'The entity browser opens from within the YAML dialog.',
+            "Step 2 — with no cursor ever placed, HAVDM refuses and says why (it asks you to place the cursor first) and the YAML is left completely unchanged. Silently inserting the id at the top of the document is a <strong>fail</strong>, and a worse one than doing nothing: it overwrites the dashboard's <code>title:</code> line and the result is still valid YAML, so nothing downstream flags it.",
             'The selected id is inserted <strong>at the cursor</strong>, not appended at the end or at the top.',
             'The YAML remains valid after the insertion.',
             'The dialog does not lose your other edits when the browser opens and closes.',
+            'Step 6 — Split view has its own Insert Entity button and it inserts at the cursor in the YAML pane. Its absence is a <strong>fail</strong>.',
           ],
         },
         {

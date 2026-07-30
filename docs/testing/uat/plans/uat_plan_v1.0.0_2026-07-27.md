@@ -1397,32 +1397,54 @@ packaged window size — expectation 1 is still human-only.
 
 #### YAML-05: Insert an entity id at the cursor from the entity browser
 
-| Field          | Value                                                                    |
-| -------------- | ------------------------------------------------------------------------ |
-| Type           | gate                                                                     |
-| Auto covered   | Y (`tests/integration/entity-browser.spec.ts`)                           |
-| Pre-conditions | The Edit YAML dialog open. Entity list available (connected, or cached). |
+| Field          | Value                                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Type           | gate                                                                                                              |
+| Auto covered   | Y (`tests/integration/yaml-entity-insert.spec.ts`, `tests/unit/entityInsertion.spec.ts`)                          |
+| Pre-conditions | Entity list available (connected, or cached). Steps 1–5 use the **Edit YAML dialog**; step 6 uses **Split** view. |
 
 **Automated coverage confirms:**
-`tests/integration/entity-browser.spec.ts` proves an entity id is inserted into
-the dashboard YAML editor. It is also the one **load-sensitive** integration spec
-in the suite, so a human confirmation here is worth having.
+`tests/integration/yaml-entity-insert.spec.ts` drives both routes and asserts the
+id lands **on the cursor's own line** — not merely that it appears somewhere in
+the document. `tests/unit/entityInsertion.spec.ts` covers the refusal logic.
+⚠ The round-1 citation (`tests/integration/entity-browser.spec.ts`) was **honest
+but could not fail**: its one insert test places the cursor at the **end** of the
+document, where "inserted at the cursor" and "appended at the end" produce
+identical text, and it asserted only that the id appeared somewhere. That spec is
+also the one **load-sensitive** integration spec in the suite.
+
+⚠⚠ **Round-1 note — this card changed.** It was failed with "the entity browser
+did not appear", and the screenshot showed the tester was in **Split view**, which
+had **no entity-insert control at all**. Split view now has one, and step 6
+exercises it deliberately. **Do not test this card from Split view for steps 1–5.**
 
 **Steps:**
 
-1. In the Edit YAML dialog, click into the editor and place the cursor inside a
-   card's `entity:` value.
-2. Click the entity-insert button in the dialog header.
-3. Search for and select an entity.
-4. Look at where the id landed.
+1. Open the **Edit YAML** dialog from the toolbar. ⚠ Make sure you are in the
+   dialog — a modal titled "Edit Dashboard YAML" — and **not** in Split view.
+2. **Without clicking into the editor first**, click **Insert Entity** — the
+   left-most button in the row at the **bottom** of the dialog, beside Cancel and
+   Apply Changes. Pick any entity, then look at the YAML.
+3. Now click into the editor and place the cursor inside a card's `entity:` value.
+4. Click **Insert Entity** again.
+5. Search for and select an entity, then look at where the id landed.
+6. Close the dialog, set the Visual/Split control to **Split**, click into the
+   YAML pane to place a cursor, and use that pane's **Insert Entity** button.
 
 **Expected:**
 
 - The entity browser opens from within the YAML dialog.
+- ⚠ **Step 2 — with no cursor ever placed, HAVDM refuses and says why** (it asks
+  you to place the cursor first) and **the YAML is left completely unchanged**.
+  Silently inserting the id at the top of the document is a **fail**, and it is a
+  worse one than doing nothing: it overwrites the dashboard's `title:` line and
+  the result is still _valid_ YAML, so nothing downstream flags it.
 - The selected id is inserted **at the cursor**, not appended at the end or at
   the top.
 - The YAML remains valid after the insertion.
 - The dialog does not lose your other edits when the browser opens and closes.
+- ⚠ **Step 6 — Split view has its own Insert Entity button** and it inserts at the
+  cursor in the YAML pane. Its absence is a **fail**.
 
 ---
 

@@ -26,6 +26,7 @@ import * as monaco from 'monaco-editor';
 import * as yaml from 'js-yaml';
 import { Card } from '../types/dashboard';
 import { cardRegistry } from '../services/cardRegistry';
+import { decideEntityInsertion, NO_CURSOR_REFUSAL } from '../utils/entityInsertion';
 import { EntitySelect } from './EntitySelect';
 import { EntityMultiSelect } from './EntityMultiSelect';
 import { IconSelect } from './IconSelect';
@@ -231,6 +232,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const lastStyleValueRef = useRef<string>('');
   const skipStyleSyncRef = useRef(false);
   const monacoEditorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  /** See `decideEntityInsertion` — a never-focused editor reports a phantom caret at (1,1). */
+  const userPlacedCursorRef = useRef(false);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const commitVersionRef = useRef(0);
   const yamlContentRef = useRef('');
@@ -1262,6 +1265,15 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         testWindow.__monacoModel = editor.getModel();
       }
 
+      // A never-focused Monaco still reports a caret at (1,1); only a real focus
+      // tells us the user chose where an inserted entity id should land. Reset
+      // on creation so a cursor placed in a PREVIOUS card's editor cannot vouch
+      // for this one.
+      userPlacedCursorRef.current = false;
+      editor.onDidFocusEditorText(() => {
+        userPlacedCursorRef.current = true;
+      });
+
       editor.onDidChangeModelContent(() => {
         const value = editor.getValue();
         handleYamlChange(value);
@@ -1561,10 +1573,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     const editor = monacoEditorRef.current;
     if (!editor) return;
 
-    const selection = editor.getSelection() ?? editor.getModel()?.getFullModelRange();
-    if (!selection) return;
+    const decision = decideEntityInsertion(userPlacedCursorRef.current, editor.getSelection());
+    if (!decision.allowed || !decision.range) {
+      message.warning(decision.refusalReason ?? NO_CURSOR_REFUSAL);
+      return;
+    }
+
     const id = { major: 1, minor: 1 };
-    const op = { identifier: id, range: selection, text: entityId, forceMoveMarkers: true };
+    const op = { identifier: id, range: decision.range, text: entityId, forceMoveMarkers: true };
     editor.executeEdits('insert-entity', [op]);
     editor.focus();
 
