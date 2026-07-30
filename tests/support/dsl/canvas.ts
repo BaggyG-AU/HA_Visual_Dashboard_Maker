@@ -104,6 +104,21 @@ export class CanvasDSL {
     await expect(this.window.getByTestId('properties-panel')).toHaveCount(0);
   }
 
+  /**
+   * Assert WHICH card the app believes is selected, and its type.
+   *
+   * Reads `selection-debug-state`, whose `data-selected-card-type` is resolved
+   * from `config.views[selectedViewIndex].cards[selectedCardIndex].type` — so this
+   * proves the selection points at the intended card, not merely that a
+   * Properties panel is open somewhere. ("A visible control is not a usable one";
+   * an open panel is not a panel targeting the right thing.)
+   */
+  async expectSelectedCardOfType(index: number, cardType: string): Promise<void> {
+    const debugState = this.window.getByTestId('selection-debug-state');
+    await expect(debugState).toHaveAttribute('data-selected-card', String(index));
+    await expect(debugState).toHaveAttribute('data-selected-card-type', cardType);
+  }
+
   async expectSelectedCards(indices: number[]): Promise<void> {
     const sorted = [...indices].sort((a, b) => a - b).join(',');
     const debugState = this.window.getByTestId('selection-debug-state');
@@ -139,6 +154,59 @@ export class CanvasDSL {
   getCard(index = 0) {
     const cards = this.window.getByTestId('canvas-card');
     return index === 0 ? cards.first() : cards.nth(index);
+  }
+
+  /**
+   * The on-screen rectangle of every card, in document order.
+   *
+   * Read from the `.react-grid-item` WRAPPER rather than the inner
+   * `canvas-card`: the wrapper is what react-grid-layout positions, so it is
+   * the geometry the layout actually produced. (`canvas-card` sits inside it
+   * and is inset by the card's own padding, which would make neighbouring
+   * cards look further apart than they are.)
+   */
+  async getCardRects(): Promise<Array<{ x: number; y: number; w: number; h: number }>> {
+    return await this.window.locator('.react-grid-layout > .react-grid-item').evaluateAll((nodes) =>
+      nodes.map((n) => {
+        const r = n.getBoundingClientRect();
+        return { x: r.left, y: r.top, w: r.width, h: r.height };
+      }),
+    );
+  }
+
+  /**
+   * Assert no two cards overlap — UAT card FILE-03's Expected 3.
+   *
+   * GRID_CONFIG.margin is [10, 10], so adjacent cards are always separated by a
+   * real gutter and a genuine intersection cannot be a rounding artefact. A
+   * 1px tolerance is still allowed so sub-pixel layout rounding on a fractional
+   * device pixel ratio cannot produce a false positive.
+   *
+   * ⚠ This asserts an ABSENCE, so it is only meaningful once the card count has
+   * been asserted too — zero cards trivially never overlap. Callers must pair it
+   * with expectCardCount().
+   */
+  async expectNoOverlappingCards(tolerance = 1): Promise<void> {
+    const rects = await this.getCardRects();
+    expect(rects.length, 'no grid items found — assert the card count first').toBeGreaterThan(0);
+
+    const overlaps: string[] = [];
+    for (let a = 0; a < rects.length; a++) {
+      for (let b = a + 1; b < rects.length; b++) {
+        const A = rects[a];
+        const B = rects[b];
+        const dx = Math.min(A.x + A.w, B.x + B.w) - Math.max(A.x, B.x);
+        const dy = Math.min(A.y + A.h, B.y + B.h) - Math.max(A.y, B.y);
+        if (dx > tolerance && dy > tolerance) {
+          overlaps.push(
+            `card[${a}] (${A.x},${A.y} ${A.w}x${A.h}) overlaps card[${b}] ` +
+              `(${B.x},${B.y} ${B.w}x${B.h}) by ${dx.toFixed(1)}x${dy.toFixed(1)}px`,
+          );
+        }
+      }
+    }
+
+    expect(overlaps, `overlapping cards:\n${overlaps.join('\n')}`).toEqual([]);
   }
 
   getBackgroundLayer(index = 0) {

@@ -13,6 +13,16 @@ const config: ForgeConfig = {
     asar: {
       unpack: '*.{node,dll}',
     },
+    // ⚠⚠ FILE-03: the dashboard templates did NOT ship before this. Measured
+    // against the UAT round-1 Win64 build, whose `resources/` held only
+    // `app.asar`: `grep -c -a -F "templates.json" resources/app.asar` -> 0, and
+    // `home-overview` -> 0. `extraResource` copies the folder to
+    // `<resources>/templates`, OUTSIDE the asar, which is where
+    // `src/utils/templatePaths.ts` looks when `app.isPackaged`.
+    //
+    // ⭐ Both halves are required: without this the path resolves to nothing;
+    // without the path fix the templates ship but are never found.
+    extraResource: ['templates'],
   },
   rebuildConfig: {},
   makers: [new MakerSquirrel({}), new MakerZIP({}, ['darwin']), new MakerRpm({}), new MakerDeb({})],

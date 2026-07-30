@@ -849,9 +849,9 @@
           auto_covered: true,
           isNew: true,
           auto_note:
-            '<code>tests/e2e/templates.spec.ts</code> proves a template loads and produces cards. It cannot say whether the resulting layout looks like a dashboard someone would want to start from.',
+            '<code>tests/e2e/templates.spec.ts</code> now drives the real dialog: it asserts all seven shipped templates are offered by readable name and category, that loading one produces exactly the number of cards the template declares, that no two cards overlap, and that clicking two different cards re-targets the Properties panel each time. It cannot say whether the resulting layout looks like a dashboard someone would want to start from. (Round 1 cited this spec while it was three placeholder tests that never loaded a template; the round-2 coverage claim is the rewritten spec.)',
           steps: [
-            'Click <strong>New</strong>, then <strong>From Template</strong>.',
+            'Click <strong>New Dashboard</strong> on the welcome screen — or <strong>New</strong> in the toolbar if a dashboard is already open — then <strong>From Template</strong>.',
             'Pick any offered template.',
             'Look at the cards that appear on the canvas.',
             'Click one of them.',

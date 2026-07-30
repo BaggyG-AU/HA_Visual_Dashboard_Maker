@@ -24,6 +24,7 @@ import {
   parseLogOutput,
   parseStatusPorcelainZ,
 } from './services/versionControlService';
+import { resolveTemplatePath } from './utils/templatePaths';
 
 const isE2ETestMode = process.env.E2E === '1' || process.env.PLAYWRIGHT_TEST === '1';
 
@@ -180,11 +181,21 @@ ipcMain.handle('fs:createBackup', async (event, filePath: string) => {
 });
 
 // Handle get template path
+//
+// ⚠⚠ FILE-03: this used to join `__dirname/../../templates` unconditionally,
+// which is the repo folder in dev and `resources/app.asar/templates` — a path
+// that does not exist — in a packaged app. The templates were therefore reachable
+// in development and absent from every installer, so a dialog-only fix would have
+// passed every gate and still failed the card, because the tester runs the
+// installer. `resolveTemplatePath` picks the right root and refuses a filename
+// that escapes the templates directory.
 ipcMain.handle('fs:getTemplatePath', async (event, filename: string) => {
   try {
-    const path = await import('path');
-    const templatePath = path.join(__dirname, '..', '..', 'templates', filename);
-    return templatePath;
+    return resolveTemplatePath(filename, {
+      isPackaged: app.isPackaged,
+      dirname: __dirname,
+      resourcesPath: process.resourcesPath,
+    });
   } catch (error) {
     throw new Error(`Failed to get template path: ${(error as Error).message}`);
   }
