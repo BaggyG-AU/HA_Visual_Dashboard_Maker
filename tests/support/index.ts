@@ -49,6 +49,7 @@ import { CalendarDSL } from './dsl/calendar';
 import { WeatherVizDSL } from './dsl/weatherViz';
 import { ApexChartsDSL } from './dsl/apexCharts';
 import { PresetMarketplaceDSL } from './dsl/presetMarketplace';
+import { TemplatesDSL } from './dsl/templates';
 
 // Re-export electron launcher
 export { launch, close } from './electron';
@@ -108,6 +109,7 @@ export interface TestContext extends electron.ElectronTestContext {
   weatherViz: WeatherVizDSL;
   apexCharts: ApexChartsDSL;
   presetMarketplace: PresetMarketplaceDSL;
+  templates: TemplatesDSL;
 }
 
 /**
@@ -159,5 +161,6 @@ export async function launchWithDSL(
     weatherViz: new WeatherVizDSL(electronCtx.window),
     apexCharts: new ApexChartsDSL(electronCtx.window),
     presetMarketplace: new PresetMarketplaceDSL(electronCtx.window),
+    templates: new TemplatesDSL(electronCtx.window),
   };
 }

@@ -36,6 +36,7 @@ import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
 import { yamlService } from './services/yamlService';
+import { templateService } from './services/templateService';
 import { GridCanvas } from './components/GridCanvas';
 import { CardPalette } from './components/CardPalette';
 import { PropertiesPanel } from './components/PropertiesPanel';
@@ -98,6 +99,7 @@ import { ThemeSelector } from './components/ThemeSelector';
 import { SettingsDialog } from './components/SettingsDialog';
 import { ThemePreviewPanel } from './components/ThemePreviewPanel';
 import { NewDashboardDialog } from './components/NewDashboardDialog';
+import { TemplateSelectionDialog } from './components/TemplateSelectionDialog';
 import { ViewSettingsDialog } from './components/ViewSettingsDialog';
 import { VersionControlDialog } from './components/VersionControlDialog';
 import { useThemeStore } from './store/themeStore';
@@ -301,6 +303,7 @@ const App: React.FC = () => {
   );
   const [verboseUIDebug, setVerboseUIDebug] = useState<boolean>(false);
   const [newDashboardDialogVisible, setNewDashboardDialogVisible] = useState<boolean>(false);
+  const [templateDialogVisible, setTemplateDialogVisible] = useState<boolean>(false);
   const [viewSettingsOpen, setViewSettingsOpen] = useState<boolean>(false);
   // WS3 slice E. Opened from the File > Version Control... menu item — a menu,
   // not a toolbar button, so nothing is added to the in-flow layout above the
@@ -2028,10 +2031,64 @@ const App: React.FC = () => {
     message.success('New blank dashboard created!');
   };
 
+  // ⭐ FILE-03. This was a three-line stub —
+  //     message.info('Template selection coming soon! For now, creating a blank
+  //     dashboard.'); createNewDashboard();
+  // — which is verbatim what the round-1 tester reported. Everything it needed
+  // already existed and had never been called: `templateService` had ZERO
+  // importers in the whole repo, `types/templates.ts` was complete, the
+  // `fs:getTemplatePath` + `readFile` IPC was in place, and seven templates in
+  // seven categories were on disk. So this is wiring, per §1 Immutable Reuse.
+  //
+  // ⚠ NO CONFIRM IS ADDED HERE, DELIBERATELY. `handleNewDashboard` above already
+  // guards on `isDirty && config` with a Modal.confirm, and it is the ONLY opener
+  // of the New Dashboard dialog — so the template path inherits that guard exactly
+  // as Blank and Sections do. A second, template-specific confirm would prompt
+  // twice for the dirty case and add friction to the clean one, where nothing
+  // unsaved is at risk. THE VISION's "never silently destroy user data" is already
+  // satisfied, at the right altitude.
   const handleCreateFromTemplate = () => {
-    // TODO: Implement template selection dialog
-    message.info('Template selection coming soon! For now, creating a blank dashboard.');
-    createNewDashboard();
+    setTemplateDialogVisible(true);
+  };
+
+  const handleTemplateSelected = async (templateId: string) => {
+    try {
+      const yamlContent = await templateService.loadTemplate(templateId);
+      const template = await templateService.getTemplate(templateId);
+      const title = template?.name ?? templateId;
+
+      loadDashboard(yamlContent, null); // null filePath means it's unsaved
+      setSourceDashboard(null); // template-derived — no HA deploy target (Phase 0.2)
+
+      // ⚠ Read the store's error FRESH. `loadDashboard` refuses to replace the
+      // canvas when the YAML will not parse (the HA-03 fix), and the `error` a
+      // React handler closed over is the value from BEFORE it ran — the same
+      // stale-snapshot trap that made HA-03 report success on a failed load.
+      const loadError = useDashboardStore.getState().error;
+      if (loadError) {
+        message.error({
+          content: `Could not load the "${title}" template — ${loadError}`,
+          duration: 8,
+        });
+        return;
+      }
+
+      const result = yamlService.parseDashboard(yamlContent);
+      const cardCount = (result.success && result.data?.views[0]?.cards?.length) || 0;
+
+      message.success({
+        content: `${title} template loaded! ${cardCount} cards added.`,
+        duration: 3,
+      });
+    } catch (error) {
+      // A template the user explicitly chose must fail loudly and name the
+      // reason; the canvas is left exactly as it was.
+      logger.error('Failed to load dashboard template', error);
+      message.error({
+        content: `Could not load that template — ${(error as Error).message}`,
+        duration: 8,
+      });
+    }
   };
 
   const handleCreateFromEntityType = (dashboardYaml: string, title: string) => {
@@ -2735,7 +2792,18 @@ const App: React.FC = () => {
                       </div>
                       <Space wrap>
                         <Tooltip title="Create a new blank dashboard">
-                          <Button icon={<FileAddOutlined />} onClick={handleNewDashboard}>
+                          {/* ⚠ testid, not the accessible name — same reason as
+                              `toolbar-open-file` below. Every antd icon renders
+                              role="img" aria-label="<icon>", so this button's
+                              accessible name is "file-add New", and the welcome
+                              screen's equivalent is "file-add New Dashboard". A
+                              test driving UAT card FILE-03 step 1 ("Click New")
+                              from a loaded dashboard had no handle at all. */}
+                          <Button
+                            icon={<FileAddOutlined />}
+                            onClick={handleNewDashboard}
+                            data-testid="toolbar-new-dashboard"
+                          >
                             New
                           </Button>
                         </Tooltip>
@@ -3013,6 +3081,16 @@ const App: React.FC = () => {
           onCreateFromEntityType={handleCreateFromEntityType}
           isConnected={isConnected}
         />
+        {/* FILE-03. Mounted only while open so each opening re-reads the template
+            metadata: a mount-only load would serve whatever the first open saw,
+            including an empty list if that first read failed. */}
+        {templateDialogVisible && (
+          <TemplateSelectionDialog
+            visible={templateDialogVisible}
+            onClose={() => setTemplateDialogVisible(false)}
+            onSelect={handleTemplateSelected}
+          />
+        )}
         {/* Mounted only while open (slice 4.7b). `destroyOnHidden` destroys the
             Modal's DOM but NOT this component, so the antd form instance created
             by `Form.useForm()` inside it survived every close — and a field

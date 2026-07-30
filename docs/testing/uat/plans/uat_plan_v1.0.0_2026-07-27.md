@@ -297,13 +297,26 @@ create a sections dashboard from the New Dashboard dialog.
 | Pre-conditions | App launched                      |
 
 **Automated coverage confirms:**
-`tests/e2e/templates.spec.ts` proves a template loads and produces cards. It
-cannot say whether the resulting layout looks like a dashboard someone would
-want to start from.
+`tests/e2e/templates.spec.ts` now drives the real dialog: it asserts all seven
+shipped templates are offered by readable name and category, that loading one
+produces exactly the number of cards the template declares, that no two cards
+overlap, and that clicking two different cards re-targets the Properties panel
+each time. It cannot say whether the resulting layout looks like a dashboard
+someone would want to start from.
+
+⚠ Round 1 cited this same spec while it was three placeholder tests — every name
+containing "pending" — that never loaded a template and never asked the app
+anything. The coverage claim above is the rewritten spec, not the old one.
+
+ⓘ The seven templates now ship with the installer (`extraResource` in
+`forge.config.ts`). Before that fix they were present in a development checkout and
+absent from every packaged build, so a template that fails to load here is a real
+defect and not an expected packaging gap.
 
 **Steps:**
 
-1. Click **New**, then **From Template**.
+1. Click **New Dashboard** on the welcome screen — or **New** in the toolbar if a
+   dashboard is already open — then **From Template**.
 2. Pick any offered template.
 3. Look at the cards that appear on the canvas.
 4. Click one of them.
