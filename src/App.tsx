@@ -112,6 +112,7 @@ import type { Card, DashboardConfig } from './types/dashboard';
 import type { Theme } from './types/homeassistant';
 import type { LoggingLevel } from './services/settingsService';
 import type { EntityState } from './services/haWebSocketService';
+import { loadPickerEntities } from './services/entityPickerSource';
 import EntityRemappingModal from './components/EntityRemappingModal';
 import {
   applyBulkCardUpdate,
@@ -168,14 +169,47 @@ const RemapWatcher: React.FC<RemapWatcherProps> = ({
 }) => {
   const { entities } = useHAEntities();
 
+  // HA-04. `useHAEntities` is fed by <HAEntityProvider enabled={isConnected}>, so
+  // it yields NOTHING unless there is a live connection — this was the fourth
+  // and last data path for the same dataset, and the only one that never read
+  // the persisted offline cache. `entityPickerSource` exists precisely to bridge
+  // that (the inline pickers have used it for some time); the remap path never
+  // got it, which is why the remap dialog saw zero entities and then reported
+  // every referenced entity as missing.
+  //
+  // ⚠ Re-read on every `config` change, NOT once on mount. Mounting happens
+  // before any dashboard exists — and, in tests, before the cache is seeded — so
+  // a mount-only load reliably captured an empty list and the fallback silently
+  // did nothing. A dashboard being loaded is precisely when we need to know what
+  // entities exist, and `config` identity changes only on a real change, so this
+  // stays stable.
+  //
+  // ⚠ Deliberately NOT dependent on anything reference-unstable. See the note on
+  // the callbacks below — an unstable dependency here re-runs this effect on
+  // every render and spins forever.
+  const [cachedEntities, setCachedEntities] = useState<EntityState[]>([]);
+
   useEffect(() => {
-    const availableList = Object.values(entities);
+    let cancelled = false;
+    loadPickerEntities()
+      .then(({ entities: loaded }) => {
+        if (!cancelled) setCachedEntities(loaded);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [config]);
+
+  useEffect(() => {
+    const live = Object.values(entities);
+    const availableList = live.length > 0 ? live : cachedEntities;
     onAvailableEntities(availableList);
     if (!config || availableList.length === 0) return;
     const referenced = entityRemappingService.extractEntityIds(config);
     const missing = entityRemappingService.detectMissing(referenced, availableList);
     onMissingDetected(missing);
-  }, [entities, config, onAvailableEntities, onMissingDetected]);
+  }, [entities, cachedEntities, config, onAvailableEntities, onMissingDetected]);
 
   return null;
 };

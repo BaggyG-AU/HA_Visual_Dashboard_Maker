@@ -90,7 +90,27 @@ export class EntityRemappingService {
     return Array.from(found);
   }
 
+  /**
+   * Which referenced entity ids are absent from the instance.
+   *
+   * ⚠ HA-04. An EMPTY `availableEntities` means "I do not know what exists on
+   * this instance", NOT "nothing exists" — but the plain set-difference below
+   * cannot tell those apart and reported EVERY referenced entity as missing.
+   * Measured: with the offline cache seeded and no live connection, opening the
+   * remap dialog on a two-card dashboard listed BOTH of its entities as missing
+   * while both sat in the cache, then offered "No data" as the replacement for
+   * each. HAVDM was asserting a fact about the user's Home Assistant that it had
+   * no basis for — the same dishonest-failure family as HA-03's synthesised
+   * dashboard entry.
+   *
+   * Returning nothing when we have no entity list is the honest answer: callers
+   * surface "cannot check" rather than a false accusation. THE VISION's "never
+   * silently destroy user data" also applies — a remap driven off a bogus
+   * missing-list is a config rewrite based on nothing.
+   */
   detectMissing(referenced: string[], availableEntities: EntityState[]): string[] {
+    if (!Array.isArray(availableEntities) || availableEntities.length === 0) return [];
+
     const availableIds = new Set(availableEntities.map((e) => e.entity_id));
     return referenced.filter((id) => !availableIds.has(id)).sort();
   }

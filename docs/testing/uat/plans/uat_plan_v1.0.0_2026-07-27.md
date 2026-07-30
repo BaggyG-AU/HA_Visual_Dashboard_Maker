@@ -846,17 +846,28 @@ uses.
 
 #### PROPS-03: The entity picker searches and completes real entity ids
 
-| Field          | Value                                                               |
-| -------------- | ------------------------------------------------------------------- |
-| Type           | gate                                                                |
-| Auto covered   | Y (`tests/unit/entityPickerSource.spec.ts`)                         |
-| Pre-conditions | A card with an Entity field selected. Works both connected and not. |
+| Field          | Value                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| Type           | gate                                                                                     |
+| Auto covered   | Y (`tests/unit/EntityPicker.offline.spec.ts`, `tests/e2e/entity-picker-sources.spec.ts`) |
+| Pre-conditions | A card with an Entity field selected. Works both connected and not.                      |
 
 **Automated coverage confirms:**
-`tests/unit/entityPickerSource.spec.ts` and
-`tests/unit/EntityPicker.offline.spec.tsx` prove the picker's source resolution
-including the offline path. They cannot tell you whether typing into it feels
-usable.
+`tests/unit/EntityPicker.offline.spec.tsx` proves the picker's source resolution
+across live, cached and **never-connected** states, and now proves that with no
+connection and no cache the field is a real text input that **accepts a
+hand-typed entity id**. `tests/e2e/entity-picker-sources.spec.ts` drives the same
+thing through the packaged renderer.
+⚠ **A correction to this card's previous citation, worth reading before trusting
+any `auto_covered` flag.** It used to cite `tests/unit/entityPickerSource.spec.ts`
+and conceded only that the specs "cannot tell you whether typing into it feels
+usable". The real gap was narrower and worse: the sibling spec asserted that the
+**"Not Connected" hint appears** with an empty cache, and passed for the entire
+life of the defect — because the hint was never the problem. One layer down, that
+branch rendered an **empty `Select` with no options and no search**, so a
+never-connected user could not enter an id at all. **A spec that asserts a
+message beside a dead end certifies the message and says nothing about the dead
+end.**
 
 **Steps:**
 
@@ -866,14 +877,22 @@ usable.
 4. Pick one from the list.
 5. Clear the field and type a full entity id that does not exist, e.g.
    `sensor.definitely_not_real`.
+6. ⭐ Now try it **with no Home Assistant connection at all** — ideally on a
+   profile that has never connected, so there is no cached entity list either.
+   Type `sensor.hand_typed_entity` into the field.
 
 **Expected:**
 
-- Typing filters the suggestions as you go.
+- Typing filters the suggestions as you go, and **the words may be typed in any
+  order** — "battery kia" finds "Kia EV6 Battery Level".
 - A suggestion can be chosen with the mouse or the keyboard.
 - The chosen id lands in the field and reaches the card.
 - ⭐ A non-existent id is **accepted** — HAVDM is permissive when not connected —
   but is marked or warned about rather than silently treated as valid.
+- ⭐ With no connection **and** no cached entities, the field is still **typable**
+  and says plainly that it cannot validate. An empty, un-typable dropdown is a
+  **fail**: it makes the card's own "works both connected and not" pre-condition
+  impossible to satisfy.
 
 #### PROPS-04: Configure a tap action
 
@@ -1916,11 +1935,23 @@ instance** — this card is the first real evidence that the connection path wor
 `tests/integration/entity-browser.spec.ts` covers the browser and its insert
 path, against fixture data. It has never seen a real instance's ~725 entities.
 
+⚠ **THIS CARD PASSED IN ROUND 1 AND ITS BEHAVIOUR HAS DELIBERATELY CHANGED.** Two
+things are different, and neither is a regression:
+(a) the browser now prefers the **live** connection and falls back to the cached
+list, where it previously read the cache **only** — so a freshly-added entity
+appears without a manual refresh;
+(b) search is now **multi-token and order-independent**, where it previously
+required every word to appear contiguously inside one field.
+**Step 3 has been rewritten to exercise (b) on purpose.** Judge the card against
+the Expected below, not against how round 1 behaved.
+
 **Steps:**
 
 1. Click **Entities** in the header.
 2. Read the entity count and the domain filter tabs.
-3. Type `light` into the search box.
+3. Type `light` into the search box. ⭐ Then type two words from a single
+   entity's friendly name **in the wrong order** — e.g. for "Kia EV6 Battery
+   Level", type `battery kia`.
 4. Switch to a specific domain tab, e.g. `sensor`.
 5. Select an entity and click the select/confirm button.
 6. Click the refresh control.
@@ -1931,8 +1962,14 @@ path, against fixture data. It has never seen a real instance's ~725 entities.
   domain.
 - The count is plausible for the instance (hundreds, not a handful).
 - Search narrows the list responsively even with hundreds of rows.
+- ⭐ Words typed in **any order** still find the entity. `battery kia` must match
+  "Kia EV6 Battery Level".
 - Domain tabs filter correctly and show per-domain counts.
 - Refresh re-fetches without emptying or duplicating the list.
+- ⓘ The tabs are grouped by **domain** (`sensor`, `light`), which on a real
+  instance means the `sensor` tab still holds ~300 rows. Grouping by
+  **integration** is queued as a separate change and is deliberately **not** part
+  of this round — do not fail the card for its absence.
 
 #### HA-03: Download an existing dashboard from Home Assistant
 
@@ -2004,6 +2041,15 @@ download.
 `tests/e2e/entity-remapping.spec.ts` and `tests/unit/entityRemapping.spec.ts`
 prove auto-mapping updates the YAML. They work against fixture entity lists, not
 a real instance's naming.
+`tests/e2e/entity-picker-sources.spec.ts` proves the remap path reads the
+**persisted offline cache** and that entities present in the entity list are
+**not** reported missing.
+⚠ Round 1's failure had **one** root cause behind all three of its symptoms: the
+remap path was the only one of HAVDM's four entity pickers that never read the
+offline cache, so with no live connection it saw **zero** entities — and
+`detectMissing` treats an empty list as "nothing exists" rather than "I do not
+know what exists", so it reported **every** referenced entity as missing, then
+offered "No data" as each replacement and had nothing for Auto-map to do.
 
 **Steps:**
 
@@ -2014,6 +2060,9 @@ a real instance's naming.
 4. Choose a replacement entity from the dropdown for that entity.
 5. Apply, then check the card on the canvas and in the YAML.
 6. Look at the **History** tab of the remapping dialog.
+7. ⭐ Now **disconnect from Home Assistant** (or start from a profile that has
+   connected before, so a cached entity list exists) and click **Remap** again on
+   a dashboard whose entities all really do exist.
 
 **Expected:**
 
@@ -2022,6 +2071,13 @@ a real instance's naming.
 - Applying updates the card and the YAML to the new entity id.
 - The history tab records the remap.
 - ⭐ Entities that **do** exist are not touched.
+- ⭐ Disconnected but with a cached entity list, the dialog still offers real
+  replacement entities. **"No data" in the replacement dropdown is a fail.**
+- ⭐⭐ Disconnected, entities that exist are **not** listed as missing. HAVDM
+  claiming your entities are gone when it simply cannot see your instance is a
+  **fail**, and a worse one than an empty dropdown — it is a false statement about
+  the user's Home Assistant, and remapping on the strength of it would rewrite a
+  working config.
 
 #### HA-05: Card availability reflects what is actually installed
 
