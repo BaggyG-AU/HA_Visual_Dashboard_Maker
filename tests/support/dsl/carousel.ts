@@ -249,6 +249,20 @@ export class CarouselDSL {
     await expect(pagination).toHaveScreenshot(name, {
       animations: 'disabled',
       caret: 'hide',
+      // ⚠⚠ THIS SNAPSHOT WAS NEVER PURELY ABOUT PAGINATION, AND THAT WAS A
+      // LATENT DEFECT IN IT. The carousel card is wider than the canvas (the
+      // canvas carries a horizontal scrollbar), so the RIGHT-HAND END of this
+      // 1176px element sits UNDERNEATH the Properties panel — which paints on
+      // top, and therefore lands in the element screenshot. The baseline had
+      // been asserting whatever panel text happened to sit in that band.
+      //
+      // It surfaced when PROPS-05 made the Conditional Visibility section
+      // render for EVERY card: that pushed the carousel's own controls down and
+      // moved the "Autoplay" label into this strip, failing a snapshot that has
+      // nothing to do with autoplay. Masking the panel makes the assertion mean
+      // what its name says, so a future properties-panel change cannot break a
+      // carousel test again.
+      mask: [this.window.getByTestId('properties-panel')],
       // Allow minimal pixel drift from subpixel centering/antialiasing in pagination dots.
       maxDiffPixels: 10,
     });

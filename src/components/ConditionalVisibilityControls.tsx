@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Divider, Input, Select, Space, Tag, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined, ApartmentOutlined } from '@ant-design/icons';
 import type {
@@ -8,6 +8,8 @@ import type {
 } from '../types/dashboard';
 import { evaluateVisibilityConditions } from '../services/conditionalVisibility';
 import { useHAEntities } from '../contexts/HAEntityContext';
+import { loadPickerEntities } from '../services/entityPickerSource';
+import { logger } from '../services/logger';
 
 const { Text } = Typography;
 
@@ -143,11 +145,50 @@ export const ConditionalVisibilityControls: React.FC<ConditionalVisibilityContro
 }) => {
   const { entities } = useHAEntities();
 
+  // ⚠⚠ PROPS-05 (High). `useHAEntities()` is the LIVE state map, and with no
+  // Home Assistant connection it is EMPTY — so this picker offered nothing to
+  // choose and the card could not be configured at all offline. That is
+  // PROPS-03's defect verbatim.
+  //
+  // ⭐⭐ PR #102 fixed it for "all four pickers" — EntitySelect,
+  // EntityMultiSelect, EntityBrowser and the PropertiesPanel — by routing them
+  // through `loadPickerEntities()`, which falls back to the persisted offline
+  // cache. THE COUNT WAS WRONG: THIS IS A FIFTH PICKER, AND IT WAS MISSED
+  // BECAUSE IT LIVES IN A FEATURE COMPONENT RATHER THAN A NAMED "picker" ONE.
+  //
+  // ⚠ The two sources are NOT interchangeable and both are still needed:
+  //   - `pickerEntities` answers "what can the user choose?" and must work
+  //     offline, so it comes from the cache-backed unified source.
+  //   - `entities` answers "what is that entity doing RIGHT NOW?", which is
+  //     what the live preview below reports. A cached state would make the
+  //     preview claim a card is visible on the strength of a stale reading.
+  const [pickerEntities, setPickerEntities] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadPickerEntities()
+      .then(({ entities: loaded }) => {
+        if (!cancelled) setPickerEntities(loaded.map((e) => e.entity_id));
+      })
+      .catch((err) => {
+        // Degrade to whatever is live rather than blanking the picker; the
+        // union below still yields the connected set.
+        logger.error('Failed to load entities for visibility conditions', err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const entityOptions = useMemo(() => {
-    return Object.keys(entities)
+    // Union, not replacement: a live entity that is not in the cache yet must
+    // still be selectable, and a cached entity that is currently unavailable
+    // must not vanish from the list the user is building a rule against.
+    const ids = new Set<string>([...pickerEntities, ...Object.keys(entities)]);
+    return Array.from(ids)
       .sort((a, b) => a.localeCompare(b))
       .map((entityId) => ({ value: entityId, label: entityId }));
-  }, [entities]);
+  }, [pickerEntities, entities]);
 
   const fallbackEntityId = entityOptions[0]?.value;
   const currentEvaluation = evaluateVisibilityConditions(value, entities);

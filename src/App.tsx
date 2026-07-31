@@ -118,7 +118,7 @@ import { setSoundSettings } from './services/soundService';
 import { setHapticSettings } from './services/hapticService';
 import { entityRemappingService, type EntityMapping } from './services/entityRemapping';
 import { PopupHost } from './features/popup/PopupHost';
-import type { Card, DashboardConfig } from './types/dashboard';
+import type { Card, DashboardConfig, View } from './types/dashboard';
 import type { Theme } from './types/homeassistant';
 import type { LoggingLevel } from './services/settingsService';
 import type { EntityState } from './services/haWebSocketService';
@@ -1637,6 +1637,34 @@ const App: React.FC = () => {
     updateConfig({ ...config, views: updatedViews });
   };
 
+  // ⭐ VIEWS-06 (Medium): say that card POSITIONS did not survive a conversion.
+  //
+  // `convertViewToSections` migrates every flat card into one starter section —
+  // nothing is lost — but each card falls back to the full-width span-12
+  // default, so the geometry the user arranged IS gone. The round-1 tester
+  // called that "Silent geometry loss".
+  //
+  // ⚠ The ViewSettingsDialog already warns BEFORE saving ("card positions reset
+  // to full width"), and that warning is accurate. What was missing is the
+  // restatement AFTERWARDS: the card's step 5 has the tester look at the result
+  // and read any message, and at that moment the app said only "View updated".
+  // A warning you may not have read is not the same as being told what happened.
+  //
+  // ⚠ Only claimed when cards were ACTUALLY migrated — converting an empty view
+  // loses nothing, and announcing a loss there would be a false alarm. Same
+  // honesty rule as FILE-05's backup message: never report a consequence that
+  // did not occur.
+  const describeSectionsConversion = (fromView: View): string => {
+    const migrated = Array.isArray(fromView.cards) ? fromView.cards.length : 0;
+    if (migrated === 0) return 'View converted to a Sections view';
+    return (
+      `View converted to a Sections view. ${migrated} ` +
+      `${migrated === 1 ? 'card was' : 'cards were'} moved into one section — their previous ` +
+      `positions were not carried over. Re-size them with the section card tools, or press ` +
+      `Ctrl+Z to undo.`
+    );
+  };
+
   // Tier 4 slice 4.5: convert the current non-sections view into a Sections view.
   // Flat cards are MIGRATED into one starter section (never destroyed), then the
   // canvas flips to SectionsCanvas. Card indices don't survive the flat->section
@@ -1650,7 +1678,7 @@ const App: React.FC = () => {
     const updatedViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
     updateConfig({ ...config, views: updatedViews });
     setSelectedSectionCard(selectedViewIndex, null, null);
-    message.success('View converted to a Sections view');
+    message.success(describeSectionsConversion(currentView));
   };
 
   // Tier 4 slice 4.5: start a brand-new dashboard whose single view is a blank
@@ -1740,7 +1768,13 @@ const App: React.FC = () => {
     if (wasSections !== isSections) {
       setSelectedSectionCard(index, null, null);
     }
-    message.success('View updated');
+    // ⭐ VIEWS-06. THIS is the path where geometry is actually lost: the canvas
+    // banner only appears on an EMPTY view, so changing the type here is the
+    // only way a user converts a POPULATED one. Reporting a bare "View updated"
+    // after silently resetting every card to full width is the defect.
+    message.success(
+      !wasSections && isSections ? describeSectionsConversion(currentView) : 'View updated',
+    );
     setViewSettingsOpen(false);
   };
 

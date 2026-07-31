@@ -1299,9 +1299,9 @@
           auto_covered: true,
           isNew: true,
           auto_note:
-            '<code>tests/e2e/conditional-visibility.spec.ts</code> proves a state-based rule applies, updates live and persists to YAML; <code>tests/unit/conditionalVisibility.spec.ts</code> covers the rule logic. Neither can judge whether the rule builder is comprehensible.',
+            '<code>tests/e2e/conditional-visibility.spec.ts</code> proves a state-based rule applies, updates live and persists to YAML; <code>tests/unit/conditionalVisibility.spec.ts</code> covers the rule logic. Neither can judge whether the rule builder is comprehensible. &#9888; <strong>Round 1&rsquo;s coverage claim was FALSE and is corrected here:</strong> that spec assigns an entity to the card before opening the controls, so it <strong>manufactured the exact precondition the defect depended on</strong> and could never have caught it &mdash; the controls were hidden outright on a card with no entity. <code>tests/e2e/round1-final-honesty.spec.ts</code> now covers the no-entity case and choosing a condition entity with <strong>no HA connection</strong>.',
           steps: [
-            'With a card selected, find the conditional-visibility controls.',
+            'Add a <strong>Button</strong> card and select it <strong>without setting an entity</strong>, then find the conditional-visibility controls. They must be present — a visibility rule is about some <em>other</em> entity&rsquo;s state, so the card needs no entity of its own.',
             'Add a root condition and set it to a state condition on any entity, e.g. <code>light.kitchen</code> is <code>on</code>.',
             'Read the preview area.',
             'Add a <strong>group</strong> with a second condition inside it.',
@@ -1469,17 +1469,17 @@
           auto_covered: true,
           isNew: true,
           auto_note:
-            '<code>tests/unit/sectionsLayout.spec.ts</code> proves the sections geometry model. The known limitation is that convert-to-sections does <strong>not</strong> translate the original grid geometry — you are checking that HAVDM is honest about that rather than pretending the layout survived.',
+            '<code>tests/unit/sectionsLayout.spec.ts</code> proves the sections geometry model. The known limitation is that convert-to-sections does <strong>not</strong> translate the original grid geometry — you are checking that HAVDM is honest about that rather than pretending the layout survived. &#9888;&#9888; <strong>ROUND-1 CORRECTION: step 2 named a control that does not exist here.</strong> The &ldquo;Convert to Sections view&rdquo; banner on the canvas appears <strong>only when the view is EMPTY</strong>, so on a populated view there was nothing to click. Converting a populated view is done through <strong>Edit view &rarr; Type &rarr; Sections</strong>, which is the only path on which geometry is actually lost. The dialog warns before you save; round 1&rsquo;s real gap was that nothing restated it afterwards. Covered by <code>tests/e2e/round1-final-honesty.spec.ts</code>.',
           steps: [
             'On a flat view with several positioned cards, note where each card sits.',
-            'Find and click the <strong>Convert to sections</strong> control.',
-            'Read any banner or message shown.',
+            'Open <strong>Edit view</strong>, change <strong>Type</strong> to <strong>Sections</strong>, and read the warning shown before you save.',
+            'Save, then read the confirmation message.',
             'Look at the resulting sections layout.',
             'Press Ctrl+Z.',
           ],
           expects: [
             'Every card from the flat view is present after the conversion — <strong>none is lost</strong>. A lost card is <strong>High</strong>.',
-            'The layout is <strong>not</strong> expected to be preserved exactly. What is expected is that HAVDM says so — a banner or message telling you geometry was not carried over. Silent geometric loss with no notice is <strong>Medium</strong>.',
+            'The layout is <strong>not</strong> expected to be preserved exactly. What is expected is that HAVDM says so <strong>twice</strong>: the dialog warns before you save, and the confirmation afterwards names how many cards moved and that their positions were not carried over, pointing at Ctrl+Z. Silent geometric loss with no notice is <strong>Medium</strong>.',
             'Undo restores the original flat view and its positions.',
           ],
         },
@@ -1519,7 +1519,7 @@
             'Re-open Edit view — the grid editor should now be present.',
             'Set columns to <code>repeat(3, 1fr)</code>, rows to <code>repeat(auto-fill, 56px)</code>, gap to <code>12px</code>. Save.',
             'Re-open Edit view and read the three fields.',
-            'Enter deliberate nonsense in columns, e.g. <code>not-a-grid</code>, and save.',
+            'Enter deliberate nonsense in columns, e.g. <code>not-a-grid</code>, and save. &#9888; <strong>Accepting it verbatim with no message is a PASS.</strong> Round 1 marked this Fail for &ldquo;nonsense was accepted (no rejected message)&rdquo;, and the owner ruled that <strong>not a defect</strong>: the grid fields are raw CSS passed through to Home Assistant untouched, and silently rewriting what you typed is the thing this card guards against. Mark Fail only if the value comes back <strong>changed</strong>.',
           ],
           expects: [
             'The grid editor is absent for a masonry view and present for a layout-card view.',
@@ -1712,10 +1712,10 @@
           auto_covered: true,
           isNew: true,
           auto_note:
-            '<code>tests/unit/CardPalette.availability.spec.tsx</code> and <code>tests/unit/capabilityProfile.spec.ts</code> prove the availability logic and its permissive never-connected default. They cannot judge whether the marking is comprehensible to a non-expert.',
+            '<code>tests/unit/CardPalette.availability.spec.tsx</code> and <code>tests/unit/capabilityProfile.spec.ts</code> prove the availability logic and its permissive never-connected default. They cannot judge whether the marking is comprehensible to a non-expert. &#9888;&#9888; <strong>ROUND-1 CORRECTION &mdash; READ BEFORE MARKING.</strong> This card previously said &ldquo;works connected or not&rdquo;, which was <strong>wrong</strong>. With no connection HAVDM cannot know what you have installed, so by design every real card shows as available (vision answer 5). <strong>Nothing being marked &ldquo;Not Available&rdquo; while disconnected is CORRECT, not a defect.</strong> What round 1 legitimately exposed is that the palette never <em>said</em> so; it now prints a notice in its footer when HAVDM has never connected. Canvas-only cards are marked regardless of connection. Covered by <code>tests/e2e/round1-final-honesty.spec.ts</code>.',
           steps: [
             'Open <strong>Sensors &amp; Display</strong> in the palette. (Custom cards are filed by what they do and carry a <strong>Custom</strong> badge — there is no "Custom Cards" category.)',
-            'Hover a card that is marked as not installed and read the tooltip.',
+            'Hover a card marked <strong>Not Available</strong> and read the tooltip. &#9888; Requires a connection; if disconnected, read the palette footer notice instead and confirm it explains why nothing is marked.',
             'Hover a card marked HAVDM canvas-only and read that tooltip.',
             'Add a not-installed card to the canvas anyway.',
             'Look for any banner or marking on the card once placed.',
