@@ -888,12 +888,14 @@
           id: 'FILE-05',
           name: 'Save writes the file, clears the dirty marker and leaves a backup',
           type: 'edge',
-          auto_covered: false,
+          auto_covered: true,
           isNew: true,
+          auto_note:
+            '<code>tests/e2e/save-and-backup.spec.ts</code> drives all four expectations against the bytes on disk, from the <strong>toolbar button</strong>, the <strong>menu</strong> and <strong>Ctrl+S</strong> separately, and asserts the backup holds the <em>previous</em> content. Round 1&rsquo;s reported symptom (&ldquo;No dashboard loaded to save&rdquo;) was the stale-menu-closure defect fixed in PR #90; it no longer reproduces on any of the three controls. The native <strong>File &rarr; Open Dashboard...</strong> dialog in step 5 is still unautomated, so re-opening through the OS picker remains a human-only check.',
           steps: [
             'With a file-backed dashboard open, drag any card to a different position.',
             'Look at the heading — note the orange asterisk — and that <strong>Save</strong> is now enabled.',
-            'Click <strong>Save</strong>.',
+            'Click <strong>Save</strong> in the toolbar. (Also try <strong>File &rarr; Save</strong> and Ctrl+S — these are three separate wirings.)',
             'Read the confirmation message and look at the heading again.',
             'Choose File &rarr; Open Dashboard... and re-open the same file.',
           ],
@@ -901,7 +903,7 @@
             'The asterisk appears as soon as the dashboard is modified, and Save becomes enabled.',
             'Saving reports success and the asterisk disappears.',
             'Re-opening the file shows the moved card in its <strong>new</strong> position — the change was actually written.',
-            'A backup of the previous file content exists alongside it. If no backup was created, that is data-safety-relevant: mark Fail and note it.',
+            'A backup of the previous content exists in a <strong>hidden <code>.backup</code> folder beside the file</strong>, named <code>&lt;filename&gt;.&lt;timestamp&gt;.backup</code>, and the save message says so. <strong>On Windows you must enable &ldquo;Hidden items&rdquo; in Explorer to see it.</strong> Only the newest 5 are kept. If the file already existed and no backup was created, that is data-safety-relevant: mark Fail and note it. (A <em>first</em> save of a brand-new file correctly makes no backup — there is nothing to preserve — and the message does not claim one.)',
           ],
         },
         {

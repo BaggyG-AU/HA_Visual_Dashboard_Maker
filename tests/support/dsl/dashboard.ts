@@ -15,6 +15,33 @@ interface CreateDashboardOptions {
 export class DashboardDSL {
   constructor(private window: Page) {}
 
+  /**
+   * The toolbar's Save button (UAT FILE-05 step 3/4).
+   *
+   * ⚠ Exposed as a locator rather than wrapped in a `save()` method on purpose:
+   * FILE-05's Expected 1 is about the button's ENABLED STATE before it is
+   * clicked, so callers need the element, not just the action.
+   *
+   * ⚠ This button is rendered INSIDE the `config` branch of src/App.tsx — it
+   * does not exist at all when no dashboard is open — which is why it can never
+   * be the control that produced FILE-05's reported "No dashboard loaded to
+   * save". That message can only come from the menu.
+   */
+  get toolbarSave() {
+    return this.window.getByTestId('toolbar-save');
+  }
+
+  /**
+   * The unsaved-changes marker — the orange asterisk beside the dashboard title.
+   *
+   * ⚠ It lives in the DOM heading, NOT in the window title.
+   * `tests/e2e/file-operations.spec.ts` watched `window.title()` for it and so
+   * could never have observed it either appearing or clearing.
+   */
+  get dirtyIndicator() {
+    return this.window.getByTestId('dashboard-dirty-indicator');
+  }
+
   private async waitForCanvasOrEmpty(timeout = 10000): Promise<void> {
     const canvasOrEmpty = this.window
       .getByText(/No cards in this view/i)

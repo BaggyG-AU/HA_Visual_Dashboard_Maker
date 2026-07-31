@@ -55,7 +55,15 @@ import { cardRegistry } from './services/cardRegistry';
 import { haConnectionService } from './services/haConnectionService';
 import { isLayoutCardGrid, convertGridLayoutToViewLayout } from './utils/layoutCardParser';
 import { getCardSizeConstraints } from './utils/cardSizingContract';
-import { shouldHandleGlobalShortcut } from './utils/keyboardShortcuts';
+import {
+  isCopyShortcut,
+  isCutShortcut,
+  isPasteShortcut,
+  isRedoShortcut,
+  isSaveShortcut,
+  isUndoShortcut,
+  shouldHandleGlobalShortcut,
+} from './utils/keyboardShortcuts';
 import { isContainerCard, appendCardToContainer } from './utils/containerCards';
 import {
   cloneCardsForClipboard,
@@ -672,7 +680,8 @@ const App: React.FC = () => {
       try {
         // Create backup before saving
         const backupResult = await window.electronAPI.createBackup(filePath);
-        if (backupResult.success && backupResult.backupPath) {
+        const backedUp = backupResult.success && Boolean(backupResult.backupPath);
+        if (backedUp) {
           logger.info('Created backup', backupResult.backupPath);
         }
 
@@ -680,7 +689,27 @@ const App: React.FC = () => {
         const result = await window.electronAPI.writeFile(filePath, yamlContent);
         if (result.success) {
           markClean();
-          message.success('Dashboard saved successfully!');
+          // ⭐ FILE-05: SAY WHERE THE BACKUP WENT.
+          //
+          // `fs:createBackup` writes to a HIDDEN `.backup/` subfolder beside the
+          // file, but the UAT card's Expected said a backup exists "alongside"
+          // it — and Windows Explorer hides dot-directories by default. A tester
+          // (or a user) looking beside the file sees nothing, so a working
+          // data-safety feature reads as a missing one. The card wording is
+          // corrected in the same change; this is the product half, and per THE
+          // VISION a state a non-expert must understand has to say so in plain
+          // language rather than leave them to find a hidden folder.
+          //
+          // ⚠ Reported only when a backup was ACTUALLY written. The first save
+          // of a file that does not exist yet returns success with NO
+          // `backupPath` — correct, there was nothing to preserve — and a
+          // message promising a backup in that case would point the user at a
+          // file that is not there. Never claim a safety net that was not hung.
+          message.success(
+            backedUp
+              ? 'Dashboard saved. The previous version was kept in the hidden .backup folder beside it.'
+              : 'Dashboard saved successfully!',
+          );
         } else {
           message.error(`Failed to save file: ${result.error}`);
         }
@@ -2477,13 +2506,25 @@ const App: React.FC = () => {
         return;
       }
 
+      // ⚠⚠ EVERY BRANCH BELOW USED TO COMPARE `event.key` CASE-SENSITIVELY
+      // INLINE (`event.key === 's'`), which meant the whole set silently did
+      // nothing with CAPS LOCK ON — `event.key` reports the character produced,
+      // so the key is 'S' in that state. Worse, it was inconsistent with the
+      // guard directly above: `shouldHandleGlobalShortcut` calls
+      // `isUndoShortcut`, which lowercases, so a Caps Lock Ctrl+Z was correctly
+      // let THROUGH the text-field guard and then failed to match here.
+      //
+      // The predicates live in src/utils/keyboardShortcuts.ts beside the guard
+      // that already consumes them, so the two can no longer disagree about
+      // what a shortcut is.
+
       // Ctrl+S: Save
-      if (event.ctrlKey && event.key === 's') {
+      if (isSaveShortcut(event)) {
         event.preventDefault();
         handleSave();
       }
       // Ctrl+Z: Undo
-      else if (event.ctrlKey && !event.shiftKey && event.key === 'z') {
+      else if (isUndoShortcut(event)) {
         event.preventDefault();
         if (canUndo()) {
           ignoreNextLayoutChangeRef.current = true;
@@ -2492,10 +2533,7 @@ const App: React.FC = () => {
         }
       }
       // Ctrl+Y or Ctrl+Shift+Z: Redo
-      else if (
-        (event.ctrlKey && event.key === 'y') ||
-        (event.ctrlKey && event.shiftKey && event.key === 'z')
-      ) {
+      else if (isRedoShortcut(event)) {
         event.preventDefault();
         if (canRedo()) {
           ignoreNextLayoutChangeRef.current = true;
@@ -2504,17 +2542,17 @@ const App: React.FC = () => {
         }
       }
       // Ctrl+C: Copy
-      else if (event.ctrlKey && event.key === 'c') {
+      else if (isCopyShortcut(event)) {
         event.preventDefault();
         handleCardCopy();
       }
       // Ctrl+X: Cut
-      else if (event.ctrlKey && event.key === 'x') {
+      else if (isCutShortcut(event)) {
         event.preventDefault();
         handleCardCut();
       }
       // Ctrl+V: Paste
-      else if (event.ctrlKey && event.key === 'v') {
+      else if (isPasteShortcut(event)) {
         event.preventDefault();
         handleCardPaste();
       }
@@ -2777,7 +2815,12 @@ const App: React.FC = () => {
                         <h2 style={{ color: accentColor, margin: 0 }}>
                           {config.title || 'Dashboard'}
                           {isDirty && (
-                            <span style={{ color: token.colorWarning, marginLeft: '8px' }}>*</span>
+                            <span
+                              style={{ color: token.colorWarning, marginLeft: '8px' }}
+                              data-testid="dashboard-dirty-indicator"
+                            >
+                              *
+                            </span>
                           )}
                         </h2>
                         <p
@@ -2856,6 +2899,7 @@ const App: React.FC = () => {
                             icon={<SaveOutlined />}
                             onClick={handleSave}
                             disabled={!isDirty}
+                            data-testid="toolbar-save"
                           >
                             Save
                           </Button>
