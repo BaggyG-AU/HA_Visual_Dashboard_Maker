@@ -3,12 +3,54 @@
  *
  * Focused on verifying dashboard dirty state hooks and file fixture presence.
  * Save/load dialogs are not automated yet; relevant tests are marked as skipped.
+ *
+ * ⚠⚠ THE TWO Ctrl+S TESTS BELOW WERE INERT UNTIL FILE-05, AND NOT ON PURPOSE.
+ * `keyboard.press('Control+S')` delivers `event.key === 'S'`, and App's handler
+ * compared `event.key === 's'` case-sensitively, so the keystroke reached
+ * nothing — which is why assertions like "the title is unchanged after saving"
+ * passed. FILE-05 made the match case-insensitive (Caps Lock produces the same
+ * uppercase key on a real keyboard), so these presses now genuinely invoke Save.
+ *
+ * That mattered: both tests ran against a dashboard created in-app, where
+ * `filePath` is null, and Save with no path delegates to `handleSaveFile()` —
+ * which opens a NATIVE Save As dialog this harness cannot drive. They are
+ * therefore file-backed now, via `__dashboardTestApi.loadYaml(yaml, filePath)`,
+ * the state where Save writes straight through and never opens a dialog.
+ *
+ * ⭐ The full FILE-05 path — the dirty marker, the backup, and the re-read —
+ * is covered in `tests/e2e/save-and-backup.spec.ts`. These two stay here as the
+ * keyboard-shortcut leg of File Operations.
  */
 
 import { test, expect } from '@playwright/test';
 import { launchWithDSL, close } from '../support';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
+
+type Ctx = Awaited<ReturnType<typeof launchWithDSL>>;
+
+const FILE_BACKED_YAML = `title: File Ops
+views:
+  - title: Home
+    path: home
+    cards:
+      - type: button
+        name: Existing Card
+`;
+
+const loadFileBacked = async (ctx: Ctx, yaml: string, filePath: string) => {
+  await ctx.window.evaluate(
+    ([y, p]) => {
+      (
+        window as unknown as {
+          __dashboardTestApi: { loadYaml: (yaml: string, filePath?: string | null) => void };
+        }
+      ).__dashboardTestApi.loadYaml(y, p);
+    },
+    [yaml, filePath] as const,
+  );
+};
 
 test.describe('File Operations', () => {
   const testDashboardPath = path.join(__dirname, '../fixtures/test-dashboard.yaml');
@@ -50,26 +92,35 @@ test.describe('File Operations', () => {
     }
   });
 
-  test('should remove asterisk after saving (pending save implementation)', async () => {
+  test('should remove the dirty marker after saving with Ctrl+S', async () => {
     const ctx = await launchWithDSL();
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'havdm-fileops-save-'));
+    const target = path.join(tmpDir, 'dash.yaml');
     try {
       await ctx.appDSL.waitUntilReady();
-      await ctx.dashboard.createNew();
+      fs.writeFileSync(target, 'title: Placeholder\nviews: []\n', 'utf8');
+      await loadFileBacked(ctx, FILE_BACKED_YAML, target);
+      await ctx.canvas.expectCardCount(1);
+
       await ctx.palette.expandCategory('Controls');
       await ctx.palette.addCard('button');
+      await ctx.canvas.expectCardCount(2);
 
-      await ctx.canvas.expectCardCount(1);
-      const dirtyTitle = await ctx.appDSL.getTitle();
+      // ⭐ CONTROL LEG. The marker must be PRESENT first, or its absence after
+      // saving proves nothing — this test previously asserted only that the
+      // window title had not changed, which no save could ever have altered.
+      await expect(ctx.dashboard.dirtyIndicator).toBeVisible();
 
-      // Save shortcut is currently mocked/no-op; ensure it doesn't crash and title remains stable
+      // Focus sits in the palette search box after adding a card, and Ctrl+S is
+      // deliberately guarded inside text fields (src/utils/keyboardShortcuts.ts).
+      await ctx.window.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
       await ctx.window.keyboard.press('Control+S');
-      await ctx.appDSL.expectTitle(/HA Visual Dashboard Maker/);
 
-      const afterSaveTitle = await ctx.appDSL.getTitle();
-      expect(afterSaveTitle.length).toBeGreaterThan(0);
-      expect(afterSaveTitle).toBe(dirtyTitle);
+      await expect(ctx.dashboard.dirtyIndicator).toBeHidden();
+      expect(fs.readFileSync(target, 'utf8')).toContain('File Ops');
     } finally {
       await close(ctx);
+      fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });
 
@@ -86,19 +137,34 @@ test.describe('File Operations', () => {
     }
   });
 
-  test('should respond to Ctrl+S keyboard shortcut (pending dialog automation)', async () => {
+  test('should respond to the Ctrl+S keyboard shortcut by writing the file', async () => {
     const ctx = await launchWithDSL();
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'havdm-fileops-ctrls-'));
+    const target = path.join(tmpDir, 'dash.yaml');
     try {
       await ctx.appDSL.waitUntilReady();
-      await ctx.dashboard.createNew();
+      fs.writeFileSync(target, 'title: Placeholder\nviews: []\n', 'utf8');
+      await loadFileBacked(ctx, FILE_BACKED_YAML, target);
+      await ctx.canvas.expectCardCount(1);
+
       await ctx.palette.expandCategory('Controls');
       await ctx.palette.addCard('button');
+      await ctx.canvas.expectCardCount(2);
 
-      // Smoke-test the shortcut executes without breaking the UI
+      await ctx.window.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
       await ctx.window.keyboard.press('Control+S');
+
+      // The bytes on disk, not "the app did not crash". Seeding the file with
+      // distinct content first is what makes a failure to write distinguishable
+      // from a write of the wrong content.
+      await expect
+        .poll(() => fs.readFileSync(target, 'utf8'), { timeout: 10000 })
+        .toContain('File Ops');
+      expect(fs.readFileSync(target, 'utf8')).not.toContain('Placeholder');
       await ctx.appDSL.expectTitle(/HA Visual Dashboard Maker/);
     } finally {
       await close(ctx);
+      fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });
 

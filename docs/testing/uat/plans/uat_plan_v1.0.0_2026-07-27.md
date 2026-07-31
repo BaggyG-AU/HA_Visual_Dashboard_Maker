@@ -361,15 +361,26 @@ opening a real file through the OS picker has no automated coverage at all.
 | Field          | Value                                    |
 | -------------- | ---------------------------------------- |
 | Type           | edge                                     |
-| Auto covered   | N                                        |
+| Auto covered   | Y (`tests/e2e/save-and-backup.spec.ts`)  |
 | Pre-conditions | A dashboard opened from a file (FILE-04) |
+
+**Automated coverage confirms:**
+`tests/e2e/save-and-backup.spec.ts` drives all four expectations against the
+bytes on disk, from the **toolbar button**, the **menu** and **Ctrl+S**
+separately — a handler reachable from three controls is three wirings and each
+needs its own evidence — and asserts the backup holds the _previous_ content.
+Round 1's reported symptom ("No dashboard loaded to save") was the stale-menu-
+closure defect fixed in PR #90 and no longer reproduces on any of the three.
+The native **File → Open Dashboard...** dialog in step 6 is still unautomated,
+so re-opening through the OS picker remains a human-only check.
 
 **Steps:**
 
 1. With a file-backed dashboard open, drag any card to a different position.
 2. Look at the heading — note the orange asterisk.
 3. Note that **Save** is now enabled.
-4. Click **Save**.
+4. Click **Save** in the toolbar. Also try **File → Save** and `Ctrl+S` — these
+   are three separate wirings and any of them could fail alone.
 5. Read the confirmation message and look at the heading again.
 6. Choose **File → Open Dashboard...** and re-open the same file.
 
@@ -380,8 +391,14 @@ opening a real file through the OS picker has no automated coverage at all.
 - Saving reports success and the asterisk disappears.
 - Re-opening the file shows the moved card in its **new** position — the change
   was actually written.
-- ⭐ A backup of the previous file content exists alongside it. If no backup was
-  created, that is data-safety-relevant: mark Fail and note it.
+- ⭐ A backup of the previous content exists in a **hidden `.backup` folder
+  beside the file**, named `<filename>.<timestamp>.backup`, and the save message
+  says so. **On Windows you must enable "Hidden items" in Explorer to see it** —
+  it is not visible beside the file by default. Only the newest 5 are kept.
+  If the file already existed and no backup was created, that is
+  data-safety-relevant: mark Fail and note it.
+  ⓘ A **first** save of a brand-new file correctly creates no backup — there is
+  nothing to preserve — and the message does not claim one in that case.
 
 #### FILE-06: Save As... writes a new file and it appears in Recent Files
 

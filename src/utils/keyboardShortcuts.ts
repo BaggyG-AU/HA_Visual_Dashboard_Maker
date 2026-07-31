@@ -50,6 +50,42 @@ export const isRedoShortcut = (event: KeyboardEvent): boolean => {
 };
 
 /**
+ * Ctrl+<letter> matchers for the shortcuts App's global handler owns.
+ *
+ * ⚠⚠ WHY THESE EXIST AT ALL: the handler used to compare `event.key === 's'`
+ * (and 'c' / 'x' / 'v') INLINE and CASE-SENSITIVELY. `event.key` carries the
+ * CHARACTER PRODUCED, not the physical key — so with CAPS LOCK ON a real
+ * keyboard reports 'S', the comparison failed, and Save, Copy, Cut and Paste
+ * silently did nothing. Undo and redo were unaffected because
+ * `isUndoShortcut` / `isRedoShortcut` above already lowercase the key, so the
+ * app's behaviour under Caps Lock was inconsistent with itself.
+ *
+ * Found while writing FILE-05's coverage: `press('Control+S')` delivers
+ * `key: 'S'`, which is exactly the Caps Lock case, and the save leg failed
+ * against it while `press('Control+s')` passed.
+ *
+ * ⚠ DELIBERATELY `ctrlKey` ONLY, NOT `ctrlKey || metaKey`, even though the
+ * undo/redo predicates accept both. Every one of these call sites listened for
+ * Ctrl alone before this change; accepting Cmd would newly bind Cmd+S/C/X/V on
+ * macOS, which is a behaviour widening this change was not asked to make and
+ * nothing here tests. Recorded as an open item instead.
+ */
+const isCtrlLetter = (event: KeyboardEvent, letter: string): boolean =>
+  event.ctrlKey && !event.shiftKey && event.key.toLowerCase() === letter;
+
+/** True for Ctrl+S (save). */
+export const isSaveShortcut = (event: KeyboardEvent): boolean => isCtrlLetter(event, 's');
+
+/** True for Ctrl+C (copy). */
+export const isCopyShortcut = (event: KeyboardEvent): boolean => isCtrlLetter(event, 'c');
+
+/** True for Ctrl+X (cut). */
+export const isCutShortcut = (event: KeyboardEvent): boolean => isCtrlLetter(event, 'x');
+
+/** True for Ctrl+V (paste). */
+export const isPasteShortcut = (event: KeyboardEvent): boolean => isCtrlLetter(event, 'v');
+
+/**
  * Should the app's global keydown handler process this event at all?
  *
  * Outside a text field: always. Inside one: only for undo/redo, and only when

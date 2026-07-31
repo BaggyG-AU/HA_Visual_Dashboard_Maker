@@ -4,6 +4,10 @@ import {
   isTextEntryTarget,
   isUndoShortcut,
   isRedoShortcut,
+  isSaveShortcut,
+  isCopyShortcut,
+  isCutShortcut,
+  isPasteShortcut,
   shouldHandleGlobalShortcut,
 } from '../../src/utils/keyboardShortcuts';
 
@@ -59,6 +63,58 @@ describe('keyboardShortcuts', () => {
     it('requires a modifier — a bare z or y is typing', () => {
       expect(isUndoShortcut(key({ key: 'z' }))).toBe(false);
       expect(isRedoShortcut(key({ key: 'y' }))).toBe(false);
+    });
+  });
+
+  /**
+   * FILE-05. `event.key` is the CHARACTER PRODUCED, not the physical key, so
+   * with Caps Lock on a real keyboard reports 'S' for Ctrl+S. App's handler
+   * compared `event.key === 's'` inline and case-sensitively, so Save, Copy,
+   * Cut and Paste silently did nothing in that state — while undo and redo kept
+   * working, because their predicates already lowercased.
+   */
+  describe('isSaveShortcut / isCopyShortcut / isCutShortcut / isPasteShortcut', () => {
+    const cases: Array<[string, (e: KeyboardEvent) => boolean, string]> = [
+      ['save', isSaveShortcut, 's'],
+      ['copy', isCopyShortcut, 'c'],
+      ['cut', isCutShortcut, 'x'],
+      ['paste', isPasteShortcut, 'v'],
+    ];
+
+    it.each(cases)('%s matches the lowercase key', (_name, predicate, letter) => {
+      expect(predicate(key({ key: letter, ctrlKey: true }))).toBe(true);
+    });
+
+    // ⭐ THE DEFECT. Without lowercasing, every one of these is false.
+    it.each(cases)('%s ALSO matches the uppercase key (Caps Lock)', (_name, predicate, letter) => {
+      expect(predicate(key({ key: letter.toUpperCase(), ctrlKey: true }))).toBe(true);
+    });
+
+    // ⭐ CONTROL LEGS — the scoping. A fix that merely lowercased without
+    // keeping the other conditions would newly bind Ctrl+Shift+V and bare
+    // typing, so these are what stop the fix from over-reaching.
+    it.each(cases)(
+      '%s requires Ctrl — bare typing is not a shortcut',
+      (_name, predicate, letter) => {
+        expect(predicate(key({ key: letter }))).toBe(false);
+      },
+    );
+
+    it.each(cases)('%s does NOT fire with Shift held', (_name, predicate, letter) => {
+      expect(predicate(key({ key: letter, ctrlKey: true, shiftKey: true }))).toBe(false);
+    });
+
+    it.each(cases)('%s does not match a different letter', (_name, predicate, letter) => {
+      const other = letter === 'q' ? 'w' : 'q';
+      expect(predicate(key({ key: other, ctrlKey: true }))).toBe(false);
+    });
+
+    // ⚠ Deliberately Ctrl-only, unlike isUndoShortcut/isRedoShortcut which also
+    // accept Cmd. Every call site listened for Ctrl alone before this change,
+    // and binding Cmd+S/C/X/V on macOS would be a widening nothing here asked
+    // for. Pinned so the asymmetry is a decision rather than an oversight.
+    it.each(cases)('%s does NOT accept Cmd, by design', (_name, predicate, letter) => {
+      expect(predicate(key({ key: letter, metaKey: true }))).toBe(false);
     });
   });
 
