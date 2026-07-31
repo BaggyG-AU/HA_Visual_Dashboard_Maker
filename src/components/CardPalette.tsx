@@ -333,6 +333,29 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
       >
         {allCards.length} cards available
         {searchTerm && ` (${Object.values(filteredCardsByCategory).flat().length} shown)`}
+        {/*
+          ⚠ EXPORT-04. With no captured capability profile, `resolveCardState`
+          is deliberately PERMISSIVE — ratified vision answer 5, so a fresh or
+          offline user is never blocked from designing. The round-1 tester
+          marked this card Fail with "No cards marked Not Installed", and they
+          were right to: showing everything as available is correct, but saying
+          NOTHING about why is not.
+
+          ⭐ An unexplained default is indistinguishable from a broken one. The
+          user cannot tell "everything really is installed" from "HAVDM has no
+          idea what you have installed". Naming it costs one line and makes the
+          permissive default honest rather than merely defensible — which is
+          precisely what this card is titled after.
+
+          ⚠ Canvas-only cards are NOT affected and stay marked regardless:
+          `resolveCardState` checks that profile-independent set FIRST.
+        */}
+        {profile.haVersion === null && (
+          <div data-testid="palette-availability-notice" style={{ marginTop: '6px' }}>
+            Not connected to Home Assistant — every card is shown as available. Connect to see which
+            are actually installed on your instance.
+          </div>
+        )}
       </div>
     </div>
   );

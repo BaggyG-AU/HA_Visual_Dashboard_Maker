@@ -70,6 +70,25 @@ testing — running it in place over `\\wsl.localhost` works but is noticeably
 slower to start, and startup responsiveness is something SHELL-01 asks you to
 judge.
 
+### ⭐ Connect to Home Assistant FIRST — round-2 change
+
+**Before running any group, connect to your Home Assistant instance once**
+(**Settings → Home Assistant → Connect**, `ha.home.local` or `192.168.1.70`),
+let the entity list load, and then carry on. You may disconnect afterwards.
+
+⚠ **This is a round-2 correction, and it comes from round 1's own evidence.**
+CANVAS-02 passed but its note read _"Not connected to HA so no entities cached.
+Need to update test case sequence to connect to HA first."_ Several cards across
+Groups 3, 5 and 8 need entities to exist before they can be judged, and running
+them cold turns an **environment fact into a product defect** — PROPS-03,
+PROPS-05 and EXPORT-04 were all marked Fail partly for that reason.
+
+⭐ Connecting once populates the **offline cache**, so the entity pickers keep
+working after you disconnect. That is deliberate product behaviour, and testing
+it is one of the things Group 11 exists for — it is not a way of avoiding the
+never-connected state. If a card explicitly says _"never connected"_, use a
+fresh profile for it.
+
 ⚠ **Two Windows-only prerequisites, so you do not log false defects:**
 
 - **Group 10 needs `git` installed and on Windows' `PATH`.** Without it every
@@ -965,21 +984,31 @@ can judge whether the options presented make sense to a dashboard author.
 
 #### PROPS-05: Build a conditional-visibility rule and see it previewed
 
-| Field          | Value                                          |
-| -------------- | ---------------------------------------------- |
-| Type           | gate                                           |
-| Auto covered   | Y (`tests/e2e/conditional-visibility.spec.ts`) |
-| Pre-conditions | A card selected                                |
+| Field          | Value                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| Type           | gate                                                                                     |
+| Auto covered   | Y (`tests/e2e/conditional-visibility.spec.ts`, `tests/e2e/round1-final-honesty.spec.ts`) |
+| Pre-conditions | A card selected. Use a card with **no entity set** for step 1.                           |
 
 **Automated coverage confirms:**
 `tests/e2e/conditional-visibility.spec.ts` proves a state-based rule applies,
-updates live and persists to YAML;
-`tests/unit/conditionalVisibility.spec.ts` covers the rule logic. Neither can
-judge whether the rule builder is comprehensible.
+updates live and persists to YAML; `tests/unit/conditionalVisibility.spec.ts`
+covers the rule logic. Neither can judge whether the rule builder is
+comprehensible.
+
+⚠ **Round 1's coverage claim was FALSE and is corrected here.** That spec
+assigns an entity to the card (`initialParsed.entity = 'light.living_room'`)
+before opening the controls — so it **manufactured the exact precondition the
+defect depended on** and could never have caught it. The controls were hidden
+outright on a card with no entity, which is what "no conditions option for
+Button card" meant. `tests/e2e/round1-final-honesty.spec.ts` now covers both the
+no-entity case and choosing a condition entity with **no HA connection**.
 
 **Steps:**
 
-1. With a card selected, find the conditional-visibility controls.
+1. Add a **Button** card and select it **without setting an entity**, then find
+   the conditional-visibility controls. They must be present — a visibility rule
+   is about some _other_ entity's state, so the card needs no entity of its own.
 2. Add a root condition.
 3. Set it to a state condition on any entity, e.g. `light.kitchen` is `on`.
 4. Read the preview area.
@@ -1202,11 +1231,11 @@ works with a real mouse.
 
 #### VIEWS-06: Convert an ordinary view into a sections view
 
-| Field          | Value                                   |
-| -------------- | --------------------------------------- |
-| Type           | fidelity                                |
-| Auto covered   | Y (`tests/unit/sectionsLayout.spec.ts`) |
-| Pre-conditions | A masonry/flat view with several cards  |
+| Field          | Value                                                                             |
+| -------------- | --------------------------------------------------------------------------------- |
+| Type           | fidelity                                                                          |
+| Auto covered   | Y (`tests/unit/sectionsLayout.spec.ts`, `tests/e2e/round1-final-honesty.spec.ts`) |
+| Pre-conditions | A masonry/flat view with several **positioned** cards                             |
 
 **Automated coverage confirms:**
 `tests/unit/sectionsLayout.spec.ts` proves the sections geometry model. The known
@@ -1214,11 +1243,20 @@ limitation is that **convert-to-sections does not translate the original grid
 geometry** — you are checking that HAVDM is honest about that rather than
 pretending the layout survived.
 
+⚠⚠ **ROUND-1 CORRECTION: step 2 named a control that does not exist here.** The
+"Convert to Sections view" **banner on the canvas appears only when the view is
+EMPTY**, so on a populated view there is nothing to click and the old step could
+not be followed. Converting a populated view is done through **Edit view →
+Type → Sections**, and that is the only path on which geometry is actually lost.
+⭐ The dialog warns _before_ you save; round 1's real gap was that nothing
+restated it _afterwards_ — the app said only "View updated".
+
 **Steps:**
 
 1. On a flat view with several positioned cards, note where each card sits.
-2. Find and click the **Convert to sections** control.
-3. Read any banner or message shown.
+2. Open **Edit view**, change **Type** to **Sections**, and read the warning
+   shown before you save.
+3. Save, then read the confirmation message.
 4. Look at the resulting sections layout.
 5. Press `Ctrl+Z`.
 
@@ -1227,8 +1265,10 @@ pretending the layout survived.
 - Every card from the flat view is present after the conversion — **none is
   lost**. A lost card is **High**.
 - ⭐ The layout is **not** expected to be preserved exactly. What is expected is
-  that HAVDM says so — a banner or message that tells you geometry was not
-  carried over. Silent geometric loss with no notice is **Medium**.
+  that HAVDM says so **twice**: the dialog warns before you save, and the
+  confirmation afterwards names how many cards moved and that their positions
+  were not carried over, pointing at `Ctrl+Z`. Silent geometric loss with no
+  notice is **Medium**.
 - Undo restores the original flat view and its positions.
 
 #### VIEWS-07: Mark a view as a subview with a back path
@@ -1284,6 +1324,12 @@ a reasonable thing to ask of a person.
    **gap** to `12px`. Save.
 5. Re-open **Edit view** and read the three fields.
 6. Enter deliberate nonsense in **columns**, e.g. `not-a-grid`, and save.
+   ⚠ **Accepting it verbatim with no message is a PASS** — see the Expected
+   below. Round 1 marked this Fail for "nonsense was accepted (no rejected
+   message)", and the owner ruled that **not a defect**: the grid fields are raw
+   CSS passed through to Home Assistant untouched, and silently rewriting what
+   you typed is the thing this card is guarding against. Only mark Fail if the
+   value comes back **changed**.
 
 **Expected:**
 
@@ -1580,11 +1626,11 @@ flagged in the palette — including the `native-graph-card` regression, not jus
 
 #### EXPORT-04: The palette marks unavailable cards honestly
 
-| Field          | Value                                              |
-| -------------- | -------------------------------------------------- |
-| Type           | fidelity                                           |
-| Auto covered   | Y (`tests/unit/CardPalette.availability.spec.tsx`) |
-| Pre-conditions | A dashboard open. Works connected or not.          |
+| Field          | Value                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------- |
+| Type           | fidelity                                                                                     |
+| Auto covered   | Y (`tests/unit/CardPalette.availability.spec.tsx`, `tests/e2e/round1-final-honesty.spec.ts`) |
+| Pre-conditions | ⚠ **Connected to Home Assistant** — steps 2 and 4 cannot be done otherwise.                  |
 
 **Automated coverage confirms:**
 `tests/unit/CardPalette.availability.spec.tsx` and
@@ -1592,11 +1638,24 @@ flagged in the palette — including the `native-graph-card` regression, not jus
 permissive never-connected default. They cannot judge whether the marking is
 comprehensible to a non-expert.
 
+⚠⚠ **ROUND-1 CORRECTION — READ THIS BEFORE MARKING.** This card previously said
+"Works connected or not", which was **wrong**, and round 1 was marked Fail with
+"No cards marked Not Installed". With **no** connection HAVDM cannot know what
+you have installed, so by design it shows every real card as available
+(ratified vision answer 5 — a fresh or offline user is never blocked). **Nothing
+being marked "Not Available" while disconnected is CORRECT, not a defect.**
+⭐ What round 1 legitimately exposed is that the palette never _said_ so. It now
+prints a plain-language notice in its footer when HAVDM has never connected.
+⭐ **Canvas-only cards are marked regardless of connection** — that set is
+profile-independent — so step 3 works either way.
+
 **Steps:**
 
 1. Open **Sensors & Display** in the palette. (Custom cards are filed by what
    they do and carry a **Custom** badge — there is no "Custom Cards" category.)
-2. Hover a card that is marked as not installed and read the tooltip.
+2. Hover a card marked **Not Available** and read the tooltip. ⚠ Requires a
+   connection; if you are disconnected, read the palette footer notice instead
+   and confirm it explains why nothing is marked.
 3. Hover a card marked HAVDM canvas-only and read that tooltip.
 4. Add a not-installed card to the canvas anyway.
 5. Look for any banner or marking on the card once placed.

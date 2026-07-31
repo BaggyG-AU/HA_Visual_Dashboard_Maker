@@ -497,19 +497,27 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     );
   };
 
-  const renderConditionalVisibilitySection = (values: FormCardValues) => {
+  // ⚠ Takes no form values any more: the section used to inspect them to decide
+  // whether to render at all, and that decision was the PROPS-05 defect.
+  const renderConditionalVisibilitySection = () => {
     const currentCard = cardRef.current;
     if (!currentCard) return null;
 
-    const supportsVisibility =
-      typeof values.entity === 'string' ||
-      Array.isArray(values.entities) ||
-      typeof currentCard.entity === 'string' ||
-      Array.isArray(currentCard.entities);
-
-    if (!supportsVisibility) {
-      return null;
-    }
+    // ⚠⚠ PROPS-05 (High). This used to return null unless the CARD already had
+    // an `entity` or `entities`, so a freshly added Button card showed no
+    // conditional-visibility controls at all — exactly the round-1 report,
+    // "No conditions option for Button card".
+    //
+    // The gate was wrong by construction, not merely too strict. Every
+    // condition RULE carries its own entity picker
+    // (ConditionalVisibilityControls renders `visibility-condition-entity-*`),
+    // so a rule asks about SOME OTHER entity's state. Home Assistant's
+    // `visibility` is a property of the card, not of the card's entity — you
+    // can legitimately hide a markdown card when a sensor reads a value, and
+    // that markdown card has no entity of its own.
+    //
+    // So the builder is offered for every card. Nothing is hidden on the
+    // strength of a condition that never applied.
 
     return (
       <Form.Item name="visibility_conditions">
@@ -1781,9 +1789,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               </Form.Item>
 
               <Form.Item noStyle shouldUpdate>
-                {() =>
-                  renderConditionalVisibilitySection(form.getFieldsValue(true) as FormCardValues)
-                }
+                {() => renderConditionalVisibilitySection()}
               </Form.Item>
 
               <Form.Item noStyle shouldUpdate>
