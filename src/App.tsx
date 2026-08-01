@@ -36,6 +36,9 @@ import { Layout as GridLayoutType } from 'react-grid-layout';
 import { fileService } from './services/fileService';
 import { useDashboardStore } from './store/dashboardStore';
 import { yamlService } from './services/yamlService';
+// UAT HA-07: the same summariser DeployDialog uses, so the live-preview deploy
+// path cannot drift into describing the adjustments differently.
+import { summarizeExportWarnings } from './services/exportWarningSummary';
 import { templateService } from './services/templateService';
 import { GridCanvas } from './components/GridCanvas';
 import { CardPalette } from './components/CardPalette';
@@ -2259,6 +2262,14 @@ const App: React.FC = () => {
       return;
     }
 
+    // ⚠ Live Preview cannot have been entered without a config (see
+    // `handleEnterLivePreview`), but the summary below reads it, so narrow here
+    // rather than relying on that invariant holding forever.
+    if (!config) {
+      message.error('No dashboard loaded');
+      return;
+    }
+
     const target = resolveLivePreviewDeployTarget(sourceDashboard);
 
     // Not sourced from HA (opened from a file / newly created): there is no
@@ -2275,6 +2286,62 @@ const App: React.FC = () => {
       setDeployDialogVisible(true);
       return;
     }
+
+    // ⭐⭐⭐ UAT HA-07: SAY WHAT IS ABOUT TO CHANGE, BEFORE CHANGING IT.
+    //
+    // ⚠⚠ This branch used to go STRAIGHT to `haWsDeployDashboard` — no dialog,
+    // no summary, no confirmation — overwriting a REAL production dashboard.
+    // The "This design was adjusted for Home Assistant" summary existed all
+    // along, but only inside `DeployDialog`, which is opened solely by the
+    // `kind === 'unknown'` branch above.
+    //
+    // ⭐⭐⭐ SO THE MORE CORRECTLY YOU USED THE PRODUCT, THE MORE CERTAINLY YOU
+    // LOST THE SUMMARY: it is downloading a dashboard FROM Home Assistant that
+    // sets `sourceDashboard`, and that is exactly what routes you down here.
+    //
+    // ⚠ `deployReport` (the memo above) cannot be reused — it is gated on
+    // `deployDialogVisible`, which is false on this path by definition. The
+    // service is called directly instead; `summarizeExportWarnings` is a pure
+    // function over the warnings, so no summary logic is duplicated.
+    const { warnings } = yamlService.sanitizeForHAWithReport(config);
+    const summary = summarizeExportWarnings(warnings ?? []);
+    const targetName = target.urlPath ?? 'the default dashboard (lovelace)';
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+      Modal.confirm({
+        title: 'Deploy to Home Assistant?',
+        width: 560,
+        okText: 'Deploy',
+        cancelText: 'Cancel',
+        content: (
+          <div data-testid="live-preview-deploy-confirm">
+            <p>
+              This will overwrite <strong>{targetName}</strong> in Home Assistant. A backup is taken
+              first.
+            </p>
+            {summary.total > 0 && (
+              <>
+                <p style={{ marginBottom: 4 }}>
+                  <strong>This design was adjusted for Home Assistant:</strong>
+                </p>
+                <ul data-testid="live-preview-deploy-summary" style={{ paddingLeft: 18 }}>
+                  {summary.lines.map((line, index) => (
+                    <li key={index}>{line}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {/* ⚠ Silence is not the same as "nothing changed" — say which it is.
+                An unexplained default is indistinguishable from a broken one. */}
+            {summary.total === 0 && <p>Nothing had to be adjusted for Home Assistant.</p>}
+          </div>
+        ),
+        onOk: () => resolve(true),
+        onCancel: () => resolve(false),
+      });
+    });
+
+    if (!confirmed) return;
 
     try {
       message.loading({ content: 'Deploying to production...', key: 'deploy' });

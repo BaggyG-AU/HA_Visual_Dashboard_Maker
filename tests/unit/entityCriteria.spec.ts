@@ -179,3 +179,72 @@ describe('matchesEntityQuery — multi-token, order-independent', () => {
     expect(ALL.every((e) => matchesEntityQuery(e, '   '))).toBe(true);
   });
 });
+
+/**
+ * UAT HA-02 (High, regression) — "when selecting 'Integration' and searching for
+ * kia only one entity is listed but there are 41 Kia Uvo integration entities".
+ *
+ * ⭐⭐⭐ THE ENTITY BELOW IS THE WHOLE DEFECT IN ONE FIXTURE. Home Assistant names
+ * `kia_uvo` entities after the CAR, not the brand — "EV6 Odometer" — so the
+ * string "kia" appears NOWHERE in its entity_id, its friendly name, its device
+ * class or its unit. Only the owning integration knows it is a Kia. The browser
+ * offered "Group by: Integration" while the search box beside it was blind to
+ * that exact axis.
+ *
+ * ⚠ The pre-existing `EV_BATTERY` fixture above CANNOT prove this: it is called
+ * `sensor.kia_ev6_battery_level` / "Kia EV6 Battery Level", so it matches "kia"
+ * through the old haystack and would pass either way. It is the ONE entity in
+ * forty-one that the tester did see.
+ */
+const EV_ODOMETER = entity('sensor.ev6_odometer', '12043', {
+  friendly_name: 'EV6 Odometer',
+  unit_of_measurement: 'km',
+});
+
+describe('matchesEntityQuery — integration search (UAT HA-02)', () => {
+  it('does NOT match the integration when no platform is supplied — the defect', () => {
+    // RED BEFORE THE FIX, and still the honest behaviour of a 2-arg call.
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia')).toBe(false);
+  });
+
+  it('matches the raw integration slug', () => {
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia_uvo', 'kia_uvo')).toBe(true);
+  });
+
+  it('matches the brand alone, which is what a user actually types', () => {
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia', 'kia_uvo')).toBe(true);
+  });
+
+  it('matches the humanised label shown in the group header', () => {
+    // The tab reads "Kia Uvo", so typing what you read has to work.
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia uvo', 'kia_uvo')).toBe(true);
+  });
+
+  it('combines integration and entity tokens in any order', () => {
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia odometer', 'kia_uvo')).toBe(true);
+    expect(matchesEntityQuery(EV_ODOMETER, 'odometer kia', 'kia_uvo')).toBe(true);
+  });
+
+  it('still requires ALL tokens — the integration does not become a wildcard', () => {
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia temperature', 'kia_uvo')).toBe(false);
+  });
+
+  it('does not match an integration the entity does not belong to', () => {
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia', 'sigen')).toBe(false);
+  });
+
+  // CONTROL LEG: the new parameter is optional, and null/undefined must behave
+  // exactly as the two-argument call did. Every assertion in the block above
+  // this one is a 2-arg call and must stay green untouched.
+  it('behaves identically when platform is null or undefined', () => {
+    expect(matchesEntityQuery(EV_BATTERY, 'kia battery', null)).toBe(true);
+    expect(matchesEntityQuery(EV_BATTERY, 'kia battery', undefined)).toBe(true);
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia', null)).toBe(false);
+  });
+
+  // ⚠ `state` is deliberately NOT searchable — the browser's placeholder used to
+  // claim it was. This pins the decision so a future edit is a choice, not a drift.
+  it('does not search the entity state', () => {
+    expect(matchesEntityQuery(EV_ODOMETER, '12043', 'kia_uvo')).toBe(false);
+  });
+});
