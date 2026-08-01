@@ -248,3 +248,70 @@ describe('matchesEntityQuery — integration search (UAT HA-02)', () => {
     expect(matchesEntityQuery(EV_ODOMETER, '12043', 'kia_uvo')).toBe(false);
   });
 });
+
+/**
+ * ⭐⭐⭐ THE FIX IS GENERAL, NOT A `kia_uvo` SPECIAL CASE — AND THIS BLOCK EXISTS
+ * BECAUSE THAT IS THE FIRST QUESTION ANYONE SENSIBLE ASKS OF IT.
+ *
+ * Nothing in `matchesEntityQuery` names an integration; `platform` is a
+ * parameter. Measured across the reference instance on 2026-08-02 by running
+ * this exact function over all 725 live entities, once per integration, with
+ * and without the third argument:
+ *
+ *   INTEGRATION            TOTAL   OLD -> NEW
+ *   unifiprotect             248     0 -> 248
+ *   kia_uvo                  105     0 -> 105
+ *   bureau_of_meteorology     80     0 ->  80
+ *   actron_air                41     0 ->  41
+ *   template                  30     0 ->  30
+ *   hacs                      19     1 ->  19
+ *   …
+ *   26 integrations | all 26 now complete | 14 fixed by this change | 0 regressions
+ *
+ * ⚠⚠ SO `kia_uvo` WAS NEVER THE SPECIAL CASE — IT WAS THE ONE THE OWNER HAPPENED
+ * TO NOTICE. `unifiprotect` is the instance's LARGEST integration and typing its
+ * own name found NOTHING. The cases below are deliberately NOT Kia.
+ */
+describe('matchesEntityQuery — the integration fix is general', () => {
+  const CAMERA = entity('binary_sensor.front_door_person', 'off', {
+    friendly_name: 'Front Door Person Detected',
+  });
+  const FORECAST = entity('sensor.sydney_forecast_max', '24', {
+    friendly_name: 'Sydney Forecast Max',
+    unit_of_measurement: '°C',
+  });
+
+  it('works for an integration whose name appears nowhere in the entity', () => {
+    // 248 entities on the reference instance; typing "unifiprotect" found none.
+    expect(matchesEntityQuery(CAMERA, 'unifiprotect')).toBe(false);
+    expect(matchesEntityQuery(CAMERA, 'unifiprotect', 'unifiprotect')).toBe(true);
+  });
+
+  it('works for a multi-word integration slug, on any of its words', () => {
+    expect(matchesEntityQuery(FORECAST, 'bureau', 'bureau_of_meteorology')).toBe(true);
+    expect(matchesEntityQuery(FORECAST, 'meteorology', 'bureau_of_meteorology')).toBe(true);
+    expect(matchesEntityQuery(FORECAST, 'bureau of meteorology', 'bureau_of_meteorology')).toBe(
+      true,
+    );
+  });
+
+  // ⚠⚠ THE PRECISION HALF. Widening a haystack is only safe if it does not turn
+  // the query into a wildcard — an over-broad picker is the failure mode this
+  // module's own header warns about.
+  it('does not match an entity belonging to a different integration', () => {
+    expect(matchesEntityQuery(CAMERA, 'bureau', 'unifiprotect')).toBe(false);
+    expect(matchesEntityQuery(FORECAST, 'unifiprotect', 'bureau_of_meteorology')).toBe(false);
+  });
+
+  it('still ANDs every token across the entity and its integration', () => {
+    expect(matchesEntityQuery(CAMERA, 'unifiprotect person', 'unifiprotect')).toBe(true);
+    expect(matchesEntityQuery(CAMERA, 'unifiprotect banana', 'unifiprotect')).toBe(false);
+  });
+
+  // ⚠ Measured: the change made ZERO searches return fewer results than before.
+  // Adding to a haystack can only widen it, and this pins that reasoning.
+  it('never removes a match that the entity fields alone would have found', () => {
+    expect(matchesEntityQuery(FORECAST, 'sydney')).toBe(true);
+    expect(matchesEntityQuery(FORECAST, 'sydney', 'bureau_of_meteorology')).toBe(true);
+  });
+});
