@@ -32,6 +32,15 @@ const { Text } = Typography;
 /** How the tab strip carves up the list. */
 type GroupBy = 'domain' | 'integration';
 
+/**
+ * Sentinel for the State facet's "anything that is actually reporting" option.
+ *
+ * ⚠ It cannot be a real state value, because it means "NOT unavailable and NOT
+ * unknown" — a predicate, not a value. Named rather than inlined so the facet
+ * definition and its `onFilter` cannot drift apart.
+ */
+const STATE_FACET_AVAILABLE = '__available__';
+
 interface Entity {
   entity_id: string;
   state: string;
@@ -74,6 +83,16 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
   // omits what you were looking for is indistinguishable from that entity not
   // existing, so the cut has to be both reversible and visible.
   const [showDiagnostic, setShowDiagnostic] = useState(false);
+  /**
+   * ⭐ UAT HA-02: the page size is STATE, not a literal.
+   *
+   * ⚠ It was `pagination={{ pageSize: 10, showSizeChanger: true }}` — a
+   * CONTROLLED value with no `onShowSizeChange` behind it, so antd re-applied 10
+   * on every render and the "10 / page" control the flag renders was inert.
+   * Measured: choosing "50 / page" left the rendered row count at 10. A control
+   * that is drawn but cannot act is worse than one that is absent.
+   */
+  const [pageSize, setPageSize] = useState(10);
 
   // Load cached entities on mount
   useEffect(() => {
@@ -172,6 +191,38 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
     [activeTab, groups],
   );
 
+  /**
+   * ⭐⭐⭐ UAT HA-02: how many entities each group would hold if NOTHING were
+   * hidden, so a tab can say "Kia Uvo (3 of 41)" rather than "Kia Uvo (3)".
+   *
+   * ⚠ THE DEFECT THIS CLOSES IS A READING, NOT A COUNT. "Kia Uvo (3)" is
+   * arithmetically true and still misleads — a user reads it as "I own three",
+   * not "three of my forty-one are being shown". `hiddenCount` below already
+   * disclosed the cut GLOBALLY; what was missing was the disclosure at the
+   * place the user is actually looking.
+   *
+   * Computed over `entities` (the raw list) rather than `visibleEntities`, and
+   * only when the cut is active — with `showDiagnostic` on, the two counts are
+   * equal by construction and the suffix would be noise.
+   */
+  const groupTotals = useMemo(() => {
+    const totals = new Map<string, number>();
+    if (showDiagnostic) return totals;
+
+    if (groupBy === 'integration') {
+      groupEntitiesByPlatform(entities as unknown as HAEntity[], registry).forEach((group) =>
+        totals.set(group.platform, group.entities.length),
+      );
+      return totals;
+    }
+
+    entities.forEach((entity) => {
+      const domain = entity.entity_id.split('.')[0];
+      totals.set(domain, (totals.get(domain) ?? 0) + 1);
+    });
+    return totals;
+  }, [entities, registry, groupBy, showDiagnostic]);
+
   // Filter entities based on search and active tab
   const filteredEntities = useMemo(() => {
     const entitiesToFilter =
@@ -185,13 +236,61 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
     // with its own single `includes()`, so every token had to appear
     // contiguously inside ONE field — "kia battery" matched nothing whose
     // friendly name was "Kia EV6 Battery Level".
+    //
+    // ⭐⭐⭐ HA-02: the entity's OWNING INTEGRATION is passed as the third
+    // argument. Without it, "kia" found 1 of 41 `kia_uvo` entities because the
+    // other 40 are named after the car ("EV6 …") and never mention the brand.
     return entitiesToFilter.filter((entity) =>
-      matchesEntityQuery(entity as unknown as HAEntity, searchTerm),
+      matchesEntityQuery(
+        entity as unknown as HAEntity,
+        searchTerm,
+        registry?.get(entity.entity_id)?.platform,
+      ),
     );
-  }, [visibleEntities, groups, resolvedTab, searchTerm]);
+  }, [visibleEntities, groups, resolvedTab, searchTerm, registry]);
 
   const hiddenCount = entities.length - visibleEntities.length;
 
+  /**
+   * Distinct values for a column's Excel-style filter list.
+   *
+   * ⚠ Derived from `visibleEntities`, not `filteredEntities` — a facet computed
+   * from the already-facetted set collapses to whatever is on screen, so
+   * unticking a value could never bring anything back.
+   */
+  const domainFilters = useMemo(() => {
+    const domains = new Set(visibleEntities.map((e) => e.entity_id.split('.')[0]));
+    return [...domains].sort().map((d) => ({ text: d, value: d }));
+  }, [visibleEntities]);
+
+  const integrationFilters = useMemo(() => {
+    if (!registry) return [];
+    const platforms = new Set<string>();
+    visibleEntities.forEach((e) => {
+      const platform = registry.get(e.entity_id)?.platform;
+      if (platform) platforms.add(platform);
+    });
+    return [...platforms].sort().map((p) => ({ text: platformLabel(p), value: p }));
+  }, [visibleEntities, registry]);
+
+  /**
+   * ⭐⭐ Spreadsheet-style column controls: sort both directions on every column,
+   * and a searchable tick-list facet where the column has a SMALL set of
+   * distinct values.
+   *
+   * ⚠⚠ WHICH COLUMNS GET A FACET IS A DELIBERATE JUDGEMENT, NOT AN OVERSIGHT.
+   * `Domain` (~20 values) and `Integration` (~24 on the reference instance) are
+   * exactly what a tick-list is for. `Entity ID` and `Friendly Name` have ONE
+   * DISTINCT VALUE PER ROW — 725 of them — so a tick-list there is a strictly
+   * worse duplicate of the free-text box above the table, which already matches
+   * across both fields. They get sorters only.
+   *
+   * ⚠⚠⚠ `State` IS FACETTED ON AVAILABILITY, NOT ON RAW VALUES. Every numeric
+   * sensor reading is its own state, so a raw list reads
+   * "22.5 · 22.6 · 41 · 42 · on · off · unavailable…" — hundreds of entries that
+   * bury the only question anyone asks of this column, which is "what is
+   * broken?". Three curated options answer it; a faithful list would not.
+   */
   const columns: ColumnsType<Entity> = [
     {
       title: 'Entity ID',
@@ -207,6 +306,8 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
       title: 'Friendly Name',
       key: 'friendly_name',
       width: '30%',
+      sorter: (a, b) =>
+        (a.attributes.friendly_name ?? '').localeCompare(b.attributes.friendly_name ?? ''),
       render: (_, record) => record.attributes.friendly_name || '—',
     },
     {
@@ -214,6 +315,18 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
       dataIndex: 'state',
       key: 'state',
       width: '15%',
+      sorter: (a, b) => String(a.state ?? '').localeCompare(String(b.state ?? '')),
+      filters: [
+        { text: 'Available', value: STATE_FACET_AVAILABLE },
+        { text: 'Unavailable', value: 'unavailable' },
+        { text: 'Unknown', value: 'unknown' },
+      ],
+      onFilter: (value, record) => {
+        const state = String(record.state ?? '').toLowerCase();
+        return value === STATE_FACET_AVAILABLE
+          ? state !== 'unavailable' && state !== 'unknown'
+          : state === value;
+      },
       render: (text: string, record) => {
         const unit = record.attributes.unit_of_measurement;
         return unit ? `${text} ${unit}` : text;
@@ -222,7 +335,14 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
     {
       title: 'Domain',
       key: 'domain',
+      dataIndex: 'entity_id',
       width: '15%',
+      sorter: (a, b) =>
+        a.entity_id.split('.')[0].localeCompare(b.entity_id.split('.')[0]) ||
+        a.entity_id.localeCompare(b.entity_id),
+      filters: domainFilters,
+      filterSearch: true,
+      onFilter: (value, record) => record.entity_id.split('.')[0] === value,
       render: (_, record) => {
         const domain = record.entity_id.split('.')[0];
         return <Badge color="blue" text={domain} />;
@@ -236,6 +356,18 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
             title: 'Integration',
             key: 'integration',
             width: '18%',
+            // ⚠ The tab strip's "Group by: Integration" is NOT made redundant by
+            // this facet, and both are kept on purpose. The tabs are exclusive —
+            // "show me ONE integration" — while the facet is multi-select —
+            // "show me THESE THREE together". Different questions, same data.
+            sorter: (a: Entity, b: Entity) =>
+              (registry.get(a.entity_id)?.platform ?? '').localeCompare(
+                registry.get(b.entity_id)?.platform ?? '',
+              ),
+            filters: integrationFilters,
+            filterSearch: true,
+            onFilter: (value: React.Key | boolean, record: Entity) =>
+              registry.get(record.entity_id)?.platform === value,
             render: (_: unknown, record: Entity) => {
               const platform = registry.get(record.entity_id)?.platform;
               if (!platform) {
@@ -268,15 +400,32 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
     }
   };
 
-  // Create a tab per group on whichever axis is active
+  // Create a tab per group on whichever axis is active.
+  //
+  // ⭐⭐⭐ UAT HA-02: a tab whose group has been thinned by the diagnostic cut
+  // reads "Kia Uvo (3 of 41)", not "Kia Uvo (3)". The bare count is
+  // arithmetically correct and still misleads — the tester read it as "I own
+  // three of these" when they owned forty-one. The "of N" suffix appears ONLY
+  // where the two numbers differ, so a tab that is showing everything stays
+  // clean.
+  const labelWithTotal = (label: string, shown: number, key: string): string => {
+    const total = groupTotals.get(key);
+    return total !== undefined && total > shown
+      ? `${label} (${shown} of ${total})`
+      : `${label} (${shown})`;
+  };
+
   const tabItems = [
     {
       key: 'all',
-      label: `All (${visibleEntities.length})`,
+      label:
+        hiddenCount > 0
+          ? `All (${visibleEntities.length} of ${entities.length})`
+          : `All (${visibleEntities.length})`,
     },
     ...groups.map((group) => ({
       key: group.key,
-      label: `${group.label} (${group.entities.length})`,
+      label: labelWithTotal(group.label, group.entities.length, group.key),
     })),
   ];
 
@@ -327,7 +476,14 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
       <Space orientation="vertical" style={{ width: '100%' }} size="middle">
         <Input
           data-testid="entity-browser-search-input"
-          placeholder="Search entities by ID, name, state, or device class..."
+          /* ⚠⚠ THIS TEXT USED TO PROMISE `state` AND THE SEARCH NEVER LOOKED AT
+             IT — measured: entities whose state was "42" were not found by
+             typing "42". It also failed to mention `integration`, which the
+             Group-by control right below treats as a first-class axis. Both
+             halves are now true: integration IS searched (UAT HA-02), and
+             availability is filtered on the State column's own facet rather
+             than through free text. */
+          placeholder="Search by entity ID, name, integration, device class or unit..."
           prefix={<SearchOutlined />}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -417,8 +573,17 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
             rowKey="entity_id"
             size="small"
             pagination={{
-              pageSize: 10,
+              pageSize,
               showSizeChanger: true,
+              // ⚠ BOTH handlers, deliberately. `onShowSizeChange` fires for the
+              // "N / page" select, but antd ALSO reports a size change through
+              // `onChange`'s second argument — and a user who changes the size
+              // while on page 3 goes through that path. Wiring only the first
+              // leaves the control working in one direction.
+              onShowSizeChange: (_current, size) => setPageSize(size),
+              onChange: (_page, size) => {
+                if (size && size !== pageSize) setPageSize(size);
+              },
               showTotal: (total) => `Total ${total} entities`,
             }}
             rowSelection={{

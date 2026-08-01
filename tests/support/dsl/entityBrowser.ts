@@ -219,7 +219,15 @@ export class EntityBrowserDSL {
    * Search for entities by search term
    */
   async search(term: string): Promise<void> {
-    const searchInput = this.window.locator('input[placeholder*="Search entities"]');
+    // ⚠⚠ WAS `input[placeholder*="Search entities"]`, AND THAT BROKE SIX TESTS
+    // THE MOMENT THE PLACEHOLDER'S WORDING CHANGED (UAT HA-02 corrected it: the
+    // old text promised a `state` search that did not exist). ⭐⭐⭐ A LOCATOR
+    // KEYED ON USER-FACING PROSE MAKES EVERY COPY EDIT A TEST BREAKAGE — and the
+    // grep that should have caught it did not, because the change was searched
+    // for as its FULL string ("Search entities by") while the locator matched a
+    // PREFIX ("Search entities"). When you change visible text, grep the
+    // SHORTEST distinctive fragment, not the sentence you are replacing.
+    const searchInput = this.window.getByTestId('entity-browser-search-input');
     await searchInput.fill(term);
     await expect(searchInput).toHaveValue(term);
   }

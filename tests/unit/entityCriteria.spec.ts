@@ -179,3 +179,139 @@ describe('matchesEntityQuery — multi-token, order-independent', () => {
     expect(ALL.every((e) => matchesEntityQuery(e, '   '))).toBe(true);
   });
 });
+
+/**
+ * UAT HA-02 (High, regression) — "when selecting 'Integration' and searching for
+ * kia only one entity is listed but there are 41 Kia Uvo integration entities".
+ *
+ * ⭐⭐⭐ THE ENTITY BELOW IS THE WHOLE DEFECT IN ONE FIXTURE. Home Assistant names
+ * `kia_uvo` entities after the CAR, not the brand — "EV6 Odometer" — so the
+ * string "kia" appears NOWHERE in its entity_id, its friendly name, its device
+ * class or its unit. Only the owning integration knows it is a Kia. The browser
+ * offered "Group by: Integration" while the search box beside it was blind to
+ * that exact axis.
+ *
+ * ⚠ The pre-existing `EV_BATTERY` fixture above CANNOT prove this: it is called
+ * `sensor.kia_ev6_battery_level` / "Kia EV6 Battery Level", so it matches "kia"
+ * through the old haystack and would pass either way. It is the ONE entity in
+ * forty-one that the tester did see.
+ */
+const EV_ODOMETER = entity('sensor.ev6_odometer', '12043', {
+  friendly_name: 'EV6 Odometer',
+  unit_of_measurement: 'km',
+});
+
+describe('matchesEntityQuery — integration search (UAT HA-02)', () => {
+  it('does NOT match the integration when no platform is supplied — the defect', () => {
+    // RED BEFORE THE FIX, and still the honest behaviour of a 2-arg call.
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia')).toBe(false);
+  });
+
+  it('matches the raw integration slug', () => {
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia_uvo', 'kia_uvo')).toBe(true);
+  });
+
+  it('matches the brand alone, which is what a user actually types', () => {
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia', 'kia_uvo')).toBe(true);
+  });
+
+  it('matches the humanised label shown in the group header', () => {
+    // The tab reads "Kia Uvo", so typing what you read has to work.
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia uvo', 'kia_uvo')).toBe(true);
+  });
+
+  it('combines integration and entity tokens in any order', () => {
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia odometer', 'kia_uvo')).toBe(true);
+    expect(matchesEntityQuery(EV_ODOMETER, 'odometer kia', 'kia_uvo')).toBe(true);
+  });
+
+  it('still requires ALL tokens — the integration does not become a wildcard', () => {
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia temperature', 'kia_uvo')).toBe(false);
+  });
+
+  it('does not match an integration the entity does not belong to', () => {
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia', 'sigen')).toBe(false);
+  });
+
+  // CONTROL LEG: the new parameter is optional, and null/undefined must behave
+  // exactly as the two-argument call did. Every assertion in the block above
+  // this one is a 2-arg call and must stay green untouched.
+  it('behaves identically when platform is null or undefined', () => {
+    expect(matchesEntityQuery(EV_BATTERY, 'kia battery', null)).toBe(true);
+    expect(matchesEntityQuery(EV_BATTERY, 'kia battery', undefined)).toBe(true);
+    expect(matchesEntityQuery(EV_ODOMETER, 'kia', null)).toBe(false);
+  });
+
+  // ⚠ `state` is deliberately NOT searchable — the browser's placeholder used to
+  // claim it was. This pins the decision so a future edit is a choice, not a drift.
+  it('does not search the entity state', () => {
+    expect(matchesEntityQuery(EV_ODOMETER, '12043', 'kia_uvo')).toBe(false);
+  });
+});
+
+/**
+ * ⭐⭐⭐ THE FIX IS GENERAL, NOT A `kia_uvo` SPECIAL CASE — AND THIS BLOCK EXISTS
+ * BECAUSE THAT IS THE FIRST QUESTION ANYONE SENSIBLE ASKS OF IT.
+ *
+ * Nothing in `matchesEntityQuery` names an integration; `platform` is a
+ * parameter. Measured across the reference instance on 2026-08-02 by running
+ * this exact function over all 725 live entities, once per integration, with
+ * and without the third argument:
+ *
+ *   INTEGRATION            TOTAL   OLD -> NEW
+ *   unifiprotect             248     0 -> 248
+ *   kia_uvo                  105     0 -> 105
+ *   bureau_of_meteorology     80     0 ->  80
+ *   actron_air                41     0 ->  41
+ *   template                  30     0 ->  30
+ *   hacs                      19     1 ->  19
+ *   …
+ *   26 integrations | all 26 now complete | 14 fixed by this change | 0 regressions
+ *
+ * ⚠⚠ SO `kia_uvo` WAS NEVER THE SPECIAL CASE — IT WAS THE ONE THE OWNER HAPPENED
+ * TO NOTICE. `unifiprotect` is the instance's LARGEST integration and typing its
+ * own name found NOTHING. The cases below are deliberately NOT Kia.
+ */
+describe('matchesEntityQuery — the integration fix is general', () => {
+  const CAMERA = entity('binary_sensor.front_door_person', 'off', {
+    friendly_name: 'Front Door Person Detected',
+  });
+  const FORECAST = entity('sensor.sydney_forecast_max', '24', {
+    friendly_name: 'Sydney Forecast Max',
+    unit_of_measurement: '°C',
+  });
+
+  it('works for an integration whose name appears nowhere in the entity', () => {
+    // 248 entities on the reference instance; typing "unifiprotect" found none.
+    expect(matchesEntityQuery(CAMERA, 'unifiprotect')).toBe(false);
+    expect(matchesEntityQuery(CAMERA, 'unifiprotect', 'unifiprotect')).toBe(true);
+  });
+
+  it('works for a multi-word integration slug, on any of its words', () => {
+    expect(matchesEntityQuery(FORECAST, 'bureau', 'bureau_of_meteorology')).toBe(true);
+    expect(matchesEntityQuery(FORECAST, 'meteorology', 'bureau_of_meteorology')).toBe(true);
+    expect(matchesEntityQuery(FORECAST, 'bureau of meteorology', 'bureau_of_meteorology')).toBe(
+      true,
+    );
+  });
+
+  // ⚠⚠ THE PRECISION HALF. Widening a haystack is only safe if it does not turn
+  // the query into a wildcard — an over-broad picker is the failure mode this
+  // module's own header warns about.
+  it('does not match an entity belonging to a different integration', () => {
+    expect(matchesEntityQuery(CAMERA, 'bureau', 'unifiprotect')).toBe(false);
+    expect(matchesEntityQuery(FORECAST, 'unifiprotect', 'bureau_of_meteorology')).toBe(false);
+  });
+
+  it('still ANDs every token across the entity and its integration', () => {
+    expect(matchesEntityQuery(CAMERA, 'unifiprotect person', 'unifiprotect')).toBe(true);
+    expect(matchesEntityQuery(CAMERA, 'unifiprotect banana', 'unifiprotect')).toBe(false);
+  });
+
+  // ⚠ Measured: the change made ZERO searches return fewer results than before.
+  // Adding to a haystack can only widen it, and this pins that reasoning.
+  it('never removes a match that the entity fields alone would have found', () => {
+    expect(matchesEntityQuery(FORECAST, 'sydney')).toBe(true);
+    expect(matchesEntityQuery(FORECAST, 'sydney', 'bureau_of_meteorology')).toBe(true);
+  });
+});

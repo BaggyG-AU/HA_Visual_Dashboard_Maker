@@ -137,8 +137,39 @@ export const filterEntitiesForCard = (entities: HAEntity[], cardType: string): H
  * the user to type their remembered words in the stored order — "battery kia"
  * found nothing for "Kia EV6 Battery Level". Every whitespace-separated token
  * must match somewhere, in any order.
+ *
+ * ⭐⭐⭐ UAT HA-02: `platform` is the OWNING INTEGRATION and it is in the haystack
+ * because leaving it out was the whole defect. Measured on a reproduction of the
+ * reference instance's `kia_uvo` integration: 41 entities, and searching "kia"
+ * returned ONE — because Home Assistant names those entities after the CAR
+ * ("EV6 Battery Level"), so the string "kia" is absent from the entity_id and
+ * the friendly_name of the other forty. Ticking "Show diagnostic & config" did
+ * not change the count, which is what ruled out the obvious suspect.
+ *
+ * ⚠⚠ THE DEFECT WAS AN ASYMMETRY, NOT A MISSING FEATURE: the Entity Browser
+ * offers "Group by: Integration" as a first-class axis, and the search box
+ * beside it was blind to that exact axis. A control that groups by something it
+ * cannot search by teaches the user the search is broken.
+ *
+ * Both forms are matched — the raw slug (`kia_uvo`) and the humanised label
+ * (`Kia Uvo`) — so "kia", "kia uvo" and "kia_uvo" all find the same 41 rows.
+ *
+ * ⚠ `platform` is OPTIONAL and defaults to undefined, so every existing 2-argument
+ * call behaves exactly as before. That is deliberate: it keeps the pre-existing
+ * assertions in `tests/unit/entityCriteria.spec.ts` as an untouched control leg.
+ *
+ * ⚠ NOTE FOR THE NEXT READER: `state` is deliberately NOT in the haystack. The
+ * search placeholder used to claim it was, which was simply untrue (measured:
+ * entities with `state: '42'` were not found by "42"). Availability is filtered
+ * on the State COLUMN instead — a curated Available/Unavailable/Unknown facet —
+ * because raw states are hundreds of distinct sensor readings and short ones
+ * like "on" appear inside `motion`, `front`, `contact` and `button`.
  */
-export const matchesEntityQuery = (entity: HAEntity, query: string): boolean => {
+export const matchesEntityQuery = (
+  entity: HAEntity,
+  query: string,
+  platform?: string | null,
+): boolean => {
   const tokens = String(query ?? '')
     .toLowerCase()
     .split(/\s+/)
@@ -151,6 +182,11 @@ export const matchesEntityQuery = (entity: HAEntity, query: string): boolean => 
     attributes.friendly_name,
     attributes.device_class,
     attributes.unit_of_measurement,
+    platform,
+    // `kia_uvo` -> `Kia Uvo`, so a user who reads the group header can type what
+    // they read. Inlined rather than imported from `entityRegistry.ts` to keep
+    // this module dependency-free, matching the other helpers in `src/utils/`.
+    typeof platform === 'string' ? platform.replace(/_/g, ' ') : null,
   ]
     .filter((part): part is string => typeof part === 'string' && part.length > 0)
     .join(' ')

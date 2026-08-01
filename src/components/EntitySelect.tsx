@@ -359,7 +359,17 @@ export const EntitySelect: React.FC<EntitySelectProps> = ({
           // every group and with it every option under one.
           if (candidate?.options) return true;
           if (!candidate?.entity) return false;
-          return matchesEntityQuery(candidate.entity, input);
+          // ⭐⭐ UAT HA-02 was reported against the Entity BROWSER, but the fix
+          // belongs to the shared matcher — so this picker gains integration
+          // search in the same change. ⚠ ENUMERATE BY DEPENDENCY, NOT BY NAME:
+          // `grep -rn "matchesEntityQuery" src/` is what found this second call
+          // site, exactly as PROPS-05's "fifth picker" was found by grepping
+          // `useHAEntities` rather than by looking for things called "picker".
+          return matchesEntityQuery(
+            candidate.entity,
+            input,
+            registry?.get(candidate.entity.entity_id)?.platform,
+          );
         }}
         options={options}
         style={{ width: '100%' }}
