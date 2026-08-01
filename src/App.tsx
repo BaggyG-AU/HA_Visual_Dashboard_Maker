@@ -110,6 +110,10 @@ import { ThemeSelector } from './components/ThemeSelector';
 import { SettingsDialog } from './components/SettingsDialog';
 import { ThemePreviewPanel } from './components/ThemePreviewPanel';
 import { NewDashboardDialog } from './components/NewDashboardDialog';
+import {
+  UnsavedChangesDialog,
+  type UnsavedChangesOutcome,
+} from './components/UnsavedChangesDialog';
 import { TemplateSelectionDialog } from './components/TemplateSelectionDialog';
 import { ViewSettingsDialog } from './components/ViewSettingsDialog';
 import { VersionControlDialog } from './components/VersionControlDialog';
@@ -314,6 +318,13 @@ const App: React.FC = () => {
   );
   const [verboseUIDebug, setVerboseUIDebug] = useState<boolean>(false);
   const [newDashboardDialogVisible, setNewDashboardDialogVisible] = useState<boolean>(false);
+  // FILE-04: the pending unsaved-changes decision. Holding the promise's
+  // `resolve` here is what lets an async handler await the user's answer.
+  const [unsavedPrompt, setUnsavedPrompt] = useState<{
+    actionLabel: string;
+    resolve: (outcome: UnsavedChangesOutcome) => void;
+  } | null>(null);
+  const [unsavedPromptSaving, setUnsavedPromptSaving] = useState<boolean>(false);
   const [templateDialogVisible, setTemplateDialogVisible] = useState<boolean>(false);
   const [viewSettingsOpen, setViewSettingsOpen] = useState<boolean>(false);
   // WS3 slice E. Opened from the File > Version Control... menu item — a menu,
@@ -563,6 +574,10 @@ const App: React.FC = () => {
   }, [isConnected, setAvailableThemes]);
 
   const handleOpenFile = async () => {
+    // ⭐ FILE-04. Before this the native dialog opened immediately and the file
+    // landed on the canvas over whatever the user had been working on.
+    if (!(await confirmReplacingCurrentDashboard('opening another dashboard'))) return;
+
     try {
       const result = await fileService.openAndReadFile();
       if (result) {
@@ -596,6 +611,10 @@ const App: React.FC = () => {
   };
 
   const handleOpenRecentFile = async (filePath: string) => {
+    // ⭐ FILE-04: Open Recent replaces the document just as completely as
+    // File > Open does, and was equally unguarded.
+    if (!(await confirmReplacingCurrentDashboard('opening another dashboard'))) return;
+
     try {
       // Check if file exists
       const fileExists = await window.electronAPI.fileExists(filePath);
@@ -634,10 +653,18 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSaveFile = async () => {
+  // ⭐ FILE-04: returns whether the dashboard was ACTUALLY written.
+  //
+  // This used to return void, which was fine while the only callers were menu
+  // items and toolbar buttons that ignore the result. The unsaved-changes guard
+  // cannot ignore it: if the user picks "Save" and then cancels the native Save
+  // As dialog, `saveFileAs` returns false and their work is still unsaved — so
+  // the open/new that raised the prompt MUST be abandoned rather than carried
+  // out. Silently discarding here would be the exact data loss FILE-04 reports.
+  const handleSaveFile = async (): Promise<boolean> => {
     if (!config) {
       message.warning('No dashboard loaded to save');
-      return;
+      return false;
     }
 
     try {
@@ -647,8 +674,10 @@ const App: React.FC = () => {
         markClean();
         message.success('Dashboard saved successfully!');
       }
+      return success;
     } catch (error) {
       message.error(`Failed to save file: ${(error as Error).message}`);
+      return false;
     }
   };
 
@@ -673,10 +702,12 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
+  // ⭐ FILE-04: like handleSaveFile, reports whether the write happened, so the
+  // unsaved-changes guard can tell "saved" from "the user backed out".
+  const handleSave = async (): Promise<boolean> => {
     if (!config) {
       message.warning('No dashboard loaded to save');
-      return;
+      return false;
     }
 
     if (filePath) {
@@ -713,15 +744,61 @@ const App: React.FC = () => {
               ? 'Dashboard saved. The previous version was kept in the hidden .backup folder beside it.'
               : 'Dashboard saved successfully!',
           );
-        } else {
-          message.error(`Failed to save file: ${result.error}`);
+          return true;
         }
+        message.error(`Failed to save file: ${result.error}`);
+        return false;
       } catch (error) {
         message.error(`Failed to save file: ${(error as Error).message}`);
+        return false;
       }
-    } else {
-      handleSaveFile();
     }
+    return handleSaveFile();
+  };
+
+  // ⭐⭐⭐ FILE-04: THE SHARED GATE FOR EVERY PATH THAT REPLACES THE DOCUMENT.
+  //
+  // `handleOpenFile` and `handleOpenRecentFile` called `loadDashboard` with NO
+  // dirty check at all, so File > Open threw away unsaved work in silence.
+  // `handleNewDashboard` did guard — but only two ways, "Create New" or
+  // "Cancel", so even there the answer to "you have unsaved changes" could
+  // never be "then save them". All three now route through one gate.
+  //
+  // ⚠ The promise is resolved by the dialog's button handlers rather than by a
+  // Modal.confirm callback, because the SAVE branch has to be awaited: picking
+  // Save and then cancelling the native Save As dialog must ABANDON the open,
+  // not fall through and discard the document anyway.
+  //
+  // Returns true when the caller may proceed to replace the document.
+  const confirmReplacingCurrentDashboard = async (actionLabel: string): Promise<boolean> => {
+    // Nothing at risk — never spend the user's attention on a prompt. "A safety
+    // prompt that fires when nothing is at risk spends attention."
+    if (!isDirty || !config) return true;
+
+    const outcome = await new Promise<UnsavedChangesOutcome>((resolve) => {
+      setUnsavedPrompt({ actionLabel, resolve });
+    });
+
+    if (outcome === 'cancel') return false;
+    if (outcome === 'discard') return true;
+
+    setUnsavedPromptSaving(true);
+    try {
+      // handleSave falls back to Save As when the document has no path yet,
+      // which is the "save or save as process is activated" the report asked
+      // for. A false here means the user backed out of that dialog.
+      return await handleSave();
+    } finally {
+      setUnsavedPromptSaving(false);
+    }
+  };
+
+  const respondToUnsavedPrompt = (outcome: UnsavedChangesOutcome) => {
+    const pending = unsavedPrompt;
+    // Close first: the save branch awaits a native dialog, and leaving this
+    // modal up behind it would stack two dialogs over the same decision.
+    setUnsavedPrompt(null);
+    pending?.resolve(outcome);
   };
 
   const handleToggleTheme = async () => {
@@ -2057,21 +2134,14 @@ const App: React.FC = () => {
     message.success(`Dashboard "${dashboardTitle}" loaded successfully!`);
   };
 
-  const handleNewDashboard = () => {
-    // Check if there are unsaved changes
-    if (isDirty && config) {
-      Modal.confirm({
-        title: 'Unsaved Changes',
-        content:
-          'You have unsaved changes. Do you want to create a new dashboard anyway? Your current changes will be lost.',
-        okText: 'Create New',
-        cancelText: 'Cancel',
-        okButtonProps: { danger: true },
-        onOk: () => setNewDashboardDialogVisible(true),
-      });
-    } else {
-      setNewDashboardDialogVisible(true);
-    }
+  const handleNewDashboard = async () => {
+    // ⭐ FILE-04: this DID guard, but only two ways — "Create New" (discard) or
+    // "Cancel". There was no way to answer "yes, save them first", which is
+    // precisely what the round-2 report asked for. It now shares the same
+    // three-way gate as File > Open and Open Recent, so the answer to the same
+    // question is the same everywhere.
+    if (!(await confirmReplacingCurrentDashboard('creating a new dashboard'))) return;
+    setNewDashboardDialogVisible(true);
   };
 
   const createNewDashboard = () => {
@@ -2184,8 +2254,14 @@ const App: React.FC = () => {
   };
 
   const handleApplyYamlChanges = (newYaml: string) => {
-    // Reload the dashboard with the new YAML
-    loadDashboard(newYaml, filePath);
+    // Re-parse the SAME document from the user's edited text.
+    //
+    // ⭐ FILE-04: `mode: 'edit'` is what tells the store this is not a document
+    // replacement. Every OTHER loadDashboard caller swaps one dashboard for a
+    // different one and must lose the outgoing undo history; this one must KEEP
+    // it and add a step, so Ctrl+Z after Apply undoes the apply — and must leave
+    // the document DIRTY, because an applied edit is an unsaved change.
+    loadDashboard(newYaml, filePath, { mode: 'edit' });
     setYamlEditorVisible(false);
 
     // ⚠ HA-03: read the store's error FRESH — the third instance of the same
@@ -2709,8 +2785,16 @@ const App: React.FC = () => {
               </div>
               <Space>
                 <Tooltip title="Undo last action (Ctrl+Z)">
+                  {/*
+                    ⚠ FILE-04: this button's ENABLED STATE is the user-visible
+                    form of "is there history to undo". Before the fix it stayed
+                    enabled on a freshly opened, clean document — pointing at the
+                    dashboard that had just been replaced. Icon-only buttons have
+                    no accessible name to key on, hence the testid.
+                  */}
                   <Button
                     size="small"
+                    data-testid="toolbar-undo"
                     icon={<UndoOutlined />}
                     onClick={() => {
                       ignoreNextLayoutChangeRef.current = true;
@@ -2723,6 +2807,7 @@ const App: React.FC = () => {
                 <Tooltip title="Redo last undone action (Ctrl+Y)">
                   <Button
                     size="small"
+                    data-testid="toolbar-redo"
                     icon={<RedoOutlined />}
                     onClick={() => {
                       ignoreNextLayoutChangeRef.current = true;
@@ -2914,7 +2999,13 @@ const App: React.FC = () => {
                     >
                       <div>
                         <h2 style={{ color: accentColor, margin: 0 }}>
-                          {config.title || 'Dashboard'}
+                          {/*
+                            ⚠ The testid is on a span around the TITLE TEXT, not
+                            on the <h2>: the dirty asterisk is a sibling inside
+                            the heading, so a heading-level testid would make
+                            "which dashboard is loaded" read as "Home Energy *".
+                          */}
+                          <span data-testid="dashboard-title">{config.title || 'Dashboard'}</span>
                           {isDirty && (
                             <span
                               style={{ color: token.colorWarning, marginLeft: '8px' }}
@@ -3271,6 +3362,16 @@ const App: React.FC = () => {
             currentFilePath={filePath}
           />
         )}
+        {/*
+          FILE-04's three-way gate. Always mounted so the promise held in
+          `unsavedPrompt` has a live component to resolve it.
+        */}
+        <UnsavedChangesDialog
+          open={unsavedPrompt !== null}
+          actionLabel={unsavedPrompt?.actionLabel ?? 'continuing'}
+          saving={unsavedPromptSaving}
+          onRespond={respondToUnsavedPrompt}
+        />
         <EntityRemappingModal
           visible={remapModalVisible}
           missingEntities={missingEntities}

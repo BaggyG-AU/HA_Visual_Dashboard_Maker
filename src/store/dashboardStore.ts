@@ -13,8 +13,28 @@ interface HistoryState {
   future: DashboardConfig[];
 }
 
+/**
+ * How a `loadDashboard` call relates to the document already on the canvas.
+ *
+ * ⭐⭐ FILE-04. `loadDashboard` was serving TWO different jobs through one
+ * signature, and conflating them is what let a previous dashboard come back:
+ *
+ * - `'replace'` (default) — a DIFFERENT document takes the canvas: File > Open,
+ *   Open Recent, New, a template, a preset, an HA download. The outgoing
+ *   document's undo history is meaningless against the incoming one and MUST be
+ *   discarded.
+ * - `'edit'` — the SAME document, re-parsed from text the user just wrote in the
+ *   YAML editor. That is an ordinary edit, so it pushes ONE undo step and leaves
+ *   the document dirty, exactly like any other change.
+ */
+export type LoadDashboardMode = 'replace' | 'edit';
+
 interface DashboardActions {
-  loadDashboard: (yamlContent: string, filePath: string | null) => void;
+  loadDashboard: (
+    yamlContent: string,
+    filePath: string | null,
+    options?: { mode?: LoadDashboardMode },
+  ) => void;
   updateConfig: (config: DashboardConfig) => void;
   beginBatchUpdate: () => void;
   applyBatchedConfig: (config: DashboardConfig) => void;
@@ -98,23 +118,63 @@ const initialState: DashboardState & HistoryState & SelectionState = {
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
   ...initialState,
 
-  loadDashboard: (yamlContent: string, filePath: string | null) => {
+  loadDashboard: (
+    yamlContent: string,
+    filePath: string | null,
+    options?: { mode?: LoadDashboardMode },
+  ) => {
+    const mode: LoadDashboardMode = options?.mode ?? 'replace';
     set({ isLoading: true, error: null });
 
     const result = yamlService.parseDashboard(yamlContent);
 
     if (result.success && result.data) {
-      set({
-        config: result.data,
+      const previousConfig = get().config;
+
+      set((state) => ({
+        config: result.data as DashboardConfig,
         filePath,
         isLoading: false,
         error: null,
-        isDirty: false,
-        selectedViewIndex: result.data.views.length > 0 ? 0 : null,
+        selectedViewIndex: (result.data as DashboardConfig).views.length > 0 ? 0 : null,
         selectedCardIndex: null,
         selectedCardIndices: [],
         selectionAnchorCardIndex: null,
-      });
+
+        // ⭐⭐⭐ FILE-04's SECOND DEFECT — THE ONE THE OWNER ACTUALLY SAW.
+        //
+        // This used to leave `past`/`future` completely untouched, so the undo
+        // history of the PREVIOUS document survived a document replacement. The
+        // owner opened a dashboard from disk, added a button, pressed Ctrl+Z —
+        // and the canvas became a TEMPLATE DASHBOARD THEY HAD BUILT EARLIER,
+        // because the stack still held its snapshots and undo walked straight
+        // out of the file they had open and into the previous one.
+        //
+        // ⚠⚠ Worse than a confusing canvas: `undo` restores a config but NOT a
+        // `filePath`, so the document silently kept pointing at the opened file.
+        // A Ctrl+S at that moment serialises the OTHER dashboard into the user's
+        // file. `fs:createBackup` means it is recoverable, but THE VISION's
+        // "never silently destroy user data" is structural, and this broke it.
+        //
+        // ⚠ The reason it survived UAT round 1 is worth keeping: the defect
+        // needs TWO documents in one session, and every test used one.
+        //
+        // 'replace' therefore discards the history outright. 'edit' (the YAML
+        // editor's Apply) pushes ONE undo step instead, because it is the same
+        // document re-parsed — see LoadDashboardMode.
+        ...(mode === 'edit' && previousConfig
+          ? {
+              past: [...state.past, cloneConfig(previousConfig)],
+              future: [],
+              // An applied YAML edit is an UNSAVED change. Marking it clean (the
+              // old behaviour, inherited from the replace path) dropped the
+              // title's dirty asterisk and, once this branch added the guard
+              // below, would have let File > Open discard the edit without ever
+              // asking — the guard keys on `isDirty`.
+              isDirty: true,
+            }
+          : { past: [], future: [], isDirty: false }),
+      }));
     } else {
       // ⭐ HA-03: a dashboard that fails to parse must NOT destroy the one
       // already open. This used to `set({ config: null, filePath: null })`, so
@@ -132,6 +192,11 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       // ⚠ `config`/`filePath` are deliberately left as they were: when nothing
       // was loaded they are already null, so a first-load failure still shows
       // the error and the welcome screen exactly as before.
+      //
+      // ⚠⚠ FILE-04: `past`/`future` are deliberately left alone too. The canvas
+      // still holds the ORIGINAL document, so its history is still the correct
+      // history for it. Clearing it here would punish the user for opening a
+      // file HAVDM could not read by silently destroying their undo stack.
       set({
         isLoading: false,
         error: result.error || 'Failed to parse dashboard',

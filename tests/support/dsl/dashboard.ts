@@ -145,49 +145,56 @@ export class DashboardDSL {
   }
 
   /**
-   * The "Unsaved Changes" confirm raised by `handleNewDashboard`.
+   * The shared "Unsaved Changes" gate (`src/components/UnsavedChangesDialog.tsx`),
+   * raised by File > Open, Open Recent and New Dashboard alike.
    *
-   * ⚠ Scoped to `.ant-modal-confirm`, and to the TITLE node specifically. A plain
-   * `getByText('Unsaved Changes')` is a strict-mode violation here: antd renders
-   * the phrase three times — `.ant-modal-title`, `.ant-modal-confirm-title`, and
-   * inside `.ant-modal-confirm-content` ("You have unsaved changes…"). That
-   * ambiguity failed this leg once while the feature was working perfectly, which
-   * is the familiar shape — a probe that addresses the wrong object is a probe bug,
-   * and the failure output naming all three nodes is what revealed it.
+   * ⚠⚠ THESE LOCATORS ARE TESTIDS ON PURPOSE. They used to key on
+   * `.ant-modal-confirm` plus the button PROSE `/^Create New$/`, and FILE-04
+   * replaced that two-way `Modal.confirm` with a three-way dialog — so every
+   * prose-keyed locator here would have broken. PR #110 lost six tests to
+   * exactly this (a locator matching a placeholder PREFIX while the grep
+   * searched the full replaced sentence). A locator keyed on user-facing prose
+   * makes every copy edit a test breakage; testids do not.
+   *
+   * ⚠ The testid sits on a div INSIDE the modal body — antd puts a Modal's
+   * data-* on `.ant-modal-root`, which Playwright always reports hidden.
    */
   private get unsavedGuard() {
-    return this.window.locator('.ant-modal-confirm');
-  }
-
-  private get unsavedGuardTitle() {
-    return this.unsavedGuard.locator('.ant-modal-confirm-title');
+    return this.window.getByTestId('unsaved-changes-dialog');
   }
 
   /**
-   * Click New Dashboard when the canvas is dirty and assert the confirm appeared.
+   * Click New Dashboard when the canvas is dirty and assert the gate appeared.
    *
-   * ⚠ This drives PRE-EXISTING behaviour (`handleNewDashboard`, `src/App.tsx`),
-   * not anything added for FILE-03 — it is the control leg proving the template
-   * path already inherits the guard, which is why FILE-03 adds no second confirm.
+   * ⚠ This drives behaviour that PRE-EXISTS FILE-03 (`handleNewDashboard`,
+   * `src/App.tsx`) — it is the control leg proving the template path inherits
+   * the guard, which is why FILE-03 adds no second confirm. FILE-04 widened the
+   * same guard to Open/Open Recent and gave it a third answer; the route this
+   * asserts is unchanged.
    */
   async clickNewDashboardExpectingUnsavedGuard(): Promise<void> {
     await this.clickNewDashboard();
-    await expect(this.unsavedGuardTitle).toHaveText('Unsaved Changes', { timeout: 10000 });
+    await expect(this.unsavedGuard).toBeVisible({ timeout: 10000 });
   }
 
   /**
-   * Dismiss the "Unsaved Changes" confirm with Cancel.
+   * Dismiss the gate with Cancel — the document is left exactly as it was.
    */
   async cancelUnsavedGuard(): Promise<void> {
-    await this.unsavedGuard.getByRole('button', { name: /^Cancel$/ }).click();
-    await expect(this.unsavedGuardTitle).toHaveCount(0, { timeout: 10000 });
+    await this.window.getByTestId('unsaved-changes-cancel').click();
+    await expect(this.unsavedGuard).toBeHidden({ timeout: 10000 });
   }
 
   /**
-   * Accept the "Unsaved Changes" confirm, which opens the New Dashboard dialog.
+   * Answer the gate with "Don't Save" — discard the changes and continue, which
+   * from New Dashboard opens the New Dashboard dialog.
+   *
+   * ⚠ Renamed from `acceptUnsavedGuard`. "Accept" was unambiguous while the
+   * confirm had one affirmative button; with Save AND Don't Save both being
+   * affirmative answers, a method called "accept" no longer says which.
    */
-  async acceptUnsavedGuard(): Promise<void> {
-    await this.unsavedGuard.getByRole('button', { name: /^Create New$/ }).click();
+  async discardUnsavedGuard(): Promise<void> {
+    await this.window.getByTestId('unsaved-changes-discard').click();
     await expect(this.window.getByTestId('new-dashboard-blank-option')).toBeVisible({
       timeout: 10000,
     });
