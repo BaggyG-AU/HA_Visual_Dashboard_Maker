@@ -29,16 +29,30 @@ import {
   clearEntityRegistry,
 } from '../support';
 
-/** 3 primary + 38 diagnostic = the shape of the real integration. */
+/**
+ * ⭐⭐⭐ MEASURED AGAINST THE REFERENCE INSTANCE 2026-08-02, AND IT IS WORSE THAN
+ * THE BUG REPORT. `config/entity_registry/list` returns **107 `kia_uvo` rows**
+ * (105 with live states), split `diagnostic: 60`, `config: 4`, uncategorised 43
+ * — which is why the tester saw a tab reading roughly forty.
+ *
+ * ⚠⚠⚠ AND **ZERO** OF THE 105 CONTAIN THE STRING "kia" IN THEIR entity_id OR
+ * THEIR friendly_name. Not one. The owner named the car "Sparky", so the real
+ * rows read `binary_sensor.ev5_front_left_door` / "Sparky Front Left Door".
+ * The brand exists ONLY in the registry's `platform` field.
+ *
+ * ⚠ THE FIRST VERSION OF THIS FIXTURE WAS TOO KIND: it gave one of the 41 a
+ * "Kia EV6 Charging" name, so the pre-fix search returned 1. Reality returns
+ * NOTHING. A fixture that flatters the old behaviour understates the defect, so
+ * the names below now follow the instance — no entity mentions the brand.
+ */
 const KIA_PRIMARY = [
-  { id: 'sensor.ev6_battery_level', name: 'EV6 Battery Level', diagnostic: false },
-  { id: 'device_tracker.ev6_location', name: 'EV6 Location', diagnostic: false },
-  // ⚠ THE ONLY ONE THE OLD SEARCH COULD FIND — the single row the tester saw.
-  { id: 'binary_sensor.kia_ev6_charging', name: 'Kia EV6 Charging', diagnostic: false },
+  { id: 'sensor.ev5_battery_level', name: 'Sparky Battery Level', diagnostic: false },
+  { id: 'device_tracker.ev5_location', name: 'Sparky Location', diagnostic: false },
+  { id: 'binary_sensor.ev5_charging', name: 'Sparky Charging', diagnostic: false },
 ];
 const KIA_DIAGNOSTIC = Array.from({ length: 38 }, (_, index) => ({
-  id: `sensor.ev6_diag_${index + 1}`,
-  name: `EV6 Diagnostic ${index + 1}`,
+  id: `sensor.ev5_diag_${index + 1}`,
+  name: `Sparky Diagnostic ${index + 1}`,
   diagnostic: true,
 }));
 const KIA = [...KIA_PRIMARY, ...KIA_DIAGNOSTIC];
@@ -134,8 +148,10 @@ test.describe('HA-02: entity browser search and filtering', () => {
 
       await search(ctx, 'kia');
 
-      // ⭐⭐⭐ THE DEFECT: this returned 1. Forty of the forty-one never mention
-      // "kia" in any field the search used to read.
+      // ⭐⭐⭐ THE DEFECT: this returned NOTHING before the fix. On the reference
+      // instance not one of the 105 live `kia_uvo` entities carries the brand in
+      // any field the search read — the owner named the car, so they all say
+      // "Sparky". The integration was the only thing that knew.
       await expect(ctx.window.locator('.ant-pagination-total-text')).toHaveText(
         'Total 41 entities',
       );

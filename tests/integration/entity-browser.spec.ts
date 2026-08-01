@@ -529,7 +529,10 @@ test.describe('Entity Browser Accessibility', () => {
       const modal = ctx.window.locator('.ant-modal:has-text("Entity Browser")');
       await expect(modal).toBeVisible();
 
-      const searchInput = ctx.window.locator('input[placeholder*="Search entities"]');
+      // ⚠ Was keyed on the placeholder's wording, which UAT HA-02 corrected —
+      // the old text advertised a `state` search the box never performed. A
+      // testid survives copy edits; prose does not.
+      const searchInput = ctx.window.getByTestId('entity-browser-search-input');
       await expect(searchInput).toBeVisible();
     } finally {
       await clearEntityCache(ctx.window);
