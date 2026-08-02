@@ -2293,6 +2293,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 </>
               )}
 
+              {/* PROPS-03: this field had no testid, so the one picker the owner's
+                  report actually names — the Light card's — had no automated
+                  reach at all. */}
               {card.type === 'light' && (
                 <>
                   <Form.Item
@@ -2300,7 +2303,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     name="entity"
                     rules={[{ required: true, message: 'Entity is required' }]}
                   >
-                    <EntitySelect placeholder="Select light" filterDomains={['light']} />
+                    <EntitySelect
+                      data-testid="entity-select"
+                      placeholder="Select light"
+                      filterDomains={['light']}
+                    />
                   </Form.Item>
 
                   <Form.Item label={<span style={{ color: 'white' }}>Name</span>} name="name">
