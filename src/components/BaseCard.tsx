@@ -29,6 +29,13 @@ import { TileCardRenderer } from './cards/TileCardRenderer';
 import { HeadingCardRenderer } from './cards/HeadingCardRenderer';
 import { EntityCardRenderer } from './cards/EntityCardRenderer';
 import { StatisticsGraphCardRenderer } from './cards/StatisticsGraphCardRenderer';
+// HACS cards HAVDM's own PALETTE offered with no renderer — a user could drag
+// one out and immediately get an "Unsupported Card Type" placeholder. Landing
+// these emptied `KNOWN_UNRENDERED_PALETTE_CARDS` in the parity spec.
+import { BatteryStateCardRenderer } from './cards/BatteryStateCardRenderer';
+import { DeclutteringCardRenderer } from './cards/DeclutteringCardRenderer';
+import { MiniMediaPlayerCardRenderer } from './cards/MiniMediaPlayerCardRenderer';
+import { EntityRowCardRenderer } from './cards/EntityRowCardRenderer';
 import { WeatherForecastCardRenderer } from './cards/WeatherForecastCardRenderer';
 import { MapCardRenderer } from './cards/MapCardRenderer';
 import { PictureCardRenderer } from './cards/PictureCardRenderer';
@@ -700,10 +707,57 @@ export const BaseCard: React.FC<BaseCardProps> = ({
         />
       );
       break;
+    // ⭐ `simple-swipe-card` is a different HACS card but the SAME SHAPE — a
+    // list of cards you swipe through. Sharing the renderer is reuse, not a
+    // shortcut; its distinct options (`card_width`, `show_pagination`) are
+    // preserved on the config either way.
+    // ⚠ Keep these two labels ADJACENT: a comment between them makes ESLint's
+    // `no-fallthrough` stop treating the first as an empty case, and it errors.
     case 'custom:swipe-card':
+    case 'custom:simple-swipe-card':
       renderedCard = (
         <SwiperCardRenderer
           card={card as React.ComponentProps<typeof SwiperCardRenderer>['card']}
+          isSelected={isSelected}
+          onClick={handleCardClick}
+        />
+      );
+      break;
+    case 'custom:battery-state-card':
+      renderedCard = (
+        <BatteryStateCardRenderer
+          card={card as React.ComponentProps<typeof BatteryStateCardRenderer>['card']}
+          isSelected={isSelected}
+          onClick={handleCardClick}
+        />
+      );
+      break;
+    case 'custom:decluttering-card':
+      renderedCard = (
+        <DeclutteringCardRenderer
+          card={card as React.ComponentProps<typeof DeclutteringCardRenderer>['card']}
+          isSelected={isSelected}
+          onClick={handleCardClick}
+        />
+      );
+      break;
+    case 'custom:mini-media-player':
+      renderedCard = (
+        <MiniMediaPlayerCardRenderer
+          card={card as React.ComponentProps<typeof MiniMediaPlayerCardRenderer>['card']}
+          isSelected={isSelected}
+          onClick={handleCardClick}
+        />
+      );
+      break;
+    // ⚠ These three are ENTITY ROWS, not cards — in HA they live inside an
+    // `entities` card. The renderer says so on its face; see hacsRowCards.ts.
+    case 'custom:fold-entity-row':
+    case 'custom:multiple-entity-row':
+    case 'custom:slider-entity-row':
+      renderedCard = (
+        <EntityRowCardRenderer
+          card={card as React.ComponentProps<typeof EntityRowCardRenderer>['card']}
           isSelected={isSelected}
           onClick={handleCardClick}
         />

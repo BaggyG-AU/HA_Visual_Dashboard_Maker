@@ -209,7 +209,13 @@
             "custom:mushroom-light-card",
             "custom:mushroom-lock-card",
             "custom:mushroom-media-player-card",
-            "custom:mushroom-title-card"
+            "custom:mushroom-title-card",
+            "custom:battery-state-card",
+            "custom:decluttering-card",
+            "custom:fold-entity-row",
+            "custom:multiple-entity-row",
+            "custom:simple-swipe-card",
+            "custom:slider-entity-row"
           ]
         },
         "entity": {
