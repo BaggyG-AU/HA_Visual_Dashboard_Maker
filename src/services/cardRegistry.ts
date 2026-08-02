@@ -219,6 +219,62 @@ class CardRegistry {
         requiredProps: ['entity'],
       },
 
+      // ⭐ HA CORE CARDS. These four ship with Home Assistant and were absent
+      // from this registry until HA-03 diffed it against HA's own baseline —
+      // `tile` alone accounted for 17 unrenderable cards on a single real
+      // dashboard. `cardRendererParity` now fails the build if a registered
+      // type has no renderer, so this class of gap cannot reappear silently.
+      {
+        type: 'tile',
+        name: 'Tile',
+        category: 'control',
+        icon: 'AppstoreOutlined',
+        description: 'Compact entity tile with icon, state and feature controls',
+        isCustom: false,
+        source: 'builtin',
+        defaultProps: { features_position: 'bottom' },
+        requiredProps: ['entity'],
+      },
+      {
+        type: 'entity',
+        name: 'Entity',
+        category: 'sensor',
+        icon: 'ProfileOutlined',
+        description: 'Show a single entity’s state',
+        isCustom: false,
+        source: 'builtin',
+        defaultProps: {},
+        requiredProps: ['entity'],
+      },
+      {
+        type: 'heading',
+        name: 'Heading',
+        category: 'layout',
+        icon: 'FontSizeOutlined',
+        description: 'Section heading with optional icon and entity badges',
+        isCustom: false,
+        source: 'builtin',
+        defaultProps: { heading: 'New section', heading_style: 'title' },
+        requiredProps: [],
+      },
+      {
+        type: 'statistics-graph',
+        name: 'Statistics Graph',
+        category: 'sensor',
+        icon: 'AreaChartOutlined',
+        description: 'Long-term recorder statistics for one or more entities',
+        isCustom: false,
+        source: 'builtin',
+        defaultProps: {
+          entities: [],
+          days_to_show: 30,
+          period: 'hour',
+          chart_type: 'line',
+          stat_types: ['mean'],
+        },
+        requiredProps: ['entities'],
+      },
+
       // Information Cards
       {
         type: 'markdown',

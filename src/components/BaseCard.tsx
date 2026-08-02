@@ -20,6 +20,15 @@ import { LightCardRenderer } from './cards/LightCardRenderer';
 import { SensorCardRenderer } from './cards/SensorCardRenderer';
 import { ConditionalCardRenderer } from './cards/ConditionalCardRenderer';
 import { HistoryGraphCardRenderer } from './cards/HistoryGraphCardRenderer';
+// HA core cards that shipped without a HAVDM renderer until HA-03 measured the
+// registry against Home Assistant's own baseline. `tile` alone accounted for 17
+// unrenderable cards on one real dashboard.
+// ⚠ tests/unit/card-renderer-parity.spec.ts PARSES THE `case` LABELS BELOW —
+// it is what now fails the build if a palette card loses its renderer.
+import { TileCardRenderer } from './cards/TileCardRenderer';
+import { HeadingCardRenderer } from './cards/HeadingCardRenderer';
+import { EntityCardRenderer } from './cards/EntityCardRenderer';
+import { StatisticsGraphCardRenderer } from './cards/StatisticsGraphCardRenderer';
 import { WeatherForecastCardRenderer } from './cards/WeatherForecastCardRenderer';
 import { MapCardRenderer } from './cards/MapCardRenderer';
 import { PictureCardRenderer } from './cards/PictureCardRenderer';
@@ -343,6 +352,42 @@ export const BaseCard: React.FC<BaseCardProps> = ({
       renderedCard = (
         <GaugeCardRenderer
           card={card as React.ComponentProps<typeof GaugeCardRenderer>['card']}
+          isSelected={isSelected}
+          onClick={handleCardClick}
+        />
+      );
+      break;
+    case 'tile':
+      renderedCard = (
+        <TileCardRenderer
+          card={card as React.ComponentProps<typeof TileCardRenderer>['card']}
+          isSelected={isSelected}
+          onClick={handleCardClick}
+        />
+      );
+      break;
+    case 'heading':
+      renderedCard = (
+        <HeadingCardRenderer
+          card={card as React.ComponentProps<typeof HeadingCardRenderer>['card']}
+          isSelected={isSelected}
+          onClick={handleCardClick}
+        />
+      );
+      break;
+    case 'entity':
+      renderedCard = (
+        <EntityCardRenderer
+          card={card as React.ComponentProps<typeof EntityCardRenderer>['card']}
+          isSelected={isSelected}
+          onClick={handleCardClick}
+        />
+      );
+      break;
+    case 'statistics-graph':
+      renderedCard = (
+        <StatisticsGraphCardRenderer
+          card={card as React.ComponentProps<typeof StatisticsGraphCardRenderer>['card']}
           isSelected={isSelected}
           onClick={handleCardClick}
         />

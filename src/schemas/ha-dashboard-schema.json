@@ -196,7 +196,20 @@
             "custom:mushroom-number-card",
             "custom:mushroom-select-card",
             "custom:mushroom-vacuum-card",
-            "custom:vertical-stack-in-card"
+            "custom:vertical-stack-in-card",
+            "custom:bubble-card",
+            "custom:better-thermostat-ui-card",
+            "custom:power-flow-card",
+            "custom:power-flow-card-plus",
+            "custom:mushroom-alarm-control-panel-card",
+            "custom:mushroom-chips-card",
+            "custom:mushroom-climate-card",
+            "custom:mushroom-cover-card",
+            "custom:mushroom-fan-card",
+            "custom:mushroom-light-card",
+            "custom:mushroom-lock-card",
+            "custom:mushroom-media-player-card",
+            "custom:mushroom-title-card"
           ]
         },
         "entity": {
