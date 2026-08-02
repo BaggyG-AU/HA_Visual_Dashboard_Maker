@@ -25,6 +25,11 @@ import {
   platformLabel,
   type EntityRegistryIndex,
 } from '../utils/entityRegistry';
+import {
+  SHOW_DIAGNOSTIC_LABEL,
+  describeAllHiddenHere,
+  describeVisibleCount,
+} from '../utils/entityDisclosure';
 import type { HAEntity } from '../types/homeassistant';
 
 const { Text } = Typography;
@@ -534,7 +539,10 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
                 disabled={!registry}
                 onChange={(e) => setShowDiagnostic(e.target.checked)}
               >
-                <span style={{ fontSize: '12px' }}>Show diagnostic &amp; config</span>
+                {/* ⭐ PROPS-03: the label now comes from src/utils/entityDisclosure.ts,
+                    shared with the Properties-panel picker. Identical text — this
+                    rendered "Show diagnostic & config" before too. */}
+                <span style={{ fontSize: '12px' }}>{SHOW_DIAGNOSTIC_LABEL}</span>
               </Checkbox>
             </div>
             {/* ⭐ The hidden set is never invisible. A count the user can read is
@@ -544,9 +552,7 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
               style={{ fontSize: '12px' }}
               data-testid="entity-browser-visible-count"
             >
-              {hiddenCount > 0
-                ? `Showing ${visibleEntities.length} of ${entities.length} (${hiddenCount} hidden)`
-                : `Showing ${visibleEntities.length}`}
+              {describeVisibleCount(visibleEntities.length, entities.length)}
             </Text>
           </Space>
         </Space>
@@ -562,7 +568,7 @@ export const EntityBrowser: React.FC<EntityBrowserProps> = ({
                   // If the only reason the table is empty is that we hid rows,
                   // say so and name the control that brings them back.
                   hiddenCount > 0 && visibleEntities.length === 0
-                  ? `All ${hiddenCount} entities here are marked diagnostic or config by Home Assistant. Tick "Show diagnostic & config" to see them.`
+                  ? describeAllHiddenHere(hiddenCount)
                   : 'No entities match your search.'
             }
           />
