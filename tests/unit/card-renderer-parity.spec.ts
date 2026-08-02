@@ -76,28 +76,24 @@ const schemaCardTypes = (): Set<string> => {
 /**
  * ⚠⚠⚠ THE KNOWN-GAP ALLOW-LIST. THIS LIST MAY SHRINK. IT MUST NEVER GROW.
  *
- * These `custom:` cards are offered in HAVDM's palette and have no renderer, so
- * a user can drag one out and immediately get an "Unsupported Card Type"
- * placeholder. They pre-date this guard; freezing them here is what let the
- * guard ship with the four core cards (the actual release blocker) instead of
- * waiting on eleven renderers.
+ * ⭐⭐⭐ IT IS NOW EMPTY, AND KEEPING IT EMPTY IS THE POINT. Every card type
+ * HAVDM's palette offers can be drawn. There is no longer any way to drag a
+ * card out of the palette and get an "Unsupported Card Type" placeholder.
  *
- * ⭐ Two of them (`custom:mini-media-player`, `custom:battery-state-card`) even
- * have dedicated PropertiesPanel forms — HAVDM will let you configure a card it
- * cannot draw.
+ * It shipped with seven entries — `custom:battery-state-card`,
+ * `custom:decluttering-card`, `custom:fold-entity-row`,
+ * `custom:mini-media-player`, `custom:multiple-entity-row`,
+ * `custom:simple-swipe-card`, `custom:slider-entity-row` — which was the
+ * mechanism that let the guard ship alongside the four core HA cards (the
+ * actual release blocker) rather than waiting on eleven renderers. Those seven
+ * have since been built and DELETED from here, which is the only sanctioned way
+ * for this list to change.
  *
- * ⚠ ADDING AN ENTRY HERE IS NOT A FIX. If this list grows, the drift this file
- * exists to prevent has simply been re-labelled.
+ * ⚠⚠ ADDING AN ENTRY HERE IS NOT A FIX. A new name in this array means the
+ * palette has started offering something it cannot draw, and the drift this
+ * file exists to prevent has simply been re-labelled. Build the renderer.
  */
-const KNOWN_UNRENDERED_PALETTE_CARDS = [
-  'custom:battery-state-card',
-  'custom:decluttering-card',
-  'custom:fold-entity-row',
-  'custom:mini-media-player',
-  'custom:multiple-entity-row',
-  'custom:simple-swipe-card',
-  'custom:slider-entity-row',
-] as const;
+const KNOWN_UNRENDERED_PALETTE_CARDS: readonly string[] = [];
 
 describe('card type parity across schema, registry and renderer', () => {
   it('parses a plausible switch out of BaseCard (guards the instrument itself)', () => {
@@ -158,19 +154,31 @@ describe('card type parity across schema, registry and renderer', () => {
     }
   });
 
-  it('the known-gap allow-list only ever shrinks', () => {
-    // Pinning the length is what turns "we know about these" into a ratchet.
-    // Deleting entries (by building the renderers) is the intended way to move
-    // this number; raising it silently re-creates the drift.
-    expect(KNOWN_UNRENDERED_PALETTE_CARDS.length).toBeLessThanOrEqual(7);
+  it('the known-gap allow-list is EMPTY and stays empty', () => {
+    // ⭐⭐⭐ The ratchet, fully closed. It shipped at seven and every one has
+    // since been built. A non-empty array here means the palette has started
+    // offering something it cannot draw again — which is the whole failure this
+    // file exists to catch, so it must fail loudly rather than be widened.
+    expect(KNOWN_UNRENDERED_PALETTE_CARDS).toEqual([]);
   });
 
-  it('every allow-listed card is genuinely still in the palette', () => {
-    // ⭐ Stops the list rotting into a set of names nobody recognises: an entry
-    // whose card was removed from the registry is dead weight that would hide a
-    // future real gap behind a stale exemption.
-    for (const type of KNOWN_UNRENDERED_PALETTE_CARDS) {
-      expect(cardRegistry.get(type), `${type} is allow-listed but not registered`).toBeDefined();
+  it('the seven former palette orphans are registered AND renderable', () => {
+    // ⭐ With the allow-list empty, RULE 1 already covers these — but naming
+    // them keeps the regression legible. If someone deletes a renderer, this
+    // says WHICH card broke instead of just printing a diff.
+    const renderers = rendererTypes();
+
+    for (const type of [
+      'custom:battery-state-card',
+      'custom:decluttering-card',
+      'custom:fold-entity-row',
+      'custom:mini-media-player',
+      'custom:multiple-entity-row',
+      'custom:simple-swipe-card',
+      'custom:slider-entity-row',
+    ]) {
+      expect(cardRegistry.get(type), `${type} missing from the palette`).toBeDefined();
+      expect(renderers.has(type), `${type} has no BaseCard case`).toBe(true);
     }
   });
 });
