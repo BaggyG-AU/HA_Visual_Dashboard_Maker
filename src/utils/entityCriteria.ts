@@ -68,6 +68,14 @@ const CARD_ENTITY_CRITERIA: Readonly<Record<string, EntityCriteria>> = {
   gauge: { requireNumeric: true },
   sensor: { requireNumeric: true },
   'history-graph': { requireNumeric: true },
+  // Long-term statistics only exist for numeric measurements, so this is the
+  // same unambiguous constraint `history-graph` carries — and listing it here
+  // keeps the two cards that answer the same question behaving the same way.
+  // ⚠ `tile`, `entity` and `heading` are deliberately ABSENT: a tile or an
+  // entity card can legitimately target any entity on the instance, and a
+  // heading targets none at all. Constraining them would be the over-broad
+  // table this file warns against.
+  'statistics-graph': { requireNumeric: true },
   'custom:apexcharts-card': { requireNumeric: true },
   'custom:mini-graph-card': { requireNumeric: true },
   'custom:havdm-progress-ring': { requireNumeric: true },

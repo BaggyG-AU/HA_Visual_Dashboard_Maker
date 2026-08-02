@@ -172,6 +172,123 @@ export interface SensorCard extends BaseCard {
   theme?: string;
 }
 
+/**
+ * HA core `tile` card (2023.7+). The most-used modern Home Assistant card and
+ * the one HA's own editor reaches for first.
+ *
+ * ⚠ Built from the CARD'S DOCUMENTED SCHEMA, not from the reference instance —
+ * per the card-breadth ruling, an instance is a *sample* of which cards exist,
+ * never a *spec* of which options they accept. The reference instance only ever
+ * uses `color`, `entity`, `features`, `icon`, `name` and `show_entity_picture`;
+ * every other field below is real and would have been missed by copying it.
+ */
+export interface TileCard extends BaseCard {
+  type: 'tile';
+  entity?: string;
+  name?: string;
+  icon?: string;
+  /** HA theme colour token (`red`, `green`, …) or `state` to colour by state. */
+  color?: string;
+  show_entity_picture?: boolean;
+  /** Stacks icon above the text instead of beside it. */
+  vertical?: boolean;
+  hide_state?: boolean;
+  /** Which attribute(s) render as the state line. String or ordered list. */
+  state_content?: string | string[];
+  features?: TileFeatureConfig[];
+  /** 2024.11+: where the feature row sits relative to the tile content. */
+  features_position?: 'bottom' | 'inline';
+  tap_action?: Action;
+  hold_action?: Action;
+  double_tap_action?: Action;
+  icon_tap_action?: Action;
+  icon_hold_action?: Action;
+  icon_double_tap_action?: Action;
+  theme?: string;
+}
+
+/**
+ * One entry in a tile card's `features[]` row. Every HA feature is `{type, …}`
+ * with per-feature extras, so the index signature is the honest expression of
+ * "we model the shape, and preserve options we do not interpret".
+ */
+export interface TileFeatureConfig {
+  type: string;
+  [key: string]: unknown;
+}
+
+/**
+ * HA core `heading` card (2024.8+). Every `sections` view HA generates contains
+ * these, which is why a tool that cannot draw one cannot draw a modern dashboard.
+ */
+export interface HeadingCard extends BaseCard {
+  type: 'heading';
+  heading?: string;
+  heading_style?: 'title' | 'subtitle';
+  icon?: string;
+  badges?: HeadingBadgeConfig[];
+  tap_action?: Action;
+}
+
+export interface HeadingBadgeConfig {
+  type?: string;
+  entity?: string;
+  content?: string;
+  icon?: string;
+  state_content?: string | string[];
+  tap_action?: Action;
+  [key: string]: unknown;
+}
+
+/**
+ * HA core `entity` card — a single entity's icon, name and state. One of the
+ * oldest cards Home Assistant ships, and absent from HAVDM until now.
+ */
+export interface EntityCard extends BaseCard {
+  type: 'entity';
+  entity: string;
+  name?: string;
+  icon?: string;
+  /** Render an attribute instead of the state. */
+  attribute?: string;
+  unit?: string;
+  /** Colour the icon by state (HA defaults this on for toggleable domains). */
+  state_color?: boolean;
+  footer?: Record<string, unknown>;
+  color?: string;
+  tap_action?: Action;
+  hold_action?: Action;
+  double_tap_action?: Action;
+  theme?: string;
+}
+
+/**
+ * HA core `statistics-graph` card — long-run recorder statistics.
+ *
+ * ⚠ HAVDM has no statistics API for the same reason it has no history API, so
+ * this renders the honest indicative plot `history-graph` has always rendered
+ * rather than inventing a second, different answer beside it on the same canvas.
+ */
+export interface StatisticsGraphCard extends BaseCard {
+  type: 'statistics-graph';
+  entities: (string | EntityConfig)[];
+  title?: string;
+  days_to_show?: number;
+  period?: '5minute' | 'hour' | 'day' | 'week' | 'month';
+  stat_types?: StatisticType | StatisticType[];
+  chart_type?: 'line' | 'bar';
+  hide_legend?: boolean;
+  logarithmic_scale?: boolean;
+  min_y_axis?: number;
+  max_y_axis?: number;
+  fit_y_data?: boolean;
+  unit?: string;
+  energy_date_selection?: boolean;
+  theme?: string;
+}
+
+export type StatisticType = 'min' | 'max' | 'mean' | 'sum' | 'state' | 'change';
+
 export interface HistoryGraphCard extends BaseCard {
   type: 'history-graph';
   entities: (string | EntityConfig)[];
@@ -327,6 +444,10 @@ export type Card =
   | GaugeCard
   | LightCard
   | SensorCard
+  | TileCard
+  | HeadingCard
+  | EntityCard
+  | StatisticsGraphCard
   | HistoryGraphCard
   | WeatherForecastCard
   | MapCard

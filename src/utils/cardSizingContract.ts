@@ -253,6 +253,48 @@ export const getCardSizeConstraints = (card: any): CardSizeConstraints => {
       maxH = 6;
       break;
 
+    case 'tile':
+      // A tile is a single compact row (~72px), and each configured feature
+      // adds roughly another. Sizing from `features.length` is what stops a
+      // tile with a slider row rendering clipped at its default height.
+      height = 2 + Math.min(4, Array.isArray(card.features) ? card.features.length : 0);
+      width = 4;
+      minW = 2;
+      maxW = 12;
+      minH = 2;
+      maxH = 10;
+      break;
+
+    case 'entity':
+      // Icon + name + a single value (~110px)
+      height = 2;
+      width = 3;
+      minW = 2;
+      maxW = 6;
+      minH = 2;
+      maxH = 4;
+      break;
+
+    case 'heading':
+      // A section label, not a panel — the shortest card HA ships.
+      height = 1;
+      width = 12;
+      minW = 2;
+      maxW = 12;
+      minH = 1;
+      maxH = 2;
+      break;
+
+    case 'statistics-graph':
+      // Same footprint as history-graph; it answers the same kind of question.
+      height = 5;
+      width = 6;
+      minW = 3;
+      maxW = 12;
+      minH = 3;
+      maxH = 12;
+      break;
+
     case 'conditional':
       // Use dimensions of the wrapped card
       if (card.card) {
