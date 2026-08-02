@@ -42,6 +42,12 @@ import {
   parseBackgroundConfig,
   type BackgroundConfig,
 } from '../utils/backgroundStyle';
+import {
+  BULK_SHOWN_FROM_NOTE,
+  BULK_UNTOUCHED_NOTE,
+  describeBulkSelection,
+  describeBulkTypeSkip,
+} from '../utils/bulkEditDisclosure';
 import { formatActionLabel, resolveAllCardActions } from '../services/smartActions';
 import type { CardActionField } from '../types/actions';
 import { normalizeBubbleHash } from '../services/bubbleCardHash';
@@ -159,6 +165,10 @@ type PopupConfigValues = {
 interface PropertiesPanelProps {
   card: Card | null;
   cardIndex: number | null;
+  // CLIP-04: the panel edits ONE card but a bulk write may fan the result out
+  // across the whole selection. These two say so — see `bulkEditDisclosure.ts`.
+  selectedCardCount?: number;
+  selectedCardTypes?: string[];
   historyNavigationVersion?: number;
   onChange: (updatedCard: Card) => void;
   onCommit: (updatedCard: Card) => void;
@@ -204,6 +214,8 @@ const MANUAL_ACTION_FIELDS: Array<{
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   card,
   cardIndex,
+  selectedCardCount = 0,
+  selectedCardTypes = [],
   historyNavigationVersion = 0,
   onChange,
   onCommit,
@@ -7009,6 +7021,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const cardMetadata = cardRegistry.get(card.type);
   const cardName = cardMetadata?.name || card.type;
 
+  // CLIP-04 (owner decision 2026-08-02, option C1): the type guard in
+  // `applyBulkCardUpdate` stays, but it stops being silent. Count how many of
+  // the selection this edit can actually reach.
+  const matchingTypeCount = selectedCardTypes.filter((type) => type === card.type).length;
+  const typeSkipNotice = describeBulkTypeSkip(matchingTypeCount, selectedCardCount, cardName);
+
   return (
     <div
       data-testid="properties-panel"
@@ -7051,6 +7069,48 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           )}
         </Space>
       </div>
+
+      {/* ⭐ CLIP-04: say what this edit is about to change BEFORE it changes.
+          The form describes ONE card, but a bulk write fans the result across
+          the whole selection — and until now nothing on this panel said so.
+          Rendered from `selectedCardCount`, a property of the SELECTION, not of
+          anything this panel controls (the #112 lesson: a control's visibility
+          must never depend on the state that control sets). */}
+      {selectedCardCount > 1 && (
+        <div
+          data-testid="properties-multi-select-notice"
+          style={{
+            marginBottom: '12px',
+            padding: '8px 10px',
+            borderRadius: '6px',
+            border: `1px solid ${token.colorPrimaryBorder}`,
+            backgroundColor: token.colorPrimaryBg,
+          }}
+        >
+          <Text strong style={{ color: token.colorText, fontSize: '12px' }}>
+            {describeBulkSelection(selectedCardCount)}
+          </Text>
+          {typeSkipNotice && (
+            <>
+              <br />
+              <Text
+                data-testid="properties-multi-select-type-notice"
+                style={{ color: token.colorText, fontSize: '12px' }}
+              >
+                {typeSkipNotice}
+              </Text>
+            </>
+          )}
+          <br />
+          <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
+            {BULK_UNTOUCHED_NOTE}
+          </Text>
+          <br />
+          <Text style={{ color: token.colorTextSecondary, fontSize: '12px' }}>
+            {BULK_SHOWN_FROM_NOTE}
+          </Text>
+        </div>
+      )}
 
       <div style={{ marginBottom: '12px' }}>
         <Text strong style={{ color: token.colorPrimary }}>

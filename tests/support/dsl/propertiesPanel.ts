@@ -201,6 +201,34 @@ export class PropertiesPanelDSL {
   }
 
   /**
+   * CLIP-04: the multi-select disclosure block. Absent by construction when one
+   * card (or none) is selected — it is gated on the SELECTION SIZE, so a
+   * single-select panel must not render it at all.
+   */
+  async expectMultiSelectNotice(cardCount: number): Promise<void> {
+    await this.expectVisible();
+    const notice = this.window.getByTestId('properties-multi-select-notice');
+    await expect(notice).toBeVisible();
+    await expect(notice).toContainText(`Editing ${cardCount} selected cards`);
+  }
+
+  async expectNoMultiSelectNotice(): Promise<void> {
+    await this.expectVisible();
+    await expect(this.window.getByTestId('properties-multi-select-notice')).toHaveCount(0);
+  }
+
+  /**
+   * CLIP-04 / option C1: the type guard stays, but it says so. Asserts the
+   * panel names how much of a MIXED-type selection this edit can reach.
+   */
+  async expectMultiSelectTypeNotice(text: string | RegExp): Promise<void> {
+    await this.expectVisible();
+    const notice = this.window.getByTestId('properties-multi-select-type-notice');
+    await expect(notice).toBeVisible();
+    await expect(notice).toContainText(text);
+  }
+
+  /**
    * Verify card name input value.
    */
   async expectCardName(name: string): Promise<void> {
