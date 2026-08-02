@@ -76,7 +76,7 @@ import {
 } from './utils/cardClipboard';
 import {
   resolveViewCards,
-  updateSectionCard,
+  setSectionCards,
   addCardToSection,
   removeSectionCards,
   insertCardsIntoSection,
@@ -873,6 +873,18 @@ const App: React.FC = () => {
   const resolveSelectedIndices = (cardsLength: number): number[] =>
     resolveOperationSelection(selectedCardIndex, selectedCardIndices, cardsLength);
 
+  // CLIP-04: the Properties panel is handed exactly ONE card, so it could never
+  // say it was editing several — the heading was the bare string "Properties"
+  // at every selection size. This gives it the SHAPE of the selection (how many
+  // and which types) without handing it every card's config.
+  const selectedCardTypes = useMemo(() => {
+    if (!config || selectedViewIndex === null) return [];
+    const cards = resolveViewCards(config.views[selectedViewIndex], selectedSectionIndex);
+    return selectedCardIndices
+      .map((index) => cards[index]?.type)
+      .filter((type): type is string => typeof type === 'string');
+  }, [config, selectedViewIndex, selectedSectionIndex, selectedCardIndices]);
+
   const handleCardSelect = (
     cardIndex: number | null,
     options?: { mode?: SelectionMode; sectionIndex?: number | null },
@@ -1180,16 +1192,23 @@ const App: React.FC = () => {
 
     const currentView = config.views[selectedViewIndex];
 
-    // Tier 4: write a single card back into its section (sections are
-    // single-select this slice, so no bulk apply).
+    // Tier 4: write back into the selected section. CLIP-04: this used to
+    // write ONE card ("sections are single-select this slice, so no bulk
+    // apply") while `selectSectionCardWithMode` happily multi-selected within a
+    // section — so the canvas said three cards were selected and the edit
+    // landed on one. Sections now take the same bulk apply as the flat canvas.
     if (selectedSectionIndex !== null) {
-      const nextView = updateSectionCard(
-        currentView,
-        selectedSectionIndex,
-        selectedCardIndex,
+      const sectionCards = resolveViewCards(currentView, selectedSectionIndex);
+      const targetIndices = resolveSelectedIndices(sectionCards.length);
+      const { cards: updatedSectionCards } = applyBulkCardUpdate(
+        sectionCards,
+        targetIndices,
         updatedCard,
+        selectedCardIndex,
       );
-      if (nextView !== currentView) {
+
+      if (updatedSectionCards !== sectionCards) {
+        const nextView = setSectionCards(currentView, selectedSectionIndex, updatedSectionCards);
         const updatedViews = config.views.map((view, i) =>
           i === selectedViewIndex ? nextView : view,
         );
@@ -1204,6 +1223,7 @@ const App: React.FC = () => {
         currentView.cards,
         targetIndices,
         updatedCard,
+        selectedCardIndex,
       );
 
       const updatedViews = config.views.map((view, i) =>
@@ -1218,22 +1238,31 @@ const App: React.FC = () => {
 
     const currentView = config.views[selectedViewIndex];
 
-    // Tier 4: commit a single card back into its section, then re-select it so
-    // the Properties panel refreshes (mirrors the flat re-select dance below).
+    // Tier 4: commit back into the selected section, then re-select so the
+    // Properties panel refreshes (mirrors the flat re-select dance below).
+    // CLIP-04: this is a BULK apply now — see the note on handleCardUpdate.
     if (selectedSectionIndex !== null) {
-      const nextView = updateSectionCard(
-        currentView,
-        selectedSectionIndex,
-        selectedCardIndex,
+      const sectionCards = resolveViewCards(currentView, selectedSectionIndex);
+      const targetIndices = resolveSelectedIndices(sectionCards.length);
+      const { cards: updatedSectionCards, updatedCount } = applyBulkCardUpdate(
+        sectionCards,
+        targetIndices,
         updatedCard,
+        selectedCardIndex,
       );
-      if (nextView !== currentView) {
+
+      if (updatedSectionCards !== sectionCards) {
+        const nextView = setSectionCards(currentView, selectedSectionIndex, updatedSectionCards);
         const updatedViews = config.views.map((view, i) =>
           i === selectedViewIndex ? nextView : view,
         );
         applyBatchedConfig({ ...config, views: updatedViews });
         endBatchUpdate();
-        message.success({ content: 'Card updated', key: 'card-updated', duration: 1.5 });
+        message.success({
+          content: updatedCount > 1 ? `Updated ${updatedCount} cards` : 'Card updated',
+          key: 'card-updated',
+          duration: 1.5,
+        });
         const viewIndex = selectedViewIndex;
         const sectionIndex = selectedSectionIndex;
         const cardIndex = selectedCardIndex;
@@ -1249,6 +1278,7 @@ const App: React.FC = () => {
         currentView.cards,
         targetIndices,
         updatedCard,
+        selectedCardIndex,
       );
 
       const updatedViews = config.views.map((view, i) =>
@@ -3252,6 +3282,8 @@ const App: React.FC = () => {
                     : null
                 }
                 cardIndex={selectedCardIndex}
+                selectedCardCount={selectedCardIndices.length}
+                selectedCardTypes={selectedCardTypes}
                 historyNavigationVersion={historyNavigationVersion}
                 onChange={handleCardUpdate}
                 onCommit={handleCardCommit}

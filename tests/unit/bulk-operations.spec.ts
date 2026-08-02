@@ -73,13 +73,93 @@ describe('bulk selection utilities', () => {
 
   it('applies bulk updates only to selected cards of the same type', () => {
     const updatedCard: Card = { type: 'button', name: 'Renamed' };
-    const result = applyBulkCardUpdate(baseCards, [0, 1, 2], updatedCard);
+    const result = applyBulkCardUpdate(baseCards, [0, 1, 2], updatedCard, 0);
 
     expect(result.updatedCount).toBe(2);
     expect((result.cards[0] as Card & { name?: string }).name).toBe('Renamed');
     expect((result.cards[1] as Card & { name?: string }).name).toBe('Renamed');
     expect(result.cards[2].type).toBe('markdown');
     expect(result.cards[0]._havdm_layout).toEqual(baseCards[0]._havdm_layout);
+  });
+
+  // ⚠⚠⚠ THE CLIP-04 REGRESSION GUARD. `applyBulkCardUpdate` used to return
+  // `{...updatedCard}` for every target, which does not apply the edited
+  // PROPERTY — it replaces each selected card with a wholesale CLONE of the
+  // edited one. Measured on `37e9dc8`: three buttons with distinct entity/name/
+  // icon, edit the name only, and all three ended up on the last-clicked card's
+  // entity AND icon. One field changed, four values destroyed.
+  //
+  // ⭐ Note the fixture: the cards DIFFER on the axis the code must preserve.
+  // Both pre-existing bulk specs used identical blank cards, which is exactly
+  // why neither could ever have caught this.
+  it('applies ONLY the changed fields to the other selected cards', () => {
+    const distinctCards: Card[] = [
+      { type: 'button', entity: 'sensor.alpha', name: 'Alpha', icon: 'mdi:alpha' },
+      { type: 'button', entity: 'sensor.beta', name: 'Beta', icon: 'mdi:beta' },
+      { type: 'button', entity: 'sensor.gamma', name: 'Gamma', icon: 'mdi:gamma' },
+    ] as Card[];
+
+    // The user is looking at card 2 and changes ONLY its name.
+    const edited: Card = {
+      type: 'button',
+      entity: 'sensor.gamma',
+      name: 'CLONED',
+      icon: 'mdi:gamma',
+    } as Card;
+    const result = applyBulkCardUpdate(distinctCards, [0, 1, 2], edited, 2);
+
+    expect(result.updatedCount).toBe(3);
+
+    // The edit lands everywhere...
+    expect(result.cards.map((c) => (c as Card & { name?: string }).name)).toEqual([
+      'CLONED',
+      'CLONED',
+      'CLONED',
+    ]);
+
+    // ...and nothing else moves.
+    expect(result.cards.map((c) => (c as Card & { entity?: string }).entity)).toEqual([
+      'sensor.alpha',
+      'sensor.beta',
+      'sensor.gamma',
+    ]);
+    expect(result.cards.map((c) => (c as Card & { icon?: string }).icon)).toEqual([
+      'mdi:alpha',
+      'mdi:beta',
+      'mdi:gamma',
+    ]);
+  });
+
+  it('keeps each non-primary card its own layout, never the edited card’s', () => {
+    const edited: Card = { type: 'button', name: 'Renamed' };
+    const result = applyBulkCardUpdate(baseCards, [0, 1], edited, 0);
+
+    expect(result.cards[1]._havdm_layout).toEqual(baseCards[1]._havdm_layout);
+    expect(result.cards[1]._havdm_layout).not.toEqual(baseCards[0]._havdm_layout);
+  });
+
+  it('propagates a field the user CLEARED, and does not invent layout keys', () => {
+    const withIcons: Card[] = [
+      { type: 'button', name: 'A', icon: 'mdi:a' },
+      { type: 'button', name: 'B', icon: 'mdi:b' },
+    ] as Card[];
+
+    // Card 0 edited so that `icon` is gone entirely.
+    const edited: Card = { type: 'button', name: 'A' } as Card;
+    const result = applyBulkCardUpdate(withIcons, [0, 1], edited, 0);
+
+    expect('icon' in result.cards[1]).toBe(false);
+    expect((result.cards[1] as Card & { name?: string }).name).toBe('B');
+    // These cards never had geometry; the bulk write must not introduce it.
+    expect('_havdm_layout' in result.cards[1]).toBe(false);
+  });
+
+  it('falls back to the whole-card write when there is no resolvable primary', () => {
+    const updatedCard: Card = { type: 'button', name: 'Renamed' };
+    const result = applyBulkCardUpdate(baseCards, [0, 1], updatedCard, null);
+
+    expect(result.updatedCount).toBe(2);
+    expect((result.cards[1] as Card & { name?: string }).name).toBe('Renamed');
   });
 
   it('removes cards by normalized indices', () => {

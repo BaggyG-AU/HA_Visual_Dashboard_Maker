@@ -70,6 +70,25 @@ export const updateSectionCard = (
 };
 
 /**
+ * Immutably swap one section's whole `cards` array.
+ *
+ * ⭐ The public counterpart of `updateSectionCard`, for callers that have
+ * already computed the next array themselves — specifically a BULK multi-select
+ * edit, which has to rewrite several of a section's cards at once.
+ *
+ * ⚠ Added for the v1.0.0 UAT round-2 defect CLIP-04. `App.tsx` used to take a
+ * `selectedSectionIndex !== null` early return commented "sections are
+ * single-select this slice, so no bulk apply" and never reached
+ * `applyBulkCardUpdate` at all — so on a sections view the selection model
+ * advertised three selected cards and the edit landed on exactly one.
+ */
+export const setSectionCards = (view: View, sectionIndex: number, nextCards: Card[]): View => {
+  const sections = view.sections;
+  if (!Array.isArray(sections) || !sections[sectionIndex]) return view;
+  return replaceSectionCards(view, sectionIndex, nextCards);
+};
+
+/**
  * Immutably swap one section's `cards` array, returning a NEW View. Sibling
  * sections are carried through reference-equal so React can skip them.
  */
