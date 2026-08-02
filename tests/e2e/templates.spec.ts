@@ -221,9 +221,11 @@ test.describe('Dashboard Templates (FILE-03)', () => {
       await ctx.dashboard.cancelUnsavedGuard();
       await ctx.canvas.expectCardCount(1);
 
-      // Accepting reaches the dialog, and From Template is offered there.
+      // Answering "Don't Save" reaches the dialog, and From Template is offered
+      // there. (FILE-04 turned this gate's single affirmative button into two —
+      // Save and Don't Save — so the discard branch is now named explicitly.)
       await ctx.dashboard.clickNewDashboardExpectingUnsavedGuard();
-      await ctx.dashboard.acceptUnsavedGuard();
+      await ctx.dashboard.discardUnsavedGuard();
       await expect(ctx.window.getByTestId('new-dashboard-template-option')).toBeVisible();
     } finally {
       await close(ctx);
