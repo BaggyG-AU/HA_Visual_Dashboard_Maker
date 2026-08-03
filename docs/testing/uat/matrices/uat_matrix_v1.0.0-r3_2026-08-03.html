@@ -1,0 +1,3041 @@
+<!doctype html>
+<!--
+  HAVDM UAT Test Matrix — v1.0.0-r3 (First stable release, round 3)
+  ===============================================================
+  Round 3. Generated 2026-08-03 from
+      docs/testing/uat/matrices/uat_matrix_template.html
+  by prompts/claude/uat-plan-and-matrix.md. The template is unmodified;
+  only the CONFIG constants and the TESTS / GROUPS / PREV data differ.
+
+  Source of truth: docs/testing/uat/plans/uat_plan_v1.0.0-r3_2026-08-03.md
+  If this matrix and that plan disagree, the plan is right.
+
+  ⚠ THIS ROUND RUNS ON WINDOWS. Launch the packaged
+      out/HA Visual Dashboard Maker-win32-x64/HA Visual Dashboard Maker.exe
+  copied to a local Windows drive. Group 10 needs git on PATH; group 11
+  needs ha.home.local to resolve (or use 192.168.1.70).
+
+  ⚠ Group 11 writes to a live Home Assistant instance. Read the live-HA
+  rules in the plan before starting it. Two cards name a button you must
+  NOT press, and two cards carry a numbered teardown step.
+
+  ⚠ PREV is the round-2 session JSON with the owner's re-marks applied on
+  top — see docs/testing/uat/VERDICT_REMARKS.md. CLIP-02 shows GREEN
+  because the owner re-marked it Pass on 2026-08-03; the filed session
+  JSON still records "fail" and is deliberately not edited.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HAVDM UAT Matrix — v1.0.0-r3</title>
+    <style>
+      :root {
+        --color-background-primary: #f6f7f9;
+        --color-background-card: #ffffff;
+        --color-background-raised: #eceef2;
+        --color-text-primary: #1b1f27;
+        --color-text-secondary: #5b6472;
+        --color-border: #d7dbe2;
+        --color-accent: #2f6feb;
+
+        --color-pass: #1a7f45;
+        --color-fail: #c2331f;
+        --color-skip: #9a6b00;
+        --color-untested: #98a1af;
+
+        --color-badge-gate: #2f6feb;
+        --color-badge-edge: #8a4fd0;
+        --color-badge-interaction: #0f7d84;
+        --color-badge-fidelity: #b4560c;
+        --color-badge-auto: #1a7f45;
+        --color-badge-defect: #c2331f;
+        --color-badge-new: #5b6472;
+        --color-badge-ha: #8a4fd0;
+
+        --color-expect-bg: rgba(26, 127, 69, 0.08);
+        --color-expect-border: rgba(26, 127, 69, 0.35);
+        --color-auto-bg: rgba(47, 111, 235, 0.08);
+        --color-auto-border: rgba(47, 111, 235, 0.35);
+        --color-warn-bg: rgba(194, 51, 31, 0.08);
+        --color-warn-border: rgba(194, 51, 31, 0.4);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --color-background-primary: #14171c;
+          --color-background-card: #1c2027;
+          --color-background-raised: #252a33;
+          --color-text-primary: #e8ebf0;
+          --color-text-secondary: #98a1af;
+          --color-border: #333944;
+          --color-accent: #5b9bff;
+
+          --color-pass: #4cc47f;
+          --color-fail: #ff7461;
+          --color-skip: #e0a63a;
+          --color-untested: #5b6472;
+
+          --color-badge-gate: #5b9bff;
+          --color-badge-edge: #b083f0;
+          --color-badge-interaction: #3fb8c0;
+          --color-badge-fidelity: #f0913f;
+          --color-badge-auto: #4cc47f;
+          --color-badge-defect: #ff7461;
+          --color-badge-new: #98a1af;
+          --color-badge-ha: #b083f0;
+
+          --color-expect-bg: rgba(76, 196, 127, 0.1);
+          --color-expect-border: rgba(76, 196, 127, 0.3);
+          --color-auto-bg: rgba(91, 155, 255, 0.1);
+          --color-auto-border: rgba(91, 155, 255, 0.3);
+          --color-warn-bg: rgba(255, 116, 97, 0.1);
+          --color-warn-border: rgba(255, 116, 97, 0.35);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 0 0 96px;
+        background: var(--color-background-primary);
+        color: var(--color-text-primary);
+        font:
+          14px/1.55 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+
+      /* ── Summary bar ─────────────────────────────────────── */
+      #summary-bar {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        align-items: center;
+        padding: 12px 20px;
+        background: var(--color-background-card);
+        border-bottom: 1px solid var(--color-border);
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+      }
+      #summary-title {
+        font-weight: 700;
+        font-size: 15px;
+        margin-right: 6px;
+      }
+      #summary-title small {
+        display: block;
+        font-weight: 400;
+        font-size: 12px;
+        color: var(--color-text-secondary);
+      }
+      .summary-stat {
+        font-size: 13px;
+        color: var(--color-text-secondary);
+        white-space: nowrap;
+      }
+      .summary-stat strong {
+        font-size: 15px;
+        color: var(--color-text-primary);
+      }
+      .stat-pass strong {
+        color: var(--color-pass);
+      }
+      .stat-fail strong {
+        color: var(--color-fail);
+      }
+      .stat-skip strong {
+        color: var(--color-skip);
+      }
+      .stat-untested strong {
+        color: var(--color-untested);
+      }
+      #acceptance-chip {
+        margin-left: auto;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--color-border);
+        white-space: nowrap;
+      }
+      #acceptance-chip.ok {
+        color: var(--color-pass);
+        border-color: var(--color-expect-border);
+        background: var(--color-expect-bg);
+      }
+      #acceptance-chip.blocked {
+        color: var(--color-fail);
+        border-color: var(--color-warn-border);
+        background: var(--color-warn-bg);
+      }
+
+      #main {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 20px 16px 0;
+      }
+
+      /* ── Runs panel ──────────────────────────────────────── */
+      #runs-panel {
+        background: var(--color-background-card);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        margin-bottom: 20px;
+        overflow: hidden;
+      }
+      #runs-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        cursor: pointer;
+        user-select: none;
+        font-weight: 600;
+      }
+      #runs-panel-body {
+        display: none;
+        padding: 0 16px 16px;
+        border-top: 1px solid var(--color-border);
+      }
+      #runs-panel-body.open {
+        display: block;
+      }
+      .runs-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-top: 12px;
+      }
+      #run-name-input,
+      #import-file-input {
+        flex: 1 1 220px;
+        min-width: 160px;
+        padding: 7px 10px;
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        background: var(--color-background-primary);
+        color: var(--color-text-primary);
+        font: inherit;
+      }
+      .runs-btn {
+        padding: 7px 13px;
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        background: var(--color-background-raised);
+        color: var(--color-text-primary);
+        font: inherit;
+        cursor: pointer;
+      }
+      .runs-btn:hover {
+        border-color: var(--color-accent);
+      }
+      .btn-clear {
+        color: var(--color-fail);
+      }
+      #saved-runs-list {
+        margin-top: 12px;
+      }
+      .saved-run {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+      #runs-autosave-note {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--color-text-secondary);
+      }
+
+      /* ── Groups ──────────────────────────────────────────── */
+      .group {
+        background: var(--color-background-card);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        margin-bottom: 14px;
+        overflow: hidden;
+      }
+      .group-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 16px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .group-title {
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .group-meta {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+      .group-chevron {
+        transition: transform 0.15s;
+        color: var(--color-text-secondary);
+      }
+      .group-chevron.open {
+        transform: rotate(90deg);
+      }
+      .group-body {
+        display: none;
+        padding: 0 12px 12px;
+      }
+      .group-body.open {
+        display: block;
+      }
+
+      /* ── Cards ───────────────────────────────────────────── */
+      .card {
+        border: 1px solid var(--color-border);
+        border-radius: 7px;
+        margin-bottom: 8px;
+        background: var(--color-background-primary);
+        overflow: hidden;
+      }
+      .card-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        padding: 10px 12px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .card-id {
+        font-weight: 700;
+        color: var(--color-accent);
+        font-variant-numeric: tabular-nums;
+      }
+      .card-name {
+        flex: 1 1 260px;
+      }
+      .badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 4px;
+        color: #fff;
+        white-space: nowrap;
+      }
+      .badge-gate {
+        background: var(--color-badge-gate);
+      }
+      .badge-edge {
+        background: var(--color-badge-edge);
+      }
+      .badge-interaction {
+        background: var(--color-badge-interaction);
+      }
+      .badge-fidelity {
+        background: var(--color-badge-fidelity);
+      }
+      .badge-auto {
+        background: var(--color-badge-auto);
+      }
+      .badge-defect {
+        background: var(--color-badge-defect);
+      }
+      .badge-new {
+        background: var(--color-badge-new);
+      }
+      .badge-ha {
+        background: var(--color-badge-ha);
+      }
+      .status-dot,
+      .status-dot-prev {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex: none;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+      }
+      .status-dot-prev {
+        opacity: 0.35;
+        width: 9px;
+        height: 9px;
+      }
+      .dot-pass {
+        background: var(--color-pass);
+      }
+      .dot-fail {
+        background: var(--color-fail);
+      }
+      .dot-skip {
+        background: var(--color-skip);
+      }
+      .dot-untested {
+        background: var(--color-untested);
+      }
+
+      .card-body {
+        display: none;
+        padding: 4px 14px 14px;
+        border-top: 1px solid var(--color-border);
+      }
+      .card-body.open {
+        display: block;
+      }
+      .card-section-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--color-text-secondary);
+        margin: 14px 0 6px;
+      }
+      .auto-note {
+        background: var(--color-auto-bg);
+        border: 1px solid var(--color-auto-border);
+        border-radius: 6px;
+        padding: 9px 12px;
+        margin-top: 12px;
+        font-size: 13px;
+      }
+      .auto-note strong {
+        display: block;
+        font-size: 11px;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--color-badge-auto);
+        margin-bottom: 3px;
+      }
+      .ha-warn {
+        background: var(--color-warn-bg);
+        border: 1px solid var(--color-warn-border);
+        border-radius: 6px;
+        padding: 9px 12px;
+        margin-top: 12px;
+        font-size: 13px;
+      }
+      .card-body ol,
+      .card-body ul {
+        margin: 0;
+        padding-left: 22px;
+      }
+      .card-body li {
+        margin-bottom: 5px;
+      }
+      .expects {
+        background: var(--color-expect-bg);
+        border: 1px solid var(--color-expect-border);
+        border-radius: 6px;
+        padding: 10px 12px 10px 8px;
+        list-style: none;
+      }
+      .expects li {
+        position: relative;
+        padding-left: 20px;
+      }
+      .expects li::before {
+        content: '✓';
+        position: absolute;
+        left: 2px;
+        color: var(--color-pass);
+        font-weight: 700;
+      }
+      .card-body textarea {
+        width: 100%;
+        min-height: 66px;
+        padding: 8px 10px;
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        background: var(--color-background-card);
+        color: var(--color-text-primary);
+        font: inherit;
+        resize: vertical;
+      }
+      .screenshot-zone {
+        border: 1px dashed var(--color-border);
+        border-radius: 6px;
+        padding: 10px;
+      }
+      .screenshot-zone > label {
+        display: block;
+        font-size: 12px;
+        color: var(--color-text-secondary);
+        margin-bottom: 6px;
+      }
+      .screenshot-file-input {
+        font-size: 12px;
+        color: var(--color-text-secondary);
+      }
+      .screenshot-preview {
+        margin-top: 8px;
+      }
+      .screenshot-img {
+        max-width: 100%;
+        max-height: 220px;
+        border-radius: 4px;
+        display: block;
+        border: 1px solid var(--color-border);
+      }
+      .screenshot-remove {
+        margin-top: 6px;
+        padding: 4px 9px;
+        font-size: 12px;
+        border: 1px solid var(--color-border);
+        border-radius: 5px;
+        background: var(--color-background-raised);
+        color: var(--color-fail);
+        cursor: pointer;
+      }
+      .severity-row {
+        display: none;
+        align-items: center;
+        gap: 9px;
+        margin-top: 12px;
+        padding: 9px 12px;
+        background: var(--color-warn-bg);
+        border: 1px solid var(--color-warn-border);
+        border-radius: 6px;
+      }
+      .severity-row.show {
+        display: flex;
+        flex-wrap: wrap;
+      }
+      .severity-row label {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--color-fail);
+      }
+      .severity-row select {
+        padding: 5px 9px;
+        border: 1px solid var(--color-border);
+        border-radius: 5px;
+        background: var(--color-background-card);
+        color: var(--color-text-primary);
+        font: inherit;
+      }
+      .severity-hint {
+        font-size: 12px;
+        color: var(--color-text-secondary);
+        flex: 1 1 220px;
+      }
+      .btn-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 15px;
+      }
+      .btn-verdict {
+        flex: 1;
+        padding: 9px;
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        background: var(--color-background-card);
+        color: var(--color-text-secondary);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-pass.active {
+        background: var(--color-pass);
+        border-color: var(--color-pass);
+        color: #fff;
+      }
+      .btn-fail.active {
+        background: var(--color-fail);
+        border-color: var(--color-fail);
+        color: #fff;
+      }
+      .btn-skip.active {
+        background: var(--color-skip);
+        border-color: var(--color-skip);
+        color: #fff;
+      }
+
+      /* ── Footer buttons + toast ──────────────────────────── */
+      #report-buttons {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-end;
+      }
+      #report-buttons button {
+        padding: 11px 17px;
+        border: 1px solid var(--color-border);
+        border-radius: 7px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+        background: var(--color-accent);
+        color: #fff;
+        border-color: transparent;
+      }
+      #issues-script-btn {
+        background: var(--color-background-card) !important;
+        color: var(--color-text-primary) !important;
+        border-color: var(--color-border) !important;
+        font-weight: 500 !important;
+      }
+      #toast {
+        position: fixed;
+        left: 50%;
+        bottom: 26px;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--color-text-primary);
+        color: var(--color-background-card);
+        padding: 10px 18px;
+        border-radius: 7px;
+        font-size: 13px;
+        opacity: 0;
+        pointer-events: none;
+        transition: 0.2s;
+        z-index: 60;
+        max-width: 90vw;
+        text-align: center;
+      }
+      #toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="summary-bar">
+      <div id="summary-title">
+        <span id="round-label">ROUND — NAME</span>
+        <small id="round-sub">build under test</small>
+      </div>
+      <div class="summary-stat stat-total">Total: <strong id="cnt-total">0</strong></div>
+      <div class="summary-stat stat-pass">Pass: <strong id="cnt-pass">0</strong></div>
+      <div class="summary-stat stat-fail">Fail: <strong id="cnt-fail">0</strong></div>
+      <div class="summary-stat stat-skip">Skip: <strong id="cnt-skip">0</strong></div>
+      <div class="summary-stat stat-untested">Untested: <strong id="cnt-untested">0</strong></div>
+      <div id="acceptance-chip" class="blocked">Not accepted</div>
+    </div>
+
+    <div id="main">
+      <!-- ── Runs panel ── -->
+      <div id="runs-panel">
+        <div id="runs-panel-header">
+          <span>Test runs — save, export, import</span>
+          <span class="group-chevron" id="runs-chevron">▶</span>
+        </div>
+        <div id="runs-panel-body">
+          <div class="runs-row">
+            <input
+              id="run-name-input"
+              type="text"
+              placeholder="Run name, e.g. Round 1 — evening"
+              maxlength="80"
+            />
+            <button class="runs-btn" id="btn-save-run">Save run</button>
+            <button class="runs-btn" id="btn-export">Export JSON</button>
+          </div>
+          <div class="runs-row">
+            <input id="import-file-input" type="file" accept=".json" />
+            <button class="runs-btn btn-clear" id="btn-clear-state">Clear all</button>
+          </div>
+          <div id="saved-runs-list"></div>
+          <div id="runs-autosave-note">
+            Current state auto-saves in this browser and restores on next open. Export the JSON at
+            the end of every sitting — a browser reset would otherwise lose the round.
+          </div>
+        </div>
+      </div>
+
+      <!-- Groups are rendered here by JS -->
+    </div>
+
+    <div id="report-buttons">
+      <button id="defect-summary-btn">Generate Test Summary Report</button>
+      <button id="issues-script-btn">Generate Issues Payload</button>
+    </div>
+    <div id="toast"></div>
+
+    <script>
+      /* ============================================================
+     CONFIG — replace these four constants per round.
+     ============================================================ */
+      const ROUND_ID = 'v1.0.0-r3';
+      const ROUND_KEY = 'v1_0_0_r3'; // storage-safe — MUST differ from every prior round
+      const ROUND_NAME = 'First stable release — round 3 (full re-run)';
+      const BUILD_UNDER_TEST =
+        'Windows x64 packaged app — HA Visual Dashboard Maker.exe, rebuilt 2026-08-03 from main = a3b60b5 (all round-2 remediation merged; 10/10 positive asar markers plus 1 negative marker verified against the round-2 binary)';
+
+      const REPO = 'BaggyG-AU/HA_Visual_Dashboard_Maker';
+      const PLAN_PATH = `docs/testing/uat/plans/uat_plan_${ROUND_ID}_2026-08-03.md`;
+
+      /* ============================================================
+     PREV — the round-2 session JSON's `current` map, with the owner's
+     re-marks applied on top (docs/testing/uat/VERDICT_REMARKS.md).
+     ⚠ CLIP-02 is 'pass' here and 'fail' in the filed session JSON. The
+     session JSON is the tester's verbatim export and is never edited;
+     the re-mark is layered on at generation time. PROPS-07 and YAML-05
+     are omitted — 'untested' is not a prior RESULT, so they render grey.
+     ============================================================ */
+      const PREV = {
+        'CANVAS-01': 'pass',
+        'CANVAS-02': 'pass',
+        'CANVAS-03': 'pass',
+        'CANVAS-04': 'pass',
+        'CANVAS-05': 'pass',
+        'CANVAS-06': 'pass',
+        'CANVAS-07': 'pass',
+        'CLIP-01': 'pass',
+        'CLIP-02': 'pass',
+        'CLIP-03': 'pass',
+        'CLIP-04': 'fail',
+        'CLIP-05': 'skip',
+        'CLIP-06': 'pass',
+        'EXPORT-01': 'pass',
+        'EXPORT-02': 'pass',
+        'EXPORT-03': 'pass',
+        'EXPORT-04': 'pass',
+        'EXPORT-05': 'pass',
+        'EXPORT-06': 'pass',
+        'FILE-01': 'pass',
+        'FILE-02': 'pass',
+        'FILE-03': 'pass',
+        'FILE-04': 'fail',
+        'FILE-05': 'pass',
+        'FILE-06': 'pass',
+        'HA-01': 'pass',
+        'HA-02': 'fail',
+        'HA-03': 'fail',
+        'HA-04': 'fail',
+        'HA-05': 'pass',
+        'HA-06': 'pass',
+        'HA-07': 'fail',
+        'HA-08': 'fail',
+        'HA-09': 'skip',
+        'PROPS-01': 'pass',
+        'PROPS-02': 'pass',
+        'PROPS-03': 'fail',
+        'PROPS-04': 'pass',
+        'PROPS-05': 'pass',
+        'PROPS-06': 'pass',
+        'SHELL-01': 'pass',
+        'SHELL-02': 'pass',
+        'SHELL-03': 'pass',
+        'SHELL-04': 'pass',
+        'THEME-01': 'fail',
+        'THEME-02': 'fail',
+        'THEME-03': 'pass',
+        'THEME-04': 'pass',
+        'VCS-01': 'pass',
+        'VCS-02': 'fail',
+        'VCS-03': 'skip',
+        'VCS-04': 'pass',
+        'VIEWS-01': 'pass',
+        'VIEWS-02': 'pass',
+        'VIEWS-03': 'pass',
+        'VIEWS-04': 'pass',
+        'VIEWS-05': 'fail',
+        'VIEWS-06': 'pass',
+        'VIEWS-07': 'pass',
+        'VIEWS-08': 'pass',
+        'YAML-01': 'pass',
+        'YAML-02': 'pass',
+        'YAML-03': 'pass',
+        'YAML-04': 'pass',
+      };
+
+      const TESTS = [
+        {
+          id: 'SHELL-01',
+          name: 'The packaged application launches and presents the welcome screen',
+          type: 'interaction',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/app-launch.spec.ts</code> asserts the window opens at the right dimensions, the main UI mounts and no critical console errors appear — but it drives a <em>development</em> build, so it has never once launched the artifact a user installs. You are checking the packaged binary.',
+          steps: [
+            'Launch <code>HA Visual Dashboard Maker.exe</code> from the copied <code>HA Visual Dashboard Maker-win32-x64</code> folder.',
+            'Wait for the window to finish painting.',
+            'Read the window title bar and the header.',
+            'Look at the left sidebar and the connection badge at the top right.',
+          ],
+          expects: [
+            'A single window opens and stays open; nothing flashes blank or white.',
+            'The header reads <strong>HA Visual Dashboard Maker</strong>.',
+            'The welcome screen offers <strong>New Dashboard</strong>, <strong>Open Local File</strong> and <strong>Browse HA Dashboards</strong>.',
+            'The <strong>Card Palette</strong> sidebar is present on the left.',
+            'The badge at the top right reads <strong>Not Connected</strong>.',
+          ],
+        },
+        {
+          id: 'SHELL-02',
+          name: 'The application menu exposes every top-level operation',
+          type: 'interaction',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/menu.spec.ts</code> asserts the File menu carries an "Export for Home Assistant..." item wired to its own channel, and that Save and Save As... stay distinct raw actions. It builds the menu in memory; it never opens a real native menu in a packaged window.',
+          steps: [
+            'Open the File menu and read every item.',
+            'Open the Edit, View, Window and Help menus in turn.',
+            'In the File menu, hover Recent Files.',
+            'Dismiss the menu with Esc.',
+          ],
+          expects: [
+            'File contains: Open Dashboard..., Save, Save As..., Export for Home Assistant..., Version Control..., Recent Files, and a quit or close item.',
+            'Edit contains Undo, Redo, Cut, Copy, Paste.',
+            'View contains Reload, Toggle Developer Tools, the zoom items and Toggle Theme.',
+            'Help contains Documentation, View on GitHub, Report Issue, About.',
+            'Recent Files shows either previous files or a disabled "No recent files".',
+            'Every menu opens and dismisses without the window freezing.',
+          ],
+        },
+        {
+          id: 'SHELL-03',
+          name: 'Theme toggle switches the interface and survives a restart',
+          type: 'edge',
+          auto_covered: false,
+          steps: [
+            'Note whether the interface is currently light or dark.',
+            'Press <strong>Ctrl+T</strong>.',
+            'Read the confirmation message that appears.',
+            'Press Ctrl+T twice more, so a theme change is the last thing you did.',
+            'Close the application completely and relaunch <code>HA Visual Dashboard Maker.exe</code>.',
+          ],
+          expects: [
+            'The interface switches between light and dark on each press, immediately.',
+            'A message names the theme that was switched to.',
+            'After relaunching, the application opens in the theme that was active when you closed it.',
+          ],
+        },
+        {
+          id: 'SHELL-04',
+          name: 'The Settings dialog opens and all three tabs render',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/settings.spec.ts</code> drives the settings surface and its persistence against a dev build. It cannot tell you whether the controls are legible, whether the dialog fits the packaged window, or whether Copy Diagnostics actually reaches your clipboard.',
+          steps: [
+            'Click the gear icon at the top right of the header.',
+            'Read the <strong>Appearance</strong> tab.',
+            'Switch to <strong>Connection</strong>, then to <strong>Diagnostics</strong>.',
+            'Change Logging Level to <code>Debug</code>.',
+            'Click Copy Diagnostics, then paste into any text field in the app (the Card Palette search box will do) to see what was copied. Clear it afterwards.',
+            'Close the dialog, re-open it, and return to Diagnostics.',
+          ],
+          expects: [
+            'The dialog opens on Appearance and all three tabs are reachable.',
+            'Diagnostics shows Logging Level, Copy Diagnostics, a verbose debug overlay toggle, Haptic Feedback and UI Sounds controls.',
+            'Copy Diagnostics places readable diagnostic text on the clipboard.',
+            'On re-opening, Logging Level still reads <code>Debug</code> — the setting persisted.',
+            'No control is clipped or cut off by the dialog edge.',
+          ],
+        },
+        {
+          id: 'FILE-01',
+          name: 'Create a blank dashboard',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/dashboard-operations.spec.ts</code> covers dashboard creation and the store state that follows. It cannot judge whether the resulting canvas is a usable starting point for a person.',
+          steps: [
+            'Click <strong>New Dashboard</strong> on the welcome screen.',
+            'In the New Dashboard dialog, click <strong>Blank Dashboard</strong>.',
+            'Look at the canvas area and the view tab strip.',
+            'Read the heading above the canvas.',
+          ],
+          expects: [
+            'The dialog offers four choices: Blank Dashboard, Sections View, From Template, From Entity Type.',
+            'Choosing Blank Dashboard closes the dialog and shows an empty canvas.',
+            'One view tab exists and is selected.',
+            'The toolbar now shows New, Open, Download, Edit YAML, Visual/Split, Save, Deploy, Remap and Live Preview.',
+          ],
+        },
+        {
+          id: 'FILE-02',
+          name: 'Create a Sections-view dashboard',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/sections-canvas.spec.ts</code> renders imported sections views and asserts section-addressed selection and editing. It starts from a fixture; it never creates a sections dashboard from the New Dashboard dialog.',
+          steps: [
+            'Click <strong>New</strong> in the toolbar (or New Dashboard on the welcome screen).',
+            'Click <strong>Sections View</strong>.',
+            'Look at the canvas.',
+            'Find the <strong>Columns wide</strong> control on the sections toolbar.',
+          ],
+          expects: [
+            'A sections canvas appears, visually distinct from the flat grid canvas.',
+            'At least one section is present, with a heading field and an Add section control.',
+            'The Columns wide control is present and shows a number.',
+            'Nothing on the canvas overlaps or renders on top of itself.',
+          ],
+        },
+        {
+          id: 'FILE-03',
+          name: 'Create a dashboard from a template',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/templates.spec.ts</code> now drives the real dialog: it asserts all seven shipped templates are offered by readable name and category, that loading one produces exactly the number of cards the template declares, that no two cards overlap, and that clicking two different cards re-targets the Properties panel each time. It cannot say whether the resulting layout looks like a dashboard someone would want to start from. (Round 1 cited this spec while it was three placeholder tests that never loaded a template; the round-2 coverage claim is the rewritten spec.)',
+          steps: [
+            'Click <strong>New Dashboard</strong> on the welcome screen — or <strong>New</strong> in the toolbar if a dashboard is already open — then <strong>From Template</strong>.',
+            'Pick any offered template.',
+            'Look at the cards that appear on the canvas.',
+            'Click one of them.',
+          ],
+          expects: [
+            'A list of templates is offered with readable names.',
+            'Selecting one produces a populated canvas, not an empty one.',
+            'Cards are laid out without overlapping each other.',
+            'Clicking a card selects it and the Properties panel targets that card.',
+          ],
+        },
+        {
+          id: 'FILE-04',
+          defect: 'fixed — recheck',
+          name: 'Open an existing dashboard YAML file from disk',
+          type: 'interaction',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/file-operations.spec.ts</code> covers the keyboard shortcuts and the dirty marker, but explicitly leaves the <strong>native file dialog unautomated</strong> — opening a real file through the OS picker has no automated coverage at all.',
+          steps: [
+            'Choose <strong>File &rarr; Open Dashboard...</strong> (or press Ctrl+O).',
+            'In the native file picker, navigate to a dashboard <code>.yaml</code> file and open it.',
+            'Read the heading and the path line beneath it.',
+            'Look at the view tabs and the canvas.',
+          ],
+          expects: [
+            'A native OS file dialog opens and accepts .yaml / .yml.',
+            'The dashboard loads; the heading shows its title and the line beneath shows the file path you chose.',
+            'Every view in the file appears as a tab.',
+            'Cards render on the canvas rather than as error tiles.',
+          ],
+        },
+        {
+          id: 'FILE-05',
+          name: 'Save writes the file, clears the dirty marker and leaves a backup',
+          type: 'edge',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/save-and-backup.spec.ts</code> drives all four expectations against the bytes on disk, from the <strong>toolbar button</strong>, the <strong>menu</strong> and <strong>Ctrl+S</strong> separately, and asserts the backup holds the <em>previous</em> content. Round 1&rsquo;s reported symptom (&ldquo;No dashboard loaded to save&rdquo;) was the stale-menu-closure defect fixed in PR #90; it no longer reproduces on any of the three controls. The native <strong>File &rarr; Open Dashboard...</strong> dialog in step 5 is still unautomated, so re-opening through the OS picker remains a human-only check.',
+          steps: [
+            'With a file-backed dashboard open, drag any card to a different position.',
+            'Look at the heading — note the orange asterisk — and that <strong>Save</strong> is now enabled.',
+            'Click <strong>Save</strong> in the toolbar. (Also try <strong>File &rarr; Save</strong> and Ctrl+S — these are three separate wirings.)',
+            'Read the confirmation message and look at the heading again.',
+            'Choose File &rarr; Open Dashboard... and re-open the same file.',
+          ],
+          expects: [
+            'The asterisk appears as soon as the dashboard is modified, and Save becomes enabled.',
+            'Saving reports success and the asterisk disappears.',
+            'Re-opening the file shows the moved card in its <strong>new</strong> position — the change was actually written.',
+            'A backup of the previous content exists in a <strong>hidden <code>.backup</code> folder beside the file</strong>, named <code>&lt;filename&gt;.&lt;timestamp&gt;.backup</code>, and the save message says so. <strong>On Windows you must enable &ldquo;Hidden items&rdquo; in Explorer to see it.</strong> Only the newest 5 are kept. If the file already existed and no backup was created, that is data-safety-relevant: mark Fail and note it. (A <em>first</em> save of a brand-new file correctly makes no backup — there is nothing to preserve — and the message does not claim one.)',
+          ],
+        },
+        {
+          id: 'FILE-06',
+          name: 'Save As... writes a new file and it appears in Recent Files',
+          type: 'interaction',
+          auto_covered: false,
+          steps: [
+            'Choose <strong>File &rarr; Save As...</strong> (or Ctrl+Shift+S).',
+            'In the native dialog, save to a new filename such as <code>uat-scratch.yaml</code>.',
+            'Read the path line beneath the dashboard heading.',
+            'Open the File &rarr; Recent Files submenu.',
+            'Open a different dashboard, then return via Recent Files &rarr; uat-scratch.yaml.',
+          ],
+          expects: [
+            'The native save dialog opens and accepts the new name.',
+            'After saving, the path line shows the <strong>new</strong> path, not the old one.',
+            'uat-scratch.yaml appears in Recent Files.',
+            'Re-opening it from Recent Files loads the same dashboard.',
+          ],
+        },
+        {
+          id: 'CANVAS-01',
+          name: 'The Card Palette lists, categorises and searches the card types',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/card-palette.spec.ts</code> proves the palette renders its categories and filters on search. It cannot tell you whether a card description makes sense to someone who has not read the source.',
+          steps: [
+            'Look at the Card Palette sidebar and expand each category in turn.',
+            'Type <code>button</code> into "Search cards...".',
+            'Clear the search and type <code>zzzz</code>.',
+            'Clear the search again and hover any card to read its tooltip.',
+            'Find a HACS card — for example <strong>Button Card</strong>, <strong>Mushroom Light</strong> or <strong>ApexCharts</strong> — and look at how the palette marks it as a custom card.',
+          ],
+          expects: [
+            'Five categories are present: Layout, Sensors &amp; Display, Controls, Media, Information.',
+            '⭐ Cards are filed by <em>what they do</em>, not by where they came from. There is no "Custom Cards" category — a custom card sits with the built-in cards that do the same job, and carries a <strong>Custom</strong> badge instead.',
+            '⭐ No single category holds most of the palette; the counts on the category headers are of comparable size rather than one bucket holding the majority.',
+            'Searching <code>button</code> narrows the list to button-like cards.',
+            'Searching <code>zzzz</code> yields an empty result without an error or a blank sidebar.',
+            'Tooltips describe what the card is, in plain language.',
+          ],
+        },
+        {
+          id: 'CANVAS-02',
+          name: 'Add a Button card and give it an entity',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/properties-panel.spec.ts</code> proves a form edit reaches the card model and the YAML. It cannot judge whether the card <em>looks</em> like a button card on the canvas once configured.',
+          steps: [
+            'From <strong>Controls</strong> in the palette, add the <strong>Button</strong> card to the canvas.',
+            'Click the new card to select it.',
+            'In the Properties panel Form tab, set <strong>Entity</strong> to any entity id, for example <code>light.kitchen</code>.',
+            "Set the card's <strong>Name</strong> to <code>UAT Button</code>.",
+            'Look at the card on the canvas.',
+          ],
+          expects: [
+            'The card appears on the canvas immediately when added.',
+            'Selecting it targets the Properties panel at that card.',
+            'After setting the entity and name, the canvas card shows <code>UAT Button</code>.',
+            'The card renders as a button — an icon and a label — not as an error tile or an empty box.',
+          ],
+        },
+        {
+          id: 'CANVAS-03',
+          name: 'Drag a card to a new position and the position sticks',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/layout.spec.ts</code> asserts the grid geometry the store records after a programmatic layout change. It cannot tell you whether dragging with a mouse feels right, or whether the card lands where you dropped it.',
+          steps: [
+            'Drag a card from its position to an empty area of the grid.',
+            'Release, and watch where the card settles.',
+            'Drag a second card so it would overlap the first.',
+            'Switch to another view tab and back.',
+          ],
+          expects: [
+            'The card follows the cursor and drops where you released it.',
+            'Cards reflow rather than stacking on top of one another.',
+            'No card is left half-off the canvas or behind another.',
+            'Returning to the view shows both cards in their new positions.',
+          ],
+        },
+        {
+          id: 'CANVAS-04',
+          name: 'Resize a card',
+          type: 'edge',
+          auto_covered: false,
+          steps: [
+            'Hover the bottom-right corner of a card until a resize handle appears.',
+            'Drag it to make the card roughly twice as wide, then release.',
+            "Look at the card's content.",
+            'Drag the same handle to make the card very small.',
+          ],
+          expects: [
+            'A resize handle is discoverable by hovering.',
+            'The card grows and shrinks as you drag, and other cards reflow around it.',
+            'Card content reflows to the new size rather than being clipped or overflowing.',
+            'At a very small size the card degrades gracefully — no content escapes its border.',
+          ],
+        },
+        {
+          id: 'CANVAS-05',
+          name: 'Selecting a card targets the Properties panel at it',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/integration/selection-history.spec.ts</code> asserts selection is tracked correctly and does not pollute the undo history. It cannot judge whether the panel that appears is the <em>right</em> panel for the card you clicked.',
+          steps: [
+            'Click a Button card and read the Properties panel heading and fields.',
+            'Click a card of a different type — a Gauge or a Markdown card.',
+            'Read the panel again.',
+            'Click an empty area of the canvas.',
+          ],
+          expects: [
+            'The panel changes to match the selected card each time.',
+            'The fields offered are appropriate to that card type, not a generic set.',
+            "The previously selected card's values do not linger in the new card's fields.",
+            'Clicking empty canvas deselects, and the panel reflects that.',
+          ],
+        },
+        {
+          id: 'CANVAS-06',
+          name: 'Delete a card from the right-click context menu',
+          type: 'edge',
+          auto_covered: false,
+          steps: [
+            'Right-click a card on the canvas.',
+            'Read the menu items offered.',
+            'Choose <strong>Delete</strong>.',
+            'Look at the canvas.',
+          ],
+          expects: [
+            'The context menu offers Cut, Copy, Paste and Delete.',
+            'Delete removes only the card you right-clicked.',
+            'Remaining cards stay where they were — deleting one does not scramble the layout.',
+            'The dashboard is marked modified (asterisk in the heading).',
+          ],
+        },
+        {
+          id: 'CANVAS-07',
+          name: 'Undo and redo restore in single, predictable steps',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/integration/selection-history.spec.ts</code> proves the store records one history entry per real change, and that merely selecting a card records none. It cannot tell you how many Ctrl+Z presses it <em>feels</em> like it takes.',
+          steps: [
+            'Move a card. Add a card. Delete a different card. Note the order.',
+            'Press Ctrl+Z once and look at the canvas.',
+            'Press Ctrl+Z twice more, checking the canvas after each press.',
+            'Press Ctrl+Y three times, checking after each.',
+            'Click a card, click empty canvas, click another card, then press Ctrl+Z once.',
+          ],
+          expects: [
+            'Each Ctrl+Z reverses exactly one of your three actions, in reverse order.',
+            'Three presses return the dashboard to its original state; three redo presses restore it fully.',
+            'The last step undoes your last <strong>edit</strong>, not a selection — clicking around does not consume undo steps.',
+            'The Undo and Redo toolbar buttons disable when there is nothing left to do.',
+          ],
+        },
+        {
+          id: 'CLIP-01',
+          name: 'Copy and paste a card',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/bulk-operations.spec.ts</code> covers the bulk copy, cut-move and delete flows through the DSL. It cannot tell you whether the pasted card lands somewhere sensible on screen.',
+          steps: [
+            'Select a card you have configured (name, entity).',
+            'Right-click it and choose <strong>Copy</strong>.',
+            'Right-click empty canvas and choose <strong>Paste</strong>.',
+            'Compare the two cards.',
+          ],
+          expects: [
+            'A second card appears, carrying the same configuration.',
+            'It lands in a visible free position, not underneath the original.',
+            'Both cards render correctly.',
+            'The dashboard is marked modified.',
+          ],
+        },
+        {
+          id: 'CLIP-02',
+          defect: 're-marked Pass — the AV alert was not a clipboard defect',
+          name: 'A pasted card is genuinely independent of its source',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/card-clone.spec.ts</code> proves the clipboard transforms deep-clone nested branches, and carries a characterisation block demonstrating that the previous shallow spread <strong>aliased</strong> them. It proves the transform in isolation; you are checking the guarantee survives the whole running application — copy, paste, store, form and YAML.',
+          steps: [
+            'Select the <strong>pasted</strong> copy from CLIP-01.',
+            'Change its Name to <code>UAT Copy Edited</code>.',
+            'In the Properties panel, change something <strong>nested</strong> — a tap action, or a style or colour value.',
+            'Now select the <strong>original</strong> card.',
+            'Read its name and the nested value you just changed on the copy.',
+            "Click Edit YAML and read both cards' entries.",
+          ],
+          expects: [
+            'The original still shows its own name, unchanged.',
+            'The nested value on the original is <strong>unchanged</strong>. If editing the copy changed the original, that is silent cross-card corruption — mark Fail and rate it <strong>High</strong>.',
+            'The YAML shows two independent card entries, not a shared fragment.',
+            '⚠ If your antivirus warns about HAVDM writing <code>config.json</code> in <code>%APPDATA%</code>, that is <strong>not</strong> this card. The binary is unsigned, so heuristics flag it; code signing is a tracked item. Judge this card only on whether the copy and the original are independent, and mention the antivirus prompt in the notes if you see it.',
+          ],
+        },
+        {
+          id: 'CLIP-03',
+          name: 'Cut removes the original and paste re-homes it',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/bulk-operations.spec.ts</code> asserts the cut-move flow through the DSL. It cannot tell you whether a card ever visibly disappears and fails to come back.',
+          steps: [
+            'Note the appearance of a specific card.',
+            'Right-click it and choose <strong>Cut</strong>. Confirm it has left the canvas.',
+            'Right-click an empty area and choose <strong>Paste</strong>.',
+            'Compare the pasted card to what you noted in step 1.',
+            'Cut another card, then press Ctrl+Z instead of pasting.',
+          ],
+          expects: [
+            'The card disappears on Cut, and Paste brings it back with its configuration intact.',
+            'At no point does a card vanish with no way to get it back. If a cut card cannot be recovered, that is data loss — <strong>High</strong>.',
+            'Ctrl+Z after a cut also restores the card.',
+          ],
+        },
+        {
+          id: 'CLIP-04',
+          defect: 'fixed — recheck',
+          name: 'Multi-select and bulk property edit',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/integration/bulk-operations.spec.ts</code> proves a bulk property edit reaches every selected card and preserves undo granularity. It cannot tell you whether the multi-selection is <em>visible</em> — whether you can see what you are about to change.',
+          steps: [
+            'Click the first card, then Ctrl+Click the second and third.',
+            'Look at the canvas — how are the selected cards indicated?',
+            'Read the Properties panel heading.',
+            'Change one shared property, for example an icon or a colour.',
+            'Look at all three cards.',
+          ],
+          expects: [
+            'All three cards are visibly marked as selected — you can tell at a glance.',
+            'The Properties panel indicates it is editing multiple cards.',
+            'The change applies to <strong>all three</strong>, not just the last-clicked one.',
+            'Cards that were not selected are untouched.',
+          ],
+        },
+        {
+          id: 'CLIP-05',
+          defect: 'was skipped — now runnable',
+          name: 'A bulk edit is a single undo step, and the form is not stale after it',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/integration/bulk-operations.spec.ts</code> asserts the store records one history entry per bulk edit — a spec that sat as fixme for months on a belief that turned out to be wrong twice over. It asserts the store; you are asserting the keyboard and the form.',
+          steps: [
+            'With the bulk edit from CLIP-04 applied, press Ctrl+Z <strong>once</strong>.',
+            'Look at all three cards.',
+            'Read the Properties panel <strong>without clicking anything else</strong>.',
+            'Press Ctrl+Y once.',
+          ],
+          expects: [
+            'One press reverts <strong>all three</strong> cards together. If it takes three presses, mark Fail — <strong>Medium</strong>.',
+            'The Properties panel shows the <strong>reverted</strong> values, not the values you typed. A form still showing the edited value after an undo is the stale-form defect — <strong>Medium</strong>.',
+            'One redo press reapplies the edit to all three.',
+          ],
+        },
+        {
+          id: 'CLIP-06',
+          name: 'Paste a card into a different view',
+          type: 'edge',
+          auto_covered: false,
+          steps: [
+            'On view 1, select a configured card and Copy it.',
+            'Switch to view 2.',
+            'Right-click empty canvas and choose Paste.',
+            'Switch back to view 1.',
+            'Edit the name of the card on view 2, then check view 1 again.',
+          ],
+          expects: [
+            'The card appears on view 2 with its configuration intact.',
+            'The original is still on view 1 — copy does not move it.',
+            'Editing the view-2 copy leaves the view-1 original unchanged.',
+            'Both views render correctly when switched between.',
+          ],
+        },
+        {
+          id: 'PROPS-01',
+          name: 'Form edits reach the card immediately, without stalling the app',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/properties-panel.spec.ts</code> proves a form field change propagates to the card model. It cannot tell you whether the canvas repaints promptly or whether the app stalls while you type — the blank-app render-loop defect class.',
+          steps: [
+            'Select a Button card.',
+            'Type a new <strong>Name</strong> and watch the canvas as you type.',
+            'Change the <strong>Icon</strong> to <code>mdi:lightbulb</code>.',
+            'Change a colour value.',
+            'Keep typing in a text field for several seconds.',
+          ],
+          expects: [
+            'The canvas card updates to match, without needing a save or a refresh.',
+            'The icon changes to the one you chose.',
+            'The application stays responsive while you type — no freeze, no blank render. A blank canvas here is <strong>High</strong>.',
+          ],
+        },
+        {
+          id: 'PROPS-02',
+          name: 'The Properties panel YAML tab shows and round-trips the card',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/yaml-service.spec.ts</code> proves card-to-YAML and YAML-to-card serialisation. It works on objects; you are checking the editor a person actually uses.',
+          steps: [
+            'With a configured card selected, open the Properties panel <strong>YAML</strong> tab.',
+            'Read the YAML and compare it to what you set in the Form tab.',
+            'Change one value directly in the YAML.',
+            'Return to the <strong>Form</strong> tab, then look at the canvas card.',
+          ],
+          expects: [
+            'The YAML reflects every property you set in the form.',
+            'No unexplained HAVDM-internal key appears — or if internal keys are shown here, they are clearly marked as HAVDM-only.',
+            'Editing the YAML updates the form and the canvas.',
+            'The two tabs never disagree about the card.',
+          ],
+        },
+        {
+          id: 'PROPS-03',
+          defect: 'fixed — recheck',
+          name: 'The entity picker searches and completes real entity ids',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/EntityPicker.offline.spec.tsx</code> proves source resolution across live, cached and <strong>never-connected</strong> states, and now proves that with no connection and no cache the field is a real text input that accepts a hand-typed entity id. <code>tests/e2e/entity-picker-sources.spec.ts</code> drives the same through the renderer. This card previously cited <code>entityPickerSource.spec.ts</code> and conceded only that the specs "cannot tell you whether typing into it feels usable" — the real gap was narrower and worse: a sibling spec asserted the "Not Connected" hint APPEARS with an empty cache and passed for the whole life of the defect, because the hint was never the problem. One layer down, that branch rendered an empty Select with no options and no search, so a never-connected user could not enter an id at all. A spec that asserts a message beside a dead end certifies the message and says nothing about the dead end.',
+          steps: [
+            'Select a card with an <strong>Entity</strong> field.',
+            'Click the field and type <code>light</code>.',
+            'Read the suggestions offered, and pick one from the list.',
+            'Clear the field and type a full entity id that does not exist, e.g. <code>sensor.definitely_not_real</code>.',
+            'Now try it with <strong>no Home Assistant connection at all</strong> — ideally on a profile that has never connected, so there is no cached entity list either. Type <code>sensor.hand_typed_entity</code> into the field.',
+          ],
+          expects: [
+            'Typing filters the suggestions as you go, and the words may be typed in <strong>any order</strong> — "battery kia" finds "Kia EV6 Battery Level".',
+            'A suggestion can be chosen with the mouse or the keyboard, and the chosen id reaches the card.',
+            'A non-existent id is <strong>accepted</strong> — HAVDM is permissive when not connected — but is marked or warned about rather than silently treated as valid.',
+            'With no connection <strong>and</strong> no cached entities, the field is still <strong>typable</strong> and says plainly that it cannot validate. An empty, un-typable dropdown is a <strong>fail</strong> — it makes this card\'s own "works both connected and not" pre-condition impossible to satisfy.',
+          ],
+        },
+        {
+          id: 'PROPS-04',
+          name: 'Configure a tap action',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/smart-actions.spec.ts</code> drives the manual pickers from the form and asserts the YAML bytes; <code>tests/unit/CardActionControls.spec.tsx</code> pins the option list, the adaptive sub-fields and the sub-field pruning; <code>tests/unit/smartActions.spec.ts</code> pins the resolution precedence. None of them can judge whether the options presented make sense to a dashboard author.',
+          steps: [
+            '⭐ <strong>No Home Assistant connection is required for this card.</strong>',
+            'Select a Button card and find the <strong>Actions</strong> section in the Properties panel.',
+            'Switch <strong>Use Smart Defaults</strong> <strong>off</strong> — the manual Tap / Hold / Double-Tap pickers appear beneath it.',
+            'Read the options offered on <strong>Tap Action</strong>.',
+            'Choose <strong>Toggle</strong>, and check the YAML tab.',
+            'Change it to <strong>Navigate</strong> and look at what additional fields appear.',
+            'Change it to <strong>Call Service</strong>.',
+            'Change it back to <strong>Not set (use Smart Defaults)</strong>.',
+          ],
+          expects: [
+            'With Smart Defaults off, three pickers are offered: Tap, Hold and Double-Tap.',
+            'Options include None, More Info, Toggle, Call Service, Navigate, URL, Popup.',
+            'Choosing Toggle writes a toggle tap action into the YAML.',
+            'Navigate reveals a navigation-path field; Call Service reveals a service field. The form adapts to the choice.',
+            'Changing the action type does <strong>not</strong> leave the previous type&rsquo;s field behind in the YAML — switching Navigate to Call Service drops <code>navigation_path</code>.',
+            'Choosing <strong>Not set</strong> removes the action from the YAML entirely, so Smart Defaults can apply again. The first choice is not a one-way door.',
+            'No option leaves the form half-configured with no way to complete it.',
+          ],
+        },
+        {
+          id: 'PROPS-05',
+          name: 'Build a conditional-visibility rule and see it previewed',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/conditional-visibility.spec.ts</code> proves a state-based rule applies, updates live and persists to YAML; <code>tests/unit/conditionalVisibility.spec.ts</code> covers the rule logic. Neither can judge whether the rule builder is comprehensible. &#9888; <strong>Round 1&rsquo;s coverage claim was FALSE and is corrected here:</strong> that spec assigns an entity to the card before opening the controls, so it <strong>manufactured the exact precondition the defect depended on</strong> and could never have caught it &mdash; the controls were hidden outright on a card with no entity. <code>tests/e2e/round1-final-honesty.spec.ts</code> now covers the no-entity case and choosing a condition entity with <strong>no HA connection</strong>.',
+          steps: [
+            'Add a <strong>Button</strong> card and select it <strong>without setting an entity</strong>, then find the conditional-visibility controls. They must be present — a visibility rule is about some <em>other</em> entity&rsquo;s state, so the card needs no entity of its own.',
+            'Add a root condition and set it to a state condition on any entity, e.g. <code>light.kitchen</code> is <code>on</code>.',
+            'Read the preview area.',
+            'Add a <strong>group</strong> with a second condition inside it.',
+            "Check the card's YAML.",
+          ],
+          expects: [
+            'A condition can be added, configured and removed without the panel breaking.',
+            'The preview states plainly whether the card would currently be visible.',
+            'Nested groups are visually distinguishable from root-level conditions.',
+            "The YAML carries the condition in Home Assistant's real <code>visibility</code> form.",
+          ],
+        },
+        {
+          id: 'PROPS-06',
+          name: 'Card spacing and layout gap controls',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/spacing.spec.ts</code> and <code>tests/unit/card-spacing.spec.ts</code> prove the spacing values reach the config. They cannot tell you whether the spacing you chose is the spacing you see.',
+          steps: [
+            'Add a <strong>Vertical Stack</strong> card and put two cards inside it.',
+            'Select the stack and find the layout gap control.',
+            'Choose a preset gap and watch the canvas.',
+            'Switch to the custom gap field and enter a clearly different value, e.g. <code>40px</code>.',
+            'Add a <strong>Grid</strong> card and set its row and column gaps separately.',
+          ],
+          expects: [
+            'The preset gap visibly changes the spacing between the nested cards.',
+            'A custom value takes effect and is visibly different from the preset.',
+            'Grid row and column gaps can be set independently and both take effect.',
+            'Spacing on the canvas is proportionate to the value you entered.',
+          ],
+        },
+        {
+          id: 'PROPS-07',
+          defect: 'untested in round 2 — must be run',
+          name: 'The properties form is not stale after an undo',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            "The unskipped bulk-operations integration test in <code>tests/integration/bulk-operations.spec.ts</code> covers exactly this class: antd's form setFieldsValue <strong>merges</strong>, so a key the reverted card no longer has was once never cleared. That spec covers the bulk path; you are checking the single-card path a person uses most.",
+          steps: [
+            'Select a Button card that has <strong>no</strong> name set.',
+            'Type <code>Temporary Name</code> into the Name field.',
+            'Press Ctrl+Z.',
+            '<strong>Without clicking anything else</strong>, read the Name field.',
+            'Click a different card, then click back to the first one and read Name again.',
+          ],
+          expects: [
+            'After the undo, the Name field is <strong>empty</strong> — the value you typed is gone from the form, not just from the card. A form still showing <code>Temporary Name</code> is the stale-form defect — <strong>Medium</strong>.',
+            'The canvas card also shows no name.',
+            'Clicking away and back shows the same (empty) value.',
+          ],
+        },
+        {
+          id: 'VIEWS-01',
+          name: 'Add a view',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/view-management.spec.ts</code> covers view creation and switching. It cannot tell you whether the new tab is usable or where focus lands.',
+          steps: [
+            'Click <strong>Add view</strong> at the right of the view tab strip.',
+            'Look at the tab strip.',
+            'Add a card to the new view.',
+            'Switch back to the first view and then forward again.',
+          ],
+          expects: [
+            'A new tab appears and becomes the active view.',
+            "The new view's canvas is empty and ready for cards.",
+            'Cards added to it stay on it — they do not appear on other views.',
+            "Switching between views is immediate and keeps each view's contents.",
+          ],
+        },
+        {
+          id: 'VIEWS-02',
+          name: "Edit a view's title, path and icon — and re-opening shows current values",
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/view-authoring.spec.ts</code> proves view metadata edits persist. It cannot tell you whether re-opening the dialog shows current values — the defect class that bit this dialog before.',
+          steps: [
+            'Select a view and click <strong>Edit view</strong>.',
+            'Set Title to <code>UAT View</code>, Path to <code>uat-view</code>, Icon to <code>mdi:home</code>.',
+            'Click <strong>Save</strong>, then look at the view tab.',
+            'Click <strong>Edit view</strong> again and read all three fields.',
+            'Change the title again, save, and re-open once more.',
+          ],
+          expects: [
+            'The tab label updates to <code>UAT View</code>.',
+            'Re-opening shows <code>UAT View</code>, <code>uat-view</code> and <code>mdi:home</code> — the <strong>current</strong> values, not the values from when the dialog first opened. Stale values here are <strong>Medium</strong>.',
+            'The second edit is reflected on the third opening too.',
+          ],
+        },
+        {
+          id: 'VIEWS-03',
+          name: "Change a view's type, and see the warning before it happens",
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/view-type-authoring.spec.ts</code> covers view-type changes and the conversion warning. It cannot judge whether the warning is understandable enough to stop someone losing work.',
+          steps: [
+            'Open <strong>Edit view</strong> on a view that has cards.',
+            'Read the <strong>Type</strong> options offered.',
+            'Choose a different view type and read any warning shown <strong>before</strong> you save.',
+            'Save, then look at the canvas.',
+            'Press Ctrl+Z.',
+          ],
+          expects: [
+            "The type list offers Home Assistant's real view types plus the layout-card grid option.",
+            'If the change is lossy, a warning says so <strong>before</strong> saving, in plain language a non-expert would follow.',
+            'After saving, the cards are still present — no card disappears silently. Cards lost without warning is <strong>High</strong>.',
+            'Undo restores the previous view type and layout.',
+          ],
+        },
+        {
+          id: 'VIEWS-04',
+          name: 'Author a sections view — add, rename, reorder, delete',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/sections-canvas.spec.ts</code> proves section-addressed selection, adding palette cards into the selected section, multi-select delete, and cut/paste between sections. It cannot tell you whether dragging a section by its handle works with a real mouse.',
+          steps: [
+            'On a sections dashboard, click <strong>Add section</strong>.',
+            "Type <code>Living Room</code> into the new section's heading field.",
+            'Add a card into that section from the palette.',
+            'Drag the section by its reorder handle to a different position.',
+            'Add a second section, then delete the first with its delete control.',
+          ],
+          expects: [
+            'Sections can be added, and each has its own heading field.',
+            'A card added while a section is selected lands <strong>in that section</strong>, not elsewhere.',
+            'Dragging by the handle reorders sections, and the cards travel with them.',
+            'Deleting a section removes it and its cards, and does not disturb other sections.',
+          ],
+        },
+        {
+          id: 'VIEWS-05',
+          defect: 'fixed — recheck',
+          name: 'Resize a card inside a section',
+          type: 'edge',
+          auto_covered: false,
+          steps: [
+            '⭐ <strong>Without selecting anything first</strong>, hover the right edge of a card inside a section until a width handle appears. Round 2 failed here: the handle did not exist in the DOM at all until the card was selected, so it could not be discovered by hovering.',
+            'Drag it wider, then release.',
+            'Hover the bottom edge and drag the card taller.',
+            "Change the section's <strong>Columns wide</strong> value.",
+          ],
+          expects: [
+            'Width and height handles are separately discoverable <strong>by hovering an unselected card</strong> — you should not have to select it first, or know they are there.',
+            "Resizing snaps to the section's column grid rather than to arbitrary pixels.",
+            'Other cards in the section reflow around the resized card.',
+            'Changing Columns wide re-lays-out the section without losing any card.',
+          ],
+        },
+        {
+          id: 'VIEWS-06',
+          name: 'Convert an ordinary view into a sections view, and be told what was not carried over',
+          type: 'fidelity',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/sectionsLayout.spec.ts</code> proves the sections geometry model. The known limitation is that convert-to-sections does <strong>not</strong> translate the original grid geometry — you are checking that HAVDM is honest about that rather than pretending the layout survived. &#9888;&#9888; <strong>ROUND-1 CORRECTION: step 2 named a control that does not exist here.</strong> The &ldquo;Convert to Sections view&rdquo; banner on the canvas appears <strong>only when the view is EMPTY</strong>, so on a populated view there was nothing to click. Converting a populated view is done through <strong>Edit view &rarr; Type &rarr; Sections</strong>, which is the only path on which geometry is actually lost. The dialog warns before you save; round 1&rsquo;s real gap was that nothing restated it afterwards. Covered by <code>tests/e2e/round1-final-honesty.spec.ts</code>.',
+          steps: [
+            'On a flat view with several positioned cards, note where each card sits.',
+            'Open <strong>Edit view</strong>, change <strong>Type</strong> to <strong>Sections</strong>, and read the warning shown before you save.',
+            'Save, then read the confirmation message.',
+            'Look at the resulting sections layout.',
+            'Press Ctrl+Z.',
+          ],
+          expects: [
+            'Every card from the flat view is present after the conversion — <strong>none is lost</strong>. A lost card is <strong>High</strong>.',
+            'The layout is <strong>not</strong> expected to be preserved exactly. What is expected is that HAVDM says so <strong>twice</strong>: the dialog warns before you save, and the confirmation afterwards names how many cards moved and that their positions were not carried over, pointing at Ctrl+Z. Silent geometric loss with no notice is <strong>Medium</strong>.',
+            'Undo restores the original flat view and its positions.',
+          ],
+        },
+        {
+          id: 'VIEWS-07',
+          name: 'Mark a view as a subview with a back path',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/viewsLayout.spec.ts</code> and the view-key export contract prove <code>subview</code> and <code>back_path</code> survive to the exported YAML — they were silently dropped before slice F. You are checking the authoring surface, not the contract.',
+          steps: [
+            'Open <strong>Edit view</strong> on the second view.',
+            'Enable the <strong>subview</strong> toggle.',
+            'Set <strong>Back path</strong> to <code>/lovelace/0</code>.',
+            'Save, then re-open Edit view.',
+            'Click <strong>Edit YAML</strong> on the toolbar and find that view.',
+          ],
+          expects: [
+            'The subview toggle and back-path field are both present and editable.',
+            'Re-opening shows both values as you set them.',
+            'The dashboard YAML carries <code>subview: true</code> and the back path for that view.',
+            'Neither key is silently dropped. A dropped key here is <strong>Medium</strong> — it is exactly the data-loss class slice F removed.',
+          ],
+        },
+        {
+          id: 'VIEWS-08',
+          name: 'The layout-card grid editor accepts raw CSS grid values verbatim',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/layout-card-editor.spec.ts</code> proves the grid editor appears only for a real layout-card view, that edits round-trip, that converting warns first, and that re-opening shows current values. It cannot judge whether raw CSS strings are a reasonable thing to ask of a person.',
+          steps: [
+            'Open <strong>Edit view</strong> on an ordinary masonry view — confirm <strong>no</strong> grid editor is offered.',
+            'Change Type to the layout-card grid option, read the warning, and save.',
+            'Re-open Edit view — the grid editor should now be present.',
+            'Set columns to <code>repeat(3, 1fr)</code>, rows to <code>repeat(auto-fill, 56px)</code>, gap to <code>12px</code>. Save.',
+            'Re-open Edit view and read the three fields.',
+            'Enter deliberate nonsense in columns, e.g. <code>not-a-grid</code>, and save. &#9888; <strong>Accepting it verbatim with no message is a PASS.</strong> Round 1 marked this Fail for &ldquo;nonsense was accepted (no rejected message)&rdquo;, and the owner ruled that <strong>not a defect</strong>: the grid fields are raw CSS passed through to Home Assistant untouched, and silently rewriting what you typed is the thing this card guards against. Mark Fail only if the value comes back <strong>changed</strong>.',
+          ],
+          expects: [
+            'The grid editor is absent for a masonry view and present for a layout-card view.',
+            'A warning appears before the type conversion.',
+            'The three values round-trip exactly as typed — <code>repeat(3, 1fr)</code> is <strong>not</strong> rewritten or normalised. Named areas and <code>1fr 2fr 1fr</code> must survive verbatim.',
+            'Nonsense input is either rejected with a clear message or accepted verbatim — but never silently rewritten into something you did not type.',
+          ],
+        },
+        {
+          id: 'YAML-01',
+          name: 'The Edit YAML dialog opens with the current dashboard',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/yaml-editor.spec.ts</code> proves the entry point exists and the editor renders. It cannot judge whether the Monaco editor is readable and scrollable at the packaged window’s real size.',
+          steps: [
+            'Click <strong>Edit YAML</strong> in the toolbar.',
+            'Read the dialog title and the editor contents.',
+            'Scroll to the bottom of the YAML.',
+            'Confirm syntax highlighting is applied.',
+            'Close the dialog without applying.',
+          ],
+          expects: [
+            'The dialog is titled <strong>Edit Dashboard YAML</strong> and shows the whole dashboard.',
+            'The YAML matches what is on the canvas — every view and card is present.',
+            'Highlighting is applied; the text is legible in the current theme.',
+            'Closing without applying leaves the canvas untouched.',
+          ],
+        },
+        {
+          id: 'YAML-02',
+          name: 'Invalid YAML is flagged and cannot be applied',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/integration/monaco-editor.spec.ts</code> and <code>tests/unit/advanced-yaml-editor.spec.ts</code> prove validation fires on bad input. They cannot tell you whether the error message helps you fix it.',
+          steps: [
+            'In the Edit YAML dialog, break the YAML — delete a colon from a key line, or add a stray <code>[</code>.',
+            'Read the validation indicator.',
+            'Try to click <strong>Apply</strong>.',
+            'Fix the YAML and read the indicator again.',
+          ],
+          expects: [
+            'An error indicator appears promptly and says what is wrong, ideally with a line number.',
+            '<strong>Apply is blocked while the YAML is invalid.</strong> If broken YAML can be applied, that is invalid config presented as valid — <strong>High</strong>.',
+            'Fixing the error clears the indicator and re-enables Apply.',
+          ],
+        },
+        {
+          id: 'YAML-03',
+          name: 'Apply &amp; Reload Canvas updates the dashboard',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/integration/yaml-operations.spec.ts</code> proves YAML parses back into the dashboard model. It cannot tell you whether the canvas actually redraws.',
+          steps: [
+            "In the Edit YAML dialog, change a card's <code>name</code> to <code>From YAML</code>.",
+            'Click <strong>Apply</strong>.',
+            'Read the confirmation prompt and confirm.',
+            'Look at the canvas.',
+            'Select the changed card and read the Properties panel.',
+          ],
+          expects: [
+            'A confirmation prompt appears before the canvas is replaced.',
+            'The canvas redraws and the card shows <code>From YAML</code>.',
+            'The Properties panel form agrees with the YAML you applied.',
+            'No other card changes.',
+          ],
+        },
+        {
+          id: 'YAML-04',
+          name: 'Split view keeps canvas and YAML in step',
+          type: 'edge',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/split-view-yaml-sync.spec.ts</code> drives the real Split mode and asserts the highlighted YAML block by <strong>line number and content</strong> — a mixed-type view highlights the right card, a top-level card never resolves to one nested inside a <code>vertical-stack</code>, focus stays on the canvas, and a palette drop reaches the YAML pane with no manual refresh. <code>tests/unit/yamlCardLocator.spec.ts</code> pins the locator and its "return nothing rather than guess" fail mode. Neither can judge whether the two panes are comfortable to work in at the packaged window size — expectation 1 is still human-only.',
+          steps: [
+            'Set the Visual/Split control to <strong>Split</strong>.',
+            'Look at the layout — canvas on one side, YAML on the other.',
+            'Select a card on the canvas and watch the YAML pane. Use a view whose cards are <strong>not all the same type</strong>, and select the <strong>second and third</strong> cards, not only the first — the round-1 defect was invisible on the first card and on any view whose cards all shared one type.',
+            'Move a card on the canvas and watch the YAML pane again. <strong>Do not click "Sync from Visual"</strong> — that button is a manual refresh, and the point of this step is that none should be needed.',
+            'Switch back to <strong>Visual</strong>.',
+          ],
+          expects: [
+            "Both panes are visible and usable at the packaged window's size.",
+            "Selecting a card highlights <strong>that card's</strong> block in the YAML pane, whatever mix of card types the view holds. A highlight left sitting on the previously-selected card is a <strong>fail</strong> — the round-1 symptom was a stale highlight, not a missing one.",
+            'Selecting a card leaves the keyboard focus on the canvas; the cursor does not jump into the YAML editor.',
+            'Moving a card updates the YAML pane <strong>without</strong> clicking "Sync from Visual".',
+            'Switching back to Visual keeps every change made in Split mode.',
+          ],
+        },
+        {
+          id: 'YAML-05',
+          defect: 'untested in round 2 — must be run',
+          name: 'Insert an entity id at the cursor from the entity browser',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/integration/yaml-entity-insert.spec.ts</code> drives both routes and asserts the id lands on the cursor\'s own line, not merely that it appears somewhere in the document. <code>tests/unit/entityInsertion.spec.ts</code> covers the refusal logic. The round-1 citation (<code>tests/integration/entity-browser.spec.ts</code>) was honest but could not fail: its one insert test places the cursor at the END of the document, where "inserted at the cursor" and "appended at the end" produce identical text. That spec is also the one load-sensitive integration spec in the suite. ROUND-1 NOTE: this card was failed with "the entity browser did not appear" and the screenshot showed the tester was in SPLIT VIEW, which had no entity-insert control at all. Split view now has one and step 6 exercises it. Do not test steps 1-5 from Split view.',
+          steps: [
+            'Open the <strong>Edit YAML</strong> dialog from the toolbar. Make sure you are in the dialog — a modal titled "Edit Dashboard YAML" — and <strong>not</strong> in Split view.',
+            '<strong>Without clicking into the editor first</strong>, click <strong>Insert Entity</strong> — the left-most button in the row at the <strong>bottom</strong> of the dialog, beside Cancel and Apply Changes. Pick any entity, then look at the YAML.',
+            "Now click into the editor and place the cursor inside a card's <code>entity:</code> value.",
+            'Click <strong>Insert Entity</strong> again.',
+            'Search for and select an entity, then look at where the id landed.',
+            "Close the dialog, set the Visual/Split control to <strong>Split</strong>, click into the YAML pane to place a cursor, and use that pane's <strong>Insert Entity</strong> button.",
+          ],
+          expects: [
+            'The entity browser opens from within the YAML dialog.',
+            "Step 2 — with no cursor ever placed, HAVDM refuses and says why (it asks you to place the cursor first) and the YAML is left completely unchanged. Silently inserting the id at the top of the document is a <strong>fail</strong>, and a worse one than doing nothing: it overwrites the dashboard's <code>title:</code> line and the result is still valid YAML, so nothing downstream flags it.",
+            'The selected id is inserted <strong>at the cursor</strong>, not appended at the end or at the top.',
+            'The YAML remains valid after the insertion.',
+            'The dialog does not lose your other edits when the browser opens and closes.',
+            'Step 6 — Split view has its own Insert Entity button and it inserts at the cursor in the YAML pane. Its absence is a <strong>fail</strong>.',
+          ],
+        },
+        {
+          id: 'EXPORT-01',
+          name: 'Export for Home Assistant writes a YAML file',
+          type: 'interaction',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/menu.spec.ts</code> proves the File menu item exists and is wired to its own channel, distinct from Save. It never opens the native save dialog or writes a file.',
+          steps: [
+            'Choose <strong>File &rarr; Export for Home Assistant...</strong>.',
+            'In the native save dialog, save as <code>uat-export.yaml</code>.',
+            'Read the confirmation message.',
+            'Load the exported file back in via File &rarr; Open Dashboard...',
+          ],
+          expects: [
+            'A native save dialog opens with a sensible default filename.',
+            'Export reports success.',
+            'The exported file loads back into HAVDM without an error.',
+            'Every view and card is present in the re-loaded dashboard.',
+          ],
+        },
+        {
+          id: 'EXPORT-02',
+          name: 'HAVDM-internal keys do not reach the exported YAML',
+          type: 'fidelity',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/haExportContract.spec.ts</code> and <code>tests/unit/exportSelfCheck.spec.ts</code> classify every card and view key as translate / strip / canvas-only, with a compile-time guard that fails the build on an unclassified key. They assert against the contract; you are reading the file a person would paste into Home Assistant.',
+          steps: [
+            'Load <code>uat-export.yaml</code> from EXPORT-01 back into HAVDM.',
+            'Open <strong>Edit YAML</strong> and read the whole document.',
+            'Search the text for <code>_havdm</code>.',
+            'Search for <code>custom:grid-layout</code> on views you did not deliberately make layout-card views.',
+          ],
+          expects: [
+            'No key beginning <code>_havdm</code> appears anywhere in the exported YAML.',
+            'No <code>_isSpacer</code> or <code>_expanderDepth</code> key appears.',
+            "HAVDM's own canvas scaffold view type does <strong>not</strong> leak — views you created normally export as ordinary Home Assistant views.",
+            'Everything remaining is a key Home Assistant would recognise.',
+          ],
+        },
+        {
+          id: 'EXPORT-03',
+          name: 'A canvas-only card becomes a "Card Not Available" placeholder on export',
+          type: 'fidelity',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/CardPalette.canvasOnly.spec.tsx</code> proves every canvas-only type is flagged in the palette — including the native-graph-card regression, not just popup-card. It cannot tell you what the <em>exported</em> file does with one.',
+          steps: [
+            'From <strong>Layout</strong> in the palette, add the <strong>Popup Card (HAVDM-only)</strong>.',
+            'Look at how the palette marked it before you added it.',
+            "Note the card's position and size on the canvas.",
+            'Choose File &rarr; Export for Home Assistant... and save as <code>uat-canvas-only.yaml</code>.',
+            'Load that file back in and find where the popup card was.',
+          ],
+          expects: [
+            'The palette marks the card as HAVDM canvas-only <strong>before</strong> you add it, with a plain-language tooltip.',
+            'The card renders on the HAVDM canvas as a design-time concept.',
+            'In the export it has become a <strong>markdown</strong> card reading "Card Not Available" — a Home Assistant native card that will actually render.',
+            'It is <strong>not</strong> exported as <code>type: spacer</code> or as <code>custom:popup-card</code>, either of which would give Home Assistant an "Unknown type encountered" error tile. That outcome is <strong>Medium</strong>.',
+            'The placeholder holds roughly the original slot, so the surrounding layout is not disturbed.',
+          ],
+        },
+        {
+          id: 'EXPORT-04',
+          name: 'The palette marks unavailable cards honestly, and still lets you author them',
+          type: 'fidelity',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/CardPalette.availability.spec.tsx</code> and <code>tests/unit/capabilityProfile.spec.ts</code> prove the availability logic and its permissive never-connected default. They cannot judge whether the marking is comprehensible to a non-expert. &#9888;&#9888; <strong>ROUND-1 CORRECTION &mdash; READ BEFORE MARKING.</strong> This card previously said &ldquo;works connected or not&rdquo;, which was <strong>wrong</strong>. With no connection HAVDM cannot know what you have installed, so by design every real card shows as available (vision answer 5). <strong>Nothing being marked &ldquo;Not Available&rdquo; while disconnected is CORRECT, not a defect.</strong> What round 1 legitimately exposed is that the palette never <em>said</em> so; it now prints a notice in its footer when HAVDM has never connected. Canvas-only cards are marked regardless of connection. Covered by <code>tests/e2e/round1-final-honesty.spec.ts</code>.',
+          steps: [
+            'Open <strong>Sensors &amp; Display</strong> in the palette. (Custom cards are filed by what they do and carry a <strong>Custom</strong> badge — there is no "Custom Cards" category.)',
+            'Hover a card marked <strong>Not Available</strong> and read the tooltip. &#9888; Requires a connection; if disconnected, read the palette footer notice instead and confirm it explains why nothing is marked.',
+            'Hover a card marked HAVDM canvas-only and read that tooltip.',
+            'Add a not-installed card to the canvas anyway.',
+            'Look for any banner or marking on the card once placed.',
+          ],
+          expects: [
+            'Not-installed and canvas-only cards are marked <strong>differently</strong> — they are different situations.',
+            "Tooltips explain in plain language, naming HACS where relevant, without requiring the reader to know HAVDM's internals.",
+            'A not-installed card can still be <strong>added and authored</strong> — HAVDM does not hard-disable it. Blocking authoring here contradicts the product vision.',
+            'Once placed, the card carries a visible "won’t render on your instance" style marking.',
+          ],
+        },
+        {
+          id: 'EXPORT-05',
+          name: 'Layout-card view keys survive the export',
+          type: 'fidelity',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/layoutCardParser.spec.ts</code> and <code>tests/unit/yaml-service.spec.ts</code> prove <code>layout</code> and <code>layout_type</code> are carried only for real layout-card view types and stripped for HAVDM’s own scaffold. You are checking the file.',
+          steps: [
+            'Open the dashboard containing the layout-card view from VIEWS-08.',
+            'Choose File &rarr; Export for Home Assistant..., save as <code>uat-layout.yaml</code>.',
+            'Load that file back into HAVDM.',
+            'Open <strong>Edit YAML</strong> and find that view.',
+            'Open <strong>Edit view</strong> on it and read the grid editor.',
+          ],
+          expects: [
+            'The exported view keeps its <code>custom:...-layout</code> type and its <code>layout</code> block.',
+            'The grid values are exactly what you typed in VIEWS-08 — <code>repeat(3, 1fr)</code> and the rest, character for character.',
+            'Ordinary views in the same file carry no <code>layout</code> block.',
+            'Re-opening the grid editor shows the same values.',
+          ],
+        },
+        {
+          id: 'EXPORT-06',
+          name: 'A full round-trip loses nothing, and a second round-trip is stable',
+          type: 'fidelity',
+          auto_covered: true,
+          auto_note:
+            "<code>tests/integration/yaml-operations.spec.ts</code> and <code>tests/unit/yaml-service.spec.ts</code> prove parse and serialise round-trip at the service level. Slice F's lesson was that a round-trip claim needs a round-trip test through the <strong>real</strong> path — this card is that test, performed by a person on the packaged app.",
+          steps: [
+            'Build or open a dashboard with at least: two views, a stack card containing two cards, a card with a tap action, and a card with a conditional-visibility rule.',
+            'Note what each of those four things is set to.',
+            'Export for Home Assistant as <code>uat-roundtrip.yaml</code>.',
+            'Close the dashboard and open <code>uat-roundtrip.yaml</code>.',
+            'Check each of the four things you noted.',
+            'Export again as <code>uat-roundtrip-2.yaml</code> and open that too.',
+          ],
+          expects: [
+            'All views and cards survive both round-trips.',
+            'The stack still contains both nested cards, in order.',
+            'The tap action is intact, and so is the visibility rule.',
+            'The second round-trip is <strong>stable</strong> — nothing further degrades. Progressive loss across round-trips is <strong>High</strong>.',
+          ],
+        },
+        {
+          id: 'THEME-01',
+          defect: 'open Low — recheck',
+          name: 'Theme Settings applies a theme and a light/dark mode',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/theme-manager.spec.ts</code> covers the import, export, load and per-view override workflows. It cannot judge whether the theme actually looks applied.',
+          steps: [
+            '⭐ <strong>No Home Assistant connection is required for this card.</strong> Themes are local content and HAVDM ships built-in themes. Connecting to HA <em>adds</em> that instance&rsquo;s themes alongside them; it is never a precondition.',
+            'Open the Theme Settings dialog — the <strong>gear icon</strong> in the header, <strong>Appearance</strong> tab.',
+            'On the <strong>Settings</strong> tab, pick a theme from <strong>Active Theme</strong>.',
+            'Switch <strong>Mode</strong> between Light and Dark.',
+            'Look at the canvas cards as you switch.',
+            'Close and re-open the dialog.',
+          ],
+          expects: [
+            'A theme can be chosen and the canvas visibly reflects it.',
+            'Light and Dark are both applied and visibly different.',
+            'Card text stays legible against card backgrounds in both modes.',
+            'Re-opening the dialog shows the theme and mode you selected.',
+          ],
+        },
+        {
+          id: 'THEME-02',
+          defect: 'accepted — confirm the limitation is marked honestly',
+          name: 'Save a named theme and load it back',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/theme-service.spec.ts</code> proves the theme storage and retrieval logic. It cannot tell you whether the manager tab is usable.',
+          steps: [
+            '⭐ <strong>No Home Assistant connection is required for this card.</strong> A built-in theme is enough to save, load and delete.',
+            'On the <strong>Manager</strong> tab, type <code>UAT Theme</code> into the save-name field and save.',
+            'Change the active theme to something clearly different.',
+            'Select <code>UAT Theme</code> in Saved Themes and load it.',
+            'Look at the canvas.',
+            'Delete <code>UAT Theme</code>.',
+          ],
+          expects: [
+            'The saved name appears in the Saved Themes list.',
+            'Loading it restores the appearance you saved.',
+            'Deleting it removes it from the list.',
+            'No confirmation step is missing before a delete that would lose a saved theme.',
+          ],
+        },
+        {
+          id: 'THEME-03',
+          name: 'Per-view theme override',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/integration/theme-integration.spec.ts</code> proves a per-view override is stored and resolved. It cannot tell you whether you can see which view is overridden.',
+          steps: [
+            '⭐ <strong>No Home Assistant connection is required for this card.</strong> Two built-in themes are enough to tell an override apart from the global theme.',
+            'Select view 1 and set a per-view theme override in Theme Settings.',
+            'Switch to view 2.',
+            'Switch back to view 1.',
+            'Clear the override on view 1.',
+          ],
+          expects: [
+            'View 1 renders with the override; view 2 renders with the global theme.',
+            'Switching between them applies the right theme each time, with no flash of the wrong one.',
+            'The dialog indicates which view currently has an override.',
+            'Clearing it returns view 1 to the global theme.',
+          ],
+        },
+        {
+          id: 'THEME-04',
+          name: 'Browse, preview and import a preset',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/preset-marketplace.spec.ts</code> covers the browse, preview and import workflow, and <code>tests/unit/preset-service.spec.ts</code> the catalog logic. Neither can judge whether a preset is worth importing once you see it.',
+          steps: [
+            '⭐ <strong>No Home Assistant connection is required for this card.</strong> The preset catalogue ships with HAVDM and is read locally.',
+            'In the <strong>main toolbar at the top of the window</strong> — <em>not</em> inside Theme Settings — click <strong>Download</strong>, or <strong>Browse HA Dashboards</strong> on the welcome screen. Then switch to the <strong>Preset Marketplace</strong> tab in the dialog that opens.',
+            'Look at the preset list.',
+            'Select a preset and read the preview.',
+            'Click the refresh control.',
+            'Import the preset and look at the canvas.',
+          ],
+          expects: [
+            'Presets are listed with readable names.',
+            'The preview shows enough to decide — a title and a representation of what you would get.',
+            'Refresh does not clear or corrupt the list.',
+            "Import adds the preset's cards without disturbing existing cards, and the result is undoable with Ctrl+Z.",
+          ],
+        },
+        {
+          id: 'VCS-01',
+          name: 'The Version Control dialog opens and explains itself',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/e2e/version-control.spec.ts</code> proves the panel is inert until opened, then offers repository selection, explains itself before a repo is chosen, closes cleanly and unmounts, and leaves the canvas and selection untouched. It cannot judge whether the explanation is convincing.',
+          steps: [
+            'Choose <strong>File &rarr; Version Control...</strong>.',
+            'Read what the panel says before you have chosen a repository.',
+            'Close the dialog.',
+            'Re-open it.',
+          ],
+          expects: [
+            'The dialog opens from the menu.',
+            'Before a repository is chosen it explains what the panel is for and offers a repository-selection control.',
+            'It states on screen that it never writes to your repository.',
+            'Closing and re-opening starts fresh rather than showing stale state.',
+            '⚠ <strong>Windows:</strong> if <code>git</code> is not on your <code>PATH</code>, the panel should say so plainly rather than erroring — HAVDM treats git-absent as a first-class state. That is a Pass, not a Fail; note it.',
+          ],
+        },
+        {
+          id: 'VCS-02',
+          defect: 'fixed — recheck',
+          name: 'Designate a repository and read its branch and status',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/integration/version-control.spec.ts</code> proves validation failures return typed errors and never reach git, and that the version-control write surface is empty. It cannot run the native folder picker.',
+          steps: [
+            'In the Version Control dialog, click the repository-selection control.',
+            '⭐ If a repository is <strong>already</strong> designated from a previous session, use the <strong>Change…</strong> button — round 2 failed because that was the one state with no route to the picker at all.',
+            'In the native folder dialog, choose a git repository directory. ⚠ Prefer a repository on a local Windows drive; one under <code>\\\\wsl.localhost</code> works but is slow.',
+            'Read the repository path, branch name and working-tree status shown.',
+            'Make a change to a file in that repository outside HAVDM, then click the refresh control.',
+          ],
+          expects: [
+            'A native folder dialog opens; only a directory can be chosen — <strong>whether or not a repository was already set</strong>.',
+            'The panel shows the repository root, the current branch, and the changed files.',
+            'Refresh picks up the change you made outside the app.',
+            'The status is accurate — it matches what the repository actually looks like.',
+          ],
+        },
+        {
+          id: 'VCS-03',
+          defect: 'was skipped — run it this round',
+          name: 'Read history and a file diff',
+          type: 'gate',
+          auto_covered: true,
+          auto_note:
+            '<code>tests/unit/version-control-service.spec.ts</code> (70 tests) proves the argv builders, the containment checks and the revision validation — most of it by asserting <strong>refusals</strong>. It never invokes git.',
+          steps: [
+            'With a dashboard file open from inside the designated repository, look at the history table.',
+            'Read a few entries — hash, author, date, message.',
+            'Look at the diff area for the currently-open file.',
+            'Select a different commit in the history.',
+          ],
+          expects: [
+            'History lists real commits from that repository in a readable form.',
+            "The diff shows the current file's changes, not another file's.",
+            'Selecting a commit updates what is shown.',
+            'Nothing hangs — if a command is slow it fails or completes; it does not leave the dialog spinning forever.',
+          ],
+        },
+        {
+          id: 'VCS-04',
+          name: 'The panel offers no way to write, and can forget the repository',
+          type: 'edge',
+          auto_covered: false,
+          steps: [
+            'Read every control in the Version Control dialog.',
+            'Look specifically for anything offering to commit, stage, push, pull, fetch, checkout, reset or discard.',
+            'Click the forget-repository control and read what the panel shows afterwards.',
+            'Close the app entirely, relaunch, and re-open Version Control.',
+          ],
+          expects: [
+            '<strong>No control writes to the repository.</strong> Any commit, push, stage or discard control present is a scope breach — mark Fail and rate it <strong>High</strong>, since it puts a user’s repository at risk.',
+            'Forgetting the repository returns the panel to its initial explain-yourself state.',
+            'After a relaunch, a repository you designated and did not forget is remembered; one you forgot is not.',
+          ],
+        },
+        {
+          id: 'HA-01',
+          name: 'Connect to Home Assistant',
+          type: 'interaction',
+          auto_covered: true,
+          needsHA: true,
+          auto_note:
+            '<code>tests/e2e/ha-connection.spec.ts</code> drives the connection dialog against a mock. <strong>No automated layer in HAVDM has ever connected to a real Home Assistant instance</strong> — this card is the first real evidence that the connection path works.',
+          steps: [
+            'Click <strong>Connect to HA</strong>.',
+            'Enter the Home Assistant URL and a long-lived access token. ⚠ If <code>ha.home.local</code> does not resolve from Windows, use <code>http://192.168.1.70:8123</code> — that is a network fact about your machine, not a HAVDM defect.',
+            'Tick the option to save the connection and name it, e.g. <code>UAT HA</code>.',
+            'Connect, and read the badge in the header.',
+            'Click <strong>Disconnect</strong>, then reconnect using the saved-connection dropdown.',
+            'Disconnect once more and try connecting with a deliberately wrong token.',
+          ],
+          expects: [
+            'The dialog accepts a URL and a token, with the token masked.',
+            'On success the badge changes to <strong>Connected</strong>. ⚠ The theme selector is present in the header whether or not you are connected (RC5 — HAVDM ships built-in themes); what changes on connect is that the instance&rsquo;s own themes join the list.',
+            'The saved connection appears in the dropdown and reconnects without retyping the token.',
+            'A wrong token produces a clear error rather than a silent failure or a hang.',
+          ],
+        },
+        {
+          id: 'HA-02',
+          defect: 'fixed — recheck',
+          name: 'Browse, search and select real entities',
+          type: 'gate',
+          auto_covered: true,
+          needsHA: true,
+          auto_note:
+            '<code>tests/integration/entity-browser.spec.ts</code> covers the browser and its insert path against fixture data, and <code>tests/integration/entity-registry-picker.spec.ts</code> now covers integration grouping, the diagnostic/config cut and its offline persistence. <code>tests/unit/haWebSocketService.registry.spec.ts</code> asserts the <code>config/entity_registry/list</code> frame itself against a payload captured from a real instance. None of them has seen a real instance’s several hundred entities. <strong>THIS CARD PASSED IN ROUND 1 AND ITS BEHAVIOUR HAS DELIBERATELY CHANGED TWICE — ONCE BEFORE THIS ROUND AND ONCE AGAIN NOW</strong>, and none of it is a regression: (a) the browser prefers the LIVE connection and falls back to the cached list, where it previously read the cache ONLY; (b) search is multi-token and order-independent; (c) <strong>NEW: the tab strip has a “Group by: Domain | Integration” switch, and entities Home Assistant marks <code>diagnostic</code> or <code>config</code> are HIDDEN BY DEFAULT behind a “Show diagnostic &amp; config” tick-box.</strong> Steps 3, 4 and 7 exercise these on purpose — judge the card against the Expected, not against how round 1 behaved.',
+          steps: [
+            'Click <strong>Entities</strong> in the header.',
+            'Read the entity count and the domain filter tabs. ⭐ Note the “Showing N of M” text beside the tick-box — on a large instance M is much larger than N.',
+            'Type <code>light</code> into the search box. Then type two words from a single entity\'s friendly name <strong>in the wrong order</strong> — e.g. for "Kia EV6 Battery Level", type <code>battery kia</code>.',
+            'Switch to a specific domain tab, e.g. <code>sensor</code>.',
+            '⭐ <strong>NEW: set <em>Group by</em> to <em>Integration</em>.</strong> Read the tab strip, then pick one integration’s tab.',
+            'Select an entity and click the select button.',
+            '⭐ <strong>NEW: tick <em>Show diagnostic &amp; config</em>, then untick it again.</strong>',
+            'Click the refresh control.',
+          ],
+          expects: [
+            'Real entities from the instance are listed, with id, friendly name, state and domain.',
+            'The count is plausible for the instance — hundreds, not a handful. ⓘ It is now SMALLER than round 1 because diagnostic and config entities are hidden by default; the “Showing N of M” text must say so rather than leaving the difference unexplained.',
+            'Search narrows the list responsively even with hundreds of rows.',
+            'Words typed in <strong>any order</strong> still find the entity — <code>battery kia</code> must match "Kia EV6 Battery Level".',
+            'Domain tabs filter correctly and show per-domain counts.',
+            '⭐ <strong>Grouping by Integration produces one tab per integration</strong>, named readably (e.g. “Bureau Of Meteorology”, not <code>bureau_of_meteorology</code>) with a count, biggest first — and the sensor haystack is visibly broken up. Selecting an integration tab shows only that integration’s entities.',
+            '⭐ <strong>Ticking “Show diagnostic &amp; config” brings the hidden entities back, and unticking hides them again.</strong> A cut you cannot reverse is a FAIL, and so is an entity that disappears without the count admitting it.',
+            'Refresh re-fetches without emptying or duplicating the list.',
+            'ⓘ Entities Home Assistant’s registry does not know about (on a typical instance <code>sun.sun</code>, <code>zone.home</code>, YAML template sensors) must STILL BE LISTED — under “Not in the entity registry” when grouped by integration. Any of them going missing is a <strong>fail</strong>.',
+          ],
+        },
+        {
+          id: 'HA-03',
+          defect: 'fixed — recheck',
+          name: 'Download an existing dashboard from Home Assistant (read-only)',
+          type: 'interaction',
+          auto_covered: true,
+          needsHA: true,
+          auto_note:
+            '<code>tests/unit/dashboardLoadDiagnostics.spec.ts</code> pins the plain-language wording of every load failure, and <code>tests/integration/dashboard-load-honesty.spec.ts</code> drives the real load seam and proves a refused dashboard reports the refusal and leaves the canvas intact. ⚠ Round-1 correction: this card previously cited <code>tests/e2e/live-preview-deploy.spec.ts</code>, which is 26 placeholder tests with zero real assertions — so HA-03 had no automated coverage while marked auto_covered. Neither new spec reads a real storage-mode dashboard; that still needs a human.',
+          steps: [
+            'Click <strong>Download</strong> (or Browse HA Dashboards).',
+            'Read the list of dashboards and their metadata.',
+            '⭐ <strong>Try the “Overview” entry tagged <em>Default</em> first.</strong> On most instances Home Assistant still generates this dashboard automatically and stores no copy, so HAVDM cannot download it — this step checks that it says so clearly.',
+            'Now choose a <strong>different</strong> dashboard and download it. <strong>Do not save, deploy or modify it.</strong>',
+            'Look at the canvas, the view tabs and the heading.',
+            'Scan the canvas for cards that failed to render.',
+          ],
+          expects: [
+            'Real dashboards from the instance are listed, with titles and any admin-only marking.',
+            '⭐ <strong>Step 3:</strong> if “Overview” cannot be downloaded, HAVDM says so in plain language — naming the dashboard, explaining that Home Assistant builds it automatically, and telling you to use <strong>“Take control”</strong> in Home Assistant first. A raw Home Assistant error such as “No config found.” is a <strong>fail</strong>. If your Overview has already been taken control of it will simply download like any other — that is also a pass.',
+            'Downloading one loads it onto the canvas.',
+            '⭐ <strong>A dashboard that cannot be loaded is never reported as loaded.</strong> A green “loaded successfully” message over an empty or unchanged canvas is <strong>High</strong>. A refused dashboard must leave whatever was already open untouched.',
+            'Cards HAVDM cannot render show a <strong>marked</strong> placeholder, not a crash and not a blank space. A blank canvas here is <strong>High</strong>.',
+            'HACS cards installed on the instance — Bubble, apexcharts, mushroom, button-card, card-mod, mini-graph-card and the rest — render as something recognisable.',
+            'Nothing is written back to Home Assistant.',
+          ],
+        },
+        {
+          id: 'HA-04',
+          defect: 'fixed — recheck; ⚠ step 1 corrected',
+          name: 'Detect and remap missing entities',
+          type: 'gate',
+          auto_covered: true,
+          needsHA: true,
+          auto_note:
+            '<code>tests/e2e/entity-remapping.spec.ts</code> and <code>tests/unit/entityRemapping.spec.ts</code> prove auto-mapping updates the YAML. They work against fixture entity lists, not a real instance’s naming. <code>tests/e2e/entity-picker-sources.spec.ts</code> proves the remap path reads the persisted offline cache and that entities present in the entity list are NOT reported missing. Round 1\'s failure had ONE root cause behind all three symptoms: the remap path was the only one of HAVDM\'s four entity pickers that never read the offline cache, so with no live connection it saw zero entities — and <code>detectMissing</code> treated an empty list as "nothing exists" rather than "I do not know what exists", so it reported EVERY referenced entity as missing, then offered "No data" as each replacement and had nothing for Auto-map to do.',
+          steps: [
+            "Open a dashboard, then edit one card's entity to a <strong>plausible rename of an entity that really exists</strong> — take an id from the entity list and alter it, e.g. append <code>_old</code>. ⚠ Do NOT invent an id in a domain your instance does not have (this instance has no <code>light</code> domain): the matcher scores on domain and name similarity, so an id that resembles nothing cannot map and the test would measure nothing.",
+            'Click <strong>Auto-map All</strong> and read the message the dialog shows.',
+            'Click <strong>Remap</strong> in the toolbar.',
+            'Read what the dialog reports as missing.',
+            'Choose a replacement entity from the dropdown for that entity.',
+            'Apply, then check the card on the canvas and in the YAML.',
+            'Look at the <strong>History</strong> tab of the remapping dialog.',
+            'Now <strong>disconnect from Home Assistant</strong> (or start from a profile that has connected before, so a cached entity list exists) and click <strong>Remap</strong> again on a dashboard whose entities all really do exist.',
+          ],
+          expects: [
+            'The missing entity is detected and listed.',
+            '<strong>Auto-map All says what it did</strong> — how many entities it mapped, or plainly that nothing scored high enough. Silence is a fail: a control that cannot report its own outcome is indistinguishable from a dead one.',
+            'The replacement dropdown is searchable across <strong>every</strong> entity by id, name or integration — not just a handful of suggestions — and shows which integration each entity belongs to.',
+            'Real entities from the instance populate the replacement dropdown.',
+            'Applying updates the card and the YAML to the new entity id.',
+            'The history tab records the remap.',
+            'Entities that <strong>do</strong> exist are not touched.',
+            'Disconnected but with a cached entity list, the dialog still offers real replacement entities. <strong>"No data" in the replacement dropdown is a fail.</strong>',
+            "Disconnected, entities that exist are <strong>not</strong> listed as missing. HAVDM claiming your entities are gone when it simply cannot see your instance is a <strong>fail</strong>, and a worse one than an empty dropdown — it is a false statement about the user's Home Assistant, and remapping on the strength of it would rewrite a working config.",
+          ],
+        },
+        {
+          id: 'HA-07',
+          defect: 'fixed — recheck',
+          name: 'The Deploy dialog states what was adjusted for Home Assistant',
+          type: 'fidelity',
+          auto_covered: true,
+          needsHA: true,
+          auto_note:
+            '<code>tests/unit/DeployDialog.spec.tsx</code> proves the export summary renders when warnings exist and is absent when they do not; <code>tests/unit/exportWarningSummary.spec.ts</code> covers the wording. Neither can judge whether the summary would stop a person deploying something they did not mean to.',
+          steps: [
+            'Ensure the dashboard contains a canvas-only card (from EXPORT-03).',
+            'Click <strong>Deploy</strong> in the toolbar.',
+            'Read the banner headed "This design was adjusted for Home Assistant".',
+            'Read each line in it.',
+            '<strong>Click Cancel. Do not deploy from this card</strong> — this card only reads the dialog.',
+          ],
+          expects: [
+            'The summary banner appears and lists the adjustments.',
+            'Each line is plain language — it names what was changed and why, without referring to HAVDM internals or key names a user would not recognise.',
+            'The banner is styled as a warning when something was genuinely lost, rather than as neutral information.',
+            'Cancelling closes the dialog and writes nothing to Home Assistant.',
+          ],
+        },
+        {
+          id: 'HA-08',
+          defect: 'fixed — recheck; ⚠ card corrected — Live Preview does not embed',
+          name: 'Live Preview creates a TEMPORARY dashboard — and Close deletes it',
+          type: 'interaction',
+          auto_covered: true,
+          needsHA: true,
+          auto_note:
+            '<code>tests/unit/livePreviewDeploy.spec.ts</code> proves the deploy target resolution never silently defaults to <code>lovelace</code>, and that the confirmation names the destination. It resolves targets in memory; it never creates anything in Home Assistant.',
+          steps: [
+            'With a dashboard open and connected, click <strong>Live Preview</strong>.',
+            'Read the message about the temporary dashboard being created.',
+            'Read the address row at the top. Click <strong>Copy address</strong> (or the <strong>Open</strong> button) and open that address in a browser.',
+            '<strong>In the browser</strong>, compare the real Home Assistant render to your HAVDM canvas.',
+            "Back in HAVDM, switch between views using the preview's view switcher.",
+            'Toggle between <strong>Edit Mode</strong> and <strong>Preview Mode</strong>.',
+            '<strong>DO NOT press "Deploy to Production" — it writes back over the production dashboard the design came from.</strong> Click <strong>Close</strong> instead, and read the confirmation.',
+            '<strong>TEARDOWN:</strong> in a browser, open Home Assistant &rarr; Settings &rarr; Dashboards and confirm no HAVDM temporary dashboard remains. If one does, delete it there.',
+          ],
+          expects: [
+            'Live Preview reports creating a temporary dashboard and enters preview mode.',
+            '⭐ <strong>Opened in a browser</strong>, the real Home Assistant render is recognisably the dashboard you designed — this is the single most valuable observation in the round. Note any card that renders differently from the HAVDM canvas.',
+            'The address is visible in its own row, never hidden under a card, and copies in one click.',
+            '⚠ HAVDM does <strong>not</strong> embed the Home Assistant render, and says so: "The boxes below arrange the layout; they are not the render." The boxes are the layout editor. Embedding is deferred past 1.0 — Home Assistant serves <code>X-Frame-Options: SAMEORIGIN</code>, so restoring it is a security decision, not a bug to raise here.',
+            'The view switcher moves between views, and the Edit Mode / Preview Mode toggle switches between arranging cards and previewing.',
+            'Close reports the temporary dashboard was deleted.',
+            'The final step confirms it: <strong>no temporary dashboard is left behind.</strong> One left behind is <strong>High</strong> — an unrequested persistent write to Home Assistant.',
+          ],
+        },
+        {
+          id: 'HA-09',
+          defect: 'was skipped — now runnable',
+          name: 'Deploy to a THROWAWAY dashboard, verify it renders, then delete it',
+          type: 'interaction',
+          auto_covered: true,
+          needsHA: true,
+          auto_note:
+            '<code>tests/unit/DeployDialog.spec.tsx</code> proves the dialog sends the sanitised config object unchanged bar the title, and errors clearly when there is no config. It mocks the WebSocket entirely — nothing has ever reached a real instance.',
+          steps: [
+            'Click <strong>Deploy</strong> in the toolbar.',
+            '<strong>Select "Create New Dashboard". Never "Update Existing Dashboard".</strong>',
+            'Type <code>Bad Key!</code> into URL Key first and read the validation message, then correct it.',
+            'Set Dashboard Title to <code>HAVDM UAT Temp</code>, URL Key to <code>havdm-uat-temp</code>, Icon to <code>mdi:test-tube</code>.',
+            'Read the export-summary banner if one is shown, then deploy.',
+            'Watch the progress steps and read the completion message.',
+            'In a browser, open Home Assistant, navigate to the new dashboard, and compare what it renders against the HAVDM canvas.',
+            '<strong>TEARDOWN:</strong> in Home Assistant go to Settings &rarr; Dashboards, find <strong>HAVDM UAT Temp</strong>, and <strong>delete it</strong>. Confirm it is gone from the sidebar.',
+          ],
+          expects: [
+            'The URL Key field rejects an invalid key with a clear message naming the allowed characters.',
+            'The deploy runs through its progress steps and reports success.',
+            'The dashboard exists in Home Assistant at <code>havdm-uat-temp</code> with the title and icon you set.',
+            'The rendered dashboard matches the HAVDM canvas — same views, same cards, laid out recognisably. Note every difference; this is the core fidelity observation of the round.',
+            'No card shows "Unknown type encountered" in Home Assistant. If one does, HAVDM exported a type HA cannot render — <strong>Medium</strong>, or <strong>High</strong> if the card is one HAVDM claimed was available.',
+            'The final step completes: <strong>the throwaway dashboard is deleted</strong>. Any <em>existing</em> dashboard being modified instead of a new one being created is <strong>High</strong>.',
+          ],
+        },
+        {
+          id: 'HA-05',
+          name: 'Card availability reflects what is actually installed on the instance',
+          type: 'fidelity',
+          auto_covered: true,
+          needsHA: true,
+          auto_note:
+            '<code>tests/unit/hacsRepositories.spec.ts</code> and <code>tests/unit/capabilityProfile.spec.ts</code> prove the HACS repository parsing and the capability profile resolution against fixtures. They have never queried a real HACS installation.',
+          steps: [
+            'While connected, expand the Card Palette categories. (Custom cards are filed by what they do — <strong>Layout</strong>, <strong>Sensors &amp; Display</strong>, <strong>Controls</strong>, <strong>Media</strong> — and carry a <strong>Custom</strong> badge, so there is no "Custom Cards" category.)',
+            'Find a card you know <strong>is</strong> installed — Bubble Card, apexcharts, mushroom, button-card, card-mod or mini-graph-card.',
+            'Find a card you know is <strong>not</strong> installed — layout-card, expander/accordion, gauge-card-pro or power-flow-card.',
+            'Compare how the two are marked.',
+            'Disconnect, and look at the same two cards again.',
+          ],
+          expects: [
+            'An installed card is shown as available, with no "not installed" marking.',
+            'A card genuinely absent from the instance is marked as not installed, in plain language mentioning HACS.',
+            'The marking matches reality. A card marked available that is not installed would let someone deploy a dashboard that will not render — <strong>Medium</strong>.',
+            'After disconnecting, the marking is <strong>permissive</strong> again — HAVDM does not claim knowledge it no longer has.',
+          ],
+        },
+        {
+          id: 'HA-06',
+          name: 'Themes are fetched from the instance',
+          type: 'gate',
+          auto_covered: true,
+          needsHA: true,
+          auto_note:
+            '<code>tests/integration/theme-integration-mocked.spec.ts</code> proves theme fetching and selection against a mocked WebSocket. It has never read a real instance’s theme list.',
+          steps: [
+            'While connected, open the theme selector in the header.',
+            'Read the list of themes offered.',
+            'Select one and look at the canvas.',
+            'Click the theme refresh control (<strong>Reload Themes from HA</strong>).',
+            'Disconnect and look at the header again.',
+          ],
+          expects: [
+            "Real themes from the Home Assistant instance are listed <strong>in addition to</strong> HAVDM's own built-in themes (the ones prefixed <code>HAVDM</code>). Seeing only built-ins while connected means the fetch failed.",
+            'Selecting one applies it visibly to the canvas.',
+            'Refresh re-fetches without emptying the list.',
+            '⭐ After disconnecting the selector <strong>remains</strong> and still offers the built-in themes — it is no longer gated on the connection (RC5). What must go is the instance&rsquo;s own themes, and <strong>Reload Themes from HA</strong> becomes disabled with a tooltip explaining why. The app does not error.',
+          ],
+        },
+      ];
+
+      /* ============================================================
+     GROUPS — group by FEATURE AREA, never by code component.
+     ============================================================ */
+      const GROUPS = [
+        {
+          title: '1 — Application Shell &amp; First Run',
+          ids: ['SHELL-01', 'SHELL-02', 'SHELL-03', 'SHELL-04'],
+        },
+        {
+          title: '2 — Creating, Opening &amp; Saving Dashboards',
+          ids: ['FILE-01', 'FILE-02', 'FILE-03', 'FILE-04', 'FILE-05', 'FILE-06'],
+        },
+        {
+          title: '3 — Card Authoring on the Canvas',
+          ids: [
+            'CANVAS-01',
+            'CANVAS-02',
+            'CANVAS-03',
+            'CANVAS-04',
+            'CANVAS-05',
+            'CANVAS-06',
+            'CANVAS-07',
+          ],
+        },
+        {
+          title: '4 — Clipboard, Multi-Select &amp; State Safety',
+          ids: ['CLIP-01', 'CLIP-02', 'CLIP-03', 'CLIP-04', 'CLIP-05', 'CLIP-06'],
+        },
+        {
+          title: '5 — Card Properties &amp; Configuration',
+          ids: ['PROPS-01', 'PROPS-02', 'PROPS-03', 'PROPS-04', 'PROPS-05', 'PROPS-06', 'PROPS-07'],
+        },
+        {
+          title: '6 — Views, Sections &amp; Layout',
+          ids: [
+            'VIEWS-01',
+            'VIEWS-02',
+            'VIEWS-03',
+            'VIEWS-04',
+            'VIEWS-05',
+            'VIEWS-06',
+            'VIEWS-07',
+            'VIEWS-08',
+          ],
+        },
+        {
+          title: '7 — The YAML Editor &amp; Split View',
+          ids: ['YAML-01', 'YAML-02', 'YAML-03', 'YAML-04', 'YAML-05'],
+        },
+        {
+          title: '8 — Export Fidelity &amp; Honest Marking',
+          ids: ['EXPORT-01', 'EXPORT-02', 'EXPORT-03', 'EXPORT-04', 'EXPORT-05', 'EXPORT-06'],
+        },
+        {
+          title: '9 — Themes &amp; Preset Marketplace',
+          ids: ['THEME-01', 'THEME-02', 'THEME-03', 'THEME-04'],
+        },
+        {
+          title: '10 — Version Control (read-only)',
+          ids: ['VCS-01', 'VCS-02', 'VCS-03', 'VCS-04'],
+        },
+        {
+          title: '11 — ⚠ Live Home Assistant',
+          ids: ['HA-01', 'HA-02', 'HA-03', 'HA-04', 'HA-05', 'HA-06', 'HA-07', 'HA-08', 'HA-09'],
+        },
+      ];
+
+      /* ============================================================
+     Storage keys — unique per round so state cannot bleed across.
+     ============================================================ */
+      const KEY_CURRENT = `havdm_uat_${ROUND_KEY}_current`;
+      const KEY_NOTES = `havdm_uat_${ROUND_KEY}_notes`;
+      const KEY_SEVERITY = `havdm_uat_${ROUND_KEY}_severity`;
+      const KEY_SCREENSHOTS = `havdm_uat_${ROUND_KEY}_screenshots`;
+      const KEY_RUNS = `havdm_uat_${ROUND_KEY}_runs`;
+      const KEY_TEARDOWN = `havdm_uat_${ROUND_KEY}_teardown`;
+
+      let state = {};
+      let notes = {};
+      let severity = {};
+      let screenshots = {};
+
+      // ── Persistence ────────────────────────────────────────────
+      function initState() {
+        TESTS.forEach((t) => {
+          state[t.id] = 'untested';
+        });
+        try {
+          const saved = localStorage.getItem(KEY_CURRENT);
+          if (saved) Object.assign(state, JSON.parse(saved));
+          const savedNotes = localStorage.getItem(KEY_NOTES);
+          if (savedNotes) Object.assign(notes, JSON.parse(savedNotes));
+          const savedSev = localStorage.getItem(KEY_SEVERITY);
+          if (savedSev) Object.assign(severity, JSON.parse(savedSev));
+          const savedShots = localStorage.getItem(KEY_SCREENSHOTS);
+          if (savedShots) Object.assign(screenshots, JSON.parse(savedShots));
+        } catch (e) {
+          console.warn('Could not restore saved state:', e);
+        }
+      }
+      function persist(key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+        } catch (e) {
+          showToast('Storage full — export your JSON now. Screenshots are the usual cause.');
+        }
+      }
+      const persistCurrent = () => persist(KEY_CURRENT, state);
+      const persistNotes = () => persist(KEY_NOTES, notes);
+      const persistSeverity = () => persist(KEY_SEVERITY, severity);
+      const persistScreenshots = () => persist(KEY_SCREENSHOTS, screenshots);
+
+      // ── Named runs ─────────────────────────────────────────────
+      function loadRuns() {
+        try {
+          return JSON.parse(localStorage.getItem(KEY_RUNS) || '[]');
+        } catch (e) {
+          return [];
+        }
+      }
+      function saveRuns(runs) {
+        persist(KEY_RUNS, runs);
+      }
+      function countsByState(st) {
+        const c = { pass: 0, fail: 0, skip: 0, untested: 0 };
+        TESTS.forEach((t) => {
+          c[st[t.id] || 'untested']++;
+        });
+        return c;
+      }
+      function saveCurrentRun(name) {
+        const runs = loadRuns();
+        runs.push({
+          name: name || `Run ${runs.length + 1}`,
+          saved: new Date().toISOString().slice(0, 16).replace('T', ' '),
+          state: { ...state },
+          notes: { ...notes },
+          severity: { ...severity },
+          screenshots: { ...screenshots },
+          counts: countsByState(state),
+        });
+        saveRuns(runs);
+        renderRunsList();
+        showToast('Run saved.');
+      }
+      function deleteRun(idx) {
+        const runs = loadRuns();
+        runs.splice(idx, 1);
+        saveRuns(runs);
+        renderRunsList();
+        showToast('Run deleted.');
+      }
+      function loadRun(idx) {
+        const run = loadRuns()[idx];
+        if (!run) return;
+        if (!confirm(`Load "${run.name}"? This replaces your current results.`)) return;
+        replaceAllState(run.state, run.notes, run.severity, run.screenshots);
+        showToast(`Loaded "${run.name}".`);
+      }
+      function replaceAllState(newState, newNotes, newSeverity, newShots) {
+        TESTS.forEach((t) => {
+          state[t.id] = 'untested';
+        });
+        Object.assign(state, newState || {});
+        Object.keys(notes).forEach((k) => delete notes[k]);
+        Object.assign(notes, newNotes || {});
+        Object.keys(severity).forEach((k) => delete severity[k]);
+        Object.assign(severity, newSeverity || {});
+        Object.keys(screenshots).forEach((k) => delete screenshots[k]);
+        Object.assign(screenshots, newShots || {});
+        persistCurrent();
+        persistNotes();
+        persistSeverity();
+        persistScreenshots();
+        render();
+      }
+      function renderRunsList() {
+        const runs = loadRuns();
+        const el = document.getElementById('saved-runs-list');
+        if (!runs.length) {
+          el.innerHTML = `<div style="font-size:12px;color:var(--color-text-secondary)">No saved runs yet.</div>`;
+          return;
+        }
+        el.innerHTML = runs
+          .map(
+            (r, i) => `
+        <div class="saved-run">
+          <span><strong>${escHtml(r.name)}</strong> — ${r.saved}
+            <span style="color:var(--color-text-secondary)">
+              (${r.counts.pass}✓ ${r.counts.fail}✗ ${r.counts.skip}⊘ ${r.counts.untested}○)</span>
+          </span>
+          <span>
+            <button class="runs-btn" data-load-run="${i}">Load</button>
+            <button class="runs-btn btn-clear" data-del-run="${i}">Delete</button>
+          </span>
+        </div>`,
+          )
+          .join('');
+        el.querySelectorAll('[data-load-run]').forEach((b) =>
+          b.addEventListener('click', () => loadRun(+b.dataset.loadRun)),
+        );
+        el.querySelectorAll('[data-del-run]').forEach((b) =>
+          b.addEventListener('click', () => deleteRun(+b.dataset.delRun)),
+        );
+      }
+
+      // ── Export / import ────────────────────────────────────────
+      function exportJSON() {
+        const payload = {
+          exported: new Date().toISOString(),
+          round: ROUND_ID,
+          roundName: ROUND_NAME,
+          buildUnderTest: BUILD_UNDER_TEST,
+          current: { ...state },
+          currentNotes: { ...notes },
+          currentSeverity: { ...severity },
+          currentScreenshots: { ...screenshots },
+          teardownConfirmed: localStorage.getItem(KEY_TEARDOWN) === 'true',
+          runs: loadRuns(),
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `uat_session_${ROUND_ID}_${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        showToast('Session JSON exported — commit it to docs/testing/uat/sessions/');
+      }
+
+      function importJSON(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result);
+            replaceAllState(
+              data.current || {},
+              data.currentNotes || {},
+              data.currentSeverity || {},
+              data.currentScreenshots || {},
+            );
+            if (Array.isArray(data.runs)) saveRuns(data.runs);
+            renderRunsList();
+            showToast('Session imported.');
+          } catch (err) {
+            showToast('Could not read that file — is it a UAT session JSON?');
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      // ── Helpers ────────────────────────────────────────────────
+      function escHtml(s) {
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+      function typeBadgeClass(type) {
+        return (
+          {
+            gate: 'badge-gate',
+            edge: 'badge-edge',
+            interaction: 'badge-interaction',
+            fidelity: 'badge-fidelity',
+          }[type] || 'badge-gate'
+        );
+      }
+      function typeLabel(type) {
+        return (
+          {
+            gate: 'gate test',
+            edge: 'edge case',
+            interaction: 'interaction',
+            fidelity: 'fidelity',
+          }[type] || type
+        );
+      }
+      function dotClass(s) {
+        return { pass: 'dot-pass', fail: 'dot-fail', skip: 'dot-skip' }[s] || 'dot-untested';
+      }
+      function listHTML(items, tag, cls) {
+        return `<${tag}${cls ? ` class="${cls}"` : ''}>${(items || []).map((i) => `<li>${i}</li>`).join('')}</${tag}>`;
+      }
+      let toastTimer;
+      function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+      }
+
+      // ── Render ─────────────────────────────────────────────────
+      function render() {
+        const testMap = {};
+        TESTS.forEach((t) => {
+          testMap[t.id] = t;
+        });
+
+        const main = document.getElementById('main');
+        main.querySelectorAll('.group').forEach((el) => el.remove());
+
+        GROUPS.forEach((group, gi) => {
+          const isFirst = gi === 0;
+          const section = document.createElement('div');
+          section.className = 'group';
+          section.innerHTML = `
+        <div class="group-header">
+          <span class="group-title">${escHtml(group.title)}</span>
+          <div class="group-meta" data-group-meta="${gi}"></div>
+        </div>
+        <div class="group-body ${isFirst ? 'open' : ''}"></div>`;
+
+          const body = section.querySelector('.group-body');
+          group.ids.forEach((id) => {
+            const t = testMap[id];
+            if (t) body.appendChild(buildCard(t));
+          });
+          main.appendChild(section);
+
+          updateGroupMetaByIndex(gi, isFirst);
+
+          section.querySelector('.group-header').addEventListener('click', () => {
+            section.querySelector('.group-body').classList.toggle('open');
+            const chev = section.querySelector('.group-chevron');
+            if (chev) chev.classList.toggle('open');
+          });
+        });
+
+        updateSummary();
+      }
+
+      function buildCard(t) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.id = t.id;
+
+        const badges = [
+          `<span class="badge ${typeBadgeClass(t.type)}">${typeLabel(t.type)}</span>`,
+          t.isNew ? `<span class="badge badge-new">new</span>` : '',
+          t.defect ? `<span class="badge badge-defect">${escHtml(t.defect)}</span>` : '',
+          t.auto_covered ? `<span class="badge badge-auto">AUTO ✓</span>` : '',
+          t.needsHA ? `<span class="badge badge-ha">live HA</span>` : '',
+        ].join('');
+
+        const prevStatus = PREV[t.id] || 'untested';
+        const autoBanner = t.auto_covered
+          ? `<div class="auto-note"><strong>Automated coverage confirms</strong>${t.auto_note || ''}</div>`
+          : '';
+        const haBanner = t.needsHA
+          ? `<div class="ha-warn"><strong>⚠ Live Home Assistant.</strong> Temporary dashboard only. Teardown is a
+         required step on this card — see <code>docs/testing/UAT_STRATEGY.md</code> §10.</div>`
+          : '';
+
+        card.innerHTML = `
+      <div class="card-header">
+        <span class="card-id">${escHtml(t.id)}</span>
+        ${badges}
+        <span class="card-name">${escHtml(t.name)}</span>
+        <span class="status-dot ${dotClass(state[t.id])}" data-dot="${t.id}" title="This round"></span>
+        <span class="status-dot-prev ${dotClass(prevStatus)}" title="Previous round: ${prevStatus}"></span>
+      </div>
+      <div class="card-body">
+        ${autoBanner}${haBanner}
+        <div class="card-section-label">Steps</div>
+        ${listHTML(t.steps, 'ol')}
+        <div class="card-section-label">Expected</div>
+        ${listHTML(t.expects, 'ul', 'expects')}
+        <div class="card-section-label">Notes</div>
+        <textarea placeholder="What did you actually observe? Observed vs expected." data-notes="${t.id}">${escHtml(notes[t.id] || '')}</textarea>
+        <div class="severity-row" data-severity-row="${t.id}">
+          <label for="sev-${t.id}">Severity</label>
+          <select id="sev-${t.id}" data-severity="${t.id}">
+            <option value="">— choose —</option>
+            <option value="high">High — data loss, blocked workflow, crash, unwanted HA write</option>
+            <option value="medium">Medium — wrong output, silent lossy translation, stale dialog</option>
+            <option value="low">Low — cosmetic, wording, minor convenience</option>
+          </select>
+          <span class="severity-hint">Required on every Fail — the acceptance bar is severity-driven.</span>
+        </div>
+        <div class="card-section-label">Screenshot</div>
+        <div class="screenshot-zone" data-screenshot-zone="${t.id}">
+          <label>📎 Click to browse, or open this card and paste from the clipboard</label>
+          <input type="file" accept="image/*" class="screenshot-file-input" />
+          <div class="screenshot-preview" style="display:none;">
+            <img class="screenshot-img" alt="Screenshot for ${escHtml(t.id)}" />
+            <button class="screenshot-remove">✕ Remove</button>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-verdict btn-pass" data-verdict="pass">Pass</button>
+          <button class="btn-verdict btn-fail" data-verdict="fail">Fail</button>
+          <button class="btn-verdict btn-skip" data-verdict="skip">Skip</button>
+        </div>
+      </div>`;
+
+        card.querySelector('.card-header').addEventListener('click', () => {
+          card.querySelector('.card-body').classList.toggle('open');
+        });
+
+        card.querySelector(`textarea[data-notes="${t.id}"]`).addEventListener('input', (e) => {
+          notes[t.id] = e.target.value;
+          persistNotes();
+        });
+
+        const sevSelect = card.querySelector(`select[data-severity="${t.id}"]`);
+        sevSelect.value = severity[t.id] || '';
+        sevSelect.addEventListener('change', (e) => {
+          if (e.target.value) severity[t.id] = e.target.value;
+          else delete severity[t.id];
+          persistSeverity();
+          updateSummary();
+        });
+        sevSelect.addEventListener('click', (e) => e.stopPropagation());
+
+        const fileInput = card.querySelector('.screenshot-file-input');
+        fileInput.addEventListener('change', (e) => {
+          if (e.target.files[0]) attachScreenshot(t.id, e.target.files[0], card);
+        });
+        card.querySelector('.screenshot-remove').addEventListener('click', (e) => {
+          e.stopPropagation();
+          clearScreenshot(t.id, card);
+        });
+        if (screenshots[t.id]) showScreenshotPreview(t.id, screenshots[t.id], card);
+
+        card.querySelectorAll('.btn-verdict').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const verdict = btn.dataset.verdict;
+            state[t.id] = verdict;
+            if (verdict !== 'fail') {
+              delete severity[t.id];
+              persistSeverity();
+            }
+            persistCurrent();
+            refreshCard(t.id);
+            updateGroupMeta(t.id);
+            updateSummary();
+          });
+        });
+
+        applyVerdictUI(card, t.id);
+        return card;
+      }
+
+      function applyVerdictUI(card, id) {
+        const verdict = state[id] || 'untested';
+        card.querySelectorAll('.btn-verdict').forEach((b) => {
+          b.classList.toggle('active', b.dataset.verdict === verdict);
+        });
+        const dot = card.querySelector(`.status-dot[data-dot="${id}"]`);
+        if (dot) dot.className = `status-dot ${dotClass(verdict)}`;
+        const sevRow = card.querySelector(`[data-severity-row="${id}"]`);
+        if (sevRow) sevRow.classList.toggle('show', verdict === 'fail');
+        const sevSelect = card.querySelector(`select[data-severity="${id}"]`);
+        if (sevSelect) sevSelect.value = severity[id] || '';
+      }
+      function refreshCard(id) {
+        const card = document.querySelector(`.card[data-id="${id}"]`);
+        if (card) applyVerdictUI(card, id);
+      }
+
+      // ── Screenshots ────────────────────────────────────────────
+      function attachScreenshot(testId, file, cardEl) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          screenshots[testId] = e.target.result;
+          persistScreenshots();
+          showScreenshotPreview(testId, e.target.result, cardEl);
+        };
+        reader.readAsDataURL(file);
+      }
+      function showScreenshotPreview(testId, dataUrl, cardEl) {
+        const zone = cardEl.querySelector(`[data-screenshot-zone="${testId}"]`);
+        if (!zone) return;
+        zone.querySelector('.screenshot-img').src = dataUrl;
+        zone.querySelector('.screenshot-preview').style.display = 'block';
+        const label = zone.querySelector('label');
+        if (label) label.style.display = 'none';
+      }
+      function clearScreenshot(testId, cardEl) {
+        delete screenshots[testId];
+        persistScreenshots();
+        const zone = cardEl.querySelector(`[data-screenshot-zone="${testId}"]`);
+        if (!zone) return;
+        zone.querySelector('.screenshot-img').src = '';
+        zone.querySelector('.screenshot-preview').style.display = 'none';
+        const label = zone.querySelector('label');
+        if (label) label.style.display = '';
+        const fi = zone.querySelector('.screenshot-file-input');
+        if (fi) fi.value = '';
+      }
+      document.addEventListener('paste', (e) => {
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        let imageFile = null;
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.startsWith('image/')) {
+            imageFile = items[i].getAsFile();
+            break;
+          }
+        }
+        if (!imageFile) return;
+        const openBody = document.querySelector('.card-body.open');
+        if (!openBody) {
+          showToast('Open a test card first, then paste your screenshot.');
+          return;
+        }
+        const card = openBody.closest('.card');
+        if (card && card.dataset.id) attachScreenshot(card.dataset.id, imageFile, card);
+      });
+
+      // ── Counters ───────────────────────────────────────────────
+      function updateGroupMeta(changedId) {
+        GROUPS.forEach((g, gi) => {
+          if (g.ids.includes(changedId)) updateGroupMetaByIndex(gi);
+        });
+      }
+      function updateGroupMetaByIndex(gi, forceOpen) {
+        const counts = { pass: 0, fail: 0, skip: 0, untested: 0 };
+        GROUPS[gi].ids.forEach((id) => {
+          counts[state[id] || 'untested']++;
+        });
+        const meta = document.querySelector(`[data-group-meta="${gi}"]`);
+        if (!meta) return;
+        const existing = meta.querySelector('.group-chevron');
+        const isOpen =
+          forceOpen !== undefined ? forceOpen : existing && existing.classList.contains('open');
+        meta.innerHTML = `
+      <span style="color:var(--color-pass)">${counts.pass}✓</span>
+      <span style="color:var(--color-fail)">${counts.fail}✗</span>
+      <span style="color:var(--color-skip)">${counts.skip}⊘</span>
+      <span style="color:var(--color-untested)">${counts.untested}○</span>
+      <span class="group-chevron ${isOpen ? 'open' : ''}">▶</span>`;
+      }
+
+      function tally() {
+        const c = {
+          pass: 0,
+          fail: 0,
+          skip: 0,
+          untested: 0,
+          high: 0,
+          medium: 0,
+          low: 0,
+          unrated: 0,
+        };
+        TESTS.forEach((t) => {
+          const s = state[t.id] || 'untested';
+          c[s]++;
+          if (s === 'fail') {
+            const sev = severity[t.id];
+            if (sev) c[sev]++;
+            else c.unrated++;
+          }
+        });
+        return c;
+      }
+
+      function updateSummary() {
+        const c = tally();
+        document.getElementById('cnt-total').textContent = TESTS.length;
+        document.getElementById('cnt-pass').textContent = c.pass;
+        document.getElementById('cnt-fail').textContent = c.fail;
+        document.getElementById('cnt-skip').textContent = c.skip;
+        document.getElementById('cnt-untested').textContent = c.untested;
+
+        // Acceptance bar — amendment-03 §3.1 / UAT_STRATEGY.md §11
+        const chip = document.getElementById('acceptance-chip');
+        const blockers = [];
+        if (c.untested > 0) blockers.push(`${c.untested} untested`);
+        if (c.high > 0) blockers.push(`${c.high} High`);
+        if (c.unrated > 0) blockers.push(`${c.unrated} unrated fail`);
+        if (blockers.length === 0) {
+          chip.className = 'ok';
+          chip.textContent =
+            c.medium > 0 ? `Accept-able — ${c.medium} Medium need sign-off` : 'Bar met';
+        } else {
+          chip.className = 'blocked';
+          chip.textContent = 'Blocked: ' + blockers.join(', ');
+        }
+      }
+
+      // ── Runs panel events ──────────────────────────────────────
+      document.getElementById('runs-panel-header').addEventListener('click', () => {
+        document.getElementById('runs-panel-body').classList.toggle('open');
+        document.getElementById('runs-chevron').classList.toggle('open');
+      });
+      document.getElementById('btn-save-run').addEventListener('click', () => {
+        const input = document.getElementById('run-name-input');
+        saveCurrentRun(input.value.trim());
+        input.value = '';
+      });
+      document.getElementById('btn-export').addEventListener('click', exportJSON);
+      document.getElementById('import-file-input').addEventListener('change', (e) => {
+        if (e.target.files[0]) {
+          importJSON(e.target.files[0]);
+          e.target.value = '';
+        }
+      });
+      document.getElementById('btn-clear-state').addEventListener('click', () => {
+        if (!confirm('Clear all current results? Saved runs are not affected.')) return;
+        replaceAllState({}, {}, {}, {});
+        showToast('All results cleared.');
+      });
+
+      // ── Live-HA teardown gate (UAT_STRATEGY.md §10) ────────────
+      function teardownGatePassed() {
+        const haTouched = TESTS.some(
+          (t) => t.needsHA && (state[t.id] || 'untested') !== 'untested',
+        );
+        if (!haTouched) return true;
+        if (localStorage.getItem(KEY_TEARDOWN) === 'true') return true;
+        const ok = confirm(
+          'LIVE HOME ASSISTANT TEARDOWN CHECK\n\n' +
+            'This round ran at least one test against the live Home Assistant instance.\n\n' +
+            'Confirm the temporary dashboard has been DELETED from Home Assistant.\n\n' +
+            'OK = confirmed deleted.  Cancel = go and remove it first.',
+        );
+        if (ok) localStorage.setItem(KEY_TEARDOWN, 'true');
+        return ok;
+      }
+
+      // ── Summary report ─────────────────────────────────────────
+      document.getElementById('defect-summary-btn').addEventListener('click', () => {
+        if (!teardownGatePassed()) {
+          showToast('Report blocked — remove the temporary Home Assistant dashboard first.');
+          return;
+        }
+
+        const ts = new Date().toISOString();
+        const date = ts.slice(0, 10);
+        const c = tally();
+
+        const bucket = { pass: [], fail: [], skip: [], untested: [] };
+        TESTS.forEach((t) => bucket[state[t.id] || 'untested'].push(t));
+
+        const row = (...cols) => '| ' + cols.join(' | ') + ' |';
+        const sep = (n) => '|' + ' --- |'.repeat(n);
+        const noteFor = (id) =>
+          (notes[id] || '').replace(/\|/g, '\\|').replace(/\n/g, ' ').trim() || '—';
+        const sevFor = (id) =>
+          severity[id] ? severity[id][0].toUpperCase() + severity[id].slice(1) : '**UNRATED**';
+        const shotFor = (id) => (screenshots[id] ? 'yes' : 'no');
+
+        const lines = [
+          `# UAT Test Summary Report — ${ROUND_ID}: ${ROUND_NAME}`,
+          '',
+          `**Generated:** ${ts}`,
+          `**Build under test:** ${BUILD_UNDER_TEST}`,
+          `**Test plan:** \`${PLAN_PATH}\``,
+          '',
+          '## Summary',
+          '',
+          row('Total', 'Pass', 'Fail', 'Skip', 'Untested'),
+          sep(5),
+          row(TESTS.length, c.pass, c.fail, c.skip, c.untested),
+          '',
+          '### Defects by severity',
+          '',
+          row('High', 'Medium', 'Low', 'Unrated'),
+          sep(4),
+          row(c.high, c.medium, c.low, c.unrated),
+          '',
+          '## Acceptance check',
+          '',
+          'Against `phase-7-ecosystem-future-growth-amendment-03.md` §3.1 / `UAT_STRATEGY.md` §11:',
+          '',
+          row('Criterion', 'Result'),
+          sep(2),
+          row('Zero open High-severity defects', c.high === 0 ? '✅ met' : `❌ ${c.high} open`),
+          row('No test left Untested', c.untested === 0 ? '✅ met' : `❌ ${c.untested} untested`),
+          row('Every Fail has a severity', c.unrated === 0 ? '✅ met' : `❌ ${c.unrated} unrated`),
+          row(
+            'Mediums fixed or accepted with rationale',
+            c.medium === 0
+              ? '✅ none raised'
+              : `⚠ ${c.medium} require written sign-off in the release notes`,
+          ),
+          row(
+            'Uncovered failures gain regression tests',
+            bucket.fail.filter((t) => !t.auto_covered).length === 0
+              ? '✅ none'
+              : `⚠ ${bucket.fail.filter((t) => !t.auto_covered).length} require new coverage`,
+          ),
+          '',
+          '## Failed tests',
+          '',
+        ];
+
+        if (bucket.fail.length === 0) {
+          lines.push('_None._', '');
+        } else {
+          lines.push(
+            row('ID', 'Name', 'Type', 'Severity', 'Regression?', 'Screenshot', 'Observed'),
+            sep(7),
+            ...bucket.fail.map((t) =>
+              row(
+                t.id,
+                t.name,
+                typeLabel(t.type),
+                sevFor(t.id),
+                PREV[t.id] === 'pass' ? '**YES**' : 'no',
+                shotFor(t.id),
+                noteFor(t.id),
+              ),
+            ),
+            '',
+          );
+        }
+
+        lines.push('## Failed tests without automated coverage', '');
+        const uncovered = bucket.fail.filter((t) => !t.auto_covered);
+        if (uncovered.length === 0) {
+          lines.push('_None._', '');
+        } else {
+          lines.push(
+            'Each fix **must** add automated coverage — `UAT_STRATEGY.md` §7 regression mandate.',
+            '',
+            row('ID', 'Name', 'Type', 'Severity'),
+            sep(4),
+            ...uncovered.map((t) => row(t.id, t.name, typeLabel(t.type), sevFor(t.id))),
+            '',
+          );
+        }
+
+        lines.push('## Skipped tests', '');
+        if (bucket.skip.length === 0) lines.push('_None._', '');
+        else
+          lines.push(
+            row('ID', 'Name', 'Reason'),
+            sep(3),
+            ...bucket.skip.map((t) => row(t.id, t.name, noteFor(t.id))),
+            '',
+          );
+
+        lines.push('## Untested', '');
+        if (bucket.untested.length === 0) lines.push('_None — every test has a verdict._', '');
+        else
+          lines.push(
+            '⚠ A test with no verdict is not a decision. Mark it Skip with a reason.',
+            '',
+            row('ID', 'Name'),
+            sep(2),
+            ...bucket.untested.map((t) => row(t.id, t.name)),
+            '',
+          );
+
+        lines.push('## Passed tests', '', row('ID', 'Name', 'Type', 'Notes'), sep(4));
+        if (bucket.pass.length === 0) lines.push(row('—', '_None_', '—', '—'));
+        else
+          bucket.pass.forEach((t) =>
+            lines.push(row(t.id, t.name, typeLabel(t.type), noteFor(t.id))),
+          );
+        lines.push('');
+
+        const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `uat_summary_${ROUND_ID}_${date}.md`;
+        a.click();
+        showToast('Report downloaded — commit it to docs/testing/uat/reports/');
+      });
+
+      // ── Issues payload ─────────────────────────────────────────
+      document.getElementById('issues-script-btn').addEventListener('click', () => {
+        const failed = TESTS.filter((t) => (state[t.id] || 'untested') === 'fail');
+        if (!failed.length) {
+          showToast('No failed tests — nothing to generate.');
+          return;
+        }
+        const date = new Date().toISOString().slice(0, 10);
+        const esc = (s) => String(s || '').replace(/'/g, "'\\''");
+
+        const lines = [
+          '#!/usr/bin/env bash',
+          '# ============================================================',
+          `# GitHub Issues payload — HAVDM UAT ${ROUND_ID} (${date})`,
+          '#',
+          '# ⚠ REVIEW BEFORE RUNNING. Creating issues is outward-facing and',
+          "#   requires the project owner's explicit authorisation.",
+          '# ⚠ NOT IDEMPOTENT — search existing issues for the test ID first:',
+          `#   https://github.com/${REPO}/issues`,
+          '# ============================================================',
+          'set -euo pipefail',
+          '',
+        ];
+
+        failed.forEach((t) => {
+          const labels = ['defect', `severity:${severity[t.id] || 'unrated'}`];
+          if (PREV[t.id] === 'pass') labels.push('regression');
+
+          const body = [
+            '## Defect summary',
+            `**Test ID:** ${t.id}`,
+            `**Test:** ${t.name}`,
+            `**UAT round:** ${ROUND_ID} — ${date}`,
+            `**Severity:** ${severity[t.id] || 'UNRATED'}`,
+            `**Regression:** ${PREV[t.id] === 'pass' ? 'YES — passed in the previous round' : 'no'}`,
+            '',
+            '## Observed',
+            (notes[t.id] || '').trim() || '_No notes recorded._',
+            '',
+            '## Expected',
+            (t.expects || []).map((e) => `- ${e.replace(/<[^>]+>/g, '')}`).join('\n') ||
+              '_None recorded._',
+            '',
+            '## Steps to reproduce',
+            (t.steps || []).map((s, i) => `${i + 1}. ${s.replace(/<[^>]+>/g, '')}`).join('\n') ||
+              '_None recorded._',
+            '',
+            '## Screenshot',
+            screenshots[t.id] ? 'Attached in the UAT session JSON.' : '_None recorded._',
+            '',
+            '## Automated coverage',
+            t.auto_covered
+              ? `Yes — ${(t.auto_note || '').replace(/<[^>]+>/g, '')}`
+              : '**No — a regression test is REQUIRED as part of the fix (UAT_STRATEGY.md §7).**',
+            '',
+            '## References',
+            `- Plan: \`${PLAN_PATH}\``,
+            `- Report: \`docs/testing/uat/reports/uat_summary_${ROUND_ID}_${date}.md\``,
+          ].join('\n');
+
+          lines.push(
+            `# ${t.id}: ${t.name}`,
+            'gh issue create \\',
+            `  --repo ${REPO} \\`,
+            `  --title '[UAT ${ROUND_ID}] ${esc(t.id)}: ${esc(t.name)}' \\`,
+            `  --label '${labels.join(',')}' \\`,
+            `  --body '${esc(body)}'`,
+            '',
+          );
+        });
+
+        const blob = new Blob([lines.join('\n')], { type: 'text/x-shellscript' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `uat_issues_${ROUND_ID}_${date}.sh`;
+        a.click();
+        showToast(`Issues payload downloaded — ${failed.length} defect(s). Review before running.`);
+      });
+
+      // ── Init ───────────────────────────────────────────────────
+      document.getElementById('round-label').textContent = `${ROUND_ID} — ${ROUND_NAME}`;
+      document.getElementById('round-sub').textContent = BUILD_UNDER_TEST;
+      document.title = `HAVDM UAT — ${ROUND_ID}`;
+      initState();
+      render();
+      renderRunsList();
+    </script>
+  </body>
+</html>
