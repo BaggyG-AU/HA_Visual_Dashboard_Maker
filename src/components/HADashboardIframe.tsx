@@ -1,6 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Button, Space, message, Modal, Tooltip, Segmented } from 'antd';
-import { EditOutlined, DeploymentUnitOutlined, CloseOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Button, Space, message, Modal, Tooltip, Segmented, Typography } from 'antd';
+import {
+  EditOutlined,
+  DeploymentUnitOutlined,
+  CloseOutlined,
+  ExportOutlined,
+} from '@ant-design/icons';
 import GridLayout, { getCompactor } from 'react-grid-layout';
 import type { Layout } from 'react-grid-layout';
 import { DashboardConfig, View } from '../types/dashboard';
@@ -14,6 +19,8 @@ import 'react-resizable/css/styles.css';
 
 // See GridCanvas: must go through getCompactor(), not the bare compactor export.
 const HA_COMPACTOR = getCompactor('vertical', false, false);
+
+const { Text } = Typography;
 
 interface HADashboardIframeProps {
   /** The full dashboard config. Live Preview edits one view at a time but always
@@ -36,9 +43,26 @@ interface HADashboardIframeProps {
 /**
  * HADashboardIframe Component
  *
- * Renders an iframe showing the actual Home Assistant dashboard with a transparent
- * drag-drop overlay for editing. Supports toggling between Edit and Preview modes,
- * and switching between the dashboard's views (multi-view editing).
+ * ⚠⚠⚠ DESPITE THE NAME, THIS RENDERS NO IFRAME, AND HAS NOT SINCE `c2f77c3`
+ * (2025-12-24, "Fix Live Preview layout persistence issue") REMOVED IT WITHOUT
+ * SAYING SO IN ITS COMMIT MESSAGE. What it renders is a drag-and-drop layout
+ * overlay — one placeholder box per card — over a patterned backdrop, plus the
+ * address at which the real Home Assistant render can be opened.
+ *
+ * ⭐ HA-08: the previous doc comment here claimed "Renders an iframe showing the
+ * actual Home Assistant dashboard", which was false and had been for months. The
+ * name is kept because renaming the component is a wider change than this fix,
+ * but the description no longer lies about what you get.
+ *
+ * ⚠ Restoring genuine embedding is NOT a small change and is deliberately out of
+ * scope here: Home Assistant serves `X-Frame-Options: SAMEORIGIN` (measured
+ * against the reference instance), so an iframe in the renderer is refused by
+ * Chromium. Embedding would mean stripping that header from the Electron session
+ * or moving to a <webview> — a security decision in its own right, tracked as
+ * post-1.0 work rather than smuggled into a Medium-severity fix.
+ *
+ * Supports toggling between Edit and Preview modes, and switching between the
+ * dashboard's views (multi-view editing).
  */
 export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
   config,
@@ -53,7 +77,6 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
 }) => {
   const [editMode, setEditMode] = useState(true);
   const [layout, setLayout] = useState<Layout>([]);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const views = config.views || [];
   const activeView: View | undefined = views[activeViewIndex];
@@ -115,12 +138,17 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
     }
   }, [config, activeViewIndex, activeView]);
 
-  // Construct iframe URL with kiosk mode, pointing at the active view. HA routes
+  // The address of the real Home Assistant render for the active view. HA routes
   // a view by its `path` when defined, otherwise by index.
+  //
+  // ⚠ The `?kiosk` suffix is gone. It existed to hide HA's chrome inside the
+  // iframe, and this address is now only ever opened in a browser — where it was
+  // stripped for display anyway, so what is shown and what is opened are the
+  // same string. An address you cannot paste is not an address.
   const viewSegment = activeView?.path ?? activeViewIndex;
-  const iframeUrl = tempDashboardPath
-    ? `${haUrl}/${tempDashboardPath}/${viewSegment}?kiosk`
-    : `${haUrl}/lovelace/0?kiosk`;
+  const previewUrl = tempDashboardPath
+    ? `${haUrl}/${tempDashboardPath}/${viewSegment}`
+    : `${haUrl}/lovelace/0`;
 
   const handleLayoutChange = async (newLayout: Layout) => {
     setLayout(newLayout);
@@ -178,11 +206,12 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
           throw new Error(result.error || 'Failed to update temp dashboard');
         }
 
-        // Reload iframe to show changes
-        if (iframeRef.current && iframeRef.current.src) {
-          const currentSrc = iframeRef.current.src;
-          iframeRef.current.src = currentSrc;
-        }
+        // ⚠ There is nothing to reload here. This used to re-assign
+        // `iframeRef.current.src`, but the ref was never attached to an element
+        // after `c2f77c3` removed the iframe, so the block was unreachable and
+        // silently did nothing. The temporary dashboard in Home Assistant HAS
+        // been updated at this point — a browser tab open on the preview address
+        // picks the change up on its own refresh.
       } catch (error) {
         logger.error('Failed to update temp dashboard', error);
         message.error('Failed to update dashboard preview');
@@ -221,21 +250,24 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
   const cards = activeView?.cards || [];
 
   return (
+    // ⭐ HA-08: a flex COLUMN, where this was absolute positioning with the
+    // content area hard-coded to `top: 60px`. The header now carries a second
+    // row (the preview address), and a magic pixel offset would have had to be
+    // guessed and re-guessed every time that row wraps.
     <div
       style={{
         position: 'relative',
         width: '100%',
         height: '100%',
         backgroundColor: '#141414',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {/* Control Bar */}
       <div
         style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
+          flex: '0 0 auto',
           zIndex: 1000,
           backgroundColor: 'rgba(20, 20, 20, 0.95)',
           padding: '12px 16px',
@@ -294,14 +326,62 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
         </Space>
       </div>
 
+      {/* ⭐⭐ HA-08 — THE PREVIEW ADDRESS.
+          Owner: "Address for preview is hidden under cards and even when it is
+          not it cannot be copied. Better option would be … a dialog with the
+          address … option to copy … and instruction on what to do."
+          It WAS hidden under cards: it lived in the centre-of-canvas banner at
+          `zIndex: 1`, directly beneath the card overlay at `zIndex: 2`. And it
+          was an anchor in the middle of a drag surface, so selecting its text to
+          copy meant fighting the overlay for the pointer.
+          It is now a row of its own in the header — never overlapped by a card,
+          because it is not in the same stacking context as the overlay at all —
+          with a one-click copy and a plain statement of what to do with it. */}
+      <div
+        data-testid="live-preview-address-bar"
+        style={{
+          flex: '0 0 auto',
+          zIndex: 1000,
+          backgroundColor: 'rgba(20, 20, 20, 0.95)',
+          padding: '10px 16px',
+          borderBottom: '1px solid #434343',
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '8px',
+        }}
+      >
+        <Text style={{ color: '#9e9e9e', fontSize: 12 }}>
+          Open this address in a browser to see the real Home Assistant render:
+        </Text>
+        <Text
+          code
+          copyable={{ text: previewUrl, tooltips: ['Copy address', 'Copied'] }}
+          style={{ color: '#00d9ff', fontSize: 12 }}
+          data-testid="live-preview-address"
+        >
+          {previewUrl}
+        </Text>
+        <Tooltip title="Open the preview in your default browser">
+          <Button
+            size="small"
+            icon={<ExportOutlined />}
+            onClick={() => window.electronAPI?.openExternal?.(previewUrl)}
+            data-testid="live-preview-open-external"
+          >
+            Open
+          </Button>
+        </Tooltip>
+        <Text style={{ color: '#6e6e6e', fontSize: 12 }}>
+          The boxes below arrange the layout; they are not the render.
+        </Text>
+      </div>
+
       {/* Main Content Area */}
       <div
         style={{
-          position: 'absolute',
-          top: '60px',
-          left: 0,
-          right: 0,
-          bottom: 0,
+          position: 'relative',
+          flex: '1 1 auto',
           overflow: 'hidden',
           backgroundColor: '#0d0d0d',
         }}
@@ -336,19 +416,12 @@ export const HADashboardIframe: React.FC<HADashboardIframeProps> = ({
           <div style={{ marginBottom: '8px', fontSize: '16px', fontWeight: 500 }}>
             Live Preview Mode
           </div>
-          <div>
-            View live dashboard at:{' '}
-            <a
-              href={iframeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: '#00d9ff', pointerEvents: 'auto' }}
-            >
-              {iframeUrl.replace('?kiosk', '')}
-            </a>
-          </div>
-          <div style={{ marginTop: '16px', fontSize: '12px' }}>
-            Drag and resize cards below to arrange your dashboard
+          {/* ⭐ HA-08: the preview address used to live HERE, at `zIndex: 1`,
+              underneath the card overlay at `zIndex: 2` — which is exactly the
+              "hidden under cards" report. It now has its own row in the header
+              above, where no card can cover it. */}
+          <div style={{ marginTop: '4px', fontSize: '12px' }}>
+            Drag and resize the boxes below to arrange your dashboard
           </div>
         </div>
 

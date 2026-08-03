@@ -20,6 +20,13 @@ import {
   type EntityMapping,
   type EntitySuggestion,
 } from '../services/entityRemapping';
+import { loadPickerEntities } from '../services/entityPickerSource';
+import {
+  platformLabel,
+  UNREGISTERED_PLATFORM,
+  type EntityRegistryIndex,
+} from '../utils/entityRegistry';
+import { logger } from '../services/logger';
 import type { DashboardConfig } from '../types/dashboard';
 
 const { Text, Title } = Typography;
@@ -40,6 +47,21 @@ interface Props {
 
 type MappingState = Record<string, string | null>;
 
+/**
+ * What pressing "Auto-map All" actually did. HA-04: the button used to merge its
+ * result into state and say nothing, so a run that matched nothing — and a run
+ * whose matches the mount effect below had ALREADY applied — were both
+ * indistinguishable from a dead button.
+ */
+interface AutoMapOutcome {
+  /** Confident matches the service returned (score >= its threshold). */
+  matched: number;
+  /** Of those, how many were not already selected. */
+  changed: number;
+  /** Missing entities considered. */
+  total: number;
+}
+
 export const EntityRemappingModal: React.FC<Props> = ({
   visible,
   missingEntities,
@@ -51,6 +73,42 @@ export const EntityRemappingModal: React.FC<Props> = ({
   const [mappingState, setMappingState] = useState<MappingState>({});
   const [activeTab, setActiveTab] = useState<'remap' | 'history'>('remap');
   const [historyVersion, setHistoryVersion] = useState(0);
+  const [autoMapOutcome, setAutoMapOutcome] = useState<AutoMapOutcome | null>(null);
+  const [registry, setRegistry] = useState<EntityRegistryIndex | null>(null);
+
+  /**
+   * HA-04: the owner asked for "the integration that the entity belongs to" when
+   * choosing a replacement. That lives in Home Assistant's entity registry, so
+   * load it the same way every other picker does.
+   *
+   * ⚠⚠ DISPLAY ONLY — never filter `availableEntities` by this. That list is
+   * "WHAT EXISTS" and feeds `detectMissing`; cutting diagnostic/config entities
+   * out of it would make HAVDM report a dashboard's diagnostic entity as
+   * vanished from the user's Home Assistant. See the same warning on the effect
+   * that builds the list in `App.tsx`.
+   */
+  useEffect(() => {
+    if (!visible) return;
+    let cancelled = false;
+    loadPickerEntities()
+      .then(({ registry: loaded }) => {
+        if (!cancelled) setRegistry(loaded);
+      })
+      .catch((err) => {
+        // A missing registry costs labels, never candidates — the picker still
+        // lists every entity, just without its integration name.
+        logger.warn('Entity registry unavailable for remap labels', err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [visible]);
+
+  const integrationOf = React.useCallback(
+    (entityId: string): string =>
+      platformLabel(registry?.get(entityId)?.platform ?? UNREGISTERED_PLATFORM),
+    [registry],
+  );
 
   const suggestionsMap = useMemo<Record<string, EntitySuggestion[]>>(() => {
     const entries = missingEntities.map(
@@ -58,6 +116,70 @@ export const EntityRemappingModal: React.FC<Props> = ({
     );
     return Object.fromEntries(entries);
   }, [missingEntities, availableEntities]);
+
+  /**
+   * Replacement candidates for one missing entity: the scored suggestions first,
+   * then EVERY other entity on the instance, alphabetically.
+   *
+   * ⭐ HA-04: `buildSuggestions` ends `.slice(0, 5)`, and the dropdown used to
+   * render exactly those five — so `showSearch` filtered *within five options*.
+   * On an instance with hundreds of entities that is the "not enough information
+   * to be able to map the missing entities" report: if the entity you wanted was
+   * not one of the five, no amount of typing could reach it. The five stay on
+   * top because the ranking is genuinely useful; they are no longer the whole
+   * list.
+   *
+   * `title` is what the search box matches, and it carries the integration name
+   * so "kia" finds every Kia Uvo entity even when the id says "ev6".
+   */
+  const optionsMap = useMemo(() => {
+    const build = (missing: string) => {
+      const suggestions = suggestionsMap[missing] ?? [];
+      const suggested = new Set(suggestions.map((s) => s.entityId));
+
+      const toOption = (
+        entityId: string,
+        friendlyName: string | undefined,
+        score: number | null,
+      ) => {
+        const integration = integrationOf(entityId);
+        return {
+          value: entityId,
+          title: [entityId, friendlyName ?? '', integration].join(' '),
+          label: (
+            <Space direction="vertical" size={0}>
+              <Space size={4} wrap>
+                <Text strong>{entityId}</Text>
+                {score !== null && (
+                  <Tag color={score >= 0.8 ? 'green' : score >= 0.6 ? 'blue' : 'default'}>
+                    {Math.round(score * 100)}%
+                  </Tag>
+                )}
+                <Tag>{integration}</Tag>
+              </Space>
+              {friendlyName && <Text type="secondary">{friendlyName}</Text>}
+            </Space>
+          ),
+        };
+      };
+
+      const rest = availableEntities
+        .filter((entity) => !suggested.has(entity.entity_id))
+        .sort((a, b) => a.entity_id.localeCompare(b.entity_id))
+        .map((entity) =>
+          toOption(entity.entity_id, entity.attributes?.friendly_name as string | undefined, null),
+        );
+
+      return [...suggestions.map((s) => toOption(s.entityId, s.friendlyName, s.score)), ...rest];
+    };
+
+    return Object.fromEntries(missingEntities.map((id) => [id, build(id)] as const));
+  }, [missingEntities, availableEntities, suggestionsMap, integrationOf]);
+
+  // A stale outcome would describe a run against a different set of entities.
+  useEffect(() => {
+    setAutoMapOutcome(null);
+  }, [visible, missingEntities, availableEntities]);
 
   useEffect(() => {
     const initial = entityRemappingService.autoMapSuggestions(missingEntities, availableEntities);
@@ -78,10 +200,13 @@ export const EntityRemappingModal: React.FC<Props> = ({
   const handleAutoMapAll = () => {
     const auto = entityRemappingService.autoMapSuggestions(missingEntities, availableEntities);
     const next: MappingState = { ...mappingState };
+    let changed = 0;
     auto.forEach(({ from, to }) => {
+      if (next[from] !== to) changed += 1;
       next[from] = to;
     });
     setMappingState(next);
+    setAutoMapOutcome({ matched: auto.length, changed, total: missingEntities.length });
   };
 
   // Expose handleApply to window for test automation
@@ -221,10 +346,35 @@ export const EntityRemappingModal: React.FC<Props> = ({
             </Space>
           </Flex>
 
+          {/* ⭐ HA-04: "Auto-map doesn't work". Measured against the reference
+              instance, the matcher is correct — it scores a genuinely renamed
+              entity at 100% and maps it. What was broken is that the button
+              never said so. Worse, the effect above already runs the SAME call
+              with the SAME arguments on mount, so in the ordinary case pressing
+              the button cannot change anything and silently changed nothing.
+              A control that cannot report its own outcome is indistinguishable
+              from a dead one. */}
+          {autoMapOutcome && (
+            <Alert
+              type={autoMapOutcome.matched > 0 ? 'success' : 'warning'}
+              showIcon
+              data-testid="remap-auto-map-outcome"
+              title={
+                autoMapOutcome.total === 0
+                  ? 'There are no missing entities to map.'
+                  : autoMapOutcome.matched === 0
+                    ? `No replacement scored high enough to map automatically for any of the ${autoMapOutcome.total} missing ${autoMapOutcome.total === 1 ? 'entity' : 'entities'}. Choose one below — the closest candidates are listed first, and you can search every entity by id, name or integration.`
+                    : autoMapOutcome.changed === 0
+                      ? `Auto-map had already filled in ${autoMapOutcome.matched === autoMapOutcome.total ? 'every' : `${autoMapOutcome.matched} of the ${autoMapOutcome.total}`} confident ${autoMapOutcome.matched === 1 ? 'match' : 'matches'} when this dialog opened, so nothing changed. Review the selections below.`
+                      : `Auto-mapped ${autoMapOutcome.changed} of ${autoMapOutcome.total} missing ${autoMapOutcome.total === 1 ? 'entity' : 'entities'}. Review the selections below before applying.`
+              }
+            />
+          )}
+
           <List
             dataSource={missingEntities}
             renderItem={(missing) => {
-              const suggestions = suggestionsMap[missing] ?? [];
+              const options = optionsMap[missing] ?? [];
               const selected = mappingState[missing] ?? null;
 
               return (
@@ -237,35 +387,27 @@ export const EntityRemappingModal: React.FC<Props> = ({
                     <Select
                       showSearch
                       allowClear
-                      placeholder="Select replacement entity"
+                      placeholder="Search by entity id, name or integration"
                       style={{ width: '100%' }}
                       value={selected ?? undefined}
                       onChange={(val) => handleChange(missing, val ?? null)}
                       data-testid={`remap-select-${missing}`}
-                      optionFilterProp="label"
-                    >
-                      {suggestions.map((s) => (
-                        <Select.Option key={s.entityId} value={s.entityId} label={s.entityId}>
-                          <Space direction="vertical" size={0}>
-                            <Space>
-                              <Text strong>{s.entityId}</Text>
-                              <Tag
-                                color={
-                                  s.score >= 0.8 ? 'green' : s.score >= 0.6 ? 'blue' : 'default'
-                                }
-                              >
-                                {Math.round(s.score * 100)}%
-                              </Tag>
-                            </Space>
-                            {s.friendlyName && <Text type="secondary">{s.friendlyName}</Text>}
-                          </Space>
-                        </Select.Option>
-                      ))}
-                    </Select>
+                      options={options}
+                      // Explicit rather than `optionFilterProp`, because `label`
+                      // is a node here and only `title` is a searchable string.
+                      filterOption={(input, option) =>
+                        String(option?.title ?? '')
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
+                      }
+                    />
                     <Input
                       placeholder="Manual entity ID"
+                      // Holds only an id typed by hand. The dropdown now lists
+                      // every entity on the instance, so "not in the options" is
+                      // the honest test for "the user invented this one".
                       value={
-                        selected && !suggestions.find((s) => s.entityId === selected)
+                        selected && !options.some((option) => option.value === selected)
                           ? selected
                           : ''
                       }

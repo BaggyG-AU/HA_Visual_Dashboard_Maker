@@ -7,6 +7,56 @@
 import { test, expect } from '@playwright/test';
 import { launchWithDSL, close } from '../support';
 
+type Ctx = Awaited<ReturnType<typeof launchWithDSL>>;
+
+/** The temporary dashboard the stubbed Home Assistant reports creating. */
+const TEMP_PATH = 'temp-dashboard-editor-1785488482593';
+
+/**
+ * Stand in for Home Assistant on the three channels Live Preview uses, so the
+ * mode can be entered with no live instance. ⚠ `ha.home.local` is READ-ONLY for
+ * development (amendment-03 §4 scopes the write exception to UAT rounds), so a
+ * test may never create a real temporary dashboard.
+ */
+async function stubLivePreviewIpc(
+  ctx: Ctx,
+  { deleteSucceeds = true }: { deleteSucceeds?: boolean } = {},
+): Promise<void> {
+  await ctx.app.evaluate(
+    ({ ipcMain }, { tempPath, ok }) => {
+      for (const channel of [
+        'ha:ws:isConnected',
+        'ha:ws:createTempDashboard',
+        'ha:ws:deleteTempDashboard',
+        'ha:ws:updateTempDashboard',
+      ]) {
+        ipcMain.removeHandler(channel);
+      }
+      ipcMain.handle('ha:ws:isConnected', () => ({ connected: true }));
+      ipcMain.handle('ha:ws:createTempDashboard', () => ({ success: true, tempPath }));
+      ipcMain.handle('ha:ws:updateTempDashboard', () => ({ success: true }));
+      ipcMain.handle('ha:ws:deleteTempDashboard', () =>
+        ok
+          ? { success: true }
+          : {
+              success: false,
+              error: `No Home Assistant dashboard has the url_path "${tempPath}"`,
+            },
+      );
+    },
+    { tempPath: TEMP_PATH, ok: deleteSucceeds },
+  );
+}
+
+/**
+ * ⚠ Located by BUTTON PROSE, not a testid. A branch-added testid vanishes when
+ * `src/` is reverted for the red leg, which would fail the run before it reached
+ * the assertion under test and measure nothing.
+ */
+async function enterLivePreview(ctx: Ctx): Promise<void> {
+  await ctx.window.getByRole('button', { name: 'Live Preview' }).click();
+}
+
 test.describe('Dashboard Browser', () => {
   test('should show dashboard browser UI', async () => {
     const ctx = await launchWithDSL();
@@ -174,19 +224,65 @@ test.describe('Live Preview', () => {
     }
   });
 
-  test('should display HA dashboard in iframe', async () => {
+  /**
+   * HA-08 (UAT round 2, Medium, regression). Owner: "Address for preview is
+   * hidden under cards and even when it is not it cannot be copied."
+   *
+   * ⚠⚠⚠ THIS TEST REPLACES A PLACEHOLDER NAMED "should display HA dashboard in
+   * iframe" WHOSE BODY WAS `expect(true).toBe(true)` — AND WHOSE PREMISE WAS
+   * FALSE. Live Preview renders NO iframe and has not since `c2f77c3`
+   * (2025-12-24) removed it without saying so. Home Assistant serves
+   * `X-Frame-Options: SAMEORIGIN` (measured against the reference instance), so
+   * an iframe in the renderer is refused by Chromium anyway. Restoring genuine
+   * embedding is post-1.0 work and a security decision of its own.
+   *
+   * What Live Preview actually offers is the ADDRESS of the real render — and
+   * that address lived in the centre-of-canvas banner at `zIndex: 1`, directly
+   * beneath the card overlay at `zIndex: 2`. Hence "hidden under cards".
+   */
+  test('shows the preview address where no card can cover it, and offers to copy it', async () => {
     const ctx = await launchWithDSL();
     const { window } = ctx;
-    void window;
 
     try {
       await ctx.appDSL.waitUntilReady();
+      await ctx.appDSL.setConnected(true);
+      await ctx.dashboard.createNew();
+      await ctx.palette.addCard('button');
+      await ctx.palette.addCard('button');
 
-      // TODO: Open live preview
-      // TODO: Verify iframe element exists
-      // TODO: Verify iframe src points to HA instance
+      await stubLivePreviewIpc(ctx);
+      await enterLivePreview(ctx);
 
-      expect(true).toBe(true); // Placeholder
+      // ⭐ CONTROL LEG — keyed on pre-existing button prose, so it passes on base
+      // too and proves Live Preview was actually entered. Without it, a red
+      // discriminator below could just mean the mode never opened.
+      await expect(window.getByRole('button', { name: 'Deploy to Production' })).toBeVisible();
+
+      // ⭐ DISCRIMINATOR — the address now has its own header row. On base there
+      // is no such element at all.
+      await expect(window.getByTestId('live-preview-address-bar')).toBeVisible();
+      const address = window.getByTestId('live-preview-address');
+      await expect(address).toContainText(TEMP_PATH);
+
+      // ⭐⭐ THE LITERAL COMPLAINT, MEASURED THE WAY CANVAS-04 MEASURED ITS OWN:
+      // the address must be the topmost element at its own centre. Existence and
+      // visibility both passed on base while it sat under the overlay —
+      // `toBeVisible()` does not do hit-testing, so only this can see it.
+      const topmost = await window.evaluate(() => {
+        const el = document.querySelector('[data-testid="live-preview-address"]');
+        if (!el) return 'ADDRESS ELEMENT NOT FOUND';
+        const r = el.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return el === hit || el.contains(hit)
+          ? 'TOPMOST'
+          : `COVERED BY ${hit?.tagName}.${hit?.className}`;
+      });
+      expect(topmost).toBe('TOPMOST');
+
+      // "…and even when it is not it cannot be copied": there is now a one-click
+      // copy, which antd renders as a button inside the copyable Text.
+      await expect(address.locator('.ant-typography-copy')).toBeVisible();
     } finally {
       await close(ctx);
     }
@@ -248,19 +344,69 @@ test.describe('Live Preview', () => {
     }
   });
 
-  test('should clean up temporary dashboard on close', async () => {
+  /**
+   * ⚠⚠⚠ THE SHARPEST COVERAGE FAILURE THIS PROJECT HAS FOUND. This test was a
+   * placeholder whose entire body was `expect(true).toBe(true)` — named for
+   * EXACTLY the defect that then shipped. "should clean up temporary dashboard
+   * on close" was GREEN in every run while three orphaned temporary dashboards
+   * accumulated on the live instance across two UAT rounds.
+   *
+   * A test named after a behaviour, passing, and asserting nothing about it is
+   * worse than no test: the name is the thing a reader trusts.
+   *
+   * The delete itself is proven at the protocol seam in
+   * `tests/unit/haWebSocketService.dashboards.spec.ts` (the `dashboard_id` vs
+   * `url_path` mismatch). What THIS test adds is the other half of the defect:
+   * the failure was silent, so the user was never told the dashboard survived.
+   */
+  test('Close reports the deletion — and says so loudly when it fails', async () => {
     const ctx = await launchWithDSL();
     const { window } = ctx;
-    void window;
 
     try {
       await ctx.appDSL.waitUntilReady();
+      await ctx.appDSL.setConnected(true);
+      await ctx.dashboard.createNew();
+      await ctx.palette.addCard('button');
 
-      // TODO: Open live preview (creates temp dashboard)
-      // TODO: Close preview
-      // TODO: Verify temp dashboard deleted from HA
+      // Deletion REFUSED by Home Assistant — which is precisely what happened in
+      // production, because the delete carried a dashboard_id that matched
+      // nothing.
+      await stubLivePreviewIpc(ctx, { deleteSucceeds: false });
+      await enterLivePreview(ctx);
 
-      expect(true).toBe(true); // Placeholder
+      // ⭐ CONTROL LEG — pre-existing prose, passes on base.
+      await expect(window.getByRole('button', { name: 'Deploy to Production' })).toBeVisible();
+
+      await window.getByRole('button', { name: 'Close' }).click();
+
+      // ⭐ DISCRIMINATOR — on base the `if (result.success)` branch simply fell
+      // through: no message of any kind, and the path was cleared anyway, losing
+      // the only handle on the orphan. The user must be told WHERE it is.
+      await expect(window.getByText(new RegExp(TEMP_PATH))).toBeVisible();
+      await expect(window.getByText(/Settings . Dashboards/i)).toBeVisible();
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  test('Close confirms the deletion when Home Assistant accepts it', async () => {
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await ctx.appDSL.setConnected(true);
+      await ctx.dashboard.createNew();
+      await ctx.palette.addCard('button');
+
+      await stubLivePreviewIpc(ctx, { deleteSucceeds: true });
+      await enterLivePreview(ctx);
+      await window.getByRole('button', { name: 'Close' }).click();
+
+      await expect(window.getByText(/Temporary dashboard deleted/i)).toBeVisible();
+      // And it really left the mode, rather than reporting success from inside it.
+      await expect(window.getByRole('button', { name: 'Deploy to Production' })).toHaveCount(0);
     } finally {
       await close(ctx);
     }

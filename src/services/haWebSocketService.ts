@@ -386,16 +386,59 @@ export class HAWebSocketService {
   }
 
   /**
+   * Resolve a dashboard's storage `id` from its `url_path`.
+   *
+   * ⭐⭐⭐ HA-08. THESE ARE NOT THE SAME STRING, AND CONFLATING THEM IS WHY
+   * TEMPORARY DASHBOARDS SURVIVED "Close". Home Assistant requires a `url_path`
+   * to contain a HYPHEN and derives the storage `id` by replacing hyphens with
+   * UNDERSCORES, so a dashboard created as `temp-dashboard-editor-1785488482593`
+   * is filed under the id `temp_dashboard_editor_1785488482593`. Measured
+   * read-only against the reference instance — every dashboard on it shows the
+   * same hyphen/underscore split:
+   *
+   *   id                                   | url_path
+   *   temp_dashboard_editor_1785488482593  | temp-dashboard-editor-1785488482593
+   *
+   * `lovelace/dashboards/delete` takes the **id**. Passing the url_path matched
+   * nothing, so every delete failed — and the failure was swallowed, leaving
+   * three orphaned dashboards on the live instance across two UAT rounds.
+   *
+   * ⚠ The evidence was in this same file the whole time: `createTempDashboard`'s
+   * own comment states the hyphen rule that creates the divergence, and
+   * `DashboardListItem` declares `id` and `url_path` as separate fields.
+   *
+   * Resolving through the list rather than transforming the string keeps this
+   * correct even if Home Assistant changes how it derives ids — the id is read
+   * from Home Assistant, never guessed. An id passed in directly still works, so
+   * callers that already hold one are unaffected.
+   */
+  private async resolveDashboardId(urlPath: string): Promise<string> {
+    const dashboards = await this.listDashboards();
+    const match = dashboards.find((d) => d.url_path === urlPath || d.id === urlPath);
+
+    if (!match) {
+      throw new Error(
+        `No Home Assistant dashboard has the url_path "${urlPath}", so there is nothing to delete. ` +
+          'It may already have been removed.',
+      );
+    }
+
+    return match.id;
+  }
+
+  /**
    * Delete a Lovelace dashboard (both resource and config)
-   * @param urlPath - Dashboard URL path to delete
+   * @param urlPath - Dashboard URL path to delete (a storage id is also accepted)
    */
   async deleteDashboardConfig(urlPath: string): Promise<void> {
+    const dashboardId = await this.resolveDashboardId(urlPath);
+
     await this.sendAndWait<void>({
       type: 'lovelace/dashboards/delete',
-      dashboard_id: urlPath,
+      dashboard_id: dashboardId,
     });
 
-    logger.info(`Deleted dashboard: ${urlPath}`);
+    logger.info(`Deleted dashboard: ${urlPath} (id: ${dashboardId})`);
   }
 
   /**

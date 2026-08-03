@@ -2352,9 +2352,26 @@ const App: React.FC = () => {
         const result = await window.electronAPI.haWsDeleteTempDashboard(tempDashboardPath);
         if (result.success) {
           message.info('Temporary dashboard deleted');
+        } else {
+          // ⚠⚠ HA-08: this branch used to be EMPTY. The IPC handler returns
+          // `{ success: false, error }` rather than throwing, so the catch below
+          // never fired and a failed delete produced NO message at all — while
+          // the state was cleared regardless, losing the only handle we had on
+          // the dashboard. Three orphaned temp dashboards accumulated on the
+          // live instance that way, across two UAT rounds, and HA-08's card
+          // rates one left behind as an unrequested persistent write to Home
+          // Assistant. Telling the user WHERE it is matters: they can still
+          // delete it from Settings -> Dashboards.
+          throw new Error(result.error || 'Home Assistant did not confirm the deletion');
         }
       } catch (error) {
         logger.error('Failed to delete temp dashboard', error);
+        message.error({
+          content: `Could not delete the temporary dashboard "${tempDashboardPath}": ${
+            (error as Error).message
+          }. Remove it in Home Assistant under Settings → Dashboards.`,
+          duration: 12,
+        });
       }
     }
 
