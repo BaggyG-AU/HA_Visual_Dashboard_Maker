@@ -70,7 +70,7 @@ overrides the old one rather than editing it.
 | Field         | Value                                                                              |
 | ------------- | ---------------------------------------------------------------------------------- |
 | **Card**      | HA-04 — Detect and remap missing entities                                          |
-| **Status**    | **OPEN** — not yet applied to any round                                            |
+| **Status**    | **APPLIED IN `v1.0.0-r3`** — 2026-08-03                                            |
 | **Recorded**  | 2026-08-03                                                                         |
 | **Origin**    | `docs/testing/uat/plans/uat_plan_v1.0.0-r2_2026-07-31.md` line 2236 (card at 2210) |
 | **Round run** | v1.0.0-r2 — card was marked Fail, severity Medium                                  |
@@ -128,7 +128,7 @@ instance section: 725 entities across 29 domains, no `light`/`fan`/`vacuum`/
 | Field         | Value                                                                                    |
 | ------------- | ---------------------------------------------------------------------------------------- |
 | **Card**      | HA-08 — Live Preview creates a temporary dashboard, and Close deletes it                 |
-| **Status**    | **OPEN** — not yet applied to any round                                                  |
+| **Status**    | **APPLIED IN `v1.0.0-r3`** — 2026-08-03                                                  |
 | **Recorded**  | 2026-08-03                                                                               |
 | **Origin**    | `docs/testing/uat/plans/uat_plan_v1.0.0-r2_2026-07-31.md` lines 2390–2406 (card at 2369) |
 | **Round run** | v1.0.0-r2 — card was marked Fail, severity Medium                                        |
