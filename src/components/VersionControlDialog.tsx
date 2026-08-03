@@ -195,6 +195,17 @@ export const VersionControlDialog: React.FC<VersionControlDialogProps> = ({
           <Button size="small" onClick={() => refresh(repoRoot)} data-testid="vcs-refresh">
             Refresh
           </Button>
+          {/* VCS-02: `handleDesignate` already replaces the designated repository
+              correctly — it sets the new root and refreshes off it, with nothing
+              first-time-only about it. It was simply only ever reachable from the
+              `!repoRoot` branch above, so once a repository was designated the
+              only way to reach a different one was Forget-then-Choose. The repo
+              root persists between sessions, so round 1's tester (no repo, button
+              present) and round 2's (repo already set, no button) saw different
+              dialogs from the same build. */}
+          <Button size="small" onClick={handleDesignate} data-testid="vcs-change-repo">
+            Change…
+          </Button>
           <Button size="small" onClick={handleForget} data-testid="vcs-forget-repo">
             Forget
           </Button>
