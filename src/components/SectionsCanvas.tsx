@@ -4,6 +4,7 @@ import type { Card, View } from '../types/dashboard';
 import type { SelectionMode } from '../utils/bulkSelection';
 import { BaseCard } from './BaseCard';
 import { CardContextMenu } from './CardContextMenu';
+import './SectionsCanvas.css';
 import {
   sectionsColumnCount,
   sectionColumnSpan,
@@ -489,6 +490,7 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                     data-card-index={ci}
                     data-grid-columns={cardSpan}
                     data-grid-rows={rowSpan}
+                    className={`havdm-section-card${selected ? ' havdm-section-card--selected' : ''}`}
                     style={{
                       gridColumn: `span ${cardSpan}`,
                       gridRow: `span ${rowSpan}`,
@@ -548,45 +550,58 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                       </CardContextMenu>
                     </div>
 
+                    {/* ⭐⭐⭐ VIEWS-05. These handles used to be rendered ONLY when
+                        the card was already selected, and drawn with
+                        `background: 'transparent'` and no stylesheet — so on an
+                        unselected card the handle DID NOT EXIST IN THE DOM, and
+                        on a selected one it was invisible. VIEWS-05 step 1 is
+                        "hover the right edge of a card until a width handle
+                        appears", which could not succeed by construction.
+                        Meanwhile selecting the card — the undocumented
+                        precondition — is what makes the slider panel appear,
+                        which is exactly what the owner reported seeing instead:
+                        "Could not resize with handle. Dialogue with sliders
+                        appears when clicking on a card." One mechanism, both
+                        sentences.
+
+                        ⭐ THIS IS ROUND-1 High CANVAS-04 ONE CANVAS OVER. `6533ec7`
+                        gave the MASONRY canvas a permanently drawn, hover-grown,
+                        hit-testable handle and never touched Sections — which is
+                        why a card that passed in round 1 failed in round 2 on
+                        unchanged code: the tester had just been taught what a
+                        canvas resize handle looks like.
+
+                        The handles are now always present and always drawn, with
+                        the same cyan affordance GridCanvas.css gives the masonry
+                        one. `beginResize` takes its address explicitly and never
+                        read the selection, so resizing an unselected card works
+                        unchanged. */}
+                    <div
+                      data-testid={`section-resize-columns-${si}-${ci}`}
+                      className="havdm-section-resize-handle havdm-section-resize-handle--columns"
+                      role="separator"
+                      aria-label="Resize card width"
+                      title="Drag to resize width"
+                      onMouseDown={(event) =>
+                        beginResize({ sectionIndex: si, cardIndex: ci }, 'columns', card, event)
+                      }
+                    />
+                    <div
+                      data-testid={`section-resize-rows-${si}-${ci}`}
+                      className="havdm-section-resize-handle havdm-section-resize-handle--rows"
+                      role="separator"
+                      aria-label="Resize card height"
+                      title="Drag to resize height"
+                      onMouseDown={(event) =>
+                        beginResize({ sectionIndex: si, cardIndex: ci }, 'rows', card, event)
+                      }
+                    />
+
                     {selected ? (
                       <>
-                        <div
-                          data-testid={`section-resize-columns-${si}-${ci}`}
-                          role="separator"
-                          aria-label="Resize card width"
-                          title="Drag to resize width"
-                          onMouseDown={(event) =>
-                            beginResize({ sectionIndex: si, cardIndex: ci }, 'columns', card, event)
-                          }
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            right: -3,
-                            width: 8,
-                            height: '100%',
-                            cursor: 'ew-resize',
-                            background: 'transparent',
-                          }}
-                        />
-                        <div
-                          data-testid={`section-resize-rows-${si}-${ci}`}
-                          role="separator"
-                          aria-label="Resize card height"
-                          title="Drag to resize height"
-                          onMouseDown={(event) =>
-                            beginResize({ sectionIndex: si, cardIndex: ci }, 'rows', card, event)
-                          }
-                          style={{
-                            position: 'absolute',
-                            bottom: -3,
-                            left: 0,
-                            width: '100%',
-                            height: 8,
-                            cursor: 'ns-resize',
-                            background: 'transparent',
-                          }}
-                        />
-                        {/* 4.3c: precise-mode numeric sliders (exact columns/rows). */}
+                        {/* 4.3c: precise-mode numeric sliders (exact columns/rows).
+                            Still selection-gated — it is the PRECISE mode, not the
+                            discoverable one, and it must not cover every card. */}
                         <div
                           data-testid={`section-precise-panel-${si}-${ci}`}
                           onMouseDown={(event) => event.stopPropagation()}

@@ -310,6 +310,92 @@ test.describe('Sections view canvas (Tier 4)', () => {
     }
   });
 
+  /**
+   * VIEWS-05 (UAT round 2, Medium, regression, `auto_covered: N`).
+   * Owner: "Could not resize with handle. Dialogue with sliders appears when
+   * clicking on a card."
+   *
+   * ⚠⚠⚠ WHY THE TEST ABOVE COULD NOT SEE THIS. "drag-resizes a card, writing
+   * grid_options.columns" calls `canvas.selectCard(0)` and then addresses the
+   * handle by testid — it PERFORMS THE USER'S MISSING STEP FOR THEM. The handles
+   * were rendered only when the card was already selected, so a test that
+   * selects first can never discover that a human cannot find them. VIEWS-05
+   * step 1 is "HOVER the right edge of a card until a width handle appears", and
+   * nothing in the suite hovered anything.
+   *
+   * This test never selects the card. That is the whole point.
+   */
+  test('a card that was never selected reveals a grabbable resize handle on hover', async ({
+    page,
+  }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { window } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadSections(ctx);
+
+      const targetCard = window
+        .getByTestId('sections-canvas-section-0')
+        .getByTestId('canvas-card')
+        .nth(0);
+
+      // ⭐ CONTROL LEG — pre-existing locators and attributes only, so it passes
+      // on base too. It proves the sections view rendered and we are looking at
+      // the right card; without it, a red discriminator below could just mean
+      // the fixture never loaded.
+      await expect(window.getByTestId('canvas-card')).toHaveCount(3);
+      await expect(targetCard).toHaveAttribute('data-grid-columns', '12');
+
+      // ⭐ DISCRIMINATOR 1 — the handle EXISTS without any selection. On base it
+      // was inside `{selected ? … : null}`, so this count is 0.
+      const handle = window.getByTestId('section-resize-columns-0-0');
+      await expect(handle).toHaveCount(1);
+
+      // ⭐ DISCRIMINATOR 2 — hovering the CARD reveals it. On base there was no
+      // stylesheet and an inline `background: 'transparent'`: nothing to reveal.
+      // ⚠ Asserted on computed opacity, NOT `toBeVisible()` — Playwright counts
+      // an `opacity: 0` element as visible, so `toBeVisible` cannot tell a
+      // revealed handle from a hidden one and would pass either way.
+      await targetCard.hover();
+      // ⚠ Bare `getComputedStyle`, not `window.getComputedStyle`: in this file
+      // `window` is the Playwright Page destructured from the context, and it
+      // shadows the DOM global inside the evaluate callback.
+      await expect
+        .poll(async () => handle.evaluate((el) => getComputedStyle(el as Element).opacity))
+        .toBe('1');
+
+      // ⭐⭐ DISCRIMINATOR 3 — it is GRABBABLE, measured the way round-1 High
+      // CANVAS-04 measured the masonry handle: topmost element at its own
+      // centre. CANVAS-04 is the proof that existence and visibility both pass
+      // while a handle is unreachable, so only hit-testing settles it.
+      const topmost = await handle.evaluate((el) => {
+        const r = (el as Element).getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return el === hit ? 'HANDLE' : `${hit?.tagName}.${(hit as Element)?.className}`;
+      });
+      expect(topmost).toBe('HANDLE');
+
+      // ⭐⭐⭐ AND THE OUTCOME THE CARD ACTUALLY ASKS FOR: a real drag resizes the
+      // card, from a card the user never clicked.
+      const section = await window.getByTestId('sections-canvas-section-0').boundingBox();
+      const box = await handle.boundingBox();
+      if (!section || !box) throw new Error('missing bounding boxes');
+      await window.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await window.mouse.down();
+      await window.mouse.move(box.x + box.width / 2 - section.width * 0.4, box.y + box.height / 2, {
+        steps: 8,
+      });
+      await window.mouse.up();
+
+      await expect
+        .poll(async () => Number(await targetCard.getAttribute('data-grid-columns')))
+        .toBeLessThan(12);
+    } finally {
+      await close(ctx);
+    }
+  });
+
   // --- Tier 4 slice 4.3c: 56px row parity + precise-mode sliders --------------
 
   test('renders cards on the 56px row grid with an estimated row span', async ({ page }) => {
