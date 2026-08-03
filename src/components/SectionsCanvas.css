@@ -1,0 +1,100 @@
+/**
+ * VIEWS-05 — the Sections canvas resize handles.
+ *
+ * ⭐⭐⭐ THE POINT OF THIS FILE. Before it, these handles had NO stylesheet at all
+ * and an inline `background: 'transparent'`, and were rendered only when the card
+ * was already selected. So VIEWS-05 step 1 — "hover the right edge of a card
+ * inside a section until a width handle appears" — could not succeed: on an
+ * unselected card the element was not in the DOM, and on a selected one there
+ * was nothing to see.
+ *
+ * The masonry canvas already solved exactly this. `GridCanvas.css` draws a cyan
+ * chevron that is always present and GROWS on hover, and `6533ec7` lifted it
+ * above its sibling so it could actually be grabbed (round-1 High CANVAS-04).
+ * That fix never reached SectionsCanvas. This file gives the Sections handles
+ * the same treatment, deliberately reusing `#00d9ff` so the two canvases teach
+ * the same gesture.
+ */
+
+.havdm-section-resize-handle {
+  position: absolute;
+  /* Above the card body so a press lands on the handle rather than the content.
+     CANVAS-04 was a hit-testing failure exactly like this: the handle was
+     visible and hoverable, and `document.elementFromPoint` at its own centre
+     still returned the card. Kept BELOW the precise panel's z-index of 5 — the
+     two do not overlap (measured: the panel spans right-152..right-4, the
+     column handle right-3..right+5), and if that ever changes, the numeric
+     panel should win over an 8px drag strip. */
+  z-index: 4;
+  background: transparent;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* Revealed by hovering the CARD, not the handle itself — you cannot hover an
+   8px invisible strip you have no reason to believe is there. This is the
+   affordance VIEWS-05 step 1 asks for. */
+.havdm-section-card:hover .havdm-section-resize-handle,
+.havdm-section-card--selected .havdm-section-resize-handle {
+  opacity: 1;
+}
+
+.havdm-section-resize-handle--columns {
+  top: 0;
+  right: -3px;
+  width: 8px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.havdm-section-resize-handle--rows {
+  bottom: -3px;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+/* The visible mark. A bar rather than GridCanvas's corner chevron because these
+   are edge handles on separate axes, and a corner glyph would not say which
+   edge it resizes. */
+.havdm-section-resize-handle::after {
+  content: '';
+  position: absolute;
+  background: #00d9ff;
+  border-radius: 2px;
+  opacity: 0.75;
+}
+
+.havdm-section-resize-handle--columns::after {
+  top: 50%;
+  right: 2px;
+  width: 3px;
+  height: 28px;
+  transform: translateY(-50%);
+}
+
+.havdm-section-resize-handle--rows::after {
+  left: 50%;
+  bottom: 2px;
+  height: 3px;
+  width: 28px;
+  transform: translateX(-50%);
+}
+
+/* Hovering the handle itself confirms the target before the drag starts —
+   the same "grows on hover" cue GridCanvas.css gives the masonry handle. */
+.havdm-section-resize-handle:hover::after {
+  opacity: 1;
+  box-shadow: 0 0 4px rgba(0, 217, 255, 0.8);
+}
+
+.havdm-section-resize-handle--columns:hover::after {
+  width: 5px;
+  height: 40px;
+}
+
+.havdm-section-resize-handle--rows:hover::after {
+  height: 5px;
+  width: 40px;
+}
