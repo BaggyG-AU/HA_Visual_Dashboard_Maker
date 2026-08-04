@@ -83,6 +83,31 @@ export default defineConfig({
       testMatch: '**/unit/**/*.spec.ts',
       grep: /__ignore_unit_in_playwright__/, // prevent running unit specs under Playwright
     },
+    {
+      // Live Home Assistant tests (Phase 7 amendment 04). These deploy to and
+      // read from the WRITABLE test instance `ha-test.home.local` — never
+      // `ha.home.local`, which stays read-only.
+      //
+      // ⚠ OPT-IN ON PURPOSE, AND IT MUST STAY THAT WAY. These specs need a
+      // reachable instance and a token, so they are network-dependent by
+      // nature. Letting them into the default run would make the DSL suite —
+      // which is the regression mass — flaky and machine-dependent, the exact
+      // opposite of its job. The `grep` gate below is the same idiom
+      // `electron-unit` above uses to exclude itself: a pattern that matches
+      // nothing unless HAVDM_LIVE=1 is set.
+      //
+      //   HAVDM_LIVE=1 npx playwright test --project=live-ha
+      //
+      // They are also absent from `./tools/checks` by construction, because it
+      // never invokes this project.
+      name: 'live-ha',
+      testMatch: '**/live/**/*.spec.ts',
+      grep: process.env.HAVDM_LIVE === '1' ? /.*/ : /__live_ha_opt_in_required__/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1600, height: 1200 },
+      },
+    },
   ],
 
   // Output folder for test artifacts

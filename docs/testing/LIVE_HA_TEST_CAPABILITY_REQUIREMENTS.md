@@ -166,12 +166,33 @@ and the instance's HA version alongside it.
 
 ---
 
-## 5. Tier 3 — Live round-trip ⚠ requires an owner decision
+## 5. Tier 3 — Live round-trip ✅ UNBLOCKED 2026-08-04
 
-**This is the tier that writes to Home Assistant, and it cannot be built without
-the owner widening amendment-03 §4.**
+> ⭐⭐ **STATUS UPDATE — THE BLOCKER BELOW HAS BEEN RESOLVED, AND NOT THE WAY THIS
+> SECTION ANTICIPATED.** The owner did not widen amendment-03 §4 for
+> `ha.home.local`. Instead, on 2026-08-04 they provided a **second, disposable
+> instance — `ha-test.home.local`** — and authorised agent writes to it, by
+> `docs/governance/phases/phase-7-ecosystem-future-growth-amendment-04.md`.
+> **`ha.home.local` remains read-only, exactly as §4 left it.**
+>
+> Built and passing: `tests/live/ha-deploy-render.spec.ts`, in an opt-in
+> `live-ha` Playwright project that runs in neither `./tools/checks` nor a
+> default suite run. Support: `tests/support/liveHa.ts`, which asserts the
+> hostname on every connection so these helpers cannot be repointed at
+> production by a later edit.
+>
+> ⭐ **Measured parity (amendment-04 §3.1):** the test instance is a snapshot of
+> the reference — same HA version (2026.7.4), all 11 HACS Lovelace resources,
+> identical 5 themes, and the same absent domains (no `light`/`fan`/`vacuum`/…).
+> That is what makes a green result there transferable.
+>
+> ⭐⭐ **The largest win was not in this tier list at all:** a disposable instance
+> lets HACS resources be **installed and uninstalled**, which finally makes the
+> capability layer testable — including whether card-mod's strip-and-warn branch
+> fires when card-mod is _removed_, currently dead code that the reference
+> instance masks precisely because card-mod is installed there.
 
-### ⚠⚠ The governance blocker, stated plainly
+### ⚠⚠ The governance blocker as originally stated (retained for the record)
 
 Amendment-03 §4 grants **one bounded exception** to the live-HA read-only rule,
 and scopes it to **UAT rounds** — explicitly _"for ordinary development and
@@ -235,6 +256,26 @@ person can say the dashboard looks right." Automating a fragile pixel comparison
 against someone else's frontend would spend a lot of effort to weaken, not
 strengthen, that judgement.
 
+> ⭐⭐ **2026-08-04 REFINEMENT — THIS RECOMMENDATION IS NARROWED, NOT REVERSED.**
+> Amendment-04 §3.2 splits the question in two, because the recommendation above
+> conflates them. **"Does it look right" is a judgement and stays human.** But
+> _"did six cards render, is this a sections view, is there an 'Unknown type
+> encountered' tile"_ is a **DOM query**, not a judgement — and it is the exact
+> class of question that, left unmeasured, produced a wrong High-severity finding
+> on 2026-08-04 (an agent asserted HA would render a view's cards invisible; HA
+> does not).
+>
+> So the mechanical half is now automated (`tests/live/ha-deploy-render.spec.ts`)
+> and the judgement half is not. ⚠ **Note what is still NOT done, deliberately:
+> no pixel snapshots.** The second row's objection — HA's own render churns
+> across versions, so snapshots are fragile — stands unchallenged and the spec
+> asserts element counts and text, never images.
+>
+> ⭐ The middle row's "needs auth automation" is solved and cost little: inject
+> `hassTokens` into `localStorage` with `clientId: null` (see
+> `tests/support/liveHa.ts`). The third row stays blocked — `X-Frame-Options` and
+> the deferred embedding decision are unchanged.
+
 **What genuinely helps instead is FR-04** — a known-good fixture dashboard, so the
 human's judgement is exercised against a controlled input.
 
@@ -282,9 +323,14 @@ footing would bake that in.
 
 ## 8. Decisions required before anything is built
 
-1. ⚠⚠ **Does amendment-03 §4's write exception extend to an automated test
-   tier?** Currently scoped to UAT rounds only. **Tier 4 cannot be built without
-   this, and it is the owner's alone.**
+1. ✅ **RESOLVED 2026-08-04 — does amendment-03 §4's write exception extend to an
+   automated test tier?** Answered by **amendment-04**, and answered better than
+   this question framed it: rather than widening §4 for `ha.home.local`, the
+   owner supplied a **separate disposable instance** (`ha-test.home.local`) and
+   authorised writes there. `ha.home.local` is untouched. ⭐ The lesson worth
+   keeping is that the question assumed the only lever was loosening the rule on
+   production; a second instance was the better answer and did not require
+   loosening anything.
 2. **Is a captured real-instance config acceptable as a committed fixture?** It
    contains entity ids and dashboard structure from a private home instance.
 3. **Should tiers 1–3 proceed independently of that decision?** They need no
