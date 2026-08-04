@@ -79,10 +79,12 @@ a round rediscovering them, and so you are not surprised when you hit them.
 2. **If you re-open the EXPORTED file in HAVDM, the Energy view will look
    empty.** The export drops its `type: sections`, and HAVDM's canvas only draws
    a sections view on a strict `type: sections` match — so it shows a flat view
-   with nothing in it. The six cards are still in the file. ⭐ Home Assistant
-   itself is fine with this: HA falls back to a sections layout whenever a
-   `sections` key is present, so the dashboard **renders correctly in HA**. It is
-   HAVDM that cannot re-read its own output. This is fix **F9**.
+   with nothing in it. The six cards are still in the file. ⭐ **Home Assistant is
+   fine with it — this has now been deployed to a real instance and looked at**
+   (`tests/live/ha-deploy-render.spec.ts`): the Energy view renders as a proper
+   sections view with both sections and all six cards, because HA falls back to a
+   sections layout whenever a `sections` key is present. **It is HAVDM, not Home
+   Assistant, that cannot re-read its own output.** This is fix **F9**.
 3. **The Home view's cards carry `view_layout` keys that Home Assistant
    ignores**, so the layout you saw on the HAVDM canvas will not be reproduced —
    the cards stack. Also **F9**. The dashboard still renders correctly; only the
