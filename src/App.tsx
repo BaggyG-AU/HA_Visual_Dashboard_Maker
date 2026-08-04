@@ -520,6 +520,34 @@ const App: React.FC = () => {
           syncWithHA: syncResult.sync,
         });
 
+        // ⭐⭐⭐ F2 / UAT defect THEME-01: RESTORE THE CHOSEN THEME TOO.
+        //
+        // This effect used to restore `darkMode` and `syncWithHA` and stop
+        // there. `setSelectedTheme` was written on every pick and NEVER READ
+        // BACK — `getSelectedTheme` had zero renderer callers — so two of three
+        // theme preferences survived a restart and the third vanished without a
+        // trace. The user's chosen theme was on disk the whole time.
+        //
+        // ⚠ ORDER MATTERS: the two `setState` values above must land FIRST,
+        // because `restoreSelectedTheme` reads `syncWithHA` to decide whether an
+        // explicit selection may apply at all. Restoring the theme before the
+        // sync flag would consult last render's value and could re-apply a theme
+        // over a user who had since turned syncing back on.
+        const selectedResult = await window.electronAPI.getSelectedTheme();
+        const restore = useThemeStore.getState().restoreSelectedTheme(selectedResult.theme);
+
+        // ⚠ An `unresolved` outcome is NOT noise: a theme the user picked is
+        // gone from this session's catalogue (typically an HA theme, absent
+        // while disconnected). Logging it is the minimum; leaving it silent is
+        // the exact failure mode F2 exists to remove.
+        if (restore.outcome === 'unresolved') {
+          logger.warn(
+            `Saved theme "${restore.themeName}" is not available in this session — leaving the theme unset`,
+          );
+        } else {
+          logger.debug('Restored theme selection', restore);
+        }
+
         logger.debug('Loaded theme preferences', darkModeResult, syncResult);
       } catch (error) {
         logger.error('Failed to load theme preferences', error);

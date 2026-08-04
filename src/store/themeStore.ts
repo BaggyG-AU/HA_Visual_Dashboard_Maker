@@ -30,6 +30,12 @@ interface ThemeStore {
   // Actions
   setAvailableThemes: (themes: Themes) => void;
   setTheme: (themeName: string) => void;
+  /**
+   * Re-apply a theme selection persisted by a previous session (F2 / THEME-01).
+   * Returns what actually happened so the caller can log or surface it — a
+   * restore that silently does nothing is the defect this fixes, not a fix.
+   */
+  restoreSelectedTheme: (themeName: string | null | undefined) => ThemeRestoreResult;
   toggleDarkMode: () => void;
   setSyncWithHA: (sync: boolean) => void;
 
@@ -40,6 +46,32 @@ interface ThemeStore {
   importThemeManager: (rawJson: string) => ThemeManagerImportResult;
   setViewOverride: (viewKey: string, themeName: string | null) => void;
   setActiveViewKey: (viewKey: string | null) => void;
+}
+
+/**
+ * Why a restore did or did not apply (F2). Every outcome is NAMED rather than
+ * folded into a boolean, because the failure this feature exists to fix was
+ * precisely an outcome nobody could see.
+ *
+ * - `applied`      — the persisted name resolved and is now the active theme.
+ * - `none-saved`   — no selection was ever persisted. The expected first-run
+ *                    case, and NOT a problem.
+ * - `sync-owns-it` — `syncWithHA` is on, so Home Assistant's theme governs and
+ *                    an explicit selection must not fight it. (`setTheme` turns
+ *                    sync off, so a persisted pick and sync-on can only coexist
+ *                    if the user later re-enabled sync — in which case sync is
+ *                    the more recent instruction and wins.)
+ * - `unresolved`   — a name WAS persisted but no longer names a theme we have,
+ *                    e.g. an HA theme that is gone, or one only present while
+ *                    connected. ⚠ THIS IS THE CASE THAT MUST NEVER BE SILENT:
+ *                    a persisted name is a REFERENCE, and a reference that no
+ *                    longer resolves is information the user needs.
+ */
+export type ThemeRestoreOutcome = 'applied' | 'none-saved' | 'sync-owns-it' | 'unresolved';
+
+export interface ThemeRestoreResult {
+  outcome: ThemeRestoreOutcome;
+  themeName: string | null;
 }
 
 const persisted = readPersistedThemeManagerState();
@@ -176,6 +208,65 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
     });
   },
 
+  /**
+   * Re-apply the theme a previous session persisted (F2 / UAT defect THEME-01).
+   *
+   * ⭐⭐⭐ THE DEFECT THIS FIXES, MEASURED BY RUNNING THE REAL STORE: every pick
+   * was WRITTEN (`setTheme` calls `setSelectedTheme`) and NEVER READ BACK.
+   * `getSelectedTheme` existed in `settingsService`, `main.ts` and `preload.ts`
+   * with **zero renderer callers**, and the boot effect restored only `darkMode`
+   * and `syncWithHA`. So two of three theme preferences came back after a
+   * restart and the third silently did not.
+   *
+   * ⭐⭐ AND IT IS ALSO THE ROOT OF THE *OTHER* REPORTED SYMPTOM. THEME-02's
+   * "No active theme to save" is not a defect in `saveCurrentTheme` — measured,
+   * that guard fires ONLY when nothing is active, and saving succeeds the moment
+   * a theme is picked. A returning user hit it because their previous selection
+   * had not come back. One missing read, two failed cards.
+   *
+   * ⚠ THIS IS DELIBERATELY NOT `setTheme`. `setTheme` is a USER INSTRUCTION and
+   * turns `syncWithHA` off as a side effect; restoring is not a new instruction
+   * and must not silently change what the user chose about syncing. It also does
+   * not re-persist — writing back what we just read would be pure noise.
+   */
+  restoreSelectedTheme: (themeName: string | null | undefined) => {
+    const state = get();
+
+    if (!themeName) {
+      return { outcome: 'none-saved' as const, themeName: null };
+    }
+
+    // Sync is the more recent instruction — see ThemeRestoreOutcome.
+    if (state.syncWithHA) {
+      return { outcome: 'sync-owns-it' as const, themeName };
+    }
+
+    // ⚠⚠ RE-RESOLVE, ALWAYS. A persisted name is a REFERENCE to a theme that
+    // may no longer exist — an HA theme removed from the instance, or one only
+    // present while connected. `setTheme` returns state unchanged for a name it
+    // cannot resolve, which is invisible; here the caller is TOLD.
+    const restoredTheme = resolveThemeByName(themeName, state.availableThemes, state.savedThemes);
+    if (!restoredTheme) {
+      return { outcome: 'unresolved' as const, themeName };
+    }
+
+    set((current) => {
+      const nextState: ThemeStore = {
+        ...current,
+        baseThemeName: themeName,
+        baseTheme: restoredTheme,
+        ...deriveEffectiveThemeState({
+          ...current,
+          baseThemeName: themeName,
+          baseTheme: restoredTheme,
+        } as ThemeStore),
+      };
+      return nextState;
+    });
+
+    return { outcome: 'applied' as const, themeName };
+  },
+
   // Toggle dark/light mode
   toggleDarkMode: () => {
     const newDarkMode = !get().darkMode;
@@ -225,7 +316,19 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
 
     const state = get();
     if (!state.currentTheme) {
-      return { success: false, error: 'No active theme to save' };
+      // ⚠ F2: THE GUARD IS CORRECT — THE OLD WORDING WAS A DEAD END. "No active
+      // theme to save" states a fact and offers no way out, and it is the first
+      // thing a user meets on this tab with nothing picked. Measured: this fires
+      // ONLY when no theme is active, and saving succeeds immediately once one
+      // is. So the message now names the step that unblocks it.
+      //
+      // ⭐ A returning user should never see this at all once the boot restore
+      // above works — but a brand-new profile legitimately reaches it, and that
+      // user is exactly the one with no idea what to do next.
+      return {
+        success: false,
+        error: 'Pick an Active Theme on the Settings tab first, then save it here.',
+      };
     }
 
     const now = new Date().toISOString();
