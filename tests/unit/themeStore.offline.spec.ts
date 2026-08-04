@@ -57,6 +57,143 @@ describe('themeStore with no Home Assistant connection', () => {
     expect(result.success).toBe(true);
     expect(useThemeStore.getState().savedThemes['UAT Theme']).toBeDefined();
   });
+
+  /**
+   * F2 / UAT defect THEME-02. ⭐ THE MEASUREMENT THAT REFRAMED THIS CARD:
+   * `saveCurrentTheme` is NOT broken. Its guard fires ONLY when no theme is
+   * active, and saving succeeds the instant one is picked (the test above).
+   * THEME-02's "No active theme to save" was the MISSING RESTORE seen from the
+   * Manager tab — a returning user's selection had not come back.
+   *
+   * ⭐⭐ THIS TEST IS RED-LEGGABLE: `saveCurrentTheme` exists on base and returns
+   * the OLD dead-end string there, so reverting `src/` fails it on the assertion
+   * with the old text rather than at an import.
+   */
+  it('the refusal names the step that unblocks it, instead of stating a fact', () => {
+    const result = useThemeStore.getState().saveCurrentTheme('UAT Theme');
+
+    expect(result.success).toBe(false);
+    // The old wording — "No active theme to save" — was correct and useless: it
+    // is the first thing a user meets on this tab with nothing picked, and it
+    // offers no way forward.
+    expect(result.error).toBe('Pick an Active Theme on the Settings tab first, then save it here.');
+    expect(result.error).not.toBe('No active theme to save');
+  });
+
+  it('still refuses an empty name, and that message is unchanged', () => {
+    // ⭐ CONTROL — green on base AND on this branch. The name guard is a
+    // different refusal and must not have been swept up in the reword.
+    expect(useThemeStore.getState().saveCurrentTheme('   ')).toEqual({
+      success: false,
+      error: 'Theme name is required',
+    });
+  });
+});
+
+/**
+ * F2 / UAT defect THEME-01 — restoring a selection a previous session persisted.
+ *
+ * ⭐⭐⭐ THE DEFECT, MEASURED BY RUNNING THE REAL STORE BEFORE ANY CODE WAS
+ * WRITTEN: every pick was WRITTEN via `setSelectedTheme` and NEVER READ BACK.
+ * `getSelectedTheme` existed in `settingsService`, `main.ts` and `preload.ts`
+ * with ZERO renderer callers, and the boot effect restored only `darkMode` and
+ * `syncWithHA`. Two of three theme preferences survived a restart; the third
+ * vanished, though it was on disk the whole time.
+ *
+ * ⚠ RED-LEG HONESTY: `restoreSelectedTheme` is NEW, so these tests cannot be
+ * red-legged — on base the action is undefined and they fail with a TypeError
+ * rather than on an assertion. They are breadth over the outcome rules. The leg
+ * that actually measures the defect is `tests/e2e/theme-restore.spec.ts`, which
+ * restarts the real app against the same profile and fails on base because the
+ * theme simply is not there.
+ */
+describe('themeStore restores a persisted selection (F2 / THEME-01)', () => {
+  const freshState = (overrides = {}) => {
+    useThemeStore.setState({
+      availableThemes: { ...BUILT_IN_THEMES },
+      savedThemes: {},
+      baseThemeName: null,
+      baseTheme: null,
+      currentThemeName: null,
+      currentTheme: null,
+      syncWithHA: false,
+      lastHAThemeName: null,
+      viewOverrides: {},
+      activeViewKey: null,
+      ...overrides,
+    });
+  };
+
+  beforeEach(() => freshState());
+
+  it('re-applies a built-in theme the previous session chose', () => {
+    const name = BUILT_IN_THEME_NAMES[0];
+
+    const result = useThemeStore.getState().restoreSelectedTheme(name);
+
+    expect(result).toEqual({ outcome: 'applied', themeName: name });
+    expect(useThemeStore.getState().currentThemeName).toBe(name);
+    expect(useThemeStore.getState().currentTheme).toEqual(BUILT_IN_THEMES[name]);
+  });
+
+  it('re-applies a SAVED theme too, not just a built-in', () => {
+    // A saved theme is resolved from a different map; restoring must consult
+    // both, exactly as `setTheme` does.
+    const saved = { 'primary-color': '#123456' };
+    freshState({ savedThemes: { Mine: { name: 'Mine', theme: saved, savedAt: 'x' } } });
+
+    expect(useThemeStore.getState().restoreSelectedTheme('Mine')).toEqual({
+      outcome: 'applied',
+      themeName: 'Mine',
+    });
+    expect(useThemeStore.getState().currentTheme).toEqual(saved);
+  });
+
+  it('reports `none-saved` and changes nothing on a first run', () => {
+    // The expected first-run case — NOT a problem, and must not be logged as one.
+    expect(useThemeStore.getState().restoreSelectedTheme(undefined)).toEqual({
+      outcome: 'none-saved',
+      themeName: null,
+    });
+    expect(useThemeStore.getState().currentTheme).toBeNull();
+  });
+
+  it('⚠ reports `unresolved` — never silently — when the saved name is gone', () => {
+    // ⭐⭐ THE CASE THAT MUST NOT BE SILENT. A persisted name is a REFERENCE, and
+    // an HA theme is absent while disconnected. `setTheme` returns state
+    // unchanged for a name it cannot resolve, which is invisible to everyone;
+    // the restore path TELLS its caller, which is what lets App.tsx warn.
+    const result = useThemeStore.getState().restoreSelectedTheme('A Theme From My HA Box');
+
+    expect(result).toEqual({ outcome: 'unresolved', themeName: 'A Theme From My HA Box' });
+    expect(useThemeStore.getState().currentThemeName).toBeNull();
+    expect(useThemeStore.getState().currentTheme).toBeNull();
+  });
+
+  it('defers to Home Assistant when syncWithHA is on', () => {
+    // ⚠ Signed off by the owner: sync is the more recent instruction. `setTheme`
+    // turns sync OFF, so a persisted pick and sync-on can only coexist if the
+    // user later re-enabled syncing — and that choice must win.
+    freshState({ syncWithHA: true });
+
+    expect(useThemeStore.getState().restoreSelectedTheme(BUILT_IN_THEME_NAMES[0])).toEqual({
+      outcome: 'sync-owns-it',
+      themeName: BUILT_IN_THEME_NAMES[0],
+    });
+    expect(useThemeStore.getState().currentTheme).toBeNull();
+  });
+
+  it('does NOT re-persist, and does NOT change the sync preference', () => {
+    // ⭐ Restoring is not a new user instruction. `setTheme` deliberately sets
+    // `syncWithHA: false` as a side effect of an explicit pick; a restore that
+    // did the same would silently rewrite a preference it was only reading, and
+    // writing back the value we just read would be pure noise.
+    const before = useThemeStore.getState().syncWithHA;
+
+    useThemeStore.getState().restoreSelectedTheme(BUILT_IN_THEME_NAMES[0]);
+
+    expect(useThemeStore.getState().syncWithHA).toBe(before);
+  });
 });
 
 describe('themeStore when Home Assistant connects', () => {
