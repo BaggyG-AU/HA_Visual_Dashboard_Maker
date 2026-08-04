@@ -1,0 +1,176 @@
+{
+  "$comment": "Measured evidence for FR-04. Captured READ-ONLY from the reference instance. Regenerate deliberately; never hand-edit. See docs/testing/uat/KNOWN_GOOD_DASHBOARD.md.",
+  "capturedAt": "2026-08-04",
+  "instance": {
+    "host": "ha.home.local",
+    "haVersion": "2026.7.4",
+    "totalEntities": 877,
+    "totalRegistryRows": 1579,
+    "domainCount": 31,
+    "domainHistogram": {
+      "alarm_control_panel": 1,
+      "automation": 32,
+      "binary_sensor": 241,
+      "button": 9,
+      "camera": 8,
+      "climate": 6,
+      "conversation": 1,
+      "counter": 1,
+      "cover": 13,
+      "device_tracker": 4,
+      "event": 12,
+      "input_boolean": 6,
+      "input_number": 11,
+      "input_select": 1,
+      "lock": 1,
+      "media_player": 6,
+      "notify": 3,
+      "number": 25,
+      "person": 2,
+      "script": 4,
+      "select": 23,
+      "sensor": 311,
+      "stt": 1,
+      "sun": 1,
+      "switch": 120,
+      "text": 1,
+      "todo": 1,
+      "tts": 2,
+      "update": 26,
+      "weather": 3,
+      "zone": 1
+    },
+    "absentDomains": [
+      "light",
+      "fan",
+      "vacuum",
+      "plant",
+      "humidifier",
+      "water_heater",
+      "siren",
+      "valve",
+      "lawn_mower",
+      "remote",
+      "image",
+      "date",
+      "datetime",
+      "time"
+    ],
+    "themes": [
+      "Material You",
+      "Mushroom",
+      "Mushroom Shadow",
+      "Mushroom Square",
+      "Mushroom Square Shadow"
+    ]
+  },
+  "lovelaceResources": [
+    "/hacsfiles/Bubble-Card/bubble-card.js",
+    "/hacsfiles/apexcharts-card/apexcharts-card.js",
+    "/hacsfiles/better-thermostat-ui-card/better-thermostat-ui-card.js",
+    "/hacsfiles/button-card/button-card.js",
+    "/hacsfiles/lovelace-card-mod/card-mod.js",
+    "/hacsfiles/lovelace-mushroom/mushroom.js",
+    "/hacsfiles/lovelace-template-entity-row/template-entity-row.js",
+    "/hacsfiles/mini-graph-card/mini-graph-card-bundle.js",
+    "/hacsfiles/modern-circular-gauge/modern-circular-gauge.js",
+    "/hacsfiles/platinum-weather-card/platinum-weather-card.js",
+    "/hacsfiles/power-flow-card-plus/power-flow-card-plus.js"
+  ],
+  "capabilityProfile": {
+    "$comment": "The tester's own resolved profile: %APPDATA%/HA Visual Dashboard Maker/ha-capability-profile.json",
+    "capturedAt": "2026-08-03T09:43:07.314Z",
+    "installedElements": [
+      "custom:apexcharts-card",
+      "custom:better-thermostat-normal-climate-card",
+      "custom:better-thermostat-ui-card",
+      "custom:bubble-card",
+      "custom:button-card",
+      "custom:mini-graph-card",
+      "custom:modern-circular-gauge",
+      "custom:mushroom-alarm-control-panel-card",
+      "custom:mushroom-chips-card",
+      "custom:mushroom-climate-card",
+      "custom:mushroom-cover-card",
+      "custom:mushroom-entity-card",
+      "custom:mushroom-fan-card",
+      "custom:mushroom-light-card",
+      "custom:mushroom-lock-card",
+      "custom:mushroom-media-player-card",
+      "custom:mushroom-number-card",
+      "custom:mushroom-person-card",
+      "custom:mushroom-select-card",
+      "custom:mushroom-switch-card",
+      "custom:mushroom-template-card",
+      "custom:mushroom-title-card",
+      "custom:mushroom-vacuum-card",
+      "custom:power-flow-card-plus"
+    ]
+  },
+  "referencedEntities": [
+    {
+      "entity_id": "cover.garage_door",
+      "state": "closed",
+      "friendly_name": "Garage Door",
+      "device_class": "garage",
+      "unit_of_measurement": null,
+      "entity_category": null
+    },
+    {
+      "entity_id": "person.micah",
+      "state": "home",
+      "friendly_name": "Micah",
+      "device_class": null,
+      "unit_of_measurement": null,
+      "entity_category": null
+    },
+    {
+      "entity_id": "sensor.ev5_ev_battery_level",
+      "state": "48",
+      "friendly_name": "Sparky EV Battery Level",
+      "device_class": "battery",
+      "unit_of_measurement": "%",
+      "entity_category": null
+    },
+    {
+      "entity_id": "sensor.home_renewables",
+      "state": "50",
+      "friendly_name": "Home - Renewables",
+      "device_class": null,
+      "unit_of_measurement": "%",
+      "entity_category": null
+    },
+    {
+      "entity_id": "sensor.sigen_plant_battery_state_of_charge",
+      "state": "89.6",
+      "friendly_name": "Sigen Plant Battery State of Charge",
+      "device_class": "battery",
+      "unit_of_measurement": "%",
+      "entity_category": null
+    },
+    {
+      "entity_id": "sensor.sigen_plant_pv_power",
+      "state": "2.198000",
+      "friendly_name": "Sigen Plant PV Power",
+      "device_class": "power",
+      "unit_of_measurement": "kW",
+      "entity_category": null
+    },
+    {
+      "entity_id": "switch.garage_lamp",
+      "state": "off",
+      "friendly_name": "Garage Lamp",
+      "device_class": null,
+      "unit_of_measurement": null,
+      "entity_category": null
+    },
+    {
+      "entity_id": "weather.mckenzie_hill",
+      "state": "rainy",
+      "friendly_name": "McKenzie Hill",
+      "device_class": null,
+      "unit_of_measurement": null,
+      "entity_category": null
+    }
+  ]
+}
