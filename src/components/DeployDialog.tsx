@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons';
 import { haConnectionService } from '../services/haConnectionService';
 import { logger } from '../services/logger';
+import { assertDeployable, DashboardValidationError } from '../services/dashboardValidation';
 import { summarizeExportWarnings } from '../services/exportWarningSummary';
 import type { ExportWarning } from '../services/exportWarnings';
 import type { DashboardConfig } from '../types/dashboard';
@@ -40,6 +41,13 @@ interface DeployStatus {
   message: string;
   error?: string;
   success: boolean;
+  /**
+   * True when the failure was the dashboard's own shape rather than anything to
+   * do with Home Assistant (F1). Validation runs BEFORE any network call, so
+   * telling this user to "check your connection" sends them to inspect something
+   * that was never broken — and nothing has been sent to HA at all.
+   */
+  isValidationError?: boolean;
 }
 
 /**
@@ -90,35 +98,26 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
         success: false,
       });
 
-      // Deploy the already-sanitised config object directly — do NOT
-      // re-serialise and re-parse it (that would re-run the import mappers and
-      // re-inflate the HAVDM-internal keys sanitizeForHA removed).
-      if (!dashboardConfig) {
-        throw new Error('No dashboard configuration to deploy.');
-      }
-
       logger.debug('Preparing deploy dashboard config', {
         titleFromForm: values.title,
         titleInConfig: dashboardConfig?.title,
       });
 
-      // Strict validation: ensure views array exists and is not empty
-      if (!dashboardConfig?.views || dashboardConfig.views.length === 0) {
-        throw new Error(
-          'Dashboard must contain at least one view. Your dashboard appears to be empty.',
-        );
-      }
-
-      // Validate each view has required properties
-      for (let i = 0; i < dashboardConfig.views.length; i++) {
-        const view = dashboardConfig.views[i];
-        if (!view.title) {
-          throw new Error(`View ${i + 1} is missing a required "title" property.`);
-        }
-        if (!view.cards || !Array.isArray(view.cards)) {
-          throw new Error(`View "${view.title}" must have a "cards" array (can be empty).`);
-        }
-      }
+      // Validate against what Home Assistant actually accepts (F1 / HA-07).
+      //
+      // ⭐ THIS REPLACES A PER-VIEW LOOP THAT DEMANDED A `title` AND A TOP-LEVEL
+      // `cards` ARRAY ON EVERY VIEW. Home Assistant requires NEITHER, and the
+      // consequence was that HAVDM refused to deploy a dashboard HAVDM itself
+      // had authored: a Sections view keeps its cards under `sections[].cards`,
+      // so it has no top-level `cards` and was rejected outright. Untitled
+      // views, strategy views and dashboard-level strategies were refused for
+      // the same reason. Every rule now lives in `dashboardValidation`, keyed
+      // off Home Assistant's own view-type fallback chain and measured against a
+      // real instance rather than inferred.
+      //
+      // ⚠ It VALIDATES ONLY — it never edits the config to make it pass. The
+      // object below still reaches Home Assistant verbatim (slice B0).
+      assertDeployable(dashboardConfig);
 
       // Wait a bit for visual feedback
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -207,6 +206,7 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
         message: 'Deployment failed',
         error: (error as Error).message,
         success: false,
+        isValidationError: error instanceof DashboardValidationError,
       });
     } finally {
       setDeploying(false);
@@ -363,14 +363,28 @@ export const DeployDialog: React.FC<DeployDialogProps> = ({
                     <div>
                       <Text>{deployStatus.error}</Text>
                       <br />
+                      {/*
+                        ⚠ F1: DO NOT MAKE THIS SUB-LINE UNCONDITIONAL AGAIN. It
+                        used to read "Please check your connection and try
+                        again." for EVERY failure, including a pure validation
+                        failure raised before a single byte was sent to Home
+                        Assistant. Blaming the wrong cause is worse than saying
+                        nothing: it sends the user off to check a connection
+                        that was working perfectly. A validation failure gets a
+                        sub-line about the dashboard, and says plainly that
+                        nothing reached Home Assistant.
+                      */}
                       <Text
+                        data-testid="deploy-failure-hint"
                         style={{
                           fontSize: '12px',
                           color: token.colorTextTertiary,
                           marginTop: '8px',
                         }}
                       >
-                        Please check your connection and try again.
+                        {deployStatus.isValidationError
+                          ? 'Nothing was sent to Home Assistant. Fix the dashboard and try again.'
+                          : 'Please check your connection and try again.'}
                       </Text>
                     </div>
                   }
