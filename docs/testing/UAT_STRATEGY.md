@@ -180,9 +180,25 @@ The report contains:
 
 ### 3.5 Step 4 — Triage (agent)
 
-The agent reads the report and, for each failure: assigns a severity per §6,
-determines whether it is a **regression** (the matrix's previous-round dot was
-green), and writes the fix spec — including the mandatory regression test per §7.
+The agent reads the report and, for each failure: **records** the tester's
+severity per §6, determines whether it is a **regression** (the matrix's
+previous-round dot was green), and writes the fix spec — including the mandatory
+regression test per §7. The output is a triage document filed alongside the
+round's report (§12).
+
+⚠ **Severity is recorded, never re-judged.** §2 reserves marking to the tester
+and re-scoring to the owner. Where triage measures that a severity or verdict
+looks wrong, it says so as an open question and changes nothing; a re-mark
+reaches `VERDICT_REMARKS.md` only after the owner rules.
+
+⚠ **A round also produces findings that failed no card.** Testers raise feature
+requests in the notes of cards that **passed**, so they appear in no failure
+table, no severity tally and no issue payload — and are the easiest thing in a
+round to lose. Triage must capture them in
+`docs/testing/uat/FEATURE_REQUESTS.md`, which carries **no severity** and does
+**not** count against the §11 pass bar. ⭐ Keeping them out of the defect ledger
+is the point: a request filed as a defect distorts the release gate, and a defect
+filed as a request escapes it.
 
 Defects are tracked as **GitHub Issues**, labelled `defect`, `severity:high` /
 `severity:medium` / `severity:low`, and `regression` where applicable.
@@ -413,8 +429,10 @@ is not a bar.
 | Summary report       | `docs/testing/uat/reports/uat_summary_<round-id>_YYYY-MM-DD.md`                                      | Matrix (download) |
 | Screenshots          | embedded in the session JSON; extracted to `docs/testing/uat/screenshots/` when attached to an Issue | Tester            |
 | Issue payloads       | `docs/testing/uat/archives/uat_issues_<round-id>_YYYY-MM-DD.sh`                                      | Matrix (download) |
+| Triage document      | `docs/testing/uat/reports/uat_triage_<round-id>_YYYY-MM-DD.md` (§3.5)                                | Agent             |
 | Corrections register | `docs/testing/uat/CARD_CORRECTIONS.md` — standing, append-only across rounds (§3.2)                  | Agent             |
 | Re-mark ledger       | `docs/testing/uat/VERDICT_REMARKS.md` — owner re-marks, applied over the export (§3.2, §8)           | Owner rules       |
+| Feature requests     | `docs/testing/uat/FEATURE_REQUESTS.md` — standing, append-only; requests that failed no card (§3.5)  | Agent records     |
 | Superseded rounds    | `docs/testing/uat/archives/`                                                                         | Agent             |
 
 ⚠ The **issue payload** is the `gh issue create` script the matrix downloads
@@ -432,6 +450,8 @@ the owner's explicit authorisation.
 - `prompts/claude/uat-plan-and-matrix.md` — the round generator
 - `docs/testing/uat/CARD_CORRECTIONS.md` — measured corrections to apply when a card is carried into a later round (§3.2)
 - `docs/testing/uat/VERDICT_REMARKS.md` — owner re-marks, applied over the session JSON when building `PREV` (§3.2, §8)
+- `docs/testing/uat/FEATURE_REQUESTS.md` — requests the tester raised that failed no card, so they appear in no failure table (§3.5)
+- `docs/testing/LIVE_HA_TEST_CAPABILITY_REQUIREMENTS.md` — requirements for closing the gaps that make UAT rediscover the same defects (§7)
 - `docs/testing/uat/matrices/uat_matrix_template.html` — the structural base for every matrix
 - `tools/verify-uat-matrix.cjs` — the matrix self-check (`npm run verify:uat-matrix`)
 - `docs/governance/phases/phase-7-ecosystem-future-growth-amendment-03.md` — the amendment establishing this framework
