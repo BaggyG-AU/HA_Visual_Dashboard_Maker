@@ -169,4 +169,207 @@ describe('DeployDialog (B0: deploy the object, no re-parse)', () => {
       expect(screen.queryByTestId('export-summary')).not.toBeInTheDocument();
     });
   });
+
+  /**
+   * F1 — the shared view-type validator (UAT defect HA-07).
+   *
+   * ⭐⭐ THESE ARE THE RED LEGS THAT ACTUALLY MEASURE THE BUG, and they are here
+   * rather than in `dashboardValidation.spec.ts` for one reason: this component
+   * EXISTS ON BASE. Reverting `src/` in the same checkout makes the validator
+   * module vanish, so a spec importing it fails at import — and a red leg that
+   * fails for the wrong reason measures nothing. Reverted, these tests fail
+   * where it counts, with the product's own defect message.
+   *
+   * Verified on base (`git stash push -u src/`, same checkout): every test in
+   * this block fails, the first four with
+   * `View "Energy" must have a "cards" array (can be empty).` and its siblings.
+   */
+  /**
+   * ⚠⚠ WAIT FOR THE DEPLOY TO SETTLE EITHER WAY — SENT *OR* REFUSED.
+   *
+   * The obvious `waitFor(() => expect(saveSpy).toHaveBeenCalled())` is the wrong
+   * instrument for a red leg, and reverting `src/` proves it: the deploy never
+   * happens, so the wait simply expires and the failure reads
+   * "Test timed out in 5000ms" — which names nothing. A red leg that fails for
+   * the wrong reason measures nothing, and a bare timeout is barely a reason at
+   * all. Settling on EITHER outcome lets the assertions quote the product's own
+   * refusal, so the failure names the defect.
+   */
+  const settle = async () => {
+    await waitFor(
+      () => {
+        const refused = screen.queryAllByText(/Deployment failed/i).length > 0;
+        expect(refused || saveSpy.mock.calls.length > 0).toBe(true);
+      },
+      { timeout: 5000 },
+    );
+  };
+
+  /** What the dialog is showing, for use in an assertion message. */
+  const dialogText = () => document.body.textContent ?? '';
+
+  describe('F1: deploys the view shapes Home Assistant actually accepts', () => {
+    const deployAndExpectSent = async (config: unknown) => {
+      render(
+        <DeployDialog
+          visible
+          onClose={() => {}}
+          dashboardConfig={config as DashboardConfig}
+          dashboardTitle="My Dashboard"
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: /deploy/i }));
+      await settle();
+      expect(
+        saveSpy,
+        `the deploy dialog REFUSED this dashboard instead of sending it. It said: "${dialogText()}"`,
+      ).toHaveBeenCalledTimes(1);
+      return saveSpy.mock.calls[0][1];
+    };
+
+    // ⭐ HA-07 IN ONE TEST: HAVDM refusing to deploy a dashboard HAVDM authored.
+    // The shape is the FR-04 artifact's "Energy" view — six cards, none of them
+    // at the top level. Measured on a real instance: HA renders it as
+    // `hui-sections-view` with two grid sections and zero error cards.
+    it('a SECTIONS view deploys — its cards live under `sections[].cards`', async () => {
+      const deployed = await deployAndExpectSent({
+        title: 'Internal',
+        views: [
+          {
+            title: 'Energy',
+            type: 'sections',
+            sections: [
+              { type: 'grid', cards: [{ type: 'markdown', content: 'a' }] },
+              { type: 'grid', cards: [{ type: 'tile', entity: 'sensor.x' }] },
+            ],
+          },
+        ],
+      });
+      // Sent VERBATIM: the validator did not quietly graft a `cards: []` on to
+      // make its own old rule pass (slice B0 — this object reaches HA as-is).
+      expect(deployed.views[0]).not.toHaveProperty('cards');
+      expect(deployed.views[0].sections).toHaveLength(2);
+    }, 15000);
+
+    it('an UNTITLED view deploys — Lovelace does not require a view title', async () => {
+      const deployed = await deployAndExpectSent({
+        title: 'Internal',
+        views: [{ cards: [{ type: 'markdown', content: 'a' }] }],
+      });
+      expect(deployed.views[0]).not.toHaveProperty('title');
+    }, 15000);
+
+    it('a STRATEGY view deploys — Home Assistant generates its cards', async () => {
+      const deployed = await deployAndExpectSent({
+        title: 'Internal',
+        views: [{ title: 'Generated', strategy: { type: 'original-states' } }],
+      });
+      expect(deployed.views[0].strategy).toEqual({ type: 'original-states' });
+      expect(deployed.views[0]).not.toHaveProperty('cards');
+    }, 15000);
+
+    it('a DASHBOARD-level strategy deploys — it has no `views` at all', async () => {
+      const deployed = await deployAndExpectSent({ strategy: { type: 'original-states' } });
+      expect(deployed.strategy).toEqual({ type: 'original-states' });
+    }, 15000);
+
+    it('a genuinely malformed view still fails, and the message names what is wrong', async () => {
+      render(
+        <DeployDialog
+          visible
+          onClose={() => {}}
+          dashboardConfig={
+            {
+              title: 'Internal',
+              views: [{ title: 'Energy', cards: 'not a list' }],
+            } as unknown as DashboardConfig
+          }
+          dashboardTitle="My Dashboard"
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: /deploy/i }));
+
+      await settle();
+      expect(dialogText(), 'the dialog did not name the malformed `cards` property').toContain(
+        'View "Energy" has a "cards" property that is not a list of cards.',
+      );
+      expect(saveSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * F1 defect 4 — the deploy dialog used to answer EVERY failure with "Please
+   * check your connection and try again", including a validation failure raised
+   * before a single byte was sent. Blaming the wrong cause is worse than
+   * silence: it sends the user to inspect a connection that was never broken.
+   */
+  describe('F1: a validation failure never blames the connection', () => {
+    it('says nothing reached Home Assistant, and does not mention the connection', async () => {
+      render(
+        <DeployDialog
+          visible
+          onClose={() => {}}
+          dashboardConfig={
+            {
+              title: 'Internal',
+              views: [{ title: 'Energy', cards: 'not a list' }],
+            } as unknown as DashboardConfig
+          }
+          dashboardTitle="My Dashboard"
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: /deploy/i }));
+
+      // ⚠ ASSERTED ON TEXT, NOT ON A TESTID, AND DELIBERATELY. Reverting `src/`
+      // in the same checkout removes any testid this branch added, so a red leg
+      // built on one would fail by not finding its locator rather than by
+      // finding the wrong text. Both strings below exist on base — that is what
+      // makes the swap between them the measurement.
+      await settle();
+      expect(
+        dialogText(),
+        'the failure sub-line did not tell the user that nothing reached Home Assistant',
+      ).toContain('Nothing was sent to Home Assistant. Fix the dashboard and try again.');
+      expect(
+        dialogText(),
+        'a pure validation failure STILL blames the connection — this is the F1 defect',
+      ).not.toContain('Please check your connection and try again.');
+      // Only now the branch-added testid — after both discriminating text
+      // assertions, so reverting `src/` fails this test on the TEXT rather than
+      // on a locator that does not exist yet.
+      expect(screen.getByTestId('deploy-failure-hint')).toHaveTextContent(
+        'Nothing was sent to Home Assistant',
+      );
+    });
+
+    it('CONTROL: a real connection failure still says to check the connection', async () => {
+      // ⭐⭐ THE CONTROL LEG, AND IT IS DESIGNED TO PASS ON BASE AS WELL AS ON
+      // THIS BRANCH. Two things follow from that. First, deleting the sub-line
+      // outright — which would satisfy the test above — fails here instead, so
+      // the pair measures "the hint became CONDITIONAL", not "the hint went
+      // away". Second, a leg that is green both sides proves the change is
+      // surgical: the connection-failure path is untouched, and only the
+      // validation path moved. It therefore asserts on TEXT ONLY, with no
+      // branch-added locator to muddy the base run.
+      (window as any).electronAPI.haWsConnect = vi
+        .fn()
+        .mockResolvedValue({ success: false, error: 'WebSocket refused' });
+
+      render(
+        <DeployDialog
+          visible
+          onClose={() => {}}
+          dashboardConfig={haReadyConfig}
+          dashboardTitle="My Dashboard"
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: /deploy/i }));
+
+      await settle();
+      expect(dialogText(), 'a genuine connection failure lost its connection hint').toContain(
+        'Please check your connection and try again.',
+      );
+      expect(saveSpy).not.toHaveBeenCalled();
+    }, 15000);
+  });
 });

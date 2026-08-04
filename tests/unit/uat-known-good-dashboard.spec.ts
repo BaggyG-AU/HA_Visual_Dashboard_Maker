@@ -12,16 +12,30 @@
  * hand-written known-good dashboard would deploy cleanly and leave HAVDM's own
  * export path broken, so the fixture must be authored IN HAVDM and its
  * deployable artifact produced BY HAVDM. That ruling paid for itself
- * immediately: this spec records three defects in HAVDM's export that a
- * hand-written file could not have surfaced, one of them silent data loss.
+ * immediately: this spec records defects in HAVDM's export that a hand-written
+ * file could not have surfaced.
  *
- * ⚠⚠ ON THE "RECORDED CURRENT BEHAVIOUR" ASSERTIONS BELOW. Three assertions
- * here pin behaviour that is WRONG. They are written as assertions rather than
- * as comments so that the fix which corrects each one is forced to come back
- * here and say so — a defect recorded in prose is a defect that gets forgotten,
- * and this file is the artifact the next four remediation items are measured
- * against. Each is labelled with the fix that will flip it. **None of them is
- * fixed in this PR — one defect, one PR.**
+ * ⚠ A CORRECTION TO THIS DOCBLOCK, MADE BY F1 AND LEFT VISIBLE ON PURPOSE. It
+ * used to end "…one of them silent data loss". THAT CLAIM WAS FALSE AND WAS
+ * WITHDRAWN. It came from measuring correctly that HAVDM's export drops
+ * `type: sections`, and then ASSUMING what Home Assistant does with a typeless
+ * view. It does not lose the cards: HA infers a sections view from the
+ * `sections` key, and the exported dashboard has since been deployed to a real
+ * instance and looked at — it renders with all six cards and zero error cards.
+ * The withdrawal was applied to this file's test comments when it was made; this
+ * line is the last place the old wording survived.
+ *
+ * ⚠⚠ ON THE "RECORDED CURRENT BEHAVIOUR" ASSERTIONS BELOW. The assertions in
+ * that block pin behaviour that is WRONG. They are written as assertions rather
+ * than as comments so that the fix which corrects each one is forced to come
+ * back here and say so — a defect recorded in prose is a defect that gets
+ * forgotten, and this file is the artifact the remaining remediation items are
+ * measured against. Each is labelled with the fix that will flip it.
+ *
+ * ⭐⭐ ONE OF THEM HAS NOW BEEN FLIPPED. F1 (the shared view-type validator)
+ * landed, so the assertion that the deploy validator REJECTS this dashboard has
+ * been rewritten into its opposite — see "F1 — FIXED" below. The two F9
+ * assertions still record broken behaviour.
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -29,6 +43,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { yamlService } from '../../src/services/yamlService';
 import { CANVAS_ONLY_CARD_TYPES, isHavdmScaffoldView } from '../../src/services/haExportContract';
+import { validateDashboardForDeploy, validateView } from '../../src/services/dashboardValidation';
 import type { Card, DashboardConfig, View } from '../../src/types/dashboard';
 
 const FIXTURE_DIR = resolve(__dirname, '../fixtures/uat');
@@ -230,7 +245,7 @@ describe('FR-04 — the known-good dashboard round-trips through HAVDM export', 
     });
   });
 
-  describe('⚠ RECORDED CURRENT BEHAVIOUR — three defects this fixture exposes', () => {
+  describe('⚠ RECORDED CURRENT BEHAVIOUR — the two F9 defects this fixture still exposes', () => {
     it('F9 (a) — the sections view LOSES `type: sections` on export, and HAVDM cannot re-open its own artifact', () => {
       // MECHANISM, measured: `convertViewToSections` (`sectionsLayout.ts:396-406`)
       // spreads `...view` and deletes only `layout` / `layout_type`, so the
@@ -311,33 +326,43 @@ describe('FR-04 — the known-good dashboard round-trips through HAVDM export', 
       );
       expect(withInternal).toEqual([]);
     });
+  });
 
-    it('F1 — the deploy validator rejects this exported dashboard, naming the sections view', () => {
-      // ⭐ HA-07 in one line: HAVDM cannot deploy a dashboard HAVDM authored.
-      // `DeployDialog.tsx:118-120` demands a `cards` array on EVERY view, but a
-      // sections view legitimately has none (its cards live under
-      // `sections[].cards`). F1 replaces this with a shared per-view-type
-      // validator that also accepts untitled and `strategy` views.
-      //
-      // ⚠ Asserted against the exported CONFIG rather than by rendering the
-      // dialog, because the string is what the tester photographed and the
-      // shape of the input is what makes it fire. The rendered-dialog assertion
-      // belongs to F1's own spec, where it can be red-legged.
-      const offending = exportedConfig.views.find(
-        (view) => !Array.isArray((view as { cards?: unknown }).cards),
-      );
-      expect(offending).toBeDefined();
-      expect(offending?.title).toBe('Energy');
+  describe('⭐ F1 — FIXED: the deploy validator accepts this exported dashboard', () => {
+    // ⭐⭐ THIS TEST IS THE FLIPPED RED LEG. Until F1 landed it asserted the
+    // OPPOSITE — that the validator REJECTED this dashboard with
+    // `View "Energy" must have a "cards" array (can be empty).`, the exact
+    // string from the tester's round-3 screenshot. That was HA-07 in one line:
+    // HAVDM could not deploy a dashboard HAVDM itself had authored, because
+    // `DeployDialog.tsx:118-120` demanded a top-level `cards` array on every
+    // view and a Sections view legitimately has none — its cards live under
+    // `sections[].cards`.
+    //
+    // The assertion is made against the REAL validator and the REAL committed
+    // artifact, not a hand-built object, per UAT_STRATEGY.md §7: a round-trip
+    // claim needs a round-trip test.
 
-      // The exact message from the tester's round-3 screenshot.
-      const message = `View "${offending?.title}" must have a "cards" array (can be empty).`;
-      expect(message).toBe('View "Energy" must have a "cards" array (can be empty).');
+    it('the offending shape is still present — this test measures the validator, not the fixture', () => {
+      // ⭐ DISCRIMINATOR. This assertion passes BOTH before and after F1, and
+      // that is exactly its job: it proves the input still has the property that
+      // used to cause the rejection, so a green result below means the VALIDATOR
+      // changed rather than the fixture having been quietly reshaped to fit.
+      const energy = exportedConfig.views[1];
+      expect(energy.title).toBe('Energy');
+      expect(Array.isArray((energy as { cards?: unknown }).cards)).toBe(false);
+      expect(cardsOf(energy)).toHaveLength(6); // ...and its six cards are all there, under `sections`.
+    });
 
-      // Every OTHER view passes, which is what makes this a targeted rejection
-      // rather than a broken dashboard.
-      expect(
-        exportedConfig.views.filter((view) => !Array.isArray((view as { cards?: unknown }).cards)),
-      ).toHaveLength(1);
+    it('validates clean — no errors on the dashboard HAVDM itself produced', () => {
+      expect(validateDashboardForDeploy(exportedConfig)).toEqual([]);
+    });
+
+    it('never mentions a "cards" array requirement for any view', () => {
+      // The old message is gone as a CLASS, not merely for this fixture.
+      const messages = exportedConfig.views
+        .flatMap((view, index) => validateView(view, index))
+        .map((error) => error.message);
+      expect(messages).toEqual([]);
     });
   });
 
