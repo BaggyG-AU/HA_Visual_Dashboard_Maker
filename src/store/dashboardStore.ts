@@ -72,6 +72,7 @@ interface DashboardActions {
   ) => void;
   markDirty: () => void;
   markClean: () => void;
+  markSavedAs: (filePath: string) => void;
   clearDashboard: () => void;
   setError: (error: string | null) => void;
   undo: () => void;
@@ -427,6 +428,26 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
 
   markClean: () => {
     set({ isDirty: false });
+  },
+
+  /**
+   * The document has been written to `filePath` — retarget it there and mark it
+   * clean (F7 / UAT defect FILE-06).
+   *
+   * ⭐⭐ WHY THIS IS ONE ACTION RATHER THAN `markClean()` PLUS A SETTER. Before
+   * F7 the ONLY writer of `filePath` was `loadDashboard`, so "Save As" wrote the
+   * bytes, called `markClean()`, and left the document still pointing at the
+   * PREVIOUS file. The next Ctrl+S then saved the user's edits into the file
+   * they had just saved AWAY from. Setting the path and clearing the dirty flag
+   * together makes the half-updated state — clean, but aimed at the wrong file —
+   * unrepresentable, which is the state that caused the defect.
+   *
+   * ⚠ NOT for `loadDashboard`'s job: this changes only where the document points
+   * and whether it is dirty. Content, selection and undo history are untouched,
+   * because Save As does not alter the document — it relocates it.
+   */
+  markSavedAs: (filePath: string) => {
+    set({ filePath, isDirty: false });
   },
 
   clearDashboard: () => {

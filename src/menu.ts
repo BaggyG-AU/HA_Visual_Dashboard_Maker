@@ -1,6 +1,6 @@
 import { app, Menu, shell, BrowserWindow, MenuItemConstructorOptions } from 'electron';
 import { settingsService } from './services/settingsService';
-import path from 'node:path';
+import { recentFileMenuLabel } from './utils/pathLabel';
 
 export function createApplicationMenu(mainWindow: BrowserWindow): Menu {
   const isMac = process.platform === 'darwin';
@@ -11,11 +11,27 @@ export function createApplicationMenu(mainWindow: BrowserWindow): Menu {
     recentFiles.length > 0
       ? [
           ...recentFiles.map((filePath, index) => ({
-            label: `${index + 1}. ${path.basename(filePath)}`,
+            // ⭐⭐ F7 / UAT defect FILE-06, ruling R5: THE PATH GOES IN THE LABEL.
+            //
+            // The tester reported that hovering a recent file shows no tooltip
+            // with its full path. The `sublabel` below was written for exactly
+            // that — and **Electron's `sublabel` and `toolTip` are macOS-ONLY**,
+            // so on the Windows build under test they render nothing at all.
+            // ⚠⚠ NEVER PROPOSE `sublabel`/`toolTip` AS A WINDOWS REMEDY AGAIN;
+            // this line is the evidence that it was already tried.
+            //
+            // R5 stages the fix: the middle-elided directory goes in the LABEL
+            // now, where every platform draws it, and a real in-app Recent Files
+            // surface with true tooltips comes post-1.0. Two same-named files in
+            // different folders are now distinguishable at a glance.
+            label: recentFileMenuLabel(filePath, index),
             click: () => {
+              // ⚠ The FULL path is sent, never the elided label — the elision is
+              // a display concern and must not reach anything that opens a file.
               mainWindow.webContents.send('menu:open-recent-file', filePath);
             },
-            // Show full path in tooltip (not all platforms support this)
+            // Kept as-is per R5: a genuine improvement on macOS, and harmless
+            // (simply ignored) everywhere else.
             sublabel: filePath,
           })),
           { type: 'separator' as const },

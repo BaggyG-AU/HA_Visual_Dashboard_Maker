@@ -398,6 +398,7 @@ const App: React.FC = () => {
     applyBatchedConfig,
     endBatchUpdate,
     markClean,
+    markSavedAs,
     setSelectedView,
     setSelectedCard,
     setSelectedSectionCard,
@@ -669,12 +670,30 @@ const App: React.FC = () => {
 
     try {
       const yamlContent = yamlService.serializeDashboard(config);
-      const success = await fileService.saveFileAs(yamlContent, 'dashboard.yaml');
-      if (success) {
-        markClean();
+      const savedPath = await fileService.saveFileAs(yamlContent, 'dashboard.yaml');
+      if (savedPath) {
+        // ⭐⭐ F7 / UAT defect FILE-06 — BOTH HALVES, AND THEY ARE ONE BUG.
+        //
+        // `saveFileAs` used to return a bare boolean, so this branch knew a file
+        // had been written but not WHICH file. Two things followed:
+        //
+        //  1. It could not register the file, so Save As never appeared in
+        //     Recent Files — the tester's report verbatim. `addRecentFile` had
+        //     exactly two call sites, File > Open and Open Recent.
+        //  2. It could not RETARGET the document, so after "Save As B.yaml" the
+        //     store still pointed at A.yaml and the next Ctrl+S wrote the user's
+        //     edits back into A. `markSavedAs` sets the path and clears the
+        //     dirty flag together, so "clean but aimed at the wrong file" cannot
+        //     occur.
+        //
+        // ⚠ Order matters only in that both must happen: retarget first so the
+        // document is correct even if the (main-process) menu rebuild is slow.
+        markSavedAs(savedPath);
+        await window.electronAPI.addRecentFile(savedPath);
         message.success('Dashboard saved successfully!');
+        return true;
       }
-      return success;
+      return false;
     } catch (error) {
       message.error(`Failed to save file: ${(error as Error).message}`);
       return false;
@@ -693,8 +712,16 @@ const App: React.FC = () => {
 
     try {
       const yamlContent = yamlService.serializeForHA(config);
-      const success = await fileService.saveFileAs(yamlContent, 'dashboard-ha.yaml');
-      if (success) {
+      // ⚠ F7: the written path is DELIBERATELY IGNORED here. An HA export is not
+      // the document under edit — it is a sanitised derivative that HAVDM cannot
+      // even re-open faithfully today (the sections round-trip break, F9). So
+      // exporting must NOT retarget the document (a later Ctrl+S would overwrite
+      // the export with HAVDM-internal YAML) and must NOT enter Recent Files
+      // (re-opening it is the broken path, not the useful one). Save As does
+      // both of those things; Export does neither, and that difference is the
+      // point of having two commands.
+      const savedPath = await fileService.saveFileAs(yamlContent, 'dashboard-ha.yaml');
+      if (savedPath) {
         message.success('Exported for Home Assistant successfully!');
       }
     } catch (error) {

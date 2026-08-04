@@ -267,6 +267,10 @@ export const GradientEditor: React.FC<GradientEditorProps> = ({
     ) {
       // Electron path: save via native dialog for correct user location + permissions.
       try {
+        // ⚠ F7: `saveFileAs` now returns the path written (or null). Gradient
+        // presets are not the dashboard under edit, so the path is deliberately
+        // ignored — exporting them must not retarget the document or enter
+        // Recent Files. Only the did-it-happen answer is used here.
         const saved = await fileService.saveFileAs(payload, 'gradient-presets.json');
         if (saved) {
           message.success('Presets exported.');

@@ -75,13 +75,30 @@ class FileService {
   }
 
   /**
-   * Save file with dialog
+   * Save file with dialog. Returns the path WRITTEN, or null if the user
+   * cancelled the dialog.
+   *
+   * ⭐⭐ F7 / UAT defect FILE-06: THIS USED TO RETURN A BARE `boolean`, AND
+   * THROWING THE PATH AWAY CAUSED BOTH HALVES OF THE DEFECT.
+   *
+   *  1. The caller could not register the file in Recent Files, because it was
+   *     never told what the file was. `addRecentFile` consequently had exactly
+   *     two call sites — File > Open and Open Recent — and **Save As never
+   *     registered anything**, which is precisely what the tester reported.
+   *  2. Worse, and not in the original triage: the caller could not RETARGET the
+   *     document either. The store's `filePath` is written only by
+   *     `loadDashboard`, so after "Save As B.yaml" the document still pointed at
+   *     A.yaml — and the next Ctrl+S wrote the user's edits back to **A**.
+   *
+   * Returning the path is the whole fix for both. ⚠ Callers that save something
+   * which is NOT the document under edit (the HA export, gradient presets) take
+   * the path and deliberately ignore it — see their own comments.
    */
-  async saveFileAs(content: string, defaultPath?: string): Promise<boolean> {
+  async saveFileAs(content: string, defaultPath?: string): Promise<string | null> {
     const filePath = await this.saveFileDialog(defaultPath);
 
     if (!filePath) {
-      return false;
+      return null;
     }
 
     const result = await this.writeFile(filePath, content);
@@ -90,7 +107,7 @@ class FileService {
       throw new Error(result.error || 'Failed to write file');
     }
 
-    return true;
+    return filePath;
   }
 
   /**
