@@ -138,11 +138,11 @@ request rides on a card that mattered.
 
 ## FR-04 — ⭐⭐ A known-good dashboard YAML, authored by us, for the tester to use
 
-| Field  | Value                                   |
-| ------ | --------------------------------------- |
-| Card   | **HA-09** (**failed** — High)           |
-| Round  | Round 3                                 |
-| Status | **OPEN** — ⚠ recommended before round 4 |
+| Field  | Value                                                        |
+| ------ | ------------------------------------------------------------ |
+| Card   | **HA-09** (**failed** — High)                                |
+| Round  | Round 3                                                      |
+| Status | **DONE IN PR #123** — fixtures + round-trip specs; see below |
 
 **Asked, verbatim:**
 
@@ -191,6 +191,39 @@ correction addressed to the tester cannot fix an input the tester does not suppl
 ⚠ **A fixture built to make tests pass is worthless.** It must be built to
 render correctly in Home Assistant, and then be allowed to fail HAVDM if HAVDM is
 wrong.
+
+### What was delivered
+
+Tester-facing guide: **`KNOWN_GOOD_DASHBOARD.md`**. Fixtures in
+`tests/fixtures/uat/`: the HAVDM source, HAVDM's own export of it, the HA-04
+remap probe, and the read-only instance capture they were built against.
+
+⭐ **The owner's ruling extended this request in one decisive way: the dashboard
+is authored IN HAVDM and its deployable artifact is produced BY HAVDM's export**,
+rather than written by hand. `tests/e2e/uat-known-good-dashboard.spec.ts` drives
+the real application and `tests/unit/uat-known-good-dashboard.spec.ts` runs the
+result through the real export path; both compare byte-for-byte against the
+committed files.
+
+**That ruling paid for itself.** A hand-written file would have deployed cleanly
+and left the export path broken. Instead the round trip measured three defects,
+all recorded as assertions rather than prose:
+
+1. ⚠⚠ **The exported sections view loses `type: sections`, and HAVDM cannot
+   re-open its own artifact** — its canvas delegates only on a strict
+   `type: sections` match, so the view draws blank while its six cards sit in the
+   file. ⭐ Home Assistant renders it correctly: HA falls back to a sections
+   layout whenever a `sections` key is present (verified in the instance's own
+   frontend bundle). **HA is more forgiving of HAVDM's output than HAVDM is.**
+2. **The exported masonry view carries dead `view_layout` keys**, so the designed
+   geometry collapses — and there is no in-app way to avoid it, because the
+   view-type editor already displays a HAVDM view as "Masonry".
+3. **The deploy validator rejects the dashboard** with HA-07's exact message.
+
+⚠ **Two of the three confounds this register blamed on the tester's own file were
+HAVDM's**: `custom:gauge-card-pro` is a HAVDM palette card, and
+`sensor.example_temperature` is the default entity HAVDM fills in for it
+(`cardRegistry.ts:535`, `:561`, `:581`).
 
 ---
 
