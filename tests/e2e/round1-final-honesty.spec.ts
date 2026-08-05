@@ -163,10 +163,32 @@ test.describe('EXPORT-04: the palette is honest about a never-connected profile'
       // defect is not the permissiveness; it is that the palette never said the
       // list is unverified. An unexplained default is indistinguishable from a
       // broken one.
-      await expect(ctx.window.getByTestId('palette-availability-notice')).toBeVisible();
-      await expect(ctx.window.getByTestId('palette-availability-notice')).toContainText(
-        /not connected/i,
-      );
+      const notice = ctx.window.getByTestId('palette-availability-notice');
+      await expect(notice).toBeVisible();
+      await expect(notice).toContainText(/not connected/i);
+
+      // ⚠⚠⚠ EXPORT-04 defect 2 — THIS ASSERTION IS THE POINT, AND ITS ABSENCE IS
+      // WHY THIS SPEC WAS GREEN THROUGH A DEFECT IT IS NAMED AFTER.
+      //
+      // `toBeVisible()` above passed for months while the tester wrote "There is
+      // no 'pallet footer' that I can see". Playwright calls an element visible
+      // when it has a non-empty bounding box and is not `visibility: hidden` — an
+      // element CLIPPED AWAY by an ancestor's `overflow: hidden` still has a
+      // bounding box, so the notice satisfied `toBeVisible()` at y≈1096 on a 1080
+      // viewport. The Sider was `height: 100vh` beneath a 64px Header.
+      //
+      // ⭐ A CONTROL IS NOT VISIBLE BECAUSE THE DOM SAYS SO — IT IS VISIBLE WHEN
+      // IT IS INSIDE THE VIEWPORT. Measure the geometry, not the node. This is
+      // the same family as the recorded trap that Playwright counts an
+      // `opacity: 0` element as visible.
+      const box = await notice.boundingBox();
+      expect(box, 'the availability notice must have a layout box').not.toBeNull();
+      const viewportHeight = await ctx.window.evaluate(() => window.innerHeight);
+      expect(
+        box!.y + box!.height,
+        `the notice must sit INSIDE the ${viewportHeight}px viewport without scrolling, ` +
+          `but its bottom edge is at ${box!.y + box!.height}px`,
+      ).toBeLessThanOrEqual(viewportHeight);
     } finally {
       await close(ctx);
     }

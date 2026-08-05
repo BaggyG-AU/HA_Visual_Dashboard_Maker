@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { theme } from 'antd';
+import { theme, Tooltip } from 'antd';
 import { Card, SpacerCard } from '../types/dashboard';
+import { cardRegistry } from '../services/cardRegistry';
+import { resolveCardState } from '../services/capability/cardAvailability';
+import { useCapabilityProfile } from '../contexts/CapabilityProfileContext';
 import { EntitiesCardRenderer } from './cards/EntitiesCardRenderer';
 import { ButtonCardRenderer } from './cards/ButtonCardRenderer';
 import { GlanceCardRenderer } from './cards/GlanceCardRenderer';
@@ -133,6 +136,11 @@ export const BaseCard: React.FC<BaseCardProps> = ({
   const { entities } = useHAEntities();
   const isVisible = evaluateVisibilityConditions(card.visibility_conditions, entities);
   const [shouldRender, setShouldRender] = useState(isVisible);
+  // ⚠ Read up here with the other hooks, NOT beside the `marksUnavailable`
+  // computation it feeds: there is a component-level early return at
+  // `if (!shouldRender)` below, and a hook after it is called conditionally
+  // (react-hooks/rules-of-hooks, caught by the gate rather than by review).
+  const capabilityProfile = useCapabilityProfile();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const stateSnapshotsRef = useRef<Record<string, string>>({});
   const triggerSequenceRef = useRef(0);
@@ -264,6 +272,38 @@ export const BaseCard: React.FC<BaseCardProps> = ({
   // `type` says it is NOT a spacer, so the narrow cast is the honest expression
   // of the question. `Partial<SpacerCard>` keeps the property's real type.
   const isSpacer = card.type === 'spacer' || (card as Partial<SpacerCard>)._isSpacer === true;
+
+  // ⭐⭐ EXPORT-04 defect 3 / Codex N1 — A PLACED CARD MUST CARRY THE SAME
+  // HONESTY THE PALETTE DOES. Before this, the only "won't render" string in
+  // `src/` was the palette tooltip (`CardPalette.tsx:300`): you could be warned
+  // while choosing a card and then never again, so a dashboard full of cards
+  // that will not render on your instance looked exactly like one that will.
+  // The UAT card's Expected 4 requires it: "Once placed, the card carries a
+  // visible 'won't render on your instance' style".
+  //
+  // ⚠ MARKING ONLY, NEVER DISABLING. The card stays fully selectable, editable,
+  // draggable and deployable — the vision is a SUPERSET design tool that
+  // TRANSLATES what it can and honestly MARKS what it cannot, and the UAT card
+  // says so explicitly. A guard that blocked authoring here would be a worse
+  // defect than the one it fixed.
+  //
+  // ⚠ `not-available` ONLY. `havdm-only` cards already carry their own story
+  // (palette badge + the "Card Not Available" placeholder they deploy into), and
+  // conflating the two would tell a canvas-only card's user to go install
+  // something that does not exist.
+  //
+  // ⚠⚠ ZERO EFFECT ON EVERY EXISTING VISUAL BASELINE, AND THAT IS LOAD-BEARING
+  // RATHER THAN LUCKY: reaching `not-available` requires `profile.haVersion !==
+  // null`, i.e. a CAPTURED profile. Every e2e/visual test runs on an isolated
+  // `userDataDir` with no captured profile, so `resolveCardState` returns
+  // `available` and this renders nothing at all.
+  const marksUnavailable =
+    !isSpacer &&
+    resolveCardState(
+      card.type,
+      { isCustom: cardRegistry.get(card.type)?.isCustom ?? false },
+      capabilityProfile,
+    ) === 'not-available';
 
   if (isSpacer) {
     return (
@@ -821,9 +861,48 @@ export const BaseCard: React.FC<BaseCardProps> = ({
       data-testid="conditional-visibility-wrapper"
       data-visible={isVisible ? 'true' : 'false'}
       data-trigger-animation-active={activeAnimationKey ? 'true' : 'false'}
-      style={{ ...transitionStyle, ...spacingStyle, ...rest.style }}
+      data-card-unavailable={marksUnavailable ? 'true' : 'false'}
+      style={{
+        ...transitionStyle,
+        ...spacingStyle,
+        // ⚠ `position` is only introduced when the badge is actually rendered.
+        // Setting it unconditionally would change the stacking context of every
+        // card on the canvas for the sake of a badge almost none of them show.
+        ...(marksUnavailable ? { position: 'relative' as const } : null),
+        ...rest.style,
+      }}
     >
       {renderedCard}
+      {marksUnavailable && (
+        <Tooltip
+          title="Not installed on your Home Assistant — this card won't render on your instance until you install it (via HACS). You can still design with it."
+          placement="top"
+        >
+          <span
+            data-testid="placed-card-unavailable-badge"
+            style={{
+              position: 'absolute',
+              top: 4,
+              right: 4,
+              zIndex: 2,
+              padding: '0 6px',
+              height: 18,
+              lineHeight: '18px',
+              borderRadius: 9,
+              backgroundColor: '#8c8c8c',
+              color: '#fff',
+              fontSize: 10,
+              // The canvas is a drag surface; a badge that swallowed the pointer
+              // would make the corner of every marked card undraggable.
+              pointerEvents: 'auto',
+              cursor: 'help',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Not Available
+          </span>
+        </Tooltip>
+      )}
     </div>
   );
 };

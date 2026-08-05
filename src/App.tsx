@@ -42,6 +42,7 @@ import { summarizeExportWarnings } from './services/exportWarningSummary';
 import { templateService } from './services/templateService';
 import { GridCanvas } from './components/GridCanvas';
 import { CardPalette } from './components/CardPalette';
+import { useRefreshCapabilityProfile } from './contexts/CapabilityProfileContext';
 import { PropertiesPanel } from './components/PropertiesPanel';
 import { EntityBrowser } from './components/EntityBrowser';
 import { DeployDialog } from './components/DeployDialog';
@@ -332,6 +333,9 @@ const App: React.FC = () => {
   // canvas (which would shift layout.visual's boundingBox clip).
   const [versionControlOpen, setVersionControlOpen] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  // EXPORT-04 defect 1 — the handle that lets a mid-session capture reach the
+  // already-open palette and the canvas. -> contexts/CapabilityProfileContext.
+  const refreshCapabilityProfile = useRefreshCapabilityProfile();
   const [livePreviewMode, setLivePreviewMode] = useState<boolean>(false);
   const [tempDashboardPath, setTempDashboardPath] = useState<string | null>(null);
   // Which HA dashboard the current design was downloaded from, so a Live-Preview
@@ -2044,6 +2048,13 @@ const App: React.FC = () => {
         logger.info(
           `Captured capability profile: ${result.profile?.installedElements.length ?? 0} custom elements`,
         );
+        // ⭐ EXPORT-04 defect 1 (PROPAGATION). Capturing wrote a new profile to
+        // disk; without this line nothing tells the open UI, so the palette
+        // keeps showing the never-connected permissive list until a restart —
+        // which is exactly what the tester saw. `capability:capture` saves
+        // before it resolves (`main.ts:605`), so re-reading here is guaranteed
+        // to pick up the profile this call just produced.
+        await refreshCapabilityProfile();
       }
     } catch (error) {
       // Background operation — don't surface to the user.
@@ -2969,10 +2980,31 @@ const App: React.FC = () => {
             </Space>
           </Header>
           <Layout>
+            {/*
+              ⚠⚠ EXPORT-04 defect 2 — THE SURFACING BUG WAS HERE, NOT IN THE
+              PALETTE. This Sider sits INSIDE the <Layout> that follows the
+              <Header>, so a `height: '100vh'` box starts at y≈64 (antd's Header
+              height) and ends 64px BELOW the viewport. With `overflow: 'hidden'`
+              that tail is CLIPPED rather than scrolled, so whatever the palette
+              pins to its own bottom edge is simply cut off: the availability
+              notice measured at y≈1096 on a 1080 viewport. That is precisely the
+              tester's "There is no 'pallet footer' that I can see" — the feature
+              existed and was off-screen.
+
+              ⭐ `100%` (not `calc(100vh - 64px)`) because the parent <Layout> is
+              already the post-Header row: hard-coding the Header's height here
+              would silently break the day it changes, which is the same class of
+              mistake as the original `100vh`.
+
+              ⚠ `overflow: 'hidden'` is KEPT deliberately — CardPalette is a
+              `height: 100%` flex column whose middle section owns the scrolling
+              (`CardPalette.tsx:180-187`). Letting the Sider scroll too would give
+              the sidebar two scrollbars and unpin the footer again.
+            */}
             <Sider
               width={280}
               theme={isDarkTheme ? 'dark' : 'light'}
-              style={{ height: '100vh', overflow: 'hidden' }}
+              style={{ height: '100%', overflow: 'hidden' }}
             >
               <CardPalette onCardAdd={handleCardAdd} />
             </Sider>
