@@ -314,6 +314,8 @@ Reference:
 
 At session start, call `mempalace_status`.
 
+**"At session start" means before your first substantive action, not the wall-clock moment the session opens.** MCP servers frequently finish connecting after a session opens, so these tools may not exist when you first read this rule. If they are still connecting, run the memory cadence the moment they appear and say so in your first response. An instruction that was briefly impossible has not lapsed, and beginning work before running it does not discharge it.
+
 **If MemPalace responds:** all persistent memory — decisions, investigations, patterns, project state, governance clarifications — goes to MemPalace via `mempalace_add_drawer` / `mempalace_checkpoint`. **Do not write it to local memory files.**
 
 **If MemPalace is unavailable** (tools absent, or the server is read-only — see `docs/governance/MEMPALACE_PROTOCOL.md`): fall back to local memory files, and say so explicitly in the response.
