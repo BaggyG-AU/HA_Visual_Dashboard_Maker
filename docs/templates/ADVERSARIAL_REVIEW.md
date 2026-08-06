@@ -1,18 +1,24 @@
-# HAVDM Adversarial Review — <YYYY-MM> (<REVIEWER MODEL>)
+# HAVDM Adversarial Review — <round-or-gate> <YYYY-MM-DD> (<REVIEWER MODEL>)
 
 <!--
-Template: copy to docs/reviews/HAVDM_ADVERSARIAL_REVIEW_<YYYY-MM>_<MODEL>.md.
+Template: copy to
+docs/reviews/HAVDM_ADVERSARIAL_REVIEW_<YYYY-MM-DD>_<round-or-gate>_<MODEL>.md
+(the round/gate segment — e.g. r4, v1.0.0-gate — keeps two same-model reviews
+from colliding; pre-existing review files keep their historical names).
 Cadence (owner-ruled 2026-08-06): before EVERY UAT round and every release
-gate. A cross-check by a second model lands as a separate file
+gate. The cross-check by the second model lands as a separate file
 (…_<MODEL2>_CROSSCHECK.md) or a clearly-delimited section — never by amending
 the first review's commit, so critique and target stay separately reviewable.
 Governed by docs/governance/OPERATING_AGREEMENT.md §3.2.
 -->
 
-**Author (reviewer):** \<model, date\>
-**Commissioned by:** owner · **Owner gate:** owner arbitration of the
-findings; this document decides nothing on its own.
-**Scope:** \<commit range / branch / documents under review\>
+**Author:** \<first-pass reviewer model, date\>
+**Reviewer:** \<cross-checker — a different model; its verdicts land in the
+cross-check section below or its own `_CROSSCHECK` file\>
+**Owner gate:** owner arbitration of the findings; this document decides
+nothing on its own.
+**Commissioned by:** owner · **Scope:** \<commit range / branch / documents
+under review\>
 
 **Reviewer write-restrictions (acknowledged):** no `[STATE]` drawer update;
 no UAT card marked or re-scored; no `src/` change; no merge; `ha.home.local`
@@ -51,9 +57,9 @@ from FIXES and rank them.
 
 ## 5. Directions
 
-Executable, not advisory: file + function, the proof-of-fix regression test,
-cost, priority. If the conclusion is that no pivot is needed, say that
-plainly and do not manufacture one.
+Actionable and specific — file + function, the proof-of-fix regression test,
+cost, priority — but advisory pending owner arbitration. If the conclusion is
+that no pivot is needed, say that plainly and do not manufacture one.
 
 ## 6. Disagreements
 
@@ -65,10 +71,10 @@ The owner arbitrates.
 
 ## Cross-check (second model)
 
-**Cross-checker:** \<different model, date\> — instructed to disagree where
-it disagrees and not to soften a refutation into a partial confirmation.
-_Two models that agree because the second deferred to the first have
-cross-checked nothing._
+**Cross-checker:** the Reviewer named in the header — instructed to disagree
+where it disagrees and not to soften a refutation into a partial
+confirmation. _Two models that agree because the second deferred to the first
+have cross-checked nothing._
 
 1. **Per-claim verdicts** on the §3 ledger (weakest claims first):
    `CONFIRMED / PARTIALLY CONFIRMED / REFUTED / UNVERIFIABLE`, each with
