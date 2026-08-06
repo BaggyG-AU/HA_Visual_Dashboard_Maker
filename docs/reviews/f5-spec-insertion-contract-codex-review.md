@@ -504,3 +504,114 @@ implementation exists, so this remains a review of the contract and planned
 proof, not code.
 
 **CHANGES-REQUIRED**
+
+---
+
+## Round 3 — rev-3 closure and regression review (2026-08-06)
+
+| Round-2 finding | Resolution                 | Verification |
+| --------------- | -------------------------- | ------------ |
+| M4              | **RESOLVED**               | §10 now names AC 21 and L15 explicitly, replaces the generic future-leg wording, narrows the residual inventory accurately, and adds the promised maintenance rule (`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:933-949`). |
+| M5.1            | **PARTIALLY RESOLVED**     | L12 is correctly green on base in every assertion and AC 17 now explicitly has no valid red leg (`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:707,718-731`), consistent with the governing rule (`docs/governance/OPERATING_AGREEMENT.md:66-73`). The new claim that L9 is the only split leg is false; see P1. |
+| M5.2            | **RESOLVED**               | C6 is gone as an operative leg, its removal is explicit, and L14 now states load-bearing two-section fixtures and folds in the landing/marker phase (`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:709,755-760`). With those fixtures, phase 1 and the landing assertion are red because load retains section 1 and the existing add path honors that still-valid index; the third assertion is red because base has no marker (`src/store/dashboardStore.ts:135-144`; `src/App.tsx:1131-1152`; `src/components/SectionsCanvas.tsx:390-477`). |
+| M5.3            | **RESOLVED**               | U3 is mandatory, named, mapped to AC 19, assigned to the new component-spec file, and reflected in the 100 → 101 file baseline (`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:197,733-738,751,816-830,867-875`). Its green/green classification is correct: base accepts `dragover` only for an internal drag and a direct `drop` without an internal source returns before invoking a writer (`src/components/SectionsCanvas.tsx:181-204,411-414,502-508`). |
+| N1              | **RESOLVED**               | §7.4 now limits section-0 resolution to successfully loaded sections views that contain a section, and separately states the zero-section `null` result and non-sections case (`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:426-436`). That agrees with the resolver contract and AC 12/AC 16 (`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:445-467,609-623`). |
+
+### Tripwire, delta, and traceability result
+
+The round-3 tripwire passed before any write. The branch, local tracking ref,
+live remote ref, and PR #132 head were all
+`97b83003ceb36cfc0ff7451b32eb57c1305a1427`; local `main` and the merge base were
+`de568c50ba3a88d84c44573eae93c08d8de43dc8`. The six supplied commits were the
+six commits over that base in the required order, with all five earlier object
+IDs unchanged. PR #132 was open, non-draft, unmerged, based on `main`, and clean.
+The full branch delta was exactly the two named documentation files, 1,557
+insertions and no deletions; rev 3 changed only the spec by +154/-69. No source or
+test file differs from base.
+
+The L12/C6/L14/U3 churn leaves no traceability orphan. The resulting map is:
+AC 1/6 → L1 (AC 6 also L3); AC 2 → L2; AC 3 → L3; AC 4 → L4; AC 5 → L5;
+AC 7 → L6; AC 8 → L7; AC 9 → L8/L14; AC 10 → L9; AC 11 → C1; AC 12 →
+L10; AC 13 → C2/C3/C5; AC 14 → C4; AC 15 → L11; AC 16 → U1/U2;
+AC 17 → L12; AC 18 → L13; AC 19 → U3; AC 20 → L14; and AC 21 → L15
+(`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:580-640,694-710,744-753,778-836`).
+Every named L1-L15, C1-C5, and U1-U3 leg maps back to an existing AC. The only
+remaining C6 mentions in the spec are explicit deletion/history notes, not a
+scheduled leg (`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:103,755-760,874,1012-1015,1023-1033`).
+
+The §3 finding-coverage additions point to sections that contain the described
+changes (`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:102-104`). The rev-3
+history accurately describes the substantive M4/M5/N1 edits
+(`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:1000-1019`); its omission of the
+header and coverage-table bookkeeping is not substantive drift.
+
+### New findings
+
+#### P1 — Rev 3's new “L9 is the only SPLIT leg” statement is false
+
+**Location:** Spec §9.2, especially L8/L15 and the new universal statement
+(`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:703,710,712-716`).
+
+**What is wrong:** L9 is not the only leg mixing red and green base assertions
+under the definition in the paragraph itself. L8 maps itself to AC 9, so it must
+prove both halves of that AC: its marker assertion is red, but in a fresh process
+the existing double-click path already adds to section 0 because the initial
+section selection is `null` and `handleCardAdd` falls back to 0
+(`src/store/dashboardStore.ts:102-113`; `src/App.tsx:1131-1152`). If L8 does not
+assert that landing, its AC-9 mapping is incomplete instead. L15 likewise has a
+red sibling-insertion assertion but a green “stack child count is unchanged”
+assertion on base: the current palette supplies only `text/plain`, while section
+targets accept `dragover` only during an internal drag, so no palette card or
+nested child lands (`src/components/CardPalette.tsx:143-147`;
+`src/components/SectionsCanvas.tsx:181-204,411-414,502-508`).
+
+**Why it matters:** Rev 3 correctly stopped presenting L12's wholly green base
+outcome as split, but the replacement universal repeats the same category of
+per-assertion accounting error elsewhere. An implementation report following the
+table could describe base-green assertions as part of an undifferentiated red
+result, contrary to the spec's own reason for itemising split legs and the
+red-before-green discipline (`docs/governance/OPERATING_AGREEMENT.md:66-73`).
+
+**Concrete correction:** Remove the “only” claim and audit every multi-assertion
+leg consistently. At minimum, classify L8 and L15 as SPLIT and state which
+assertions are red versus green on base; alternatively, separate their
+base-preserving assertions into named control legs. Keep L12 green/green and do
+not change AC 17's no-valid-red statement.
+
+#### P2 (minor) — U3's Testing Library precedent count is overstated
+
+**Location:** Spec §9.5
+(`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:832-836`).
+
+**What is wrong:** There are eleven `tests/unit/*.spec.tsx` files, but only nine
+import Testing Library and call `render`. The two exceptions import only Vitest
+and utility helpers and render no component
+(`tests/unit/BackgroundCustomizer.spec.tsx:1-9`;
+`tests/unit/GradientEditor.spec.tsx:1-9`). The cited closest precedent is sound:
+`card-context-menu.spec.tsx` imports Testing Library and renders through its
+provider helper (`tests/unit/card-context-menu.spec.tsx:20-37`).
+
+**Why it matters:** This does not undermine U3's feasibility, but it is a new,
+quantified codebase claim and is factually inaccurate as written.
+
+**Concrete correction:** Say “nine of the eleven `.spec.tsx` files render with
+Testing Library,” or avoid the count and cite the existing component-render
+precedent directly.
+
+### Confidence and limits — round 3
+
+**CONFIDENCE: HIGH.** I read the complete rev-3 patch and resulting spec, checked
+the complete AC/leg inventory, resolved the new source and test claims by symbol,
+and independently verified the complete local/remote/PR tripwire. The static unit
+inventory matches the stated 100-file baseline and the proposed new U3 file would
+move it to 101 (`vitest.config.ts:5-8`; `tests/unit/smoke.test.ts:1`).
+
+I still cannot inspect the cited MemPalace drawer; I treated the owner's exact
+words supplied for this round as authoritative. Per the hard constraint, I did
+not run e2e or integration tests, so I could not observe C5, Electron `dragTo`
+MIME delivery, or any future F5 behavior. I did not run the quoted unit baseline,
+so 1316/1316 remains a recorded `[STATE]` value rather than a result of this
+review. There is no F5 implementation or U3 file yet to execute. I did not edit
+the spec, source, tests, PR, or remote branch.
+
+**CHANGES-REQUIRED**
