@@ -6,6 +6,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { CapabilityProfileProvider } from './contexts/CapabilityProfileContext';
 import './index.css';
 
 // Import Material Design Icons locally (bundled, not from CDN)
@@ -24,8 +25,14 @@ if (!container) {
 
 // Create root and render the app
 const root = createRoot(container);
+// ⚠ The capability provider wraps App rather than living INSIDE it, because App
+// is itself a consumer: it owns `captureCapabilityProfile` and has to refresh
+// the shared profile once a capture lands (EXPORT-04 defect 1). A provider a
+// component renders cannot be read by that same component.
 root.render(
   <React.StrictMode>
-    <App />
+    <CapabilityProfileProvider>
+      <App />
+    </CapabilityProfileProvider>
   </React.StrictMode>,
 );

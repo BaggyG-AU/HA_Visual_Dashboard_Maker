@@ -12,10 +12,8 @@ import {
 import { cardRegistry, CardCategory, CardTypeMetadata } from '../services/cardRegistry';
 import { SHORTCUT_PASSTHROUGH_ATTR } from '../utils/keyboardShortcuts';
 import { resolveCardState } from '../services/capability/cardAvailability';
-import {
-  defaultCapabilityProfile,
-  type CapabilityProfile,
-} from '../services/capability/capabilityProfile';
+import { useCapabilityProfile } from '../contexts/CapabilityProfileContext';
+import { capturedAtLabel } from '../utils/capabilityLabel';
 
 interface CardPaletteProps {
   onCardAdd: (cardType: string) => void;
@@ -65,28 +63,20 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeKeys, setActiveKeys] = useState<string[]>([]);
   const previousActiveKeysRef = useRef<string[] | null>(null);
-  const [profile, setProfile] = useState<CapabilityProfile>(defaultCapabilityProfile());
 
-  // Load the persisted capability profile once. This is the OFFLINE source of
-  // truth for card availability — never a live query at render time (standalone
-  // principle). Absent electronAPI (e.g. unit tests) keeps the permissive default.
-  useEffect(() => {
-    let cancelled = false;
-    const api = window.electronAPI;
-    if (api?.capabilityGetProfile) {
-      api
-        .capabilityGetProfile()
-        .then((res) => {
-          if (!cancelled && res?.profile) setProfile(res.profile);
-        })
-        .catch(() => {
-          /* keep the permissive default */
-        });
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // The persisted capability profile — the OFFLINE source of truth for card
+  // availability, never a live query at render time (standalone principle).
+  //
+  // ⭐ EXPORT-04 defect 1. This used to be a local `useState` filled by a
+  // `useEffect(..., [])` with an EMPTY dependency array, which meant a capture
+  // performed mid-session NEVER reached an already-open palette — the user
+  // connected, HAVDM inventoried their instance, and this list went on showing
+  // the never-connected permissive answer until the app restarted. The profile
+  // now has one owner that can be refreshed, and `App.captureCapabilityProfile`
+  // refreshes it the moment a capture lands.
+  // ⚠ Outside a provider this is the permissive default, which is what keeps a
+  // bare unit render honest rather than crashing.
+  const profile = useCapabilityProfile();
 
   // Get all cards and group by category
   const allCards = cardRegistry.getAll();
@@ -175,6 +165,45 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ marginBottom: '12px' }}
         />
+
+        {/*
+          ⭐⭐ EXPORT-04 defect 2 — THE NOTICE LIVES HERE, ABOVE THE SCROLL AREA.
+          It used to sit in the palette FOOTER, below a `flex: 1` scroll region.
+          That is structurally sound on its own, but the Sider around it was
+          `height: 100vh` under a 64px Header with `overflow: hidden`, so the
+          footer was clipped 64px below the viewport and the user never saw it
+          (`App.tsx`, the Sider comment). The Sider is fixed too — this move is
+          belt-and-braces, and it is the better home regardless: an explanation
+          of what the list below MEANS belongs before the list, not after it.
+
+          ⚠ TWO STATES, AND THE PERMISSIVE ONE IS NOT A DEFECT. Never-connected
+          shows everything as available BY DESIGN (ratified vision answer 5) — the
+          failure this text fixes is silence, not permissiveness. An unexplained
+          default is indistinguishable from a broken one: the user cannot tell
+          "everything really is installed" from "HAVDM has no idea what you have".
+          Once a capture exists, ruling R1 makes the marks reflect the LAST
+          CAPTURE even after disconnect, so the honest thing is to say when that
+          was rather than imply it is live.
+
+          ⚠ Canvas-only cards are unaffected in both states and stay marked:
+          `resolveCardState` checks that profile-independent set FIRST.
+        */}
+        {profile.haVersion === null ? (
+          <div
+            data-testid="palette-availability-notice"
+            style={{ color: token.colorTextTertiary, fontSize: '11px' }}
+          >
+            Not connected to Home Assistant — every card is shown as available. Connect to see which
+            are actually installed on your instance.
+          </div>
+        ) : (
+          <div
+            data-testid="palette-availability-freshness"
+            style={{ color: token.colorTextTertiary, fontSize: '11px' }}
+          >
+            Availability as of the last capture, {capturedAtLabel(profile.capturedAt)}.
+          </div>
+        )}
       </div>
 
       <div
@@ -333,29 +362,6 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
       >
         {allCards.length} cards available
         {searchTerm && ` (${Object.values(filteredCardsByCategory).flat().length} shown)`}
-        {/*
-          ⚠ EXPORT-04. With no captured capability profile, `resolveCardState`
-          is deliberately PERMISSIVE — ratified vision answer 5, so a fresh or
-          offline user is never blocked from designing. The round-1 tester
-          marked this card Fail with "No cards marked Not Installed", and they
-          were right to: showing everything as available is correct, but saying
-          NOTHING about why is not.
-
-          ⭐ An unexplained default is indistinguishable from a broken one. The
-          user cannot tell "everything really is installed" from "HAVDM has no
-          idea what you have installed". Naming it costs one line and makes the
-          permissive default honest rather than merely defensible — which is
-          precisely what this card is titled after.
-
-          ⚠ Canvas-only cards are NOT affected and stay marked regardless:
-          `resolveCardState` checks that profile-independent set FIRST.
-        */}
-        {profile.haVersion === null && (
-          <div data-testid="palette-availability-notice" style={{ marginTop: '6px' }}>
-            Not connected to Home Assistant — every card is shown as available. Connect to see which
-            are actually installed on your instance.
-          </div>
-        )}
       </div>
     </div>
   );
