@@ -1,6 +1,6 @@
 # F5 — Sections-canvas insertion contract (Feature Spec)
 
-**Status:** Draft — rev 1, Codex round-1 findings applied (§11); awaiting owner sign-off
+**Status:** Draft — rev 2: Codex round-1 findings applied and **both open questions answered by the owner** (§10, §11). No open questions remain; awaiting owner sign-off (merge of PR #132)
 **Author:** Claude Opus
 **Reviewer:** Codex — on-branch review
 `docs/reviews/f5-spec-insertion-contract-codex-review.md` (commit `76cf6d4`,
@@ -80,28 +80,30 @@ sign-off**. No implementation begins before that merge.
 
 ## 3. Finding Coverage
 
-| Finding / Ruling / Deliverable                                                                                                                       | Addressed in section                | Status  |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------- |
-| **UAT VIEWS-04 defect (1)** — `SectionsCanvas` has no palette-drop handler; drops are refused                                                        | §7.1, §7.2, §7.3                    | Covered |
-| **UAT VIEWS-04 defect (2)** — double-click add targets `selectedSectionIndex ?? 0`                                                                   | §7.4, §7.5                          | Covered |
-| **UAT VIEWS-04, tester** — "Cannot drag cards into any section if the section is **empty**"                                                          | §7.3 (empty section)                | Covered |
-| **UAT VIEWS-04, tester** — "Needs to be stress tested (automated)"                                                                                   | §5 (deferred to F11)                | Covered |
-| **Ruling ARB-R7** — written, owner-signed spec before any code                                                                                       | Header, §2, §12                     | Covered |
-| **ARB-R7 required content** — palette payload shape                                                                                                  | §7.1                                | Covered |
-| **ARB-R7 required content** — target-section resolution, incl. what "Add section" sets                                                               | §7.4                                | Covered |
-| **ARB-R7 required content** — insertion semantics                                                                                                    | §7.3, §7.6                          | Covered |
-| **Fable review §3.7 loose end** — reconcile "lands in the last section" with the code's default-0                                                    | §7.4                                | Covered |
-| **Fable review §F5** — `onPaletteDrop(sectionIndex)` prop, `GridCanvas`'s path in `SectionsCanvas`                                                   | §7.2, §7.7                          | Covered |
-| **Fable review §F5** — make the selected section **visibly** selected                                                                                | §7.5                                | Covered |
-| **Fable review §F5 MUST NOT** — internal card/section drag flags and their gating unchanged                                                          | §5                                  | Covered |
-| **`[STATE]` v142** — "an empty section is addressable at no other moment"                                                                            | §7.4, §7.5                          | Covered |
-| **Coverage debt** — the card's cited `auto_covered` spec never reaches the fallback (a 21st `auto_covered` form)                                     | §9.1, §9.4                          | Covered |
-| **Codex review M1** — `loadDashboard` omits the `selectedSectionIndex` reset, so a load can inherit a target                                         | §7.4, §10 Q2, §9.3 C6               | Covered |
-| **Codex review M2** — a harness limitation must not weaken the `dragover` discriminator                                                              | §7.1, §9.6 item 2                   | Covered |
-| **Codex review M3** — `insertCardIntoSectionAt` has a valid historical-behaviour red leg                                                             | §9.5 U1, U2                         | Covered |
-| **Codex review M4** — the container question blocks more contract than stated                                                                        | §10 Q1                              | Covered |
-| **Codex review M5** — ACs and legs did not prove several normative behaviours                                                                        | §8 AC 1, 15–19; §9.2                | Covered |
-| **Codex review m1–m5** — corrections register in §6; guard parity and no-op undo; optional-callback gating; dense-packing caveat; toolbar protection | §6, §7.6, §7.2, §7.6, §5 MUST NOT 8 | Covered |
+| Finding / Ruling / Deliverable                                                                                                                       | Addressed in section                        | Status  |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ------- |
+| **UAT VIEWS-04 defect (1)** — `SectionsCanvas` has no palette-drop handler; drops are refused                                                        | §7.1, §7.2, §7.3                            | Covered |
+| **UAT VIEWS-04 defect (2)** — double-click add targets `selectedSectionIndex ?? 0`                                                                   | §7.4, §7.5                                  | Covered |
+| **UAT VIEWS-04, tester** — "Cannot drag cards into any section if the section is **empty**"                                                          | §7.3 (empty section)                        | Covered |
+| **UAT VIEWS-04, tester** — "Needs to be stress tested (automated)"                                                                                   | §5 (deferred to F11)                        | Covered |
+| **Ruling ARB-R7** — written, owner-signed spec before any code                                                                                       | Header, §2, §12                             | Covered |
+| **ARB-R7 required content** — palette payload shape                                                                                                  | §7.1                                        | Covered |
+| **ARB-R7 required content** — target-section resolution, incl. what "Add section" sets                                                               | §7.4                                        | Covered |
+| **ARB-R7 required content** — insertion semantics                                                                                                    | §7.3, §7.6                                  | Covered |
+| **Fable review §3.7 loose end** — reconcile "lands in the last section" with the code's default-0                                                    | §7.4                                        | Covered |
+| **Fable review §F5** — `onPaletteDrop(sectionIndex)` prop, `GridCanvas`'s path in `SectionsCanvas`                                                   | §7.2, §7.7                                  | Covered |
+| **Fable review §F5** — make the selected section **visibly** selected                                                                                | §7.5                                        | Covered |
+| **Fable review §F5 MUST NOT** — internal card/section drag flags and their gating unchanged                                                          | §5                                          | Covered |
+| **`[STATE]` v142** — "an empty section is addressable at no other moment"                                                                            | §7.4, §7.5                                  | Covered |
+| **Coverage debt** — the card's cited `auto_covered` spec never reaches the fallback (a 21st `auto_covered` form)                                     | §9.1, §9.4                                  | Covered |
+| **Codex review M1** — `loadDashboard` omits the `selectedSectionIndex` reset, so a load can inherit a target                                         | §7.4, §10 Q2, §5 MUST NOT 4, AC 20, leg L14 | Covered |
+| **Owner ruling Q2, 2026-08-06** — `loadDashboard` resets `selectedSectionIndex`                                                                      | §5 MUST NOT 4, §6, §7.4, AC 20, leg L14     | Covered |
+| **Owner ruling Q1, 2026-08-06** — sections-container nesting deferred                                                                                | §5, §7.2, §7.3, AC 21, leg L15              | Covered |
+| **Codex review M2** — a harness limitation must not weaken the `dragover` discriminator                                                              | §7.1, §9.6 item 2                           | Covered |
+| **Codex review M3** — `insertCardIntoSectionAt` has a valid historical-behaviour red leg                                                             | §9.5 U1, U2                                 | Covered |
+| **Codex review M4** — the container question blocks more contract than stated                                                                        | §10 Q1                                      | Covered |
+| **Codex review M5** — ACs and legs did not prove several normative behaviours                                                                        | §8 AC 1, 15–19; §9.2                        | Covered |
+| **Codex review m1–m5** — corrections register in §6; guard parity and no-op undo; optional-callback gating; dense-packing caveat; toolbar protection | §6, §7.6, §7.2, §7.6, §5 MUST NOT 8         | Covered |
 
 ## 4. In Scope
 
@@ -123,6 +125,14 @@ sign-off**. No implementation begins before that merge.
   (automated)") — that is **F11 / CANVAS-03**, item 12 of the remediation order
   (`drawer_havdm_decisions_6e8d4788d9513ccce593c378`). F5 adds deterministic
   legs, not a stress harness.
+- **Container nesting inside a section** — owner-ruled DEFERRED, 2026-08-06 (§10
+  Q1). A palette card dropped on a container card inside a section becomes a
+  **sibling at that index**, not a child, unlike the flat canvas's PROPS-06
+  behaviour (`GridCanvas.tsx:256-275`). ⚠ Recorded as a deferred follow-up
+  awaiting the owner's scheduling — it should settle nested-child **addressing**
+  (the sections selection model is top-level `(sectionIndex, cardIndex)` only),
+  not merely the drop. Not silently dropped, and not added to the 13-item
+  remediation order unilaterally.
 - Dragging a card **out of** a sections view, between views, or from a flat view
   into a sections view.
 - Section reorder, rename, delete, `max_columns` — shipped in slice 4.4 and
@@ -150,10 +160,11 @@ sign-off**. No implementation begins before that merge.
    `src/store/dashboardStore.ts:258-352`. The `selectedSectionIndex: null` resets
    on `setSelectedView`, `setSelectedCard`, `setSelectedCards` and
    `selectCardWithMode` stay exactly as they are; §7.5 resolves the target for
-   _display and add_ without changing what is stored. ⚠ **`loadDashboard`'s
-   omitted reset (§7.4) is governed by open question Q2, not by this line** — if
-   the owner rules that it should reset, that change is carved out of this
-   MUST NOT explicitly.
+   _display and add_ without changing what is stored. ⚠ **ONE CARVE-OUT, owner-ruled
+   2026-08-06 (§10 Q2): `loadDashboard` gains `selectedSectionIndex: null`
+   alongside the four selection fields it already resets
+   (`src/store/dashboardStore.ts:139-143`).** That single addition is in scope;
+   every other reducer in that file stays untouched.
 5. **No new committed visual snapshots and no rebaseline.** §9.7 states why this
    slice cannot reach one.
 6. **The strategy-view placeholder** (`GridCanvas.tsx:327-352`) and the
@@ -178,6 +189,7 @@ sign-off**. No implementation begins before that merge.
 | `src/components/SplitViewEditor.tsx`   | Forward the same prop through to `GridCanvas` (`:491-510`).                                                                                                                                   |
 | `src/App.tsx`                          | New `handleSectionPaletteDrop`; `handleCardAdd`'s sections branch uses the shared resolver; wire the prop at both `GridCanvas` mount sites (`:3296`, `:3348`).                                |
 | `src/utils/sectionsLayout.ts`          | New `insertCardIntoSectionAt` and `resolveTargetSectionIndex` (both pure).                                                                                                                    |
+| `src/store/dashboardStore.ts`          | **One line**: add `selectedSectionIndex: null` to `loadDashboard`'s success `set` (`:139-143`), per the owner's Q2 ruling and MUST NOT 4's carve-out. Nothing else in this file changes.      |
 | `tests/unit/sectionsLayout.spec.ts`    | Legs U1/U2 for the two new helpers (§9.5).                                                                                                                                                    |
 | `tests/e2e/sections-canvas.spec.ts`    | An empty-section fixture, a no-sections fixture, and the legs in §9.2/§9.3.                                                                                                                   |
 | `docs/testing/uat/CARD_CORRECTIONS.md` | Append the VIEWS-04 coverage-citation correction (§9.4). ⚠ The r3 plan and every UAT verdict stay untouched — this register is the committed, append-only mechanism for future-round wording. |
@@ -272,9 +284,10 @@ accepts every `dragover` unconditionally and only then checks `if (!onCardDrop)
 return;` at drop (`GridCanvas.tsx:244-246`) — a shape this component must not
 copy.
 
-⚠ **`to.cardIndex`'s meaning in this docblock is settled only if open question Q1
-is answered "defer".** If the owner rules that a drop onto a container card
-nests, this callback's contract changes; see §10.
+⚠ **`to.cardIndex` always means the index the new card takes — including when the
+addressed card is a container.** The owner ruled on 2026-08-06 that
+sections-container nesting is deferred (§10 Q1, §5), so this callback has exactly
+one meaning and needs no container discriminator.
 
 `GridCanvas` forwards it in the sections delegation at `:297-316` (the branch
 guarded by `view.type === 'sections'` at `:295`); `SplitViewEditor` forwards it
@@ -395,24 +408,30 @@ successful load of a new one.** If the inherited index happens to address an
 existing section in the new view, both today's add path (`App.tsx:1137-1138`)
 and this spec's resolver treat it as valid and target it.
 
-So there are two distinct no-visible-target states, not one:
+That made two distinct no-visible-target states, not one:
 
 1. **Genuine null** (the table above) — the add lands in section 0.
-2. **Inherited non-null** — a second document opened in the same session can
+2. **Inherited non-null** — a second document opened in the same session could
    target whatever section number was selected in the first.
 
 In both, a user double-clicks a palette card and the card lands somewhere
 **nothing on screen has named**. There is no CSS for a selected _section_:
 `src/components/SectionsCanvas.css` styles only `.havdm-section-card--selected`
-(`:38`) and the resize handles. The §7.5 marker closes both states — it renders
-whatever the resolver returns, so an inherited target stops being invisible even
-if the owner decides the retention itself should stay.
+(`:38`) and the resize handles.
 
-⚠ **Whether that omitted reset is a defect to fix is open question Q2 (§10)** —
-it is a change to load-time selection semantics, which MUST NOT 4 otherwise
-forbids. This spec does not guess. Note that the marker makes the retention
-visible either way, so Q2 governs _correctness of the retained value_, not
-whether the user can see it.
+**✅ State 2 is closed by the owner's Q2 ruling of 2026-08-06 (§10): F5 adds
+`selectedSectionIndex: null` to `loadDashboard`'s success `set`**, so a load joins
+the table above and every document opens with the target resolved to section 0.
+Red leg L14 proves it. State 1 remains legitimate — it is the ordinary
+no-selection case — and is closed not by changing state but by the §7.5 marker,
+which renders whatever the resolver returns so the target is never invisible.
+
+⚠ The retention is recorded here rather than deleted because it is the **reason**
+the one-line store change is in this slice at all, and because it is the second
+instance of previous-document state surviving a load in this same reducer — the
+first was FILE-04's undo history (`src/store/dashboardStore.ts:145-165`). ⭐ **The
+generalisable lesson: a partial `set` in a zustand reducer is a silent-retention
+surface — enumerate the fields it does NOT name, not only the ones it does.**
 
 **The contract.** One shared, pure resolver becomes the single source of truth
 for the target, and the marker in §7.5 renders **the same value**:
@@ -602,6 +621,14 @@ discriminate at `dragover` — hence the marker MIME in §7.1.
     no part of the toolbar's flex row (MUST NOT 8).
 19. A `SectionsCanvas` mounted **without** `onPaletteCardDrop` refuses palette
     drops exactly as it does today: no `preventDefault()`, no card, no message.
+20. Loading a second dashboard over a first **clears the section selection**:
+    `selection-debug-state` shows `data-selected-section="null"` immediately
+    after the load, whatever was selected in the previous document, and the
+    target marker sits on section 0. (Owner ruling Q2 — §10.)
+21. A palette card dropped on a **container** card inside a section becomes a
+    **sibling at that card's index**, not a child — the deferred-nesting ruling
+    (§10 Q1) made explicit, so a later change to it is a visible contract change
+    rather than a silent one.
 
 ## 9. Test Plan
 
@@ -670,6 +697,8 @@ assertion. Legs that mean "the section's own body" must pass an explicit
 | L11 | Drop an **`entities`** card; assert `title === 'New Entities'` **and** no `_havdm_layout` / `view_layout`                                                                                   | 15        | 🔴 RED — no card to inspect                                                                                                                                                              |
 | L12 | Dispatched drop with an explicitly populated `DataTransfer` carrying (a) non-JSON, (b) `{}`, (c) an unregistered `cardType`; assert no card, no message, no undo entry, unchanged selection | 17        | 🟠 SPLIT — the no-card assertions pass on base (everything is refused); the **no-undo-entry and unchanged-selection** assertions are the discriminating ones on the branch               |
 | L13 | Marker rendered, one-column section: reorder handle, heading input and Delete are visible and operable; rename through the input still commits                                              | 18        | 🔴 RED — the marker does not exist on base                                                                                                                                               |
+| L14 | Load dashboard A, select a card in its section 1, load dashboard B over it; assert `selection-debug-state[data-selected-section] === 'null'`                                                | 20        | 🔴 RED — on base the index is retained, so the attribute reads `'1'`. ⭐ Uses only base-existing testids, so it survives the `git stash push -u src/` red-leg technique intact           |
+| L15 | Drop a palette card on a **vertical-stack** card inside a section; assert it lands as a **sibling** at that index and the stack's own child count is unchanged                              | 21        | 🔴 RED — nothing lands on base. On the branch it pins the deferred-nesting ruling, so a future nesting change cannot land silently                                                       |
 
 ⚠ L9 and L12 are marked SPLIT deliberately: each mixes assertions that are red on
 base with assertions that are green on base, and the spec says which is which so
@@ -687,15 +716,15 @@ in the PR, not left implied.
 
 Per the control-leg pattern used in #125/#126/#127/#129 (`[STATE]` v142).
 
-| Leg | What it pins                                                                                                   | Proves AC | Note                                                                                                                                                                                                                                                                                                               |
-| --- | -------------------------------------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| C1  | Double-click add **with a card selected** lands in that section                                                | 11        | The existing `:96` leg, kept as the control                                                                                                                                                                                                                                                                        |
-| C2  | Internal card drag-move between populated sections                                                             | 13        | The existing `:239` leg                                                                                                                                                                                                                                                                                            |
-| C3  | Internal section reorder + drag-resize                                                                         | 13        | Existing `:270`, `:532`                                                                                                                                                                                                                                                                                            |
-| C4  | PROPS-06 container nesting on the flat canvas                                                                  | 14        | Existing `canvas-resize-and-nesting.spec.ts:117`                                                                                                                                                                                                                                                                   |
-| C5  | **Internal** card drag into an **EMPTY** section                                                               | 13        | ⚠ **Outcome not assumed — measure it (§9.6).**                                                                                                                                                                                                                                                                     |
-| C6  | A second document loaded over a first: the marker names whatever the resolver returns, and the add lands there | 9         | ⚠ Pins §7.4's measured retention behaviour so **Q2's answer changes one leg's expectation, not the contract**. On base the marker half is RED.                                                                                                                                                                     |
-| L5  | Palette drop on the canvas background is a no-op                                                               | 5         | ⚠ **Passes on base for the wrong reason** — on base _every_ palette drop is refused, so this is **not** a control leg: it discriminates nothing until the branch exists, where it pins that the fix did not over-broaden. Recorded per `[STATE]`'s "a green assertion on base is NOT automatically a control leg". |
+| Leg | What it pins                                                                           | Proves AC | Note                                                                                                                                                                                                                                                                                                               |
+| --- | -------------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| C1  | Double-click add **with a card selected** lands in that section                        | 11        | The existing `:96` leg, kept as the control                                                                                                                                                                                                                                                                        |
+| C2  | Internal card drag-move between populated sections                                     | 13        | The existing `:239` leg                                                                                                                                                                                                                                                                                            |
+| C3  | Internal section reorder + drag-resize                                                 | 13        | Existing `:270`, `:532`                                                                                                                                                                                                                                                                                            |
+| C4  | PROPS-06 container nesting on the flat canvas                                          | 14        | Existing `canvas-resize-and-nesting.spec.ts:117`                                                                                                                                                                                                                                                                   |
+| C5  | **Internal** card drag into an **EMPTY** section                                       | 13        | ⚠ **Outcome not assumed — measure it (§9.6).**                                                                                                                                                                                                                                                                     |
+| C6  | After L14's second load, a double-click add lands in section 0 and the marker names it | 9, 20     | ⚠ Was a retention-pinning control leg while Q2 was open; the owner's **reset** ruling turns its behavioural half into a red leg — promoted to **L14** in §9.2. C6 now covers only the follow-on add, whose marker half is RED on base.                                                                             |
+| L5  | Palette drop on the canvas background is a no-op                                       | 5         | ⚠ **Passes on base for the wrong reason** — on base _every_ palette drop is refused, so this is **not** a control leg: it discriminates nothing until the branch exists, where it pins that the fix did not over-broaden. Recorded per `[STATE]`'s "a green assertion on base is NOT automatically a control leg". |
 
 ### 9.4 Repairing the card's coverage citation
 
@@ -785,8 +814,14 @@ implementation PR.
   Record the new number; comparing against 1316 afterwards reads as a false
   regression (the baseline has already moved five times).
 - **e2e:** currently **307 tests = 298 passed / 7 failed / 2 skipped**, with
-  **six** expected failures post-#128. Legs L1–L13 and control legs C5–C6 raise
+  **six** expected failures post-#128. Legs L1–L15 and control legs C5–C6 raise
   the total (C1–C4 already exist). The six known failures must stay six.
+- ⚠ **Q2's one-line store change touches every load path**, so its regression
+  sweep is not confined to sections: re-run the file-open, YAML-editor Apply
+  (`mode: 'edit'`) and dashboard-generator specs, not just
+  `sections-canvas.spec.ts`. Nothing in the suite is known to assert cross-document
+  section retention, but that is an expectation to verify, not to assume
+  (`[STATE]` lesson (z)).
 - **Snapshots: zero impact, by construction.** `SectionsCanvas` renders only
   under `view.type === 'sections'` (`GridCanvas.tsx:295`), and **no visual spec
   loads a sections view** — `grep -l "type: sections" tests/e2e/*.visual.spec.ts`
@@ -797,22 +832,46 @@ implementation PR.
   cross-cutting product code → **Medium minimum** on the regression gate matrix
   (`TESTING_STANDARDS.md` ~789). Escalating needs no ruling.
 
-## 10. Open Questions
+## 10. Open Questions — none remaining (both answered 2026-08-06)
 
-**Q1 — Should a palette card dropped onto a CONTAINER card inside a section nest
-into it, as it does on the flat canvas?** PROPS-06 established for `GridCanvas`
-that a palette card dropped on a container nests into it rather than becoming a
-sibling (`GridCanvas.tsx:256-275`, `App.handleCardDropIntoContainer:1217+`). A
-user who learned that on the flat canvas will expect it inside a section.
-§7.3's contract as written does **not** nest: a drop on any card, container or
-not, inserts at that card's index. Nesting would need a section-addressed
-variant of `appendCardToContainer` and its own legs.
+**None open. Both questions were answered by the owner on 2026-08-06 and the
+answers are folded into the normative text above; they are recorded here for
+audit.**
 
-**Recommendation: defer nesting to a follow-up**, keeping F5 at insert-at-index.
+### Q1 — container nesting inside a section — ✅ ANSWERED: DEFER
 
-⚠ **What "nest" would invalidate — the full blast radius.** An earlier draft
-claimed only one table row was blocked; that was understated. If the owner rules
-"nest", every item below is affected and must be revised before implementation:
+**Question.** Should a palette card dropped onto a CONTAINER card inside a
+section nest into it, as it does on the flat canvas? PROPS-06 established for
+`GridCanvas` that a palette card dropped on a container nests into it rather than
+becoming a sibling (`GridCanvas.tsx:256-275`,
+`App.handleCardDropIntoContainer:1217+`). A user who learned that on the flat
+canvas will expect it inside a section.
+
+**Owner's answer, 2026-08-06: "lets defer for now."** F5 stays at
+insert-at-index: a drop on any card in a section — container or not — inserts the
+new card at that card's index as a sibling. Sections-container nesting is
+explicitly out of scope (§5) and is recorded as a deferred follow-up needing the
+owner's scheduling; it is **not** silently dropped.
+
+**Two consequences of the deferral, stated so neither is a surprise later.**
+
+1. **An identical gesture will change behaviour if nesting is added after
+   release.** Dropping a palette card on a stack inside a section produces a
+   sibling now and would produce a child then. The exposure is bounded — it needs
+   the intersection of a sections view, a container card, and a drop aimed
+   precisely at it — and closing the parity before 1.0 keeps the change inside
+   the pre-release window.
+2. **The deferral is not merely a scope cut; it avoids shipping half a feature.**
+   The sections selection model is top-level `(sectionIndex, cardIndex)` only
+   (`SectionsCanvas.tsx:17-20`, `:478-550`), so a nested child has no address —
+   nesting today would create a card the user cannot then select or edit. The
+   flat canvas carries that same limitation, and its Properties panel documented
+   the one route that did not work (PROPS-06's own history). The follow-up should
+   therefore settle nested-child addressing, not just the drop.
+
+**Because the answer is "defer", every item in the table below stands exactly as
+written in this spec.** The table is retained as the audit record of what a
+"nest" ruling would have invalidated:
 
 | Blocked by Q1                                    | Why                                                                                                                                                                                                                                            |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -824,30 +883,47 @@ claimed only one table row was blocked; that was understated. If the owner rules
 | §9.2, leg L3 — plus a new sections-container leg | L3 asserts sibling insertion at `ci`; a nesting ruling changes its expectation and adds a container leg.                                                                                                                                       |
 
 Everything **not** in that table — §7.1, §7.4, §7.5, §7.7, the other four rows of
-§7.3, and all remaining ACs and legs — is unaffected by the answer either way. If
-the owner answers "defer", every listed item stands exactly as written and the
-follow-up is tracked separately.
+§7.3, and all remaining ACs and legs — was unaffected by the answer either way.
 
-**Q2 — Should `loadDashboard` reset `selectedSectionIndex`?** Measured (§7.4):
-its success branch resets `selectedViewIndex`, `selectedCardIndex`,
+### Q2 — the `loadDashboard` reset — ✅ ANSWERED: RESET IT
+
+**Question.** Should `loadDashboard` reset `selectedSectionIndex`? Measured
+(§7.4): its success branch resets `selectedViewIndex`, `selectedCardIndex`,
 `selectedCardIndices` and `selectionAnchorCardIndex` but **omits**
-`selectedSectionIndex` (`src/store/dashboardStore.ts:135-141`), so a section
+`selectedSectionIndex` (`src/store/dashboardStore.ts:135-143`), so a section
 index selected in one document survives into the next one loaded in the same
-session. This spec does not guess whether that is intentional.
+session.
 
-- **(a) Leave it.** The §7.5 marker makes the inherited target visible, so it is
-  no longer silent. MUST NOT 4 stands untouched. Cheapest; the retention itself
-  stays odd.
-- **(b) Reset it** (`selectedSectionIndex: null` alongside the other four).
-  Requires an explicit carve-out from MUST NOT 4, and a leg proving a second
-  document opens with the target back at section 0.
-- Recommendation: **(b)** — the retention looks like an omitted reset rather than
-  a decision, and every sibling field in that same `set` is cleared. But it is
-  load-time selection semantics, so it is the owner's call.
-- ⚠ Q2 blocks **only** control leg C6's expectation and MUST NOT 4's carve-out.
-  No part of §7.1–§7.3 or §7.5–§7.7 depends on the answer: the resolver clamps an
-  inherited-but-invalid index to 0 either way, and the marker renders whatever it
-  returns.
+**Owner's answer, 2026-08-06: reset it** — option (b), accepting the
+recommendation. `loadDashboard` gains `selectedSectionIndex: null` alongside its
+four siblings, carved out of MUST NOT 4 explicitly (§5), and proved by red leg
+L14 (§9.2). §7.4's "inherited non-null" state ceases to exist for loads.
+
+**The three reasons of record.**
+
+1. **The project has already ruled on this principle in this very function.**
+   FILE-04's second defect was previous-document state surviving a load — the
+   undo history — and the fix's own comment records that it broke the VISION's
+   structural "never silently destroy user data"
+   (`src/store/dashboardStore.ts:145-165`). A retained section index is the same
+   class with a smaller blast radius; leaving it means the reducer hardened
+   against cross-document leakage still leaks one field.
+2. **The retained value is meaningless by construction.** Section 2 of document A
+   bears no relation to section 2 of document B, so there is no reading under
+   which retention is desirable — which is why it reads as an omitted line rather
+   than a decision.
+3. **`'edit'` mode does not depend on the retention.** ⚠ Verified: all four
+   selection fields sit in the **unconditional** part of the `set`
+   (`:139-143`) — only `past`/`future`/`isDirty` are mode-conditional
+   (`:166-178`) — so the YAML editor's Apply path (`mode: 'edit'`,
+   `App.tsx:2360`) already clears the card selection today. Retention there
+   leaves a section selected with no card: an inconsistency, not a feature.
+   Resetting the fifth field alongside its siblings is coherent in **both**
+   modes.
+
+**Risk accepted as low:** `null` is already a legal and frequently-produced value
+for this field (the six paths in §7.4's table), and `resolveTargetSectionIndex`
+clamps whatever it receives.
 
 ## 11. Revision History & Amendments
 
@@ -855,6 +931,7 @@ session. This spec does not guess whether that is intentional.
 | ---------- | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
 | 2026-08-06 | 0   | Draft                                                                                                                                                                                                                                                            | Claude Opus |
 | 2026-08-06 | 1   | Applied the Codex independent review (`docs/reviews/f5-spec-insertion-contract-codex-review.md`, commit `76cf6d4`, CHANGES-REQUIRED): M1–M5 and m1–m5. Draft text amended in place — the spec is not yet approved, so §11's immutability rule does not yet bind. | Claude Opus |
+| 2026-08-06 | 2   | **Owner answered both open questions.** Q1 → defer sections-container nesting; Q2 → reset `selectedSectionIndex` on load. Folded into the normative text; §10 now records the rulings and holds nothing open.                                                    | Claude Opus |
 
 **What rev 1 changed, by finding.** **M1** — §7.4 corrected: `loadDashboard`
 omits the `selectedSectionIndex` reset, so a loaded document can inherit a target;
