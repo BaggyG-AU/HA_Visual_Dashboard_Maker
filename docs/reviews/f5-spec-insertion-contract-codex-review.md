@@ -332,3 +332,175 @@ run the unit/e2e baseline counts quoted from `[STATE]`; those remain
 implementation-time measurements. No implementation exists to review.
 
 **CHANGES-REQUIRED**
+
+---
+
+## Round 2 — response verification (2026-08-06)
+
+| Round-1 finding | Resolution             | Verification                                                                                                                                                                                                              |
+| --------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1              | **RESOLVED**           | §7.4 now reports the measured partial-merge retention accurately, the owner-ratified reset is a single named carve-out, and AC 20/L14 cover it. The separate overbroad sentence introduced in rev 2 is N1 below.          |
+| M2              | **RESOLVED**           | §7.1 makes the marker MIME the sole palette `dragover` discriminator, while §9.6 now changes only the harness strategy if `dragTo` cannot expose it and requires a stop-and-amend if the real application cannot.         |
+| M3              | **RESOLVED**           | §9.5 U1 supplies a behavioral red leg against the historical append semantics; U2 bases its no-valid-red treatment on behavior-preserving extraction and names alternative evidence.                                      |
+| M4              | **REGRESSED**          | Rev 1 added the requested blast-radius table, but rev 2 added AC 21/L15 without adding them to that table and retained the now-false claim that every unlisted AC and leg is unaffected.                                  |
+| M5              | **PARTIALLY RESOLVED** | The revised ACs and most named legs close the original gaps, but L12's base outcome is still misclassified, C6 is still called a control despite being red on base, and AC 19 has no mandatory named leg.                 |
+| m1              | **RESOLVED**           | §6 now names `docs/testing/uat/CARD_CORRECTIONS.md`, and §9.4 assigns the VIEWS-04 citation correction there while preserving the r3 evidence.                                                                            |
+| m2              | **RESOLVED**           | §7.6 now gives warning/warning/error parity with `handleCardAdd` and requires the reference-equal early return before `updateConfig`.                                                                                     |
+| m3              | **RESOLVED**           | §7.2 and §7.3 condition both palette `dragover` acceptance and `drop` handling on `onPaletteCardDrop` being present; AC 19 states the refusal contract. Its missing proof is tracked under M5, not this contract finding. |
+| m4              | **RESOLVED**           | §7.6 defines `ci` as logical array/DOM order, expressly disclaims a pixel-order promise under dense packing, and uses selection as landing feedback.                                                                      |
+| m5              | **RESOLVED**           | MUST NOT 8 and §7.5 put the marker on its own `gridColumn: '1 / -1'` row outside the toolbar flex context, with AC 18/L13 protecting the controls.                                                                        |
+
+### Tripwire and delta result
+
+The round-2 tripwire passed before any write. The branch and local/remote/live
+head were `feature/f5-spec-insertion-contract` at
+`9a707a17f91ff81379a5589bc25939480dae1dc5`; local `main` and the merge base were
+`de568c50ba3a88d84c44573eae93c08d8de43dc8`. The four required commits were
+present in the required order. The full branch delta was exactly the two named
+documentation files and 1,300 insertions, with no `src/` or `tests/` delta.
+Commits `9450553` and `76cf6d4` retained their original object IDs. PR #132 was
+open, non-draft, unmerged, based on `main`, and reported the same head OID.
+
+I reviewed both author fix commits as patches as well as the resulting 966-line
+spec. Commit `09e4325` changed only the spec by +363/-129; commit `9a707a1`
+changed only the spec by +165/-88. I did not edit the spec or any source/test
+file.
+
+### Ruling-transcription and new-code-claim result
+
+The settled rulings are transcribed faithfully at the implementation boundary.
+Q1 is recorded as **deferred**, with sibling insertion left normative and a
+named follow-up that is not unilaterally inserted into the remediation order
+(spec §5, lines 128-135; §10, lines 841-870). Q2 is confined to one new
+`selectedSectionIndex: null` line in `loadDashboard`'s success `set` (spec §5,
+lines 159-167; §6, line 192; §10, lines 888-922). That placement is genuinely
+unconditional: the current four selection writes precede the mode-conditional
+`past`/`future`/`isDirty` spread
+(`src/store/dashboardStore.ts:135-177`), and the YAML editor is the caller that
+passes `mode: 'edit'` (`src/App.tsx:2352-2361`). The cited FILE-04 comment really
+does document previous-document undo history surviving a load
+(`src/store/dashboardStore.ts:145-165`).
+
+The other added mechanism claims checked out. `handleCardAdd` has the stated
+warning/warning/error preconditions and its sections branch supplies the title,
+append, selection, and success-message precedent (`src/App.tsx:1101-1117`,
+`:1127-1153`). Existing section mutation handlers return on a reference-equal
+helper result before `updateConfig` (`src/App.tsx:1693-1703`, `:1741-1749`,
+`:1760-1767`, `:1775-1782`, `:1788-1795`). The toolbar is a non-wrapping flex
+row inside a full-width grid item (`src/components/SectionsCanvas.tsx:419-477`),
+so §7.5's proposed separate full-width marker row uses an existing layout
+device rather than entering that flex row. Finally, L14's
+`selection-debug-state[data-selected-section]` seam is present on base
+(`src/App.tsx:3575-3597` at `de568c5`), so that test can survive the stated
+source-only stash technique.
+
+### Unresolved or regressed round-1 findings
+
+#### M4 — REGRESSED: the Q1 blast-radius audit excludes the rev-2 ruling pins
+
+**Location:** Spec §10 Q1, lines 872-886; AC 21, lines 628-631; L15, line 701.
+
+**What is wrong:** The retained table calls itself the audit record of everything
+a future "nest" ruling would invalidate. It lists AC 3, AC 7, AC 15 and describes
+L3 plus an unnamed new container leg, then says every unlisted AC and leg is
+unaffected. Rev 2, however, added AC 21's explicit sibling-not-child contract
+and L15 to prove it. Those are the first AC and leg a future nesting decision
+would invalidate, yet neither is named in the retained table and both fall under
+its false "all remaining" sentence.
+
+**Why it matters:** The operative deferral is correct, but the audit trail now
+misstates its own blast radius. A later owner or implementer following §10 could
+change nesting while overlooking the exact rev-2 regression pin created for
+that decision.
+
+**Concrete correction:** Add AC 21 and L15 explicitly to the table (and replace
+the generic "new sections-container leg" wording with L15), then narrow the
+"all remaining" sentence accordingly.
+
+#### M5 — PARTIALLY RESOLVED: the test matrix still overclaims its base evidence
+
+**Location:** Spec §9.2 L12 and its explanation, lines 698-707; AC 19 and its
+proof paragraph, lines 622-623 and 709-713; §9.3 C6, lines 715-727.
+
+**What is wrong:** Three traceability errors remain.
+
+1. L12 is wholly **green on base**, not split. A real palette gesture is refused
+   because palette drag-start currently sets only `text/plain`
+   (`src/components/CardPalette.tsx:143-146`), while section targets call
+   `preventDefault()` only for an internal `dragInProgress`
+   (`src/components/SectionsCanvas.tsx:181-182`, `:411-414`, `:502-508`). Even if
+   L12 dispatches `drop` directly, today's `dropOn` only clears the internal drag
+   state and exits when no internal source/callback exists
+   (`src/components/SectionsCanvas.tsx:184-204`). It performs no config write,
+   selection write, undo push, or UI message. Therefore **all** of L12's no-card,
+   no-message, no-undo, and unchanged-selection assertions pass on base. Their
+   ability to detect over-broadening after implementation makes L12 a valuable
+   branch control; it does not make any assertion red on base.
+2. C6 sits under “control legs — must pass on base and on the branch,” yet its
+   own note says its marker half is red on base. Its landing half is not a
+   documented base control either: `loadDashboard` currently omits
+   `selectedSectionIndex` (`src/store/dashboardStore.ts:135-143`), and the add
+   path honors a retained index when it is valid in dashboard B
+   (`src/App.tsx:1131-1150`). Whether that assertion is red therefore depends on
+   B's unstated section count. C6 is not a control leg merely because L14 asserts
+   the reset one step earlier.
+3. AC 19 still has no named, mandatory leg. Lines 709-713 leave its proof as a
+   future choice between a component assertion and code inspection. Component
+   rendering is practical in this repository—the existing unit suite uses
+   Testing Library rendering and event dispatch
+   (`tests/unit/card-context-menu.spec.tsx:22-37`)—so the fallback does not
+   establish the promised AC-to-leg trace.
+
+**Why it matters:** The Operating Agreement makes observed red behavior, not a
+test's eventual usefulness, the controlling evidence
+(`docs/governance/OPERATING_AGREEMENT.md:66-73`). These classifications could
+record green-on-base behavior as a successful red leg, while the optional
+callback guard could ship without a committed test at all.
+
+**Concrete correction:** Reclassify L12 as a green-on-base, branch-discriminating
+control. Remove C6 from the control table and either fold its assertions into
+L14 or give it a red-leg ID and classification. Add a named, mandatory component
+leg for AC 19 (for example U3), classify it green on base and branch, and update
+§6/§9.7 if that requires a new unit file or changes the file-count baseline.
+
+### New finding
+
+#### N1 (minor) — the Q2 result overstates section-0 resolution for zero-section documents
+
+**Location:** Spec §7.4, lines 422-427, especially “every document opens with the
+target resolved to section 0”; compare §7.4 lines 455-458 and AC 12/AC 16,
+lines 600-614.
+
+**What is wrong:** Resetting `selectedSectionIndex` to `null` does not make
+section 0 exist. The same contract says the resolver returns `null` when a view
+has no sections, and the current add path warns and returns when `sections` is
+empty (`src/App.tsx:1131-1138`). Thus “every document” contradicts the
+zero-sections branch and also sweeps in non-sections documents, for which this
+sections target is inapplicable.
+
+**Why it matters:** This is a normative target-resolution section implementing
+an owner ruling. The universal wording silently broadens the ruling's derived
+effect even though the resolver and ACs specify the correct boundary elsewhere.
+
+**Concrete correction:** Replace that clause with “every successfully loaded
+sections view with at least one section opens with the add target resolved to
+section 0”; state that zero-section views resolve to `null` and retain the AC 12
+warning behavior.
+
+### Confidence and limits — round 2
+
+**CONFIDENCE: HIGH.** I read the unchanged round-1 review, both complete author
+patches, the complete resulting spec, and the governing in-repo files. I traced
+the added source claims by symbol rather than trusting cited line numbers and
+checked every AC-to-leg mapping. I also independently verified the complete
+local and live PR tripwire.
+
+I still cannot inspect the cited MemPalace drawers; I treated the owner's exact
+words and the operative recommendation supplied in the review prompt as the
+authority. Per the hard constraint, I did not run e2e or integration tests, so I
+could not observe C5, Electron `dragTo` MIME delivery, warning timing, or the
+proposed marker layout. I did not run the quoted baseline suite counts. No F5
+implementation exists, so this remains a review of the contract and planned
+proof, not code.
+
+**CHANGES-REQUIRED**
