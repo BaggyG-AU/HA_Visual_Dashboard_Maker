@@ -31,6 +31,18 @@ bootstrap-only fallback with **no duplication** between the two.
 
 ### On session start
 
+⚠ **"Session start" means BEFORE YOUR FIRST SUBSTANTIVE ACTION, not the
+wall-clock moment the session opens** — they are not the same, and the whole
+sequence below is due at the former. MCP servers frequently finish connecting
+_after_ a session opens, so these tools may not exist when you first read
+this. **If they are still connecting, run the sequence the moment they appear
+and say so in your first response.** An instruction that was briefly
+impossible has not lapsed, and beginning work before running it does not
+discharge it. (Evidence: a 2026-08-07 test on a sibling project — one agent
+ran none of its cadence because the server was mid-connect at the due moment
+and nothing returned it there; another ran all of it, but only after starting
+work.)
+
 1. `mempalace_status` — confirm the palace is live and `havdm` is present.
 2. `mempalace_search` `"HAVDM current state of play"` (limit 15) — load the live
    `[STATE]` drawer (it supersedes all prior state drawers).
