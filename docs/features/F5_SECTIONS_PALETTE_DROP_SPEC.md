@@ -1,11 +1,11 @@
 # F5 — Sections-canvas insertion contract (Feature Spec)
 
-**Status:** Draft — rev 2: Codex round-1 findings applied and **both open questions answered by the owner** (§10, §11). No open questions remain; awaiting owner sign-off (merge of PR #132)
+**Status:** Draft — rev 3: Codex rounds 1 and 2 applied, **both open questions answered by the owner** (§10, §11). No open questions remain; awaiting owner sign-off (merge of PR #132)
 **Author:** Claude Opus
 **Reviewer:** Codex — on-branch review
-`docs/reviews/f5-spec-insertion-contract-codex-review.md` (commit `76cf6d4`,
-verdict CHANGES-REQUIRED, confidence High); findings applied in a follow-up
-commit on this branch
+`docs/reviews/f5-spec-insertion-contract-codex-review.md`; round 1 commit
+`76cf6d4` and round 2 commit `45bcbad`, both CHANGES-REQUIRED, both confidence
+High; findings applied in follow-up commits on this branch
 **Owner gate:** spec approval before any code (ruling ARB-R7 /
 `docs/governance/OPERATING_AGREEMENT.md` §1, §3)
 **Branch:** `feature/f5-spec-insertion-contract` · **Created:** 2026-08-06
@@ -99,6 +99,9 @@ sign-off**. No implementation begins before that merge.
 | **Codex review M1** — `loadDashboard` omits the `selectedSectionIndex` reset, so a load can inherit a target                                         | §7.4, §10 Q2, §5 MUST NOT 4, AC 20, leg L14 | Covered |
 | **Owner ruling Q2, 2026-08-06** — `loadDashboard` resets `selectedSectionIndex`                                                                      | §5 MUST NOT 4, §6, §7.4, AC 20, leg L14     | Covered |
 | **Owner ruling Q1, 2026-08-06** — sections-container nesting deferred                                                                                | §5, §7.2, §7.3, AC 21, leg L15              | Covered |
+| **Codex round 2, M4 REGRESSION** — the Q1 audit table omitted rev 2's own ruling pins (AC 21, L15)                                                   | §10 Q1 table                                | Covered |
+| **Codex round 2, M5 residue** — L12 misclassified, C6 was not a control leg, AC 19 had no mandatory leg                                              | §9.2, §9.3, §9.5 U3, §6, §9.7               | Covered |
+| **Codex round 2, N1** — "every document opens ... at section 0" overstated the Q2 effect                                                             | §7.4                                        | Covered |
 | **Codex review M2** — a harness limitation must not weaken the `dragover` discriminator                                                              | §7.1, §9.6 item 2                           | Covered |
 | **Codex review M3** — `insertCardIntoSectionAt` has a valid historical-behaviour red leg                                                             | §9.5 U1, U2                                 | Covered |
 | **Codex review M4** — the container question blocks more contract than stated                                                                        | §10 Q1                                      | Covered |
@@ -181,18 +184,19 @@ sign-off**. No implementation begins before that merge.
 
 ## 6. Files to Create / Modify
 
-| Path                                   | Change                                                                                                                                                                                        |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/components/CardPalette.tsx`       | `handleDragStart` (`:143-147`) additionally sets the marker MIME. `text/plain` unchanged.                                                                                                     |
-| `src/components/SectionsCanvas.tsx`    | New optional `onPaletteCardDrop` prop; palette branches in the section-body and card-wrapper `onDragOver`/`onDrop`; the target-section marker.                                                |
-| `src/components/GridCanvas.tsx`        | Forward one new optional prop to `SectionsCanvas` (`:297-316`). No change to its own drop handlers.                                                                                           |
-| `src/components/SplitViewEditor.tsx`   | Forward the same prop through to `GridCanvas` (`:491-510`).                                                                                                                                   |
-| `src/App.tsx`                          | New `handleSectionPaletteDrop`; `handleCardAdd`'s sections branch uses the shared resolver; wire the prop at both `GridCanvas` mount sites (`:3296`, `:3348`).                                |
-| `src/utils/sectionsLayout.ts`          | New `insertCardIntoSectionAt` and `resolveTargetSectionIndex` (both pure).                                                                                                                    |
-| `src/store/dashboardStore.ts`          | **One line**: add `selectedSectionIndex: null` to `loadDashboard`'s success `set` (`:139-143`), per the owner's Q2 ruling and MUST NOT 4's carve-out. Nothing else in this file changes.      |
-| `tests/unit/sectionsLayout.spec.ts`    | Legs U1/U2 for the two new helpers (§9.5).                                                                                                                                                    |
-| `tests/e2e/sections-canvas.spec.ts`    | An empty-section fixture, a no-sections fixture, and the legs in §9.2/§9.3.                                                                                                                   |
-| `docs/testing/uat/CARD_CORRECTIONS.md` | Append the VIEWS-04 coverage-citation correction (§9.4). ⚠ The r3 plan and every UAT verdict stay untouched — this register is the committed, append-only mechanism for future-round wording. |
+| Path                                             | Change                                                                                                                                                                                        |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/CardPalette.tsx`                 | `handleDragStart` (`:143-147`) additionally sets the marker MIME. `text/plain` unchanged.                                                                                                     |
+| `src/components/SectionsCanvas.tsx`              | New optional `onPaletteCardDrop` prop; palette branches in the section-body and card-wrapper `onDragOver`/`onDrop`; the target-section marker.                                                |
+| `src/components/GridCanvas.tsx`                  | Forward one new optional prop to `SectionsCanvas` (`:297-316`). No change to its own drop handlers.                                                                                           |
+| `src/components/SplitViewEditor.tsx`             | Forward the same prop through to `GridCanvas` (`:491-510`).                                                                                                                                   |
+| `src/App.tsx`                                    | New `handleSectionPaletteDrop`; `handleCardAdd`'s sections branch uses the shared resolver; wire the prop at both `GridCanvas` mount sites (`:3296`, `:3348`).                                |
+| `src/utils/sectionsLayout.ts`                    | New `insertCardIntoSectionAt` and `resolveTargetSectionIndex` (both pure).                                                                                                                    |
+| `src/store/dashboardStore.ts`                    | **One line**: add `selectedSectionIndex: null` to `loadDashboard`'s success `set` (`:139-143`), per the owner's Q2 ruling and MUST NOT 4's carve-out. Nothing else in this file changes.      |
+| `tests/unit/sectionsLayout.spec.ts`              | Legs U1/U2 for the two new helpers (§9.5).                                                                                                                                                    |
+| `tests/unit/SectionsCanvas.paletteDrop.spec.tsx` | **NEW FILE** — leg U3, the mandatory component-level proof of AC 19 (§9.5). ⚠ Moves the unit **file** baseline 100 → 101 (§9.7).                                                              |
+| `tests/e2e/sections-canvas.spec.ts`              | An empty-section fixture, a no-sections fixture, and the legs in §9.2/§9.3.                                                                                                                   |
+| `docs/testing/uat/CARD_CORRECTIONS.md`           | Append the VIEWS-04 coverage-citation correction (§9.4). ⚠ The r3 plan and every UAT verdict stay untouched — this register is the committed, append-only mechanism for future-round wording. |
 
 ## 7. Design / Contract
 
@@ -421,8 +425,13 @@ In both, a user double-clicks a palette card and the card lands somewhere
 
 **✅ State 2 is closed by the owner's Q2 ruling of 2026-08-06 (§10): F5 adds
 `selectedSectionIndex: null` to `loadDashboard`'s success `set`**, so a load joins
-the table above and every document opens with the target resolved to section 0.
-Red leg L14 proves it. State 1 remains legitimate — it is the ordinary
+the table above: **every successfully loaded sections view with at least one
+section opens with the add target resolved to section 0.** Red leg L14 proves it.
+⚠ The reset makes the field `null`; it does not make a section exist. A
+**zero-section** view still resolves to `null` — the resolver's own no-sections
+rule (AC 16) and the warning path (AC 12) — and a non-sections view has no
+section target at all. The claim is about loaded **sections views with sections**,
+never "every document". State 1 remains legitimate — it is the ordinary
 no-selection case — and is closed not by changing state but by the §7.5 marker,
 which renders whatever the resolver returns so the target is never invisible.
 
@@ -682,49 +691,73 @@ assertion. Legs that mean "the section's own body" must pass an explicit
 `targetPosition` inside a region belonging to neither, and assert the resulting
 **index** (last), not merely a count.
 
-| Leg | What it drives                                                                                                                                                                              | Proves AC | Real outcome on base                                                                                                                                                                     |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| L1  | `dragTo` palette → populated section **body** at an explicit bare-region `targetPosition`; assert the new card is **last**                                                                  | 1, 6      | 🔴 RED — drop refused (`dragover` never `preventDefault`ed), count and order unchanged                                                                                                   |
-| L2  | `dragTo` palette → `section-empty-${si}`                                                                                                                                                    | 2         | 🔴 RED — same refusal; the tester's exact complaint                                                                                                                                      |
-| L3  | `dragTo` palette → `canvas-card` at `(0,0)`; assert text order, new card first                                                                                                              | 3, 6      | 🔴 RED — nothing lands                                                                                                                                                                   |
-| L4  | `dragTo` palette → `section-toolbar-${si}`                                                                                                                                                  | 4         | 🔴 RED — nothing lands                                                                                                                                                                   |
-| L5  | `dragTo` palette → sections-canvas background                                                                                                                                               | 5         | 🟢 GREEN on base — and **not** a control leg; see §9.3                                                                                                                                   |
-| L6  | Selection after a drop, via `selection-debug-state`                                                                                                                                         | 7         | 🔴 RED — no drop happens, so no selection change                                                                                                                                         |
-| L7  | Ctrl+Z / Ctrl+Y around one drop                                                                                                                                                             | 8         | 🔴 RED — no drop to undo                                                                                                                                                                 |
-| L8  | Load a sections dashboard into a **fresh process** (no prior document): marker visible, then `palette.addCard`                                                                              | 9         | 🔴 RED — the marker does not exist on base                                                                                                                                               |
-| L9  | "Add section" → marker on the new last section → assert `selection-debug-state[data-selected-section]` **directly** → `palette.addCard`                                                     | 10        | 🟠 SPLIT — the debug-state and landing assertions pass on base (they pin §7.4's measured claim, and answer Fable §3.7's "pin down what Add section stores"); the marker assertion is RED |
-| L10 | **No-sections** view + `dragTo`; assert the warning text                                                                                                                                    | 12        | 🔴 RED — nothing happens **and no warning** on base                                                                                                                                      |
-| L11 | Drop an **`entities`** card; assert `title === 'New Entities'` **and** no `_havdm_layout` / `view_layout`                                                                                   | 15        | 🔴 RED — no card to inspect                                                                                                                                                              |
-| L12 | Dispatched drop with an explicitly populated `DataTransfer` carrying (a) non-JSON, (b) `{}`, (c) an unregistered `cardType`; assert no card, no message, no undo entry, unchanged selection | 17        | 🟠 SPLIT — the no-card assertions pass on base (everything is refused); the **no-undo-entry and unchanged-selection** assertions are the discriminating ones on the branch               |
-| L13 | Marker rendered, one-column section: reorder handle, heading input and Delete are visible and operable; rename through the input still commits                                              | 18        | 🔴 RED — the marker does not exist on base                                                                                                                                               |
-| L14 | Load dashboard A, select a card in its section 1, load dashboard B over it; assert `selection-debug-state[data-selected-section] === 'null'`                                                | 20        | 🔴 RED — on base the index is retained, so the attribute reads `'1'`. ⭐ Uses only base-existing testids, so it survives the `git stash push -u src/` red-leg technique intact           |
-| L15 | Drop a palette card on a **vertical-stack** card inside a section; assert it lands as a **sibling** at that index and the stack's own child count is unchanged                              | 21        | 🔴 RED — nothing lands on base. On the branch it pins the deferred-nesting ruling, so a future nesting change cannot land silently                                                       |
+| Leg | What it drives                                                                                                                                                                                                                                                                                                   | Proves AC | Real outcome on base                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L1  | `dragTo` palette → populated section **body** at an explicit bare-region `targetPosition`; assert the new card is **last**                                                                                                                                                                                       | 1, 6      | 🔴 RED — drop refused (`dragover` never `preventDefault`ed), count and order unchanged                                                                                                                                                                                                                                                                                                                                                                   |
+| L2  | `dragTo` palette → `section-empty-${si}`                                                                                                                                                                                                                                                                         | 2         | 🔴 RED — same refusal; the tester's exact complaint                                                                                                                                                                                                                                                                                                                                                                                                      |
+| L3  | `dragTo` palette → `canvas-card` at `(0,0)`; assert text order, new card first                                                                                                                                                                                                                                   | 3, 6      | 🔴 RED — nothing lands                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| L4  | `dragTo` palette → `section-toolbar-${si}`                                                                                                                                                                                                                                                                       | 4         | 🔴 RED — nothing lands                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| L5  | `dragTo` palette → sections-canvas background                                                                                                                                                                                                                                                                    | 5         | 🟢 GREEN on base — and **not** a control leg; see §9.3                                                                                                                                                                                                                                                                                                                                                                                                   |
+| L6  | Selection after a drop, via `selection-debug-state`                                                                                                                                                                                                                                                              | 7         | 🔴 RED — no drop happens, so no selection change                                                                                                                                                                                                                                                                                                                                                                                                         |
+| L7  | Ctrl+Z / Ctrl+Y around one drop                                                                                                                                                                                                                                                                                  | 8         | 🔴 RED — no drop to undo                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| L8  | Load a sections dashboard into a **fresh process** (no prior document): marker visible, then `palette.addCard`                                                                                                                                                                                                   | 9         | 🔴 RED — the marker does not exist on base                                                                                                                                                                                                                                                                                                                                                                                                               |
+| L9  | "Add section" → marker on the new last section → assert `selection-debug-state[data-selected-section]` **directly** → `palette.addCard`                                                                                                                                                                          | 10        | 🟠 SPLIT — the debug-state and landing assertions pass on base (they pin §7.4's measured claim, and answer Fable §3.7's "pin down what Add section stores"); the marker assertion is RED                                                                                                                                                                                                                                                                 |
+| L10 | **No-sections** view + `dragTo`; assert the warning text                                                                                                                                                                                                                                                         | 12        | 🔴 RED — nothing happens **and no warning** on base                                                                                                                                                                                                                                                                                                                                                                                                      |
+| L11 | Drop an **`entities`** card; assert `title === 'New Entities'` **and** no `_havdm_layout` / `view_layout`                                                                                                                                                                                                        | 15        | 🔴 RED — no card to inspect                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| L12 | Dispatched drop with an explicitly populated `DataTransfer` carrying (a) non-JSON, (b) `{}`, (c) an unregistered `cardType`; assert no card, no message, no undo entry, unchanged selection                                                                                                                      | 17        | 🟢 GREEN on base, **wholly** — see the note below. A branch-side over-broadening control, **not** a red leg                                                                                                                                                                                                                                                                                                                                              |
+| L13 | Marker rendered, one-column section: reorder handle, heading input and Delete are visible and operable; rename through the input still commits                                                                                                                                                                   | 18        | 🔴 RED — the marker does not exist on base                                                                                                                                                                                                                                                                                                                                                                                                               |
+| L14 | **Two phases, one leg.** Load dashboard A (≥2 sections), select a card in its **section 1**, load dashboard B (also ≥2 sections) over it. Phase 1: assert `selection-debug-state[data-selected-section] === 'null'`. Phase 2: `palette.addCard`, assert it lands in **section 0** and the marker names section 0 | 9, 20     | 🔴 RED, all three assertions — on base the index is retained, so phase 1 reads `'1'`, phase 2's add lands in section 1, and no marker exists. ⚠ **The fixture's section counts are load-bearing and must be as stated**: if B had one section the phase-2 assertion would be vacuous, and if A had no selection phase 1 would pass on base. ⭐ Phases 1–2 use only base-existing testids, so those survive the `git stash push -u src/` technique intact |
+| L15 | Drop a palette card on a **vertical-stack** card inside a section; assert it lands as a **sibling** at that index and the stack's own child count is unchanged                                                                                                                                                   | 21        | 🔴 RED — nothing lands on base. On the branch it pins the deferred-nesting ruling, so a future nesting change cannot land silently                                                                                                                                                                                                                                                                                                                       |
 
-⚠ L9 and L12 are marked SPLIT deliberately: each mixes assertions that are red on
-base with assertions that are green on base, and the spec says which is which so
-that a green result is never read as proof of the wrong half. Per `[STATE]`
-discriminator lesson (m), a red leg where one assertion passes on base is
-stronger, not weaker — it proves which behaviour is being measured.
+⚠ **L9 is the only SPLIT leg.** It mixes assertions that are red on base with
+assertions that are green on base, and the table says which is which so a green
+result is never read as proof of the wrong half. Per `[STATE]` discriminator
+lesson (m), a red leg where one assertion passes on base is stronger, not weaker
+— it proves which behaviour is being measured.
+
+⚠⚠ **L12 IS GREEN ON BASE IN EVERY ASSERTION, AND SAYING OTHERWISE WOULD RECORD
+A GREEN AS A RED LEG.** Traced on base: a real palette gesture never reaches a
+handler at all (the palette sets only `text/plain`, `CardPalette.tsx:143-146`,
+and section targets `preventDefault()` only for an internal drag,
+`SectionsCanvas.tsx:181-182`, `:411-414`, `:502-508`). And even a **directly
+dispatched** `drop` — which bypasses the browser's refusal — reaches `dropOn`,
+which clears the internal drag state and returns at
+`if (!from || !onCardMove) return;` (`:184-204`): no config write, no selection
+write, no undo push, no message. So **all four** of L12's assertions pass on base.
+**AC 17 therefore has no valid red leg**, because base and branch agree for an
+invalid payload — nothing happens either way. L12's value is entirely on the
+branch, where it discriminates the implementation from an over-broad one that
+writes, warns, or pushes undo on garbage input. It is a **control**, and the
+implementation PR must not report it as a red leg.
 
 ⚠ **AC 19 (no callback ⇒ today's refusal) is not e2e-reachable** — every
-production mount supplies the callback (§7.2). It is proved by a component-level
-render assertion in the unit suite, or, if that proves impractical, by code
-inspection recorded in the implementation PR. Whichever is chosen must be stated
-in the PR, not left implied.
+production mount supplies the callback (§7.2). It is proved by **named leg U3**
+(§9.5), a component-level render, not by an optional choice deferred to
+implementation time. The repository already renders components in the unit suite
+with Testing Library (`tests/unit/card-context-menu.spec.tsx:22-37`), so the
+"code inspection instead" fallback is not available.
 
 ### 9.3 Control legs — must pass on base **and** on the branch
 
 Per the control-leg pattern used in #125/#126/#127/#129 (`[STATE]` v142).
 
-| Leg | What it pins                                                                           | Proves AC | Note                                                                                                                                                                                                                                                                                                               |
-| --- | -------------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| C1  | Double-click add **with a card selected** lands in that section                        | 11        | The existing `:96` leg, kept as the control                                                                                                                                                                                                                                                                        |
-| C2  | Internal card drag-move between populated sections                                     | 13        | The existing `:239` leg                                                                                                                                                                                                                                                                                            |
-| C3  | Internal section reorder + drag-resize                                                 | 13        | Existing `:270`, `:532`                                                                                                                                                                                                                                                                                            |
-| C4  | PROPS-06 container nesting on the flat canvas                                          | 14        | Existing `canvas-resize-and-nesting.spec.ts:117`                                                                                                                                                                                                                                                                   |
-| C5  | **Internal** card drag into an **EMPTY** section                                       | 13        | ⚠ **Outcome not assumed — measure it (§9.6).**                                                                                                                                                                                                                                                                     |
-| C6  | After L14's second load, a double-click add lands in section 0 and the marker names it | 9, 20     | ⚠ Was a retention-pinning control leg while Q2 was open; the owner's **reset** ruling turns its behavioural half into a red leg — promoted to **L14** in §9.2. C6 now covers only the follow-on add, whose marker half is RED on base.                                                                             |
-| L5  | Palette drop on the canvas background is a no-op                                       | 5         | ⚠ **Passes on base for the wrong reason** — on base _every_ palette drop is refused, so this is **not** a control leg: it discriminates nothing until the branch exists, where it pins that the fix did not over-broaden. Recorded per `[STATE]`'s "a green assertion on base is NOT automatically a control leg". |
+| Leg | What it pins                                                                                                                                                      | Proves AC | Note                                                                                                                                                                                                                                                                                                               |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| C1  | Double-click add **with a card selected** lands in that section                                                                                                   | 11        | The existing `:96` leg, kept as the control                                                                                                                                                                                                                                                                        |
+| C2  | Internal card drag-move between populated sections                                                                                                                | 13        | The existing `:239` leg                                                                                                                                                                                                                                                                                            |
+| C3  | Internal section reorder + drag-resize                                                                                                                            | 13        | Existing `:270`, `:532`                                                                                                                                                                                                                                                                                            |
+| C4  | PROPS-06 container nesting on the flat canvas                                                                                                                     | 14        | Existing `canvas-resize-and-nesting.spec.ts:117`                                                                                                                                                                                                                                                                   |
+| C5  | **Internal** card drag into an **EMPTY** section                                                                                                                  | 13        | ⚠ **Outcome not assumed — measure it (§9.6).**                                                                                                                                                                                                                                                                     |
+| U3  | `SectionsCanvas` rendered **without** `onPaletteCardDrop`: a dispatched palette `dragover` is **not** `preventDefault()`ed and a dispatched `drop` writes nothing | 19        | Component-level (Testing Library), green on base **and** branch — the mandatory named proof for AC 19. New file `tests/unit/SectionsCanvas.paletteDrop.spec.tsx` (§6, §9.7)                                                                                                                                        |
+| L5  | Palette drop on the canvas background is a no-op                                                                                                                  | 5         | ⚠ **Passes on base for the wrong reason** — on base _every_ palette drop is refused, so this is **not** a control leg: it discriminates nothing until the branch exists, where it pins that the fix did not over-broaden. Recorded per `[STATE]`'s "a green assertion on base is NOT automatically a control leg". |
+| L12 | Invalid/unknown palette payload writes nothing                                                                                                                    | 17        | Listed here as well as in §9.2 because it is **green on base in every assertion** — see §9.2's note. Branch-side over-broadening control only.                                                                                                                                                                     |
+
+⚠ **There is no C6.** An earlier revision listed a control leg pinning
+cross-document section retention. The owner's Q2 **reset** ruling made its
+behavioural half red on base, so a "must pass on base" classification became
+false; its assertions are folded into **L14** (§9.2) as that leg's phase 2. The
+removal is recorded rather than silent because C6 appears in the round-1 and
+round-2 review record on this branch.
 
 ### 9.4 Repairing the card's coverage citation
 
@@ -780,6 +813,28 @@ its result becomes visible. The docblock of U2 states this in place; U1's docblo
 states its red leg instead, with the observed failure recorded in the
 implementation PR.
 
+**U3 — `SectionsCanvas` without `onPaletteCardDrop`, in a NEW file
+`tests/unit/SectionsCanvas.paletteDrop.spec.tsx`.** Renders the component with
+the callback omitted, dispatches a palette `dragover` carrying the marker MIME
+and asserts the event was **not** `preventDefault()`ed, then dispatches a `drop`
+and asserts nothing is written. This is the **mandatory named proof of AC 19**:
+the optional-callback refusal is unreachable from e2e because every production
+mount supplies the callback (§7.2), and leaving its proof to "a component
+assertion, or else code inspection" would have let the guard ship with no
+committed test at all.
+
+⚠ Classified **green on base and on the branch** — a control leg, listed in §9.3.
+On base nothing accepts a palette drag; on the branch it is the callback's
+absence that withholds acceptance. It discriminates a correct implementation from
+one that accepts unconditionally and then discards silently, which is the failure
+mode m3 identified.
+
+⚠ A component render of `SectionsCanvas` is practical here: eleven `.tsx`
+component specs already render with Testing Library, the closest model being
+`tests/unit/card-context-menu.spec.tsx:22-37`. Check whether the render needs the
+jsdom `ResizeObserver` polyfill now living in `tests/unit/setup.ts`, which that
+spec documents at `:28-33`.
+
 ### 9.6 Two things to measure before writing the fix
 
 1. **C5 — does an internal card drag into an EMPTY section work on base?** The
@@ -809,13 +864,15 @@ implementation PR.
 
 ### 9.7 Expected baseline impact
 
-- **Unit:** currently **1316/1316 across 100 files** (`[STATE]` v142). This slice
-  adds cases to an existing file — the file count holds, the test count rises.
-  Record the new number; comparing against 1316 afterwards reads as a false
-  regression (the baseline has already moved five times).
+- **Unit:** currently **1316/1316 across 100 files** (`[STATE]` v142). ⚠ **Both
+  numbers move.** U1/U2 add cases to an existing file; **U3 adds a new file**
+  (`tests/unit/SectionsCanvas.paletteDrop.spec.tsx`), so the file count goes
+  **100 → 101**. Record both new numbers; comparing against 1316/100 afterwards
+  reads as a false regression (the test baseline has already moved five times).
 - **e2e:** currently **307 tests = 298 passed / 7 failed / 2 skipped**, with
-  **six** expected failures post-#128. Legs L1–L15 and control legs C5–C6 raise
-  the total (C1–C4 already exist). The six known failures must stay six.
+  **six** expected failures post-#128. Legs L1–L15 and control leg C5 raise the
+  e2e total (C1–C4 already exist; U1–U3 are unit legs, and there is no C6 — see
+  §9.3). The six known failures must stay six.
 - ⚠ **Q2's one-line store change touches every load path**, so its regression
   sweep is not confined to sections: re-run the file-open, YAML-editor Apply
   (`mode: 'edit'`) and dashboard-generator specs, not just
@@ -873,17 +930,25 @@ owner's scheduling; it is **not** silently dropped.
 written in this spec.** The table is retained as the audit record of what a
 "nest" ruling would have invalidated:
 
-| Blocked by Q1                                    | Why                                                                                                                                                                                                                                            |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| §7.2, the `onPaletteCardDrop` docblock           | It promises `to.cardIndex` **is** the index the new card takes. Under nesting, an addressed container makes that false.                                                                                                                        |
-| §7.3, the **Card wrapper** row                   | Needs a container branch and a second callback or discriminated payload, as the flat path has (`GridCanvas.tsx:256-275`).                                                                                                                      |
-| §7.6, steps 3–5                                  | The write path could no longer always be `insertCardIntoSectionAt`; a container write needs `appendCardToContainer`'s equivalent.                                                                                                              |
-| §7.6, step 5 (selection)                         | Must say whether the top-level container or the nested child is selected. The sections selection model is top-level `(sectionIndex, cardIndex)` only (`SectionsCanvas.tsx:17-20`, `:478-550`) — a nested child is not addressable by it today. |
-| AC 3, AC 7, AC 15                                | AC 3 needs a container exception; AC 7's landed index and AC 15's card shape both change for a nested card.                                                                                                                                    |
-| §9.2, leg L3 — plus a new sections-container leg | L3 asserts sibling insertion at `ci`; a nesting ruling changes its expectation and adds a container leg.                                                                                                                                       |
+| Blocked by Q1                                | Why                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| §7.2, the `onPaletteCardDrop` docblock       | It promises `to.cardIndex` **is** the index the new card takes. Under nesting, an addressed container makes that false.                                                                                                                                                                                                                |
+| §7.3, the **Card wrapper** row               | Needs a container branch and a second callback or discriminated payload, as the flat path has (`GridCanvas.tsx:256-275`).                                                                                                                                                                                                              |
+| §7.6, steps 3–5                              | The write path could no longer always be `insertCardIntoSectionAt`; a container write needs `appendCardToContainer`'s equivalent.                                                                                                                                                                                                      |
+| §7.6, step 5 (selection)                     | Must say whether the top-level container or the nested child is selected. The sections selection model is top-level `(sectionIndex, cardIndex)` only (`SectionsCanvas.tsx:17-20`, `:478-550`) — a nested child is not addressable by it today.                                                                                         |
+| AC 3, AC 7, AC 15                            | AC 3 needs a container exception; AC 7's landed index and AC 15's card shape both change for a nested card.                                                                                                                                                                                                                            |
+| **AC 21** — added by rev 2 to pin the ruling | ⭐ **The FIRST thing a nesting decision invalidates.** It states outright that a drop on a container is a SIBLING, not a child — the deferral made normative. Reversing the ruling reverses this AC.                                                                                                                                   |
+| §9.2, leg L3, **and leg L15**                | L3 asserts sibling insertion at `ci`. **L15 is rev 2's dedicated regression pin for this very ruling** — it drops onto a vertical stack and asserts the card is a sibling and the stack's child count is unchanged. A nesting ruling inverts L15's expectation outright; it is not merely "a new container leg" to be added alongside. |
 
 Everything **not** in that table — §7.1, §7.4, §7.5, §7.7, the other four rows of
-§7.3, and all remaining ACs and legs — was unaffected by the answer either way.
+§7.3, and the ACs and legs not named above — was unaffected by the answer either
+way. ⚠ **This table is maintained, not frozen:** it was written while Q1 was open
+and listed only the then-existing text, so rev 2's AC 21 and L15 had to be added
+to it after the deferral ruling created them. **Anything added later that encodes
+the sibling-not-child decision must be added here too** — the table's whole
+purpose is that a future owner or implementer revisiting nesting can find every
+pin that assumes the deferral, and a pin missing from it is a pin that gets
+silently contradicted.
 
 ### Q2 — the `loadDashboard` reset — ✅ ANSWERED: RESET IT
 
@@ -932,6 +997,26 @@ clamps whatever it receives.
 | 2026-08-06 | 0   | Draft                                                                                                                                                                                                                                                            | Claude Opus |
 | 2026-08-06 | 1   | Applied the Codex independent review (`docs/reviews/f5-spec-insertion-contract-codex-review.md`, commit `76cf6d4`, CHANGES-REQUIRED): M1–M5 and m1–m5. Draft text amended in place — the spec is not yet approved, so §11's immutability rule does not yet bind. | Claude Opus |
 | 2026-08-06 | 2   | **Owner answered both open questions.** Q1 → defer sections-container nesting; Q2 → reset `selectedSectionIndex` on load. Folded into the normative text; §10 now records the rulings and holds nothing open.                                                    | Claude Opus |
+| 2026-08-06 | 3   | Applied the Codex **round-2** verification (same review file, round-2 section, commit `45bcbad`, CHANGES-REQUIRED): M4 regression, M5 residue, N1. See the note below.                                                                                           | Claude Opus |
+
+**What rev 3 changed.** **M4 (REGRESSED — a defect rev 2 introduced):** rev 2
+added AC 21 and leg L15 to pin the deferral, but did not add them to §10 Q1's
+blast-radius table, whose "everything not listed is unaffected" sentence was
+thereby false about the two items a nesting ruling would invalidate _first_. Both
+are now listed, the generic "a new sections-container leg" is replaced by L15,
+and the table carries a maintenance rule so the next addition does not repeat the
+omission. **M5 (residue):** L12 is reclassified **green on base in every
+assertion** — traced through `dropOn`'s `if (!from || !onCardMove) return;`,
+which writes nothing even for a directly dispatched drop — so AC 17 is stated to
+have **no valid red leg**, and L12 is a branch-side over-broadening control;
+**C6 is deleted** (the Q2 reset made "must pass on base" false for it) with its
+assertions folded into L14 as phase 2, and L14's fixture section counts are now
+stated because the assertions are vacuous without them; **AC 19 gains a
+mandatory named leg U3**, a component render in a new file, replacing the
+"component assertion or else code inspection" choice. **N1:** §7.4's "every
+document opens with the target resolved to section 0" is narrowed to loaded
+sections views with at least one section, with the zero-section (`null`) and
+non-sections cases stated.
 
 **What rev 1 changed, by finding.** **M1** — §7.4 corrected: `loadDashboard`
 omits the `selectedSectionIndex` reset, so a loaded document can inherit a target;
