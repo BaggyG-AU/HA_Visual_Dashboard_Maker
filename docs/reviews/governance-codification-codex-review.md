@@ -511,3 +511,143 @@ solely on guessing their contents.
   rebaseline PR, exact gate-report format, index lifecycle/backfill policy,
   private pending queue, and universal owner-assigned reviewer rule before any
   of them becomes normative in-repo.
+
+## Round 2 Re-Verification (commit c3204c9)
+
+**Author:** OpenAI Codex (GPT-5), 2026-08-06
+
+**Reviewer independence:** I authored neither commit `c3204c9` nor any of the
+three governed files. This section preserves the round-1 record above and
+re-verifies its findings against the owner's corrected authority and the fix
+commit.
+
+**Scope:** commit `c3204c9`; the changes to
+`docs/governance/OPERATING_AGREEMENT.md`,
+`docs/templates/FEATURE_SPEC.md`, and
+`docs/templates/ADVERSARIAL_REVIEW.md`.
+
+**Owner gate:** BaggyG-AU remains the sole final approver and merger after
+reading PR #131 and both review rounds.
+
+### Tripwire and method
+
+**PASS.** After `git fetch origin`, `origin/main` was `acc984a` and
+`origin/feature/governance-codification` was `c3204c9`, exactly three commits
+ahead in the required order: `9cc23ed`, `1bd4a67`, `c3204c9`. Commit `c3204c9`
+modifies only the three governed Markdown files. No `src/` or `tests/` path is
+in its diff.
+
+The complete `c3204c9` patch and all three resulting files were read. Every
+round-1 finding was re-checked, repository-relative targets and cited sections
+were resolved, and the fix delta was scanned for new rule, pointer, index, and
+template defects.
+
+### Per-finding verdicts
+
+| Finding | Round-2 verdict        | Evidence at `c3204c9`                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **M1**  | **WITHDRAWN**          | The corrected autonomy authority expressly permits the owner to merge by approving the `gh pr merge` ask. The revised text makes the owner the decision-maker and forbids agent action on its own authority (`docs/governance/OPERATING_AGREEMENT.md:38-48`). Round 1's objection to the authorized-ask path was based on an incomplete authority summary.                                                                                                              |
+| **M2**  | **RESOLVED**           | The general gate now says before implementation (`docs/governance/OPERATING_AGREEMENT.md:32-37`), while mandatory template/review use is limited to R7-class work and explicitly optional otherwise (`:122-124`; `docs/templates/FEATURE_SPEC.md:5-10,17-19`).                                                                                                                                                                                                          |
+| **M3**  | **RESOLVED**           | The agreement says one **content** commit, with invariant review and post-review fix commits additional on the governed branch, never squashed/amended so reviewer authorship is erased (`docs/governance/OPERATING_AGREEMENT.md:52-57`). This says exactly what the owner stated merge of PR #131 will ratify.                                                                                                                                                         |
+| **M4**  | **RESOLVED**           | The rule now requires a genuine red leg where one exists and explicit alternative evidence where none exists (`docs/governance/OPERATING_AGREEMENT.md:62-67`; `docs/templates/FEATURE_SPEC.md:73-77`). The newly added unsupported `store action` example is separately N3.                                                                                                                                                                                             |
+| **M5**  | **PARTIALLY RESOLVED** | The standalone-rebaseline-PR rule is gone and index maintenance is labeled non-law (`docs/governance/OPERATING_AGREEMENT.md:68-74,148-152`). The corrected authority withdraws the round-1 objection to the post-merge routine in principle, but its cited verbatim drawer does not include the added `./tools/checks` rerun (`:58-61`), and `ai_rules.md` §5 supports truthful run reporting but not the still-mandatory step count (`:72-74`; `ai_rules.md:159-177`). |
+| **M6**  | **PARTIALLY RESOLVED** | The bounded owner-run UAT exception and writable test instance are now stated (`docs/governance/OPERATING_AGREEMENT.md:77-81`), but the UAT pointer says §4 instead of §10; see N1.                                                                                                                                                                                                                                                                                     |
+| **M7**  | **RESOLVED**           | The fallback now says PR body exactly as `ai_rules.md` §11 requires (`docs/governance/OPERATING_AGREEMENT.md:82-85`); the pending-queue alternative is absent from all three governed files.                                                                                                                                                                                                                                                                            |
+| **M8**  | **RESOLVED**           | Rollback trigger 1 again counts only zero-finding independent **spec** reviews (`docs/governance/OPERATING_AGREEMENT.md:132-136`).                                                                                                                                                                                                                                                                                                                                      |
+| **M9**  | **RESOLVED**           | All governed classes are enumerated and the agreement requires three separate fields (`docs/governance/OPERATING_AGREEMENT.md:98-101,111-118`); the agreement and both templates now have literal `Author:`, `Reviewer:`, and `Owner gate:` fields (`:5-10`; `docs/templates/FEATURE_SPEC.md:16-19`; `docs/templates/ADVERSARIAL_REVIEW.md:15-19`).                                                                                                                     |
+| **M10** | **RESOLVED**           | The index now has ID and Status columns, separate ARB-R1–R7 rows, an expressly completed one-time rebaseline row, and a GOV-RAT row naming both cadence legs (`docs/governance/OPERATING_AGREEMENT.md:146-167`). No visible source contradicted a new row; drawer-only arbitration substance remains opaque as instructed.                                                                                                                                              |
+| **M11** | **RESOLVED**           | Both phase paths are repository-relative (`docs/governance/OPERATING_AGREEMENT.md:22-26`); the feature template uses the full agreement path and correct §§1/3 split (`docs/templates/FEATURE_SPEC.md:7-10,18-19`); and the merge setting is explicitly machine-local/gitignored with the committed agreement rule binding regardless (`docs/governance/OPERATING_AGREEMENT.md:38-48`).                                                                                 |
+| **M12** | **RESOLVED**           | Agreement and template consistently add full date plus round/gate identity, preventing same-model monthly collisions (`docs/governance/OPERATING_AGREEMENT.md:125-130`; `docs/templates/ADVERSARIAL_REVIEW.md:3-12`).                                                                                                                                                                                                                                                   |
+| **M13** | **PARTIALLY RESOLVED** | The round-1 slogans/rationale were trimmed and the post-merge rule now has a drawer citation (`docs/governance/OPERATING_AGREEMENT.md:58-74`), but the revised pointer-style declaration newly allows full narrative in committed documents rather than keeping it in memory; see N2 (`:15-20`).                                                                                                                                                                        |
+| **m1**  | **RESOLVED**           | §11 now defines dated append-only amendment subsections that carry the new normative text as well as the revision-log row (`docs/templates/FEATURE_SPEC.md:87-95`).                                                                                                                                                                                                                                                                                                     |
+| **m2**  | **RESOLVED**           | Finding Coverage now distinguishes unmapped substantive behavior from supporting design/risk/test sections (`docs/templates/FEATURE_SPEC.md:32-38`).                                                                                                                                                                                                                                                                                                                    |
+| **m3**  | **RESOLVED**           | The extra background, code-citation, and baseline-impact directions are explicitly labeled guidance (`docs/templates/FEATURE_SPEC.md:26-30,59-63,78-79`).                                                                                                                                                                                                                                                                                                               |
+| **m4**  | **RESOLVED**           | Directions are now "actionable and specific" but expressly advisory pending owner arbitration (`docs/templates/ADVERSARIAL_REVIEW.md:58-62`).                                                                                                                                                                                                                                                                                                                           |
+
+### Delta check — new major findings
+
+#### N1 — The new live-HA cross-reference points to the wrong UAT section
+
+**Evidence:** `docs/governance/OPERATING_AGREEMENT.md:77-80` locates the bounded
+UAT exception at `docs/testing/UAT_STRATEGY.md` §4. Section 4 is Test Types
+(`docs/testing/UAT_STRATEGY.md:221-240`); the live-HA policy and exception are
+in §10 (`:378-400`).
+
+**Problem:** This is a newly broken operative pointer. A reader following it
+does not reach the safety envelope that defines permitted and forbidden writes.
+
+**Concrete fix:** Change the UAT strategy reference from §4 to §10. Keep the
+separate amendment-04 pointer unchanged.
+
+#### N2 — Pointer-style storage is broadened beyond the ratified memory boundary
+
+**Evidence:** The fix changes the pointer-style declaration so a MemPalace
+drawer **or a committed document** may hold each rule's "full narrative," and
+says growing content moves to either kind of record
+(`docs/governance/OPERATING_AGREEMENT.md:15-20`).
+
+**Problem:** The owner-ratified R3 boundary is operative rules and one-line
+pointers in-repo, with full ruling narrative in the memory store. The new text
+silently permits future governance narrative to be stored in-repo and conflicts
+with the agreement's no-duplication purpose and `ai_rules.md` §11.
+
+**Concrete fix:** Restore MemPalace/the memory store as the destination for full
+ruling narrative. A committed document may remain a pointer target where it is
+already an authoritative operative document, but must not become an alternative
+store for the ruling's full context, alternatives, and supersessions.
+
+#### N3 — The red-leg exception gains an unsupported `store action` scope
+
+**Evidence:** Both the agreement and feature template identify a brand-new
+"module or store action" as unable to take a red leg and point to amendment-02
+(`docs/governance/OPERATING_AGREEMENT.md:62-67`;
+`docs/templates/FEATURE_SPEC.md:73-77`). The cited source establishes only the
+new-pure-module case (`docs/governance/phases/phase-7-ecosystem-future-growth-amendment-02.md:116-130`)
+and contains no store-action ruling.
+
+**Problem:** The added example expands a test-safety exception without cited
+authority. It can let a new store action bypass a meaningful behavioral red leg
+solely because the action is new.
+
+**Concrete fix:** Remove `store action` from both examples, or cite a specific
+owner-authorized precedent that establishes when a store action genuinely has
+no valid behavioral red leg. The controlling test remains whether a valid red
+leg exists, not whether code is newly named.
+
+No other new major defect was found. In particular, the M3 packaging text and
+M7 PR-body-only fallback match the owner's stated dispositions; the rebuilt
+rulings index is structurally one-row-per-ruling and clearly distinguishes
+standing, delivered, and completed entries; and the adversarial filename is now
+collision-resistant.
+
+### Prettier
+
+**PASS.** The command
+
+```text
+npx prettier --check docs/governance/OPERATING_AGREEMENT.md docs/templates/FEATURE_SPEC.md docs/templates/ADVERSARIAL_REVIEW.md
+```
+
+returned `All matched files use Prettier code style!`
+
+### Final verdict
+
+**CHANGES-REQUIRED.** Blocking items: the unresolved portions of **M5**; **N1**
+(and therefore M6); **N2** (and therefore M13); and **N3**. All other round-1
+findings are resolved, except M1, which is withdrawn under the corrected
+authority.
+
+**Confidence: High.** The remote history, complete fix diff, resulting files,
+visible authorities, section targets, pending-queue removal, and Prettier result
+were checked directly. Drawer-backed arbitration rows could be verified for
+structure and visible consistency but not for their opaque memory contents.
+
+### Drawer candidates
+
+- **`[INVESTIGATION] PR #131 round-2 independent re-verification`** — record
+  that commit `c3204c9` resolved M2-M4, M7-M12, and m1-m4; M1 was withdrawn
+  under corrected authority; M5/M6/M13 remain partial; and N1-N3 block merge.
+- **`[DECISION] Governed-artifact packaging exception` (conditional on owner
+  merge of PR #131)** — one content commit remains the normal discipline;
+  invariant review and post-review fix commits are additional on the governed
+  branch and must preserve reviewer authorship.
