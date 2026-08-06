@@ -24,6 +24,45 @@ under review\>
 no UAT card marked or re-scored; no `src/` change; no merge; `ha.home.local`
 read-only. Proposed changes go in this document, nowhere else.
 
+## 0. Working practice this review is held to
+
+<!--
+These are the cross-project `practice` wing rules that bear on a reviewer.
+They are QUOTED HERE VERBATIM, not cited, because the reviewer is often a
+model with no MemPalace access — it judges against exactly what this prompt
+supplies. If the reviewer DOES have MemPalace, the full drawers are in the
+wing index `drawer_practice_charter_a914959dbe8a1120cffad334`.
+Keep this section in sync when the wing's reviewer-facing rules change.
+-->
+
+1. **A finding is a sample, not the population.** When you find a defect,
+   identify the CLASS it belongs to — all rows of that table, all call sites,
+   all specs of that kind — and sweep every member before reporting. Say which
+   you did: "L12 is misclassified" and "I checked all 15 legs; only L12 is
+   misclassified" are different reports, and only the second lets the author
+   stop. Reporting instances one round at a time makes you an expensive linter.
+2. **No unverified universals.** "Only", "every", "all", "none" or any count is
+   a measurement and needs the enumeration that backs it, attached to the
+   claim. A count of containers is not a count of contents — the command you
+   ran must measure the property you are asserting.
+3. **A check is evidence only for the property it exercises.** Before writing
+   "verified", ask: if this claim were false, would what I ran have failed? A
+   green suite proves nothing if the tests were written to agree with the code;
+   an isolated pass says little about a flaky path; confirming the wiring is
+   not confirming that a value flows through it.
+4. **Verify each finding against the source before reporting it.** Quote
+   `path:line`. A finding you cannot locate is a question, and should be
+   written as one. Check whether the thing you are calling an inconsistency is
+   a DELIBERATE decision recorded somewhere you were not shown — say so if you
+   suspect it rather than asserting a defect.
+5. **Silence is not a result.** State "no issue found" explicitly for every
+   heading you were asked to cover, so the reader can trust the heading was
+   checked. Zero findings on a mature artifact is a PASS, not a failed review —
+   never manufacture a finding to justify the pass.
+6. **Declare your evidence boundary** (see §2): what you could not run, could
+   not reach, or could not verify. `UNVERIFIABLE` is a result; a quietly
+   dropped claim is not.
+
 ## 1. Verdict first
 
 The headline conclusion in three sentences or fewer, before any evidence.
@@ -32,6 +71,12 @@ The headline conclusion in three sentences or fewer, before any evidence.
 
 What was actually done (files read, commands run, suites executed) and how
 confident the verdict is. Never claim a run that did not happen.
+
+**Constraints — what this review did NOT establish.** Suites not run,
+environments not exercised, documents or systems unreachable in this session,
+and what that means for confidence (e.g. "targeted probes are review evidence,
+not release gates"; "reviewed the dev build, not the packaged binary"). A
+reader must be able to tell "checked and clean" from "never looked".
 
 ## 3. Claim ledger
 
@@ -54,6 +99,12 @@ Every load-bearing claim in this review, tagged:
 Per finding: **evidence** (`path:line`), **problem**, **concrete fix**, and
 **what must NOT change** (the guard rails around the fix). Separate PIVOTS
 from FIXES and rank them.
+
+Add **class swept:** per finding — the class the instance belongs to and
+whether every member was checked (§0 rule 1). "Class: all 23 test legs —
+swept, 3 affected" closes the class; "class not swept" tells the author to
+sweep it before fixing. This is what stops the next round re-reporting the
+same defect one instance later.
 
 ## 5. Directions
 

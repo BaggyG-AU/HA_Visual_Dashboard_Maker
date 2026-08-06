@@ -320,6 +320,10 @@ At session start, call `mempalace_status`.
 
 **No duplication between the two stores.** When MemPalace is live, `MEMORY.md` and any other local memory file are bootstrap-only: they exist to orient an agent before MemPalace is reachable. They are not authoritative and must not be treated as current if MemPalace holds the same content.
 
+**Which wing.** Anything specific to this project — code, tests, defects, project state, HAVDM governance — goes to the `havdm` wing. A lesson that is **agent-general** (true for any AI agent, on any project, in any repository) goes to the shared cross-project `practice` wing instead, and its one-line entry is added to that wing's index drawer `drawer_practice_charter_a914959dbe8a1120cffad334` in the same pass. The same no-duplication principle applies across wings: one fact, one home. A `practice` drawer states the rule and summarises its evidence in a sentence; the full case study stays in the project wing, and the two point at each other. The bar for admission to `practice` is its charter, `drawer_practice_charter_f9efb6904018fb7a2021bd64`.
+
+**Agents that cannot reach MemPalace** must be given the applicable `practice` rules **quoted verbatim in their prompt** — an independent reviewer, a fresh chat, a sub-agent without MCP. A reviewer judges against exactly what its prompt supplies; a rule cited by name reaches it not at all.
+
 Agents without MemPalace access satisfy this rule via the fallback path, and surface drawer-candidate notes in their PR body for a MemPalace-enabled agent to file.
 
 Why this rule exists: local memory files cannot be updated mid-session by MCP and silently drift from the palace. Two stores holding the same fact means one of them is wrong and nobody knows which.
