@@ -651,3 +651,67 @@ structure and visible consistency but not for their opaque memory contents.
   merge of PR #131)** — one content commit remains the normal discipline;
   invariant review and post-review fix commits are additional on the governed
   branch and must preserve reviewer authorship.
+
+## Round 3 Confirmation (commit 7ee688f)
+
+**Author:** OpenAI Codex (GPT-5), 2026-08-06
+
+**Reviewer independence:** I authored neither commit `7ee688f` nor either
+governed file changed by it.
+
+**Scope:** commit `7ee688f`; the changes to
+`docs/governance/OPERATING_AGREEMENT.md` and
+`docs/templates/FEATURE_SPEC.md`.
+
+**Owner gate:** BaggyG-AU remains the sole final approver and merger after
+reading PR #131 and all three review rounds.
+
+### Tripwire
+
+**PASS.** After `git fetch origin`, `origin/main` was `acc984a` and
+`origin/feature/governance-codification` was `7ee688f`, exactly five commits
+ahead in the required order: `9cc23ed`, `1bd4a67`, `c3204c9`, `4587f7a`,
+`7ee688f`. Commit `7ee688f` changes only the two governed files in scope.
+
+### Per-item verdicts
+
+| Item    | Verdict      | Evidence at `7ee688f`                                                                                                                                                                                                                                                                                                                        |
+| ------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **M5**  | **RESOLVED** | The drawer-ratified post-merge routine ends with the `[STATE]` bump, while the merged-main checks rerun is expressly standing practice outside that routine; truthful gate reporting remains the §5 rule, while 4/4 step-count confirmation is expressly practice rather than §5 law (`docs/governance/OPERATING_AGREEMENT.md:60-65,78-81`). |
+| **N1**  | **RESOLVED** | The bounded owner-run UAT envelope now points to `docs/testing/UAT_STRATEGY.md` §10, which contains that live-HA policy and exception (`docs/governance/OPERATING_AGREEMENT.md:84-88`; `docs/testing/UAT_STRATEGY.md:378-400`).                                                                                                              |
+| **M6**  | **RESOLVED** | Consequently, the operative live-HA rule retains both the bounded production-instance exception and the writable test-instance lane with resolving pointers (`docs/governance/OPERATING_AGREEMENT.md:84-88`).                                                                                                                                |
+| **N2**  | **RESOLVED** | Full ruling narrative is confined to the MemPalace drawer; an already-authoritative committed operative document may be a pointer target but is expressly not an alternative store (`docs/governance/OPERATING_AGREEMENT.md:15-22`).                                                                                                         |
+| **M13** | **RESOLVED** | Consequently, the agreement's pointer-style boundary now matches the ratified memory-store-only narrative rule, while its rulings index remains one-line pointers (`docs/governance/OPERATING_AGREEMENT.md:15-22,153-159`).                                                                                                                  |
+| **N3**  | **RESOLVED** | Both files remove the unsupported store-action example and make existence of a valid red leg the controlling test; the sole cited no-valid-red example is the documented brand-new-module/import-failure case (`docs/governance/OPERATING_AGREEMENT.md:66-73`; `docs/templates/FEATURE_SPEC.md:73-79`).                                      |
+
+### Delta check
+
+**PASS — no new major defect found.** The `7ee688f` delta changes only the two
+declared Markdown files. Its revised UAT and amendment pointers resolve, the
+pointer-style wording is internally consistent with the rulings index, and the
+red-leg wording has the same scope in the agreement and feature-spec template.
+
+### Prettier
+
+**PASS.** The command
+
+```text
+npx prettier --check docs/governance/OPERATING_AGREEMENT.md docs/templates/FEATURE_SPEC.md
+```
+
+returned `All matched files use Prettier code style!`
+
+### Final verdict
+
+**APPROVE — ready for the owner to merge.** No blocking item remains from M5,
+M6, M13, or N1-N3.
+
+**Confidence: High.** The remote history, complete fix diff, resulting files,
+visible authority targets, internal cross-references, and format gate were
+checked directly.
+
+### Drawer candidates
+
+- **`[INVESTIGATION] PR #131 round-3 independent confirmation`** — record that
+  commit `7ee688f` resolved the remaining M5/M6/M13 and N1-N3 blockers; Codex's
+  final advisory verdict is APPROVE, with the owner still the sole merger.
