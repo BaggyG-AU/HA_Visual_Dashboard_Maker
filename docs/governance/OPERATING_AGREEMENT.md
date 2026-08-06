@@ -13,11 +13,13 @@ owner's merge ratifies its text.
 `docs/governance/PROMPTMI_GOVERNANCE_REVIEW_2026-08.md`, merged as PR #130).
 
 This document is **pointer-style** by design, per `ai_rules.md` §11: it states
-the operative rules and points at the authoritative record — a MemPalace
-drawer or a committed document — for each rule's full narrative (context,
-alternatives, supersessions). It never carries that narrative itself. If a
-line here starts growing content, the content moves to the authoritative
-record and the line shrinks back to a pointer (§3.3).
+the operative rules and points at the authoritative MemPalace drawer for each
+ruling's full narrative (context, alternatives, supersessions). It never
+carries that narrative itself, and no committed document becomes an
+alternative store for it — an already-authoritative committed operative
+document (e.g. the multi-model plan) may serve as a pointer target, nothing
+more. If a line here starts growing content, the content moves to the memory
+store and the line shrinks back to a pointer (§3.3).
 
 **Precedence:** implementation-safety rules in `ai_rules.md` cannot be
 overridden by anything here. The phase framework
@@ -58,11 +60,15 @@ read-only-investigate → short-plan sequence and the post-merge routine below).
 - **Post-merge routine** (agent-executed, autonomous, per the autonomy
   agreement drawer cited in §1): verify
   `git merge-base --is-ancestor <sha> origin/main`, ff-only sync `main`,
-  prune the branch, re-run `./tools/checks`, bump the `[STATE]` drawer.
+  prune the branch, bump the `[STATE]` drawer. (Re-running `./tools/checks`
+  on the merged `main` is standing practice, not part of the drawer-ratified
+  routine.)
 - **Red-before-green, same checkout:** a new test is proven by seeing it fail
-  on base where a valid red leg exists. Where none exists (established
-  practice: a brand-new module or store action cannot be red-legged — see
-  `docs/governance/phases/phase-7-ecosystem-future-growth-amendment-02.md`),
+  on base where a valid red leg exists. The controlling test is whether a
+  valid red leg exists, not whether the code is newly named. Where none
+  exists — the documented case is a brand-new module, whose test fails at
+  import rather than on behaviour
+  (`docs/governance/phases/phase-7-ecosystem-future-growth-amendment-02.md`) —
   the spec or docblock must say so explicitly and name the alternative
   evidence.
 - **Never blind-rebaseline.** Snapshot and suite diffs are triaged against
@@ -70,13 +76,14 @@ read-only-investigate → short-plan sequence and the post-merge routine below).
   owner's authorization (precedent: the one authorized rebaseline landed in
   its own PR — #128, `drawer_havdm_decisions_c9a9720edc90cf10ce5b67d6`).
 - **Gates are reported from a real run** — `ai_rules.md` §5: never claim a
-  gate you did not execute. Report `./tools/checks` with its real exit code
-  and step count, not a piped or laundered result.
+  gate you did not execute. Report `./tools/checks` with its real exit code,
+  never a piped or laundered result. (Also confirming the 4/4 step count is
+  standing verification practice, not §5 law.)
 - **UAT role separation:** the owner runs UAT and marks every test; the
   agent never marks a test (`docs/testing/UAT_STRATEGY.md` §2).
 - **Live Home Assistant:** `ha.home.local` is read-only for agent work; the
   sole exception is the bounded owner-run UAT envelope
-  (`docs/testing/UAT_STRATEGY.md` §4, preserved by
+  (`docs/testing/UAT_STRATEGY.md` §10, preserved by
   `docs/governance/phases/phase-7-ecosystem-future-growth-amendment-04.md`).
   `ha-test.home.local` is writable for agent work (same amendment).
 - **Memory and reporting:** `ai_rules.md` §11 memory cadence and §12

@@ -72,7 +72,9 @@ not an intention.
 - New tests, per suite (unit / e2e / integration), and which AC each proves.
 - **Red-before-green legs:** where a valid red leg exists, how each new test
   is shown to FAIL on base in the same checkout (revert-src / historical-bug
-  swap). Where none exists (e.g. a brand-new module or store action — see
+  swap). The controlling test is whether a valid red leg exists, not whether
+  the code is new. Where none exists (the documented case is a brand-new
+  module — see
   `docs/governance/phases/phase-7-ecosystem-future-growth-amendment-02.md`),
   say so here explicitly and name the alternative evidence.
 - Guidance: name any expected baseline impact (suite counts, snapshots)
