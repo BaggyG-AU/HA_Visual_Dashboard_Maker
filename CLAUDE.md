@@ -40,6 +40,39 @@ bootstrap-only fallback with **no duplication** between the two.
 4. `mempalace_search` `"HAVDM current milestone Phase 7"` — load milestone context.
 5. `mempalace_diary_read` `agent_name="claude-code", wing="havdm"` — surface
    recent session hand-offs (recency-ordered; catches what search ranking misses).
+6. `mempalace_get_drawer` `drawer_practice_charter_a914959dbe8a1120cffad334` —
+   the **`practice` wing index** (see below). Fetched by ID, not searched.
+
+### The `practice` wing — shared working practice, not HAVDM state
+
+MemPalace also carries a **cross-project** wing, `practice`, holding rules for
+how AI agents should work on any repository: how to respond to a review
+finding, how to evidence a claim, how to commission and conduct reviews, how
+to keep a long artifact internally coherent. It is not HAVDM state and it is
+not a second copy of anything in the `havdm` wing.
+
+- **Load the index, not the wing.** One call to `mempalace_get_drawer`
+  `drawer_practice_charter_a914959dbe8a1120cffad334` returns every rule as a
+  one-liner plus its drawer ID. Fetch in full only the two or three that match
+  the task in front of you. ⚠ Fetch the index **by ID** — do not search for
+  it; semantic ranking buries older drawers, which is the same reason the
+  `havdm` searches above use `limit 15`.
+- **Before authoring or reviewing a spec, plan or governance change**, read
+  the drawers covering review conduct and claim hygiene. Most rework this
+  project has paid for is already named there.
+- **File back what generalises.** A lesson that would help any agent on any
+  project goes into `practice` **and** gets its line added to the index
+  drawer — an unindexed drawer is unfindable. A lesson about HAVDM's code,
+  tests or governance stays in the `havdm` wing. One fact, one home — the
+  wing split is [`ai_rules.md`](ai_rules.md) §11; the bar for what may enter
+  `practice` at all is the wing charter
+  `drawer_practice_charter_f9efb6904018fb7a2021bd64`.
+- ⚠ **When you hand work to an agent that cannot reach MemPalace** — an
+  independent review prompt, a fresh chat, a sub-agent without MCP — **quote
+  the applicable `practice` rules into that prompt verbatim.** A reviewer
+  judges against exactly what the prompt supplies; a cited rule reaches
+  nothing. [`docs/templates/ADVERSARIAL_REVIEW.md`](docs/templates/ADVERSARIAL_REVIEW.md)
+  §0 already carries the reviewer-facing subset for that purpose.
 
 ### On session end (pause / wrap / hand-off)
 
