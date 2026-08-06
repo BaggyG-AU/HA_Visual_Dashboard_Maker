@@ -615,3 +615,117 @@ review. There is no F5 implementation or U3 file yet to execute. I did not edit
 the spec, source, tests, PR, or remote branch.
 
 **CHANGES-REQUIRED**
+
+---
+
+## Round 4 — rev-4 closure and regression review (2026-08-06)
+
+The disclosed rev-4 edit to this review file is **CONTENT-PRESERVING**. I
+compared `d853a74..b618727` before making any write: every changed content row is
+identical apart from Markdown table-padding spaces, and the only changed
+non-whitespace tokens are the two separator-row dash runs that Prettier resized.
+No reviewer sentence, finding, ordering, or verdict changed.
+
+| Round-3 finding | Resolution             | Verification                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1              | **PARTIALLY RESOLVED** | L8 is correctly SPLIT (marker red, required landing assertion green), and L15 is correctly SPLIT (sibling insertion red, unchanged stack green). L9 remains correctly SPLIT and L12 correctly remains wholly green. However, rev 4's replacement exhaustive claim is still false: L7, L10, and L13 also mix red and green base assertions. See R4-1.                                                           |
+| P2              | **RESOLVED**           | The repository has exactly eleven `tests/unit/*.spec.tsx` files. Exactly nine import Testing Library and call `render`; `BackgroundCustomizer.spec.tsx` and `GradientEditor.spec.tsx` are the two exceptions, and both test utilities without rendering a component (`tests/unit/BackgroundCustomizer.spec.tsx:1-9`; `tests/unit/GradientEditor.spec.tsx:1-9`; `tests/unit/card-context-menu.spec.tsx:20-37`). |
+
+### Tripwire, delta, code claims, and traceability
+
+The round-4 tripwire passed before any write. The branch, HEAD, tracking ref, and
+PR #132 head were all `b618727c3677e4fd85e1dc161048aff8dff182c9`; local `main`
+and the merge base were `de568c50ba3a88d84c44573eae93c08d8de43dc8`. The eight
+specified commits were the complete branch history over that base, in the stated
+order, with all seven earlier object IDs unchanged. PR #132 was open, non-draft,
+unmerged, and based on `main`. The worktree was clean. The full branch delta was
+exactly the two named docs files, 1,682 insertions and no deletions, with no
+`src/` or `tests/` change. Rev 4 was the only commit after round 3 and changed the
+spec by +37/-23 and this review by the disclosed +7/-7 formatting-only edit.
+
+The new L8 base trace is correct by symbol rather than by trusting its line
+citations. A fresh store initializes `selectedSectionIndex` to `null`; a
+successful load in the same fresh process does not change it; and
+`handleCardAdd` resolves a populated sections view to section 0 when that value
+is `null`, appends there, and selects the appended card
+(`src/store/dashboardStore.ts:102-120,122-178`;
+`src/App.tsx:1101-1153`). Thus L8's marker assertion is red on base while its
+required landing assertion is green. L15's two colours are also correct: the
+base sections canvas refuses the palette gesture, so sibling insertion is red
+and the stack-child count remains unchanged, green
+(`src/components/CardPalette.tsx:143-147`;
+`src/components/SectionsCanvas.tsx:181-204,411-414,502-508`). L9 and L12 retain
+the base outcomes verified in round 3.
+
+Rev 4 changes no AC number, leg ID, or `Proves AC` cell, so the complete
+bidirectional map remains: AC 1/6 → L1 (AC 6 also L3); AC 2 → L2; AC 3 → L3;
+AC 4 → L4; AC 5 → L5; AC 7 → L6; AC 8 → L7; AC 9 → L8/L14; AC 10 → L9;
+AC 11 → C1; AC 12 → L10; AC 13 → C2/C3/C5; AC 14 → C4; AC 15 → L11;
+AC 16 → U1/U2; AC 17 → L12; AC 18 → L13; AC 19 → U3; AC 20 → L14; and
+AC 21 → L15 (`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:580-640,696-765,790-849`).
+Every AC 1-21 has a named leg, and every named L1-L15, C1-C5, and U1-U3 leg maps
+to an existing AC. There are no traceability orphans in either direction.
+
+### New finding
+
+#### R4-1 — The new exhaustive SPLIT inventory still omits three mixed-outcome legs
+
+**Location:** Spec §9.2, L7, L10, L13, and the new standing-rule paragraphs
+(`docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md:704,707,710,714-728`).
+
+**What is wrong:** Rev 4 correctly says classification is per assertion and must
+be traced through the base path, but then says exactly three legs mix red and
+green. Applying that rule to the rest of the same table produces three more:
+
+- **L7 is SPLIT.** With the palette drop refused, the post-drop insertion and
+  redo-reapplication assertions are red. But the undo-restores-the-exact-
+  pre-drop-list assertion is green: a replace load starts with empty history,
+  the refused drop pushes no history entry, and Ctrl+Z therefore performs no
+  write, leaving the already-pre-drop list exactly unchanged
+  (`src/store/dashboardStore.ts:135-178,208-220,461-500`;
+  `src/App.tsx:2816-2832`).
+- **L10 is SPLIT.** AC 12 and L10 require both no card and the warning. Base
+  refuses the gesture, so the no-card assertion is green; base emits no warning
+  on that refused path, so the warning assertion is red. The row itself already
+  describes both facts as “nothing happens and no warning.”
+- **L13 is SPLIT.** The marker assertion is red because no marker exists on
+  base. The reorder handle, heading input, Delete control, and rename behavior
+  already exist and operate on base, so those preservation assertions are green
+  (`src/components/SectionsCanvas.tsx:206-221,416-477`;
+  `tests/e2e/sections-canvas.spec.ts:489-555`).
+
+The remaining single-colour rows do not contradict the rule: their explicitly
+planned assertions are all red or all green as recorded, while C5 deliberately
+has no colour until its required base measurement. U1 already names its specific
+historical-behaviour failures rather than claiming every case is red.
+
+**Why it matters:** The operative acceptance criteria and test obligations are
+unchanged, but the new audit rule immediately contradicts its own exhaustive
+inventory. An implementation report following it could again record
+green-on-base assertions as part of an undifferentiated red result—the exact
+accounting failure P1 required rev 4 to remove.
+
+**Concrete correction:** Mark L7, L10, and L13 SPLIT and name their halves as
+above (or extract the green halves into named controls), then replace “Three
+legs” with the resulting complete inventory. Keep L8, L9, L15, and L12's rev-4
+classifications unchanged.
+
+**Class:** **BOOKKEEPING** — this corrects base-result classification and the
+audit trail; it does not change what F5 builds, what the tests must prove, or
+either owner ruling. There are no new contract-level findings in round 4.
+
+### Confidence and limits — round 4
+
+**CONFIDENCE: HIGH.** I read the complete rev-4 patch and resulting spec,
+audited every explicit multi-assertion row under rev 4's new rule, resolved the
+new source and unit-inventory claims by symbol, and rechecked the complete
+AC/leg inventory in both directions. After appending and formatting this round,
+`./tools/checks` completed all 4/4 steps with real exit 0.
+
+I still cannot inspect the cited MemPalace drawer; I treated the owner's exact
+words supplied for this round as authoritative. Per the hard constraint, I did
+not run e2e or integration tests, so I did not observe future F5 behavior,
+Electron `dragTo` MIME delivery, or C5. There is still no F5 implementation to
+execute. I did not edit the spec, source, tests, PR, or remote branch.
+
+**CHANGES-REQUIRED**
