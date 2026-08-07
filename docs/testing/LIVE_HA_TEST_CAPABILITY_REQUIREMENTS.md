@@ -7,6 +7,90 @@
 
 ---
 
+## Host placeholders (repo-wide convention)
+
+This repository is public. Prose documentation under `docs/` uses placeholders
+rather than the maintainer's own network details; substitute your own values.
+
+⚠ **This is a writing convention, not a redaction, and it does not claim the
+real values are absent from the repository.** They remain in evidence records,
+in test and source constants, and throughout git history. The scope section
+below states which classes are deliberately not covered and why, and publishes
+the commands that show you exactly where those values still are.
+
+| Placeholder         | Meaning                                                                   |
+| ------------------- | ------------------------------------------------------------------------- |
+| `<HA_HOST>`         | Hostname of the live **read-only** Home Assistant instance used for UAT   |
+| `<HA_HOST_IP>`      | Its LAN IP, where the hostname fails to resolve                           |
+| `<HA_TEST_HOST>`    | The separate **writable** test instance (agent-writable per amendment-04) |
+| `<HA_TEST_HOST_IP>` | The writable test instance's LAN IP                                       |
+| `<user>`            | Your OS account name in a filesystem path                                 |
+
+The values to substitute come from the app's own connection settings and the
+maintainer's gitignored local config. New prose must not hard-code them.
+
+### Scope of the convention — and what it deliberately does not cover
+
+This convention binds **prose documentation under `docs/**/*.md`**. Two classes
+are outside it, for different reasons. Both are deliberate; neither is an
+oversight.
+
+**1. Evidence — never rewritten.** A document recording what someone said, ran
+or observed at a point in time is evidence, and editing it falsifies the record.
+This covers independent review documents, verbatim tester remarks, **completed
+UAT plans and their generated matrices and archives** (`UAT_STRATEGY.md` §97:
+_"never edited after the round has run — doing so would falsify the evidence"_).
+The test is the document's kind, not its convenience.
+
+**2. Functional values — need configuration, not a placeholder.** Source,
+tests and fixtures contain host values the code actually uses at runtime:
+
+```
+tests/support/liveHa.ts            LIVE_HA_HOST constant
+tests/fixtures/uat/instance-manifest.json   "host"
+tests/integration/entity-caching.spec.ts    a typed URL
+src/components/ConnectionDialog.tsx         user-facing example URLs
+```
+
+Substituting a placeholder here would break the code. These need an env var or
+config indirection — a behavioural change with its own test impact, which does
+not belong in a documentation pass. **Tracked as follow-up work, not done here.**
+Provenance comments in source (`// verified against <host> on <date>`) are left
+alongside them so a comment never contradicts the constant beside it.
+
+Re-enumerate the candidate set at any time. These commands return **candidates
+for triage**, not a list of defects: every hit belongs to exactly one of the
+four classes above, and deciding which is a judgement the reader makes. A hit is
+not a leak — `/home/u/config` in a unit test is already anonymous, and
+`ConnectionDialog.tsx`'s example addresses are invented.
+
+```bash
+# the values themselves
+git grep -hoIE '\b(192\.168|10\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01]))\.[0-9]{1,3}\.[0-9]{1,3}\b' -- .
+git grep -hoIE '\b[a-z0-9-]+\.home\.local\b' -- .
+git grep -hoIE '([A-Za-z]:)?[/\]+Users[/\]+[A-Za-z0-9_.-]+|/home/[A-Za-z0-9_.-]+' -- .
+
+# the same class as the file list the four classes get applied to
+git grep -lIE '\b(192\.168|10\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01]))\.[0-9]{1,3}\.[0-9]{1,3}\b|\b[a-z0-9-]+\.home\.local\b|([A-Za-z]:)?[/\]+Users[/\]+[A-Za-z0-9_.-]+|/home/[A-Za-z0-9_.-]+' -- . | sort
+```
+
+⚠ **Three properties of the user-path pattern are load-bearing, and each was
+established by running the command and diffing its output — not by reading it.**
+It matches **one or more** separators (`[/\]+`) because a Windows path inside a
+JSON string carries doubled backslashes (`c:\\Users\\…`), and a
+single-separator pattern skips those files in silence. It covers the POSIX
+`/home/<user>` form as well as `…/Users/<user>`, because the tester is on
+Windows while every automated test runs on Linux. And the commands are
+**single-quoted**: under double quotes the shell consumes a backslash level and
+the character class stops matching what it appears to.
+
+⚠ **Before trusting any narrowing of this pattern, diff the new output against
+the old in _both_ directions.** A published command replaces a hand-built
+list's failure mode with its own — the pattern silently not being the class —
+and only a two-way diff catches that.
+
+---
+
 ## The ask
 
 > "I want you to do a deep dive on how we might be able to test the things that
@@ -31,7 +115,7 @@ recurring UAT defect lives in one of them.
 
 ### Blind spot A — nothing connects to a real Home Assistant
 
-**Measured:** no test in `tests/` opens a connection to `ha.home.local`. The
+**Measured:** no test in `tests/` opens a connection to `<HA_HOST>`. The
 handful of files mentioning it do so in **comments recording where a fixture came
 from**, not in live calls. Every HA interaction is a `FakeSocket`, a `vi.mock`, or
 a captured fixture.
@@ -138,7 +222,7 @@ profile fixture and a re-launch helper.
 
 **No live HA at run time. One read-only capture, committed as a fixture.**
 
-**Requirement.** Capture real dashboard configs from `ha.home.local` **once**,
+**Requirement.** Capture real dashboard configs from `<HA_HOST>` **once**,
 read-only, commit them under `tests/fixtures/`, and drive them through HAVDM's
 real load and export paths.
 
@@ -170,10 +254,10 @@ and the instance's HA version alongside it.
 
 > ⭐⭐ **STATUS UPDATE — THE BLOCKER BELOW HAS BEEN RESOLVED, AND NOT THE WAY THIS
 > SECTION ANTICIPATED.** The owner did not widen amendment-03 §4 for
-> `ha.home.local`. Instead, on 2026-08-04 they provided a **second, disposable
-> instance — `ha-test.home.local`** — and authorised agent writes to it, by
+> `<HA_HOST>`. Instead, on 2026-08-04 they provided a **second, disposable
+> instance — `<HA_TEST_HOST>`** — and authorised agent writes to it, by
 > `docs/governance/phases/phase-7-ecosystem-future-growth-amendment-04.md`.
-> **`ha.home.local` remains read-only, exactly as §4 left it.**
+> **`<HA_HOST>` remains read-only, exactly as §4 left it.**
 >
 > Built and passing: `tests/live/ha-deploy-render.spec.ts`, in an opt-in
 > `live-ha` Playwright project that runs in neither `./tools/checks` nor a
@@ -205,7 +289,7 @@ decision is not the agent's to make and is not assumed here.**
 Forbidden regardless of any widening, per §4: any production dashboard;
 `haWsSaveDashboardConfig` against an existing user dashboard; **any
 Modbus/inverter/VPP/Remote-EMS surface**; any automation, script or helper
-mutation. ⚠ `ha.home.local` is VPP-enrolled via Amber Electric SmartShift.
+mutation. ⚠ `<HA_HOST>` is VPP-enrolled via Amber Electric SmartShift.
 
 ### Requirements, if granted
 
@@ -325,9 +409,9 @@ footing would bake that in.
 
 1. ✅ **RESOLVED 2026-08-04 — does amendment-03 §4's write exception extend to an
    automated test tier?** Answered by **amendment-04**, and answered better than
-   this question framed it: rather than widening §4 for `ha.home.local`, the
-   owner supplied a **separate disposable instance** (`ha-test.home.local`) and
-   authorised writes there. `ha.home.local` is untouched. ⭐ The lesson worth
+   this question framed it: rather than widening §4 for `<HA_HOST>`, the
+   owner supplied a **separate disposable instance** (`<HA_TEST_HOST>`) and
+   authorised writes there. `<HA_HOST>` is untouched. ⭐ The lesson worth
    keeping is that the question assumed the only lever was loosening the rule on
    production; a second instance was the better answer and did not require
    loosening anything.

@@ -91,7 +91,7 @@ instance's 725 live entities:
   auto-mapped.
 - `light.does_not_exist_uat` tops out at **0.176** and maps nothing. Two
   independent reasons, either of which alone is fatal: the name is built to
-  resemble nothing, **and `ha.home.local` has no `light` domain at all**, so even
+  resemble nothing, **and `<HA_HOST>` has no `light` domain at all**, so even
   the domain component of the similarity score is unavailable.
 
 A similarity matcher cannot map an identifier designed to resemble nothing. The
@@ -154,7 +154,7 @@ without mentioning it in its message. `iframeRef` was left unattached, so the
 went on claiming "Renders an iframe showing the actual Home Assistant dashboard"
 for seven months. `HADashboardIframe.tsx` contains **zero** `<iframe>` tags.
 
-Restoring embedding is not a small fix. `ha.home.local` serves
+Restoring embedding is not a small fix. `<HA_HOST>` serves
 `X-Frame-Options: SAMEORIGIN` — measured with `curl -sS -D -` — so Chromium
 refuses the frame. Embedding would require stripping that header from the
 Electron session or moving to `<webview>`, which is a **security** decision

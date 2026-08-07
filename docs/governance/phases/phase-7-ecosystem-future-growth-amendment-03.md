@@ -198,7 +198,7 @@ are in is not a bar, it is a negotiation.
 
 ## 4) Amendment C — a bounded, named exception to the live-HA read-only rule
 
-HAVDM's standing rule is that live testing against `ha.home.local` is
+HAVDM's standing rule is that live testing against `<HA_HOST>` is
 **READ-ONLY**, because that instance is VPP-enrolled via Amber Electric
 SmartShift.
 

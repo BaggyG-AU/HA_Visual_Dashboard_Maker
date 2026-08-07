@@ -541,8 +541,8 @@ document) require a green automated baseline before the round opens.
       — full-product scope, 66 cards in 11 groups. **Re-pointed at the Windows
       artifact 2026-07-27**, with two Windows-only preconditions added so
       environmental failures are not logged as product defects: group 10 needs
-      `git` on `PATH`, and group 11 needs `ha.home.local` to resolve (fall back
-      to `192.168.1.70`).
+      `git` on `PATH`, and group 11 needs `<HA_HOST>` to resolve (fall back
+      to `<HA_HOST_IP>`).
 - [x] HTML matrix generated to
       `docs/testing/uat/matrices/uat_matrix_v1.0.0_2026-07-27.html` —
       `npm run verify:uat-matrix` 63/63, re-verified after the Windows re-point
@@ -552,7 +552,7 @@ document) require a green automated baseline before the round opens.
 - [ ] ⚠ Any temporary Home Assistant dashboard **deleted** (UAT_STRATEGY §10) —
       **PARTIAL, and this is an open finding.** HA-09's throwaway
       `havdm-uat-temp` is confirmed **gone**. But a read-only
-      `lovelace/dashboards/list` against `ha.home.local` on 2026-07-27 still
+      `lovelace/dashboards/list` against `<HA_HOST>` on 2026-07-27 still
       returns **`temp-dashboard-editor-1785138319094`** ("New Dashboard
       (Editing)", created 17:45:19 AEST — inside the sitting, 49 minutes before
       the summary was generated), which is HA-08's Live Preview temporary
