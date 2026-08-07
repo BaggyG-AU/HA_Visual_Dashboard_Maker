@@ -9,8 +9,14 @@
 
 ## Host placeholders (repo-wide convention)
 
-This repository is public, so the maintainer's own network details are not
-recorded in it. Documentation uses placeholders; substitute your own values.
+This repository is public. Prose documentation under `docs/` uses placeholders
+rather than the maintainer's own network details; substitute your own values.
+
+⚠ **This is a writing convention, not a redaction, and it does not claim the
+real values are absent from the repository.** They remain in evidence records,
+in test and source constants, and throughout git history. The scope section
+below states which classes are deliberately not covered and why, and publishes
+the commands that show you exactly where those values still are.
 
 | Placeholder         | Meaning                                                                   |
 | ------------------- | ------------------------------------------------------------------------- |
@@ -20,8 +26,8 @@ recorded in it. Documentation uses placeholders; substitute your own values.
 | `<HA_TEST_HOST_IP>` | The writable test instance's LAN IP                                       |
 | `<user>`            | Your OS account name in a filesystem path                                 |
 
-The real values live in the app's own connection settings and in the
-maintainer's gitignored local config — never in a committed prose document.
+The values to substitute come from the app's own connection settings and the
+maintainer's gitignored local config. New prose must not hard-code them.
 
 ### Scope of the convention — and what it deliberately does not cover
 
