@@ -1046,3 +1046,126 @@ it, edit UAT or the signed spec, or update `[STATE]`.
   and does not explicitly call those results UNVERIFIED at `d998691`. Verdict
   CHANGES-REQUIRED, high confidence; the PR is not merge-ready until that
   body-only evidence correction is live.
+
+## Round 6
+
+| Finding                               | Disposition  | Round-6 judgment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R2-m1 — duplicated evidence counts    | **RESOLVED** | The exact live `gh pr view 137 --json body` result has no `18 specs` / `8 specs` labels on the MEDIUM rows, and both rows explicitly say **UNVERIFIED at head**. “Measured at `4827082` and not re-run at any commit since” is more durable and no less explicit than **UNVERIFIED at `d998691`**: it names the last measurement while making the current-head status invariant instead of pinning another repair SHA that will stale. The retained `83`→`80` references remain historical. The original token command still returns exactly 20 paths; that historical, command-backed measurement is acceptable because it is not a count duplicating an adjacent inventory table.                                                      |
+| M4 — reopening after Round 5 resolved | **RESOLVED** | **The reopening was proper, not scope overreach.** The old “every line that ACTS” wording was false: the direct `ctx.window.evaluate` driver at `sections-canvas.spec.ts:699-704` and the `mouse.*` palette gesture at `:924-931` exist, while an exact candidate-line probe returns zero hits for both ranges. “Acts” was not fairly limited to an unstated regex vocabulary. The repair independently justifies its extra scope, withdraws the universal, publishes the exact ten-verb boundary, and flags row 4's omission in the hand trace. Deliberately not widening the lexical proxy is correct. The candidate subsection's SHA-256 is identical before and after `5e1df5a`, so no candidate output verified in Round 5 changed. |
+
+### Regression check
+
+The branch began clean at `5e1df5a`. `git diff 1e3d821..5e1df5a` changes only
+`docs/testing/F5_LOAD_PATH_SWEEP.md` and `tools/f5-load-path-sweep.sh`; its
+`src/` and `tests/` diff is empty. `git diff 4827082..HEAD --stat -- src/` is
+also empty. No PNG, signed spec, UAT state or `[STATE]` file changed, and `main`
+and `origin/main` remain `82eb819`.
+
+`./tools/checks` passed all four phases: Prettier clean, TypeScript clean, ESLint
+**0 errors / 145 warnings**, and Vitest **1,335 passed across 101 files**. The
+Electron spec and both MEDIUM sweeps were not rerun. The MEDIUM results remain
+**UNVERIFIED at head**, never accepted, confirmed or held by this review.
+
+Time-qualifying “each was executed” changes the claim only by making its
+evidence boundary narrower: execution is asserted at the commit named beside a
+result, not at head. The live-body sentence about the two sweep lists is now
+grammatical and still says only that their membership and rationale are derived
+in the sweep document; the repair does not add a new coverage claim.
+
+### Step 4 — the author's weakest claims
+
+1. **Withdrawing rather than widening:** sound. Candidate search can surface
+   common textual actions, but it cannot decide runtime reachability. Adding
+   more verbs would create another apparently authoritative approximation. The
+   hand trace remains the answer and now exposes the known candidate gap.
+2. **No commit-specific UNVERIFIED label:** sound. “UNVERIFIED at head,” coupled
+   to the last measured commit and a “not re-run since” statement, directly
+   answers the current evidence question without creating a stale repair-SHA
+   marker.
+3. **Reopening M4:** warranted. Round 5's no-cap check established distance
+   completeness, not verb completeness. The author changed only explanatory
+   evidence, supplied an independent justification, and preserved the candidate
+   subsection byte for byte.
+4. **The retained 20-file measurement:** acceptable. I reran the published
+   command and mechanically enumerated exactly 20 paths. It records the output
+   of the historical, retracted instrument; it does not summarise the hand-trace
+   table beside it.
+
+Two wording/count precision notes are **non-blocking and may be accepted with
+the merge**:
+
+- The live body says “No script output changed.” The explanatory banner plainly
+  did change; the verified true claim is narrower: **no candidate output
+  changed**. That is the property relevant to preserving Round 5's check.
+- `5e1df5a`'s message says “96 candidate pairs across 12 files.” Mechanical
+  deduplication finds 96 unique candidate lines in 10 candidate-bearing files;
+  12 is the number of mentioned/search-input files, two of which emit no
+  candidate. The current artifacts publish neither summary count, and the
+  byte-equivalence result does not depend on this imprecise shorthand.
+
+Neither note changes a product, test, trace or merge-safety conclusion, and a
+seventh evidence-only repair round would cost more than correcting these
+historical statements is worth.
+
+### Step 5 — stop question and merge recommendation
+
+The Round-5 blocker is discharged and the M4 reopening leaves the evidence more
+honest without invalidating prior verification. **PR #137 is ready for the owner
+to merge.** No further review, Electron run or MEDIUM rerun is warranted by
+`5e1df5a`; the two notes above may be accepted with the merge.
+
+`OPERATING_AGREEMENT.md` §3.3's rollback trigger has **not fired**. Rounds 1–5
+each produced findings the owner acted on. Round 6 produces no actionable or
+merge-blocking finding, so it is the first clean approval, not three consecutive
+zero-finding independent spec reviews; nor has more than one working session
+elapsed without an acted-on finding.
+
+### Verdict
+
+**APPROVE — High confidence.** R2-m1 is resolved, the M4 reopening was proper,
+and the repair is evidence-only with clean regression gates. The owner may merge
+PR #137 without another repair round.
+
+### Observed verification and limits
+
+- Exact `gh pr view 137 --json body` — MEDIUM size labels absent; both results
+  explicitly **UNVERIFIED at head**; `83`→`80` references historical.
+- Original token command — mechanically enumerated **20 paths**, matching the
+  retained historical statement.
+- `bash tools/f5-load-path-sweep.sh` — exit 0; zero candidate hits across the
+  two named direct-drive ranges; the candidate subsection has identical
+  pre/post SHA-256
+  `5035298b0b51f128230e53aae308461aadeacd0c2ebbcbd833965ee73449d4ab`.
+- Candidate recount — 96 unique candidate lines, 10 candidate-bearing files,
+  and 12 mentioned/search-input files.
+- `./tools/checks` — exit 0: Prettier clean, TypeScript clean, ESLint **0 errors /
+  145 warnings**, Vitest **1,335 passed across 101 files**.
+- Static scope — only the sweep document and script changed; `src/`, tests,
+  PNG, signed spec, UAT and `[STATE]` untouched; `main` and `origin/main` stayed
+  at `82eb819`.
+
+Checked clean: R2-m1's live-body correction and count class; the factual basis,
+scope and remedy of the M4 reopening; candidate-output equivalence; the two
+narrowing/editorial changes; and the prescribed evidence-only regression
+surface.
+
+Not checked: I did not reopen M1, M2, M3, M5, m1, m2, R2-m2, R3-M1, the
+nine-row hand trace or the practice rule; did not rerun L16/L17, the Electron
+spec, either MEDIUM sweep, either full suite, a live Home Assistant instance or
+a native OS-menu click; and did not execute the branch against base production.
+I did not edit the PR body, mark the PR ready, merge it, edit UAT or the signed
+spec, or update `[STATE]`.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"` — **Round 6:** APPROVE, high confidence;
+  R2-m1 resolved because the live MEDIUM row-size labels are gone and both rows
+  say UNVERIFIED at head; the M4 reopening was factually warranted and not
+  overreach because the old universal missed direct `evaluate`/`mouse.*`
+  drivers, while withdrawing it preserves the honest mechanical/hand-trace
+  boundary and leaves candidate output byte-identical. `./tools/checks` passed
+  at 1,335/101. Two non-blocking precision notes—the full banner changed even
+  though candidates did not, and 96 unique candidates occupy 10 of 12 searched
+  files—may be accepted with the merge. PR #137 is owner-merge-ready; §3.3 has
+  not fired.
