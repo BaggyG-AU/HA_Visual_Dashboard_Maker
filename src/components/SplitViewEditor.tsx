@@ -61,6 +61,11 @@ interface SplitViewEditorProps {
   ) => void;
 
   /** Tier 4 slice 4.4: sections-view section-level authoring */
+  /** F5: a palette card dropped inside a sections view — forwarded to GridCanvas. */
+  onSectionPaletteDrop?: (
+    cardType: string,
+    to: { sectionIndex: number; cardIndex: number },
+  ) => void;
   onSectionAdd?: (atIndex?: number) => void;
   onSectionRemove?: (sectionIndex: number) => void;
   onSectionMove?: (fromIndex: number, toIndex: number) => void;
@@ -113,6 +118,7 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
   onCardPaste,
   onCardDelete,
   onSectionCardMove,
+  onSectionPaletteDrop,
   onSectionCardResize,
   onSectionAdd,
   onSectionRemove,
@@ -502,6 +508,7 @@ export const SplitViewEditor: React.FC<SplitViewEditorProps> = ({
                 onCardPaste={onCardPaste}
                 onCardDelete={onCardDelete}
                 onSectionCardMove={onSectionCardMove}
+                onSectionPaletteDrop={onSectionPaletteDrop}
                 onSectionCardResize={onSectionCardResize}
                 onSectionAdd={onSectionAdd}
                 onSectionRemove={onSectionRemove}

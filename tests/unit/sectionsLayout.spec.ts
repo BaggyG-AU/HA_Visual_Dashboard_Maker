@@ -5,6 +5,8 @@ import {
   sectionColumnSpan,
   updateSectionCard,
   addCardToSection,
+  insertCardIntoSectionAt,
+  resolveTargetSectionIndex,
   removeSectionCards,
   insertCardsIntoSection,
   moveSectionCard,
@@ -148,6 +150,148 @@ describe('sectionsLayout', () => {
       expect(addCardToSection({ type: 'sections' } as unknown as View, 0, card)).toEqual({
         type: 'sections',
       });
+    });
+  });
+
+  /**
+   * F5 leg U1 — `insertCardIntoSectionAt`.
+   *
+   * ⭐ RED-BEFORE-GREEN BY HISTORICAL BEHAVIOUR, SAME CHECKOUT. This helper is a
+   * new export, but that is NOT why it would resist a red leg — a real
+   * discriminating one exists and was run. The production module could only
+   * APPEND before F5 (`addCardToSection`), and that append IS the pre-F5
+   * palette-add semantics. So the red leg is: expose `insertCardIntoSectionAt`
+   * delegating to `addCardToSection`, run these cases, and watch the insert-at-0
+   * and insert-in-the-middle cases fail ON BEHAVIOUR — the module imports
+   * cleanly and the assertion is about WHERE the card went, not about a missing
+   * symbol. The observed failure is recorded in the implementation PR.
+   */
+  describe('insertCardIntoSectionAt (F5)', () => {
+    const newCard = () => ({ type: 'button', entity: 'switch.new' }) as unknown as Card;
+
+    it('inserts at index 0, pushing the existing cards down', () => {
+      const view = sectionsView();
+      const card = newCard();
+      const updated = insertCardIntoSectionAt(view, 0, 0, card);
+
+      const target = (updated.sections as ViewSection[])[0].cards!;
+      expect(target).toHaveLength(2);
+      expect(target[0]).toEqual(card);
+      expect(target[1]).toEqual(view.sections![0].cards![0]);
+    });
+
+    it('inserts in the middle, taking that slot', () => {
+      const view = {
+        type: 'sections',
+        sections: [
+          {
+            type: 'grid',
+            cards: [
+              { type: 'markdown', content: 'a' },
+              { type: 'markdown', content: 'b' },
+              { type: 'markdown', content: 'c' },
+            ],
+          },
+        ],
+      } as unknown as View;
+      const card = newCard();
+
+      const target = (insertCardIntoSectionAt(view, 0, 1, card).sections as ViewSection[])[0]
+        .cards!;
+      expect(
+        target.map((c) => (c as { content?: string; type: string }).content ?? c.type),
+      ).toEqual(['a', 'button', 'b', 'c']);
+    });
+
+    it('appends when the index equals the card count', () => {
+      const view = sectionsView();
+      const card = newCard();
+      const existing = view.sections![0].cards!.length;
+
+      const target = (insertCardIntoSectionAt(view, 0, existing, card).sections as ViewSection[])[0]
+        .cards!;
+      expect(target).toHaveLength(existing + 1);
+      expect(target[existing]).toEqual(card);
+    });
+
+    it('clamps an index below 0 and above the card count', () => {
+      const view = sectionsView();
+      const existing = view.sections![0].cards!.length;
+
+      const low = (insertCardIntoSectionAt(view, 0, -5, newCard()).sections as ViewSection[])[0]
+        .cards!;
+      expect(low[0]).toEqual(newCard());
+
+      const high = (insertCardIntoSectionAt(view, 0, 99, newCard()).sections as ViewSection[])[0]
+        .cards!;
+      expect(high[existing]).toEqual(newCard());
+      expect(high).toHaveLength(existing + 1);
+    });
+
+    it('appends for a non-finite index rather than dropping the card', () => {
+      const view = sectionsView();
+      const existing = view.sections![0].cards!.length;
+      const target = (insertCardIntoSectionAt(view, 0, NaN, newCard()).sections as ViewSection[])[0]
+        .cards!;
+      expect(target).toHaveLength(existing + 1);
+      expect(target[existing]).toEqual(newCard());
+    });
+
+    it('returns the input view reference-equal for an out-of-range section', () => {
+      const view = sectionsView();
+      expect(insertCardIntoSectionAt(view, 9, 0, newCard())).toBe(view);
+      expect(
+        insertCardIntoSectionAt({ type: 'sections' } as unknown as View, 0, 0, newCard()),
+      ).toEqual({ type: 'sections' });
+    });
+
+    it('does not mutate the source view, and leaves sibling sections reference-equal', () => {
+      const view = sectionsView();
+      const before = view.sections![0].cards!.length;
+
+      const updated = insertCardIntoSectionAt(view, 0, 0, newCard());
+
+      expect(updated).not.toBe(view);
+      expect(view.sections![0].cards).toHaveLength(before);
+      expect((updated.sections as ViewSection[])[1]).toBe(view.sections![1]);
+    });
+  });
+
+  /**
+   * F5 leg U2 — `resolveTargetSectionIndex`.
+   *
+   * ⚠ NO VALID RED LEG EXISTS, and the reason is NOT that the export is new.
+   * This is a BEHAVIOUR-PRESERVING EXTRACTION of the decision `handleCardAdd`
+   * already made inline, so there is no behaviour change for a red leg to
+   * refute: any historical-behaviour stand-in would be the same function, and
+   * the test would pass before and after.
+   *
+   * ALTERNATIVE EVIDENCE, per OPERATING_AGREEMENT.md §2: control leg C1 (the
+   * double-click path that already worked still lands in the same section, on
+   * base AND on the branch), plus e2e legs L8 and L9, which exercise this
+   * resolver through the production path where its result becomes VISIBLE.
+   */
+  describe('resolveTargetSectionIndex (F5)', () => {
+    it('returns null when the view has no sections', () => {
+      expect(
+        resolveTargetSectionIndex({ type: 'sections', sections: [] } as unknown as View, 0),
+      ).toBeNull();
+      expect(resolveTargetSectionIndex({ type: 'sections' } as unknown as View, null)).toBeNull();
+      expect(resolveTargetSectionIndex(null, 2)).toBeNull();
+      expect(resolveTargetSectionIndex(undefined, 2)).toBeNull();
+    });
+
+    it('returns the selected index when it addresses an existing section', () => {
+      expect(resolveTargetSectionIndex(sectionsView(), 1)).toBe(1);
+      expect(resolveTargetSectionIndex(sectionsView(), 0)).toBe(0);
+    });
+
+    it('falls back to 0 for a null selection', () => {
+      expect(resolveTargetSectionIndex(sectionsView(), null)).toBe(0);
+    });
+
+    it('falls back to 0 for a selection past the end', () => {
+      expect(resolveTargetSectionIndex(sectionsView(), 9)).toBe(0);
     });
   });
 

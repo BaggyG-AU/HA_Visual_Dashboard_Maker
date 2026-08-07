@@ -15,6 +15,15 @@ import { resolveCardState } from '../services/capability/cardAvailability';
 import { useCapabilityProfile } from '../contexts/CapabilityProfileContext';
 import { capturedAtLabel } from '../utils/capabilityLabel';
 
+/**
+ * F5 §7.1: the type marker a palette drag carries alongside `text/plain`, so a
+ * drop target can identify a palette drag from `dataTransfer.types` alone during
+ * `dragover`. Exported because `SectionsCanvas` is the consumer; it lives here,
+ * with the producer of the payload, so there is one definition rather than two
+ * string literals that can drift apart.
+ */
+export const PALETTE_CARD_MIME = 'application/x-havdm-palette-card';
+
 interface CardPaletteProps {
   onCardAdd: (cardType: string) => void;
 }
@@ -141,8 +150,21 @@ export const CardPalette: React.FC<CardPaletteProps> = ({ onCardAdd }) => {
   };
 
   const handleDragStart = (e: React.DragEvent, cardType: string) => {
+    const payload = JSON.stringify({ cardType });
     // RGL looks for "text/plain" by default
-    e.dataTransfer.setData('text/plain', JSON.stringify({ cardType }));
+    e.dataTransfer.setData('text/plain', payload);
+    // F5 §7.1: the SAME body under a marker MIME, so a drop target can recognise
+    // a palette drag during `dragover`. There the drag data store is in
+    // PROTECTED MODE — `getData()` returns '' and only `dataTransfer.types` is
+    // readable — so a target that must decide whether to `preventDefault()` has
+    // nothing but the type list to go on. Discriminating on `text/plain` instead
+    // would accept any stray text drag (a selection dragged out of the Monaco
+    // YAML editor, say), which would then fail to parse at drop time and no-op:
+    // the "gesture that silently does nothing" failure VIEWS-04 is about.
+    //
+    // Additive by design — `text/plain` above is untouched, so GridCanvas's flat
+    // drop path and react-grid-layout both read exactly what they read before.
+    e.dataTransfer.setData(PALETTE_CARD_MIME, payload);
     e.dataTransfer.effectAllowed = 'copy';
   };
 

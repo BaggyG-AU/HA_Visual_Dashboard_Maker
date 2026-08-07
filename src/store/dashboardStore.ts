@@ -141,6 +141,23 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         selectedCardIndex: null,
         selectedCardIndices: [],
         selectionAnchorCardIndex: null,
+        // ⭐ F5 / owner ruling Q2 (2026-08-06). This line used to be missing, and
+        // because zustand's `set` MERGES PARTIALLY, a section index selected in
+        // one document SURVIVED a successful load of a different one in the same
+        // session — nothing in App.tsx reset it afterwards. If the inherited
+        // index happened to address a section in the new view, the palette add
+        // silently targeted it.
+        //
+        // The retained value is meaningless by construction (section 2 of
+        // document A bears no relation to section 2 of document B), so it read as
+        // an omitted line rather than a decision. It is also the SECOND instance
+        // of previous-document state surviving a load in this very reducer — the
+        // first being the undo history immediately below.
+        //
+        // ⭐ The generalisable lesson, worth more than the fix: A PARTIAL `set`
+        // IN A ZUSTAND REDUCER IS A SILENT-RETENTION SURFACE — enumerate the
+        // fields it does NOT name, not only the ones it does.
+        selectedSectionIndex: null,
 
         // ⭐⭐⭐ FILE-04's SECOND DEFECT — THE ONE THE OWNER ACTUALLY SAW.
         //

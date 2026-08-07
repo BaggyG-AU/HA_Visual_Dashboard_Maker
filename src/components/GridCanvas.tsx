@@ -84,6 +84,15 @@ interface GridCanvasProps {
     address: { sectionIndex: number; cardIndex: number },
     gridOptions: { columns?: number; rows?: number },
   ) => void;
+  /**
+   * F5: a palette card dropped inside a SECTIONS view, at an explicit
+   * (section, card) address. Forwarded straight to SectionsCanvas; this
+   * component's own flat drop handlers are untouched by it.
+   */
+  onSectionPaletteDrop?: (
+    cardType: string,
+    to: { sectionIndex: number; cardIndex: number },
+  ) => void;
   // Tier 4 slice 4.4: sections-view section-level authoring (no-ops elsewhere).
   onSectionAdd?: (atIndex?: number) => void;
   onSectionRemove?: (sectionIndex: number) => void;
@@ -165,6 +174,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
   onCardDelete,
   onSectionCardMove,
   onSectionCardResize,
+  onSectionPaletteDrop,
   onSectionAdd,
   onSectionRemove,
   onSectionMove,
@@ -305,6 +315,7 @@ export const GridCanvas: React.FC<GridCanvasProps> = ({
         onCardPaste={onCardPaste}
         onCardDelete={onCardDelete}
         onCardMove={onSectionCardMove}
+        onPaletteCardDrop={onSectionPaletteDrop}
         onCardResize={onSectionCardResize}
         onSectionAdd={onSectionAdd}
         onSectionRemove={onSectionRemove}
