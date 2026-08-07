@@ -8,8 +8,15 @@
 # under-inclusion". That command enumerates specs that happen to MENTION those
 # tokens. It cannot enumerate the specs that REACH a production `loadDashboard`
 # call site, because a spec that clicks a template tile never spells the word.
-# The independent review of PR #137 (M4) found three consumers missing that way;
-# running this script finds six.
+#
+# ⚠⚠ AND THE FIRST VERSION OF THIS SCRIPT MADE THE SAME MISTAKE ONE LEVEL UP. It
+# listed every file CONTAINING a control's testid and called them consumers, so
+# a spec that merely asserts a tile is VISIBLE was credited with driving the load
+# path behind it. Round 2 of the review caught it. Section 3 now reports only
+# lines that ACT on a control. No count of consumers is printed or quoted
+# anywhere — run the script and read the list; a summarised count is a second
+# source of truth that drifts the moment a row changes, and this sweep has
+# already paid for that twice.
 #
 # ⭐ THE RULE IT ENCODES: a population claim needs an enumeration of the
 # POPULATION, and the enumeration has to be mechanical and re-runnable. Start at
@@ -41,13 +48,16 @@ echo "=============================================================="
 echo "2. ENTRY CONTROLS that reach those call sites"
 echo "=============================================================="
 for testid in \
+  toolbar-open-file \
+  menu:open-file \
+  menu:open-recent-file \
   toolbar-new-dashboard \
   new-dashboard-blank-option \
   new-dashboard-sections-option \
   new-dashboard-template-option \
   new-dashboard-entity-type-option \
-  yaml-apply-button \
-  dashboard-browser-modal; do
+  preset-marketplace-import \
+  yaml-apply-button; do
   printf '  %-34s -> ' "$testid"
   grep -rl "$testid" src/ --include=*.tsx | tr '\n' ' '
   echo
@@ -55,23 +65,44 @@ done
 
 echo
 echo "=============================================================="
-echo "3. CONSUMERS — specs and DSL modules that drive those controls"
+echo "3. CONSUMERS — who ACTUALLY DRIVES those controls, not who mentions them"
 echo "=============================================================="
+echo "  ⚠⚠ A MENTION IS NOT A DRIVE, and the first version of this script"
+echo "     conflated them. It listed every file CONTAINING a testid, so"
+echo "     templates.spec.ts (which only asserts the Entity Type tile is"
+echo "     VISIBLE) was reported as the consumer of the entity-type load path,"
+echo "     and recent-files.spec.ts was named for a handler it never invokes."
+echo "     That is the round-1 finding — searching test-file spelling instead of"
+echo "     behaviour — repeated one level up. A driver must ACT on the control:"
+echo "     .click(), .dblclick(), .fill(), .press(), .hover(), .dragTo() or a"
+echo "     dispatched event. Lines below are the ACTING lines only."
 for testid in \
+  toolbar-open-file \
+  menu:open-file \
+  menu:open-recent-file \
   toolbar-new-dashboard \
   new-dashboard-blank-option \
   new-dashboard-sections-option \
   new-dashboard-template-option \
   new-dashboard-entity-type-option \
-  yaml-apply-button \
-  dashboard-browser-modal; do
+  preset-marketplace-import \
+  yaml-apply-button; do
   echo "  --- $testid ---"
-  specs=$(grep -rl "$testid" tests/e2e tests/integration --include=*.spec.ts 2>/dev/null | sort)
-  dsls=$(grep -rl "$testid" tests/support --include=*.ts 2>/dev/null | sort)
-  if [ -n "$specs" ]; then echo "$specs" | sed 's/^/      spec: /'; fi
-  if [ -n "$dsls" ]; then echo "$dsls" | sed 's/^/      DSL : /'; fi
-  if [ -z "$specs$dsls" ]; then echo "      (no consumer — this control has no test driving it)"; fi
+  # An acting line either chains an action onto the locator, or is followed
+  # within three lines by one (the DSL's usual `const x = ...` then `x.click()`).
+  hits=$(grep -rn -A3 -- "$testid" tests/e2e tests/integration tests/support \
+           --include=*.ts 2>/dev/null \
+         | grep -E '\.(click|dblclick|fill|press|hover|dragTo|selectOption|check|dispatchEvent|send)\(' \
+         | sed 's/-\([0-9]*\)-/:\1:/' | sort -u)
+  if [ -n "$hits" ]; then
+    echo "$hits" | sed 's/^/      DRIVES: /'
+  else
+    echo "      ⚠ NO DRIVER — this control is mentioned but never acted on."
+  fi
 done
+echo
+echo "  ⓘ A DSL hit means the driver is a helper; resolve it to its callers with"
+echo "     grep -rl '<methodName>(' tests/e2e tests/integration --include=*.spec.ts"
 
 echo
 echo "=============================================================="

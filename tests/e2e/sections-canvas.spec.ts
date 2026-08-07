@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { close, launchWithDSL } from '../support';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
 // A dashboard whose single view is an HA "sections" view. Its cards live under
 // sections[].cards, NOT the view's top-level `cards` (which is empty), so before
@@ -1685,9 +1688,26 @@ views:
       // content div. The repository already had this written down
       // (`tests/integration/bulk-operations.spec.ts:76-78`), and the first draft
       // of this leg copied `yamlEditor.close()`'s `toHaveCount(0)` anyway and
-      // failed on it. ⓘ That DSL assertion is therefore latently broken; no spec
-      // calls `yamlEditor.close()` or `yamlEditor.apply()`, so it has never run.
-      // Reported, NOT fixed here — repairing shared DSL is outside this finding.
+      // failed on it.
+      //
+      // ⓘ THE FULL SIBLING INVENTORY, swept rather than re-read:
+      //     grep -rn "yaml-editor-modal" tests/support
+      //   1. `tests/support/dsl/yamlEditor.ts:92`   — `close()`
+      //   2. `tests/support/dsl/yamlEditor.ts:106`  — `apply()`
+      //   3. `tests/support/assertions/yaml.ts:23`  — `expectYamlEditorModalHidden()`
+      // All three assert `toHaveCount(0)` on the same force-rendered Modal.
+      // ⚠ And the sweep found one more thing than a sibling count would: the
+      // SAME testid is asserted `toBeVisible()` at `tests/support/assertions/yaml.ts:14`,
+      // which is broken in the OPPOSITE direction — antd puts the attribute on
+      // `.ant-modal-root`, which is always reported hidden (the reason
+      // `tests/support/dsl/presetMarketplace.ts:16-19` tells callers to use
+      // `.ant-modal-wrap` instead). So the defect is not "two or three bad
+      // assertions" but "this testid is the wrong node to assert on at all".
+      // ⓘ None of it has ever run: no spec calls any of those three, and no spec
+      // imports `tests/support/assertions/yaml.ts` at all. Nothing above
+      // invalidates any published result.
+      // Reported, NOT fixed here — repairing shared DSL is outside this finding,
+      // and over-reach is the other half of the fix-round failure mode.
       await expect(window.getByTestId('yaml-editor-content').first()).toBeHidden({
         timeout: 10000,
       });
@@ -1702,6 +1722,56 @@ views:
       await expect(window.getByTestId('section-add-target-0')).toBeVisible();
     } finally {
       await close(ctx);
+    }
+  });
+
+  // --- L17 ------------------------------------------------------------------
+  test('F5 L17: File > Open Recent clears the section selection', async ({ page }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { canvas, window } = ctx;
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'havdm-f5-recent-'));
+    const docBPath = path.join(dir, 'doc-b.yaml');
+    try {
+      // ⚠⚠ WHY THIS LEG EXISTS, AND IT IS A ROUND-2 FINDING AGAINST MY OWN
+      // ROUND-1 REPAIR. The corrected sweep named `tests/e2e/recent-files.spec.ts`
+      // as the consumer of `App.handleOpenRecentFile` (`src/App.tsx:648-665`).
+      // It is not: that file tests Save As registration, retargeting,
+      // cancellation and export exclusion, and never opens a recent file.
+      // Measured — `grep -rln "open-recent\|openRecentFile" tests/e2e tests/integration`
+      // returned NOTHING, so this production load call site had no consumer at
+      // all. Naming a spec that merely MENTIONS a feature is the same error, one
+      // level up, as the token-grep the round-1 finding was about.
+      fs.writeFileSync(docBPath, DOC_B_YAML, 'utf8');
+
+      await ctx.appDSL.waitUntilReady();
+      await loadYaml(ctx, DOC_A_YAML);
+      await canvas.selectCard(1);
+      const debug = window.getByTestId('selection-debug-state');
+      await expect(debug).toHaveAttribute('data-selected-section', '1');
+
+      // Drive the REAL renderer subscription. `src/menu.ts:31` sends exactly
+      // this channel with exactly this payload when a Recent Files item is
+      // clicked, and `src/App.tsx:2838-2847` is what receives it — so
+      // everything after the OS menu itself is production code.
+      // ⓘ No unsaved-changes prompt intervenes: a replace load leaves
+      // `isDirty` false and selection alone does not set it, so
+      // `confirmReplacingCurrentDashboard` returns immediately.
+      await ctx.app.evaluate(({ BrowserWindow }, p) => {
+        BrowserWindow.getAllWindows()[0]?.webContents.send('menu:open-recent-file', p);
+      }, docBPath);
+
+      await expect(window.getByTestId('sections-canvas')).toContainText('B-CARD-0');
+
+      // RED on base: `loadDashboard` never wrote `selectedSectionIndex`, so
+      // document A's section 1 survived into document B through Open Recent
+      // exactly as through the other load paths.
+      await expect(debug).toHaveAttribute('data-selected-section', 'null');
+      // RED on base: no marker existed to show where an add would land.
+      await expect(window.getByTestId('section-add-target-0')).toBeVisible();
+    } finally {
+      await close(ctx);
+      fs.rmSync(dir, { recursive: true, force: true });
     }
   });
 
