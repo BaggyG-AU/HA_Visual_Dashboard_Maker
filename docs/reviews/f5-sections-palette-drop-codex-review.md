@@ -406,3 +406,170 @@ relevant unit/F5/regression evidence without changing the signed contract, and
 update the PR evidence so every reported observation is executable and current.
 Only BaggyG-AU decides whether the corrected implementation is acceptable and
 merges it.
+
+## Round 2
+
+| Finding                                         | Disposition            | Round-2 judgment                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1 — wrong palette source                       | **RESOLVED**           | `settledPointOnSelector` now requires three stable, hit-tested samples; `palettePointerDrag` settles the source both before target resolution and immediately before the press; and `expectDragStartedFromTile` requires exactly one `dragstart` record whose tile and `text/plain` payload name the requested card. I ran the whole 10-leg gesture class at `--repeat-each=5`: **50/50 passed**. The exact L11 command also passed **5/5**.                         |
+| M2 — L15 did not exercise the container row     | **RESOLVED**           | L15 now targets `[data-testid="canvas-card"][data-section-index="0"][data-card-index="0"]`, asserts the new markdown card at top-level index 0, the vertical stack shifted to index 1, and `vertical-stack-container > div` remains exactly the two ordered children. The locator matches the renderer's direct child wrappers and would grow or change if a nesting implementation inserted the card.                                                               |
+| M3 — L13 was neither narrow nor all-controls    | **RESOLVED**           | L13 resizes the BrowserWindow and renderer to **900×800**, proves the section is narrower than its 1920×1080 launch box and narrower than 900 px, retains the marker-below-toolbar geometry check, renames, hit-tests the reorder handle with Playwright `hover()`, reorders, and clicks Delete last. Repository-wide viewport search found 900 px is the suite's narrowest configured width; the only other custom viewport is 1200 px. The full F5 run passed L13. |
+| M4 — load-path sweep was not a population proof | **PARTIALLY RESOLVED** | The script correctly finds all **nine** production `loadDashboard(...)` call sites, the template/entity-type specs were added, and L16 now crosses Apply into `mode: 'edit'`. But the advertised source-to-consumer mapping is still not valid: the script greps for control testid _mentions_, the document promotes those mentions to consumers that “drive” a handler, and `handleOpenRecentFile` still has no executed consumer. Details below.                  |
+| M5 — impossible U3 green-on-base claim          | **RESOLVED**           | The U3 docblock and PR body now say the file cannot execute against base because its imports/API are branch-only, and classify the same-input refusal/acceptance pair as branch-side alternative evidence. The trace that the new dragstart assertion itself is green on base also holds: `main:CardPalette.handleDragStart` sets the same `text/plain` JSON before setting `effectAllowed`. No base execution is claimed.                                           |
+| m1 — L5 observed only card count                | **RESOLVED**           | L5 now snapshots the dirty indicator, both history lengths, and the whole selection debug tuple before the background gesture and proves all remain unchanged afterward, in addition to card count and a verified background hit point.                                                                                                                                                                                                                              |
+| m2 — no explicit empty payload                  | **RESOLVED**           | L12 and U3 now dispatch `''` with the marker MIME present, distinguish acceptance at the gate from rejection in `paletteCardTypeFrom`'s `!raw` branch, and prove no callback/config/history/selection/message effect. U3's eight cases and the complete F5 spec passed.                                                                                                                                                                                              |
+
+### Verdict
+
+**CHANGES-REQUIRED — High confidence.** Six round-1 findings are resolved, and
+M1's repair is stable under a materially deeper repeat than the author's
+published run. M4 remains blocking because the new evidence package still says
+every call site has a named, executed consumer while one production call site
+does not. A green 107-test sweep cannot support a path it never invokes.
+
+### Regression and contradiction sweep
+
+#### M1 probe and gesture class
+
+The document-level bubble listener is reliable for the palette path inspected:
+`CardPalette.handleDragStart` does not stop propagation, no palette ancestor has
+a `dragstart` stop, React's delegated root handler runs before the event reaches
+`document`, and `dragstart` is the readable phase for the payload the handler has
+just written. The probe array is reset before each gesture and the listener is
+armed only once. `toHaveLength(1)` could turn an unexpected duplicate event into
+a loud failure, but it cannot make a wrong source pass; no duplicate or missing
+record occurred in **50** consecutive class repetitions. The base trace is also
+sound: `main:src/components/CardPalette.tsx` writes
+`JSON.stringify({ cardType })` to `text/plain` in the same handler.
+
+#### M4 remains partially resolved
+
+`bash tools/f5-load-path-sweep.sh` exited 0 and printed the complete nine-site
+production population. Comparing its output with the source and consumers found
+the following contradiction:
+
+- script sections 2–3 do not enumerate entry controls for File > Open or File >
+  Open Recent at all; for the controls they do enumerate, section 3 reports any
+  spec that contains the testid, not necessarily one that clicks it;
+- the sweep table names `tests/e2e/recent-files.spec.ts` as the consumer of
+  `App.handleOpenRecentFile`, but that file tests Save As registration,
+  retargeting, cancellation, and export exclusion. The observed 107-test run
+  showed those four tests and no Open Recent action. No test in the repository
+  drives `menu:open-recent-file` through the renderer subscription;
+  `tests/unit/menu.spec.ts` proves only that the main menu emits the path, not
+  that App receives it and calls `loadDashboard`;
+- the same mention/consumer confusion creates false extra mappings elsewhere:
+  `templates.spec.ts` merely checks that the Sections and Entity Type sibling
+  tiles are visible, and `entity-type-dashboard.spec.ts` merely checks that the
+  Template tile is visible. The real consumers are `view-authoring.spec.ts` for
+  Sections, `templates.spec.ts` for Template, and
+  `entity-type-dashboard.spec.ts` for Entity Type; and
+- therefore `docs/testing/F5_LOAD_PATH_SWEEP.md`'s claim that every one of the
+  nine sites has a named consumer and each was executed is false for
+  `App.handleOpenRecentFile`. The document neither runs that path nor explicitly
+  justifies it by equivalence, which was the correction M4 required.
+
+The blank-path command does return **80** files, and every matched call is a
+`dashboard.createNew` variant whose default or explicit kind is blank. The scope
+limit is legitimate: a Medium sweep need not become the full suite merely
+because the blank creation path is common. Its accounting text is not clean,
+however; see R2-m1.
+
+#### Previously clean behavior and scope
+
+- `git diff 0fcca14..4827082 --stat -- src/` is empty. The fix round changed no
+  product code, and the signed spec is untouched.
+- MUST NOT 1–8 and §7.1, §7.2, §7.3's six target rows, and §7.6 remain clean in
+  source because no source moved. L13 now closes the former MUST NOT 8 proof
+  gap. The 18-file e2e sweep also kept the flat PROPS-06 nesting control,
+  internal section/card drag controls, resizing, selection, undo, and existing
+  authoring paths green.
+- The changed shared gesture helper strengthens L1–L7, L10, L11 and L15 rather
+  than removing a postcondition. L8, L9, L14 and C5 do not call that helper;
+  their bodies remain effective. L3's extra settled `(si, ci)` target is a
+  justified same-class hardening and does not weaken its insert-at-index
+  discriminator.
+- L16 is in scope and needs no §11 amendment. The signed §9.2 expressly
+  contemplates later added/changed legs and requires per-assertion base tracing;
+  L16 supplies that trace while testing the already-governed load reset. Adding
+  coverage does not amend the product contract or the immutable §9.2 table.
+- The two evidence-infrastructure files are justified by M4, although their
+  consumer mapping needs correction. Declining to repair the shared YAML DSL in
+  this proof-only fix was proper scope control; the latent assertions were not
+  needed to make L16 pass.
+- `git diff --name-only main -- '*.png'` returned no path. The visual-spec
+  sections greps also still return no match, so no snapshot or rebaseline moved.
+
+The first self-reported L16 defect is real and fixed in the leg: the production
+YAML `<Modal forceRender>` retains `yaml-editor-modal`, so an absence assertion
+cannot become true on close; the current assertion targets the inner
+`yaml-editor-content` visibility and L16 passed **3/3**. The second self-report
+is only partly cleaned up: the mechanical count is 80, but the new evidence
+document still contains the old number.
+
+### New minor findings
+
+#### R2-m1 — The corrected sweep document still says “all 83,” and the PR understates the blank-path sample
+
+`docs/testing/F5_LOAD_PATH_SWEEP.md` first publishes and explains the corrected
+**80** at lines 108–122, then says at line 131, “What is not claimed: that all
+83 were run.” That is the exact stale hand-built number the round says it fixed.
+The PR body additionally says six of the 80 blank-path specs were in the sweep,
+but the published 18+8 list contains at least eight: the six the document names
+plus `entity-remapping.spec.ts` and `monaco-editor.spec.ts`, both of which call
+blank `dashboard.createNew()`. Correct the contradictory evidence text from the
+mechanical result; do not add another manually maintained summary.
+
+#### R2-m2 — One sibling impossible modal-absence helper remains undisclosed
+
+The fix correctly reports the impossible `toHaveCount(0)` assertions in
+`YamlEditorDSL.close()` and `.apply()`, and neither has a spec caller. The class
+sweep finds the same latent assertion in
+`tests/support/assertions/yaml.ts:expectYamlEditorModalHidden`, which locates
+`yaml-editor-modal` and also expects count 0. It likewise has no caller, so it
+does not invalidate any result above and need not have been repaired in this F5
+commit. It is nevertheless a sibling of the disclosed defect and should be
+included in the disclosure rather than leaving the inventory at two.
+
+### Claim verification and observed commands
+
+- `bash tools/f5-load-path-sweep.sh` — exit 0; nine production call sites; the
+  consumer contradictions above were checked against the named specs and source.
+- Gesture class, 10 enumerated legs, `--repeat-each=5` — **50 passed** in 7.6m.
+- Exact L11 `--repeat-each=5` — **5 passed** in 1.1m.
+- Exact L16 `--repeat-each=3` — **3 passed** in 43.6s.
+- Complete `sections-canvas.spec.ts` — **33 passed** in 4.6m.
+- Medium e2e sweep, 18 specs — **107 passed** in 15.8m.
+- Medium integration sweep, 8 specs — **56 passed / 0 failed / 19 skipped** in
+  9.6m; the skips were exactly the known `dashboard-generator.spec.ts`
+  `describe.skip` group.
+- `./tools/checks` — exit 0 across all four phases: Prettier clean, TypeScript
+  clean, ESLint **0 errors / 145 warnings**, Vitest **1,335 passed across 101
+  files**.
+- Static scope checks — fix-round `src/` diff empty; main and origin/main both
+  `82eb819`; no changed PNG; branch and origin began this round at `4827082`.
+
+### Checked clean and not checked
+
+Checked clean: M1, M2, M3, M5, m1 and m2; the source contract and MUST NOT
+guardrails; all previously unflagged F5 legs and C5; the changed L3 target; L16's
+scope and per-assertion classification; snapshot scope; all published test/gate
+counts other than elapsed-time variation.
+
+Not checked: no live Home Assistant instance was used; the full 307-test e2e and
+235-test integration suites were not run; and I did not execute branch tests
+against base production or attempt to reconstruct the author's uncommitted first
+draft. Base classifications and the force-render failure were instead traced
+through their source paths. PR #137 was confirmed open and unmerged at fix commit
+`4827082`; I did not mark it ready, merge it, change UAT state, edit the signed
+spec, or update `[STATE]`.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"`: file this Round-2 record—M1, M2, M3, M5,
+  m1 and m2 resolved; M4 partially resolved because the nine-site source
+  enumeration falsely maps `recent-files.spec.ts` to `App.handleOpenRecentFile`,
+  leaving that call site unexecuted and unjustified. Include R2-m1's stale
+  83/80 and six/eight accounting contradictions, R2-m2's undisclosed
+  `expectYamlEditorModalHidden` sibling, and the observed 50/5/3/33/107 and
+  56-pass verification results above.
