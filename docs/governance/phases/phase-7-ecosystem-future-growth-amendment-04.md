@@ -3,7 +3,7 @@ Amendment: 04
 Amends: docs/governance/phases/phase-7-ecosystem-future-growth-blueprint.md
 Supersedes-in-part: docs/governance/phases/phase-7-ecosystem-future-growth-amendment-03.md §4
 (the live-HA write envelope is widened to a SECOND, SEPARATE instance; the rule for
-`ha.home.local` is unchanged)
+`<HA_HOST>` is unchanged)
 Date: 2026-08-04
 CURRENT_VERSION: 0.7.5-beta.10
 Governance Mode: HARD MODE++
@@ -35,15 +35,15 @@ comment, a tester-facing document and a memory drawer, and was wrong. Home
 Assistant does not behave the way the finding assumed.
 
 **Resolution, authorised by the project owner (micah / BaggyG-AU) on 2026-08-04:**
-a second, disposable Home Assistant instance — **`ha-test.home.local`
+a second, disposable Home Assistant instance — **`<HA_TEST_HOST>`
 (192.168.1.190:8123)** — is provided, and the agent MAY write to it freely for
 development and agent-run testing. The owner's framing was that it does not
 matter if it breaks.
 
 This amendment does three things:
 
-1. **Adds a writable lane** for `ha-test.home.local`, scoped by hostname.
-2. **Leaves `ha.home.local` exactly as amendment-03 §4 left it** — read-only,
+1. **Adds a writable lane** for `<HA_TEST_HOST>`, scoped by hostname.
+2. **Leaves `<HA_HOST>` exactly as amendment-03 §4 left it** — read-only,
    with the bounded UAT-round temp-dashboard exception and nothing more.
 3. **Unblocks Tier 3** (live round-trip) of
    `docs/testing/LIVE_HA_TEST_CAPABILITY_REQUIREMENTS.md`, which that document
@@ -62,14 +62,14 @@ document's section headings are authoritative.**
 
 ## 1) The boundary — scoped by HOSTNAME, not by "test versus production"
 
-| Instance                                      | Reads | Writes                                                        |
-| --------------------------------------------- | ----- | ------------------------------------------------------------- |
-| **`ha-test.home.local`** (192.168.1.190:8123) | ✅    | ✅ **permitted** — development and agent-run testing          |
-| **`ha.home.local`** (192.168.1.70:8123)       | ✅    | ❌ **forbidden**, except amendment-03 §4's UAT-round envelope |
+| Instance                                  | Reads | Writes                                                        |
+| ----------------------------------------- | ----- | ------------------------------------------------------------- |
+| **`<HA_TEST_HOST>`** (192.168.1.190:8123) | ✅    | ✅ **permitted** — development and agent-run testing          |
+| **`<HA_HOST>`** (<HA_HOST_IP>:8123)       | ✅    | ❌ **forbidden**, except amendment-03 §4's UAT-round envelope |
 
 ⚠ **The risk this clause exists to prevent is not a broken test instance. It is a
 later reader generalising "the agent may write to live Home Assistant" out of this
-amendment.** `ha.home.local` is VPP-enrolled via Amber Electric SmartShift;
+amendment.** `<HA_HOST>` is VPP-enrolled via Amber Electric SmartShift;
 Modbus writes are blocked and Remote EMS cannot be enabled there.
 
 **Therefore: every future statement of this rule must name the host.** "Live HA is
@@ -82,7 +82,7 @@ The test instance's token is stored **outside the repository** at
 instance's token remains where it was, in `~/.claude/settings.json`.
 
 ⭐ **Measured 2026-08-04: the reference instance's token returns HTTP 401 against
-`ha-test.home.local`.** Home Assistant tokens are instance-specific, so the two
+`<HA_TEST_HOST>`.** Home Assistant tokens are instance-specific, so the two
 hosts cannot be confused by an accidental credential swap — **provided each is
 read from its own distinct location.** No single configuration value may ever
 serve both hosts, so that a misconfiguration cannot point a write at production.
@@ -176,14 +176,14 @@ that:
    what the DSL suite is for.
 3. **A live spec must skip cleanly, not fail, when the instance or token is
    absent.** Another machine must be able to run the suite.
-4. **Reads of `ha.home.local` remain always permitted** and remain the right tool
+4. **Reads of `<HA_HOST>` remain always permitted** and remain the right tool
    for enumerating the reference instance.
 
 ---
 
 ## 5) ⚠ What this does NOT change
 
-- It does not relax `ha.home.local` in any way.
+- It does not relax `<HA_HOST>` in any way.
 - It does not make live testing a substitute for UAT. Per the standing pattern, a
   readiness gate answers "do the tests pass?", never "does the product work for a
   human?"
@@ -199,12 +199,12 @@ that:
 
 ## 6) Traceability
 
-| Item           | Value                                                                      |
-| -------------- | -------------------------------------------------------------------------- |
-| Authorised by  | Project owner (micah / BaggyG-AU), 2026-08-04                              |
-| Instance       | `ha-test.home.local` → 192.168.1.190:8123                                  |
-| Credential     | `~/.havdm/ha-test-token` (mode 600), outside the repository                |
-| Amends         | amendment-03 §4 (widened for a second host; unchanged for `ha.home.local`) |
-| Unblocks       | `LIVE_HA_TEST_CAPABILITY_REQUIREMENTS.md` Tier 3; narrows Tier 4           |
-| First use      | `tests/live/ha-deploy-render.spec.ts`                                      |
-| Version impact | **None.** This amendment applies no version bump.                          |
+| Item           | Value                                                                  |
+| -------------- | ---------------------------------------------------------------------- |
+| Authorised by  | Project owner (micah / BaggyG-AU), 2026-08-04                          |
+| Instance       | `<HA_TEST_HOST>` → 192.168.1.190:8123                                  |
+| Credential     | `~/.havdm/ha-test-token` (mode 600), outside the repository            |
+| Amends         | amendment-03 §4 (widened for a second host; unchanged for `<HA_HOST>`) |
+| Unblocks       | `LIVE_HA_TEST_CAPABILITY_REQUIREMENTS.md` Tier 3; narrows Tier 4       |
+| First use      | `tests/live/ha-deploy-render.spec.ts`                                  |
+| Version impact | **None.** This amendment applies no version bump.                      |

@@ -173,7 +173,7 @@ correction addressed to the tester cannot fix an input the tester does not suppl
 
 **What it must contain, derived from the reference instance rather than invented:**
 
-- Only entities that **exist** on `ha.home.local` (725 across 29 domains), with
+- Only entities that **exist** on `<HA_HOST>` (725 across 29 domains), with
   ⚠ **no `light`, `fan`, `vacuum` or `plant` entities — the instance has none of
   those domains**
 - Only HACS cards **actually installed** there — `apexcharts-card`, `button-card`,

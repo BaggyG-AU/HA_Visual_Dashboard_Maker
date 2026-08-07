@@ -81,11 +81,11 @@ read-only-investigate → short-plan sequence and the post-merge routine below).
   standing verification practice, not §5 law.)
 - **UAT role separation:** the owner runs UAT and marks every test; the
   agent never marks a test (`docs/testing/UAT_STRATEGY.md` §2).
-- **Live Home Assistant:** `ha.home.local` is read-only for agent work; the
+- **Live Home Assistant:** `<HA_HOST>` is read-only for agent work; the
   sole exception is the bounded owner-run UAT envelope
   (`docs/testing/UAT_STRATEGY.md` §10, preserved by
   `docs/governance/phases/phase-7-ecosystem-future-growth-amendment-04.md`).
-  `ha-test.home.local` is writable for agent work (same amendment).
+  `<HA_TEST_HOST>` is writable for agent work (same amendment).
 - **Memory and reporting:** `ai_rules.md` §11 memory cadence and §12
   Workflow State block apply to every significant response. Agents without
   MemPalace write access surface drawer-candidate notes in their PR body for

@@ -371,13 +371,13 @@ What changed for HAVDM, and why:
 | `docs/test/uat/`                               | **`docs/testing/uat/`**                                  | `ai_rules.md` §2 — testing docs live under `docs/testing/`.                                       |
 | `docs/prompts/claude/`                         | **`prompts/claude/`**                                    | HAVDM's existing prompt-library convention (`prompts/README.md`).                                 |
 | Creative Director distinct from all agents     | Solo owner is the tester                                 | Role separation is thinner, but §2's rule that the agent never marks a test still holds.          |
-| Live-service testing not applicable            | ⚠ **Bounded temp-dashboard write** to `ha.home.local`    | See §10 — the standing rule is read-only, and UAT holds a narrow, named exception.                |
+| Live-service testing not applicable            | ⚠ **Bounded temp-dashboard write** to `<HA_HOST>`        | See §10 — the standing rule is read-only, and UAT holds a narrow, named exception.                |
 
 ---
 
 ## 10. ⚠ Live Home Assistant policy during UAT
 
-HAVDM's standing rule is that live testing against `ha.home.local` is
+HAVDM's standing rule is that live testing against `<HA_HOST>` is
 **READ-ONLY**, because that instance is VPP-enrolled via Amber Electric
 SmartShift.
 

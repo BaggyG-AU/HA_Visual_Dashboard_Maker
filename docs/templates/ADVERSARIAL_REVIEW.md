@@ -21,7 +21,7 @@ nothing on its own.
 under review\>
 
 **Reviewer write-restrictions (acknowledged):** no `[STATE]` drawer update;
-no UAT card marked or re-scored; no `src/` change; no merge; `ha.home.local`
+no UAT card marked or re-scored; no `src/` change; no merge; `<HA_HOST>`
 read-only. Proposed changes go in this document, nowhere else.
 
 ## 0. Working practice this review is held to

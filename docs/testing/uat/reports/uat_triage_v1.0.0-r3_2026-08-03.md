@@ -139,7 +139,7 @@ files** — `C:\dev\homeassistant2\dashboards\uat_dashboard3.yaml` and
 
 Measured against the reference instance, those files reference:
 
-- `custom:gauge-card-pro` — **not installed** on `ha.home.local` (the instance's
+- `custom:gauge-card-pro` — **not installed** on `<HA_HOST>` (the instance's
   11 Lovelace resources do not include it)
 - `sensor.example_temperature` — **does not exist**
 - `input_boolean.toggle` (HA-04's detected missing entity) — **does not exist**,
@@ -370,7 +370,7 @@ resolver logic is already covered and already correct.
 The persisted `selectedTheme` is **`"Mushroom Shadow"`**, which is a **Home
 Assistant instance theme, not a HAVDM built-in.** Measured at both ends:
 
-- `frontend/get_themes` on `ha.home.local` returns 5 themes: `Material You`,
+- `frontend/get_themes` on `<HA_HOST>` returns 5 themes: `Material You`,
   `Mushroom`, **`Mushroom Shadow`**, `Mushroom Square`, `Mushroom Square Shadow`
 - `BUILT_IN_THEMES` (`src/features/theme-manager/builtInThemes.ts:142`) holds
   exactly four: `HAVDM Default`, `HAVDM Midnight`, `HAVDM Solar`,
@@ -440,7 +440,7 @@ record: *entities cards cannot host the row types as children*.
 screenshot shows every value as `unknown` / `--`. Those entities exist and carry
 real states on the instance:
 
-| Entity                                | Actual state on `ha.home.local`             |
+| Entity                                | Actual state on `<HA_HOST>`             |
 | ------------------------------------- | ------------------------------------------- |
 | `sensor.mckenzie_hill_extended_text_0` | `"Partly cloudy. Medium chance of showers…"` |
 | `sensor.mckenzie_hill_temp_max_0`      | `"12"`                                      |
@@ -729,7 +729,7 @@ These are recorded, not decided. §2 reserves all of them.
    proposed** — raised only because the severity may understate it.
 2. **THEME-03's blank skip reason and THEME-04's untested state** breach §3.1
    criterion 5. Both need either a reason or a verdict before round 4 closes.
-3. **Whether the live-HA test tier may write to `ha.home.local`.** Amendment-03
+3. **Whether the live-HA test tier may write to `<HA_HOST>`.** Amendment-03
    §4 scopes the write exception to **UAT rounds, not development**. The proposed
    tier needs that widened, and it is the owner's to grant. See the requirements
    document.
@@ -743,7 +743,7 @@ These are recorded, not decided. §2 reserves all of them.
 - **No GitHub Issues** (§3.5).
 - **Round 1, 2 and 3 plans and session JSONs unedited.** The round-3 export was
   filed byte-identical (`cmp`) and committed non-executable.
-- **Live `ha.home.local` read-only throughout** — `GET /api/states`,
+- **Live `<HA_HOST>` read-only throughout** — `GET /api/states`,
   `lovelace/resources`, `lovelace/dashboards/list`, `lovelace/config`,
   `config/entity_registry/list`, `frontend/get_themes`. Nothing written.
 - The tester's `config.json` and dashboard YAML files were **read, never

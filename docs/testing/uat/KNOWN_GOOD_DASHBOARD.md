@@ -60,7 +60,7 @@ exercised on purpose.
 `heading` card: battery gauge and solar tile in the first, EV battery tile and a
 renewables gauge in the second.
 
-Every entity was enumerated read-only from `ha.home.local` on **2026-08-04** and
+Every entity was enumerated read-only from `<HA_HOST>` on **2026-08-04** and
 had a real state at the time. Every card type is either Home Assistant native or
 one of the 24 elements resolved in the capability profile. There are no
 `custom:grid-layout` views — layout-card is not installed on the instance.
@@ -135,7 +135,7 @@ npx vitest run tests/unit/uat-known-good-dashboard.spec.ts
 ```
 
 ⚠ `instance-manifest.json` is a **read-only capture of a live instance** and is
-regenerated separately, by enumerating `ha.home.local` again. The instance
+regenerated separately, by enumerating `<HA_HOST>` again. The instance
 drifts: between 2026-08-03 and 2026-08-04 it went from 725 entities across 29
 domains to **877 across 30**, and gained the `select` and `text` domains. Re-enumerate
 before trusting any count from a previous round.

@@ -7,6 +7,25 @@
 
 ---
 
+## Host placeholders (repo-wide convention)
+
+This repository is public, so the maintainer's own network details are not
+recorded in it. Documentation uses placeholders; substitute your own values.
+
+| Placeholder      | Meaning                                                                   |
+| ---------------- | ------------------------------------------------------------------------- |
+| `<HA_HOST>`      | Hostname of the live Home Assistant instance used for UAT                 |
+| `<HA_HOST_IP>`   | Its LAN IP, where a hostname fails to resolve                             |
+| `<HA_TEST_HOST>` | The separate **writable** test instance (agent-writable per amendment-04) |
+| `<user>`         | Your OS account name in a filesystem path                                 |
+
+The real values live in the app's own connection settings and in the
+maintainer's gitignored local config — never in a committed document. Historical
+review records and verbatim tester remarks are exempt: they are evidence of what
+someone actually said or ran, and are not rewritten.
+
+---
+
 ## The ask
 
 > "I want you to do a deep dive on how we might be able to test the things that
@@ -31,7 +50,7 @@ recurring UAT defect lives in one of them.
 
 ### Blind spot A — nothing connects to a real Home Assistant
 
-**Measured:** no test in `tests/` opens a connection to `ha.home.local`. The
+**Measured:** no test in `tests/` opens a connection to `<HA_HOST>`. The
 handful of files mentioning it do so in **comments recording where a fixture came
 from**, not in live calls. Every HA interaction is a `FakeSocket`, a `vi.mock`, or
 a captured fixture.
@@ -138,7 +157,7 @@ profile fixture and a re-launch helper.
 
 **No live HA at run time. One read-only capture, committed as a fixture.**
 
-**Requirement.** Capture real dashboard configs from `ha.home.local` **once**,
+**Requirement.** Capture real dashboard configs from `<HA_HOST>` **once**,
 read-only, commit them under `tests/fixtures/`, and drive them through HAVDM's
 real load and export paths.
 
@@ -170,10 +189,10 @@ and the instance's HA version alongside it.
 
 > ⭐⭐ **STATUS UPDATE — THE BLOCKER BELOW HAS BEEN RESOLVED, AND NOT THE WAY THIS
 > SECTION ANTICIPATED.** The owner did not widen amendment-03 §4 for
-> `ha.home.local`. Instead, on 2026-08-04 they provided a **second, disposable
-> instance — `ha-test.home.local`** — and authorised agent writes to it, by
+> `<HA_HOST>`. Instead, on 2026-08-04 they provided a **second, disposable
+> instance — `<HA_TEST_HOST>`** — and authorised agent writes to it, by
 > `docs/governance/phases/phase-7-ecosystem-future-growth-amendment-04.md`.
-> **`ha.home.local` remains read-only, exactly as §4 left it.**
+> **`<HA_HOST>` remains read-only, exactly as §4 left it.**
 >
 > Built and passing: `tests/live/ha-deploy-render.spec.ts`, in an opt-in
 > `live-ha` Playwright project that runs in neither `./tools/checks` nor a
@@ -205,7 +224,7 @@ decision is not the agent's to make and is not assumed here.**
 Forbidden regardless of any widening, per §4: any production dashboard;
 `haWsSaveDashboardConfig` against an existing user dashboard; **any
 Modbus/inverter/VPP/Remote-EMS surface**; any automation, script or helper
-mutation. ⚠ `ha.home.local` is VPP-enrolled via Amber Electric SmartShift.
+mutation. ⚠ `<HA_HOST>` is VPP-enrolled via Amber Electric SmartShift.
 
 ### Requirements, if granted
 
@@ -325,9 +344,9 @@ footing would bake that in.
 
 1. ✅ **RESOLVED 2026-08-04 — does amendment-03 §4's write exception extend to an
    automated test tier?** Answered by **amendment-04**, and answered better than
-   this question framed it: rather than widening §4 for `ha.home.local`, the
-   owner supplied a **separate disposable instance** (`ha-test.home.local`) and
-   authorised writes there. `ha.home.local` is untouched. ⭐ The lesson worth
+   this question framed it: rather than widening §4 for `<HA_HOST>`, the
+   owner supplied a **separate disposable instance** (`<HA_TEST_HOST>`) and
+   authorised writes there. `<HA_HOST>` is untouched. ⭐ The lesson worth
    keeping is that the question assumed the only lever was loosening the rule on
    production; a second instance was the better answer and did not require
    loosening anything.

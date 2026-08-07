@@ -73,7 +73,7 @@ judge.
 ### ⭐ Connect to Home Assistant FIRST — round-2 change
 
 **Before running any group, connect to your Home Assistant instance once**
-(**Settings → Home Assistant → Connect**, `ha.home.local` or `192.168.1.70`),
+(**Settings → Home Assistant → Connect**, `<HA_HOST>` or `<HA_HOST_IP>`),
 let the entity list load, and then carry on. You may disconnect afterwards.
 
 ⚠ **This is a round-2 correction, and it comes from round 1's own evidence.**
@@ -96,13 +96,13 @@ fresh profile for it.
   one. If git genuinely is absent, VCS-01 still has a correct answer — the panel
   should say so plainly instead of erroring, and slice E treats git-absent as a
   first-class state. Note which situation you are in.
-- **Group 11 needs `ha.home.local` to resolve from Windows.** If it does not,
-  use the IP `192.168.1.70` in the connection dialog instead. A hostname that
+- **Group 11 needs `<HA_HOST>` to resolve from Windows.** If it does not,
+  use the IP `<HA_HOST_IP>` in the connection dialog instead. A hostname that
   will not resolve is a network fact about your machine, not a HAVDM defect.
 
 ### ⚠ Live Home Assistant rules — read before Group 11
 
-`ha.home.local` is VPP-enrolled via Amber Electric SmartShift. Amendment-03 §4
+`<HA_HOST>` is VPP-enrolled via Amber Electric SmartShift. Amendment-03 §4
 grants UAT one bounded exception and nothing wider:
 
 - **Permitted** — a HAVDM **temporary** dashboard (Live Preview creates it, Close
@@ -1989,7 +1989,7 @@ the containment checks and the revision validation — most of it by asserting
 ### Group 11 — ⚠ Live Home Assistant
 
 ⚠⚠ **Read the live-HA rules at the top of this plan before starting this group.**
-`ha.home.local` is VPP-enrolled. The last two cards — **HA-08** and **HA-09** —
+`<HA_HOST>` is VPP-enrolled. The last two cards — **HA-08** and **HA-09** —
 each name a button you must **not** press, and each carries teardown as a
 numbered step. They run last deliberately, so the round ends with the instance
 back the way it started. The matrix will not let you generate the summary report
@@ -2001,12 +2001,12 @@ without it.
 
 #### HA-01: Connect to Home Assistant
 
-| Field          | Value                                                                                                             |
-| -------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Type           | interaction                                                                                                       |
-| Auto covered   | Y (`tests/e2e/ha-connection.spec.ts`)                                                                             |
-| Needs HA       | **Yes**                                                                                                           |
-| Pre-conditions | HA URL and a long-lived access token to hand. Use `192.168.1.70` if `ha.home.local` does not resolve from Windows |
+| Field          | Value                                                                                                         |
+| -------------- | ------------------------------------------------------------------------------------------------------------- |
+| Type           | interaction                                                                                                   |
+| Auto covered   | Y (`tests/e2e/ha-connection.spec.ts`)                                                                         |
+| Needs HA       | **Yes**                                                                                                       |
+| Pre-conditions | HA URL and a long-lived access token to hand. Use `<HA_HOST_IP>` if `<HA_HOST>` does not resolve from Windows |
 
 **Automated coverage confirms:**
 `tests/e2e/ha-connection.spec.ts` drives the connection dialog against a mock.
