@@ -1703,9 +1703,19 @@ views:
       // `tests/support/dsl/presetMarketplace.ts:16-19` tells callers to use
       // `.ant-modal-wrap` instead). So the defect is not "two or three bad
       // assertions" but "this testid is the wrong node to assert on at all".
-      // ⓘ None of it has ever run: no spec calls any of those three, and no spec
-      // imports `tests/support/assertions/yaml.ts` at all. Nothing above
-      // invalidates any published result.
+      // ⓘ None of it has ever run — but state that precisely, because a looser
+      // version of this sentence was itself a finding. The module IS reachable:
+      // `tests/support/index.ts:66` re-exports it as `yamlAssertions` and 103
+      // specs import that barrel. What is true is narrower and is what matters:
+      // NO SPEC CALLS any of those helpers —
+      //     grep -rnE 'yamlAssertions\.|expectYamlEditorModal[A-Za-z]*\(' \
+      //       tests/e2e tests/integration --include=*.spec.ts \
+      //       | grep -vE ':[0-9]+: *(//|\*)'
+      // returns nothing — the comment filter matters, or this very block is a
+      // hit. So the broken assertions ran in no published result.
+      // ⚠ "No spec imports it" was an unverified universal reached by grepping
+      // the file path instead of the barrel that re-exports it — the same
+      // proxy-for-the-real-question error this PR keeps paying for.
       // Reported, NOT fixed here — repairing shared DSL is outside this finding,
       // and over-reach is the other half of the fix-round failure mode.
       await expect(window.getByTestId('yaml-editor-content').first()).toBeHidden({

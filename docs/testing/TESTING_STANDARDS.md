@@ -810,49 +810,50 @@ If the user asks for a gate by name (`fast gate`, `medium gate`, `slow gate`), r
 5. **Flake stabilization claims**:
    - Must satisfy Rule 18 (targeted run + 5x loop + full-suite pass).
 
-#### Reviewer Re-Run Scope (MANDATORY for independent reviews)
+#### Reviewer Re-Run Scope (PROVISIONAL GUIDANCE — not a rule, and not binding)
 
-An independent reviewer re-running the author's entire gate is mostly waste. This
-split is **measured**, from the two review rounds on PR #137:
+⚠⚠ **STATUS: PROVISIONAL. This binds nobody.** It is a heuristic drawn from **two
+review rounds on one PR (#137)** — too little to establish a general rule, and
+deliberately written without "MUST" or "MANDATORY" after an independent review
+found an earlier draft self-contradictory: it read as a mandatory reviewer rule
+while claiming not to amend reviewer governance. Both could not be true.
+**Anything binding on reviewers belongs in `docs/governance/OPERATING_AGREEMENT.md`
+§3 and needs its own PR and independent review under §3(b).**
 
-| Round   | What re-running found                                                                                                                                                                                                                                           |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Round 1 | The F5 spec re-run returned **31 passed / 1 failed** against the author's reported 32/32, and a `--repeat-each=5` on the failing leg reproduced a wrong-card defect. **That single ~5-minute re-run is why the fix round existed.**                             |
-| Round 2 | Every re-run returned the author's number unchanged. **All three round-2 findings came from reading and grepping — none from running.** The 15.8 m e2e sweep and 9.6 m integration sweep produced identical numbers in both rounds and found nothing in either. |
+What was measured, on PR #137:
 
-**The reviewer MUST re-run:**
+| Round   | What re-running found                                                                                                                                                                                                            |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Round 1 | The reviewer's re-run of the load-bearing spec returned **31 passed / 1 failed** against the author's reported 32/32, and a deeper repeat reproduced a wrong-card defect. **That one ~5-minute run is why a fix round existed.** |
+| Round 2 | Every re-run returned the author's number unchanged, and **all three round-2 findings came from reading and grepping.** The two MEDIUM sweeps produced identical numbers in both rounds.                                         |
 
-1. **The single load-bearing spec** — the one the change is about. This is where
-   a disagreement actually shows up.
-2. **A _deeper_ repeat than the author published** on the flakiest mechanism
-   (e.g. `--repeat-each=5` where the author ran 3). This is escalation, not
-   duplication, and it is the reviewer's highest-yield test action.
-3. **`./tools/checks`** — the gate, and the cheapest way to catch a lint, type or
-   unit regression.
+Suggested emphasis for a reviewer's finite time:
 
-**The reviewer re-runs the MEDIUM sweeps BY EXCEPTION ONLY**, justified in
-writing. Default to accepting the author's counts plus the published command.
+1. **Re-run the load-bearing spec** — where a disagreement actually surfaces.
+2. **Go deeper than the author did** on the flakiest mechanism (e.g. a larger
+   `--repeat-each`). Escalation finds things duplication cannot.
+3. **Run `./tools/checks`** — cheap, and it catches lint/type/unit regressions.
+4. **Spend the remaining time tracing coverage claims, not re-running green
+   suites.** Apply the `auto_covered` audit recipe to the _author's own_ coverage
+   claims: open each named consumer spec, follow the DSL method, and check which
+   control it actually **drives** and whether that action **terminates** in the
+   behaviour claimed. On PR #137 every finding after round 1 came from doing
+   exactly this, and none from re-running.
 
-> ⚠⚠ **THE TEMPTING EXCEPTION IS THE ONE THAT PROVES THE RULE.** "The author
-> changed the sweep's membership" looks like grounds to re-run it. On PR #137 the
-> membership _was_ changed, it _was_ re-run, and the re-run still could not test
-> it — **the sweep's defect was in its membership, and only reading the list
-> found it.** A green sweep cannot support a path it never invokes.
+⚠⚠⚠ **A RE-RUN NOT PERFORMED LEAVES THE RESULT UNVERIFIED — SAY "UNVERIFIED",
+NEVER "ACCEPTED".** An earlier draft told reviewers to default to "accepting the
+author's counts". That is exactly wrong: it converts an explicit evidence
+boundary into apparent independent verification, and hands an author language to
+hide behind. A reviewer who does not re-run a suite has not checked it, and the
+review must say so in its "not checked" section.
 
-**Author side:** run the flake-prone repeat at the depth the reviewer will use,
-and run a brand-new leg in isolation before folding it into a full-spec run.
+> ⚠ **One caution worth keeping.** On PR #137 the sweep's _membership_ was
+> changed, the sweep _was_ re-run, and the re-run still could not test it — the
+> defect was in which specs the list contained, and only **reading** the list
+> found it. A green suite cannot support a path it never invokes.
 
-⭐ **The higher-yield reviewer activity is static.** Apply the `auto_covered`
-audit recipe to the author's own coverage claims, not just to the product's: open
-each named consumer spec, follow the DSL method, and check which control it
-actually **drives**. Round 2's blocking finding was exactly that — a spec named as
-a consumer that never invoked the handler.
-
-ⓘ This subsection binds **test practice**. It deliberately does not amend
-`docs/governance/OPERATING_AGREEMENT.md` §3, which would be a substantive
-governance change under §3(b) and needs its own PR and independent review. If the
-owner wants the split to bind reviewers as governance, ride it on the already-owed
-governance PR.
+**Author side:** run the flake-prone repeat at the depth a reviewer is likely to
+use, and run a brand-new leg in isolation before folding it into a full-spec run.
 
 #### Command Request Shortcuts (for user prompts)
 

@@ -50,114 +50,83 @@ list for contrast.
 
 ## The population — every production `loadDashboard` call site
 
-Nine call sites, from section 1 of the script. `src/App.tsx:2203` is the test
-backdoor (`__dashboardTestApi.loadYaml`); the other eight are user-reachable.
+Section 1 of the script is **fully mechanical** and has been correct in every
+review round. `src/App.tsx:2203` is the test backdoor
+(`__dashboardTestApi.loadYaml`); the other eight are user-reachable.
 
-⚠⚠ **THE "DRIVER" COLUMN IS THE ONE THAT MATTERS, AND THE FIRST VERSION OF THIS
-TABLE GOT IT WRONG.** Round 2 of the independent review found that it named
-consumers that merely _mention_ a control's testid, not ones that _act_ on it —
-`recent-files.spec.ts` was credited with the Open Recent path it never invokes,
-and `templates.spec.ts` was credited with the entity-type path where it only
-asserts a sibling tile is visible. **That is the round-1 finding repeated one
-level up: searching test-file spelling instead of behaviour.** Section 3 of the
-script now reports only lines that ACT on a control (`.click()`, `.fill()`,
-`.press()`, `.dispatchEvent()`, `webContents.send()`, …), and this table is
-regenerated from that output.
+## The consumer mapping is a HAND TRACE, not a generated result
 
-| #   | Call site          | Handler                       | User flow                             | Control that reaches it                      | Driver — a line that ACTS on that control                                                                                            |
-| --- | ------------------ | ----------------------------- | ------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | `src/App.tsx:620`  | `handleOpenFile`              | File > Open                           | `toolbar-open-file`                          | `tests/integration/file-open-unsaved-guard.spec.ts:106`                                                                              |
-| 2   | `src/App.tsx:665`  | `handleOpenRecentFile`        | File > Open Recent                    | `menu:open-recent-file`                      | `tests/e2e/sections-canvas.spec.ts` leg **L17** — **added this round; nothing drove it before**                                      |
-| 3   | `src/App.tsx:1943` | `createNewSectionsDashboard`  | New Dashboard > Sections              | `new-dashboard-sections-option`              | `tests/e2e/view-authoring.spec.ts:75`                                                                                                |
-| 4   | `src/App.tsx:2203` | `__dashboardTestApi.loadYaml` | test backdoor                         | n/a (test API)                               | `tests/e2e/sections-canvas.spec.ts` and many others                                                                                  |
-| 5   | `src/App.tsx:2299` | `handleDashboardDownload`     | Preset import / HA dashboard download | `preset-marketplace-import`                  | `tests/support/dsl/presetMarketplace.ts:44` → `tests/e2e/preset-marketplace.spec.ts`, `tests/integration/preset-marketplace.spec.ts` |
-| 6   | `src/App.tsx:2346` | `createNewDashboard`          | New Dashboard > Blank                 | `new-dashboard-blank-option`                 | `tests/e2e/entity-type-dashboard.spec.ts:60`, and `dashboardDSL.createNew()` — see below                                             |
-| 7   | `src/App.tsx:2377` | `handleTemplateSelected`      | New Dashboard > Template              | `new-dashboard-template-option`              | `tests/support/dsl/templates.ts:29` → `tests/e2e/templates.spec.ts`                                                                  |
-| 8   | `src/App.tsx:2412` | `handleCreateFromEntityType`  | New Dashboard > Entity type           | `new-dashboard-entity-type-option`           | `tests/e2e/entity-type-dashboard.spec.ts:196` (and nine further cases)                                                               |
-| 9   | `src/App.tsx:2445` | `handleApplyYamlChanges`      | Dashboard YAML Apply (`mode: 'edit'`) | `yaml-apply-button` + the Apply confirmation | `tests/e2e/sections-canvas.spec.ts` leg **L16** — **added this round; nothing crossed the confirm before**                           |
+⚠⚠⚠ **THIS DOCUMENT SPENT THREE REVIEW ROUNDS TRYING TO GENERATE THIS TABLE, AND
+FAILED THREE TIMES IN THE SAME WAY.**
 
-⚠ The `tests/` paths above are the sole inventory. There is deliberately **no
-summary count** of consumers or files added: a count that summarises a table is a
-second source of truth about the table and drifts the moment a row changes. This
-document has already paid for that lesson twice — see "the blank path" below.
+| Round | What was published as the mapping                    | Why it was wrong                                                                                               |
+| ----- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 1     | files containing a `loadDashboard`-ish **token**     | a spec that clicks a template tile never spells the word                                                       |
+| 2     | files containing a control **testid**                | **a mention is not a drive** — asserting a tile is _visible_ was credited as driving the path behind it        |
+| 3     | an action within **three lines** of a control testid | dropped a real driver whose `.click()` sat four lines away; credited entry-tile clicks that only open a wizard |
 
-### Two routes that are mentioned but never driven
+⭐⭐⭐ **EACH FIX REPLACED ONE TEXTUAL PROXY FOR REACHABILITY WITH A SLIGHTLY
+BETTER TEXTUAL PROXY.** Whether executing a spec causes a particular line of
+production code to run is a **control-flow property**. It is not lexical, no
+grep can decide it, and widening the window only moves the proxy. The generator
+of the defect was not any one command — it was **the attempt to derive a
+judgement mechanically and publish it wearing mechanical authority.**
 
-Regenerate with `bash tools/f5-load-path-sweep.sh` and read section 3:
+**So the table below is traced by hand, row by row, and labelled as such.** Each
+row names the **terminal** action — the one that actually reaches the call site —
+and, where the chain passes through intermediate steps, says so. The script lists
+_candidates_ and stops; it no longer answers this question.
 
-- **`menu:open-file`** — the File menu's Open item. The same handler is reached by
-  `toolbar-open-file`, which **is** driven (row 1), so the call site is covered;
-  the menu route specifically is not. Not a gap in `loadDashboard` coverage.
-- **The HA-download route into row 5.** `handleDashboardDownload` is reached both
-  by importing a marketplace preset (driven, row 5) and by downloading a real
-  dashboard from a live Home Assistant instance (**not driven** — it needs a live
-  instance, which F5 does not require and this sweep does not use).
+| #   | Call site          | Handler                       | Terminal driver (traced)                                                                                                                                                                        |
+| --- | ------------------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `src/App.tsx:620`  | `handleOpenFile`              | `tests/integration/dashboard-load-honesty.spec.ts:85` — `button.click()` on `welcome-open-local-file` / `toolbar-open-file` after a stubbed chooser; also `file-open-unsaved-guard.spec.ts:106` |
+| 2   | `src/App.tsx:665`  | `handleOpenRecentFile`        | `tests/e2e/sections-canvas.spec.ts` leg **L17** — sends `menu:open-recent-file` into the production renderer subscription (`src/App.tsx:2838-2847`)                                             |
+| 3   | `src/App.tsx:1943` | `createNewSectionsDashboard`  | `tests/e2e/view-authoring.spec.ts:75` — clicks `new-dashboard-sections-option`, which is wired directly to the handler (single step)                                                            |
+| 4   | `src/App.tsx:2203` | `__dashboardTestApi.loadYaml` | the `loadYaml` helper throughout `tests/e2e/sections-canvas.spec.ts` — direct test-API call (single step)                                                                                       |
+| 5   | `src/App.tsx:2299` | `handleDashboardDownload`     | `presetMarketplace.importSelected()` (`tests/support/dsl/presetMarketplace.ts:44`) → `onPresetImport` → `onDashboardDownload`. **Two hops**; the preset-import route, not the HA-download route |
+| 6   | `src/App.tsx:2346` | `createNewDashboard`          | `tests/e2e/entity-type-dashboard.spec.ts:60` clicks `new-dashboard-blank-option`; also every `dashboardDSL.createNew()` default-kind call                                                       |
+| 7   | `src/App.tsx:2377` | `handleTemplateSelected`      | `tests/e2e/templates.spec.ts:107` → `chooseTemplate()` → `tile.click()` (`tests/support/dsl/templates.ts:155`). ⚠ **NOT** `templates.ts:29` — that click only opens the chooser                 |
+| 8   | `src/App.tsx:2412` | `handleCreateFromEntityType`  | `tests/e2e/entity-type-dashboard.spec.ts:246-264` — category tile **then** the _Create Dashboard_ button. ⚠ **NOT** `:196`, which clicks the entry tile and only asserts the wizard rendered    |
+| 9   | `src/App.tsx:2445` | `handleApplyYamlChanges`      | `tests/e2e/sections-canvas.spec.ts` leg **L16** — Apply **and** its confirmation                                                                                                                |
 
-Naming these explicitly is the point: an honest mapping says which route was
-exercised, not merely which handler.
+⚠ Rows 7 and 8 are the ones the generated mappings got wrong, in both prior
+rounds and in opposite directions. They are the reason this table is hand-traced.
 
-### The `mode: 'edit'` path had no consumer at all
+### Two routes deliberately not exercised
 
-`handleApplyYamlChanges` is reached only from the OK handler of the Apply
-confirmation dialog (`YamlEditorDialog.handleConfirmApply`). Measured:
+- **`menu:open-file`** — the File menu's Open item. The same handler is driven
+  via the toolbar (row 1), so this is a **route** gap, not a call-site gap.
+- **The live-HA download route into row 5.** It shares `handleDashboardDownload`
+  with the exercised preset-import route and needs a live Home Assistant
+  instance, which F5 does not require.
 
-```bash
-grep -rn "Apply & Reload" tests/          # before this PR: no match anywhere
-```
+### `mode: 'edit'` and Open Recent each had no consumer at all
 
-Every existing Apply test stops at the confirmation boundary — including
-`tests/integration/monaco-editor.spec.ts:182-200`, which asserts the dialog
-appears and goes no further — so the one branch of `loadDashboard` whose `set` is
-_partly conditional on mode_ was never exercised end to end by any test in the
-repository. Leg **L16** now crosses it.
-
-### Open Recent had no consumer either
-
-Measured before leg L17 was written:
+Measured before legs L16 and L17 were written:
 
 ```bash
+grep -rn "Apply & Reload" tests/                                     # -> no match
 grep -rln "open-recent\|openRecentFile" tests/e2e tests/integration   # -> no match
 ```
 
+Every existing Apply test stopped at the confirmation boundary, and
 `tests/e2e/recent-files.spec.ts` tests Save As registration, retargeting,
-cancellation and export exclusion — it never opens a recent file, and crediting
-it with this path was the round-2 finding. `tests/unit/menu.spec.ts` proves the
-main process _emits_ the path, not that the renderer receives it and loads.
-**Leg L17 drives `menu:open-recent-file` into the real renderer subscription
-(`src/App.tsx:2838-2847`), so everything after the OS menu itself is production
-code.**
+cancellation and export exclusion — it never opens a recent file.
 
-### The blank path, and what is honestly claimed about it
+### The blank path
 
 `createNewDashboard` (`src/App.tsx:2346`) is reached by `dashboardDSL.createNew()`,
-whose default kind is `blank` (`tests/support/dsl/dashboard.ts:73`):
+whose default kind is `blank` (`tests/support/dsl/dashboard.ts:73`). Which specs
+call it, and how many, is a question for the command — **not for a number quoted
+here**, which is how this document published a stale count twice:
 
 ```bash
-grep -rl "\.createNew(" tests/e2e tests/integration --include=*.spec.ts | sort | wc -l
+grep -rl "\.createNew(" tests/e2e tests/integration --include=*.spec.ts | sort
 ```
 
-So the population for this one call site is, in practice, most of the suite —
-exactly what §9.7 predicted, and what makes a bounded "Medium" sweep a judgement
-rather than an enumeration.
-
-⚠⚠ **THIS PARAGRAPH HAS NOW BEEN WRONG TWICE, AND THE FIX IS TO STOP WRITING THE
-NUMBER.** It first said 83, read off a listing rather than counted. It was then
-corrected to 80 in one place while a stale "all 83" survived in another — a
-second source of truth about the same command, drifting exactly as predicted.
-**Run the command; do not quote its output here.** Which specs inside the sweep
-exercise the blank path is likewise a question for the command, not for a
-maintained list:
-
-```bash
-comm -12 \
-  <(grep -rl "\.createNew(" tests/e2e tests/integration --include=*.spec.ts | sort) \
-  <(printf '%s\n' <the 26 swept spec paths> | sort)
-```
-
-**What is claimed:** the blank path is exercised by specs inside the executed
-sweep, enumerable with the command above. **What is not claimed:** that every
-spec reaching it was run. The full e2e and integration suites remain unverified
-since PR #128, and this PR does not change that.
+**What is claimed:** specs inside the executed sweep exercise the blank path.
+**What is not claimed:** that every spec reaching it was run. The full e2e and
+integration suites remain unverified since PR #128.
 
 ## What is actually claimed, and what is not
 
