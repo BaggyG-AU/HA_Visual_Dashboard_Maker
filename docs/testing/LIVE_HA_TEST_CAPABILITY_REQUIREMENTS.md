@@ -52,13 +52,36 @@ not belong in a documentation pass. **Tracked as follow-up work, not done here.*
 Provenance comments in source (`// verified against <host> on <date>`) are left
 alongside them so a comment never contradicts the constant beside it.
 
-Re-enumerate the whole class at any time with:
+Re-enumerate the candidate set at any time. These commands return **candidates
+for triage**, not a list of defects: every hit belongs to exactly one of the
+four classes above, and deciding which is a judgement the reader makes. A hit is
+not a leak — `/home/u/config` in a unit test is already anonymous, and
+`ConnectionDialog.tsx`'s example addresses are invented.
 
 ```bash
-git grep -hoIE "\b(192\.168|10\.[0-9]+|172\.(1[6-9]|2[0-9]|3[01]))\.[0-9]+\.[0-9]+\b" -- .
-git grep -hoIE "\b[a-z0-9-]+\.home\.local\b" -- .
-git grep -hoIE "Users[/\\\\][A-Za-z0-9_.-]+" -- .
+# the values themselves
+git grep -hoIE '\b(192\.168|10\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01]))\.[0-9]{1,3}\.[0-9]{1,3}\b' -- .
+git grep -hoIE '\b[a-z0-9-]+\.home\.local\b' -- .
+git grep -hoIE '([A-Za-z]:)?[/\]+Users[/\]+[A-Za-z0-9_.-]+|/home/[A-Za-z0-9_.-]+' -- .
+
+# the same class as the file list the four classes get applied to
+git grep -lIE '\b(192\.168|10\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01]))\.[0-9]{1,3}\.[0-9]{1,3}\b|\b[a-z0-9-]+\.home\.local\b|([A-Za-z]:)?[/\]+Users[/\]+[A-Za-z0-9_.-]+|/home/[A-Za-z0-9_.-]+' -- . | sort
 ```
+
+⚠ **Three properties of the user-path pattern are load-bearing, and each was
+established by running the command and diffing its output — not by reading it.**
+It matches **one or more** separators (`[/\]+`) because a Windows path inside a
+JSON string carries doubled backslashes (`c:\\Users\\…`), and a
+single-separator pattern skips those files in silence. It covers the POSIX
+`/home/<user>` form as well as `…/Users/<user>`, because the tester is on
+Windows while every automated test runs on Linux. And the commands are
+**single-quoted**: under double quotes the shell consumes a backslash level and
+the character class stops matching what it appears to.
+
+⚠ **Before trusting any narrowing of this pattern, diff the new output against
+the old in _both_ directions.** A published command replaces a hand-built
+list's failure mode with its own — the pattern silently not being the class —
+and only a two-way diff catches that.
 
 ---
 
