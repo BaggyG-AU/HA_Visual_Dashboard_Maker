@@ -573,3 +573,230 @@ spec, or update `[STATE]`.
   83/80 and six/eight accounting contradictions, R2-m2's undisclosed
   `expectYamlEditorModalHidden` sibling, and the observed 50/5/3/33/107 and
   56-pass verification results above.
+
+## Round 3
+
+| Finding                                        | Disposition            | Round-3 judgment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M4 — load-path consumer mapping                | **PARTIALLY RESOLVED** | L17 closes the previously uncovered Open Recent call site and passed **10/10** at twice the author's repeat depth. The nine source call sites are still enumerated correctly. The new `-A3` mapper is not a valid source-to-consumer proof, however: it silently drops real drivers and credits intermediate actions that do not reach the listed `loadDashboard` call.                                                                                                                            |
+| R2-m1 — duplicated blank-path counts           | **PARTIALLY RESOLVED** | The live counts are removed from `F5_LOAD_PATH_SWEEP.md`, and its 83→80 text is clearly historical. The live PR body still says both that “all 80” were not run and that six swept specs exercise the path, while its Round-3 table says both counts were deleted. The document's replacement `comm` recipe also contains a literal `<the 26 swept spec paths>` placeholder, so it does not regenerate the asserted intersection as published.                                                     |
+| R2-m2 — impossible YAML-modal helper inventory | **PARTIALLY RESOLVED** | The defect class is now complete: three impossible absence assertions and the opposite-direction visibility assertion all target the wrong outer modal node. No spec calls those broken helpers, so no result is invalidated and leaving the shared helper repair out of F5 remains correct scope control. The further universal “no spec imports `tests/support/assertions/yaml.ts` at all” is false: `tests/support/index.ts:66` re-exports it and 103 e2e/integration specs import that barrel. |
+
+### Regression sweep over the six closed findings
+
+M1, M2, M3, M5, m1 and m2 remain clean. Commit `0ceeac8` changes none of their
+test bodies: the only behavioral addition to `sections-canvas.spec.ts` is L17,
+plus three Node imports and an expanded L16 comment. The complete file passed
+**34/34**, including the strengthened source discriminator, L15's container
+postconditions, L13 at 900×800 with all controls operated, L5's state invariants,
+L12's explicit empty payload and C5. `./tools/checks` also kept U3's branch-side
+discriminator green.
+
+L16 remains effective and passed in the full file. The `fs`, `os` and `path`
+imports do not alter another leg. L17's temporary directory is created after a
+successful launch, all writes and assertions are inside `try`, and its `finally`
+closes Electron then removes the directory. The shared `close()` catches its own
+app-close failure before returning, so the subsequent removal is still attempted;
+no `havdm-f5-recent-*` directory remained after the 10-repeat and full-file runs.
+
+`git diff 4827082..0ceeac8 --stat -- src/` is empty, and
+`git diff --name-only main -- '*.png'` returns no path. The signed spec, UAT
+state, `[STATE]` and product behavior are untouched. The
+`TESTING_STANDARDS.md` edit is one additive 44-line subsection; it changes no
+existing gate row or trigger, although the new subsection itself is a finding
+below.
+
+### Why M4 is still the same unswept class
+
+`bash tools/f5-load-path-sweep.sh` exits 0 and still finds the complete nine-site
+source population. L17 is good evidence for row 2: `src/menu.ts:31` sends
+`menu:open-recent-file` with the path, L17 sends that exact channel and payload,
+`src/preload.ts:173-175` forwards it, and `App.tsx:2838-2847` invokes
+`handleOpenRecentFile`. The menu unit test independently clicks the real recent
+item and proves the same full path is sent. Bypassing the OS menu is therefore a
+faithful split at a separately tested boundary, not a product backdoor.
+
+The traced no-prompt claim also holds. The initial replace-mode `loadDashboard`
+sets `isDirty: false`; selecting a section card changes selection only; and
+`confirmReplacingCurrentDashboard` returns immediately when `!isDirty`. L17 then
+proves the loaded document, cleared section selection and target marker. Its
+**10/10** repeat and the full-file pass support the new call-site consumer.
+
+The regenerated mapping still fails elsewhere:
+
+- `tools/f5-load-path-sweep.sh:93-96` keeps any action within three lines after a
+  testid spelling. It misses the real Open driver in
+  `dashboard-load-honesty.spec.ts:81-85`, where `.click()` is four lines after
+  `toolbar-open-file`. It also misses `DashboardDSL.selectDashboardKind`: the
+  three option strings are at lines 59–61 and the generic `option.click()` is at
+  line 66. These omissions are silent rather than printed as unresolved hops.
+- Row 7 names `tests/support/dsl/templates.ts:29`, but that click only calls
+  `handleCreateFromTemplate` and opens the template chooser. It does not reach
+  `handleTemplateSelected` at `App.tsx:2371-2377`. The genuine driver is the
+  later template-tile action, such as `templates.spec.ts:107` calling
+  `chooseTemplate()`.
+- Row 8 names `entity-type-dashboard.spec.ts:196`. That test clicks the entry
+  tile, verifies the wizard, and ends at line 210 without generating anything.
+  The click merely sets `showEntityTypeWizard`; it cannot reach
+  `handleCreateFromEntityType`. A genuine path continues through category
+  selection and the Create Dashboard click, as the test at lines 246–264 does.
+- The same window is over-inclusive in the other direction: actions on a
+  category tile or Create button happen to appear under the entry-tile match.
+  Proximity does not prove data or control flow. “Contains an action near the
+  testid” is the same proxy error as “contains the testid,” one level later.
+
+The underlying repository does have genuine consumers for all nine call sites;
+the defect remains the evidence package's claim that this script and these named
+lines demonstrate that fact. I traced the complete source population as follows:
+
+1. `App.tsx:620` — the stubbed file chooser followed by `button.click()` in
+   `file-open-unsaved-guard.spec.ts` reaches `handleOpenFile`.
+2. `App.tsx:665` — L17 reaches `handleOpenRecentFile` through the production
+   renderer subscription.
+3. `App.tsx:1943` — `view-authoring.spec.ts:75` directly invokes the Sections
+   option wired to `createNewSectionsDashboard`.
+4. `App.tsx:2203` — the `loadYaml` helper used throughout `sections-canvas.spec.ts`
+   directly invokes the test API.
+5. `App.tsx:2299` — `presetMarketplace.importSelected()` reaches
+   `onPresetImport` → `onDashboardDownload` → `handleDashboardDownload`.
+6. `App.tsx:2346` — the blank option at `entity-type-dashboard.spec.ts:60` and
+   `DashboardDSL.createNew()` reach `createNewDashboard`.
+7. `App.tsx:2377` — `templates.spec.ts:107` selects a template tile and reaches
+   `handleTemplateSelected`.
+8. `App.tsx:2412` — the entity-type path at
+   `entity-type-dashboard.spec.ts:246-264` selects a category and creates the
+   dashboard, reaching `handleCreateFromEntityType`.
+9. `App.tsx:2445` — L16 crosses both Apply and its confirmation to reach
+   `handleApplyYamlChanges`.
+
+The correct remedy is to make that terminal trace the generated evidence, with
+unresolved multi-step hops named explicitly. Expanding `-A3` to a larger window
+would only move the proxy again.
+
+The two explicitly unexercised routes are characterised correctly. File-menu
+Open reaches the same `handleOpenFile` already driven through the toolbar, so it
+is a route gap rather than a call-site gap. The live-HA download route shares
+`handleDashboardDownload` with the exercised preset-import route and needs a live
+instance that F5 does not require. Neither omission contradicts the store-reset
+coverage claim when stated at that granularity.
+
+### R2-m1 and R2-m2 details
+
+Deleting duplicate blank-path counts is the right application of the
+remove-the-mechanism rule, not an evasion. It was not completed across the live
+evidence surfaces. The PR body still contains the Round-2 sentence:
+“What is deliberately NOT claimed: that all 80 specs ... were run. They were
+not; six of them are in the sweep,” and later says the command “says 80.” Those
+are the exact live `80` and six/eight contradictions R2-m1 identified, while the
+new PR table says both counts were deleted. The historical 83→80 narrative in
+the document is not a live count and is clean.
+
+The replacement intersection recipe at `F5_LOAD_PATH_SWEEP.md:151-155` is also
+not executable: `<the 26 swept spec paths>` is prose, not a command that derives
+the set. Either publish a command that mechanically produces both inputs or make
+the weaker claim that only the individually traced consumers were checked.
+
+For R2-m2, the relevant caller sweep returns no use of `yamlEditor.close()`,
+`yamlEditor.apply()`, `yamlAssertions`, `expectYamlEditorModalHidden()` or
+`expectYamlEditorModalVisible()` in any spec. That is sufficient to establish
+that the broken assertions ran in no published result. The import statement is
+nevertheless false: `tests/support/index.ts:66` has
+`export * as yamlAssertions from './assertions/yaml'`, and this command returns
+103 spec files:
+
+```bash
+rg -l "from ['\"]\.\./support['\"]" tests/e2e tests/integration \
+  --glob '*.spec.ts' | wc -l
+```
+
+The module is unused through that namespace, not unimported or dead. Correct the
+claim; repairing the four latent assertions remains properly outside this F5
+review-fix commit.
+
+### New finding R3-M1 — the mandatory reviewer policy exceeds both its evidence and its stated scope
+
+`TESTING_STANDARDS.md:813-855` labels the subsection “MANDATORY for independent
+reviews,” says reviewers “MUST” run three things, orders Medium re-runs “BY
+EXCEPTION ONLY,” and says to default to “accepting the author's counts.” It then
+says the subsection does not amend reviewer governance and that binding
+reviewers belongs in a separate governance PR. Both cannot be true: this text is
+already written as a mandatory rule for reviewers.
+
+The evidence is also only two rounds on one PR. It supports a useful provisional
+heuristic—always rerun the load-bearing spec, deepen the flake probe, and spend
+review time tracing coverage claims—but it does not establish the universal that
+an author's entire gate is “mostly waste.” More importantly, an independent
+reviewer may leave a Medium result **author-reported and not independently
+rerun**; “accepting” the number converts an explicit evidence boundary into
+apparent independent verification and gives an author language to hide behind.
+
+The decision for this commit is still sound: I did **not** rerun the 18-spec e2e
+or 8-spec integration sweeps because there is no `src/` change, their membership
+did not change, and the only changed spec ran in full. The PR correctly marks the
+old 107 result as measured at `4827082` and says the same set would now contain
+108 tests because of L17. The problem is codifying that local judgment as a
+mandatory cross-review rule from n=2, not this round's application of it.
+
+Keep the subsection as explicitly provisional guidance, remove “MANDATORY,”
+“MUST,” and “accepting,” and describe omitted re-runs as unverified. If the owner
+wants a binding reviewer rule, take it through the governance PR the subsection
+itself says is required. Because this policy was not needed to close M4,
+R2-m1 or R2-m2, adding it here is fix-round scope overreach.
+
+### Rising-round diagnosis and §3.3 judgment
+
+For M4, this is **the same class patched one instance at a time: an author sweep
+failure**. Round 1 replaced token spelling with testid spelling; round 2 replaced
+mention with a three-line action window; round 3 still mistakes an intermediate
+action for a terminal call-path consumer. The remedy is not another wider grep.
+Trace all nine rows end to end once and make the evidence represent unresolved
+hops honestly.
+
+R3-M1 is separately the other failure mode: new work introduced while repairing
+findings created a scope-control defect. That distinction matters; it does not
+change the diagnosis of the M4 lineage.
+
+`OPERATING_AGREEMENT.md` §3.3's rollback trigger has not fired: rounds 1 and 2
+both produced findings the owner acted on, and this round found material
+contradictions again. The cost is plainly approaching the point where another
+broad rerun would be wasteful, but a narrow Round 4 is worth its cost because the
+evidence artifact is not converged. It should verify one complete nine-row trace,
+the removal of the live PR counts/import overstatement, and the policy rollback
+or governance move—not reopen the six closed product-proof findings.
+
+### Verdict
+
+**CHANGES-REQUIRED — High confidence.** L17 and the product-facing regression
+evidence are clean. Approval is blocked by M4's third invalid consumer map,
+R2-m1's still-live PR contradiction, R2-m2's false import universal, and the new
+mandatory reviewer rule's scope/evidence contradiction.
+
+### Observed verification and limits
+
+- `bash tools/f5-load-path-sweep.sh` — exit 0; nine production call sites; its
+  section-3 omissions and false terminal mappings are described above.
+- L17 at `--repeat-each=10` — **10 passed** in 1.7m, twice the author's depth.
+- Complete `sections-canvas.spec.ts` — **34 passed** in 4.9m.
+- `./tools/checks` — exit 0: Prettier clean, TypeScript clean, ESLint **0 errors /
+  145 warnings**, Vitest **1,335 passed across 101 files**.
+- Static scope — no `src/` diff since `4827082`; no changed PNG; no leftover L17
+  temp directory; `main` and `origin/main` remained `82eb819` at review start.
+
+Checked clean: all six previously closed findings, L16, L17's production-boundary
+fidelity and cleanup, the two deliberately uncovered routes at call-site
+granularity, source/snapshot scope, the 107→108 historical caveat, and the
+additive-only shape of the testing-standards edit.
+
+Not checked: no live Home Assistant instance or native OS menu click; no full
+307-test e2e or 235-test integration suite; no re-run of the 18+8 Medium sweeps;
+no branch execution against base production. I did not mark PR #137 ready,
+merge it, edit its body, change UAT, edit the signed spec, or update `[STATE]`.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"`: file this Round-3 record—M4, R2-m1 and
+  R2-m2 partially resolved; L17 clean at 10/10 and the full F5 file 34/34; the
+  `-A3` map drops real drivers and maps template/entity entry clicks that do not
+  reach their call sites; the PR still contains 80/six; the YAML module is
+  barrel-imported but its broken helpers are uncalled; and R3-M1 finds the n=2
+  mandatory reviewer policy both self-contradictory and out of repair scope.
