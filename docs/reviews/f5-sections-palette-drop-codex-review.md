@@ -951,3 +951,98 @@ merge it, edit UAT or the signed spec, or update `[STATE]`.
   claim and drops L16/L17/row-8 actions; R2-m1 remains partial because the live
   PR body still says the command returns 80. Verdict CHANGES-REQUIRED, high
   confidence; any Round 5 should check only those two residues.
+
+## Round 5
+
+| Finding                             | Disposition            | Round-5 judgment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ----------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M4 — load-path candidate population | **RESOLVED**           | `bash tools/f5-load-path-sweep.sh` now prints L16's actions at `sections-canvas.spec.ts:1683-1684`, L17's send at `:1771`, and row 8's category/Create actions at `entity-type-dashboard.spec.ts:254` and `:261`. A whole-script sweep found no executable `head`, `tail`, grep `-m`, sed quit/range, awk exit/NR bound or equivalent output cap; the sole `head -4` text is the explanatory comment describing the removed defect. The “every line that ACTS” comment is now true. The longer output remains grouped and source-labelled, so the added volume does not obscure the terminal candidates.                                                   |
+| R2-m1 — duplicated evidence counts  | **PARTIALLY RESOLVED** | The active blank-path `80` is gone from the live PR body, and the local sweep document/script no longer turn the adjacent inventories into separate totals. The retained `83`→`80` wording is clearly historical. However, the live MEDIUM-results table still labels the sweeps “18 specs” and “8 specs,” contradicting `d998691`'s commit-message claim that those sweep-size counts were removed. Those rows say they were not rerun at an earlier repair commit, but do not explicitly mark the MEDIUM results **UNVERIFIED at `d998691`**. The generic evidence rule and separate full-suite caveat do not make that commit-specific status explicit. |
+
+### Regression check
+
+`git diff 28c2b00..d998691` changes only
+`docs/testing/F5_LOAD_PATH_SWEEP.md` and `tools/f5-load-path-sweep.sh`. The
+`src/` and `tests/` diffs are empty; no PNG, signed spec, UAT or `[STATE]` file
+changed. `main` and `origin/main` remain `82eb819`.
+
+`./tools/checks` passed all four phases: Prettier clean, TypeScript clean, ESLint
+**0 errors / 145 warnings**, and Vitest **1,335 passed across 101 files**. The
+load-bearing Electron spec and the 18-spec e2e / 8-spec integration MEDIUM
+sweeps were deliberately not rerun. Their results are **UNVERIFIED at
+`d998691`**, not accepted or independently confirmed by this round.
+
+Removing the cap makes the candidate section substantially longer, especially
+for `sections-canvas.spec.ts`, but it remains usable: each block retains its
+file heading and every candidate retains an exact line number. The additional
+output is the population the artifact promises, not noise that warrants a new
+silent bound.
+
+### Step 3 — the stop question and merge recommendation
+
+The script-side evidence has converged; the live PR description has not. PR
+#137 is **not ready to merge** while its results table retains the `18 specs`
+and `8 specs` sweep-size labels and fails to say explicitly that those MEDIUM
+results are **UNVERIFIED at `d998691`**. This is an evidence-artifact blocker,
+not a product-code defect. Once the owner makes that body-only correction, a
+single exact read of the live PR body is sufficient; another broad review,
+Electron run or MEDIUM rerun would not be worth its cost.
+
+`OPERATING_AGREEMENT.md` §3.3's rollback trigger has **not fired**. This round
+found an actionable residue for the owner, as did the earlier rounds; there are
+not three consecutive zero-finding reviews, nor a review session without a
+finding the owner can act on.
+
+### Verdict
+
+**CHANGES-REQUIRED — High confidence.** M4 is resolved. Approval remains
+blocked only by R2-m1's two live PR-table counts and the missing explicit
+commit-specific UNVERIFIED label.
+
+### Observed verification and limits
+
+- `bash tools/f5-load-path-sweep.sh` — exit 0; L16 `:1683-1684`, L17 `:1771`
+  and row 8 `:254`, `:261` all present; no executable output cap found anywhere
+  in the script.
+- Exact `gh pr view 137 --json body` — active blank-path `80` removed;
+  historical `83`→`80` properly framed; MEDIUM table still says `18 specs` and
+  `8 specs`, without **UNVERIFIED at `d998691`**.
+- `./tools/checks` — exit 0: Prettier clean, TypeScript clean, ESLint **0 errors /
+  145 warnings**, Vitest **1,335 passed across 101 files**.
+- Static scope — branch began clean at `d998691`; repair changes only the sweep
+  document and script; `src/`, tests, PNG, signed spec, UAT and `[STATE]`
+  untouched; `main` and `origin/main` stayed at `82eb819`.
+
+Checked clean: only the two Round-4 residues, their whole classes in the script,
+document, live PR body and repair commit message, and the required evidence-only
+regression surface.
+
+Not checked: I did not reopen M1, M2, M3, M5, m1, m2, R2-m2, R3-M1, the
+nine-row hand trace or the practice rule; did not rerun L16/L17, the
+load-bearing Electron spec, either MEDIUM sweep, either full suite, a live Home
+Assistant instance or a native OS-menu click; and did not execute the branch
+against base production. I did not edit the PR body, mark the PR ready, merge
+it, edit UAT or the signed spec, or update `[STATE]`.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"` — **Round 3, still unfiled:** M4, R2-m1 and
+  R2-m2 partially resolved; L17 clean at 10/10 and the full F5 file 34/34; the
+  `-A3` map dropped real drivers and credited template/entity entry clicks that
+  did not reach their call sites; the PR still contained 80/six; the YAML module
+  was barrel-imported but its broken helpers were uncalled; and R3-M1 found the
+  n=2 mandatory reviewer policy self-contradictory and outside repair scope.
+- `havdm/review`, `added_by="codex"` — **Round 4, still unfiled:** the complete
+  nine-row hand trace is correct and falsifiable; R2-m2 and R3-M1 are resolved;
+  the practice decidability/UNVERIFIED rule is sound; `./tools/checks` passed at
+  1,335/101; M4 remained partial because `head -4` contradicted the
+  candidate-completeness claim and dropped L16/L17/row-8 actions; R2-m1 remained
+  partial because the live PR body still said the command returned 80. Verdict
+  CHANGES-REQUIRED, high confidence; Round 5 should check only those residues.
+- `havdm/review`, `added_by="codex"` — **Round 5:** M4 resolved after removing
+  the candidate-output cap; exact L16/L17/row-8 actions are present and no other
+  executable bound remains; `./tools/checks` passed at 1,335/101. R2-m1 remains
+  partial because the live PR table still publishes the 18/8 MEDIUM sweep sizes
+  and does not explicitly call those results UNVERIFIED at `d998691`. Verdict
+  CHANGES-REQUIRED, high confidence; the PR is not merge-ready until that
+  body-only evidence correction is live.
