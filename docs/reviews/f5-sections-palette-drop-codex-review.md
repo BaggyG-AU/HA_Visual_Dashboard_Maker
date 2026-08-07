@@ -800,3 +800,154 @@ merge it, edit its body, change UAT, edit the signed spec, or update `[STATE]`.
   reach their call sites; the PR still contains 80/six; the YAML module is
   barrel-imported but its broken helpers are uncalled; and R3-M1 finds the n=2
   mandatory reviewer policy both self-contradictory and out of repair scope.
+
+## Round 4
+
+| Finding                                        | Disposition            | Round-4 judgment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M4 — load-path consumer mapping                | **PARTIALLY RESOLVED** | The labelled hand trace is now the right instrument, and I independently followed all nine rows to their stated `loadDashboard` calls. The script no longer emits a mapping. Its advertised candidate population is still incomplete, however: `tools/f5-load-path-sweep.sh:113-114` ends each whole-file action search with `head -4`, silently dropping terminal drivers after the fourth action. It omits L16, L17 and row 8's category/Create actions while claiming to print “every line that ACTS.” |
+| R2-m1 — duplicated blank-path counts           | **PARTIALLY RESOLVED** | The sweep document and script no longer publish the blank-path population count, and the literal `<the 26 swept spec paths>` recipe is gone. The live PR body still ends with the exact active statement Round 3 identified: “The command says **80**; the number is corrected.” Its latest repair section simultaneously says the live `80` is gone. Historical discussion may name the former error; this final note still republishes the count as current evidence.                                   |
+| R2-m2 — impossible YAML-modal helper inventory | **RESOLVED**           | `tests/support/index.ts:66` is correctly disclosed as the `yamlAssertions` barrel re-export, and the published caller command is executable. With the comment filter it prints nothing (exit 1 because there are no matches); without the filter it prints the disclosure comment itself. The mechanical barrel-import command returns 103 spec paths. The supported claim is now “barrel-reachable but uncalled,” not “unimported.”                                                                      |
+| R3-M1 — mandatory reviewer policy              | **RESOLVED**           | `TESTING_STANDARDS.md:813-856` says **PROVISIONAL**, “not a rule,” and “binds nobody”; presents four items as suggested emphasis; and says an omitted re-run remains **UNVERIFIED**, never accepted. `MUST`, `MANDATORY` and “accepting” now appear only while repudiating the earlier wording. The self-contradiction is gone. Round 3 expressly allowed this provisional rollback, so deletion is not required; a binding version still requires the separate §3(b) governance PR.                      |
+
+### Regression check
+
+`git diff 0ceeac8..d8ae22b --stat -- src/` is empty. The repair commit changes
+only `F5_LOAD_PATH_SWEEP.md`, `TESTING_STANDARDS.md`,
+`sections-canvas.spec.ts` and `f5-load-path-sweep.sh`; no PNG, signed-spec, UAT,
+`[STATE]` or product file moved. `main` and `origin/main` remain `82eb819`.
+
+The `sections-canvas.spec.ts` diff is comment-only: it replaces the false
+“unimported” disclosure with the barrel-reachable/uncalled claim and its command.
+No import, test body, assertion or executable expression changed. I therefore
+did **not** rerun the load-bearing Electron spec: a comment-only diff cannot
+affect its execution, so the prompt's condition for that run was not met.
+
+`./tools/checks` passed all four phases: Prettier clean, TypeScript clean, ESLint
+**0 errors / 145 warnings**, and Vitest **1,335 passed across 101 files**. The
+18-spec e2e and 8-spec integration MEDIUM sweeps were not rerun. Describing their
+results as **UNVERIFIED at `d8ae22b`**, rather than accepted, is now correct.
+
+### The nine-row trace and the remaining M4 defect
+
+The hand trace is falsifiable and its terminal claims hold:
+
+1. `dashboard-load-honesty.spec.ts:79-85` chooses the visible welcome/toolbar
+   button after stubbing the chooser, and both buttons are wired directly to
+   `handleOpenFile` → `App.tsx:620`.
+2. L17 sends `menu:open-recent-file`; `preload.ts:173-175` forwards the payload,
+   `App.tsx:2838-2847` invokes `handleOpenRecentFile`, and `App.tsx:665` loads it.
+3. `view-authoring.spec.ts:68-75` clicks the Sections option, whose dialog prop is
+   `createNewSectionsDashboard` → `App.tsx:1943`.
+4. `sections-canvas.spec.ts:699-704` calls `__dashboardTestApi.loadYaml` directly
+   → `App.tsx:2203`.
+5. `presetMarketplace.importSelected()` clicks the import control;
+   `PresetMarketplacePanel` calls `onPresetImport`, `DashboardBrowser` forwards
+   it to `onDashboardDownload`, and `handleDashboardDownload` reaches
+   `App.tsx:2299`.
+6. `entity-type-dashboard.spec.ts:60` clicks the Blank option, whose dialog prop
+   is `createNewDashboard` → `App.tsx:2346`; the default `DashboardDSL.createNew`
+   path selects the same option.
+7. `templates.spec.ts:107` calls `chooseTemplate()`, whose tile click at
+   `templates.ts:155` reaches `TemplateSelectionDialog.handleSelect` and
+   `handleTemplateSelected` → `App.tsx:2377`. `templates.ts:29` only opens the
+   chooser and is correctly excluded.
+8. `entity-type-dashboard.spec.ts:246-264` opens the wizard, clicks a category,
+   then clicks Create Dashboard; `EntityTypeDashboardWizard.handleGenerate`
+   calls through `onGenerate` to `handleCreateFromEntityType` → `App.tsx:2412`.
+   The `:196` case stops after rendering the wizard and is correctly excluded.
+9. L16 clicks Apply and then Apply & Reload; `YamlEditorDialog.handleConfirmApply`
+   calls `onApply`, wired to `handleApplyYamlChanges` → `App.tsx:2445`.
+
+This is the correct structural split: mechanically enumerate the decidable
+source population, then label and expose the control-flow judgment as a hand
+trace. Moving the judgment into prose has not made it harder to falsify—the
+per-row terminal action, callbacks and source call are named, and reading them
+settled every row.
+
+The candidate listing does not meet its separate promise. The exact action grep
+finds 24 action-shaped lines in `sections-canvas.spec.ts`, but the script prints
+only its first four. L16's actions at `:1683-1684` and L17's send at `:1771` are
+absent. The same cap prints only lines `:22`, `:52`, `:60` and `:80` from
+`entity-type-dashboard.spec.ts`, omitting row 8's terminal sequence at
+`:246`, `:254` and `:261`. This is not another reachability-proxy failure—the
+script correctly refuses to decide reachability—but it is still a false
+completeness claim about the candidate input supplied to the hand trace. Remove
+`head -4`, or explicitly publish the output as a truncated sample and remove
+the “every line” / “every hop” claims from both artifacts.
+
+### Step 4 — the stop question
+
+The product remains clean, but the evidence artifact is **not yet converged**.
+A narrow Round 5 is worth its cost for exactly two mechanical checks and nothing
+else:
+
+1. confirm the candidate output is genuinely whole-file, or that every claim of
+   candidate completeness has been withdrawn; and
+2. confirm the live PR body no longer republishes the blank-path count.
+
+No product-proof finding, test body, L16/L17 behavior, YAML-helper inventory or
+reviewer-policy wording needs reopening. If those two checks are clean and the
+repair remains evidence-only, another broad review or Electron rerun would not
+be worth its cost.
+
+### Step 5 — the practice rule
+
+`drawer_practice_claims_1fcfbf72537d81a3cdb9bc69` is a sound generalisation of
+this episode. Its decidability precondition does **not** license skipping
+evidence: a decidable population still requires a published command, while a
+runtime-reachability claim that no adequate command can decide requires a
+labelled, per-hop hand trace with unresolved hops exposed. The mechanical trigger—source-text search plus a
+runtime-behaviour claim means stop—rejects the invalid instrument, not the duty
+to investigate. The present nine-row trace demonstrates the distinction: the
+trace is independently checkable even though grep cannot derive it.
+
+The companion evidence-language clause is also correct. An unperformed check is
+**UNVERIFIED**; “accepted” or “held” would falsely imply independent execution.
+I found no defect in the new cross-project rule and no need to amend it from
+this round.
+
+### Verdict
+
+**CHANGES-REQUIRED — High confidence.** R2-m2 and R3-M1 are resolved, and the
+nine-row hand trace is correct. Approval remains blocked by M4's silently
+truncated candidate population and R2-m1's still-live PR-body count.
+
+### Observed verification and limits
+
+- `bash tools/f5-load-path-sweep.sh` — exit 0; nine production call sites; the
+  output itself demonstrates the `head -4` omissions described above.
+- Published YAML-helper caller command — filtered output empty (exit 1); the
+  unfiltered form returns only the disclosure comment; barrel-import enumeration
+  returns 103 spec paths.
+- `./tools/checks` — exit 0: Prettier clean, TypeScript clean, ESLint **0 errors /
+  145 warnings**, Vitest **1,335 passed across 101 files**.
+- Static scope — branch began clean at `d8ae22b`; no `src/` or PNG diff in the
+  repair; `sections-canvas.spec.ts` comment-only; signed spec, UAT and `[STATE]`
+  untouched; PR #137 open, unmerged and non-draft.
+
+Checked clean: all nine terminal traces, the hand-trace/mechanical boundary,
+R2-m2's published filter and barrel disclosure, R3-M1's provisional rollback,
+the new practice rule, and the evidence-only regression surface.
+
+Not checked: I did not re-audit M1, M2, M3, M5, m1, m2, L16 or L17; did not run
+the load-bearing Electron spec, the 18+8 MEDIUM sweeps, either full suite, a live
+Home Assistant instance, or a native OS-menu click; and did not execute the
+branch against base production. I did not edit the PR body, mark the PR ready,
+merge it, edit UAT or the signed spec, or update `[STATE]`.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"` — **Round 3, still unfiled:** M4, R2-m1 and
+  R2-m2 partially resolved; L17 clean at 10/10 and the full F5 file 34/34; the
+  `-A3` map dropped real drivers and credited template/entity entry clicks that
+  did not reach their call sites; the PR still contained 80/six; the YAML module
+  was barrel-imported but its broken helpers were uncalled; and R3-M1 found the
+  n=2 mandatory reviewer policy self-contradictory and outside repair scope.
+- `havdm/review`, `added_by="codex"` — **Round 4:** the complete nine-row hand
+  trace is correct and falsifiable; R2-m2 and R3-M1 are resolved; the practice
+  decidability/UNVERIFIED rule is sound; `./tools/checks` passed at 1,335/101;
+  M4 remains partial because `head -4` contradicts the candidate-completeness
+  claim and drops L16/L17/row-8 actions; R2-m1 remains partial because the live
+  PR body still says the command returns 80. Verdict CHANGES-REQUIRED, high
+  confidence; any Round 5 should check only those two residues.
