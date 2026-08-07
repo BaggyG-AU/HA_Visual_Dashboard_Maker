@@ -316,7 +316,11 @@ At session start, call `mempalace_status`.
 
 **"At session start" means before your first substantive action, not the wall-clock moment the session opens.** MCP servers frequently finish connecting after a session opens, so these tools may not exist when you first read this rule. If they are still connecting, run the memory cadence the moment they appear and say so in your first response. An instruction that was briefly impossible has not lapsed, and beginning work before running it does not discharge it.
 
-⚠ **That covers a delay, not an absence.** If this checkout has no MemPalace at all — no `.mcp.json`, no `mempalace.yaml`, no `mempalace_*` tools — you are not the maintainer's machine, and **everything in this rule that requires MemPalace is simply not owed.** Do not retry, do not seek a workaround, and never report a memory operation you did not perform. Say once that MemPalace is unavailable and continue on the fallback path below. This is the expected state for any contributor: the config files are gitignored and the palace is machine-local by design.
+⚠ **That covers a delay, not an absence.** If the `mempalace_*` tools never appear at all, **everything in this rule that requires MemPalace is simply not owed** — there is no duty, so nothing lapses and nothing stays pending. Do not retry, do not seek a workaround, and never report a memory operation you did not perform. Say once that MemPalace is unavailable and continue. This is the expected state for anyone who is not the maintainer: the palace is machine-local by design.
+
+**Decide this by calling the tools, not by looking for config files.** Presence or absence of `.mcp.json` / `mempalace.yaml` proves nothing in either direction — MemPalace may be registered globally in a user-level MCP config with no project file present, and a project file may exist while the server never starts. The only test that settles it is whether `mempalace_*` tools are callable once the session has settled.
+
+**Where no memory store exists, no persistent fallback is owed.** The local-memory path below assumes a store that a fresh clone does not have and this repository does not ship — do not create one, and do not commit one. Record what would have been a drawer as notes in the PR body, and let a MemPalace-enabled agent file it.
 
 **If MemPalace responds:** all persistent memory — decisions, investigations, patterns, project state, governance clarifications — goes to MemPalace via `mempalace_add_drawer` / `mempalace_checkpoint`. **Do not write it to local memory files.**
 
