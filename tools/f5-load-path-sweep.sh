@@ -84,9 +84,25 @@ echo "     ⭐ PROXIMITY DOES NOT PROVE CONTROL FLOW, AND A WIDER WINDOW ONLY"
 echo "     MOVES THE PROXY. REACHABILITY IS NOT LEXICAL — NO GREP CAN DECIDE IT."
 echo
 echo "  So this script now stops where mechanism stops. It lists the entry"
-echo "  controls and every line that ACTS on one; deciding which of those"
-echo "  actions TERMINATES in a loadDashboard call is a hand trace, recorded"
-echo "  and labelled as such in docs/testing/F5_LOAD_PATH_SWEEP.md."
+echo "  controls and every line matching the TEN-VERB ACTION SET below;"
+echo "  deciding which of those actions TERMINATES in a loadDashboard call is"
+echo "  a hand trace, recorded and labelled as such in"
+echo "  docs/testing/F5_LOAD_PATH_SWEEP.md."
+echo "      matched: .click .dblclick .fill .press .hover .dragTo"
+echo "               .selectOption .check .dispatchEvent .send"
+echo
+echo "  ⚠⚠⚠ THIS IS NOT \"EVERY LINE THAT ACTS\". THAT WORDING STOOD HERE UNTIL"
+echo "     ROUND 5 AND WAS A FALSE UNIVERSAL: THE VERB SET IS FIXED, SO"
+echo "     DIRECT-DRIVE FORMS ARE NOT MATCHED AT ALL — mouse.*, keyboard.type,"
+echo "     evaluate() and focus(). Two known consequences, BOTH CARRIED BY THE"
+echo "     HAND TRACE AND NEITHER BY THIS LISTING:"
+echo "       - row 4's terminal driver, tests/e2e/sections-canvas.spec.ts:699-704"
+echo "         (ctx.window.evaluate -> __dashboardTestApi.loadYaml);"
+echo "       - F5's own palette gesture, tests/e2e/sections-canvas.spec.ts:924-931"
+echo "         (mouse.move/down/move/up — dragTo cannot start a palette drag)."
+echo "     ⭐ WIDENING THE VERB SET WOULD ONLY MOVE THE PROXY AGAIN, WHICH IS"
+echo "        THE MISTAKE ROUNDS 1-3 MADE THREE TIMES. The fix is to STATE WHAT"
+echo "        IS MATCHED, not to claim completeness the instrument cannot have."
 echo "  ⚠ Treat the lines below as CANDIDATES REQUIRING A TRACE, never as the"
 echo "    answer. An intermediate click looks identical to a terminal one here."
 for testid in \
@@ -109,6 +125,10 @@ for testid in \
   echo "$files" | sed 's/^/      mentions: /'
   # Whole-file action listing, so a driver is never dropped for sitting more
   # than N lines from its locator. Over-inclusive BY DESIGN and labelled so.
+  #
+  # ⚠⚠ BUT IT *CAN* DROP A DRIVER FOR USING A VERB THIS REGEX DOES NOT NAME —
+  # see the banner above. Distance-completeness is not verb-completeness, and
+  # until round 5 this loop claimed both while only having the first.
   #
   # ⚠⚠⚠ THIS LOOP CARRIED A `head -4` UNTIL ROUND 4 FOUND IT — WHICH MEANT THE
   # LISTING SILENTLY DROPPED CANDIDATES (INCLUDING L16, L17 AND ROW 8's TERMINAL

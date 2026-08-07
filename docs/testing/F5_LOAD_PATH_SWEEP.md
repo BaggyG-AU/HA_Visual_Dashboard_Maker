@@ -44,9 +44,33 @@ bash tools/f5-load-path-sweep.sh
 Section 1 of its output is the source-side population and is fully mechanical.
 Sections 2–3 walk outward to entry controls and their consumers, reporting both
 direct spec references **and** DSL modules, because a spec often reaches a
-control through a DSL method; every hop the script cannot make itself is printed
-rather than silently skipped. Section 5 reproduces the original token-spelling
+control through a DSL method. Section 5 reproduces the original token-spelling
 list for contrast.
+
+> ⚠⚠⚠ **What section 3's candidate listing is, exactly — because until round 5
+> this document and the script both overstated it.** The listing is _whole-file_
+> (no cap: a driver is never dropped for sitting far from its locator) but it
+> matches a **fixed ten-verb set**:
+>
+> ```
+> .click  .dblclick  .fill  .press  .hover  .dragTo
+> .selectOption  .check  .dispatchEvent  .send
+> ```
+>
+> It is therefore **not** "every line that ACTS", and **not** "every hop the
+> script cannot make itself". **Direct-drive forms are not matched at all:
+> `mouse.*`, `keyboard.type`, `evaluate()`, `focus()`.** Two known consequences,
+> both carried by the hand trace below and neither by the listing:
+>
+> - **row 4's terminal driver**, `tests/e2e/sections-canvas.spec.ts:699-704`
+>   (`ctx.window.evaluate` → `__dashboardTestApi.loadYaml`);
+> - **F5's own palette gesture**, `tests/e2e/sections-canvas.spec.ts:924-931`
+>   (`mouse.move/down/move/up` — `dragTo` cannot start a palette drag).
+>
+> ⭐ **The fix for this was to state what is matched, NOT to widen the verb
+> set.** Widening would only move the proxy again — the mistake rounds 1–3 made
+> three times. The listing is an _input_ to the hand trace, and the trace is
+> what answers the question.
 
 ## The population — every production `loadDashboard` call site
 
@@ -78,17 +102,17 @@ row names the **terminal** action — the one that actually reaches the call sit
 and, where the chain passes through intermediate steps, says so. The script lists
 _candidates_ and stops; it no longer answers this question.
 
-| #   | Call site          | Handler                       | Terminal driver (traced)                                                                                                                                                                        |
-| --- | ------------------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `src/App.tsx:620`  | `handleOpenFile`              | `tests/integration/dashboard-load-honesty.spec.ts:85` — `button.click()` on `welcome-open-local-file` / `toolbar-open-file` after a stubbed chooser; also `file-open-unsaved-guard.spec.ts:106` |
-| 2   | `src/App.tsx:665`  | `handleOpenRecentFile`        | `tests/e2e/sections-canvas.spec.ts` leg **L17** — sends `menu:open-recent-file` into the production renderer subscription (`src/App.tsx:2838-2847`)                                             |
-| 3   | `src/App.tsx:1943` | `createNewSectionsDashboard`  | `tests/e2e/view-authoring.spec.ts:75` — clicks `new-dashboard-sections-option`, which is wired directly to the handler (single step)                                                            |
-| 4   | `src/App.tsx:2203` | `__dashboardTestApi.loadYaml` | the `loadYaml` helper throughout `tests/e2e/sections-canvas.spec.ts` — direct test-API call (single step)                                                                                       |
-| 5   | `src/App.tsx:2299` | `handleDashboardDownload`     | `presetMarketplace.importSelected()` (`tests/support/dsl/presetMarketplace.ts:44`) → `onPresetImport` → `onDashboardDownload`. **Two hops**; the preset-import route, not the HA-download route |
-| 6   | `src/App.tsx:2346` | `createNewDashboard`          | `tests/e2e/entity-type-dashboard.spec.ts:60` clicks `new-dashboard-blank-option`; also every `dashboardDSL.createNew()` default-kind call                                                       |
-| 7   | `src/App.tsx:2377` | `handleTemplateSelected`      | `tests/e2e/templates.spec.ts:107` → `chooseTemplate()` → `tile.click()` (`tests/support/dsl/templates.ts:155`). ⚠ **NOT** `templates.ts:29` — that click only opens the chooser                 |
-| 8   | `src/App.tsx:2412` | `handleCreateFromEntityType`  | `tests/e2e/entity-type-dashboard.spec.ts:246-264` — category tile **then** the _Create Dashboard_ button. ⚠ **NOT** `:196`, which clicks the entry tile and only asserts the wizard rendered    |
-| 9   | `src/App.tsx:2445` | `handleApplyYamlChanges`      | `tests/e2e/sections-canvas.spec.ts` leg **L16** — Apply **and** its confirmation                                                                                                                |
+| #   | Call site          | Handler                       | Terminal driver (traced)                                                                                                                                                                                                                                           |
+| --- | ------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `src/App.tsx:620`  | `handleOpenFile`              | `tests/integration/dashboard-load-honesty.spec.ts:85` — `button.click()` on `welcome-open-local-file` / `toolbar-open-file` after a stubbed chooser; also `file-open-unsaved-guard.spec.ts:106`                                                                    |
+| 2   | `src/App.tsx:665`  | `handleOpenRecentFile`        | `tests/e2e/sections-canvas.spec.ts` leg **L17** — sends `menu:open-recent-file` into the production renderer subscription (`src/App.tsx:2838-2847`)                                                                                                                |
+| 3   | `src/App.tsx:1943` | `createNewSectionsDashboard`  | `tests/e2e/view-authoring.spec.ts:75` — clicks `new-dashboard-sections-option`, which is wired directly to the handler (single step)                                                                                                                               |
+| 4   | `src/App.tsx:2203` | `__dashboardTestApi.loadYaml` | the `loadYaml` helper at `tests/e2e/sections-canvas.spec.ts:699-704`, used throughout the file — direct test-API call (single step). ⚠ **Absent from the section-3 candidate listing**: it drives via `ctx.window.evaluate`, which the ten-verb set does not match |
+| 5   | `src/App.tsx:2299` | `handleDashboardDownload`     | `presetMarketplace.importSelected()` (`tests/support/dsl/presetMarketplace.ts:44`) → `onPresetImport` → `onDashboardDownload`. **Two hops**; the preset-import route, not the HA-download route                                                                    |
+| 6   | `src/App.tsx:2346` | `createNewDashboard`          | `tests/e2e/entity-type-dashboard.spec.ts:60` clicks `new-dashboard-blank-option`; also every `dashboardDSL.createNew()` default-kind call                                                                                                                          |
+| 7   | `src/App.tsx:2377` | `handleTemplateSelected`      | `tests/e2e/templates.spec.ts:107` → `chooseTemplate()` → `tile.click()` (`tests/support/dsl/templates.ts:155`). ⚠ **NOT** `templates.ts:29` — that click only opens the chooser                                                                                    |
+| 8   | `src/App.tsx:2412` | `handleCreateFromEntityType`  | `tests/e2e/entity-type-dashboard.spec.ts:246-264` — category tile **then** the _Create Dashboard_ button. ⚠ **NOT** `:196`, which clicks the entry tile and only asserts the wizard rendered                                                                       |
+| 9   | `src/App.tsx:2445` | `handleApplyYamlChanges`      | `tests/e2e/sections-canvas.spec.ts` leg **L16** — Apply **and** its confirmation                                                                                                                                                                                   |
 
 ⚠ Rows 7 and 8 are the ones the generated mappings got wrong, in both prior
 rounds and in opposite directions. They are the reason this table is hand-traced.
@@ -132,9 +156,11 @@ integration suites remain unverified since PR #128.
 ## What is actually claimed, and what is not
 
 - **Claimed:** every row of the traced table above names a terminal driver, and
-  each was executed. **The table is the inventory** — there is no separate count
-  of rows to drift against it. Results are recorded in the PR body against the
-  command that produced them.
+  each was executed **at the commit named beside its result in the PR body** —
+  not necessarily at the head of this branch. **The table is the inventory** —
+  there is no separate count of rows to drift against it. Results are recorded
+  in the PR body against the command that produced them, and a run not repeated
+  since leaves that result **UNVERIFIED at head**, never "accepted" or "held".
 - **Not claimed:** "every load path" or "zero under-inclusion". Those words are
   withdrawn. The honest statement is the table above plus the run results.
 - **Not claimed:** that the omitted flows were ever broken. The review did not
