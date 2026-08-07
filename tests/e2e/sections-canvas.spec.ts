@@ -712,6 +712,177 @@ views:
   };
 
   /**
+   * One sample of "is a pointer at this element's centre actually on it, and has
+   * it stopped moving?" — measured in ONE round trip so the box and the hit-test
+   * cannot disagree about a layout that shifted between two of them.
+   */
+  type SettleSample = { ok: false; why: string } | { ok: true; x: number; y: number; key: string };
+
+  /** How many consecutive identical samples make a layout "settled". */
+  const SETTLE_SAMPLES = 3;
+
+  /**
+   * The centre of the single element matching `selector`, re-measured until it
+   * is genuinely under its own centre AND has held the same box for
+   * `SETTLE_SAMPLES` consecutive polls.
+   *
+   * ⚠⚠⚠ ONE PASSING HIT-TEST IS NOT ENOUGH, AND THAT IS MEASURED, NOT ARGUED.
+   * The previous revision of this helper returned as soon as a single poll saw
+   * the centre belong to the requested element. The independent review of
+   * PR #137 ran `--grep 'F5 L11' --repeat-each=5` against it and got 3 passed /
+   * 2 failed, both failures dragging `custom:fold-entity-row` when the leg had
+   * asked for `entities`. A single hit-test is a MOMENTARY GEOMETRIC
+   * OBSERVATION; the element can still be mid-flight.
+   *
+   * ⭐ THE MECHANISM, MEASURED FROM `CardPalette.tsx`: the palette filters on
+   * name, type OR DESCRIPTION, so the search term `entities` matches NINE tiles
+   * across FOUR categories (entities, glance, thermostat, statistics-graph,
+   * media-control, custom:auto-entities, custom:multiple-entity-row,
+   * custom:fold-entity-row, custom:slider-entity-row) while `markdown` matches
+   * exactly ONE tile in ONE category. A `useEffect` then expands every matching
+   * category in a SECOND render pass, so the tiles move across React commits
+   * after the first hit-test has already succeeded. That asymmetry is exactly
+   * why every markdown leg was stable and only L11 failed.
+   *
+   * ⚠ POLL FOR STABILITY, NOT FOR THE ANSWER YOU WANT. The settle criterion is
+   * the gesture's own precondition — a pointer at this coordinate hits this
+   * element, and keeps hitting it.
+   */
+  const settledPointOnSelector = async (ctx: Ctx, selector: string) => {
+    let point = { x: 0, y: 0 };
+    let lastKey: string | null = null;
+    let streak = 0;
+
+    await expect
+      .poll(
+        async () => {
+          const sample: SettleSample = await ctx.window.evaluate((sel): SettleSample => {
+            const nodes = document.querySelectorAll(sel);
+            if (nodes.length !== 1) {
+              return { ok: false, why: `${nodes.length} elements match ${sel}` };
+            }
+            const el = nodes[0] as HTMLElement;
+            const rect = el.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) {
+              return { ok: false, why: `${sel} has a zero-size box` };
+            }
+            const x = rect.x + rect.width / 2;
+            const y = rect.y + rect.height / 2;
+            const hit = document.elementFromPoint(x, y) as HTMLElement | null;
+            if (!hit || hit.closest(sel) !== el) {
+              return { ok: false, why: `the centre of ${sel} belongs to another element` };
+            }
+            return {
+              ok: true,
+              x,
+              y,
+              key: [rect.x, rect.y, rect.width, rect.height].map((n) => Math.round(n)).join(','),
+            };
+          }, selector);
+
+          if (!sample.ok) {
+            streak = 0;
+            lastKey = null;
+            return false;
+          }
+          streak = sample.key === lastKey ? streak + 1 : 1;
+          lastKey = sample.key;
+          point = { x: sample.x, y: sample.y };
+          return streak >= SETTLE_SAMPLES;
+        },
+        {
+          intervals: [100, 100, 100, 100, 200, 300, 500, 1000],
+          timeout: 15000,
+          message: `the point must hold still over ${selector} for ${SETTLE_SAMPLES} consecutive samples`,
+        },
+      )
+      .toBe(true);
+    return point;
+  };
+
+  /** The settled centre of a testid'd element. */
+  const settledPointOn = (ctx: Ctx, testId: string) =>
+    settledPointOnSelector(ctx, `[data-testid="${testId}"]`);
+
+  /**
+   * ⚠⚠⚠ WHAT THE GESTURE ACTUALLY INITIATED, RECORDED AT `dragstart`.
+   *
+   * A settle-poll on the source tile proves a geometric precondition. It does
+   * NOT prove which tile supplied the payload the browser then dragged, and the
+   * review of PR #137 showed the difference is not theoretical (see
+   * `settledPointOnSelector` above). So the source discriminator has to cover
+   * DRAG INITIATION: a document-level listener records the element the drag
+   * started on and the `text/plain` body it carried, and every gesture asserts
+   * that body names the card the leg asked for.
+   *
+   * ⭐ `dragstart` is the one moment the payload is readable: its drag data
+   * store is in READ/WRITE mode, unlike `dragover`'s protected mode where only
+   * `dataTransfer.types` can be seen. Reading it here therefore needs NO change
+   * to the product's §7.1 MIME contract — the harness observes what the app
+   * already writes.
+   *
+   * ⚠ BUBBLE PHASE, DELIBERATELY. React 19 delegates its listeners at the
+   * `#root` container, so a document-level CAPTURE listener would run BEFORE
+   * `CardPalette.handleDragStart` has called `setData` and would read nothing.
+   */
+  const armDragStartProbe = (ctx: Ctx) =>
+    ctx.window.evaluate(() => {
+      const w = window as unknown as {
+        __f5DragStarts?: { sourceTestId: string | null; raw: string | null }[];
+        __f5DragProbeArmed?: boolean;
+      };
+      w.__f5DragStarts = [];
+      if (w.__f5DragProbeArmed) return;
+      w.__f5DragProbeArmed = true;
+      document.addEventListener('dragstart', (event) => {
+        const tile = (event.target as HTMLElement | null)?.closest?.(
+          '[data-testid^="palette-card-"]',
+        ) as HTMLElement | null;
+        let raw: string | null = null;
+        try {
+          raw = event.dataTransfer?.getData('text/plain') ?? null;
+        } catch {
+          raw = null;
+        }
+        w.__f5DragStarts?.push({
+          sourceTestId: tile?.getAttribute('data-testid') ?? null,
+          raw,
+        });
+      });
+    });
+
+  /**
+   * The M1 assertion. It runs on EVERY leg that uses `palettePointerDrag`,
+   * because the wrong-card defect's root cause is shared by all of them — fixing
+   * L11 alone would have patched the instance and left the class.
+   */
+  const expectDragStartedFromTile = async (ctx: Ctx, cardType: string) => {
+    const records = await ctx.window.evaluate(
+      () =>
+        (
+          window as unknown as {
+            __f5DragStarts?: { sourceTestId: string | null; raw: string | null }[];
+          }
+        ).__f5DragStarts ?? [],
+    );
+
+    expect(records, 'the gesture must initiate exactly one dragstart').toHaveLength(1);
+    expect(
+      records[0].sourceTestId,
+      `the drag must start on palette-card-${cardType}, not another tile`,
+    ).toBe(`palette-card-${cardType}`);
+    expect(records[0].raw, 'dragstart must carry a text/plain payload').toBeTruthy();
+
+    let carried: unknown;
+    try {
+      carried = (JSON.parse(records[0].raw as string) as { cardType?: unknown }).cardType;
+    } catch {
+      throw new Error(`the dragstart payload was not JSON: ${String(records[0].raw)}`);
+    }
+    expect(carried, 'the INITIATED payload must name the requested card').toBe(cardType);
+  };
+
+  /**
    * The REAL palette gesture: press on the tile, make a short move near the
    * source (this is what makes Chromium begin the native drag — see the gesture
    * policy note above), then travel to the target point and release.
@@ -725,6 +896,13 @@ views:
    * card-wrapper legs passed, and an instrumented diagnostic showed the product
    * path itself working perfectly for the very gesture the leg reported as
    * broken. The instrument was wrong, not the product.
+   *
+   * ⚠⚠ AND THE SOURCE IS SETTLED TWICE, WHICH IS THE OTHER HALF OF THE M1
+   * REPAIR. Settling it first absorbs the filter reflow so the TARGET below is
+   * measured against a layout that has stopped moving; settling it again
+   * immediately before the press closes the window the review named — the old
+   * helper measured the source, then resolved the target, then pressed, and the
+   * palette could reflow in between.
    */
   const palettePointerDrag = async (
     ctx: Ctx,
@@ -732,8 +910,13 @@ views:
     resolvePoint: () => Promise<{ x: number; y: number }>,
   ) => {
     await revealPaletteTile(ctx, cardType);
-    const { x: sx, y: sy } = await settledPointOn(ctx, `palette-card-${cardType}`);
+    const sourceSelector = `[data-testid="palette-card-${cardType}"]`;
+
+    await settledPointOnSelector(ctx, sourceSelector);
     const point = await resolvePoint();
+    const { x: sx, y: sy } = await settledPointOnSelector(ctx, sourceSelector);
+
+    await armDragStartProbe(ctx);
 
     await ctx.window.mouse.move(sx, sy);
     await ctx.window.mouse.down();
@@ -744,48 +927,21 @@ views:
     await ctx.window.mouse.move(point.x, point.y + 1);
     await ctx.window.mouse.up();
 
+    // A wrong-card gesture now fails on the SOURCE, loudly, instead of quietly
+    // exercising a different row of §7.3's contract table behind assertions that
+    // only count cards.
+    await expectDragStartedFromTile(ctx, cardType);
+
     await ctx.window.getByTestId('card-search').fill('');
   };
 
-  /**
-   * The centre of `testId`, re-measured until the point is genuinely OVER that
-   * element — then returned.
-   *
-   * ⚠ POLL FOR STABILITY, NOT FOR THE ANSWER YOU WANT. The settle criterion is
-   * exactly the gesture's precondition: a pointer at this coordinate hits this
-   * element. Both the palette tile (source) and the drop target go through it,
-   * because BOTH reflow — revealing a tile filters the palette, and the filtered
-   * list re-orders under the pointer. Measured the hard way: a leg that dragged
-   * `palette-card-entities` dropped a `custom:fold-entity-row`, because the box
-   * was read while the filtered list was still settling and the coordinate then
-   * belonged to a different tile. A mis-aimed gesture now fails LOUDLY here
-   * rather than silently exercising a different contract row.
-   */
-  const settledPointOn = async (ctx: Ctx, testId: string) => {
-    let point = { x: 0, y: 0 };
-    await expect
-      .poll(
-        async () => {
-          const box = await ctx.window.getByTestId(testId).boundingBox();
-          if (!box) return false;
-          point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-          return ctx.window.evaluate(
-            ({ x, y, id }) =>
-              !!(document.elementFromPoint(x, y) as HTMLElement | null)?.closest(
-                `[data-testid="${id}"]`,
-              ),
-            { ...point, id: testId },
-          );
-        },
-        { message: `the point must settle over ${testId}` },
-      )
-      .toBe(true);
-    return point;
-  };
-
-  /** Drag a palette card onto the centre of a testid'd element. */
+  /** Drag a palette card onto the settled centre of a testid'd element. */
   const palettePointerDragToTestId = (ctx: Ctx, cardType: string, testId: string) =>
     palettePointerDrag(ctx, cardType, () => settledPointOn(ctx, testId));
+
+  /** Drag a palette card onto the settled centre of a CSS-selected element. */
+  const palettePointerDragToSelector = (ctx: Ctx, cardType: string, selector: string) =>
+    palettePointerDrag(ctx, cardType, () => settledPointOnSelector(ctx, selector));
 
   /**
    * A point inside section `si` that belongs to the section's OWN body — neither
@@ -835,6 +991,16 @@ views:
         const dataTransfer = new DataTransfer();
         dataTransfer.setData('text/plain', body);
         dataTransfer.setData('application/x-havdm-palette-card', body);
+        // ⚠ THE INSTRUMENT CHECKS ITSELF. `acceptsPaletteDrag` discriminates on
+        // the marker's MEMBERSHIP IN `types`, so a payload the browser declined
+        // to register — an EMPTY body is the case that makes this a real risk —
+        // would be refused for the wrong reason and the leg would silently
+        // measure nothing at all.
+        if (!Array.from(dataTransfer.types).includes('application/x-havdm-palette-card')) {
+          throw new Error(
+            `the dispatched DataTransfer did not carry the palette marker for payload ${JSON.stringify(body)}`,
+          );
+        }
         const fire = (type: string) =>
           target.dispatchEvent(
             new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer }),
@@ -847,6 +1013,38 @@ views:
 
   const sectionCards = (ctx: Ctx, si: number) =>
     ctx.window.getByTestId(`sections-canvas-section-${si}`).getByTestId('canvas-card');
+
+  /**
+   * Every `data-*` attribute of a debug-state element, as one comparable object.
+   *
+   * ⭐ These are EXISTING test surfaces (`selection-debug-state` and
+   * `history-debug-state` are both rendered under `isTestEnv()` in `App.tsx`),
+   * so proving "changes no config" needed no new product code — which matters,
+   * because the review cleared the product and the repair is a proof repair.
+   */
+  const debugSnapshot = (ctx: Ctx, testId: string) =>
+    ctx.window.evaluate((id) => {
+      const el = document.querySelector(`[data-testid="${id}"]`);
+      if (!el) throw new Error(`missing debug-state element: ${id}`);
+      return Object.fromEntries(
+        Array.from(el.attributes)
+          .filter((attr) => attr.name.startsWith('data-') && attr.name !== 'data-testid')
+          .map((attr) => [attr.name, attr.value]),
+      ) as Record<string, string>;
+    }, testId);
+
+  /**
+   * Resize the real BrowserWindow AND the renderer viewport — the same two calls
+   * the shared launcher makes at `tests/support/electron.ts:226-237`, which pins
+   * every other test to 1920x1080.
+   */
+  const setWindowSize = async (ctx: Ctx, size: { width: number; height: number }) => {
+    await ctx.app.evaluate(({ BrowserWindow }, bounds) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      if (win) win.setBounds({ x: 0, y: 0, width: bounds.width, height: bounds.height });
+    }, size);
+    await ctx.window.setViewportSize(size);
+  };
 
   // --- L1 -------------------------------------------------------------------
   test('F5 L1: palette drop on a populated section body appends as the last card', async ({
@@ -912,15 +1110,15 @@ views:
       await expect(sectionCards(ctx, 0)).toHaveCount(2);
       await expect(sectionCards(ctx, 0).nth(0)).toContainText('SEC-ORIGINAL');
 
-      await palettePointerDrag(ctx, 'markdown', async () => {
-        const first = window
-          .getByTestId('canvas-card')
-          .filter({ has: window.locator('text=SEC-ORIGINAL') })
-          .first();
-        const box = await first.boundingBox();
-        if (!box) throw new Error('no box for the first card');
-        return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-      });
+      // The target is addressed by its own (si, ci) and settle-verified, like
+      // every other gesture target in this block: an unpolled box measurement is
+      // the same momentary observation the source used to make, and this leg
+      // would otherwise be the one place it survived.
+      await palettePointerDragToSelector(
+        ctx,
+        'markdown',
+        '[data-testid="canvas-card"][data-section-index="0"][data-card-index="0"]',
+      );
 
       // Inserted AT index 0 — the previously-there card shifts down.
       await expect(sectionCards(ctx, 0)).toHaveCount(3);
@@ -945,18 +1143,52 @@ views:
       await expect(window.getByTestId('sections-canvas')).toBeVisible();
       await expect(sectionCards(ctx, 0)).toHaveCount(1);
 
-      await palettePointerDragToTestId(ctx, 'markdown', 'sections-canvas-section-0');
+      // The container's OWN children, addressed separately from the section's
+      // top-level cards. A nested child is not a `canvas-card`, so these two
+      // locators can never be confused with one another.
+      const stackChildren = window.getByTestId('vertical-stack-container').locator('> div');
+      await expect(stackChildren).toHaveCount(2);
 
-      // RED half on base: nothing lands at all.
-      // This is the owner's DEFERRED-NESTING ruling made executable: a drop on a
-      // container inside a section is a SIBLING at that index, unlike the flat
-      // canvas's PROPS-06 nesting. Adding nesting later must break this leg
-      // rather than change behaviour silently.
+      // ⚠⚠ THE GESTURE MUST LAND ON THE CONTAINER'S OWN CARD WRAPPER, NOT ON THE
+      // SECTION THAT HOLDS IT. This leg used to aim at the centre of
+      // `sections-canvas-section-0` — the whole section — and the settle-poll
+      // accepted any descendant whose `closest()` was that section, so it never
+      // established that the pointer was on the vertical stack at all. An
+      // implementation that appended from the SECTION-BODY branch satisfied
+      // every assertion this leg then made, while violating AC 21's "sibling AT
+      // THAT CARD'S INDEX". Selecting the wrapper by its own (si, ci) attributes
+      // makes the settle-poll prove the pointer is on the container itself.
+      await palettePointerDragToSelector(
+        ctx,
+        'markdown',
+        '[data-testid="canvas-card"][data-section-index="0"][data-card-index="0"]',
+      );
+
+      // RED on base (nothing lands): the section now holds TWO top-level cards.
       await expect(sectionCards(ctx, 0)).toHaveCount(2);
-      // GREEN half on base (nothing lands, so the stack is trivially unchanged)
-      // — and it is the half that pins the ruling on the branch.
-      await expect(window.getByTestId('sections-canvas')).toContainText('STACK-CHILD-A');
-      await expect(window.getByTestId('sections-canvas')).toContainText('STACK-CHILD-B');
+
+      // ⭐⭐⭐ RED on base, and THE AC 21 DISCRIMINATOR: the new card takes the
+      // container's former index 0. An append-from-the-section-body
+      // implementation puts it at index 1 and passes the count above — which is
+      // exactly the hole this leg had. This is the owner's DEFERRED-NESTING
+      // ruling made executable: a drop on a container inside a section is a
+      // SIBLING at that index, unlike the flat canvas's PROPS-06 nesting.
+      await expect(sectionCards(ctx, 0).nth(0)).toContainText('Your content here');
+      await expect(sectionCards(ctx, 0).nth(0)).not.toContainText('STACK-CHILD-A');
+
+      // RED on base: the container SHIFTED DOWN to index 1, carrying both
+      // children with it.
+      await expect(sectionCards(ctx, 0).nth(1)).toContainText('STACK-CHILD-A');
+      await expect(sectionCards(ctx, 0).nth(1)).toContainText('STACK-CHILD-B');
+
+      // GREEN on base (nothing lands, so the stack is trivially unchanged) — and
+      // this is the half that pins the ruling on the branch: the container's
+      // child list is EXACTLY unchanged, in count and in order, so nothing
+      // nested. Adding nesting later must break this leg rather than change
+      // behaviour silently.
+      await expect(stackChildren).toHaveCount(2);
+      await expect(stackChildren.nth(0)).toContainText('STACK-CHILD-A');
+      await expect(stackChildren.nth(1)).toContainText('STACK-CHILD-B');
     } finally {
       await close(ctx);
     }
@@ -995,6 +1227,21 @@ views:
       await loadYaml(ctx, EMPTY_SECTION_YAML);
       await expect(window.getByTestId('canvas-card')).toHaveCount(2);
 
+      // ⭐ AC 5 has TWO clauses — "changes no config" AND "adds no card" — and
+      // counting cards proves only the second. A background handler could write
+      // an equivalent config, push an undo entry or move the selection while the
+      // count stayed at two. These snapshots are the first clause's observables:
+      // `isDirty` (every config write path sets it, so the absent dirty asterisk
+      // means no write of any kind landed), the undo/redo stacks, and the whole
+      // selection tuple. A replace load starts clean, so the pre-drop state is
+      // itself asserted rather than assumed.
+      const dirtyIndicator = window.getByTestId('dashboard-dirty-indicator');
+      await expect(dirtyIndicator).toHaveCount(0);
+      const historyBefore = await debugSnapshot(ctx, 'history-debug-state');
+      const selectionBefore = await debugSnapshot(ctx, 'selection-debug-state');
+      expect(historyBefore['data-past-length']).toBe('0');
+      expect(historyBefore['data-future-length']).toBe('0');
+
       // Below the sections grid: canvas root, deliberately NOT a drop target, so
       // the browser shows a "no drop" cursor — a visible refusal rather than a
       // card teleporting into a section the user did not aim at.
@@ -1004,13 +1251,34 @@ views:
         if (!canvas || !grid) throw new Error('no canvas/grid box');
         const belowGrid = grid.y + grid.height + 30;
         expect(belowGrid).toBeLessThan(canvas.y + canvas.height);
-        return { x: canvas.x + canvas.width / 2, y: belowGrid };
+        const point = { x: canvas.x + canvas.width / 2, y: belowGrid };
+
+        // The point must be the BACKGROUND, verified rather than assumed — a
+        // point that had drifted into a section would make this leg silently
+        // assert the opposite of what it is named for.
+        const hit = await ctx.window.evaluate(
+          ({ x, y }) => {
+            const el = document.elementFromPoint(x, y) as HTMLElement | null;
+            return {
+              inSection: !!el?.closest('[data-testid^="sections-canvas-section-"]'),
+              inCanvas: !!el?.closest('[data-testid="sections-canvas"]'),
+            };
+          },
+          { ...point },
+        );
+        expect(hit.inSection, 'the background point must not be inside a section').toBe(false);
+        expect(hit.inCanvas, 'the background point must still be on the canvas').toBe(true);
+        return point;
       });
 
       // ⚠ NOT a control leg: on base every palette drop is refused, so this
       // passes for the wrong reason there. It discriminates only on the branch,
       // where it pins that the fix did not over-broaden.
       await expect(window.getByTestId('canvas-card')).toHaveCount(2);
+      // AC 5's "changes no config" clause, directly observed.
+      await expect(dirtyIndicator).toHaveCount(0);
+      expect(await debugSnapshot(ctx, 'history-debug-state')).toEqual(historyBefore);
+      expect(await debugSnapshot(ctx, 'selection-debug-state')).toEqual(selectionBefore);
     } finally {
       await close(ctx);
     }
@@ -1210,8 +1478,19 @@ views:
       const debug = window.getByTestId('selection-debug-state');
       await expect(debug).toHaveAttribute('data-selected-card', '0');
 
+      const dirtyIndicator = window.getByTestId('dashboard-dirty-indicator');
+      await expect(dirtyIndicator).toHaveCount(0);
+      const historyBefore = await debugSnapshot(ctx, 'history-debug-state');
+      const selectionBefore = await debugSnapshot(ctx, 'selection-debug-state');
+
+      // AC 17 names THREE payload shapes — malformed, EMPTY, and unknown card
+      // type — and the empty one has its own production branch (`if (!raw)` in
+      // `SectionsCanvas.paletteCardTypeFrom`) that nothing here reached. A
+      // payload that parses to `{}` is not an empty payload; it is a well-formed
+      // object with no `cardType`, and it exits two branches later.
       const target = '[data-testid="sections-canvas-section-0"]';
       await dispatchPaletteDrop(ctx, target, 'this is not json');
+      await dispatchPaletteDrop(ctx, target, '');
       await dispatchPaletteDrop(ctx, target, JSON.stringify({}));
       await dispatchPaletteDrop(ctx, target, JSON.stringify({ cardType: 'no-such-card-type' }));
 
@@ -1224,6 +1503,12 @@ views:
       await expect(debug).toHaveAttribute('data-selected-section', '0');
       await expect(debug).toHaveAttribute('data-selected-card', '0');
       await expect(window.locator('.ant-message')).toHaveCount(0);
+
+      // "Writes no config" observed directly rather than inferred from a card
+      // count: no dirty flag, no history push, no selection movement.
+      await expect(dirtyIndicator).toHaveCount(0);
+      expect(await debugSnapshot(ctx, 'history-debug-state')).toEqual(historyBefore);
+      expect(await debugSnapshot(ctx, 'selection-debug-state')).toEqual(selectionBefore);
 
       // No undo entry was pushed: Ctrl+Z must not walk back past the load.
       await ctx.appDSL.undo();
@@ -1242,31 +1527,84 @@ views:
     const { window } = ctx;
     try {
       await ctx.appDSL.waitUntilReady();
-      // max_columns 1 => a ONE-COLUMN section, the narrowest layout the suite
-      // can produce and the case MUST NOT 8 is about.
+      // max_columns 1 => a ONE-COLUMN section.
       await loadYaml(ctx, EMPTY_SECTION_YAML.replace('max_columns: 2', 'max_columns: 1'));
       await expect(window.getByTestId('sections-canvas')).toBeVisible();
+
+      // ⚠⚠ `max_columns: 1` ALONE DOES NOT MAKE A NARROW SECTION, and this leg
+      // used to claim it did. The shared launcher pins every test to 1920x1080
+      // (`tests/support/electron.ts:226-237`), where one column makes the
+      // section WIDER, not narrower — so AC 18's "at the suite's narrowest
+      // window" clause was never exercised. The window itself has to shrink.
+      const section = window.getByTestId('sections-canvas-section-0');
+      const wideBox = await section.boundingBox();
+      if (!wideBox) throw new Error('no section box at the launcher width');
+
+      const NARROW = { width: 900, height: 800 };
+      await setWindowSize(ctx, NARROW);
+      expect(window.viewportSize()).toEqual(NARROW);
+
+      // The narrowness is MEASURED against the launcher's own default, not
+      // asserted — a bounded viewport is only evidence if the layout it produces
+      // is demonstrably narrower than the one every other test runs at.
+      await expect
+        .poll(async () => (await section.boundingBox())?.width ?? Number.POSITIVE_INFINITY, {
+          message: 'the section must reflow narrower than the launcher default',
+        })
+        .toBeLessThan(wideBox.width);
+      const narrowBox = await section.boundingBox();
+      if (!narrowBox) throw new Error('no section box at the narrow width');
+      expect(narrowBox.width).toBeLessThan(NARROW.width);
 
       // RED half on base: no marker exists.
       await expect(window.getByTestId('section-add-target-0')).toBeVisible();
 
-      // GREEN half on base — and the POINT of the leg: it proves the marker did
-      // not displace the controls it sits next to.
-      await expect(window.getByTestId('section-drag-handle-0')).toBeVisible();
-      await expect(window.getByTestId('section-delete-0')).toBeVisible();
-      const heading = window.getByTestId('section-title-input-0');
-      await expect(heading).toBeVisible();
-
-      // Operable, not merely visible: the rename still commits.
-      await heading.fill('Renamed Section');
-      await heading.press('Enter');
-      await expect(heading).toHaveValue('Renamed Section');
-
-      // The marker occupies no part of the toolbar's flex row.
+      // The marker occupies no part of the toolbar's flex row — asserted at the
+      // NARROW width, where a flex row is most likely to wrap or overlap.
       const markerBox = await window.getByTestId('section-add-target-0').boundingBox();
       const toolbarBox = await window.getByTestId('section-toolbar-0').boundingBox();
       if (!markerBox || !toolbarBox) throw new Error('no marker/toolbar box');
       expect(markerBox.y).toBeGreaterThanOrEqual(toolbarBox.y + toolbarBox.height - 1);
+
+      // GREEN half on base — and the POINT of the leg: it proves the marker did
+      // not displace the controls it sits next to.
+      const handle = window.getByTestId('section-drag-handle-0');
+      const heading = window.getByTestId('section-title-input-0');
+      await expect(handle).toBeVisible();
+      await expect(heading).toBeVisible();
+      await expect(window.getByTestId('section-delete-0')).toBeVisible();
+
+      // ⚠⚠ VISIBLE IS NOT OPERABLE, and asserting visibility on all three while
+      // operating only the heading is what let a marker overlay that DISABLES
+      // reorder or Delete without hiding them pass this leg. All three are now
+      // operated, each with its own outcome assertion, with the marker rendered.
+      // Delete goes LAST because it destroys the section the others act on.
+
+      // 1. HEADING — the rename commits.
+      await heading.fill('Renamed Section');
+      await heading.press('Enter');
+      await expect(heading).toHaveValue('Renamed Section');
+
+      // 2. REORDER HANDLE — hit-tested first (Playwright's hover actionability
+      //    fails if anything covers the handle, which is precisely the overlay
+      //    failure MUST NOT 8 guards against), then actually reordered.
+      await handle.hover();
+      await dispatchCardDrag(
+        ctx,
+        '[data-testid="section-drag-handle-0"]',
+        '[data-testid="sections-canvas-section-1"]',
+      );
+      // Order was [Renamed Section, Empty One]; after the reorder it is
+      // [Empty One, Renamed Section].
+      await expect(window.getByTestId('section-title-input-0')).toHaveValue('Empty One');
+      await expect(window.getByTestId('section-title-input-1')).toHaveValue('Renamed Section');
+
+      // 3. DELETE — last, because it removes a section the assertions above
+      //    depend on. The renamed section survives, which is what proves the
+      //    click landed on the button it was aimed at.
+      await window.getByTestId('section-delete-0').click();
+      await expect(window.getByTestId('sections-canvas-section-1')).toHaveCount(0);
+      await expect(window.getByTestId('section-title-input-0')).toHaveValue('Renamed Section');
     } finally {
       await close(ctx);
     }
@@ -1303,6 +1641,65 @@ views:
       await palette.addCard('markdown');
       await expect(sectionCards(ctx, 0)).toHaveCount(2);
       await expect(sectionCards(ctx, 1)).toHaveCount(1);
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  // --- L16 ------------------------------------------------------------------
+  test("F5 L16: applying dashboard YAML clears the section selection (mode: 'edit')", async ({
+    page,
+  }) => {
+    void page;
+    const ctx = await launchWithDSL();
+    const { canvas, window, yamlEditor } = ctx;
+    try {
+      await ctx.appDSL.waitUntilReady();
+
+      // ⚠⚠ WHY THIS LEG EXISTS. §9.7 warns that the one-line `loadDashboard`
+      // reset touches EVERY load path, and `mode: 'edit'` is the one branch
+      // where that `set` is partly conditional — `past`/`future`/`isDirty` are
+      // spread per-mode while the five selection fields sit in the
+      // unconditional part (`src/store/dashboardStore.ts:160,183-194`). It was
+      // also the only production load call site with NO end-to-end consumer:
+      // `grep -rn "Apply & Reload" tests/` returned nothing across the whole
+      // suite, so every existing Apply test stops at the confirmation dialog
+      // (`tests/integration/monaco-editor.spec.ts:182-200`) and the callback
+      // that reaches `loadDashboard` was never invoked by any test.
+      await loadYaml(ctx, DOC_A_YAML);
+      await canvas.selectCard(1);
+      const debug = window.getByTestId('selection-debug-state');
+      await expect(debug).toHaveAttribute('data-selected-section', '1');
+
+      await yamlEditor.open();
+      await yamlEditor.setEditorContent(DOC_B_YAML, 'modal');
+
+      // Apply raises a confirmation; only its OK handler calls `onApply`, which
+      // is what reaches `handleApplyYamlChanges` -> `loadDashboard(..., { mode:
+      // 'edit' })` (`src/App.tsx:2445`). Crossing it is the whole point.
+      await window.getByTestId('yaml-apply-button').click();
+      await window.getByRole('button', { name: /Apply & Reload Canvas/i }).click();
+      // ⚠ HIDDEN, NOT ABSENT. `<Modal data-testid="yaml-editor-modal" forceRender>`
+      // renders eagerly and a closed antd Modal KEEPS its DOM, so `toHaveCount(0)`
+      // is not satisfiable — which is why the assertion is made against the inner
+      // content div. The repository already had this written down
+      // (`tests/integration/bulk-operations.spec.ts:76-78`), and the first draft
+      // of this leg copied `yamlEditor.close()`'s `toHaveCount(0)` anyway and
+      // failed on it. ⓘ That DSL assertion is therefore latently broken; no spec
+      // calls `yamlEditor.close()` or `yamlEditor.apply()`, so it has never run.
+      // Reported, NOT fixed here — repairing shared DSL is outside this finding.
+      await expect(window.getByTestId('yaml-editor-content').first()).toBeHidden({
+        timeout: 10000,
+      });
+      await expect(window.getByTestId('sections-canvas')).toContainText('B-CARD-0');
+
+      // RED on base: `loadDashboard` never wrote `selectedSectionIndex`, and
+      // zustand's `set` merges partially, so section 1 of document A survived
+      // into document B — through the edit path exactly as through the replace
+      // path L14 covers.
+      await expect(debug).toHaveAttribute('data-selected-section', 'null');
+      // RED on base: no marker existed to show where an add would land.
+      await expect(window.getByTestId('section-add-target-0')).toBeVisible();
     } finally {
       await close(ctx);
     }

@@ -8,21 +8,36 @@
  * its proof to "a component assertion, or else code inspection" would have let
  * the guard ship with no committed test at all.
  *
- * ⚠ CLASSIFICATION: GREEN ON BASE **AND** ON THE BRANCH — a CONTROL LEG, not a
- * red leg. On base nothing accepts a palette drag at all; on the branch it is
- * specifically the callback's ABSENCE that withholds acceptance. What it
- * discriminates is a correct implementation from one that accepts every dragover
- * unconditionally and then discards the drop silently when no writer is mounted
- * — which is precisely the failure `GridCanvas` models in the other direction
- * (it `preventDefault()`s unconditionally and only checks `if (!onCardDrop)` at
- * drop time). Accepting a gesture and then dropping it on the floor recreates
- * the silent-gesture failure VIEWS-04 is about.
+ * ⚠⚠⚠ CLASSIFICATION — CORRECTED, AND THE CORRECTION MATTERS MORE THAN THE
+ * CLASSIFICATION. An earlier version of this docblock said that with `src/`
+ * stashed "the import resolves" and every assertion here would pass on base,
+ * i.e. that this file is an OBSERVED green-on-base control. **THAT IS
+ * STATICALLY IMPOSSIBLE AND WAS NEVER EXECUTED.** Measured:
  *
- * ⚠ This whole FILE is new, so it cannot be red-legged in the ordinary way: with
- * `src/` stashed the import resolves but the component has no
- * `onPaletteCardDrop` prop at all, and every assertion here would pass for the
- * wrong reason (nothing is accepted on base for any input). That is exactly why
- * it is declared a control leg rather than dressed up as a red one.
+ *     git show main:src/components/CardPalette.tsx   | rg 'PALETTE_CARD_MIME'
+ *     git show main:src/components/SectionsCanvas.tsx | rg 'onPaletteCardDrop'
+ *
+ * both return NO MATCH, so restoring base `src/` makes this file fail at IMPORT,
+ * before any behavioural assertion runs. There is no base run of this file to
+ * report, and none was ever performed.
+ *
+ * ⭐ WHAT IS ACTUALLY EXECUTED, AND WHAT IT PROVES. Every result below is a
+ * BRANCH-SIDE observation. Their evidential value comes from the pair of cases
+ * that DISAGREE with one another on the same input: the same dragover on the
+ * same element is REFUSED without `onPaletteCardDrop` and ACCEPTED with it. A
+ * component that accepted everything unconditionally, or refused everything
+ * unconditionally, fails one of the two. That is ALTERNATIVE EVIDENCE for AC 19
+ * — a within-branch discriminator — and it is deliberately NOT the same thing as
+ * a control leg observed green on base.
+ *
+ * The failure it discriminates against is real and has a precedent in this
+ * repository: `GridCanvas` `preventDefault()`s unconditionally and only checks
+ * `if (!onCardDrop)` at drop time, so it accepts a gesture and then drops it on
+ * the floor — the silent-gesture failure VIEWS-04 is about.
+ *
+ * ⚠ A NEW FILE IMPORTING A NEW SYMBOL CANNOT BE RED-LEGGED AT ALL. This is the
+ * fifth consecutive slice to hit that limit (#125, #126, #127, #129, and now
+ * F5); treat it as a property of every new-surface slice rather than a surprise.
  *
  * The companion positive case — that the callback, when supplied, IS honoured —
  * is proved end-to-end by the e2e legs in tests/e2e/sections-canvas.spec.ts.
@@ -171,5 +186,29 @@ describe('SectionsCanvas without onPaletteCardDrop refuses palette drops (F5 AC 
     section.dispatchEvent(paletteDragEvent('drop', JSON.stringify({ cardType: 'no-such-card' })));
 
     expect(onPaletteCardDrop).not.toHaveBeenCalled();
+  });
+
+  it('discards an EMPTY payload silently — the third shape AC 17 names', () => {
+    // ⚠ AC 17 names malformed, EMPTY and unknown-card-type payloads, and the
+    // empty one has its OWN production branch (`if (!raw)` in
+    // `paletteCardTypeFrom`) that the case above never reaches: `{}` is a
+    // well-formed object with no `cardType` and exits two branches later. The
+    // inventory read as complete while one named shape had no case at all.
+    const onPaletteCardDrop = vi.fn();
+    renderCanvas({ onPaletteCardDrop });
+
+    const event = paletteDragEvent('drop', '');
+    // Both MIMEs are present but empty, so acceptance still happens on the
+    // marker's membership in `types` and the refusal is the PAYLOAD's, not the
+    // gate's — otherwise this case would pass for the wrong reason.
+    expect(
+      (event as unknown as { dataTransfer: { types: string[] } }).dataTransfer.types,
+    ).toContain(PALETTE_CARD_MIME);
+    screen.getByTestId('sections-canvas-section-0').dispatchEvent(event);
+
+    expect(onPaletteCardDrop).not.toHaveBeenCalled();
+    // The drop is still ACCEPTED at the gate (the marker was there); it is the
+    // payload that is discarded. That distinction is the point of the case.
+    expect(event.defaultPrevented).toBe(true);
   });
 });
