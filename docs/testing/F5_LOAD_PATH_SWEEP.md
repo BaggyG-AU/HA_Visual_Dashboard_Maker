@@ -51,8 +51,9 @@ list for contrast.
 ## The population — every production `loadDashboard` call site
 
 Section 1 of the script is **fully mechanical** and has been correct in every
-review round. `src/App.tsx:2203` is the test backdoor
-(`__dashboardTestApi.loadYaml`); the other eight are user-reachable.
+review round — **run it; the population is its output, not a number quoted
+here.** `src/App.tsx:2203` is the test backdoor (`__dashboardTestApi.loadYaml`);
+the rest are user-reachable.
 
 ## The consumer mapping is a HAND TRACE, not a generated result
 
@@ -130,9 +131,10 @@ integration suites remain unverified since PR #128.
 
 ## What is actually claimed, and what is not
 
-- **Claimed:** every one of the nine production call sites has at least one named
-  consumer spec, and each named consumer was executed. Results are recorded in
-  the PR body against the command that produced them.
+- **Claimed:** every row of the traced table above names a terminal driver, and
+  each was executed. **The table is the inventory** — there is no separate count
+  of rows to drift against it. Results are recorded in the PR body against the
+  command that produced them.
 - **Not claimed:** "every load path" or "zero under-inclusion". Those words are
   withdrawn. The honest statement is the table above plus the run results.
 - **Not claimed:** that the omitted flows were ever broken. The review did not

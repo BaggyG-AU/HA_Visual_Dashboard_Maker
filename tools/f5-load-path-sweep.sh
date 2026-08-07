@@ -109,9 +109,16 @@ for testid in \
   echo "$files" | sed 's/^/      mentions: /'
   # Whole-file action listing, so a driver is never dropped for sitting more
   # than N lines from its locator. Over-inclusive BY DESIGN and labelled so.
+  #
+  # ⚠⚠⚠ THIS LOOP CARRIED A `head -4` UNTIL ROUND 4 FOUND IT — WHICH MEANT THE
+  # LISTING SILENTLY DROPPED CANDIDATES (INCLUDING L16, L17 AND ROW 8's TERMINAL
+  # ACTIONS) WHILE THE COMMENT DIRECTLY ABOVE CLAIMED NOTHING WAS EVER DROPPED.
+  # NEVER CAP A LISTING WHOSE WHOLE PURPOSE IS COMPLETENESS. If output volume
+  # ever becomes a problem, print a COUNT and say what was withheld — a cap a
+  # reader cannot see is indistinguishable from an empty result.
   for f in $files; do
     grep -nE '\.(click|dblclick|fill|press|hover|dragTo|selectOption|check|dispatchEvent|send)\(' "$f" \
-      | sed "s|^|      candidate: $f:|" | head -4
+      | sed "s|^|      candidate: $f:|"
   done
 done
 
