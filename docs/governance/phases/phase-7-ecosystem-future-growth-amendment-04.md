@@ -36,7 +36,7 @@ Assistant does not behave the way the finding assumed.
 
 **Resolution, authorised by the project owner (micah / BaggyG-AU) on 2026-08-04:**
 a second, disposable Home Assistant instance — **`<HA_TEST_HOST>`
-(192.168.1.190:8123)** — is provided, and the agent MAY write to it freely for
+(<HA_TEST_HOST_IP>:8123)** — is provided, and the agent MAY write to it freely for
 development and agent-run testing. The owner's framing was that it does not
 matter if it breaks.
 
@@ -62,10 +62,10 @@ document's section headings are authoritative.**
 
 ## 1) The boundary — scoped by HOSTNAME, not by "test versus production"
 
-| Instance                                  | Reads | Writes                                                        |
-| ----------------------------------------- | ----- | ------------------------------------------------------------- |
-| **`<HA_TEST_HOST>`** (192.168.1.190:8123) | ✅    | ✅ **permitted** — development and agent-run testing          |
-| **`<HA_HOST>`** (<HA_HOST_IP>:8123)       | ✅    | ❌ **forbidden**, except amendment-03 §4's UAT-round envelope |
+| Instance                                      | Reads | Writes                                                        |
+| --------------------------------------------- | ----- | ------------------------------------------------------------- |
+| **`<HA_TEST_HOST>`** (<HA_TEST_HOST_IP>:8123) | ✅    | ✅ **permitted** — development and agent-run testing          |
+| **`<HA_HOST>`** (<HA_HOST_IP>:8123)           | ✅    | ❌ **forbidden**, except amendment-03 §4's UAT-round envelope |
 
 ⚠ **The risk this clause exists to prevent is not a broken test instance. It is a
 later reader generalising "the agent may write to live Home Assistant" out of this
@@ -202,7 +202,7 @@ that:
 | Item           | Value                                                                  |
 | -------------- | ---------------------------------------------------------------------- |
 | Authorised by  | Project owner (micah / BaggyG-AU), 2026-08-04                          |
-| Instance       | `<HA_TEST_HOST>` → 192.168.1.190:8123                                  |
+| Instance       | `<HA_TEST_HOST>` → <HA_TEST_HOST_IP>:8123                              |
 | Credential     | `~/.havdm/ha-test-token` (mode 600), outside the repository            |
 | Amends         | amendment-03 §4 (widened for a second host; unchanged for `<HA_HOST>`) |
 | Unblocks       | `LIVE_HA_TEST_CAPABILITY_REQUIREMENTS.md` Tier 3; narrows Tier 4       |
