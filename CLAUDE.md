@@ -19,9 +19,21 @@ tools are available, **use them actively** — per [`ai_rules.md`](ai_rules.md) 
 MemPalace is authoritative for dev-cycle context, and `MEMORY.md` is a
 bootstrap-only fallback with **no duplication** between the two.
 
-> If the tools are **not** present, MCP hasn't loaded — reload the VS Code window
-> (`Ctrl+Shift+P` → _Developer: Reload Window_) and approve the project MCP
-> server. Config: `.mcp.json` + `mempalace.yaml` at repo root (both gitignored).
+> **If the tools are not present, first work out which case you are in.**
+>
+> - **You are the maintainer and the config exists locally** — MCP simply
+>   hasn't loaded. Reload the VS Code window (`Ctrl+Shift+P` → _Developer:
+>   Reload Window_) and approve the project MCP server. Config: `.mcp.json` +
+>   `mempalace.yaml` at repo root, **both gitignored**.
+> - **You have no `.mcp.json` / `mempalace.yaml` at all** — you are working
+>   without this project's memory store, which is the normal state for anyone
+>   who is not the maintainer, since those files are gitignored and the palace
+>   is machine-local. **This whole section does not apply to you.** Skip it,
+>   say once in your first response that MemPalace is unavailable, and carry
+>   on — it is not a blocker and there is nothing to install.
+>   [`ai_rules.md`](ai_rules.md) §11's fallback path governs: use local memory
+>   files, and surface drawer-candidate notes in the PR body for a
+>   MemPalace-enabled agent to file later.
 
 > **If reads work but writes are refused**, your server is latched read-only
 > because another Claude Code window claimed the palace writer lease first.
@@ -38,10 +50,17 @@ _after_ a session opens, so these tools may not exist when you first read
 this. **If they are still connecting, run the sequence the moment they appear
 and say so in your first response.** An instruction that was briefly
 impossible has not lapsed, and beginning work before running it does not
-discharge it. (Evidence: a 2026-08-07 test on a sibling project — one agent
-ran none of its cadence because the server was mid-connect at the due moment
-and nothing returned it there; another ran all of it, but only after starting
-work.)
+discharge it. (Evidence: a 2026-08-07 test on a sibling private project — one
+agent ran none of its cadence because the server was mid-connect at the due
+moment and nothing returned it there; another ran all of it, but only after
+starting work.)
+
+⚠ **STILL CONNECTING is not the same as NEVER AVAILABLE.** The paragraph above
+governs a delay of seconds. If the tools are absent because this checkout has
+no MemPalace at all — the ordinary case for anyone who is not the maintainer —
+the sequence below is **not** owed, has not lapsed, and must not be retried,
+worked around, or reported as done. Say so once and proceed on
+[`ai_rules.md`](ai_rules.md) §11's fallback path.
 
 1. `mempalace_status` — confirm the palace is live and `havdm` is present.
 2. `mempalace_search` `"HAVDM current state of play"` (limit 15) — load the live
