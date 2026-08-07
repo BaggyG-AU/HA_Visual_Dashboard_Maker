@@ -10,8 +10,12 @@ import {
   sectionColumnSpan,
   sectionCardColumnSpan,
   sectionCardRowSpan,
+  resolveTargetSectionIndex,
   SECTION_GRID_COLUMNS,
 } from '../utils/sectionsLayout';
+import { PALETTE_CARD_MIME } from './CardPalette';
+import { cardRegistry } from '../services/cardRegistry';
+import { logger } from '../services/logger';
 
 /** A (section, card) address for a drag-move. */
 export interface SectionCardAddress {
@@ -33,6 +37,24 @@ interface SectionsCanvasProps {
   onCardPaste?: () => void;
   onCardDelete?: () => void;
   onCardMove?: (from: SectionCardAddress, to: SectionCardAddress) => void;
+  /**
+   * F5: a card dragged from the palette and dropped inside this sections view.
+   * `to.cardIndex` is the index the new card takes (existing cards from that
+   * index shift down); `to.cardIndex === cards.length` appends.
+   *
+   * ⚠ `to.cardIndex` always means the index the new card takes — INCLUDING when
+   * the addressed card is a container. Sections-container nesting is owner-ruled
+   * DEFERRED (2026-08-06), so this callback has exactly one meaning and needs no
+   * container discriminator. Adding nesting later is therefore a VISIBLE
+   * contract change here, not a silent one.
+   *
+   * ⚠ Optional, and the ACCEPTANCE is conditional on it too: without this prop
+   * the palette branches below never `preventDefault()`, so the browser refuses
+   * the drop and shows a "no drop" cursor. Accepting a drag and then discarding
+   * it because no writer is mounted would recreate the exact silent-gesture
+   * failure F5 exists to remove.
+   */
+  onPaletteCardDrop?: (cardType: string, to: SectionCardAddress) => void;
   onCardResize?: (
     address: SectionCardAddress,
     gridOptions: { columns?: number; rows?: number },
@@ -89,6 +111,7 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
   onCardPaste,
   onCardDelete,
   onCardMove,
+  onPaletteCardDrop,
   onCardResize,
   canPaste,
   onSectionAdd,
@@ -202,6 +225,95 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
     if (!from || !onCardMove) return;
     onCardMove(from, to);
   };
+
+  // --- F5: palette drag-and-drop into a section ------------------------------
+  //
+  // Unlike the flat GridCanvas — which accepts EVERY dragover unconditionally
+  // because a flat canvas has no competing HTML5 drag — this component runs two
+  // internal drags of its own (card-move and section-reorder), so it has to
+  // DISCRIMINATE at dragover. During dragover the drag data store is in
+  // protected mode: getData() returns '' and only `types` is readable. Hence the
+  // marker MIME, which is the ONLY palette branch at dragover.
+  //
+  // ⚠ Deliberately NOT `text/plain`: that would accept any stray text drag (a
+  // selection dragged out of the Monaco YAML editor, say), which would then fail
+  // to parse at drop and no-op — the "gesture that silently does nothing"
+  // failure this slice exists to remove.
+  const acceptsPaletteDrag = (event: React.DragEvent): boolean =>
+    !!onPaletteCardDrop && Array.from(event.dataTransfer.types).includes(PALETTE_CARD_MIME);
+
+  // Payload validation happens HERE, at drop, never at dragover.
+  //
+  // ⚠ The `text/plain` fallback is a PAYLOAD READER, not an acceptance rule: it
+  // only ever runs on an event a target already accepted because the marker was
+  // in `types`. It cannot widen what is accepted.
+  //
+  // Anything malformed is discarded with a warning and NOTHING else — no config
+  // write, no message, no selection change — the same defensive shape
+  // GridCanvas.handleDrop already uses.
+  const paletteCardTypeFrom = (event: React.DragEvent): string | null => {
+    const raw =
+      event.dataTransfer.getData(PALETTE_CARD_MIME) || event.dataTransfer.getData('text/plain');
+    if (!raw) {
+      logger.warn('SectionsCanvas: palette drop carried no payload; ignoring');
+      return null;
+    }
+
+    let cardType: unknown;
+    try {
+      cardType = (JSON.parse(raw) as { cardType?: unknown }).cardType;
+    } catch {
+      logger.warn('SectionsCanvas: palette drop payload was not JSON; ignoring');
+      return null;
+    }
+
+    if (typeof cardType !== 'string' || cardType.length === 0) {
+      logger.warn('SectionsCanvas: palette drop payload had no cardType; ignoring');
+      return null;
+    }
+    if (!cardRegistry.get(cardType)) {
+      logger.warn(`SectionsCanvas: palette drop named an unregistered card type: ${cardType}`);
+      return null;
+    }
+    return cardType;
+  };
+
+  /**
+   * Accept a palette dragover. Returns true when this was a palette drag and the
+   * caller should NOT fall through to the internal-drag branch.
+   */
+  const paletteDragOver = (event: React.DragEvent, alsoStopPropagation: boolean): boolean => {
+    if (!acceptsPaletteDrag(event)) return false;
+    event.preventDefault();
+    if (alsoStopPropagation) event.stopPropagation();
+    // The palette sets effectAllowed = 'copy'; answering 'move' produces an
+    // incompatible pair and Chromium refuses the drop outright.
+    event.dataTransfer.dropEffect = 'copy';
+    return true;
+  };
+
+  /**
+   * Handle a palette drop. Returns true when this was a palette drag and the
+   * caller should NOT fall through to `dropOn`.
+   *
+   * ⚠ stopPropagation is MANDATORY on the card-level drop: without it the event
+   * bubbles from the card wrapper to the section body and BOTH handlers insert —
+   * two cards from one gesture.
+   */
+  const paletteDrop = (to: SectionCardAddress, event: React.DragEvent): boolean => {
+    if (!acceptsPaletteDrag(event)) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    const cardType = paletteCardTypeFrom(event);
+    if (cardType) onPaletteCardDrop?.(cardType, to);
+    return true;
+  };
+
+  // F5 §7.5: which section a palette DOUBLE-CLICK add would land in. Rendered as
+  // a marker so the target is never invisible. This is DERIVED state — nothing
+  // writes selectedSectionIndex on render — and it calls the SAME resolver the
+  // add path calls, so the marker cannot disagree with the behaviour.
+  const targetSectionIndex = resolveTargetSectionIndex(view, selectedSectionIndex);
 
   // Section-title editing keeps a LOCAL draft while typing and commits on blur /
   // Enter, so a rename is ONE undoable edit (not one per keystroke).
@@ -390,6 +502,7 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
             <div
               key={`section-${si}`}
               data-testid={`sections-canvas-section-${si}`}
+              data-target-section={si === targetSectionIndex ? 'true' : undefined}
               ref={(el) => {
                 sectionRefs.current[si] = el;
               }}
@@ -397,6 +510,12 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                 gridColumn: `span ${span}`,
                 display: 'grid',
                 gridTemplateColumns: `repeat(${SECTION_GRID_COLUMNS}, minmax(0, 1fr))`,
+                // F5 §7.5: mark the add target. `outline` rather than `border`
+                // deliberately — an outline is drawn outside the box and takes
+                // NO layout space, so the marker cannot reflow a section's
+                // contents or push the toolbar's controls around (MUST NOT 8).
+                outline: si === targetSectionIndex ? `2px solid ${token.colorPrimary}` : undefined,
+                outlineOffset: 2,
                 // 4.3c: true HA sections grid — fixed 56px rows + dense packing
                 // so smaller cards backfill gaps (HA's Z-grid default). Dense is
                 // CSS-only: DOM order stays array order, so drag-reorder (which
@@ -408,10 +527,24 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
               }}
               // Dropping on the section's own area (not a card) appends a card to
               // the end, OR reorders a dragged section to this section's slot.
+              //
+              // F5: a PALETTE drop also appends here. The empty-section
+              // placeholder and the section toolbar carry no handlers of their
+              // own — they are children of this div and React dispatches
+              // synthetic events along the React tree, so both bubble here and
+              // are answered by this one pair. That is why the empty-section case
+              // needs no new element: the ONLY reason it refused a palette drop
+              // before was the `dragInProgress` gate below, which is false for a
+              // palette drag because nothing in this component sets it.
               onDragOver={(event) => {
+                if (paletteDragOver(event, false)) return;
                 if (dragInProgress) event.preventDefault();
               }}
-              onDrop={(event) => dropOn({ sectionIndex: si, cardIndex: cards.length }, event)}
+              onDrop={(event) => {
+                const to = { sectionIndex: si, cardIndex: cards.length };
+                if (paletteDrop(to, event)) return;
+                dropOn(to, event);
+              }}
             >
               {/* Per-section authoring header (slice 4.4): drag handle to reorder
                   the section, an editable heading, and delete. Spans the full grid
@@ -475,6 +608,37 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                   Delete
                 </button>
               </div>
+              {/* F5 §7.5: name the add target BEFORE the user acts. Until now
+                  nothing on screen said which section a palette double-click
+                  would land in, so the card arrived somewhere the user had not
+                  been shown — the heart of VIEWS-04.
+
+                  ⚠ It sits on its OWN full-width grid line, immediately under
+                  the toolbar and OUTSIDE its flex context (MUST NOT 8). The
+                  toolbar row is a single non-wrapping flex row already holding
+                  the drag handle, a 220px-max heading Input and a Delete button
+                  pinned with marginLeft:auto; a competing flex child there could
+                  squeeze or push those controls out of reach in a one-column
+                  section on a narrow window — regressing the very authoring
+                  controls this slice is repairing.
+
+                  It is read-only by design: it displays the target and offers no
+                  click action, so it can never enter the "a control's visibility
+                  depends on the state it sets" loop. */}
+              {si === targetSectionIndex ? (
+                <div
+                  data-testid={`section-add-target-${si}`}
+                  style={{
+                    gridColumn: `1 / -1`,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: token.colorPrimary,
+                    paddingBottom: 2,
+                  }}
+                >
+                  Cards add here
+                </div>
+              ) : null}
               {cards.map((card, ci) => {
                 const preview = previewFor(si, ci);
                 const cardSpan = preview?.columns ?? sectionCardColumnSpan(card);
@@ -499,13 +663,26 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
                     onMouseDownCapture={(event) => rememberMode(si, ci, event)}
                     // Drop onto a card inserts at that card's position (card move),
                     // or reorders a dragged section to this card's section.
+                    //
+                    // F5: a PALETTE drop takes this card's slot too — sections are
+                    // an ordered list and `ci` is its logical array index, which
+                    // is what YAML, export, selection and every existing section
+                    // operation address. The internal card-move contract already
+                    // reads a drop onto card `ci` as "take slot `ci`"; a palette
+                    // drop that appended instead would make one gesture mean two
+                    // different things depending on where the card came from.
                     onDragOver={(event) => {
+                      if (paletteDragOver(event, true)) return;
                       if (dragInProgress) {
                         event.preventDefault();
                         event.stopPropagation();
                       }
                     }}
-                    onDrop={(event) => dropOn({ sectionIndex: si, cardIndex: ci }, event)}
+                    onDrop={(event) => {
+                      const to = { sectionIndex: si, cardIndex: ci };
+                      if (paletteDrop(to, event)) return;
+                      dropOn(to, event);
+                    }}
                   >
                     {/* Content clips to the card's allotted 56px cell (HA-faithful);
                         the resize handles + precise panel are SIBLINGS of this
@@ -692,6 +869,31 @@ export const SectionsCanvas: React.FC<SectionsCanvasProps> = ({
           <div
             data-testid="sections-canvas-empty"
             style={{ color: token.colorTextSecondary, padding: 16 }}
+            // F5: this is the ONE "empty" surface that needs its own handlers.
+            // The canvas ROOT is deliberately not a drop target (dropping on
+            // bare canvas must produce a visible browser-level refusal rather
+            // than teleporting the card into some section the user did not aim
+            // at), so an event bubbling out of here would be refused. Accepting
+            // it here lets the gesture be ANSWERED — with the same warning the
+            // double-click path already gives — instead of ignored.
+            //
+            // ⚠ Contrast the EMPTY-SECTION placeholder, which needs none: it
+            // sits inside a section body that is itself a target.
+            onDragOver={(event) => {
+              paletteDragOver(event, false);
+            }}
+            onDrop={(event) => {
+              if (!acceptsPaletteDrag(event)) return;
+              event.preventDefault();
+              event.stopPropagation();
+              const cardType = paletteCardTypeFrom(event);
+              if (!cardType) return;
+              // A view with no sections has no addressable target, so the
+              // address below is a placeholder and is never read: App's handler
+              // hits its own no-sections guard and warns first. The card type is
+              // the real one, so the callback's contract still holds.
+              onPaletteCardDrop?.(cardType, { sectionIndex: 0, cardIndex: 0 });
+            }}
           >
             This sections view has no sections.
           </div>

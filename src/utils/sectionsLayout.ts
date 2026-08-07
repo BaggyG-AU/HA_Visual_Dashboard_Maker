@@ -124,6 +124,65 @@ export const addCardToSection = (view: View, sectionIndex: number, card: Card): 
 };
 
 /**
+ * F5: insert a card AT A GIVEN INDEX in a section — the palette-drop write path.
+ *
+ * `addCardToSection` above can only append, which is the whole pre-F5 add
+ * semantics; a drop aimed at an existing card has to be able to take that card's
+ * slot. `cardIndex === cards.length` appends, so this is a superset of the
+ * append behaviour rather than a replacement for it.
+ *
+ * The index is CLAMPED to [0, cards.length] rather than rejected: a drop address
+ * comes from the DOM and a stale render could name a card that has since gone.
+ * Clamping lands the card at the nearest legal slot instead of silently dropping
+ * the user's gesture. A non-finite index appends.
+ *
+ * Out-of-range SECTION returns the input view unchanged (reference-equal) — the
+ * established convention in this module, and what lets App's handlers skip the
+ * store write and avoid pushing a junk undo entry.
+ */
+export const insertCardIntoSectionAt = (
+  view: View,
+  sectionIndex: number,
+  cardIndex: number,
+  card: Card,
+): View => {
+  const cards = sectionCardsAt(view, sectionIndex);
+  if (cards === null) return view;
+
+  const requested = Number.isFinite(cardIndex) ? Math.trunc(cardIndex) : cards.length;
+  const at = Math.min(Math.max(0, requested), cards.length);
+
+  return replaceSectionCards(view, sectionIndex, [...cards.slice(0, at), card, ...cards.slice(at)]);
+};
+
+/**
+ * F5: which section a section-less add (the palette DOUBLE-CLICK path) targets.
+ * Returns null when the view has no sections.
+ *
+ * ⚠ The rendered target marker (SectionsCanvas) and the add path (App) MUST both
+ * call this. A marker computed separately can disagree with the behaviour it
+ * claims to describe, and a marker that lies is worse than no marker: VIEWS-04
+ * is a defect report about a card landing where nothing on screen named.
+ *
+ * This is a BEHAVIOUR-PRESERVING EXTRACTION of the decision `handleCardAdd`
+ * already made inline — same rules, same fallback. What F5 changes is that the
+ * fallback is now DISPLAYED rather than silent.
+ *
+ * ⚠ A DROP never consults this: a drop carries an explicit (section, card)
+ * address from the element it landed on. The selection is an input to the
+ * double-click path only.
+ */
+export const resolveTargetSectionIndex = (
+  view: View | undefined | null,
+  selectedSectionIndex: number | null,
+): number | null => {
+  const sections = view && Array.isArray(view.sections) ? view.sections : [];
+  if (sections.length === 0) return null;
+  if (selectedSectionIndex !== null && sections[selectedSectionIndex]) return selectedSectionIndex;
+  return 0;
+};
+
+/**
  * Remove cards at the given indices from a section (delete / the cut half of a
  * move). Out-of-range and duplicate indices are ignored; a no-op index list or
  * an out-of-range section returns the input view unchanged (reference-equal).

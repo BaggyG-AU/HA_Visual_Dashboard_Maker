@@ -199,6 +199,77 @@ in the renderer; why live-preview embedding is deferred).
 
 ---
 
+### VIEWS-04 — the `Auto covered` citation overstates what the cited spec proves
+
+| Field         | Value                                                                              |
+| ------------- | ---------------------------------------------------------------------------------- |
+| **Card**      | VIEWS-04 — Author a sections view (add, rename, reorder, delete)                   |
+| **Status**    | **OPEN** — apply at `v1.0.0-r4` plan generation                                    |
+| **Recorded**  | 2026-08-07                                                                         |
+| **Origin**    | `docs/testing/uat/plans/uat_plan_v1.0.0-r3_2026-08-03.md` line 1272 (card at 1267) |
+| **Round run** | v1.0.0-r3 — card was marked Fail, severity High                                    |
+
+⚠ **This entry corrects a COVERAGE CITATION, not a step, an expected result or a
+verdict.** The card's own text is sound: step 3 asks the tester to "Add a card
+into that section from the palette", and its Expected — "A card added while a
+section is selected lands **in that section**, not elsewhere" — described a real
+product defect, correctly reported. Nothing here withdraws or re-scores that
+Fail, and nothing here touches the r3 plan.
+
+**The text as written:**
+
+> Auto covered: Y (`tests/e2e/sections-canvas.spec.ts`)
+
+and the card's "Automated coverage confirms" paragraph, which claims the spec
+proves "… adding palette cards into the selected section".
+
+**What was measured** (audited per the standing recipe — open the cited spec,
+follow the DSL method, check which control it drives and which step that is):
+
+- `tests/e2e/sections-canvas.spec.ts` "adds a palette card into the selected
+  section" does drive the real double-click, but it **selects a card first**, then
+  asserts `data-selected-section = '1'` before adding. It therefore only ever
+  exercised the branch where `selectedSectionIndex` is non-null — the branch that
+  already worked. **The `?? 0` fallback was never reached, so that assertion
+  could not have failed on it.**
+- **No spec anywhere drove a palette DRAG onto any canvas in a sections view** —
+  the half of step 3 the tester actually reported.
+- The fixture had **no empty section**, so no existing leg touched the tester's
+  "Cannot drag cards into any section if the section is empty" case at all.
+
+This is a 21st form of the `auto_covered` problem: _a spec that covers the
+working half of the step the card describes, and is counted as covering the
+step._
+
+**What the next round's card must say instead:**
+
+The `Auto covered` line stays `Y` — the coverage now genuinely exists — but the
+"Automated coverage confirms" paragraph must name what is actually proved, and
+must not imply the drag path was ever covered before F5. The legs added by F5
+(PR for `feature/f5-sections-palette-drop`) in the same spec file are:
+
+- palette **drag** onto a populated section body, an **empty** section, an
+  existing card, and a section toolbar;
+- a drop on the canvas background adding nothing, and a drop into a view with
+  zero sections warning rather than silently doing nothing;
+- selection after a drop, one-Ctrl+Z undo granularity, and the card shape a
+  dropped card carries;
+- the **target marker** that names the add target before the gesture, including
+  after "Add section", and that it does not displace the section toolbar's
+  controls;
+- an internal card drag into an **empty** section, kept as a control.
+
+⭐ The wording should also drop any suggestion that the double-click leg proves
+the no-selection case: after F5 the no-selection target is **displayed**, and it
+is the marker legs — not the double-click leg — that prove it.
+
+**Evidence:** `docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md` §9.1, §9.4
+(merged PR #132, `d76878d`) · `drawer_havdm_decisions_6e8d4788d9513ccce593c378`
+(ruling ARB-R7 and the 13-item remediation order, F5 is item 6) ·
+`drawer_havdm_decisions_a2b1346037d4f731d4e37ba7` (the owner's Q1/Q2 rulings).
+
+---
+
 ## Related documents
 
 - `docs/testing/UAT_STRATEGY.md` — §2 roles, §3.2 plan generation, §5 writing

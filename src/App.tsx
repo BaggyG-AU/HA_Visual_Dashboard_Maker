@@ -77,6 +77,8 @@ import {
 } from './utils/cardClipboard';
 import {
   resolveViewCards,
+  insertCardIntoSectionAt,
+  resolveTargetSectionIndex,
   setSectionCards,
   addCardToSection,
   removeSectionCards,
@@ -1134,8 +1136,10 @@ const App: React.FC = () => {
         message.warning('This sections view has no sections to add a card to');
         return;
       }
-      const targetSection =
-        selectedSectionIndex !== null && sections[selectedSectionIndex] ? selectedSectionIndex : 0;
+      // F5: the SAME resolver SectionsCanvas renders its target marker from, so
+      // the marker and the landing site cannot disagree. Behaviour-preserving —
+      // these are the rules this branch already applied inline.
+      const targetSection = resolveTargetSectionIndex(currentView, selectedSectionIndex) ?? 0;
 
       const sectionCard = { ...baseCard } as Card;
       if (['entities', 'glance'].includes(cardType)) {
@@ -1202,6 +1206,87 @@ const App: React.FC = () => {
 
   const handleCardDrop = (cardType: string, x?: number, y?: number) => {
     handleCardAdd(cardType, x, y);
+  };
+
+  /**
+   * F5 / VIEWS-04: a palette card DRAGGED into a sections view.
+   *
+   * Before this, `SectionsCanvas` had no palette-drop path at all — its drop
+   * targets gated `preventDefault()` on the internal-drag flags, and HTML5 DnD
+   * refuses any drop whose `dragover` did not `preventDefault()`. So the gesture
+   * did nothing, visibly and repeatedly, and an EMPTY section — which is
+   * addressable at no other moment — could not receive a card by any route.
+   *
+   * Unlike the double-click path, the address arrives EXPLICITLY from the
+   * element the card landed on; the section selection is not consulted.
+   */
+  const handleSectionPaletteDrop = (
+    cardType: string,
+    to: { sectionIndex: number; cardIndex: number },
+  ) => {
+    // Guards, with PER-PRECONDITION parity with handleCardAdd — which does not
+    // use one notification level for all of them.
+    if (!config) {
+      message.warning('Please load a dashboard first');
+      return;
+    }
+    if (selectedViewIndex === null) {
+      message.warning('Please select a view first');
+      return;
+    }
+    const cardMetadata = cardRegistry.get(cardType);
+    if (!cardMetadata) {
+      // Unreachable from a well-formed palette payload — SectionsCanvas's drop
+      // validation already rejects an unregistered type silently. Kept for
+      // parity, not as the primary path.
+      message.error(`Unknown card type: ${cardType}`);
+      return;
+    }
+
+    const currentView = config.views[selectedViewIndex];
+    const sections = Array.isArray(currentView.sections) ? currentView.sections : [];
+    if (sections.length === 0) {
+      // The no-sections placeholder routes here so the gesture is ANSWERED with
+      // the same warning the double-click path gives, rather than ignored. `to`
+      // is a placeholder in this case and is deliberately never read.
+      message.warning('This sections view has no sections to add a card to');
+      return;
+    }
+
+    // A sections card is a positionless list entry: no `_havdm_layout`, no
+    // `view_layout`. Titles match the double-click path exactly.
+    const sectionCard = {
+      type: cardType,
+      ...(cardMetadata.defaultProps as Record<string, unknown>),
+    } as Card;
+    if (['entities', 'glance'].includes(cardType)) {
+      (sectionCard as Record<string, unknown>).title = `New ${cardMetadata.name}`;
+    }
+
+    const nextView = insertCardIntoSectionAt(
+      currentView,
+      to.sectionIndex,
+      to.cardIndex,
+      sectionCard,
+    );
+    // ⚠ Reference-equal early return BEFORE touching the store — the invariant
+    // every section handler here keeps. Without it, a defensive no-op would push
+    // a junk undo entry that swallows the user's real previous edit.
+    if (nextView === currentView) return;
+
+    const nextViews = config.views.map((view, i) => (i === selectedViewIndex ? nextView : view));
+    // ONE write => one history entry => ONE Ctrl+Z per drop.
+    updateConfig({ ...config, views: nextViews });
+
+    // Where it actually landed, read back by identity rather than by recomputing
+    // the clamp — one source of truth for the insertion index.
+    const landedCards = resolveViewCards(nextView, to.sectionIndex);
+    const landedIndex = landedCards.indexOf(sectionCard);
+    setSelectedSectionCard(selectedViewIndex, to.sectionIndex, landedIndex);
+
+    // No success toast: the selection IS the feedback — the new card carries the
+    // selected-card styling and drives the Properties panel. The double-click
+    // path keeps its toast, where the landing site may be scrolled out of sight.
   };
 
   // PROPS-06: a palette card dropped ON a container card nests INTO it.
@@ -3282,6 +3367,7 @@ const App: React.FC = () => {
                           selectedCardIndices={selectedCardIndices}
                           selectedSectionIndex={selectedSectionIndex}
                           onSectionCardMove={handleSectionCardMove}
+                          onSectionPaletteDrop={handleSectionPaletteDrop}
                           onSectionCardResize={handleSectionCardResize}
                           onSectionAdd={handleSectionAdd}
                           onSectionRemove={handleSectionRemove}
@@ -3352,6 +3438,7 @@ const App: React.FC = () => {
                                   onCardPaste={handleCardPaste}
                                   onCardDelete={handleCardDelete}
                                   onSectionCardMove={handleSectionCardMove}
+                                  onSectionPaletteDrop={handleSectionPaletteDrop}
                                   onSectionCardResize={handleSectionCardResize}
                                   onSectionAdd={handleSectionAdd}
                                   onSectionRemove={handleSectionRemove}
