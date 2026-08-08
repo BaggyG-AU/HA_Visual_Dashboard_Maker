@@ -939,3 +939,280 @@ independent follow-up review.
   behaviour-bearing preimage to an allowed destination. Classify Git change
   records, including both rename sides and any promised mode/status property,
   before treating silence from a pathname filter as evidence-only proof.
+
+## Round 5
+
+**Verdict: CHANGES-REQUIRED (high confidence).** **Merge readiness: not ready.**
+The two shipped assertions close R4-M1's named rename and object-type cases,
+including their false-positive controls. They still compare only the endpoint
+trees. A real commit that adds a behaviour path and a later commit that removes
+it is absent from both endpoint diffs, so both assertions print nothing while
+the repair history did touch a non-allowlisted path. The same bypass hides a
+temporary executable/symlink mode that is restored before HEAD. This leaves
+one merge-blocking finding, R5-M1.
+
+### Disposition of R4-M1
+
+| Round-4 finding                                 | Disposition            | Merge effect               | Round-5 judgement                                                                                                                                                                                                                                              |
+| ----------------------------------------------- | ---------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R4-M1 — enumerate rename sides and object modes | **PARTIALLY RESOLVED** | **MERGE-BLOCKING — R5-M1** | `--no-renames` exposes both sides of a net rename and the raw-mode assertion rejects a net symlink, gitlink or executable file. Both operate on `<previous>..HEAD` endpoint trees, not every change record in the repair, so transient behaviour is invisible. |
+
+### R4-M1 — the endpoint assertions miss paths and modes touched only in intermediate commits
+
+I extracted the allowlist and `awk` program from the shipped Operating
+Agreement, then used those extracted values in the two exact commands:
+
+```sh
+round5_allow_re=$(sed -n "s/.*grep -vE '\([^']*\)'.*/\1/p" \
+  docs/governance/OPERATING_AGREEMENT.md | head -n 1)
+round5_mode_awk=$(sed -n "s/.*awk '\([^']*\)'.*/\1/p" \
+  docs/governance/OPERATING_AGREEMENT.md | head -n 1)
+
+git diff --no-renames --name-only 34fbc1c..HEAD | grep -vE "$round5_allow_re"
+git diff --no-renames --raw 34fbc1c..HEAD | awk "$round5_mode_awk"
+```
+
+They extracted:
+
+```text
+round5_allow_re=^(docs/reviews/[^/]+\.md|PR_NOTES\.md|CODEX_SUMMARY\.md)$
+round5_mode_awk=$2 !~ /^(100644|000000)$/
+```
+
+On the actual Round-4 repair range, command 1 printed the governance document
+and command 2 printed nothing:
+
+```text
+docs/governance/OPERATING_AGREEMENT.md
+<no output>
+```
+
+That correctly classifies `34fbc1c..2cc9dc9` as review-requiring because at
+least one assertion printed. On the real evidence-only control
+`7a2d66e..34fbc1c`, both printed nothing, correctly accepting the Round-4
+review-file-only change.
+
+**Real-commit adversarial results.** I constructed commits in an isolated Git
+repository with `git update-index`/`commit-tree`, declared the expected
+classification, and ran both shipped assertions. `PRINT` below records which
+assertion supplied the output; `SILENT` means both printed nothing.
+
+| Change-record case                                    | Expected | Observed                                                  | Judgement                                      |
+| ----------------------------------------------------- | -------- | --------------------------------------------------------- | ---------------------------------------------- |
+| Behaviour file → allowed review name                  | PRINT    | command 1: `package.json`                                 | Correct                                        |
+| Allowed → allowed rename                              | SILENT   | both: no output                                           | Correct false-positive control                 |
+| Regular allowed file → symlink                        | PRINT    | command 2: `:100644 120000 … T docs/reviews/a.md`         | Correct                                        |
+| Gitlink added at allowed path                         | PRINT    | command 2: `:000000 160000 … A docs/reviews/submodule.md` | Correct                                        |
+| Executable bit added to allowed file                  | PRINT    | command 2: `:100644 100755 … M docs/reviews/a.md`         | Correct                                        |
+| Symlink → ordinary file                               | SILENT   | both: no output                                           | Correct under the stated resulting-type policy |
+| Executable bit removed                                | SILENT   | both: no output                                           | Correct under the stated resulting-type policy |
+| Non-ancestor endpoints with a net `src/behavior.ts`   | PRINT    | command 1: `src/behavior.ts`                              | Correct, conservative post-rebase result       |
+| Empty range                                           | SILENT   | both: no output                                           | Correct                                        |
+| Merge endpoint resolving an allowed path to a symlink | PRINT    | command 2: `:100644 120000 … T docs/reviews/x.md`         | Correct                                        |
+| Behaviour path added, then removed within the range   | PRINT    | **both: no output**                                       | **False accept — R5-M1**                       |
+| Executable bit added, then removed within the range   | PRINT    | **both: no output**                                       | **False accept — same R5-M1 class**            |
+| Unsupported index mode `100664` requested             | SILENT   | Git normalized the index entry to `100644`                | No unobserved mode exists                      |
+
+The fail-against-current-command evidence for the path case was:
+
+```text
+$ git diff --no-renames --name-only BASE..RESTORED | grep -vE "$round5_allow_re"
+<no output>
+$ git diff --no-renames --raw BASE..RESTORED | awk "$round5_mode_awk"
+<no output>
+$ git log --format= --no-renames --name-only BASE..RESTORED | sed '/^$/d'
+src/transient.ts
+src/transient.ts
+```
+
+The corresponding mode sequence was also invisible at the endpoints, while a
+per-commit raw enumeration exposed the disallowed transition:
+
+```text
+:100755 100644 … M  docs/reviews/a.md
+:100644 100755 … M  docs/reviews/a.md
+
+$ git log --format= --no-renames --raw BASE..RESTORED | awk "$round5_mode_awk"
+:100644 100755 … M  docs/reviews/a.md
+```
+
+This is behaviour-bearing, not merely historical trivia. An intermediate
+workflow can run when pushed, an executable can be invoked, and sensitive or
+behavioural content remains in Git history even after the endpoint tree is
+restored. More directly, the normative claim at
+`OPERATING_AGREEMENT.md:258-262` is “the repair touched only allowed paths,”
+not “the two endpoint trees have a net difference only at allowed paths.” The
+checks do not decide the claim they certify.
+
+**Required correction.** Enumerate the path and resulting-mode records of every
+commit in the reviewed repair range rather than only the aggregate endpoint
+delta. Preserve the fixed rename decomposition and regular-file policy, define
+or fail closed when the previous-review commit is not an ancestor, and handle
+merge commits without silently dropping a parent comparison. The exact command
+is the author's choice. The required fail-against-old cases are a behaviour
+path added then removed and an allowed file made executable/symlink then
+restored; the repaired mechanism must report both histories through the
+appropriate assertion.
+
+**Raw line shapes.** `$2` is the destination mode in every ordinary raw record
+the exact `git diff --raw A..B` command produced, including when `B` was a merge
+commit. The merge endpoint appeared in the ordinary form and was correctly
+rejected:
+
+```text
+:100644 120000 … T  docs/reviews/x.md
+```
+
+I also forced a combined raw display with `git show --cc --raw`. It produced:
+
+```text
+::100644 100644 120000 … TT  docs/reviews/x.md
+```
+
+There `$2` is a parent mode and the shipped `awk` program printed nothing. That
+is not a current defect because the shipped `git diff A..B` does not emit
+combined records, even for a merge endpoint. It is a constraint on the R5-M1
+repair: if it adopts a history/combined form, it must parse that form rather
+than reuse `$2` blindly.
+
+`--find-copies-harder` also re-enabled rename/copy detection when added to the
+test, regardless of its order relative to `--no-renames`, and reproduced the
+rename false accept. The shipped command does not contain that option, so this
+is not a current defect; the mandatory real-commit rename control would detect
+such a future edit. Re-running the shipped form over repository rename `74a2582`
+emitted both paths under `diff.renames=true`, `copies`, `false`, and
+`diff.renameLimit=1`; omitting `--no-renames` emitted only the destination under
+`true` and `copies`. The documented configuration measurement is therefore
+confirmed. No issue was found in the existing prose's add/delete versus
+resulting-object-type policy over a single endpoint delta.
+
+**Two-command form — no issue found.** A single parser could reduce the chance
+of a half-run, but it would also have to parse quoting, path fields, modes and
+merge shapes together. The binding text says “both,” labels each assertion,
+and repeats that the second is not optional. Two short orthogonal commands are
+clearer and independently auditable; the current defect is their shared
+endpoint key, not their count.
+
+### Regression and same-class sweep
+
+- The branch began clean at `2cc9dc91a1c2ebcd8cee3c298be85dcd2025ab4f`;
+  `main` and `origin/main` were `a6ce103`, and PR #139 was open, non-draft and
+  unmerged at the commissioned head and base.
+- `git diff --name-only 34fbc1c..2cc9dc9` returned only
+  `docs/governance/OPERATING_AGREEMENT.md`. More strongly, per-commit
+  `git log --name-status` enumerated all three repair commits and each modified
+  only that file with mode `100644 → 100644`. The range has no `src/`, `tests/`,
+  PNG, signed specification, UAT or `[STATE]` change and remains docs-only.
+- The §3.4 pointer is structurally complete in the repository: rounds 2, 3 and
+  4 in this committed review record the incomplete blocklist, prefix and rename
+  defects respectively, and the Operating Agreement attributes one drawer to
+  each corresponding round. Whether
+  `drawer_havdm_review_c922769aee0360b071fa5566` or the two earlier drawers
+  contain the attributed content is **UNVERIFIABLE** without MemPalace. I did
+  not substitute the author's filing commit for drawer inspection.
+- The two measured-property sentences removed no operative content. The
+  `diff.renames`/`diff.renameLimit` measurement is compatible with the exact
+  command, but both sentences are explanatory case history in a document whose
+  preamble says full narrative never lives there. The non-ASCII universal is
+  also config-dependent: default `core.quotePath` printed
+  `"docs/reviews/caf\303\251.md"`, while
+  `git -c core.quotePath=false diff --no-renames --name-only …` emitted the raw
+  `docs/reviews/café.md`, which matched the allowlist and made command 1 silent.
+  Acceptance under that configuration is policy-correct for an ordinary direct
+  `.md`; the statement that the path always false-rejects is not. This is a
+  **non-blocking scope-control note** the owner may accept with the merge, though
+  the already-required repair should remove the narrative or qualify it.
+- `./tools/checks` exited 0 after this Round-5 text was formatted: all 4 steps
+  passed, lint reported 0 errors / 145 warnings, and 1,335 unit tests passed
+  across 101 files.
+
+### Step 4 — the author's weakest claims
+
+1. **The self-pass technique materially improved, but is still insufficient.**
+   Real commits, declared expectations, configuration variance and a
+   false-positive control are genuine method rather than the Round-4 name-table
+   theatre. The pass nevertheless remained keyed to the net endpoint delta and
+   never enumerated the commits whose paths/modes the prose claims to govern;
+   R5-M1 is the behaviour-bearing bypass that key cannot see. One improved pass
+   therefore does not establish a reliable method.
+2. **The edge population remains incomplete.** Ordinary raw `$2` parsing is
+   sound for the exact command, but transient records are absent and combined
+   records would move the destination mode out of `$2`. The repair must choose
+   a history form and test its merge semantics explicitly.
+3. **The measured properties are unnecessary documentation.** The rename
+   configuration result is accurate within the named options, but belongs in
+   the review/drawer evidence rather than pointer-style law. The non-ASCII
+   statement is additionally false as a universal under
+   `core.quotePath=false`. This is non-blocking because the operative
+   classification remains safe and policy-aligned.
+4. **Two commands are acceptable.** Their explicit conjunction and separate
+   responsibilities are clearer than one complicated parser. A compound
+   wrapper could improve ergonomics, but its absence does not falsify the rule.
+
+### Step 5 — verdict, convergence, and rollback
+
+**CHANGES-REQUIRED, high confidence.** PR #139 is **not merge-ready**. R5-M1
+is merge-blocking: the current mechanism can certify a repair history that
+contains a behaviour-bearing path or disallowed mode, contradicting the exact
+“repair touched” population it claims to decide. The optional measured-property
+paragraph is a non-blocking note the owner could accept with the merge, but it
+should be removed or qualified while the blocker is repaired. Correct only the
+endpoint-versus-history population, preserve the now-clean rename/type cases,
+exercise transient path and mode cases against old and repaired commands, then
+commission the required narrow follow-up.
+
+Applying §0 rule 1 clause 6 by name, the rising round count remains primarily
+an **author sweep failure**. The technique changed in a meaningful way, but it
+still patched the named endpoint instances without enumerating the behavioural
+population promised by “touched.” This gap existed in the earlier endpoint
+command rather than being generated by the R4-M1 repair. The optional
+measurement paragraph is a secondary scope-control failure: it introduced
+unnecessary narrative and one configuration-dependent universal, but it is not
+the merge blocker.
+
+No §3.3 rollback trigger fired. This is one governance PR, not three
+consecutive implementation slices or specification reviews; its rounds have
+not been clean; no machine-enforcement mechanism was proposed; and the §4
+index remains one row per ruling. The PR is still converging—net rename and
+object-mode handling are now sound—but the remaining endpoint gap is not an
+acceptable residue because it controls whether behavior-bearing repair history
+receives independent review.
+
+### Checked clean and not checked
+
+- **Checked clean:** commissioned branch/PR/base state; exact two-command
+  extraction; net behavior-to-allowed and allowed-to-allowed renames; symlink,
+  gitlink and executable additions; regularizing type/mode transitions;
+  non-ancestor and empty ranges; merge endpoints; ordinary and combined raw
+  field shapes; unusual index-mode normalization; rename configuration and
+  `--find-copies-harder` interaction; two-command ergonomics; actual per-commit
+  repair scope; pointer completeness in repository evidence; rollback triggers;
+  and the required repository gate.
+- **Could not check:** MemPalace remained unavailable, so the Round-4 drawer,
+  its author-filed wording, and all three drawer-content attributions remain
+  **UNVERIFIABLE**. Repository and live PR evidence—not drawer content—support
+  this review.
+- **Not run:** e2e, integration or UAT. The repair range is docs-only and the
+  commission limits the rerun to `./tools/checks`.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"` — **PR #139 Round-5 narrow governance
+  review:** CHANGES-REQUIRED, high confidence; not merge-ready. R4-M1 is
+  partially resolved: net renames, symlinks, gitlinks and executable modes are
+  now classified correctly, but both shipped assertions compare endpoint trees
+  and silently accept a behaviour path or disallowed mode introduced and then
+  restored within the repair history (merge-blocking R5-M1). The self-pass is
+  materially better than Round-4 name-table theatre but remains insufficient
+  because it is keyed to net endpoint records rather than every commit touched.
+  The measured-property paragraph is a non-blocking scope-control note;
+  `core.quotePath=false` disproves its universal non-ASCII false-reject claim.
+  No §3.3 rollback trigger fired. Correct only the history population, preserve
+  the clean endpoint cases, prove transient path/mode histories print, then
+  commission one narrow follow-up.
+- `practice/review`, `added_by="codex"` — **Candidate general lesson:** an
+  endpoint diff cannot prove a universal about every path or mode a commit range
+  touched. A path or unsafe mode added and restored between endpoints is absent
+  from both trees; when the claim governs repair history, enumerate per-commit
+  change records (including merge semantics) and use transient add/remove and
+  mode/restore sequences as fail-against-old cases.
