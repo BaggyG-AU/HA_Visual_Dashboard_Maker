@@ -823,10 +823,10 @@ carve-out remain **guidance**, deliberately — see §3.5 for why.
 
 What was measured, on PR #137:
 
-| Round   | What re-running found                                                                                                                                                                                                            |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Round 1 | The reviewer's re-run of the load-bearing spec returned **31 passed / 1 failed** against the author's reported 32/32, and a deeper repeat reproduced a wrong-card defect. **That one ~5-minute run is why a fix round existed.** |
-| Round 2 | Every re-run returned the author's number unchanged, and **all three round-2 findings came from reading and grepping.** The two MEDIUM sweeps produced identical numbers in both rounds.                                         |
+| Round   | What re-running found                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Round 1 | The reviewer's re-run of the load-bearing spec returned **31 passed / 1 failed** against the author's reported 32/32, and a deeper repeat reproduced a wrong-card defect. **That one ~5-minute run is why a fix round existed.**                                                                                                                                                                                                                      |
+| Round 2 | Every re-run returned the author's number unchanged, and **all three round-2 findings came from reading and grepping.** ⚠ Round 2 is the **only** round whose reviewer actually re-ran the MEDIUM sweeps (107 e2e / 56 pass + 19 skip integration); **round 1's reviewer did NOT re-run them and said so plainly**, so round 1's MEDIUM figures are author-reported. An earlier draft called both rounds equivalent measured outcomes — they are not. |
 
 Items 1–3 are the binding set (§3.5); item 4 is where the remaining time is best spent:
 
