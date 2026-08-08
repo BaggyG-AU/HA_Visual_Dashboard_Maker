@@ -317,6 +317,15 @@ three must print.** Build them as real commits on a throwaway branch — this
 class of defect lives in `git diff`'s behaviour, not in the regex, and feeding
 synthetic strings to `grep` cannot detect it.
 
+ⓘ Two measured properties, so neither is rediscovered as a defect. **The
+`--no-renames` flag is not config-dependent:** the rename bypass stays closed
+under `diff.renames` set to `true`, `copies` or `false`, and under a
+`diff.renameLimit` of 1. **And a non-ASCII path fails safe:** git quotes it
+(`"docs/reviews/caf\303\251.md"`), the quoted form does not match the
+allowlist, so such a path is reported as review-requiring. That is a
+false-reject, never a false-accept — the safe direction, and the reason no
+`-z` handling is needed here.
+
 The three defects this rule has had are recorded with the rounds that found
 them: the incomplete blocklist in `drawer_havdm_review_b23fc37ce14ccdeaf159e6ca`
 (round 2), the unanchored prefix in
