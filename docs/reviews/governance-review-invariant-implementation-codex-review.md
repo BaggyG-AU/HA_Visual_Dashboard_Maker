@@ -672,3 +672,270 @@ does not satisfy the specifically named index-accumulation trigger.
   note the owner may accept with the merge. No §3.3 rollback trigger fired.
   Correct only R3-M1 and R3-M2, exercise their negative cases, then commission
   one narrow follow-up review.
+
+## Round 4
+
+**Verdict: CHANGES-REQUIRED (high confidence).** **Merge readiness: not ready.**
+R3-M2 is resolved: the independent reviewer now reaches one destination in
+every unavailable form, and the non-reviewer fallbacks remain conditional on
+whether a local store exists. R3-M1 closes the named prefix cases but remains
+only partially resolved. The command uses Git's rename-collapsing
+`--name-only` output, so a behaviour-bearing file renamed into an allowed
+review pathname disappears from the input and the repair is certified as
+evidence-only. That is one merge-blocking defect, R4-M1.
+
+### Disposition of R3-M1 and R3-M2
+
+| Round-3 finding                  | Disposition            | Merge effect               | Round-4 judgement                                                                                                                                                                                                                                                                 |
+| -------------------------------- | ---------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R3-M1 — anchored path allowlist  | **PARTIALLY RESOLVED** | **MERGE-BLOCKING — R4-M1** | The shipped expression rejects the named suffixes, subpaths and wrong extensions. The surrounding `git diff --name-only` command nevertheless omits the preimage of a detected rename, and pathname matching cannot distinguish regular Markdown blobs from symlinks or gitlinks. |
+| R3-M2 — one reviewer destination | **RESOLVED**           | None                       | Section 11 expressly displaces both fallbacks for the reviewer in all three unavailable forms, carves the reviewer out of the local branch, and preserves the non-reviewer's pre-existing store-dependent split. No sixth destination was found.                                  |
+
+### R3-M1 — the regex is sound over names, but the command does not enumerate every touched path
+
+I extracted the expression from the shipped Operating Agreement rather than
+copying it from the commission, then ran every name through that value. The
+loop printed `SILENT` when `grep -vE` printed no path and `PRINTS` when it
+printed the path:
+
+```sh
+round4_re=$(sed -n "s/.*grep -vE '\([^']*\)'.*/\1/p" \
+  docs/governance/OPERATING_AGREEMENT.md | head -n 1)
+printf '%s\n' "$round4_path" | grep -vE "$round4_re"
+```
+
+```text
+EXTRACTED_REGEX=^(docs/reviews/[^/]+\.md|PR_NOTES\.md|CODEX_SUMMARY\.md)$
+
+SILENT  docs/reviews/HAVDM_ADVERSARIAL_REVIEW_2026-08_CODEX_CROSSCHECK.md
+SILENT  docs/reviews/HAVDM_ADVERSARIAL_REVIEW_2026-08_FABLE.md
+SILENT  docs/reviews/contributor-fallback-codex-review.md
+SILENT  docs/reviews/f5-sections-palette-drop-codex-review.md
+SILENT  docs/reviews/f5-spec-insertion-contract-codex-review.md
+SILENT  docs/reviews/governance-codification-codex-review.md
+SILENT  docs/reviews/governance-review-invariant-implementation-codex-review.md
+SILENT  docs/reviews/parameterise-host-refs-codex-review.md
+SILENT  PR_NOTES.md
+SILENT  CODEX_SUMMARY.md
+
+PRINTS  PR_NOTES.md.sh
+PRINTS  CODEX_SUMMARY.md/tool.js
+PRINTS  docs/reviews/some-tool.sh
+PRINTS  docs/reviews/sub/x.md
+PRINTS  docs/reviews/x.md.sh
+PRINTS  PR_NOTES.mdx
+PRINTS  CODEX_SUMMARY.md.bak
+PRINTS  docs/reviewsX/y.md
+PRINTS  docs/reviews/.md
+PRINTS  docs/reviews/x.MD
+PRINTS  docs/reviews/x.markdown
+PRINTS  .github/workflows/ci.yml
+PRINTS  package.json
+PRINTS  ai_rules.md
+
+SILENT  docs/reviews/x y.md
+PRINTS  docs/reviews/x.md/child
+PRINTS  "docs/reviews/x\ny.md"
+SILENT  docs/reviews/symlink.md
+SILENT  docs/reviews/submodule.md
+SILENT  docs/reviews/deleted-review.md
+SILENT  docs/reviews/renamed-review.md
+```
+
+The first ten are the complete current positive population: `git ls-files`
+enumerated eight direct review documents plus the two root documents. All ten
+currently have Git mode `100644`; `git ls-files --stage` found no `120000`
+symlink or `160000` gitlink anywhere in the repository. A direct name with a
+space is valid and accepted. A child of a directory named `x.md` is rejected
+because it contains another slash. A newline is either split when fed raw to
+line-oriented `grep`, or quoted in Git's non-`-z` name output; the quoted form
+above is rejected. Git passes the tracked spelling to the filter even on a
+case-insensitive filesystem, so uppercase `.MD` remains rejected.
+
+The silent synthetic symlink, gitlink, deletion and rename names show the
+limit of a name-only regex: it cannot decide object type or change status. A
+deletion of an allowed evidence path is still an allowed _path_ under the
+current rule, and neither a symlink nor a gitlink is currently present or
+consumed, so those cases alone do not establish a live behaviour change. They
+do show that the prose's “a `.md` file” is narrower than what the mechanism can
+observe; the rule must either say it classifies pathnames regardless of Git
+mode or mechanically constrain the allowed object types.
+
+**R4-M1 is the concrete behaviour-bearing bypass.** Git's default rename
+detection emits only the destination in `--name-only` output. The repository's
+own `74a2582` rename supplies fail-against-current-command evidence:
+
+```text
+$ git diff --name-status 74a2582^ 74a2582 | rg 'FOUNDATION_LAYER_IMPLEMENTATION'
+R100  docs/features/FOUNDATION_LAYER_IMPLEMENTATION.md  docs/archive/features/FOUNDATION_LAYER_IMPLEMENTATION.md
+
+$ git diff --name-only 74a2582^ 74a2582 | rg 'FOUNDATION_LAYER_IMPLEMENTATION'
+docs/archive/features/FOUNDATION_LAYER_IMPLEMENTATION.md
+
+$ git diff --no-renames --name-only 74a2582^ 74a2582 | rg 'FOUNDATION_LAYER_IMPLEMENTATION'
+docs/archive/features/FOUNDATION_LAYER_IMPLEMENTATION.md
+docs/features/FOUNDATION_LAYER_IMPLEMENTATION.md
+```
+
+If that same detected rename moves `package.json`, a workflow, source file or
+tool to `docs/reviews/x.md`, the shipped command supplies only the allowed
+destination to the regex and prints nothing. The repair touched a
+non-allowlisted behaviour path, directly falsifying the universals at
+`OPERATING_AGREEMENT.md:258-269` and `:276-282`.
+
+**Required correction.** Make the mechanical test enumerate both sides of a
+rename—for example, disable rename detection before applying the path
+allowlist, or consume a status format that preserves both paths. Decide and
+state whether deletions, symlinks and gitlinks are members of the evidence-only
+population; if only regular Markdown blobs qualify, the mechanism must inspect
+mode/status rather than promise that property from a name regex. Add a
+behaviour-file-to-allowed-name rename as the fail-against-old negative case.
+
+**The remaining R3-M1 alignment questions — no issue found beyond R4-M1.** The
+regex and the revised direct-`.md` prose agree over ordinary pathname strings.
+Steps (2) and (3), warnings (a)/(b), the single-list rule and the closing
+summary use the same named path population. No current tool reads, follows or
+executes fenced content from `docs/reviews`, `PR_NOTES.md` or
+`CODEX_SUMMARY.md`; a future consumer would itself be a non-allowlisted code or
+configuration change and would draw review. Wholesale review Markdown is
+therefore an acceptable current content risk, but not an evergreen exemption
+from reconsidering the allowlist when such a consumer is introduced.
+
+### R3-M2 — one destination is now unambiguous
+
+I read `ai_rules.md` §11 straight through twice and independently enumerated
+the governed set by role and availability, using cross-references to inspect
+`ai_rules.md`, `CLAUDE.md`, the Operating Agreement, the adversarial-review
+template and `MEMPALACE_PROTOCOL.md`. The resulting destination matrix is:
+
+| Role                 | Write condition                                       | One destination                    |
+| -------------------- | ----------------------------------------------------- | ---------------------------------- |
+| Any agent            | MemPalace responds and accepts writes                 | MemPalace                          |
+| Independent reviewer | Tools absent, read-only, or writer-lease refusal      | Committed review file              |
+| Non-reviewer         | MemPalace unavailable; an existing local store exists | Existing local memory files        |
+| Non-reviewer         | No memory store exists                                | PR body                            |
+| Non-reviewer         | Writer-lease refusal                                  | PR body under the general fallback |
+
+No governed artifact adds a sixth destination. `MEMPALACE_PROTOCOL.md`
+describes operation and authority but adds no persistence destination. This
+role-by-condition enumeration is independent of the author's end-to-end
+section read and does not key the class on a known destination token.
+
+The reviewer reaches the committed review file exactly once: `ai_rules.md:327`
+displaces both PR-body and local-file branches, and `:331` repeats the local
+carve-out. The non-reviewer policy is genuinely preserved: the repair added
+only reviewer qualifications and left the existing store-dependent distinction
+at `:323`/`:331` intact. Those lines are not simultaneous commands—`:323`
+governs absence of a local store, while the local path explicitly assumes one
+exists. The reviewer exception does not contradict “do not create one” at
+`:323`: the committed review is the reviewer's already-required branch
+deliverable, not a newly created local memory store. Leaving `CLAUDE.md`
+untouched was sound scope control; it already states the reviewer file and
+never offers the reviewer a local-memory destination.
+
+### Regression and same-class sweep
+
+- The branch began clean at `7a2d66e42e6043f3a6a04f2eb09219c596eaf316`;
+  `main` and `origin/main` were `a6ce103`, and PR #139 was open, non-draft and
+  unmerged with the commissioned head and base.
+- `git diff --name-only 04bd02a..7a2d66e` returned exactly `ai_rules.md` and
+  `docs/governance/OPERATING_AGREEMENT.md`. The range has no `src/`, `tests/`,
+  PNG, signed specification, UAT or `[STATE]` change. It therefore remains
+  docs-only.
+- The §2 and §3.4 trim removed failed-draft chronology and the amendment-count
+  story, not operative conditions. The shorter §2 retains the mandatory
+  higher-precedence placement, lease rule and authority pointers; §3.4 retains
+  the polarity, anchors, population and maintenance instruction. A targeted
+  dangling-reference sweep found no residue after `7a2d66e` made the one list
+  drift failure self-contained.
+- The defect facts attributed at `OPERATING_AGREEMENT.md:294-298` are supported
+  by rounds 2 and 3 in this committed review and by PR #139. Whether each named
+  drawer contains the specifically attributed record is **UNVERIFIABLE** from
+  the repository alone. MemPalace remained unavailable, so I did not accept
+  the drawer-to-defect mapping as independently checked.
+- `./tools/checks` exited 0 after this Round-4 text was formatted: all 4 steps
+  passed, lint reported 0 errors / 145 warnings, and 1,335 unit tests passed
+  across 101 files.
+
+### Step 4 — the author's weakest claims
+
+1. **The self-pass did not make this round short.** It found two real prose
+   defects, but it remained keyed to hostile _names_ and missed the
+   behaviour-to-allowed rename that its own commission explicitly required the
+   reviewer to test. For this same-class sweep, it functioned as theatre rather
+   than a reliable adversarial method. The remedy is fail-against-old evidence
+   over Git change records, not a longer author-generated name table.
+2. **The allowlist is still under-specified.** Ordinary pathname negatives are
+   now sound, but rename preimages, modes and statuses are outside the key the
+   mechanism observes. R4-M1 is merge-blocking; the symlink/gitlink/deletion
+   policy also needs an explicit prose/mechanism decision in the same repair.
+3. **Not editing `CLAUDE.md` was correct.** Its reviewer condition was already
+   unambiguous and it contains no local-memory alternative for that role.
+   Symmetry-only wording would have been unrelated fix-round work.
+4. **The trim is clean.** It removed chronology, retained the operative rule
+   and evidence pointers, and the head commit repaired the one dangling
+   antecedent it initially introduced. No further dangling or operative loss
+   was found.
+
+### Step 5 — verdict, convergence, and rollback
+
+**CHANGES-REQUIRED, high confidence.** PR #139 is **not merge-ready**. R4-M1
+is merge-blocking because the exact mechanical test can certify a repair that
+removes a behaviour-bearing path. R3-M2 is fully resolved, and the trim,
+drawer-pointer evidence boundary and `CLAUDE.md` scope decision add no further
+finding. Correct only the rename/status population of R3-M1, align its prose,
+exercise a behaviour-file-to-review-file rename against the old and repaired
+commands, then commission the required narrow follow-up.
+
+Applying §0 rule 1 clause 6 by name, the rising round count remains primarily
+an **author sweep failure**, not a scope-control failure. The self-pass has not
+changed that diagnosis: it improved two pieces of prose but still tested the
+class through path tokens rather than Git's behaviour. Scope control has
+improved—the trim is operative-safe and `CLAUDE.md` was deliberately left
+alone. The PR remains technically convergent: one of two Round-3 blockers is
+closed and the remaining correction is confined to one mechanical invariant.
+
+No §3.3 rollback trigger fired. This is still one governance PR, not three
+consecutive implementation slices or specification reviews; there have not
+been three clean passes; no machine-enforcement proposal was added; and the §4
+index remains one row per ruling. The remaining residue is not acceptable with
+the merge because it defeats the rule that decides whether a repair receives
+independent follow-up review.
+
+### Checked clean and not checked
+
+- **Checked clean:** the exact author negative/positive names; spaces,
+  newlines, case, subdirectory and empty-basename cases; all current allowed
+  modes; ordinary prose/regex alignment; warning/summary alignment; current
+  Markdown-consumer risk; the reviewer and non-reviewer destination matrix;
+  all governed destination surfaces; the `CLAUDE.md` no-edit decision; exact
+  repair range; narrative trim; dangling references; rollback triggers; and
+  the required repository check.
+- **Could not check:** MemPalace was unavailable, so the Round-3 and practice
+  drawers, their filing fidelity, and the two Operating Agreement drawer
+  attributions remain **UNVERIFIABLE**. Repository and live PR evidence—not
+  drawer content—support this review.
+- **Not run:** e2e, integration or UAT. The range is docs-only and the
+  commission limits the rerun to `./tools/checks`.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"` — **PR #139 Round-4 narrow governance
+  review:** CHANGES-REQUIRED, high confidence; not merge-ready. R3-M2 is
+  resolved: every reviewer unavailability form reaches the committed review
+  file, non-reviewer fallbacks remain conditional, and no sixth destination
+  was found. R3-M1 is partially resolved and leaves merge-blocking R4-M1:
+  default Git rename detection makes `git diff --name-only` omit a
+  behaviour-bearing preimage when it is renamed into an allowed review path.
+  The author self-pass remained name-keyed and functioned as theatre rather
+  than a reliable same-class sweep; the rising-round diagnosis remains author
+  sweep failure. The narrative trim and `CLAUDE.md` scope decision are clean,
+  and no §3.3 rollback trigger fired. Correct only the change-record population
+  and prose, prove a behaviour-to-allowed rename fails against the repaired
+  mechanism, then commission one narrow follow-up.
+- `practice/review`, `added_by="codex"` — **Candidate general lesson:** a path
+  allowlist applied to `git diff --name-only` does not necessarily enumerate
+  every path a change touched, because rename detection can collapse a
+  behaviour-bearing preimage to an allowed destination. Classify Git change
+  records, including both rename sides and any promised mode/status property,
+  before treating silence from a pathname filter as evidence-only proof.
