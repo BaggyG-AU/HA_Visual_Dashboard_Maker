@@ -256,9 +256,9 @@ round and the owner could merge unreviewed new work.
    plus a regression check that nothing else moved.
 3. **Evidence-only residues may be accepted by the owner with the merge**, with
    no further round. **"Evidence-only" means every path the repair touched is
-   on this allowlist:** a Markdown review document directly under
-   `docs/reviews/` — no subdirectory, no other file type — or exactly
-   `PR_NOTES.md` or `CODEX_SUMMARY.md`. The mechanical test is therefore that
+   on this allowlist:** a `.md` file directly under `docs/reviews/` — no
+   subdirectory, no other extension — or exactly `PR_NOTES.md` or
+   `CODEX_SUMMARY.md`. The mechanical test is therefore that
 
    ```
    git diff --name-only <previous review commit>..HEAD \
@@ -299,8 +299,10 @@ record.
 
 ⚠ **Step (3)'s allowlist is now the only list to maintain**, and adding a path
 to it is itself a §3(b) governance change. Step (2) no longer carries a surface
-list of its own — it defers to step (3) — so the two cannot drift apart, which
-is the failure both earlier drafts had in a different form.
+list of its own — it defers to step (3) — so the two cannot drift apart. **A
+step (2) that names its own surfaces alongside a step (3) that tests different
+ones is this rule's recurring failure**, and it is why only one of them may
+hold a list.
 
 ⚠ **The governed rule surfaces — `ai_rules.md`, `CLAUDE.md` and
 `docs/governance/**` — are deliberately not on the allowlist and are never
