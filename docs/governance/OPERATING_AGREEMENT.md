@@ -291,8 +291,11 @@ evidence-only. ⚠ **Before changing this expression, run it against
 real ranges cannot detect this class of defect, because a range that contains
 no hostile path returns the same output either way.
 
-Both defects this rule has had, and the rounds that found them, are recorded in
-`drawer_havdm_review_b23fc37ce14ccdeaf159e6ca` and the PR #139 record.
+Both defects this rule has had are recorded with the rounds that found them:
+the incomplete blocklist in `drawer_havdm_review_b23fc37ce14ccdeaf159e6ca`
+(round 2) and the unanchored prefix in
+`drawer_havdm_review_d086b4e07dc28938830173ae` (round 3), plus the PR #139
+record.
 
 ⚠ **Step (3)'s allowlist is now the only list to maintain**, and adding a path
 to it is itself a §3(b) governance change. Step (2) no longer carries a surface
