@@ -415,3 +415,260 @@ narrow the pilot before its existing triggers or gate operate.
   a bounded, reversible pilot judgement the owner may accept with the merge.
   No §3.3 rollback trigger fired. Correct R2-M1 and R2-M2, then commission one
   narrow follow-up review.
+
+## Round 3
+
+**Verdict: CHANGES-REQUIRED (high confidence).** **Merge readiness: not ready.**
+Both round-2 corrections make the right central move, but both remain only
+partially resolved. The evidence-only regex still admits behaviour-bearing
+paths, and `ai_rules.md` still gives a no-MemPalace reviewer a third destination
+in local memory. The PR is structurally converging, but those are not residues
+the owner should accept with the merge.
+
+### Disposition of R2-M1 and R2-M2
+
+| Round-2 finding                       | Disposition            | Merge effect               | Round-3 judgement                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------- | ---------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R2-M1 — evidence-only mechanical test | **PARTIALLY RESOLVED** | **MERGE-BLOCKING — R3-M1** | Inverting the test from an executable-directory blocklist to a prose-path allowlist closes the omitted-third-surface class outside the allowlist. The actual regex is broader than the prose allowlist it describes: the directory alternative accepts any file type, and the two filename alternatives are not end-anchored. |
+| R2-M2 — one MP-LEASE destination      | **PARTIALLY RESOLVED** | **MERGE-BLOCKING — R3-M2** | The reviewer exception is now explicit in `ai_rules.md`, `CLAUDE.md`, the Operating Agreement and the reviewer template. But `ai_rules.md:329` still directs an unavailable/read-only case to local memory files, so reading §11 straight through does not yield one destination.                                             |
+
+### R3-M1 — the allowlist regex still accepts behaviour-bearing paths
+
+**What the real ranges printed.** I ran the rule's exact filter over two real
+ranges:
+
+```text
+$ git diff --name-only fa62399..446271d | grep -vE '^(docs/reviews/|PR_NOTES\.md|CODEX_SUMMARY\.md)'
+<no output>  # exit 1; the range changes only the Round-2 review file
+
+$ git diff --name-only 446271d..0fa3de9 | grep -vE '^(docs/reviews/|PR_NOTES\.md|CODEX_SUMMARY\.md)'
+CLAUDE.md
+ai_rules.md
+docs/governance/OPERATING_AGREEMENT.md
+docs/templates/ADVERSARIAL_REVIEW.md
+```
+
+Those results correctly classify the actual review-only and governance-repair
+ranges. They do not decide the wider claim that every behaviour-bearing path is
+rejected.
+
+**Counterexample.** The regex's alternatives match prefixes, not the prose-file
+population stated at `docs/governance/OPERATING_AGREEMENT.md:263-275`. This
+negative test printed nothing and exited 1 for all three constructed paths:
+
+```text
+$ printf '%s\n' PR_NOTES.md.sh CODEX_SUMMARY.md/tool.js docs/reviews/behavior-bearing-tool.sh \
+    | grep -vE '^(docs/reviews/|PR_NOTES\.md|CODEX_SUMMARY\.md)'
+<no output>
+```
+
+A repair can therefore add a shell/JavaScript tool under an allowed prefix and
+pass the mechanical test. `git ls-files docs/reviews` currently enumerates
+eight files and all eight are Markdown reviews: the two `HAVDM_ADVERSARIAL`
+reviews plus `contributor-fallback`, `f5-sections-palette-drop`,
+`f5-spec-insertion-contract`, `governance-codification`,
+`governance-review-invariant-implementation`, and `parameterise-host-refs`.
+There is no unsafe current member; the unsafe claim is the wholesale future
+wildcard. This is exactly the kind of negative case that the universal at
+`docs/governance/OPERATING_AGREEMENT.md:290-292` says is impossible.
+
+**Required correction.** Anchor the alternatives and constrain the review
+population to review documents—for the current layout, for example:
+
+```text
+grep -vE '^(docs/reviews/[^/]+\.md|PR_NOTES\.md|CODEX_SUMMARY\.md)$'
+```
+
+The exact expression is the author's choice, but a behaviour-bearing suffix,
+subpath or non-document beneath an allowed prefix must print. Exercise those
+negative cases before claiming the class closed.
+
+**Other R2-M1 questions — no issue found.** Excluding `ai_rules.md`,
+`CLAUDE.md` and `docs/governance/**` is conservative but not improper
+over-reach: rule text is the governance product, so prose syntax alone does not
+make a repair evidence-only (`OPERATING_AGREEMENT.md:299-303`). Steps 2 and 3,
+the single-list maintenance warning and the closing summary are mutually
+consistent (`:259-307`). The lifecycle also terminates: a governance finding
+repaired in round N requires N+1; if N+1 is clean, there is no repair and step 4
+stops, while a finding the owner declines to repair likewise creates no further
+repair. Repeated fresh defects can prolong the process, but the rule does not
+force another round in the absence of another repair.
+
+### R3-M2 — `ai_rules.md` still names a third destination
+
+**The five live surfaces.** Four now state the intended reviewer exception
+without ambiguity:
+
+- `docs/governance/OPERATING_AGREEMENT.md:89-105` — non-reviewers use the PR
+  body; the independent reviewer uses the committed review file. The MP-LEASE
+  row repeats the exception at `:399`.
+- `CLAUDE.md:70-85` — “if — and only if” the agent is the independent reviewer,
+  it uses the review file; `:83-85` explicitly says a refused write alone does
+  not qualify a non-reviewer.
+- `docs/templates/ADVERSARIAL_REVIEW.md:27-35` — “this document, not ... the PR
+  body” for the commissioned independent reviewer.
+- `ai_rules.md:323-325` — the general PR-body fallback followed immediately by
+  “One exception ... the independent reviewer”; `:337` repeats the carve-out.
+
+The fifth reading is inside that last surface: `ai_rules.md:329` still says
+“If MemPalace is unavailable (tools absent, or the server is read-only) ...
+fall back to local memory files.” A no-MemPalace independent reviewer reading
+§11 straight through therefore encounters PR body at `:323`, review file at
+`:325`, and local memory at `:329`, before review file is repeated at `:337`.
+The exception is scoped to the PR-body fallback and does not expressly displace
+the local-memory instruction. R2-M2 required one unambiguous destination, so
+this same-class member remains merge-blocking.
+
+**Required correction.** Reconcile the absent and read-only branches at
+`ai_rules.md:319-337` and state expressly that an independent reviewer uses the
+committed review file instead of either the PR-body or local-memory fallback.
+Preserve whichever local-memory rule is intended for non-reviewers; this
+finding does not require redesigning their policy.
+
+**History-count verification — no issue found.** These commands returned 18 at
+the pre-amendment review commit, then 19 at both the amendment and current head:
+
+```text
+git log --follow --format='%H' 446271d -- ai_rules.md | wc -l  # 18
+git log --follow --format='%H' c4fd0a4 -- ai_rules.md | wc -l  # 19
+git log --follow --format='%H' 0fa3de9 -- ai_rules.md | wc -l  # 19
+```
+
+The 18-commit enumeration at `446271d` is `6b8e1a9`, `cc5577c`, `289163a`,
+`96c4a95`, `18f3ef5`, `4e66a49`, `116a2e5`, `939d4b5`, `d72fcc7`, `a59377e`,
+`e67be52`, `23f441a`, `1774ac0`, `2613ee4`, `d88e255`, `2dba83d`, `293a869`,
+and `ac4a4ad`. `git show` verifies that the five named governance commits
+`18f3ef5`, `96c4a95`, `289163a`, `cc5577c` and `6b8e1a9` each amend §11.
+Pinning “eighteen” to `446271d` is accurate, and `0fa3de9` correctly repairs the
+first draft's stale count.
+
+**Other R2-M2 questions — no issue found.** The `CLAUDE.md` condition is now
+unambiguous. Adding the destination to `ADVERSARIAL_REVIEW.md` is a legitimate
+class sweep, not unrelated scope: both `ai_rules.md:335` and
+`CLAUDE.md:123-128` send a no-MemPalace reviewer to that template. Editing
+`ai_rules.md` is the sounder of the two options R2-M2 offered and resolves,
+rather than disturbs, its §0 precedence rule. No other conflict was introduced
+by placing the exception in the higher-precedence file; the remaining conflict
+is the pre-existing local-memory sentence the destination sweep missed.
+
+### Regression and same-class sweep
+
+- The branch began clean at the commissioned `0fa3de9`; `main` and
+  `origin/main` were both `a6ce103`, and PR #139 was open and unmerged.
+- `git diff 446271d..0fa3de9` changes exactly `ai_rules.md`, `CLAUDE.md`,
+  `docs/governance/OPERATING_AGREEMENT.md`, and
+  `docs/templates/ADVERSARIAL_REVIEW.md`. It changes no `src/`, `tests/`, PNG,
+  signed feature specification, UAT material or `[STATE]` content.
+- `./tools/checks` exited 0: lint reported 0 errors / 145 warnings, formatting
+  and typecheck passed, and all 1,335 unit tests passed across 101 files.
+- `gh pr view 139 --json body` showed that the live PR body now accurately says
+  round 1 did not rerun the MEDIUM sweeps and round 2 was the sole independently
+  observed MEDIUM run. That matches
+  `docs/reviews/f5-sections-palette-drop-codex-review.md:390-400` and
+  `:534-548`; the correction did not overstate what was observed.
+- The corrected “rounds 2–6” account is also accurate. The real
+  `4827082..4b02dcc` range has an empty `src/` stat but changes
+  `tests/e2e/sections-canvas.spec.ts` and `tools/f5-load-path-sweep.sh` (184
+  insertions / 35 deletions combined), so those repairs were not evidence-only
+  and each correctly drew a follow-up round.
+
+**Prior clearances, checked at their actual claim width — no issue found.** M1's
+pilot population and cost trigger at
+`docs/governance/OPERATING_AGREEMENT.md:132-219` were not changed by this repair;
+the Round-2 clearance was expressly based on repository text and the ruling
+quoted in the commission, while the unavailable drawer remained unverified.
+M3's historical account at `OPERATING_AGREEMENT.md:327-372` and
+`docs/testing/TESTING_STANDARDS.md:813-849` is unchanged and is now directly
+cross-checked against the round-1/round-2 review evidence above. Neither
+“RESOLVED” clearance rested on a narrower check than the claim it cleared.
+
+**Previously-clean regression areas, by name and location — no issue found.**
+ARB-R8 at `OPERATING_AGREEMENT.md:169-184`, the superseded exclusion in
+`PROMPTMI_GOVERNANCE_REVIEW_2026-08.md`, and the lease/latch text at
+`OPERATING_AGREEMENT.md:119-125` were not substantively changed. The ARB-R8,
+REV-IMPL and REV-RERUN index rows at `:396-398` retain their prior content; the
+MP-LEASE row at `:399` changed only to align the repaired exception. The repair
+range stays inside the two finding classes; the reviewer template is the one
+legitimate extra member of the destination sweep.
+
+**One non-blocking scope-control note.** The repair added historical narrative
+at `OPERATING_AGREEMENT.md:105-118` and `:280-303`, although the document's own
+preamble says it is pointer-style and “never carries that narrative itself”
+(`:15-22`). That is real over-reach: the operative exception, allowlist and
+pointers do not need the failed-draft chronology or the 18-commit story. The
+owner may accept this note with the merge because it creates no destination or
+lifecycle ambiguity and §3.3's named index trigger has not fired; the MP-LEASE
+row remains one operative sentence plus its authority pointer. Moving future
+case history to the review/PR record would better honor the constitution.
+
+### Step 3 — the author's weakest claims
+
+1. **“The allowlist is a class fix” — partly accepted, but insufficient.** The
+   polarity inversion is a class-level correction for every non-allowlisted
+   path. The author nevertheless failed to sweep false-negative members inside
+   the allowed prefixes, leaving R3-M1. This is not merely `+ one directory`,
+   but it is still an incomplete class fix.
+2. **Excluding governance documents — accepted.** Governance prose changes the
+   operative rule and is appropriately review-requiring; the correction asked
+   for known prose-only paths, not every file whose syntax is prose.
+3. **Termination — accepted.** The worked governance case above reaches step 4
+   after a clean round or an owner-declined repair. Endless fresh repair defects
+   are possible in practice but are not mandated by the lifecycle.
+4. **Pointer-style narrative — concern confirmed, non-blocking.** The new
+   history conflicts with `OPERATING_AGREEMENT.md:15-22`; the owner may accept
+   it with the merge, but it should not become the pattern for another repair.
+5. **Editing `ai_rules.md` — accepted.** The amendment count and five §11 SHAs
+   are verified, and putting the exception in the highest-precedence source is
+   cleaner than relying on a cross-document pointer alone.
+
+### Step 4 — verdict, convergence, and rollback
+
+**CHANGES-REQUIRED, high confidence.** PR #139 is **not merge-ready**. R3-M1
+and R3-M2 are merge-blocking; the pointer-style narrative is explicitly a note
+the owner may accept with the merge. Tighten the regex against the three named
+negative cases, reconcile `ai_rules.md:329` with the reviewer exception, and
+commission one narrow follow-up over only those two edits and their same-class
+negative cases.
+
+Applying §0 rule 1 clause 6 by name, the rising round count is primarily an
+**author sweep failure**: R2-M1 did not test the allowed population after
+inverting the test, and R2-M2 did not read every destination sentence in §11.
+It is not principally a scope-control failure, although the added historical
+narrative is a non-blocking example of that secondary risk. The PR is
+converging—the two architectural choices are now sound and the remaining
+repairs are narrow—but the current residues still falsify the exact mechanical
+and single-destination claims.
+
+No §3.3 rollback trigger has fired. This is one governance PR, not three
+consecutive implementation slices or spec reviews; its rounds have produced
+acted-on findings rather than three clean passes; no machine enforcement was
+proposed; and the §4 index still has one row per ruling. The body-narrative note
+does not satisfy the specifically named index-accumulation trigger.
+
+### Checked clean and not checked
+
+- **Checked clean:** the central allowlist inversion, its two real-range
+  classifications, governance exclusion, lifecycle termination, step/list
+  alignment, `CLAUDE.md`, Operating Agreement, index and template destinations,
+  the amendment counts and five §11 commits, both live PR-body corrections,
+  M1/M3 clearance widths, and the named regression areas above.
+- **Could not check:** MemPalace remained unavailable, so the Round-2 review
+  drawer, owner-ruling drawer and author filing could not be inspected; all
+  drawer-only claims remain **UNVERIFIABLE**. The repository and live PR body
+  supplied the evidence used here.
+- **Not run:** e2e, integration and UAT. The repair is docs-only and the
+  commissioned rerun is `./tools/checks` only.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"` — **PR #139 Round-3 narrow governance
+  review:** CHANGES-REQUIRED, high confidence; not merge-ready. R2-M1 and
+  R2-M2 are both partially resolved. The polarity inversion and explicit
+  reviewer exception are sound, but the allowlist admits non-document paths
+  under allowed prefixes (R3-M1), and `ai_rules.md:329` still supplies a third
+  local-memory destination (R3-M2). The rising round count is primarily an
+  author sweep failure, though the PR is structurally converging. Historical
+  narrative added to the pointer-style Operating Agreement is a non-blocking
+  note the owner may accept with the merge. No §3.3 rollback trigger fired.
+  Correct only R3-M1 and R3-M2, exercise their negative cases, then commission
+  one narrow follow-up review.
