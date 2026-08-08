@@ -255,23 +255,31 @@ round and the owner could merge unreviewed new work.
    allowlist** requires **one narrow follow-up round** covering that finding
    plus a regression check that nothing else moved.
 3. **Evidence-only residues may be accepted by the owner with the merge**, with
-   no further round. **"Evidence-only" means every path the repair touched is
-   on this allowlist:** a `.md` file directly under `docs/reviews/` — no
-   subdirectory, no other extension — or exactly `PR_NOTES.md` or
-   `CODEX_SUMMARY.md`. The mechanical test is therefore that
+   no further round. **"Evidence-only" means the repair touched only allowed
+   paths, and changed none of them into something other than an ordinary
+   file.** The allowed paths are: a `.md` file directly under `docs/reviews/` —
+   no subdirectory, no other extension — or exactly `PR_NOTES.md` or
+   `CODEX_SUMMARY.md`. **Both of these commands must print nothing:**
 
    ```
-   git diff --name-only <previous review commit>..HEAD \
+   # (1) every touched path is allowed — a rename is counted on BOTH sides
+   git diff --no-renames --name-only <previous review commit>..HEAD \
      | grep -vE '^(docs/reviews/[^/]+\.md|PR_NOTES\.md|CODEX_SUMMARY\.md)$'
+
+   # (2) nothing became a symlink or a submodule
+   git diff --no-renames --raw <previous review commit>..HEAD \
+     | awk '$2 !~ /^(100644|000000)$/'
    ```
 
-   **prints nothing.** That is mechanical deliberately, so the classification
-   is not left to inference.
+   **Adding or deleting an allowed path is evidence-only; changing what kind of
+   object lives there is not.** Both tests are mechanical deliberately, so the
+   classification is not left to inference.
 
 4. **The sequence stops when no repair requiring a follow-up under (2)
    remains.** The owner may then merge.
 
-⚠⚠ **Two properties of that expression are load-bearing. Do not relax either.**
+⚠⚠ **Three properties of that test are load-bearing. Do not relax any of
+them.**
 
 **(a) It is an allowlist, not a blocklist.** A blocklist of executable
 directories cannot be completed: this repository carries behaviour-bearing
@@ -291,11 +299,29 @@ evidence-only. ⚠ **Before changing this expression, run it against
 real ranges cannot detect this class of defect, because a range that contains
 no hostile path returns the same output either way.
 
-Both defects this rule has had are recorded with the rounds that found them:
-the incomplete blocklist in `drawer_havdm_review_b23fc37ce14ccdeaf159e6ca`
-(round 2) and the unanchored prefix in
-`drawer_havdm_review_d086b4e07dc28938830173ae` (round 3), plus the PR #139
-record.
+**(c) `--no-renames` is mandatory, and the second command is not optional.**
+Git detects renames by default and `--name-only` then emits **only the
+destination**, so a behaviour-bearing file renamed into an allowed review
+pathname vanishes from the input entirely. Measured: renaming `package.json`
+to `docs/reviews/x.md` makes the un-suffixed command print nothing and certify
+the repair as evidence-only, while `package.json` has in fact been deleted.
+`--no-renames` decomposes that into an add and a delete, and the delete is
+outside the allowlist. Command (2) exists because a pathname cannot carry an
+object type: without it, replacing an allowed `.md` with a **symlink** or a
+**submodule** at the same path passes command (1) unchanged.
+
+⚠ **The three negative cases every future edit of this test must be run
+against:** `PR_NOTES.md.sh`, a rename of any behaviour-bearing file into
+`docs/reviews/x.md`, and an allowed `.md` path replaced by a symlink. **All
+three must print.** Build them as real commits on a throwaway branch — this
+class of defect lives in `git diff`'s behaviour, not in the regex, and feeding
+synthetic strings to `grep` cannot detect it.
+
+The three defects this rule has had are recorded with the rounds that found
+them: the incomplete blocklist in `drawer_havdm_review_b23fc37ce14ccdeaf159e6ca`
+(round 2), the unanchored prefix in
+`drawer_havdm_review_d086b4e07dc28938830173ae` (round 3), and the
+rename-collapse in the round-4 record, plus the PR #139 record.
 
 ⚠ **Step (3)'s allowlist is now the only list to maintain**, and adding a path
 to it is itself a §3(b) governance change. Step (2) no longer carries a surface
