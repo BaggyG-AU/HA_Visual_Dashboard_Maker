@@ -1216,3 +1216,396 @@ receives independent review.
   from both trees; when the claim governs repair history, enumerate per-commit
   change records (including merge semantics) and use transient add/remove and
   mode/restore sequences as fail-against-old cases.
+
+## Round 6
+
+**Verdict: CHANGES-REQUIRED (high confidence).** **Merge readiness: not ready.**
+The population is still defined exactly in the Operating Agreement, the move to
+an evidentiary command does not reopen M2, and both R5-M1's history defect and
+R6-M1's merge-record-format defect are closed. The shipped commands nevertheless
+have two new false-accept routes through Git state the author left delegated,
+including a `diff.*` variable and `git replace`—both populations this commission
+expressly offered for attack. Separately, the new structural rationale says five
+review rounds each found a defect in a command that the audit proves did not
+exist until after round 1. Those are merge-blocking R6-M2 and R6-M3.
+
+### Disposition
+
+| Item                                                       | Disposition                | Merge effect                 | Round-6 judgement                                                                                                                                                                                       |
+| ---------------------------------------------------------- | -------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R5-M1 — endpoint rather than history population            | **RESOLVED**               | None                         | Both moved commands enumerate every commit. Real transient-path and transient-mode histories print; their endpoint predecessors stay silent.                                                            |
+| R6-M1 — `-m` delegates merge-record shape                  | **RESOLVED**               | None                         | `--diff-merges=separate` overrides all four tested `log.diffMerges` values, including `GIT_CONFIG_*` injection, and emits ordinary per-parent raw records.                                              |
+| M2 — define evidence-only in the rule                      | **RESOLVED; not reopened** | None                         | §3.4(3)(i) and (ii) state the complete path/history and resulting-object population. The command moved; the definition did not.                                                                         |
+| R6-M2 — other Git state suppresses or replaces records     | **OPEN**                   | **MERGE-BLOCKING**           | `diff.ignoreSubmodules=all` suppresses a gitlink record, and a replacement commit can hide a behaviour path. Both shipped commands then certify falsely.                                                |
+| R6-M3 — the split rationale misstates the measured lineage | **OPEN**                   | **MERGE-BLOCKING**           | The Operating Agreement and testing standard say five rounds each found a command defect; the audit correctly proves the command was born in the round-1 fix and rounds 2–5 found four command defects. |
+| R6-N1 — the audit's terminal defect count                  | **OPEN**                   | **OWNER-ACCEPTABLE RESIDUE** | The audit's otherwise-correct enumeration calls R6-M1 the “twelfth defect in that paragraph.” Its own counts support no such number.                                                                    |
+
+### R6-M2 — the commands still delegate which records exist
+
+I extracted and ran the two commands exactly as shipped in
+`docs/testing/TESTING_STANDARDS.md`:
+
+```sh
+git log --format= --no-renames --diff-merges=separate --raw 818b9d2..c26a8c2 \
+  | awk -F'\t' 'NF>1 {print $2}' \
+  | grep -vE '^(docs/reviews/[^/]+\.md|PR_NOTES\.md|CODEX_SUMMARY\.md)$'
+
+git log --format= --no-renames --diff-merges=separate --raw 818b9d2..c26a8c2 \
+  | awk '$2 !~ /^(100644|000000)$/'
+```
+
+Command 1 printed:
+
+```text
+docs/governance/OPERATING_AGREEMENT.md
+docs/testing/TESTING_STANDARDS.md
+docs/governance/OPERATING_AGREEMENT.md
+```
+
+Command 2 printed nothing. Check (0),
+`git merge-base --is-ancestor 818b9d2 c26a8c2`, exited 0. The conjunction
+therefore correctly classifies the commissioned range as review-requiring.
+
+It does not remain correct under another ordinary Git configuration variable.
+I made a real commit whose tree contains:
+
+```text
+160000 commit <object>  docs/reviews/gitlink.md
+```
+
+The default mode command printed the `:000000 160000 ...` raw record. Against
+the identical commits, this exact command printed nothing:
+
+```sh
+git -c diff.ignoreSubmodules=all log --format= --no-renames \
+  --diff-merges=separate --raw BASE..HEAD \
+  | awk '$2 !~ /^(100644|000000)$/'
+```
+
+The path command also stayed silent because the allowed path passed its regex.
+This is a false accept under §3.4(3)(ii), not a conservative rejection. A
+tested repair is to add `--ignore-submodules=none`: with the same hostile
+configuration it restored the `160000` record and command 2 printed.
+
+Replacement refs produce an independent false accept. I committed
+`src/replaced.ts`, then used `git replace` to substitute a same-parent commit
+whose tree matched the base. Check (0) succeeded and both shipped commands were
+silent. The actual object, inspected with replacement disabled, still changed:
+
+```text
+$ git --no-replace-objects diff-tree --no-commit-id --name-only -r <actual-head>
+src/replaced.ts
+```
+
+Running the path command through `git --no-replace-objects log ...` printed
+`src/replaced.ts`. A known-bad live-proof range does not close either class: an
+ordinary bad file still prints under `diff.ignoreSubmodules=all`, and a
+replacement can target the reviewed range without targeting the range chosen
+for the liveness check.
+
+**Required correction.** Make all three Git reads use unreplaced objects, and
+make both log commands override submodule suppression (for example,
+`git --no-replace-objects ...` and `--ignore-submodules=none`). Prove both
+repairs fail against the current commands and pass against the replacement.
+Add at least these two cases to the negative-case floor: a gitlink under
+`diff.ignoreSubmodules=all`, and a behaviour commit hidden by a replacement ref.
+Sweep other inputs that can suppress the raw population rather than patching
+only these names.
+
+This is one finding because both demonstrations falsify the same claimed
+property: the command delegates the commit/change-record population to ambient
+repository state. It is merge-blocking because silence can exempt a
+behaviour-bearing repair from the independent follow-up §3.4 requires.
+
+### R6-M1 and the change-record matrix
+
+R6-M1's named repair is sound. On Git 2.43.0, a two-parent merge resolving an
+allowed file to a symlink produced two ordinary records, and command 2 printed
+under effective `log.diffMerges=separate`, `first-parent`, `combined`, and
+`dense-combined`. Injecting `combined` and `dense-combined` through
+`GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_0`, and `GIT_CONFIG_VALUE_0` also printed.
+The explicit option wins.
+
+I rebuilt all six mandated negative cases and the four false-positive controls
+as real commits. The numbers below are output-record counts from path command 1
+and mode command 2, respectively:
+
+| Case                                             | Expected | Path / mode records | Result                                                       |
+| ------------------------------------------------ | -------- | ------------------- | ------------------------------------------------------------ |
+| `PR_NOTES.md.sh` added                           | PRINT    | 1 / 0               | Correct                                                      |
+| behaviour path renamed to an allowed review name | PRINT    | 1 / 0               | Correct                                                      |
+| allowed ordinary file becomes a symlink          | PRINT    | 0 / 1               | Correct                                                      |
+| transient behaviour path                         | PRINT    | 2 / 0               | Correct; R5-M1 closed                                        |
+| transient executable mode                        | PRINT    | 0 / 1               | Correct under `core.fileMode=true` and `false`; R5-M1 closed |
+| evil merge, each of four merge configs           | PRINT    | 0 / 2 each          | Correct; R6-M1 closed                                        |
+| review document only                             | SILENT   | 0 / 0               | Correct control                                              |
+| allowed → allowed rename                         | SILENT   | 0 / 0               | Correct control                                              |
+| both exact root notes                            | SILENT   | 0 / 0               | Correct control                                              |
+| empty commit                                     | SILENT   | 0 / 0               | Correct control                                              |
+
+The moved command also classified the author's other named cases correctly
+when independently rebuilt: a three-parent octopus merge printed the behaviour
+path three times under each of `separate`, `combined`, `dense-combined`, and
+`off`; a copy to an allowed name stayed silent under default settings and
+`diff.renames=copies`; replacing `docs/reviews/` itself with a symlink printed;
+non-ASCII behaviour paths printed under both `core.quotePath` settings; the
+non-ASCII allowed-path asymmetry remained conservative; a TAB-bearing behaviour
+path printed; an allowed path containing a space stayed silent; and a clean
+unsigned range remained silent under `log.showSignature=true`. A non-ancestor
+check returned nonzero.
+
+`$2` is the destination mode in every record that
+`--diff-merges=separate` actually emits: each record has one old mode and one
+new mode, including one record per octopus parent. A root commit cannot occur
+inside a valid `<previous-review>..HEAD` range: if the previous review is an
+ancestor, the root is either the excluded lower endpoint or precedes it; if it
+is unrelated or unavailable, check (0) fails. No root-record gap was found.
+
+Correctly positioned `--first-parent` still printed the path introduced by the
+octopus merge. `--find-copies-harder` on the behaviour-to-allowed rename also
+printed the source pathname in the raw rename record; this does not make the
+option safe generally, and the shipped warning not to add it remains warranted.
+`.gitattributes` did not suppress raw records and its own non-allowlisted change
+printed. An unmerged index did not alter committed-log output; that is correct
+because §3.4 governs commits, not an uncommitted working tree. A shallow clone
+cannot silently reconstruct an unavailable previous review commit: ancestry
+fails; a history rewrite likewise makes the old review SHA non-ancestral.
+Grafted histories are part of the replacement-object finding above.
+
+On this machine the supported option succeeds. Simulating an unsupported form
+with `--diff-merges=not-a-mode` exited 128, wrote `fatal:` to stderr, and wrote
+zero bytes to stdout; `--follow` behaved the same way. Older and newer Git
+binaries were not installed, so their exact diagnostics are **UNVERIFIED**.
+The mandatory known-bad proof is an adequate procedural guard against this
+specific execution-error hazard when followed, but it does not make the
+commands fail loudly and cannot test semantic completeness. An error-preserving
+wrapper would be stronger. I do not make that a separate finding because the
+text accurately calls the guard a mitigation and explicitly requires it.
+
+One harness error occurred in my option-interaction pass: I initially placed
+`--first-parent` and `--find-copies-harder` before the `log` subcommand, which
+made Git fail and produced misleading silence. I detected the nonzero command,
+discarded those observations, and rebuilt both with the options in their valid
+positions before recording the results above.
+
+### R6-M3 — the new rationale contradicts the audit's central measurement
+
+The audit's central history is correct:
+
+```text
+$ git show 0a311bb:docs/governance/OPERATING_AGREEMENT.md | grep -c evidence-only
+2
+$ git show 0a311bb:docs/governance/OPERATING_AGREEMENT.md \
+    | grep -E 'git diff --stat|git diff --name-only|--no-renames'
+<no output>
+$ git show bcba77a:docs/governance/OPERATING_AGREEMENT.md \
+    | grep -n 'git diff --stat <previous review commit>'
+250: ...
+```
+
+M2 was the original absence of a repair trigger and definition. Its fix in
+`bcba77a` created the command. Rounds 2–5 then found four defects in that
+command: blocklist, prefix, rename collapse, and endpoint enumeration. The audit
+found the fifth command defect, delegated merge-record format.
+
+The new Operating Agreement instead says, at lines 290–295, that between rounds
+1 and 5 the command was the definition and **“five consecutive review rounds
+each found exactly one defect in it”**, names only the four defects above, and
+calls the audit result a sixth. The new testing section repeats that five review
+rounds each found a defect in a command living in governance. Both statements
+are false on the audit's own evidence: the command was absent in round 1, four
+review rounds found command defects, and the audit found the fifth.
+
+The live PR body is less explicit but carries the same misleading compression:
+“every deficiency in it was a deficiency in the governing law — five rounds,
+five governance amendments.” Five rounds did require amendments, but the first
+amendment created the mechanism; it did not correct a pre-existing command
+defect. The distinction is the audit's main scope-control finding and must not be
+flattened in the text adopting that audit.
+
+**Required correction.** Align the Operating Agreement, testing standard, and
+live body to the measured chain: one original definition/lifecycle gap; the
+round-1 fix introduced the mechanism; rounds 2–5 found four command defects; the
+audit found the fifth. This is merge-blocking because the false causal count is
+new governance rationale and directly contradicts the primary source cited to
+justify the structural ruling.
+
+### The structural split and M2
+
+**M2 remains resolved.** Read without the command, §3.4(3) still supplies a
+decision procedure in prose. Condition (i) names the complete allowed-path
+population, requires every commit in the range, and counts both rename sides.
+Condition (ii) independently rejects symlinks, submodules, and added executable
+bits. Addition/deletion semantics and the non-ancestor failure are explicit. A
+stranger need not infer whether an allowed symlink or transient behaviour path
+qualifies.
+
+The removed mechanism material landed rather than disappearing. Former
+properties (a)–(d) are in the testing standard as (a)–(d); R6-M1 added (e). The
+five old mandatory negatives moved and R6-M1 added a sixth. The four-defect
+history moved and gained the audit's fifth command defect. The old extracted
+commands themselves were deliberately replaced with the pinned history form.
+No operative population clause was lost.
+
+Step (2)'s “not evidence-only under (3)” is the correct reference. It covers
+both (i) and (ii), unlike the former “outside the allowlist” wording, and it has
+no independent surface list that can drift inversely from (3).
+
+The split is sound despite `TESTING_STANDARDS.md` not being a §3-governed
+authority. The Operating Agreement binds the population and the duty to publish
+and independently re-run evidence that establishes it. Weakening a working
+command cannot change that population; it creates rejectable evidence, as
+R6-M2 demonstrates, rather than silently amending the law. The testing standard
+therefore has standing to carry the current working form, but no authority to
+redefine the term. This does not make command defects cost-free or immune from a
+narrow follow-up: a finding-driven change to the non-allowlisted testing
+standard is still fresh work under §3.4(2).
+
+The owner-directed widening was proper. The audit measured a repeated defect
+pattern and the owner commissioned adoption of its recommendation. Both the
+audit and adoption remain fresh review surface, and this round has treated them
+that way. No unrelated product or test implementation entered the range.
+
+### Regression, class sweep, index, and live PR body
+
+- `git diff --name-status 818b9d2..c26a8c2` returned exactly one added audit and
+  the two expected modified documents:
+  `docs/reviews/pr139-defect-pattern-audit.md`,
+  `docs/governance/OPERATING_AGREEMENT.md`, and
+  `docs/testing/TESTING_STANDARDS.md`. Per-commit enumeration showed the same
+  three paths. No `src/`, `tests/`, PNG, signed specification, UAT, or `[STATE]`
+  path changed.
+- The new evidence command over that range correctly printed the two
+  non-allowlisted documents; the audit path passed the allowlist. The range is
+  review-requiring, as claimed.
+- A behaviour-keyed enumeration found these operative readers: §3.3's cost
+  trigger sends readers to §3.4; §3.4 defines the population and sends readers
+  to the testing standard; the testing standard carries the command and points
+  back to §3.4; and the single REV-IMPL row summarizes and points to both. The
+  superseded Promptmi governance review points to §3.4 but does not state a
+  rival test. Historical review files describe prior forms rather than direct a
+  current classification. No unreported operative member was found.
+- The REV-IMPL index remains one row for one ruling and matches the body on
+  pilot status, lifecycle, population authority, and command location. Its
+  added clause is a compact operative summary, not a second definition. R6-M3's
+  false history is in the body, not the row.
+- At review start, the live PR was open, non-draft, and unmerged against
+  `main`, but its remote head was still `3db6c4d` while the commissioned author
+  head `c26a8c2` was two local commits ahead. The live body had nevertheless
+  already appended the audit/adoption sections. Its withdrawal of the claim
+  that `-m` always yields ordinary records is accurate and not over-corrected;
+  R6-M3 is the remaining stale causal compression. The temporary head/body
+  mismatch is delivery state, not a separate content finding.
+
+### The audit as a change artifact
+
+The audit's main measurements hold at its `3db6c4d` cutoff. The
+governance-prefixed log contains twelve commits, but `0a311bb` is the original
+content commit; the eleven commits after it that touch the Operating Agreement
+are fixes. Eight of the twelve governance-prefixed commits touch only that
+document. At `c4fd0a4`, the unanchored regex and rename-detecting
+`--name-only` command are present, while the endpoint key inherited from
+`bcba77a` remains; the round-3, round-4, and round-5 defects were therefore
+co-resident.
+
+I agree with the audit's **four author-sweep / two scope-control** classification
+and with its narrower statement about my own earlier diagnosis. “Primarily an
+author sweep failure” is right for rounds 3–5, while the full lineage has a
+scope-control stage that created the mechanism and an author-sweep stage that
+failed to test its population. The two causes are sequential, not mutually
+exclusive.
+
+At 587 lines, the audit is long but not itself over-reach. It is the
+owner-commissioned, primary-source measurement for a five-round governance
+decision, is contained to `docs/reviews/`, and is independently reviewed here.
+Its local count error is real but does not invalidate its tables or central
+measurements:
+
+`docs/reviews/pr139-defect-pattern-audit.md:449` says an auditor found the
+“twelfth defect in that paragraph.” Before R6-M1 the audit counts five of ten
+merge-blocking findings in that lineage, six of twelve including R5-N1. R6-M1
+is therefore the sixth merge-blocking finding in the lineage, the eleventh
+merge-blocking finding overall, or the thirteenth item if both earlier notes are
+counted—never the twelfth defect in the paragraph. This is R6-N1, an isolated
+review-file error the owner may accept as evidence-only residue, though it
+should be corrected with the blockers.
+
+MemPalace remained unavailable. The claim that the five author-filed drawers
+did not soften the review is therefore **UNVERIFIABLE**; I did not substitute
+the committed filing prose or semantic search for drawer inspection.
+
+### Weakest claims, convergence, and rollback
+
+1. **Moving the commands does not reopen M2.** Confirmed. The population, not
+   an implementation accident, is the definition.
+2. **The split is the right remedy.** Confirmed as a governance boundary, not
+   as a proven future cost reduction. R6-M2 shows the intended distinction in
+   action: the evidence is defective while the law remains decidable.
+3. **The widening was proper.** Confirmed because the owner commissioned both
+   the audit and adoption. It did not relax the duty to review the new work.
+4. **The live-proof guard is sufficient.** Sufficient only for the execution
+   error it names when a human follows it; weaker than mechanically preserving
+   the Git command's failure status and irrelevant to semantic suppression.
+5. **The self-pass is reliable.** Not established. It is substantially better
+   and its reported named cases held, but the author again wrote the winning
+   populations—`diff.*` variables and `git replace`—into the commission without
+   exercising them. One broad pass with two same-class misses cannot establish
+   reliability.
+
+Applying **§0 rule 1 clause 6 by name**, the rising round count remains
+primarily an **author sweep failure**, now with a secondary scope-control error
+in R6-M3. Pinning `log.diffMerges` closed the demonstrated instance of ambient
+Git configuration but did not sweep other settings that control whether raw
+records exist. The audit-driven restructuring is a different animal from a
+narrow finding repair: it is an owner-directed architectural response to the
+measured pattern. It improves the authority boundary, but its new command and
+rationale are still unreviewed work.
+
+No §3.3 rollback trigger fired. Six rounds on one governance PR are not three
+consecutive implementation slices or three clean spec reviews; findings have
+been substantive and acted on; no author/reviewer machine-enforcement proposal
+was made; and the §4 index remains one row per ruling. The PR is structurally
+converging, but R6-M2 controls whether behaviour-bearing repairs receive review
+and R6-M3 writes a known-false causal account into the governing rationale.
+Neither is an owner-acceptable merge residue.
+
+### Checked clean and not checked
+
+- **Repository gate:** `./tools/checks` exited 0 after the Round-6 review was
+  formatted: all four steps passed; lint reported 0 errors / 145 warnings;
+  Prettier and `tsc --noEmit` were clean; and 1,335 unit tests passed across 101
+  files.
+- **Checked clean:** local author head/base and docs-only range; exact shipped
+  command extraction; actual-range classification; all six mandatory negatives
+  and four controls; transient path/mode history; two-parent and octopus merge
+  shapes; four `log.diffMerges` values and environment injection; `core.fileMode`
+  settings; `--first-parent`, `--follow`, `--find-copies-harder`, attributes,
+  quoting, TAB/space paths, clean signature configuration, unmerged index,
+  ancestry/root reasoning, current Git error behavior; M2 definition;
+  relocation of the removed properties/cases/history; step (2)/(3) alignment;
+  behaviour-keyed reference sweep; REV-IMPL row; live PR body; audit counts,
+  lineage, classifications, scope; and rollback triggers.
+- **Could not check:** MemPalace drawer contents and no-softening claim;
+  unavailable older/newer Git binaries; platform-specific case-insensitive
+  filesystem behavior. Those remain **UNVERIFIED**.
+- **Not run:** e2e, integration, or UAT. The commissioned range is docs-only and
+  this round permits only `./tools/checks` as the repository gate.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"` — **PR #139 Round-6 review:**
+  CHANGES-REQUIRED, high confidence; not merge-ready. M2 remains resolved and
+  the structural split is sound; R5-M1 and R6-M1 close. Merge-blocking R6-M2:
+  `diff.ignoreSubmodules=all` suppresses a `160000` record and replacement refs
+  can hide an actual behaviour commit, making both published commands silent.
+  Merge-blocking R6-M3: the new Operating Agreement and testing standard say
+  five review rounds each found a command defect although the audit proves the
+  command was created by the round-1 fix and rounds 2–5 found four defects.
+  R6-N1 is an owner-acceptable isolated audit count error. No rollback trigger
+  fired.
+- `practice/verification`, `added_by="codex"` — **Candidate general lesson:**
+  pinning an output format does not pin the population that reaches it. A Git
+  proof over `--raw` must also neutralize settings that suppress records and
+  replacement objects that substitute commits; prove a gitlink under
+  `diff.ignoreSubmodules=all` and an actual behaviour commit under `git replace`
+  fail against the old form before trusting silence from the repair.
