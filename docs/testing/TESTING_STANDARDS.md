@@ -856,6 +856,124 @@ review must say so in its "not checked" section.
 **Author side:** run the flake-prone repeat at the depth a reviewer is likely to
 use, and run a brand-new leg in isolation before folding it into a full-spec run.
 
+#### Evidence-only classification — the published commands
+
+⚠⚠ **THE RULE IS NOT HERE. `docs/governance/OPERATING_AGREEMENT.md` §3.4(3)
+defines the evidence-only population and is authoritative; this section carries
+the commands that establish it.** The author publishes them with the repair and
+the reviewer re-runs them. **A defect in these commands is a defect in one pull
+request's evidence, correctable in that pull request — it is not a governance
+amendment.** That split was ruled on 2026-08-08 after five review rounds each
+found one defect in a command that was living in the governing text; see
+`docs/reviews/pr139-defect-pattern-audit.md`.
+
+Check (0) must succeed and commands (1) and (2) must both print nothing:
+
+```sh
+# (0) fail closed unless the previous review commit is an ancestor
+git merge-base --is-ancestor <previous review commit> HEAD
+
+# (1) every path touched by EVERY commit in the range is allowed
+git log --format= --no-renames --diff-merges=separate --raw <previous review commit>..HEAD \
+  | awk -F'\t' 'NF>1 {print $2}' \
+  | grep -vE '^(docs/reviews/[^/]+\.md|PR_NOTES\.md|CODEX_SUMMARY\.md)$'
+
+# (2) no record left an allowed path as anything but an ordinary file
+git log --format= --no-renames --diff-merges=separate --raw <previous review commit>..HEAD \
+  | awk '$2 !~ /^(100644|000000)$/'
+```
+
+⚠⚠⚠ **BEFORE TRUSTING SILENCE, PROVE THE COMMANDS ARE LIVE.** Run both over a
+range you already know is review-requiring and confirm they print. **A command
+that errors — an unknown option on an older git, a typo, a bad extraction —
+writes to stderr and prints nothing on stdout, so a broken command is
+indistinguishable from a clean result.** This project has already nearly shipped
+one silent no-op: a mis-escaped `awk` program extracted as the empty string, and
+`awk ""` "passes" every case without running.
+
+**Five properties are load-bearing. Do not relax any of them.**
+
+**(a) It is an allowlist, not a blocklist.** A blocklist of executable
+directories cannot be completed: this repository carries behaviour-bearing files
+at the root, under `.github/workflows/`, `.claude/`, `templates/` and
+`test-dashboards/`, and a new one can appear any day. **An allowlist inverts the
+burden of proof — a path is evidence-only only if it matches a named pattern, so
+a behaviour-bearing path added tomorrow is review-requiring by default.**
+
+**(b) The alternatives are end-anchored, and the review alternative admits one
+level of `.md` only.** Drop the `$`, or widen `[^/]+\.md` to a bare prefix, and
+it stops being an allowlist of paths and becomes an allowlist of _prefixes_ —
+`PR_NOTES.md.sh` and `docs/reviews/some-tool.sh` then both pass. Testing only on
+real ranges cannot detect this: a range containing no hostile path returns the
+same output either way.
+
+**(c) `--no-renames` is mandatory, and command (2) is not optional.** Git detects
+renames by default and reports **only the destination**, so a behaviour-bearing
+file renamed into an allowed review pathname vanishes from the input. Measured:
+renaming `package.json` to `docs/reviews/x.md` made the earlier rename-detecting
+form print nothing while `package.json` had in fact been deleted. Command (2)
+exists because a pathname cannot carry an object type: without it, replacing an
+allowed `.md` with a symlink or a submodule passes command (1) unchanged.
+
+**(d) The enumeration is over COMMITS, not the two endpoint trees.** An endpoint
+diff answers "do the start and end trees differ only at allowed paths?" — the
+rule claims something stronger, that _the repair touched_ only allowed paths.
+Those come apart whenever a change is made and undone inside the range. Not
+bookkeeping: an intermediate workflow runs when it is pushed, an intermediate
+executable can be invoked, and the content stays in history either way.
+
+**(e) ⭐ The merge-record format must be PINNED, not delegated.** `-m` alone
+leaves the raw record format to the **`log.diffMerges` configuration variable**.
+Under `log.diffMerges=combined` or `dense-combined` a merge emits a _combined_
+record — `::100644 100644 120000 … MM<TAB>path` — in which `$2` is a **parent**
+mode, not the destination, so command (2) reads the wrong field and stays
+silent. **Measured on git 2.43.0: with `-m`, a merge that resolved an allowed
+`.md` to a symlink was correctly rejected under `separate` and `first-parent`
+and SILENTLY CERTIFIED EVIDENCE-ONLY under `combined` and `dense-combined`;
+with `--diff-merges=separate` it was correctly rejected under all four.** ⚠ Do
+not add `--find-copies-harder`: it re-enables rename detection regardless of its
+order relative to `--no-renames` and reproduces the rename bypass.
+
+⚠ **The six negative cases every future edit of these commands must be run
+against — all six must print:**
+
+1. `PR_NOTES.md.sh` added;
+2. any behaviour-bearing file **renamed** into `docs/reviews/x.md`;
+3. an allowed `.md` path **replaced by a symlink**;
+4. a behaviour-bearing path **added in one commit and removed in a later one**;
+5. an allowed file **made executable and then restored**;
+6. case 3 performed **by a merge commit whose resolution differs from both
+   parents**, run under `git -c log.diffMerges=combined` **and**
+   `-c log.diffMerges=dense-combined`.
+
+**Build them as real commits on a throwaway branch** — this class of defect
+lives in git's own behaviour, not in the regex, and feeding synthetic strings to
+`grep` cannot reach it. Confirm the false-positive controls stay silent too: a
+review-document-only change, and an allowed→allowed rename.
+
+ⓘ **Two accepting behaviours are correct, not defects — do not "fix" them.**
+(1) The commands classify **pathnames and object types, never content**: copying
+a behaviour file to an allowed name is accepted, which is the same
+already-assessed risk as any review document (no tool reads, follows or executes
+fenced content from these paths; a future consumer would itself be a
+non-allowlisted change and draw review). (2) A **non-ASCII allowed path** is
+accepted under `core.quotePath=false` and rejected under the default, because
+git quotes it and the quoted form misses the allowlist — an asymmetry that errs
+towards _requiring_ review, which is the safe direction.
+
+⚠ **Commit before you test on a throwaway branch.** A throwaway branch inherits
+your dirty tree and `git reset --hard` eats it.
+
+**The five defects these commands have had**, each found by a round that ran
+them against real git state: the incomplete blocklist
+(`drawer_havdm_review_b23fc37ce14ccdeaf159e6ca`, round 2); the unanchored prefix
+(`drawer_havdm_review_d086b4e07dc28938830173ae`, round 3); the rename collapse
+(`drawer_havdm_review_c922769aee0360b071fa5566`, round 4); the endpoint-only
+enumeration (`drawer_havdm_review_eb44509d2f400cc6e86bcedc`, round 5); and the
+delegated merge-record format (`drawer_havdm_governance_66a9a195ba4302d0fe346fd4`,
+found by audit). **Every one was a case the then-current negative-case list did
+not name.** Treat the list above as a floor, never a ceiling.
+
 #### Command Request Shortcuts (for user prompts)
 
 When asked:
