@@ -247,11 +247,21 @@ round and the owner could merge unreviewed new work.
 3. **Evidence-only residues may be accepted by the owner with the merge**, with
    no further round. **"Evidence-only" means:** the repair changed only
    documentation, review or PR-body prose, comments, or non-executable text —
-   and **`git diff --stat <previous review commit>..HEAD -- src/ tests/` is
-   empty**. That is a mechanical test, deliberately, so it is not left to
-   inference.
+   and **`git diff --stat <previous review commit>..HEAD -- src/ tests/ tools/`
+   is empty**. That is a mechanical test, deliberately, so it is not left to
+   inference. ⚠⚠ **`tools/` is in that list on purpose and the omission was a
+   real defect in this rule's first draft: step (2) already said "or tools",
+   while the mechanical test checked only `src/ tests/` — the two steps
+   disagreed. PR #137's M4 lived in a `tools/` shell script for FIVE review
+   rounds, and nothing in the repository's gate reads shell, so a
+   behaviour-bearing script change is exactly the repair most likely to slip
+   through as "evidence-only".**
 4. **The sequence stops when no repair requiring a follow-up under (2)
    remains.** The owner may then merge.
+
+⚠ Step (3)'s path list and step (2)'s prose must always name the same
+surfaces. If a future change adds a behaviour-bearing directory, it goes in
+both or the rule silently reopens the hole described above.
 
 ⚠ A repair that is evidence-only by (3) does not become reviewable merely
 because a reviewer would find it interesting; and a repair that touches
