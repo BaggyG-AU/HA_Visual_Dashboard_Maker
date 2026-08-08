@@ -251,3 +251,167 @@ protocol's lease/latch mechanics remain consistent and need no change.
   classes require a narrow follow-up, what residues the owner may accept, and
   the exit condition; otherwise the process permits both under-review and
   endless review.
+
+## Round 2
+
+**Verdict: CHANGES-REQUIRED (high confidence).** **Merge readiness: not ready.**
+M1 and M3 are resolved. M2 and M4 are only partially resolved and each leaves
+one merge-blocking defect. The class-(d) three-slice cost threshold is a
+non-blocking judgement the owner may accept with the merge after the blockers
+are corrected.
+
+### Disposition of M1–M4
+
+| Round-1 finding                   | Disposition            | Merge effect               | Round-2 judgement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --------------------------------- | ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1 — pilot scope and cost trigger | **RESOLVED**           | None                       | Class (d) unambiguously covers every implementation slice from 2026-08-08 until the shared v1.0.0/Phase 7 pilot gate. Keeping the owner's extension inside the existing pilot is the faithful conservative reading: the ruling widened the pilot's subject matter but did not say to make class (d) permanent. In the stated scenario, after the third consecutive slice the accumulated review time is over one working session and all three findings are evidence-only, so the new trigger fires even though each slice produced a small acted-on residue. |
+| M2 — repair lifecycle             | **PARTIALLY RESOLVED** | **MERGE-BLOCKING — R2-M1** | A Major product fix now requires a narrow follow-up and the sequence stops when no qualifying repair remains. The mechanical evidence-only test still has false negatives outside its three named directories.                                                                                                                                                                                                                                                                                                                                                |
+| M3 — MEDIUM correction and n=1    | **RESOLVED**           | None                       | Both policy documents now distinguish round 1's author-reported MEDIUM figures from round 2's sole independently observed MEDIUM rerun. The binding rule is candidly an owner judgement based on one PR and is bounded by the pilot. A slice with no load-bearing spec and no repeatable flaky mechanism can mark items 1 and 2 not applicable with the named substitute/reason, then run item 3, without inventing evidence.                                                                                                                                 |
+| M4 — MP-LEASE destination         | **PARTIALLY RESOLVED** | **MERGE-BLOCKING — R2-M2** | The Operating Agreement and its index now state the reviewer-specific refinement, but the first instruction a reviewer is told to read still sends the notes to the PR body. The contradiction therefore survives at the decisive surface.                                                                                                                                                                                                                                                                                                                    |
+
+### R2-M1 — the evidence-only mechanical test still misses live behaviour surfaces
+
+**Evidence.** The lifecycle correctly requires a narrow follow-up after a change
+to product code or behaviour-bearing tests or tools
+(`docs/governance/OPERATING_AGREEMENT.md:238-260`). Commit `fa62399` also made
+step 3 check `src/`, `tests/`, and `tools/`, closing the specific mismatch from
+the first repair (`:243-258`). But the repository has existing executable or
+behaviour-bearing paths outside all three: root-level
+`analyze-test-results.js`, `package.json`, `playwright.config.ts`,
+`vitest.config.ts`, and `vite.*.config.ts`; `.github/workflows/`; and product
+templates under `templates/`. A repair can change any of them while
+`git diff --stat <previous review commit>..HEAD -- src/ tests/ tools/` remains
+empty. The prose definition would still say such a change is not evidence-only,
+but the purportedly mechanical guard does not establish that fact and can be
+gamed or applied as a false proof. The maintenance warning compounds the
+problem by assuming each behaviour-bearing surface can be represented as a
+directory added to both lists (`:262-264`), while the closing summary again
+mentions only `src/` and tests (`:266-268`).
+
+**Required correction.** Make the mechanical test conservative over the whole
+diff—for example, mechanically allowlist the known prose-only review/document
+paths and require review for every other changed path—rather than trying to
+enumerate executable directories. Align steps 2 and 3, the maintenance warning,
+and the closing summary. The result must classify root configuration and
+scripts, workflows, templates, and any future behaviour-bearing path without
+human inference being presented as a mechanical proof.
+
+**Class swept.** I enumerated the tracked tree rather than stopping at the
+prompt's `tools/` example. The third-surface problem is a repository-path-class
+gap, not another omission confined to one known directory. I found no separate
+lifecycle or termination defect: a product-code Major cannot now reach merge
+after the sole full round without the required narrow follow-up, and step 4 is
+a finite exit rule.
+
+### R2-M2 — the reviewer destination still conflicts at `ai_rules.md`
+
+**Evidence.** The Operating Agreement now calls the review-file destination a
+reviewer-specific refinement and preserves the PR body for non-reviewers
+(`docs/governance/OPERATING_AGREEMENT.md:89-106`); the MP-LEASE index row says
+the same (`:360`). `CLAUDE.md:70-81` adds an exception, although its
+“independent reviewer ... **or** your write is refused” construction can also
+be read to include a non-reviewer whose write is refused, contrary to the
+paragraph's “independent reviewers only” label and its final “Every other
+agent” sentence.
+
+The decisive conflict remains unchanged in `ai_rules.md`. That file calls
+itself immutable, says its rules win unless a prompt explicitly overrides it,
+and tells an agent to read it first (`ai_rules.md:1-13`). It then twice directs
+an agent without MemPalace to put drawer candidates in the PR body
+(`ai_rules.md:319-335`) and neither points to nor scopes an exception for an
+independent reviewer. Calling the later Operating Agreement text a
+“refinement” cannot make that destination discoverable to the no-MemPalace
+reviewer who reads only the instruction it was told to read. The title
+“Immutable” is not a resolution of two incompatible actions.
+
+**Required correction.** Put the reviewer exception in `ai_rules.md` itself,
+or add an equally explicit pointer there that makes the review-file destination
+authoritative for independent reviewers while retaining the PR body for
+everyone else. Tighten `CLAUDE.md` so the exception unambiguously applies only
+to independent reviewers. Keep the Operating Agreement bullet and MP-LEASE row
+aligned with that single rule.
+
+**Class swept.** I checked the live fallback destinations in the Operating
+Agreement, its MP-LEASE index row, `CLAUDE.md`, and `ai_rules.md`. The author's
+extra index-row repair is present, but the sweep missed the unchanged
+high-precedence instruction and the ambiguous `CLAUDE.md` condition. The
+writer-lease/latch mechanics were outside this narrow round because round 1
+already checked them clean.
+
+### Regression and repair sweep
+
+- The branch began this round at the commissioned `fa62399`; `main` and
+  `origin/main` were both `a6ce103`, and PR #139 was open and unmerged.
+- `git diff bfcc01a..bcba77a` changes only `CLAUDE.md`,
+  `docs/governance/OPERATING_AGREEMENT.md`, and
+  `docs/testing/TESTING_STANDARDS.md`. Commit `fa62399` changes only the
+  Operating Agreement. Neither repair range changes `src/`, `tests/`, PNGs,
+  signed feature specifications, UAT material, `[STATE]`, or `ai_rules.md`.
+- `git diff --stat main...HEAD -- src/ tests/` was empty. This is a docs-only
+  governance review, so I did not run e2e or integration tests.
+- `./tools/checks` exited 0: lint reported 0 errors / 145 warnings, formatting
+  and typecheck passed, and all 1,335 unit tests passed across 101 files.
+- The repair introduced the two same-class defects above. I found no unrelated
+  fifth ruling or behavioural expansion in the repair diff.
+
+### Step 3 — the author's weakest claims
+
+1. **Pilot scope — accepted.** The new wording is explicit and the conservative
+   reading is faithful. “Extend” did not silently ratify permanence; the owner
+   can make permanence a later ruling at the already-declared gate.
+2. **Mechanical test — rejected.** Adding `tools/` closes the published example
+   but not the defect class. Existing root scripts/configuration, workflows,
+   and templates supply third surfaces, producing R2-M1.
+3. **No `ai_rules.md` edit — rejected.** The unchanged general rule is both the
+   highest-precedence text and the first surface a future reviewer is told to
+   read. Scope elsewhere does not resolve the contradiction there, producing
+   R2-M2.
+4. **Three-slice threshold — accepted as a pilot judgement, not as measured
+   fact.** It is invented rather than measured, but it is openly bounded,
+   reversible, and capable of firing in the named scenario. This is a note the
+   owner may accept with the merge, not a blocker.
+
+### Step 4 — verdict, merge readiness, and rollback
+
+**CHANGES-REQUIRED, high confidence.** PR #139 is **not merge-ready**. R2-M1
+and R2-M2 are merge-blocking because each leaves a mechanical or instruction
+path through a rule whose stated purpose is invariance. Correct those two
+findings and commission one narrow follow-up over only those corrections and
+their same-class sweep. The three-slice threshold is expressly a non-blocking
+owner-judgement note that may be accepted with the eventual merge.
+
+No §3.3 rollback trigger has fired. This governance PR is not one of the three
+consecutive class-(d) implementation slices needed for either class-(d)
+trigger; the review rounds also produced acted-on findings rather than three
+clean rounds. There is therefore no evidentiary basis in this round to drop or
+narrow the pilot before its existing triggers or gate operate.
+
+### Checked clean and not checked
+
+- **Checked clean:** M1's population and time boundary; the cost-trigger walk;
+  M2's product-fix follow-up and termination; both M3 MEDIUM accounts, n=1
+  framing, and applicability paths; the M4 Operating Agreement bullet/index;
+  the complete repair path list and the changed-file regression scope.
+- **Not reopened:** ARB-R8 header placement, the superseded implementation
+  exclusion, PR #137's numbers, the four original §4 rows against their bodies,
+  lease mechanics, and original scope control. Round 1 checked those clean and
+  this commission prohibited reopening them.
+- **Not checked:** e2e, integration, UAT, and product behaviour, because the
+  repair is docs-only and the commissioned rerun is `./tools/checks` only.
+  MemPalace remained unavailable, so the two drawer contents and author filing
+  could not be inspected; all drawer-only claims remain **UNVERIFIABLE**. The
+  repository evidence stands independently of them.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"` — **PR #139 round-2 narrow governance
+  review:** CHANGES-REQUIRED, high confidence; not merge-ready. M1 and M3 are
+  resolved. M2 remains merge-blocking because the evidence-only mechanical
+  test misses behaviour-bearing root scripts/configuration, workflows,
+  templates, and future paths outside `src/`, `tests/`, and `tools/`. M4 remains
+  merge-blocking because unchanged, high-precedence `ai_rules.md` still sends a
+  no-MemPalace reviewer to the PR body, while `CLAUDE.md` states an ambiguous
+  “reviewer or refused write” condition. The invented three-slice threshold is
+  a bounded, reversible pilot judgement the owner may accept with the merge.
+  No §3.3 rollback trigger fired. Correct R2-M1 and R2-M2, then commission one
+  narrow follow-up review.
