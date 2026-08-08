@@ -259,26 +259,32 @@ round and the owner could merge unreviewed new work.
    paths, and changed none of them into something other than an ordinary
    file.** The allowed paths are: a `.md` file directly under `docs/reviews/` —
    no subdirectory, no other extension — or exactly `PR_NOTES.md` or
-   `CODEX_SUMMARY.md`. **Both of these commands must print nothing:**
+   `CODEX_SUMMARY.md`. **Check (0) must succeed and commands (1) and (2) must
+   both print nothing:**
 
    ```
-   # (1) every touched path is allowed — a rename is counted on BOTH sides
-   git diff --no-renames --name-only <previous review commit>..HEAD \
+   # (0) fail closed unless the previous review commit is an ancestor
+   git merge-base --is-ancestor <previous review commit> HEAD
+
+   # (1) every path touched by EVERY commit in the range is allowed
+   #     (--no-renames counts a rename on both sides; -m covers each merge parent)
+   git log --format= --no-renames --raw -m <previous review commit>..HEAD \
+     | awk -F'\t' 'NF>1 {print $2}' \
      | grep -vE '^(docs/reviews/[^/]+\.md|PR_NOTES\.md|CODEX_SUMMARY\.md)$'
 
-   # (2) nothing became a symlink or a submodule
-   git diff --no-renames --raw <previous review commit>..HEAD \
+   # (2) no record left an allowed path as anything but an ordinary file
+   git log --format= --no-renames --raw -m <previous review commit>..HEAD \
      | awk '$2 !~ /^(100644|000000)$/'
    ```
 
    **Adding or deleting an allowed path is evidence-only; changing what kind of
-   object lives there is not.** Both tests are mechanical deliberately, so the
+   object lives there is not.** All three are mechanical deliberately, so the
    classification is not left to inference.
 
 4. **The sequence stops when no repair requiring a follow-up under (2)
    remains.** The owner may then merge.
 
-⚠⚠ **Three properties of that test are load-bearing. Do not relax any of
+⚠⚠ **Four properties of that test are load-bearing. Do not relax any of
 them.**
 
 **(a) It is an allowlist, not a blocklist.** A blocklist of executable
@@ -299,39 +305,49 @@ evidence-only. ⚠ **Before changing this expression, run it against
 real ranges cannot detect this class of defect, because a range that contains
 no hostile path returns the same output either way.
 
-**(c) `--no-renames` is mandatory, and the second command is not optional.**
-Git detects renames by default and `--name-only` then emits **only the
-destination**, so a behaviour-bearing file renamed into an allowed review
-pathname vanishes from the input entirely. Measured: renaming `package.json`
-to `docs/reviews/x.md` makes the un-suffixed command print nothing and certify
-the repair as evidence-only, while `package.json` has in fact been deleted.
-`--no-renames` decomposes that into an add and a delete, and the delete is
-outside the allowlist. Command (2) exists because a pathname cannot carry an
-object type: without it, replacing an allowed `.md` with a **symlink** or a
-**submodule** at the same path passes command (1) unchanged.
+**(c) `--no-renames` is mandatory, and command (2) is not optional.** Git
+detects renames by default and then reports **only the destination**, so a
+behaviour-bearing file renamed into an allowed review pathname vanishes from
+the input entirely. Measured: renaming `package.json` to `docs/reviews/x.md`
+made the earlier rename-detecting form print nothing and certify the repair as
+evidence-only, while `package.json` had in fact been deleted. `--no-renames`
+decomposes that into an add and a delete, and the delete is outside the
+allowlist. Command (2) exists because a pathname cannot carry an object type:
+without it, replacing an allowed `.md` with a **symlink** or a **submodule** at
+the same path passes command (1) unchanged.
 
-⚠ **The three negative cases every future edit of this test must be run
-against:** `PR_NOTES.md.sh`, a rename of any behaviour-bearing file into
-`docs/reviews/x.md`, and an allowed `.md` path replaced by a symlink. **All
-three must print.** Build them as real commits on a throwaway branch — this
-class of defect lives in `git diff`'s behaviour, not in the regex, and feeding
-synthetic strings to `grep` cannot detect it.
+**(d) The enumeration is over COMMITS, not over the two endpoint trees.** An
+endpoint diff answers "do the start and end trees differ only at allowed
+paths?" — but this rule claims something stronger, that _the repair touched_
+only allowed paths. Those come apart whenever a change is made and undone
+inside the range: a behaviour path added in one commit and removed in a later
+one, or an allowed file made executable and then restored, is **absent from
+both endpoint diffs** while the history plainly contains it. Measured: both
+cases are silent under an endpoint diff and print under the commands above.
+This is not bookkeeping — an intermediate workflow runs when it is pushed, an
+intermediate executable can be invoked, and the content stays in history either
+way. ⚠ Check (0) exists because `<previous review commit>..HEAD` enumerates
+only commits reachable from `HEAD`; if the previous review commit is not an
+ancestor (after a rebase or force-push) the range cannot see what changed, and
+the repair **is not evidence-only**.
 
-ⓘ Two measured properties, so neither is rediscovered as a defect. **The
-`--no-renames` flag is not config-dependent:** the rename bypass stays closed
-under `diff.renames` set to `true`, `copies` or `false`, and under a
-`diff.renameLimit` of 1. **And a non-ASCII path fails safe:** git quotes it
-(`"docs/reviews/caf\303\251.md"`), the quoted form does not match the
-allowlist, so such a path is reported as review-requiring. That is a
-false-reject, never a false-accept — the safe direction, and the reason no
-`-z` handling is needed here.
+⚠ **The five negative cases every future edit of this test must be run
+against:** `PR_NOTES.md.sh`; a rename of any behaviour-bearing file into
+`docs/reviews/x.md`; an allowed `.md` path replaced by a symlink; **a
+behaviour-bearing path added in one commit and removed in a later one**; and
+**an allowed file made executable and then restored**. **All five must print.**
+Build them as real commits on a throwaway branch, and confirm the ordinary
+positive cases stay silent — this class of defect lives in git's own behaviour,
+not in the regex, and feeding synthetic strings to `grep` cannot detect it.
 
-The three defects this rule has had are recorded with the rounds that found
+The four defects this rule has had are recorded with the rounds that found
 them: the incomplete blocklist in `drawer_havdm_review_b23fc37ce14ccdeaf159e6ca`
 (round 2), the unanchored prefix in
-`drawer_havdm_review_d086b4e07dc28938830173ae` (round 3), and the
-rename-collapse in `drawer_havdm_review_c922769aee0360b071fa5566` (round 4),
-plus the PR #139 record.
+`drawer_havdm_review_d086b4e07dc28938830173ae` (round 3), the rename-collapse in
+`drawer_havdm_review_c922769aee0360b071fa5566` (round 4), and the endpoint-only
+enumeration in `drawer_havdm_review_eb44509d2f400cc6e86bcedc` (round 5), plus
+the PR #139 record. **Every one of the four was a case the test's population did
+not cover, found only by running it against real git state.**
 
 ⚠ **Step (3)'s allowlist is now the only list to maintain**, and adding a path
 to it is itself a §3(b) governance change. Step (2) no longer carries a surface
