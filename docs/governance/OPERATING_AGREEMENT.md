@@ -102,20 +102,14 @@ read-only-investigate → short-plan sequence and the post-merge routine below).
   rather than two — the review file is the reviewer's own committed
   deliverable on the branch, so the notes still arrive with the PR. **Agents
   that are not acting as an independent reviewer continue to use the PR body**
-  exactly as `ai_rules.md` §11 says. ⚠⚠ **An earlier draft of this ruling
-  tried to resolve the clash by scope alone, leaving `ai_rules.md` untouched
-  because it is titled "Immutable". That failed: `ai_rules.md` is both the
-  highest-precedence text and the first file an agent is told to read, so a
-  no-MemPalace reviewer still landed on "use the PR body" and never reached
-  this bullet. PR #139's round-2 review found it (R2-M2).** "Immutable" in
-  that file's title means its rules win on conflict — not that the file is
-  unamendable: **eighteen commits had edited it before this amendment**
-  (measured at `446271d`; this amendment is the nineteenth), five of them
-  governance amendments to §11 alone — `18f3ef5`, `96c4a95`, `289163a`,
-  `cc5577c`, `6b8e1a9`. ⚠ The five SHAs are the durable evidence; the running
-  total is pinned to a commit on purpose, because a count written into the
-  artifact it measures goes stale on the very edit that writes it. The
-  amendment route is this invariant, and it was used here.
+  exactly as `ai_rules.md` §11 says. ⚠ **The exception must live in
+  `ai_rules.md` itself, not only here:** that file is both the
+  highest-precedence text and the first one an agent is told to read, so
+  scoping the clash away in this document alone leaves a no-MemPalace reviewer
+  on the PR-body fallback. **"Immutable" in its title means its rules win on
+  conflict, not that the file cannot be amended** — it is amended through this
+  invariant, as it was here. Evidence and history:
+  `drawer_havdm_review_b23fc37ce14ccdeaf159e6ca` and the PR #139 record.
   ⚠⚠ **Never kill a process
   to free the lease and never set `MEMPALACE_MCP_ALLOW_PEER_WRITER`** — a
   read-only-latched server never re-evaluates and must itself be restarted
@@ -262,13 +256,13 @@ round and the owner could merge unreviewed new work.
    plus a regression check that nothing else moved.
 3. **Evidence-only residues may be accepted by the owner with the merge**, with
    no further round. **"Evidence-only" means every path the repair touched is
-   on this allowlist:** `docs/reviews/**` (the review files themselves) and
-   `PR_NOTES.md` / `CODEX_SUMMARY.md` (PR-body prose carried in-repo). The
-   mechanical test is therefore that
+   on this allowlist:** a Markdown review document directly under
+   `docs/reviews/` — no subdirectory, no other file type — or exactly
+   `PR_NOTES.md` or `CODEX_SUMMARY.md`. The mechanical test is therefore that
 
    ```
    git diff --name-only <previous review commit>..HEAD \
-     | grep -vE '^(docs/reviews/|PR_NOTES\.md|CODEX_SUMMARY\.md)'
+     | grep -vE '^(docs/reviews/[^/]+\.md|PR_NOTES\.md|CODEX_SUMMARY\.md)$'
    ```
 
    **prints nothing.** That is mechanical deliberately, so the classification
@@ -277,19 +271,28 @@ round and the owner could merge unreviewed new work.
 4. **The sequence stops when no repair requiring a follow-up under (2)
    remains.** The owner may then merge.
 
-⚠⚠ **The allowlist polarity is the point, and it is the correction of this
-rule's first two drafts.** Draft one tested `-- src/ tests/`; draft two added
-`tools/` after PR #137's M4 was found living in a shell script for five rounds
-with nothing in the gate able to read shell. **Both were blocklists of
-executable directories, and such a list cannot be complete.** This repository
-also carries behaviour-bearing `analyze-test-results.js`, `package.json`,
-`playwright.config.ts`, `vitest.config.ts`, `vite.*.config.ts`,
-`forge.config.ts`, `eslint.config.mjs`, `.github/workflows/`, `.claude/`,
-`templates/` and `test-dashboards/` — a repair could change any of them while
-`-- src/ tests/ tools/` stayed empty, and the blocklist would have certified it
-as evidence-only. **An allowlist inverts the burden of proof: a path is
-evidence-only only if it is named, so a behaviour-bearing path added tomorrow
-is review-requiring by default instead of silently exempt.**
+⚠⚠ **Two properties of that expression are load-bearing. Do not relax either.**
+
+**(a) It is an allowlist, not a blocklist.** A blocklist of executable
+directories cannot be completed: this repository carries behaviour-bearing
+files at the root, under `.github/workflows/`, `.claude/`, `templates/` and
+`test-dashboards/`, and a new one can appear any day. **An allowlist inverts
+the burden of proof — a path is evidence-only only if it matches a named
+pattern, so a behaviour-bearing path added tomorrow is review-requiring by
+default instead of silently exempt.**
+
+**(b) The alternatives are end-anchored, and the review alternative admits one
+level of `.md` only.** Drop the `$` or widen `[^/]+\.md` to a bare prefix and
+the test stops being an allowlist of paths and becomes an allowlist of
+_prefixes_ — `PR_NOTES.md.sh` and `docs/reviews/some-tool.sh` then both pass as
+evidence-only. ⚠ **Before changing this expression, run it against
+`PR_NOTES.md.sh`, `CODEX_SUMMARY.md/tool.js` and
+`docs/reviews/some-tool.sh`, and confirm all three print.** Testing it only on
+real ranges cannot detect this class of defect, because a range that contains
+no hostile path returns the same output either way.
+
+Both defects this rule has had, and the rounds that found them, are recorded in
+`drawer_havdm_review_b23fc37ce14ccdeaf159e6ca` and the PR #139 record.
 
 ⚠ **Step (3)'s allowlist is now the only list to maintain**, and adding a path
 to it is itself a §3(b) governance change. Step (2) no longer carries a surface
