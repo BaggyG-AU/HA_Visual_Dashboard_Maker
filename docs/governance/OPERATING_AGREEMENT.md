@@ -321,7 +321,8 @@ The three defects this rule has had are recorded with the rounds that found
 them: the incomplete blocklist in `drawer_havdm_review_b23fc37ce14ccdeaf159e6ca`
 (round 2), the unanchored prefix in
 `drawer_havdm_review_d086b4e07dc28938830173ae` (round 3), and the
-rename-collapse in the round-4 record, plus the PR #139 record.
+rename-collapse in `drawer_havdm_review_c922769aee0360b071fa5566` (round 4),
+plus the PR #139 record.
 
 ⚠ **Step (3)'s allowlist is now the only list to maintain**, and adding a path
 to it is itself a §3(b) governance change. Step (2) no longer carries a surface
