@@ -446,9 +446,18 @@ values:** replace `-m` with `--diff-merges=separate`, which pins the format
 instead of delegating it. I have not applied it — this audit is analysis-only.
 
 ⚠ **The point of R6-M1 is not R6-M1.** It is that an auditor who was not
-commissioned to review §3.4, working for under an hour, found the twelfth defect
+commissioned to review §3.4, working for under an hour, found a further defect
 in that paragraph by trying one case the author's five-case list did not name.
 The list will always be shorter than the population. **That is the finding.**
+
+> ⚠ **Corrected after round 6 (finding R6-N1).** This sentence originally called
+> R6-M1 "the twelfth defect in that paragraph", a number nothing in this audit
+> supports. Counted against the tables above, R6-M1 is **the sixth
+> merge-blocking finding in the §3.4 lineage** — the eleventh merge-blocking
+> finding overall, or the thirteenth item if both non-blocking notes are
+> included. The §5 heading's "eleventh defect" is the overall count and is
+> correct. **An audit whose whole complaint is unquantified claims does not get
+> to publish a bare numeral it never derived.**
 
 ---
 

@@ -288,16 +288,29 @@ round and the owner could merge unreviewed new work.
 
 ⚠⚠⚠ **WHY THE COMMANDS ARE NOT IN THIS DOCUMENT, WHICH IS ITSELF A RULING OF
 2026-08-08.** Between rounds 1 and 5 of PR #139 the mechanical command _was_ the
-definition of "evidence-only", and it lived here. **Five consecutive review
-rounds each found exactly one defect in it — an incomplete blocklist, an
-unanchored prefix, a rename collapse, an endpoint-only enumeration — and every
-repair was therefore a governance amendment requiring its own review round.**
-A sixth defect (the record format left to the `log.diffMerges` configuration)
-was found by audit immediately afterwards, in a form that had already passed all
-five negative cases this section used to mandate. ⭐⭐ **The population a rule
-governs is stable; the command that decides it is not. Putting a shell pipeline
-in the normative position made every deficiency in the pipeline a deficiency in
-the law.** Full measurement: `docs/reviews/pr139-defect-pattern-audit.md`.
+definition of "evidence-only", and it lived here. **The measured chain, stated
+exactly, because an earlier draft of this paragraph compressed it into a false
+one and round 6 filed that as a finding (R6-M3):**
+
+1. **Round 1 found no command defect — there was no command.** Its finding M2
+   was the absence of a repair trigger and a definition.
+2. **The round-1 fix CREATED the command**, as M2's answer.
+3. **Rounds 2, 3, 4 and 5 then found four defects in it** — an incomplete
+   blocklist, an unanchored prefix, a rename collapse, an endpoint-only
+   enumeration — **and every repair was a governance amendment requiring its own
+   review round.**
+4. **A fifth defect** (the record format left to the `log.diffMerges`
+   configuration) **was found by audit**, in a form that had already passed all
+   five negative cases this section then mandated. **A sixth** (submodule
+   suppression and replacement refs deciding which records exist at all) **was
+   found by round 6, after the commands had already moved out.**
+
+⭐⭐ **The population a rule governs is stable; the command that decides it is
+not. Putting a shell pipeline in the normative position made every deficiency in
+the pipeline a deficiency in the law.** ⭐ Defect six is the split working as
+intended: it landed on the evidence, cost one round, and amended no rule. Full
+measurement: `docs/reviews/pr139-defect-pattern-audit.md`; round 6's findings
+`drawer_havdm_review_90707252302c49840361e152`.
 
 ⚠ **Adding a path to the evidence-only population in (3)(i) is itself a §3(b)
 governance change.** Step (2) carries no surface list of its own — it defers to
