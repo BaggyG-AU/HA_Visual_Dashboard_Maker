@@ -109,9 +109,13 @@ read-only-investigate → short-plan sequence and the post-merge routine below).
   no-MemPalace reviewer still landed on "use the PR body" and never reached
   this bullet. PR #139's round-2 review found it (R2-M2).** "Immutable" in
   that file's title means its rules win on conflict — not that the file is
-  unamendable: eighteen commits have edited it, five of them governance
-  amendments to §11 alone (`18f3ef5`, `96c4a95`, `289163a`, `cc5577c`,
-  `6b8e1a9`). The amendment route is this invariant, and it was used here.
+  unamendable: **eighteen commits had edited it before this amendment**
+  (measured at `446271d`; this amendment is the nineteenth), five of them
+  governance amendments to §11 alone — `18f3ef5`, `96c4a95`, `289163a`,
+  `cc5577c`, `6b8e1a9`. ⚠ The five SHAs are the durable evidence; the running
+  total is pinned to a commit on purpose, because a count written into the
+  artifact it measures goes stale on the very edit that writes it. The
+  amendment route is this invariant, and it was used here.
   ⚠⚠ **Never kill a process
   to free the lease and never set `MEMPALACE_MCP_ALLOW_PEER_WRITER`** — a
   read-only-latched server never re-evaluates and must itself be restarted
