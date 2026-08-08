@@ -67,18 +67,22 @@ instead, which for a checkout with no memory store is **nothing persistent** —
 put drawer-candidate notes in the PR body and let a MemPalace-enabled agent
 file them later.
 
-> ⚠ **One exception, for independent reviewers only.** If you are acting as
-> the independent reviewer under
-> [`OPERATING_AGREEMENT.md`](docs/governance/OPERATING_AGREEMENT.md) §3 — or
-> your MemPalace **write** is refused by the per-palace writer lease, which is
-> the normal case when author and reviewer run concurrently — put the notes in
-> a `MemPalace drawer candidates` section **at the end of your committed
-> review file**, not in the PR body, and the write-enabled author files them
-> with `added_by="<reviewer>"` (ruling **MP-LEASE**, `OPERATING_AGREEMENT.md`
-> §2). The review file is your own deliverable on the branch, so the notes
-> still arrive with the PR. ⚠⚠ **Never kill a process to free the lease and
-> never set `MEMPALACE_MCP_ALLOW_PEER_WRITER`.** Every other agent uses the PR
-> body exactly as described above.
+> ⚠ **One exception, for independent reviewers only.** If — and only if — you
+> are acting as the independent reviewer under
+> [`OPERATING_AGREEMENT.md`](docs/governance/OPERATING_AGREEMENT.md) §3, put
+> the notes in a `MemPalace drawer candidates` section **at the end of your
+> committed review file**, not in the PR body, and the write-enabled author
+> files them with `added_by="<reviewer>"` (ruling **MP-LEASE**,
+> `OPERATING_AGREEMENT.md` §2; the same exception is carried in
+> [`ai_rules.md`](ai_rules.md) §11, which is the higher-precedence text).
+> The review file is your own deliverable on the branch, so the notes still
+> arrive with the PR. This holds **however** MemPalace is unavailable to you —
+> absent entirely, or present with the **write** refused by the per-palace
+> writer lease, which is the normal case when author and reviewer run
+> concurrently. ⚠⚠ **Never kill a process to free the lease and never set
+> `MEMPALACE_MCP_ALLOW_PEER_WRITER`.** ⚠ **A refused write does not by itself
+> put you inside this exception.** An agent that is not acting as the
+> independent reviewer uses the PR body exactly as described above.
 
 1. `mempalace_status` — confirm the palace is live and `havdm` is present.
 2. `mempalace_search` `"HAVDM current state of play"` (limit 15) — load the live

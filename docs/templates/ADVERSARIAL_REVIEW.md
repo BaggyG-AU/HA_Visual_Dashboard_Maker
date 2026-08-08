@@ -24,6 +24,16 @@ under review\>
 no UAT card marked or re-scored; no `src/` change; no merge; `<HA_HOST>`
 read-only. Proposed changes go in this document, nowhere else.
 
+**Where your MemPalace notes go (ruling MP-LEASE).** If MemPalace is absent,
+or present with the **write** refused by the per-palace writer lease — the
+normal case when author and reviewer run concurrently — record them in a
+`MemPalace drawer candidates` section at the end of **this document**, not in
+the PR body, and the write-enabled author files them with
+`added_by="<reviewer>"`. This is the independent reviewer's exception to the
+general PR-body fallback, and it is carried in `ai_rules.md` §11 itself as
+well as `docs/governance/OPERATING_AGREEMENT.md` §2. ⚠ Never kill a process to
+free the lease and never set `MEMPALACE_MCP_ALLOW_PEER_WRITER`.
+
 ## 0. Working practice this review is held to
 
 <!--

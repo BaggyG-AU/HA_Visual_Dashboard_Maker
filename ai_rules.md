@@ -322,6 +322,8 @@ At session start, call `mempalace_status`.
 
 **Where no memory store exists, no persistent fallback is owed.** The local-memory path below assumes a store that a fresh clone does not have and this repository does not ship — do not create one, and do not commit one. Record what would have been a drawer as notes in the PR body, and let a MemPalace-enabled agent file it.
 
+⚠ **One exception, and only one — the independent reviewer.** An agent acting as the independent reviewer under `docs/governance/OPERATING_AGREEMENT.md` §3 puts those notes in a `MemPalace drawer candidates` section **at the end of its committed review file**, not in the PR body, and the write-enabled author files them with `added_by="<reviewer>"` (ruling **MP-LEASE**, `OPERATING_AGREEMENT.md` §2). The review file is the reviewer's own deliverable on the branch, so the notes still arrive with the PR. This applies to an independent reviewer whether MemPalace is absent entirely or its **write** is refused by the per-palace writer lease — the normal case when author and reviewer run concurrently. ⚠⚠ Never kill a process to free the lease and never set `MEMPALACE_MCP_ALLOW_PEER_WRITER`. **Every agent that is not acting as an independent reviewer uses the PR body, exactly as stated above.**
+
 **If MemPalace responds:** all persistent memory — decisions, investigations, patterns, project state, governance clarifications — goes to MemPalace via `mempalace_add_drawer` / `mempalace_checkpoint`. **Do not write it to local memory files.**
 
 **If MemPalace is unavailable** (tools absent, or the server is read-only — see `docs/governance/MEMPALACE_PROTOCOL.md`): fall back to local memory files, and say so explicitly in the response.
@@ -332,7 +334,7 @@ At session start, call `mempalace_status`.
 
 **When you can read the `practice` rules and the agent you are briefing cannot**, quote the applicable ones **verbatim into that prompt** — an independent reviewer, a fresh chat, a sub-agent without MCP. A reviewer judges against exactly what its prompt supplies; a rule cited by name reaches it not at all. (If you cannot reach MemPalace yourself, this does not apply — you cannot quote what you cannot read. `docs/templates/ADVERSARIAL_REVIEW.md` §0 carries the reviewer-facing subset in-repo for exactly that case.)
 
-Agents without MemPalace access satisfy this rule via the fallback path, and surface drawer-candidate notes in their PR body for a MemPalace-enabled agent to file.
+Agents without MemPalace access satisfy this rule via the fallback path, and surface drawer-candidate notes in their PR body for a MemPalace-enabled agent to file — **except an agent acting as the independent reviewer, which uses its committed review file instead** (the MP-LEASE exception above; `docs/governance/OPERATING_AGREEMENT.md` §2).
 
 Why this rule exists: local memory files cannot be updated mid-session by MCP and silently drift from the palace. Two stores holding the same fact means one of them is wrong and nobody knows which.
 

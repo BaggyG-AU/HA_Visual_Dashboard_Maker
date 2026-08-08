@@ -97,13 +97,22 @@ read-only-investigate → short-plan sequence and the post-merge routine below).
   routinely refused. This is expected, not a fault: **the reviewer records a
   `MemPalace drawer candidates` section at the end of its committed review
   file, and the write-enabled author files them with
-  `added_by="<reviewer>"`.** ⚠ **This is a REVIEWER-SPECIFIC REFINEMENT of the
-  general fallback in the bullet above and in `ai_rules.md` §11, not an
-  override of it** — the review file is the reviewer's own committed
+  `added_by="<reviewer>"`.** ⚠ **This is a REVIEWER-SPECIFIC EXCEPTION that
+  `ai_rules.md` §11 now carries itself**, so the two documents state one rule
+  rather than two — the review file is the reviewer's own committed
   deliverable on the branch, so the notes still arrive with the PR. **Agents
   that are not acting as an independent reviewer continue to use the PR body**
-  exactly as `ai_rules.md` §11 says; that rule is unchanged and this document
-  does not override it (see Precedence, above). ⚠⚠ **Never kill a process
+  exactly as `ai_rules.md` §11 says. ⚠⚠ **An earlier draft of this ruling
+  tried to resolve the clash by scope alone, leaving `ai_rules.md` untouched
+  because it is titled "Immutable". That failed: `ai_rules.md` is both the
+  highest-precedence text and the first file an agent is told to read, so a
+  no-MemPalace reviewer still landed on "use the PR body" and never reached
+  this bullet. PR #139's round-2 review found it (R2-M2).** "Immutable" in
+  that file's title means its rules win on conflict — not that the file is
+  unamendable: eighteen commits have edited it, five of them governance
+  amendments to §11 alone (`18f3ef5`, `96c4a95`, `289163a`, `cc5577c`,
+  `6b8e1a9`). The amendment route is this invariant, and it was used here.
+  ⚠⚠ **Never kill a process
   to free the lease and never set `MEMPALACE_MCP_ALLOW_PEER_WRITER`** — a
   read-only-latched server never re-evaluates and must itself be restarted
   (VS Code: Reload Window); the latch is deliberate, because a second
@@ -227,10 +236,13 @@ gesture drag the wrong card while count-only assertions stayed green.** The
 gate suite did not catch it; the author's own testing did not; the reviewer
 did, by re-running at a deeper repeat. That is precisely the class this
 invariant's previous exclusion assumed the gate and the owner's PR review
-would catch. **Rounds 2–6 were all evidence cleanup** on artifacts that did
-not exist until the round-1 fix — `git diff <round-1 fix>..<head> -- src/`
-is empty at every round. The value is concentrated in round 1; the cost was
-spread over five more.
+would catch. **Rounds 2–6 found no product-code defect** — `git diff
+<round-1 fix>..<head> -- src/` is empty at every round — and worked on
+artifacts that did not exist until the round-1 fix. ⚠ They were **not**
+therefore _evidence-only_ in the §3.4(3) sense: the same range also changed
+`tests/e2e/sections-canvas.spec.ts` and `tools/f5-load-path-sweep.sh`, and
+each such repair correctly drew the follow-up round §3.4(2) now requires. The
+value is concentrated in round 1; the cost was spread over five more.
 
 ⚠ **The first round is a full review; it is not a formality.** Narrowing
 applies only to rounds 2+.
@@ -241,31 +253,54 @@ following, an author could apply a Major product fix after the sole mandatory
 round and the owner could merge unreviewed new work.
 
 1. **One full round is always mandatory.**
-2. A finding-driven change to **product code, or to behaviour-bearing tests or
-   tools**, requires **one narrow follow-up round** covering that finding plus
-   a regression check that nothing else moved.
+2. A finding-driven change to **anything outside step (3)'s evidence
+   allowlist** requires **one narrow follow-up round** covering that finding
+   plus a regression check that nothing else moved.
 3. **Evidence-only residues may be accepted by the owner with the merge**, with
-   no further round. **"Evidence-only" means:** the repair changed only
-   documentation, review or PR-body prose, comments, or non-executable text —
-   and **`git diff --stat <previous review commit>..HEAD -- src/ tests/ tools/`
-   is empty**. That is a mechanical test, deliberately, so it is not left to
-   inference. ⚠⚠ **`tools/` is in that list on purpose and the omission was a
-   real defect in this rule's first draft: step (2) already said "or tools",
-   while the mechanical test checked only `src/ tests/` — the two steps
-   disagreed. PR #137's M4 lived in a `tools/` shell script for FIVE review
-   rounds, and nothing in the repository's gate reads shell, so a
-   behaviour-bearing script change is exactly the repair most likely to slip
-   through as "evidence-only".**
+   no further round. **"Evidence-only" means every path the repair touched is
+   on this allowlist:** `docs/reviews/**` (the review files themselves) and
+   `PR_NOTES.md` / `CODEX_SUMMARY.md` (PR-body prose carried in-repo). The
+   mechanical test is therefore that
+
+   ```
+   git diff --name-only <previous review commit>..HEAD \
+     | grep -vE '^(docs/reviews/|PR_NOTES\.md|CODEX_SUMMARY\.md)'
+   ```
+
+   **prints nothing.** That is mechanical deliberately, so the classification
+   is not left to inference.
+
 4. **The sequence stops when no repair requiring a follow-up under (2)
    remains.** The owner may then merge.
 
-⚠ Step (3)'s path list and step (2)'s prose must always name the same
-surfaces. If a future change adds a behaviour-bearing directory, it goes in
-both or the rule silently reopens the hole described above.
+⚠⚠ **The allowlist polarity is the point, and it is the correction of this
+rule's first two drafts.** Draft one tested `-- src/ tests/`; draft two added
+`tools/` after PR #137's M4 was found living in a shell script for five rounds
+with nothing in the gate able to read shell. **Both were blocklists of
+executable directories, and such a list cannot be complete.** This repository
+also carries behaviour-bearing `analyze-test-results.js`, `package.json`,
+`playwright.config.ts`, `vitest.config.ts`, `vite.*.config.ts`,
+`forge.config.ts`, `eslint.config.mjs`, `.github/workflows/`, `.claude/`,
+`templates/` and `test-dashboards/` — a repair could change any of them while
+`-- src/ tests/ tools/` stayed empty, and the blocklist would have certified it
+as evidence-only. **An allowlist inverts the burden of proof: a path is
+evidence-only only if it is named, so a behaviour-bearing path added tomorrow
+is review-requiring by default instead of silently exempt.**
+
+⚠ **Step (3)'s allowlist is now the only list to maintain**, and adding a path
+to it is itself a §3(b) governance change. Step (2) no longer carries a surface
+list of its own — it defers to step (3) — so the two cannot drift apart, which
+is the failure both earlier drafts had in a different form.
+
+⚠ **The governed rule surfaces — `ai_rules.md`, `CLAUDE.md` and
+`docs/governance/**` — are deliberately not on the allowlist and are never
+evidence-only**, because on a governance change the rule text _is_ the product.
+This PR is the demonstration: the round-1 M4 repair edited `CLAUDE.md`, and the
+narrow round-2 review found a real defect inside that edit.
 
 ⚠ A repair that is evidence-only by (3) does not become reviewable merely
-because a reviewer would find it interesting; and a repair that touches
-`src/` or a behaviour-bearing test is never evidence-only, however small.
+because a reviewer would find it interesting; and a repair that touches any
+non-allowlisted path is never evidence-only, however small.
 
 ⚠⚠ **A fix round is unreviewed new work** (§2's packaging rule already
 assumes this): the narrow round N+1 exists because a repair can introduce
@@ -340,21 +375,21 @@ index only locates it. Full narrative never lives here. _Maintenance
 convention (not itself ratified law): rows are appended as rulings land;
 rulings that predate this index are added when next cited._
 
-| ID         | Date       | Status           | Ruling                                                                                                                                                                                                                                                                                                                                                                                                       | Authority                                                                       |
-| ---------- | ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| VISION     | 2026-07-21 | Standing         | Product VISION — nine ratified answers (superset design tool; export translates; never-connected = permissive; …)                                                                                                                                                                                                                                                                                            | `drawer_havdm_decisions_d4f0886c7035390d30c1d1a7`                               |
-| AUTONOMY   | 2026-07-25 | Standing         | Plan sign-off before implementation; the agent never merges; autonomous execution after sign-off; post-merge routine                                                                                                                                                                                                                                                                                         | `drawer_havdm_decisions_9e545b5b958d1c1ef33c701c`                               |
-| MM-VERDICT | 2026-07-26 | Standing         | No automated multi-model orchestration loop; narrow manual uses only (flake-triage subagent, manual Fable handoffs)                                                                                                                                                                                                                                                                                          | `docs/governance/MULTI_MODEL_WORKFLOW_PLAN_2026-07.md` §6                       |
-| ARB-R1     | 2026-08-04 | Standing         | HA-05: the persisted capability profile wins; correct the UAT card (the optional freshness note was delivered by PR #129)                                                                                                                                                                                                                                                                                    | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
-| ARB-R2     | 2026-08-04 | Standing         | HA-06: HA themes are kept after disconnect; correct the card; the Reload-disabled test leg stands                                                                                                                                                                                                                                                                                                            | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
-| ARB-R3     | 2026-08-04 | Standing         | F9 export target is sections-first; `custom:grid-layout` only when sections cannot hold the geometry AND layout-card is installed; always warn when lossy                                                                                                                                                                                                                                                    | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
-| ARB-R4     | 2026-08-04 | Standing         | PROPS-03: both the card correction and the UX fix; no severity re-mark                                                                                                                                                                                                                                                                                                                                       | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
-| ARB-R5     | 2026-08-04 | Delivered (#126) | F7 staged: path-in-label now; in-app surface post-1.0 with FR-01                                                                                                                                                                                                                                                                                                                                             | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
-| ARB-R6     | 2026-08-04 | Standing         | F12: fs-IPC path scoping (with a threat model) and Windows code signing are formal 1.0 ship-gates, not UAT cards                                                                                                                                                                                                                                                                                             | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
-| ARB-R7     | 2026-08-04 | Standing         | F5 and F8 each require a written spec signed off by the owner before any code                                                                                                                                                                                                                                                                                                                                | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
-| REBASE-128 | 2026-08-04 | Completed (#128) | One-time authorization: rebaseline the stale visual snapshot(s) and run the full e2e + integration pass before F4 — not a standing permission                                                                                                                                                                                                                                                                | `drawer_havdm_decisions_c9a9720edc90cf10ce5b67d6`                               |
-| GOV-RAT    | 2026-08-06 | Standing         | Governance-review Tier 1 adopted: the §3 invariant, both templates, Codex as F5/F8 spec reviewer, adversarial review before every UAT round **and** every release gate                                                                                                                                                                                                                                       | `drawer_havdm_decisions_0475d2d73336a4a2481bdec6`                               |
-| ARB-R8     | 2026-08-07 | Standing         | §3.1's three header lines bind the CHANGE ARTIFACT (spec, remediation plan, triage document, or a review of one), not the long-lived instruction file a governance change edits; `ai_rules.md` and `CLAUDE.md` are exempt and no retrofit is owed                                                                                                                                                            | `drawer_havdm_decisions_ac026150b5fe8c5e6f70c519`                               |
-| REV-IMPL   | 2026-08-08 | Pilot → v1.0.0   | Slice implementations join the §3 governed classes as class (d) at **one mandatory review round**; rounds 2+ are narrow with a defined repair lifecycle, and the owner may accept evidence-only residues with the merge (§3.4). ⚠ Part of the F5/F8 pilot — permanence decided at the v1.0.0 gate                                                                                                            | this document §3.4; case study `drawer_havdm_patterns_9b2499f0b71c059ee556d65a` |
-| REV-RERUN  | 2026-08-08 | Pilot → v1.0.0   | A class-(d) reviewer MUST re-run the load-bearing spec, a deeper repeat than the author published, and `./tools/checks`; MEDIUM sweeps stay by-exception guidance; an unperformed re-run leaves a result UNVERIFIED (§3.5). ⚠ Binding on n=1 PR is an owner JUDGEMENT, reassessed at the v1.0.0 gate                                                                                                         | this document §3.5; case study `drawer_havdm_patterns_9b2499f0b71c059ee556d65a` |
-| MP-LEASE   | 2026-08-08 | Standing         | Under the writer-lease collision the reviewer surfaces `MemPalace drawer candidates` in its committed review file and the write-enabled author files them with `added_by=<reviewer>`; never kill a process, never set `MEMPALACE_MCP_ALLOW_PEER_WRITER` (§2). ⚠ A REVIEWER-SPECIFIC REFINEMENT of the `ai_rules.md` §11 PR-body fallback, not an override — every non-reviewing agent still uses the PR body | this document §2; `drawer_havdm_review_65aecb8d3cb0de6511b03648`                |
+| ID         | Date       | Status           | Ruling                                                                                                                                                                                                                                                                                                                                                                                                                                            | Authority                                                                       |
+| ---------- | ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| VISION     | 2026-07-21 | Standing         | Product VISION — nine ratified answers (superset design tool; export translates; never-connected = permissive; …)                                                                                                                                                                                                                                                                                                                                 | `drawer_havdm_decisions_d4f0886c7035390d30c1d1a7`                               |
+| AUTONOMY   | 2026-07-25 | Standing         | Plan sign-off before implementation; the agent never merges; autonomous execution after sign-off; post-merge routine                                                                                                                                                                                                                                                                                                                              | `drawer_havdm_decisions_9e545b5b958d1c1ef33c701c`                               |
+| MM-VERDICT | 2026-07-26 | Standing         | No automated multi-model orchestration loop; narrow manual uses only (flake-triage subagent, manual Fable handoffs)                                                                                                                                                                                                                                                                                                                               | `docs/governance/MULTI_MODEL_WORKFLOW_PLAN_2026-07.md` §6                       |
+| ARB-R1     | 2026-08-04 | Standing         | HA-05: the persisted capability profile wins; correct the UAT card (the optional freshness note was delivered by PR #129)                                                                                                                                                                                                                                                                                                                         | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
+| ARB-R2     | 2026-08-04 | Standing         | HA-06: HA themes are kept after disconnect; correct the card; the Reload-disabled test leg stands                                                                                                                                                                                                                                                                                                                                                 | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
+| ARB-R3     | 2026-08-04 | Standing         | F9 export target is sections-first; `custom:grid-layout` only when sections cannot hold the geometry AND layout-card is installed; always warn when lossy                                                                                                                                                                                                                                                                                         | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
+| ARB-R4     | 2026-08-04 | Standing         | PROPS-03: both the card correction and the UX fix; no severity re-mark                                                                                                                                                                                                                                                                                                                                                                            | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
+| ARB-R5     | 2026-08-04 | Delivered (#126) | F7 staged: path-in-label now; in-app surface post-1.0 with FR-01                                                                                                                                                                                                                                                                                                                                                                                  | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
+| ARB-R6     | 2026-08-04 | Standing         | F12: fs-IPC path scoping (with a threat model) and Windows code signing are formal 1.0 ship-gates, not UAT cards                                                                                                                                                                                                                                                                                                                                  | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
+| ARB-R7     | 2026-08-04 | Standing         | F5 and F8 each require a written spec signed off by the owner before any code                                                                                                                                                                                                                                                                                                                                                                     | `drawer_havdm_decisions_6e8d4788d9513ccce593c378`                               |
+| REBASE-128 | 2026-08-04 | Completed (#128) | One-time authorization: rebaseline the stale visual snapshot(s) and run the full e2e + integration pass before F4 — not a standing permission                                                                                                                                                                                                                                                                                                     | `drawer_havdm_decisions_c9a9720edc90cf10ce5b67d6`                               |
+| GOV-RAT    | 2026-08-06 | Standing         | Governance-review Tier 1 adopted: the §3 invariant, both templates, Codex as F5/F8 spec reviewer, adversarial review before every UAT round **and** every release gate                                                                                                                                                                                                                                                                            | `drawer_havdm_decisions_0475d2d73336a4a2481bdec6`                               |
+| ARB-R8     | 2026-08-07 | Standing         | §3.1's three header lines bind the CHANGE ARTIFACT (spec, remediation plan, triage document, or a review of one), not the long-lived instruction file a governance change edits; `ai_rules.md` and `CLAUDE.md` are exempt and no retrofit is owed                                                                                                                                                                                                 | `drawer_havdm_decisions_ac026150b5fe8c5e6f70c519`                               |
+| REV-IMPL   | 2026-08-08 | Pilot → v1.0.0   | Slice implementations join the §3 governed classes as class (d) at **one mandatory review round**; rounds 2+ are narrow with a defined repair lifecycle, and the owner may accept evidence-only residues with the merge (§3.4). ⚠ Part of the F5/F8 pilot — permanence decided at the v1.0.0 gate                                                                                                                                                 | this document §3.4; case study `drawer_havdm_patterns_9b2499f0b71c059ee556d65a` |
+| REV-RERUN  | 2026-08-08 | Pilot → v1.0.0   | A class-(d) reviewer MUST re-run the load-bearing spec, a deeper repeat than the author published, and `./tools/checks`; MEDIUM sweeps stay by-exception guidance; an unperformed re-run leaves a result UNVERIFIED (§3.5). ⚠ Binding on n=1 PR is an owner JUDGEMENT, reassessed at the v1.0.0 gate                                                                                                                                              | this document §3.5; case study `drawer_havdm_patterns_9b2499f0b71c059ee556d65a` |
+| MP-LEASE   | 2026-08-08 | Standing         | Under the writer-lease collision the reviewer surfaces `MemPalace drawer candidates` in its committed review file and the write-enabled author files them with `added_by=<reviewer>`; never kill a process, never set `MEMPALACE_MCP_ALLOW_PEER_WRITER` (§2). ⚠ A REVIEWER-SPECIFIC EXCEPTION to the PR-body fallback, carried in `ai_rules.md` §11 itself so the two documents state one rule — every non-reviewing agent still uses the PR body | this document §2; `drawer_havdm_review_65aecb8d3cb0de6511b03648`                |
