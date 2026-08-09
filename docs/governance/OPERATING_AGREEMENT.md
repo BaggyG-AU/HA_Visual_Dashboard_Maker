@@ -123,6 +123,17 @@ read-only-investigate → short-plan sequence and the post-merge routine below).
 Ratified 2026-08-06 (`drawer_havdm_decisions_0475d2d73336a4a2481bdec6`),
 piloting on F5/F8; permanence decided at the v1.0.0 gate / Phase 7 close-out.
 
+⚠⚠ **SCOPE OF CLASS (d), STATED EXPLICITLY BECAUSE THE 2026-08-08 RULING DID
+NOT SETTLE IT AND AN INDEPENDENT REVIEW FOUND THE AMBIGUITY BLOCKING.** Class
+(d) **joins the existing pilot rather than pre-empting its verdict**: it
+applies to **every** slice implementation from 2026-08-08, and its permanence
+is decided at the **same v1.0.0 gate / Phase 7 close-out** as classes (a)–(c),
+on the data the pilot collects. It is **not** permanent law yet. The original
+ratification's "two data points" wording described the F5/F8 _spec_ pilot; the
+owner has widened what the pilot observes, not shortened it. **If the owner
+intends class (d) to be permanent before that gate, that is a further ruling
+and this paragraph is what it must amend.**
+
 > No agent approves an artifact it authored. Every artifact in the classes
 > below is reviewed by a **different model** before it reaches the owner for
 > sign-off; the review is a committed document on the artifact's branch, not
@@ -131,11 +142,14 @@ piloting on F5/F8; permanence decided at the v1.0.0 gate / Phase 7 close-out.
 
 **Governed artifact classes:** (a) written specs and remediation plans of the
 R7 class; (b) substantive governance changes — including changes to this
-document; (c) triage documents that rank or re-scope defects. Reviews of
-these artifacts are themselves governed artifacts for header purposes (§3.1).
-**Explicitly not covered:** routine slice implementation — the owner's PR
-review, the gate suite, and UAT check it; periodic adversarial passes (§3.2)
-audit it in bulk.
+document; (c) triage documents that rank or re-scope defects; (d) **slice
+implementations — see §3.4 for the review lifecycle, which is one mandatory
+round with no automatic follow-up.** Reviews of these
+artifacts are themselves governed artifacts for header purposes (§3.1).
+**Explicitly not covered:** nothing in the four classes above is exempt.
+Work outside them — chores, dependency bumps, docs typo passes — remains
+covered by the owner's PR review, the gate suite, UAT, and the periodic
+adversarial passes of §3.2.
 
 **Mechanics:** the review lands on the artifact's branch as
 `docs/reviews/<branch-shortname>-<reviewer>-review.md`; the owner signs off
@@ -180,15 +194,120 @@ meantime, which is the cost of leaving a ruling unwritten.
 
 - Three consecutive zero-finding independent **spec** reviews → the pairing
   has gone deferential: switch reviewer vendor, or narrow the invariant to
-  governance changes only.
+  governance changes only. ⚠ A single clean approval is **not** this trigger:
+  PR #137's round 6 returned APPROVE with no actionable finding and that was
+  the first clean round in six, not three consecutive ones.
+- **Class (d) only:** three consecutive implementation slices whose mandatory
+  round produces no finding the owner acts on → drop class (d) back out of
+  §3 and rely on the gate, the owner's PR review and §3.2's adversarial
+  passes, as the invariant did before 2026-08-08.
 - Review round-trips add more than one working session of wall-clock per
   spec without findings the owner acts on → drop to owner-only sign-off and
   record the trial outcome in MemPalace.
+- **Class (d) cost trigger, which fires even when every round finds
+  something.** If implementation review adds more than one working session of
+  wall-clock across any **three consecutive slices**, and **no round in them
+  produced a product- or behaviour-bearing finding** → narrow class (d) to
+  cross-cutting slices only, or drop it. ⚠ This trigger exists because the older one cannot fire while each round
+  produces one small acted-on residue — which is exactly the shape PR #137
+  took across rounds 2–6.
 - Any proposal to **machine-enforce** author ≠ reviewer (CI, hooks,
   scripts) → stop; the invariant is cheap only while it is a header
   convention.
 - The rulings index (§4) accumulating content rather than pointers → cut it
   back to one line per ruling.
+
+### 3.4 Implementation slices — the review lifecycle
+
+Owner-ruled 2026-08-08, narrowed by the owner 2026-08-09 after eight review
+rounds.
+
+> **(d) slice implementations: one full independent review is mandatory before
+> merge. No automatic follow-up round is required, and the OWNER decides
+> whether any post-review change warrants re-review.**
+
+⚠ **The first round is a full review; it is not a formality.** Its measured
+basis is PR #137 round 1, which found a harness defect that let the palette
+gesture drag the wrong card while count-only assertions stayed green — the
+gate suite did not catch it, the author's own testing did not, the reviewer
+did. **Rounds 2–6 of that PR found no product-code defect at all.** The value
+is concentrated in the first round; the cost was spread over five more.
+
+⚠⚠ **THERE IS NO MECHANICAL EVIDENCE-ONLY TEST, AND NO COMMAND IS NORMATIVE
+FOR THIS SECTION.** An earlier form of §3.4 defined a repair lifecycle around
+a `git log` pipeline that decided which repairs required a further round.
+**Six review rounds and one audit each found a different false-accept route in
+that pipeline; no round found a defect in the population it was meant to
+decide.** The owner removed it on 2026-08-09 rather than repair it an eighth
+time. ⚠ That is a judgement about one implementation's reliability and cost as
+a _normative decider_ — **not a claim that the property admits no decision
+procedure**, which the evidence does not establish. The full record is
+`docs/reviews/governance-review-invariant-implementation-codex-review.md` and
+`docs/reviews/pr139-defect-pattern-audit.md`.
+
+⚠ **The governed rule surfaces — `ai_rules.md`, `CLAUDE.md` and
+`docs/governance/**` — are never treated as incidental**, because on a
+governance change the rule text _is_ the product.
+
+### 3.5 Reviewer re-run scope (binding)
+
+Owner-ruled 2026-08-08. Previously provisional guidance in
+`docs/testing/TESTING_STANDARDS.md`, which now points here.
+
+A reviewer of a class-(d) artifact **must** re-run, and must report each with
+the command that produced it:
+
+1. **The single load-bearing spec** for the change.
+2. **A deeper repeat than the author published** on the flakiest mechanism —
+   escalation, not duplication.
+3. **`./tools/checks`**, reported with its real exit code.
+
+**Measured basis, both from PR #137 round 1:** (1) returned **31 passed / 1
+failed** against the author's reported 32/32 — that one ~5-minute run is the
+entire reason a fix round existed; (2) at `--repeat-each=5` returned **3
+passed / 2 failed**, which is what proved M1 was a real defect rather than a
+one-off. (3) is close to free.
+
+⚠⚠ **THE EVIDENCE IS ONE PULL REQUEST. Six rounds on PR #137 are six
+observations of the same slice, not six independent slices.** The owner's
+adoption of it as binding is therefore a **JUDGEMENT, not a measured
+generalisation** — accepted deliberately, and bounded by class (d) being part
+of the pilot: this is reassessed at the v1.0.0 gate with whatever further
+slices the pilot collects. An earlier draft presented it as though the
+evidence generalised; it does not yet.
+
+**Applicability, so the mandate can be obeyed honestly on every slice:**
+
+- **More than one load-bearing spec** → re-run all of them.
+- **No single load-bearing spec** (a slice with no focused spec) → item 1 is
+  **not applicable**; say so in the review and name what was run instead.
+- **No repeatable flaky mechanism** → item 2 is **not applicable**; say so and
+  name why. A reviewer must never invent a repeat to satisfy the rule.
+- **"Deeper" means a strictly greater repeat count than the author published.**
+  Where the author already published a deep repeat, matching it once is
+  sufficient and the reviewer says so.
+- **Cost bound:** items 1–3 together should not exceed roughly one working
+  session. If they would, re-run what fits, and record what was left
+  **UNVERIFIED** — never silently drop it.
+
+**Not binding — guidance only:** the broader MEDIUM domain sweeps are re-run
+**by exception**, justified in writing. ⚠⚠ **The evidence for this carve-out
+is ONE independently observed re-run, not two, and an earlier draft of this
+paragraph overstated it — a defect of exactly the kind the UNVERIFIED rule
+below exists to prevent.** What is actually on the record: **round 1's
+reviewer did NOT re-run the author's multi-file MEDIUM sweep and said so
+plainly**, so round 1's MEDIUM numbers are **author-reported**; **round 2's
+reviewer did re-run both sweeps** and observed 107 passed (e2e) and 56 passed
+/ 19 skipped (integration) — **the author's numbers unchanged, and no finding
+came from either run**, at ~25 minutes combined. ⚠ The tempting exception proves the rule: the sweep's _membership_ was
+changed, it _was_ re-run, and the re-run still could not test it — the defect
+was in which specs the list contained, and only **reading** the list found it.
+
+⚠⚠⚠ **A re-run not performed leaves the result UNVERIFIED. Never write
+"accepted", "confirmed" or "held" for a check nobody ran** — the word choice
+is itself a claim about evidence, and "accepting the author's counts"
+converts an explicit evidence boundary into apparent independent
+verification.
 
 ## 4. Rulings index
 
@@ -213,4 +332,6 @@ rulings that predate this index are added when next cited._
 | REBASE-128 | 2026-08-04 | Completed (#128) | One-time authorization: rebaseline the stale visual snapshot(s) and run the full e2e + integration pass before F4 — not a standing permission                                                                                                                                                                                                                                                                                                     | `drawer_havdm_decisions_c9a9720edc90cf10ce5b67d6`                                                                                                                                                                  |
 | GOV-RAT    | 2026-08-06 | Standing         | Governance-review Tier 1 adopted: the §3 invariant, both templates, Codex as F5/F8 spec reviewer, adversarial review before every UAT round **and** every release gate                                                                                                                                                                                                                                                                            | `drawer_havdm_decisions_0475d2d73336a4a2481bdec6`                                                                                                                                                                  |
 | ARB-R8     | 2026-08-07 | Standing         | §3.1's three header lines bind the CHANGE ARTIFACT (spec, remediation plan, triage document, or a review of one), not the long-lived instruction file a governance change edits; `ai_rules.md` and `CLAUDE.md` are exempt and no retrofit is owed                                                                                                                                                                                                 | `drawer_havdm_decisions_ac026150b5fe8c5e6f70c519`                                                                                                                                                                  |
+| REV-IMPL   | 2026-08-08 | Pilot → v1.0.0   | Slice implementations join the §3 governed classes as class (d): **one full independent review before merge, no automatic follow-up round, and the owner decides whether a post-review change warrants re-review** (§3.4). ⚠ Part of the F5/F8 pilot — permanence decided at the v1.0.0 gate. ⚠ The mechanical evidence-only test was removed by the owner 2026-08-09 after eight rounds; no command is normative for §3.4                        | this document §3.4; case study `drawer_havdm_patterns_9b2499f0b71c059ee556d65a`; the five-round measurement behind the split `docs/reviews/pr139-defect-pattern-audit.md`                                          |
+| REV-RERUN  | 2026-08-08 | Pilot → v1.0.0   | A class-(d) reviewer MUST re-run the load-bearing spec, a deeper repeat than the author published, and `./tools/checks`; MEDIUM sweeps stay by-exception guidance; an unperformed re-run leaves a result UNVERIFIED (§3.5). ⚠ Binding on n=1 PR is an owner JUDGEMENT, reassessed at the v1.0.0 gate                                                                                                                                              | this document §3.5; case study `drawer_havdm_patterns_9b2499f0b71c059ee556d65a`                                                                                                                                    |
 | MP-LEASE   | 2026-08-08 | Standing         | Under the writer-lease collision the reviewer surfaces `MemPalace drawer candidates` in its committed review file and the write-enabled author files them with `added_by=<reviewer>`; never kill a process, never set `MEMPALACE_MCP_ALLOW_PEER_WRITER` (§2). ⚠ A REVIEWER-SPECIFIC EXCEPTION to the PR-body fallback, carried in `ai_rules.md` §11 itself so the two documents state one rule — every non-reviewing agent still uses the PR body | `drawer_havdm_decisions_1069fb46eb9173d1dc58a9a2` — current record, incl. which PR ratifies (history: `drawer_havdm_decisions_9f91fa0a88ed9df5b21c2482`; evidence: `drawer_havdm_review_65aecb8d3cb0de6511b03648`) |

@@ -810,24 +810,25 @@ If the user asks for a gate by name (`fast gate`, `medium gate`, `slow gate`), r
 5. **Flake stabilization claims**:
    - Must satisfy Rule 18 (targeted run + 5x loop + full-suite pass).
 
-#### Reviewer Re-Run Scope (PROVISIONAL GUIDANCE — not a rule, and not binding)
+#### Reviewer Re-Run Scope (items 1–3 are BINDING — see `OPERATING_AGREEMENT.md` §3.5)
 
-⚠⚠ **STATUS: PROVISIONAL. This binds nobody.** It is a heuristic drawn from **two
-review rounds on one PR (#137)** — too little to establish a general rule, and
-deliberately written without "MUST" or "MANDATORY" after an independent review
-found an earlier draft self-contradictory: it read as a mandatory reviewer rule
-while claiming not to amend reviewer governance. Both could not be true.
-**Anything binding on reviewers belongs in `docs/governance/OPERATING_AGREEMENT.md`
-§3 and needs its own PR and independent review under §3(b).**
+⚠⚠ **STATUS CHANGED 2026-08-08.** This was provisional guidance binding nobody,
+because an earlier draft read as a mandatory reviewer rule while claiming not to
+amend reviewer governance — both could not be true, and an independent review
+found it. It has now gone through the §3(b) route it named: **items 1–3 below
+are BINDING on reviewers of a class-(d) implementation slice, ratified in
+`docs/governance/OPERATING_AGREEMENT.md` §3.5. That document is authoritative;
+this section is the working detail behind it.** Item 4 and the MEDIUM-sweep
+carve-out remain **guidance**, deliberately — see §3.5 for why.
 
 What was measured, on PR #137:
 
-| Round   | What re-running found                                                                                                                                                                                                            |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Round 1 | The reviewer's re-run of the load-bearing spec returned **31 passed / 1 failed** against the author's reported 32/32, and a deeper repeat reproduced a wrong-card defect. **That one ~5-minute run is why a fix round existed.** |
-| Round 2 | Every re-run returned the author's number unchanged, and **all three round-2 findings came from reading and grepping.** The two MEDIUM sweeps produced identical numbers in both rounds.                                         |
+| Round   | What re-running found                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Round 1 | The reviewer's re-run of the load-bearing spec returned **31 passed / 1 failed** against the author's reported 32/32, and a deeper repeat reproduced a wrong-card defect. **That one ~5-minute run is why a fix round existed.**                                                                                                                                                                                                                      |
+| Round 2 | Every re-run returned the author's number unchanged, and **all three round-2 findings came from reading and grepping.** ⚠ Round 2 is the **only** round whose reviewer actually re-ran the MEDIUM sweeps (107 e2e / 56 pass + 19 skip integration); **round 1's reviewer did NOT re-run them and said so plainly**, so round 1's MEDIUM figures are author-reported. An earlier draft called both rounds equivalent measured outcomes — they are not. |
 
-Suggested emphasis for a reviewer's finite time:
+Items 1–3 are the binding set (§3.5); item 4 is where the remaining time is best spent:
 
 1. **Re-run the load-bearing spec** — where a disagreement actually surfaces.
 2. **Go deeper than the author did** on the flakiest mechanism (e.g. a larger
