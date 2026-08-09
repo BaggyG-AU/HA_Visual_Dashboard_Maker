@@ -129,11 +129,18 @@ Full analysis: `drawer_havdm_investigations_d4d800cfc80f091d552f5ded`.
 ### 5.2 `mempalace_checkpoint` bypasses the peer-writer guard
 
 `checkpoint` is not in the server's `_MUTATING_TOOLS` set, so a read-only-latched
-server can still write through it. Useful in an emergency — it is how a session's
-work was salvaged on 2026-07-20 — but it is an **unintended hole**, not a
-sanctioned workaround. Prefer `add_drawer` + `diary_write`; if `checkpoint`
-succeeds while `add_drawer` refuses, your server is latched read-only and should
-be restarted.
+server can still write through it. It salvaged a session's work on 2026-07-20 —
+but it is an **unintended hole**, not a sanctioned workaround. Prefer
+`add_drawer` + `diary_write`; if `checkpoint` succeeds while `add_drawer`
+refuses, your server is latched read-only and should be restarted.
+
+⚠⚠ **An independent reviewer must NOT use this bypass.** Under ruling
+**MP-LEASE** (`OPERATING_AGREEMENT.md` §2, carried in `ai_rules.md` §11) a
+writer-lease refusal is the reviewer's NORMAL state, not an emergency, and its
+single destination is a `MemPalace drawer candidates` section at the end of the
+committed review file for the write-enabled author to file with
+`added_by="<reviewer>"`. The emergency note above is for roles and
+circumstances that do not contradict that ruling.
 
 ### 5.3 Base IDs vs chunk IDs
 
