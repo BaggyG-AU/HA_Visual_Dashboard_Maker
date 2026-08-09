@@ -33,6 +33,23 @@
 #       could claim the body was scanned when nothing was read. `--require-pr`
 #       now propagates the failure and exits non-zero.
 #
+# ⚠⚠⚠ WHAT ROUND 1 OF THE INDEPENDENT REVIEW FOUND IN THIS FILE
+# (docs/reviews/self-pass-gate-codex-review.md, 90cc492). Both are repaired
+# below; neither was merge-blocking, and both were MEASURED, not argued:
+#   N1  The base-ref guard covered only ref RESOLUTION. `merge-base`, the diffs
+#       and the log all ran under `set -uo pipefail` with no status check, so a
+#       base that RESOLVED but shared no ancestor with HEAD returned exit 0 with
+#       EMPTY OUTPUT — precisely the "unknown population presenting as an empty
+#       one" this script's own comment promises cannot happen. Every git command
+#       whose output defines the population is now status-checked and exits 2.
+#   N2  Only the committed range used `--name-status -M -z`. The dirty legs
+#       reverted to `git diff --name-only -z … | tr '\0' '\n'`, so a STAGED
+#       rename emitted only the destination — the same defect M4 repaired for
+#       the committed range, left in place one storage state over — and the
+#       `tr` destroyed record framing for any pathname containing a newline.
+#       The index and working-tree legs now use the same NUL record parser as
+#       the committed range, and NUL framing is preserved end to end.
+#
 # USAGE:
 #   bash tools/claims-worklist.sh                  # local surfaces, base=origin/main
 #   bash tools/claims-worklist.sh --with-pr        # also the live PR body, best-effort
@@ -63,6 +80,24 @@ for arg in "$@"; do
   esac
 done
 
+T="$(mktemp -d)"
+trap 'rm -rf "$T"' EXIT
+
+# git_or_die <outfile> <human label> <git args…> — N1. Every command whose
+# output DEFINES the population is status-checked. Silence from a failed git
+# call is indistinguishable from silence from a clean tree, and this script
+# exists precisely to stop that confusion.
+git_or_die() {
+  local out="$1" label="$2"
+  shift 2
+  if ! git "$@" >"$out" 2>"$T/stderr"; then
+    echo "FATAL: $label failed: git $*" >&2
+    sed 's/^/  /' "$T/stderr" >&2
+    echo "  Refusing to emit a worklist from a population that could not be enumerated." >&2
+    exit 2
+  fi
+}
+
 # --------------------------------------------------------------------------
 # BASE REF — fail closed. A missing base ref means the population is unknown,
 # and an unknown population must never present as an empty one.
@@ -73,35 +108,61 @@ if ! git rev-parse --verify --quiet "$BASE" >/dev/null; then
   echo "  Refusing to emit an empty worklist that would read as 'no candidates'." >&2
   exit 2
 fi
-MERGE_BASE="$(git merge-base "$BASE" HEAD)"
+# N1 — resolving is not relating. An existing ref that shares no ancestor with
+# HEAD made `merge-base` fail while everything downstream carried on with an
+# empty population and the script exited 0.
+if ! MERGE_BASE="$(git merge-base "$BASE" HEAD 2>"$T/stderr")"; then
+  echo "FATAL: base ref '$BASE' resolves but shares no merge base with HEAD." >&2
+  sed 's/^/  /' "$T/stderr" >&2
+  echo "  The changed population is undefined, not empty. Refusing to exit 0." >&2
+  exit 2
+fi
 
 # --------------------------------------------------------------------------
-# THE CHANGED POPULATION — M4. `--name-status -M -z` gives NUL-separated
+# THE CHANGED POPULATION — M4 and N2. `--name-status -M -z` gives NUL-separated
 # records; a rename record is `R<score>\0<old>\0<new>`, every other status is
 # `<X>\0<path>`. Both sides of a rename are emitted, so a governed file moved
 # OUT of a governed directory is still in the population.
-changed_paths() {
+#
+# ⚠ N2: the COMMITTED range, the INDEX and the WORKING TREE all go through this
+# one parser. The dirty legs used to fall back to `--name-only -z | tr '\0'
+# '\n'`, which lost a rename's source and destroyed record framing for a
+# pathname containing a newline. NUL framing is now preserved all the way to
+# the array below.
+parse_name_status() {
   local status old new
   while IFS= read -r -d '' status; do
     case "$status" in
       R* | C*)
         IFS= read -r -d '' old || break
         IFS= read -r -d '' new || break
-        printf '%s\n%s\n' "$old" "$new"
+        printf '%s\0%s\0' "$old" "$new"
         ;;
       *)
         IFS= read -r -d '' new || break
-        printf '%s\n' "$new"
+        printf '%s\0' "$new"
         ;;
     esac
-  done < <(git diff --name-status -M -z "$MERGE_BASE"...HEAD)
-  # Uncommitted and untracked work counts too: running this pre-submit on a
-  # dirty tree is the moment it is most useful.
-  git diff --name-only -z HEAD | tr '\0' '\n'
-  git ls-files --others --exclude-standard -z | tr '\0' '\n'
+  done
 }
 
-mapfile -t CHANGED < <(changed_paths | grep -v '^$' | sort -u)
+git_or_die "$T/committed" "committed-range diff ($MERGE_BASE...HEAD)" \
+  diff --name-status -M -z "$MERGE_BASE"...HEAD
+git_or_die "$T/cached" "index diff (--cached)" diff --name-status -M -z --cached
+git_or_die "$T/worktree" "working-tree diff" diff --name-status -M -z
+git_or_die "$T/untracked" "untracked enumeration" ls-files --others --exclude-standard -z
+
+{
+  parse_name_status <"$T/committed"
+  parse_name_status <"$T/cached"
+  parse_name_status <"$T/worktree"
+  cat "$T/untracked"
+} | LC_ALL=C sort -zu >"$T/changed"
+
+CHANGED=()
+while IFS= read -r -d '' p; do
+  [ -n "$p" ] && CHANGED+=("$p")
+done <"$T/changed"
 
 if [ "$CHANGED_ONLY" -eq 1 ]; then
   printf '%s\n' "${CHANGED[@]}"
@@ -149,7 +210,11 @@ done
 
 # Every commit message on the branch. This surface is why M1 existed: it comes
 # into being AFTER a pre-commit run, so the detector's target must cover it.
-MSGS="$(git log --format='%H%n%B' "$MERGE_BASE"..HEAD 2>/dev/null || true)"
+# N1 again: `|| true` here would turn a failed log into "this branch has no
+# commit messages", which is the same false accept one surface over.
+git_or_die "$T/msgs" "branch commit messages ($MERGE_BASE..HEAD)" \
+  log --format='%H%n%B' "$MERGE_BASE"..HEAD
+MSGS="$(cat "$T/msgs")"
 if [ -n "$MSGS" ]; then
   OUT="$( (printf '%s\n' "$MSGS" | grep -nEo "$COUNT_RE"; printf '%s\n' "$MSGS" | grep -nEi "$UNIV_RE" | cut -c1-140) 2>/dev/null || true)"
   [ -n "$OUT" ] && emit CANDIDATE "branch commit messages" "$OUT"
