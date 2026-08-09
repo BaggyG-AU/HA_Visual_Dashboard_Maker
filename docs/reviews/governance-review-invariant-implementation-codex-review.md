@@ -1609,3 +1609,240 @@ Neither is an owner-acceptable merge residue.
   replacement objects that substitute commits; prove a gitlink under
   `diff.ignoreSubmodules=all` and an actual behaviour commit under `git replace`
   fail against the old form before trusting silence from the repair.
+
+## Round 7
+
+Author: Claude Opus (`2d667f5` repairs and `9ded8c6` merge resolution)
+Reviewer: OpenAI Codex (GPT-5), independent reviewer; did not author either commit
+Owner gate: BaggyG-AU reads PR #139 and this round together; only the owner signs off and merges
+
+**Verdict: CHANGES-REQUIRED (high confidence).** **Merge readiness: not ready.**
+R6-M3, R6-N1, and the merge resolution are resolved. The two named R6-M2
+repairs also work, but R6-M2's required population sweep is still open: a legacy
+graft file bypasses `--no-replace-objects`, and `diff.relative=true` can remove
+out-of-directory records before either filter sees them. Both produce a real
+false accept on Git 2.43.0. The new submodule-sweep prose is also factually
+wrong about `submodule.<name>.ignore=all`, although the shipped override handles
+that setting correctly.
+
+This is not an owner-acceptable evidence-only residue. Repairing the published
+commands and their negative-case floor changes
+`docs/testing/TESTING_STANDARDS.md`, which is outside §3.4(3)'s allowlist. Under
+§3.4(2), the repair **forces round 8**. A seventh commissioned round has found
+another false-accept route in the same mechanism class; **the rule is too
+expensive to ratify in its current form.**
+
+### Disposition
+
+| Item                                            | Disposition  | Merge effect                                  | Round-7 judgement                                                                                                                                                                                                |
+| ----------------------------------------------- | ------------ | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R6-M2 — ambient state changes record population | **OPEN**     | **MERGE-BLOCKING; FORCES ROUND 8**            | The named submodule and replacement-ref repairs hold, but `.git/info/grafts` still rewrites history under `--no-replace-objects`, and `diff.relative=true` can suppress paths outside the current subdirectory.  |
+| R6-M3 — false five-round command lineage        | **RESOLVED** | None                                          | Both live explanations now distinguish the absent round-1 command, its creation by the round-1 fix, four round-found defects, the audit defect, and round 6's population defect.                                 |
+| R6-N1 — unsupported audit count                 | **RESOLVED** | None                                          | The correction now derives R6-M1 as sixth in the §3.4 lineage, eleventh merge-blocking overall, and thirteenth including both notes.                                                                             |
+| `9ded8c6` conflict resolution                   | **RESOLVED** | None; no parent contribution lost or reopened | All thirteen paths differing from either parent are accounted for. The only synthesized blob is the Operating Agreement, and its semantic table delta is exactly the claimed MP-LEASE replacement plus two rows. |
+
+### R7-M1 — the population proof still delegates history and path scope
+
+#### Legacy grafts bypass `--no-replace-objects`
+
+`--no-replace-objects` disables replacement refs; it does not disable the
+deprecated but still-operative `.git/info/grafts` mechanism. I built this real
+history in an isolated repository:
+
+```text
+known-bad liveness range: add docs/reviews/bad.sh and leave
+                          docs/reviews/live.md as a symlink
+review base -> C1:        add src/transient.ts
+C1 -> review HEAD:        delete src/transient.ts
+```
+
+Without a graft, the shipped path command reports two records over the review
+range. I then added one graft line assigning `HEAD` directly to the review base
+as its parent. The object itself still names C1 as its parent (`git cat-file -p
+HEAD`), but Git's revision walk skips C1. With
+`advice.graftFileDeprecated=false`, there is no warning to rescue the result:
+
+| Range / state                 | Check (0) | Raw-log exit | Raw bytes | Path / mode records | stderr bytes |
+| ----------------------------- | --------- | ------------ | --------- | ------------------- | ------------ |
+| Known-bad range, before graft | 0         | 0            | 106       | 1 / 1               | 0 / 0        |
+| Review range, before graft    | 0         | 0            | 99        | 2 / 0               | 0 / 0        |
+| Known-bad range, after graft  | 0         | 0            | 106       | 1 / 1               | 0 / 0        |
+| Review range, after graft     | 0         | 0            | **0**     | **0 / 0**           | **0 / 0**    |
+
+The liveness proof therefore passes while the reviewed range is falsely
+certified evidence-only. This is the exact population property R6-M2 was
+required to sweep. Round 6's statement that grafted histories belonged to the
+replacement-object finding was incorrect on the Git version being reviewed.
+
+#### `diff.relative` filters the population by working directory
+
+I separately committed `src/evil.ts`, ran the published commands from
+`docs/reviews/`, and injected `diff.relative=true` through both `-c` and
+`GIT_CONFIG_*`. Check (0) returned 0; `git log` returned 0 with no stderr; both
+filters saw zero records. The same hostile configuration still let a separate
+known-bad range inside `docs/reviews/` print in both commands. Adding
+`--no-relative` to the log invocation restored `src/evil.ts`:
+
+| Measurement                                        | Ancestry / raw exit | Raw bytes | Path / mode records |
+| -------------------------------------------------- | ------------------- | --------- | ------------------- |
+| Known-bad liveness under `diff.relative=true`      | 0 / 0               | 80        | 2 / 1               |
+| Reviewed behavior range under `diff.relative=true` | 0 / 0               | **0**     | **0 / 0**           |
+| Same range through `GIT_CONFIG_*` injection        | 0 / 0               | **0**     | **0 / 0**           |
+| Same range with explicit `--no-relative`           | n/a / 0             | 44        | 1 / 0               |
+
+This is not a pathname-regex problem. Git removed the record before the regex
+or mode check received input.
+
+**Required correction.** Fail closed when the repository's legacy graft file
+is non-empty, before trusting ancestry or log output; pin non-relative output
+on both log commands; and add real-commit negative cases proving both old forms
+fail and both replacements pass. Re-run the class sweep against settings and
+environment that choose the revision walk and diff scope, not only settings
+whose names mention submodules or replacements. If the owner keeps this
+mechanism, its non-allowlisted repair requires round 8 under the rule being
+ratified.
+
+### R7-N1 — the per-submodule sweep claim is false, though the override works
+
+The new property (f) says a per-submodule `submodule.<name>.ignore` “did not”
+suppress the gitlink (`TESTING_STANDARDS.md:946-952`). In a repository whose
+`.gitmodules` mapped the gitlink to `submodule.review`, the old command emitted
+zero records under `submodule.review.ignore=all`. `dirty` and `untracked`
+emitted one record. The shipped `--ignore-submodules=none` emitted one record
+under all four values (`none`, `dirty`, `untracked`, `all`).
+
+The operative repair is therefore sound, but the reported sweep is not. Amend
+the sentence to record that both global and correctly mapped per-submodule
+`=all` suppress, and that the unconditional option overrides both. Fold this
+claim correction into the R7-M1 repair rather than spending a separate round on
+it.
+
+### Named R6-M2 repairs and regression suite
+
+Source inspection confirms all three Git reads carry
+`--no-replace-objects`, and both logs carry
+`--ignore-submodules=none` (`TESTING_STANDARDS.md:872-887`). The named repairs
+fail against the old form and pass against the shipped form:
+
+- A gitlink at an allowed path under `diff.ignoreSubmodules=all` was silent in
+  the old form and produced one mode record in the new form. The global
+  `dirty`/`untracked` values produced a record in both forms; the explicit
+  option also overrode a mapped `submodule.review.ignore=all`.
+- A behavior commit replaced by a same-parent decoy was silent in the old form
+  and produced `src/replaced.ts` in the new form.
+- A replacement that fabricated ancestry returned 0 in the old check and 1
+  under `--no-replace-objects`.
+
+I rebuilt the eight mandatory negatives as real commits. Cases 1 and 2 printed
+one path record; case 3 printed one mode record; case 4 printed two path
+records; case 5 printed one mode record; the rebuilt merge case printed mode
+records under all four hostile `log.diffMerges` values; and cases 7 and 8
+produced the fail-old/pass-new results above. Review-only (also under
+`diff.ignoreSubmodules=all`), allowed-to-allowed rename, and the two exact root
+notes remained silent.
+
+Two harness defects were caught rather than counted as evidence. My first
+merge fixture left a side-path conflict unresolved, so its failed commit and
+results were discarded; I rebuilt it as a symlink/symlink conflict with a
+third resolution. My first counter treated a blank input line as a mode record;
+I detected the contradiction against zero raw bytes, required a raw-record
+prefix in the counter, and reran the submodule and replacement cases.
+
+I enumerated applicable `diff.*`, `log.*`, and adjacent settings from
+`git help --config`, then exercised a matrix over algorithms, external diff,
+submodule ignore/format, rename detection, relative output, merge format,
+follow, root display, signatures, attributes, quoting, replacement enablement,
+and submodule recursion. Only `diff.relative=true` suppressed the ordinary
+behavior record. A hostile attributes file, external diff environment,
+alternate object directory, and substituted/sparse index did not suppress raw
+history records. Legacy grafts independently did.
+
+### R6-M3 and R6-N1
+
+R6-M3 is closed at both changed live surfaces. The source history confirms no
+mechanical command at `0a311bb`, creation by `bcba77a`, four command findings in
+rounds 2–5, the audit's merge-format finding, and round 6's population finding.
+The numbered account in `OPERATING_AGREEMENT.md:289-313` and the shorter account
+in `TESTING_STANDARDS.md:859-870` preserve those distinctions and do not revive
+the old five-round falsehood.
+
+R6-N1 is also closed. The audit's tables enumerate ten pre-round-6
+merge-blocking findings and two notes. R6-M1 is the sixth merge-blocking item in
+the §3.4 lineage and the eleventh overall, or thirteenth including the two
+notes. The correction at `pr139-defect-pattern-audit.md:453-460` states exactly
+that and leaves the valid §5 overall heading intact.
+
+### `9ded8c6` merge resolution
+
+After fetching, the live PR remained open, non-draft, and mergeable with remote
+head `9ded8c6975b8bf4f0cea98b744f217874a9915fe` and remote base
+`e1773f9e4b97bddc9002df55aa9620870f0660dc`. The merge's first parent is
+`2d667f55bddeb2d6f0f115b623c56dc2d17272b7`; the common ancestor of the two
+parents is `a6ce103c560ac45331321c8956bb445c789fa9d0`.
+
+I took the union of every path differing between the merge and either parent,
+then compared blob IDs at all three commits. Thirteen paths are in that
+population: four are the first parent's blobs, eight are the second parent's
+blobs, and `docs/governance/OPERATING_AGREEMENT.md` is the sole synthesized
+blob. `CLAUDE.md` and `MEMPALACE_PROTOCOL.md` are main's blobs exactly; the
+branch never changed the protocol file from the common ancestor. The other
+twelve path dispositions match their branch of origin. `git diff --check`
+against both parents is clean, and no conflict marker remains in the touched
+population.
+
+The first-parent-to-merge diff of the synthesized file has one hunk, the §4
+table. Independently counting lines beginning `| ` gives eighteen lines and
+sixteen data rows in both the first parent and merge; main has fourteen data
+rows. All current rows contain zero escaped pipes, so cell splitting does not
+drop a present row. Comparing normalized data cells (excluding header,
+separator, and padding) gives exactly one semantic delta against the first
+parent—the MP-LEASE Authority cell—and exactly two added rows against main,
+REV-IMPL and REV-RERUN. Taking main's MP-LEASE authority preserves PR #140's
+correction. The resolution lost no parent contribution and reopened no closed
+finding.
+
+The docs-only boundary also holds: `git diff --stat origin/main...HEAD -- src/
+tests/` is empty, and the `src`, `tests`, `package.json`, and `vitest.config.ts`
+tree/blob IDs equal main.
+
+### Checked clean and not checked
+
+- **Repository gate:** `./tools/checks` exited **0**; all four steps passed.
+  ESLint reported 0 errors / 145 warnings, Prettier and `tsc --noEmit` were
+  clean, and Vitest passed 1,335 tests across 101 files.
+- **Checked clean:** live remote head/base and PR state; complete `2d667f5`
+  source diff; all eight mandated negative cases and three controls; fail-old
+  evidence for submodule suppression, commit replacement, and fabricated
+  ancestry; the ambient configuration matrix and independent graft/relative
+  cases; R6-M3 and R6-N1 histories; union-of-parent merge path classification;
+  §4 row population and semantic cell deltas; conflict-marker and whitespace
+  checks; main's CLAUDE/MP-LEASE carriage; docs-only source/test boundary.
+- **Could not check:** behavior on Git versions other than 2.43.0; a genuine
+  network-backed partial clone during an unavailable promisor fetch;
+  platform-specific case-insensitive filesystem behavior. These remain
+  **UNVERIFIED**.
+- **Not run:** e2e, integration, or UAT. The commission limits repository
+  re-run scope to `./tools/checks`, and the reviewed commits are docs-only.
+- **Not changed:** governance/testing sources, PR body, `[STATE]`, UAT, branch
+  topology, or merge state. This round changes only this review file. No
+  MemPalace write was attempted under MP-LEASE.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"` — **PR #139 Round-7 review:**
+  CHANGES-REQUIRED, high confidence. R6-M3, R6-N1, and the `9ded8c6` merge
+  resolution are resolved. R6-M2 remains open: `.git/info/grafts` is honored by
+  Git 2.43 under `--no-replace-objects` and can skip a transient behavior commit
+  while liveness still passes; `diff.relative=true` can suppress
+  out-of-directory records when the command runs from a subdirectory. The
+  shipped submodule/replacement fixes work, but the prose incorrectly says a
+  mapped `submodule.<name>.ignore=all` does not suppress. The required
+  non-allowlisted testing-standard repair forces round 8; the rule is too
+  expensive to ratify in its current form.
+- `practice/verification`, `added_by="codex"` candidate — **Disabling replacement
+  refs does not disable every Git history substitution:** on Git 2.43,
+  `.git/info/grafts` still rewrites ancestry under `--no-replace-objects`; with
+  its warning disabled, a targeted graft can leave a known-bad liveness range
+  live while making the reviewed transient-change range cleanly silent. Also
+  pin `--no-relative` when a repository-wide raw population must not depend on
+  the caller's working directory.
