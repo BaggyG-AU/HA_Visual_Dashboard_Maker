@@ -856,56 +856,6 @@ review must say so in its "not checked" section.
 **Author side:** run the flake-prone repeat at the depth a reviewer is likely to
 use, and run a brand-new leg in isolation before folding it into a full-spec run.
 
-#### Evidence-only classification — how to evidence it
-
-⚠⚠ **THE RULE IS `docs/governance/OPERATING_AGREEMENT.md` §3.4(3) AND IT IS THE
-ONLY NORMATIVE TEXT.** It defines a population: which paths a repair touched
-across **every commit** in the range, and whether any allowed path was left as
-anything but an ordinary file. **Nothing in this section is a gate, a mandated
-command, or a required negative-case floor.** The author publishes whatever
-evidence they judge sufficient; the reviewer reads the range and decides.
-
-⭐⭐⭐ **WHY THERE IS NO PUBLISHED COMMAND HERE ANY MORE.** A `git log` pipeline
-was tried as the decider through seven review rounds of PR #139 and produced a
-new false accept in every one: incomplete blocklist, unanchored prefix, rename
-collapse, endpoint-only enumeration, delegated merge-record format, submodule
-suppression and replacement refs, then legacy grafts and `diff.relative`. **Once the
-definition existed, no round found a defect in it** — round 1's finding was that
-there was no definition at all, and the fix that answered it created both the
-definition and the command. Owner-ruled
-2026-08-09: the property is not mechanically decidable under hostile repository
-configuration, so no command is normative for it. The full seven-round record is
-`docs/reviews/governance-review-invariant-implementation-codex-review.md` and
-`docs/reviews/pr139-defect-pattern-audit.md`.
-
-**Hazards worth knowing when you build your own evidence — ADVISORY, and
-deliberately not a checklist.** Each was measured on git 2.43.0. They are listed
-because they are counter-intuitive, not because clearing them is sufficient:
-
-- **Renames report only the destination**, so a behaviour file renamed to an
-  allowed review name vanishes; a pathname also cannot carry an object type, so
-  an allowed `.md` replaced by a symlink or gitlink needs a separate check.
-- **Endpoint trees are not the commit range.** A path added and removed inside
-  the range never appears in an endpoint diff, but it was still pushed.
-- **Ambient state decides which records EXIST, separately from how they are
-  formatted** — and this is the class that kept reopening. Measured suppressors:
-  `log.diffMerges=combined`/`dense-combined` (a combined record moves the mode
-  field); `diff.ignoreSubmodules=all`, **globally or as a correctly mapped
-  per-submodule `submodule.<name>.ignore=all`**; replacement refs, which can
-  also **fabricate ancestry**; `.git/info/grafts`, which still rewrites history
-  **even under `--no-replace-objects`**; and `diff.relative=true`, which drops
-  out-of-directory paths before any filter sees them.
-- **A known-bad liveness proof does not close that class.** A graft or a
-  replacement can target the reviewed range while leaving the range you chose
-  for the liveness check untouched — measured, twice.
-- **Silence and error are indistinguishable on stdout.** A mistyped option or a
-  mis-extracted `awk` program prints nothing and looks clean.
-
-⚠ **Build any check you do write as real commits on a throwaway branch** — this
-class of defect lives in git's own behaviour, not in a regex, and feeding
-synthetic strings to `grep` cannot reach it. **Commit first:** a throwaway
-branch inherits your dirty tree and `git reset --hard` eats it.
-
 #### Command Request Shortcuts (for user prompts)
 
 When asked:

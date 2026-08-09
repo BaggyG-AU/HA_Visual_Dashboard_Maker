@@ -143,7 +143,8 @@ and this paragraph is what it must amend.**
 **Governed artifact classes:** (a) written specs and remediation plans of the
 R7 class; (b) substantive governance changes — including changes to this
 document; (c) triage documents that rank or re-scope defects; (d) **slice
-implementations, at one mandatory round — see §3.4.** Reviews of these
+implementations — see §3.4 for the review lifecycle, which is one mandatory
+round with no automatic follow-up.** Reviews of these
 artifacts are themselves governed artifacts for header purposes (§3.1).
 **Explicitly not covered:** nothing in the four classes above is exempt.
 Work outside them — chores, dependency bumps, docs typo passes — remains
@@ -205,10 +206,9 @@ meantime, which is the cost of leaving a ruling unwritten.
   record the trial outcome in MemPalace.
 - **Class (d) cost trigger, which fires even when every round finds
   something.** If implementation review adds more than one working session of
-  wall-clock across any **three consecutive slices**, and the findings in
-  those rounds were **evidence-only** (§3.4) rather than product- or
-  behaviour-bearing → narrow class (d) to cross-cutting slices only, or drop
-  it. ⚠ This trigger exists because the older one cannot fire while each round
+  wall-clock across any **three consecutive slices**, and **no round in them
+  produced a product- or behaviour-bearing finding** → narrow class (d) to
+  cross-cutting slices only, or drop it. ⚠ This trigger exists because the older one cannot fire while each round
   produces one small acted-on residue — which is exactly the shape PR #137
   took across rounds 2–6.
 - Any proposal to **machine-enforce** author ≠ reviewer (CI, hooks,
@@ -217,116 +217,37 @@ meantime, which is the cost of leaving a ruling unwritten.
 - The rulings index (§4) accumulating content rather than pointers → cut it
   back to one line per ruling.
 
-### 3.4 Implementation slices — one mandatory round
+### 3.4 Implementation slices — the review lifecycle
 
-Owner-ruled 2026-08-08, on the measured outcome of PR #137.
+Owner-ruled 2026-08-08, narrowed by the owner 2026-08-09 after eight review
+rounds.
 
-> A slice implementation gets **one mandatory independent review round**
-> before the owner merges. Rounds after the first are **narrow**: they check
-> only findings left unresolved by the previous round, plus a regression
-> check that the repair changed nothing else. **The owner may accept
-> evidence-only residues with the merge** rather than requiring another
-> round.
+> **(d) slice implementations: one full independent review is mandatory before
+> merge. No automatic follow-up round is required, and the OWNER decides
+> whether any post-review change warrants re-review.**
 
-**Why one round and not "until APPROVE".** PR #137 ran six rounds. Round 1
-found seven findings including **M1 — a harness defect that let the palette
-gesture drag the wrong card while count-only assertions stayed green.** The
-gate suite did not catch it; the author's own testing did not; the reviewer
-did, by re-running at a deeper repeat. That is precisely the class this
-invariant's previous exclusion assumed the gate and the owner's PR review
-would catch. **Rounds 2–6 found no product-code defect** — `git diff
-<round-1 fix>..<head> -- src/` is empty at every round — and worked on
-artifacts that did not exist until the round-1 fix. ⚠ They were **not**
-therefore _evidence-only_ in the §3.4(3) sense: the same range also changed
-`tests/e2e/sections-canvas.spec.ts` and `tools/f5-load-path-sweep.sh`, and
-each such repair correctly drew the follow-up round §3.4(2) now requires. The
-value is concentrated in round 1; the cost was spread over five more.
+⚠ **The first round is a full review; it is not a formality.** Its measured
+basis is PR #137 round 1, which found a harness defect that let the palette
+gesture drag the wrong card while count-only assertions stayed green — the
+gate suite did not catch it, the author's own testing did not, the reviewer
+did. **Rounds 2–6 of that PR found no product-code defect at all.** The value
+is concentrated in the first round; the cost was spread over five more.
 
-⚠ **The first round is a full review; it is not a formality.** Narrowing
-applies only to rounds 2+.
-
-**The lifecycle — when a repair requires the next round, and when it stops.**
-"One mandatory round" states a minimum, not a stopping rule; without the
-following, an author could apply a Major product fix after the sole mandatory
-round and the owner could merge unreviewed new work.
-
-1. **One full round is always mandatory.**
-2. A finding-driven change that is **not evidence-only under (3)** requires
-   **one narrow follow-up round** covering that finding plus a regression check
-   that nothing else moved. ⚠ Keyed on all of (3), not on its path list alone:
-   a repair can touch only allowed paths and still fail (3)(ii).
-3. **Evidence-only residues may be accepted by the owner with the merge**, with
-   no further round. **A repair is evidence-only when both of the following
-   hold across _every commit_ in the range from the previous review commit to
-   `HEAD`:**
-
-   - **(i) every path it touches is an allowed path** — a `.md` file directly
-     under `docs/reviews/` (no subdirectory, no other extension), or exactly
-     `PR_NOTES.md`, or exactly `CODEX_SUMMARY.md` — **counting both sides of a
-     rename**, so a behaviour-bearing file renamed into an allowed name is not
-     evidence-only; **and**
-   - **(ii) no allowed path is left as anything but an ordinary file** — a
-     symlink, a submodule, or an added executable bit disqualifies the repair.
-
-   **Adding or deleting an allowed path is evidence-only; changing what kind of
-   object lives there is not.** ⚠ If the previous review commit is **not an
-   ancestor** of `HEAD` — after a rebase or a force-push — the range cannot
-   enumerate what the repair touched, and the repair **is not evidence-only**.
-
-   ⚠⚠ **The population above is the rule, and NO COMMAND IS NORMATIVE FOR IT
-   — not here and not anywhere else in this repository.** The author publishes
-   whatever evidence they judge sufficient; the reviewer reads the range and
-   decides. A disagreement is an ordinary review finding in that pull request,
-   never an amendment to this section. Hazards worth knowing when building that
-   evidence are advisory only, in `docs/testing/TESTING_STANDARDS.md` →
-   **"Evidence-only classification — how to evidence it"**.
-
-4. **The sequence stops when no repair requiring a follow-up under (2)
-   remains.** The owner may then merge.
-
-⚠⚠⚠ **WHY NO COMMAND DECIDES THIS — RULED BY THE OWNER 2026-08-09, AND IT
-SUPERSEDES THE 2026-08-08 RULING THAT ONLY MOVED THE COMMANDS ELSEWHERE.**
-Between rounds 1 and 5 of PR #139 a `git log` pipeline _was_ the definition of
-"evidence-only" and lived here; round 5's fix moved it to
-`docs/testing/TESTING_STANDARDS.md`. **That half-move failed, and round 7
-measured why: `TESTING_STANDARDS.md` is not on the (3)(i) allowlist, so
-repairing the command there is still a non-evidence-only change that forces
-another round.** The command is therefore no longer normative anywhere.
-
-**Seven consecutive rounds each found a NEW false-accept route in the same
-pipeline** — incomplete blocklist, unanchored prefix, rename collapse,
-endpoint-only enumeration, delegated merge-record format, submodule suppression
-and replacement refs, then legacy grafts and `diff.relative`. **Once (3)
-existed, not one round found a defect in it** — round 1's M2 was the absence of
-any definition, and the fix that answered it created both (3) and the command;
-every later finding landed on the command. ⭐⭐ **The
-population a rule governs is stable; the command that decides it is not — and
-seven rounds is the evidence that this property is not mechanically decidable
-under hostile repository configuration. A correct rule applied to an
-undecidable property is a defect generator.** Full measurement:
-`docs/reviews/pr139-defect-pattern-audit.md` and rounds 1–7 of
-`docs/reviews/governance-review-invariant-implementation-codex-review.md`.
-
-⚠ **Adding a path to the evidence-only population in (3)(i) is itself a §3(b)
-governance change.** Step (2) carries no surface list of its own — it defers to
-step (3) — so the two cannot drift apart. **A step (2) that names its own
-surfaces alongside a step (3) that tests different ones is this rule's recurring
-failure**, and it is why only one of them may hold a list.
+⚠⚠ **THERE IS NO MECHANICAL EVIDENCE-ONLY TEST, AND NO COMMAND IS NORMATIVE
+FOR THIS SECTION.** An earlier form of §3.4 defined a repair lifecycle around
+a `git log` pipeline that decided which repairs required a further round.
+**Six review rounds and one audit each found a different false-accept route in
+that pipeline; no round found a defect in the population it was meant to
+decide.** The owner removed it on 2026-08-09 rather than repair it an eighth
+time. ⚠ That is a judgement about one implementation's reliability and cost as
+a _normative decider_ — **not a claim that the property admits no decision
+procedure**, which the evidence does not establish. The full record is
+`docs/reviews/governance-review-invariant-implementation-codex-review.md` and
+`docs/reviews/pr139-defect-pattern-audit.md`.
 
 ⚠ **The governed rule surfaces — `ai_rules.md`, `CLAUDE.md` and
-`docs/governance/**` — are deliberately not on the allowlist and are never
-evidence-only**, because on a governance change the rule text _is_ the product.
-This PR is the demonstration: the round-1 M4 repair edited `CLAUDE.md`, and the
-narrow round-2 review found a real defect inside that edit.
-
-⚠ A repair that is evidence-only by (3) does not become reviewable merely
-because a reviewer would find it interesting; and a repair that touches any
-non-allowlisted path is never evidence-only, however small.
-
-⚠⚠ **A fix round is unreviewed new work** (§2's packaging rule already
-assumes this): the narrow round N+1 exists because a repair can introduce
-its own defect, and on #137 one did — the round-1 fix created the finding
-that ran for the next five rounds.
+`docs/governance/**` — are never treated as incidental**, because on a
+governance change the rule text _is_ the product.
 
 ### 3.5 Reviewer re-run scope (binding)
 
@@ -411,6 +332,6 @@ rulings that predate this index are added when next cited._
 | REBASE-128 | 2026-08-04 | Completed (#128) | One-time authorization: rebaseline the stale visual snapshot(s) and run the full e2e + integration pass before F4 — not a standing permission                                                                                                                                                                                                                                                                                                     | `drawer_havdm_decisions_c9a9720edc90cf10ce5b67d6`                                                                                                                                                                  |
 | GOV-RAT    | 2026-08-06 | Standing         | Governance-review Tier 1 adopted: the §3 invariant, both templates, Codex as F5/F8 spec reviewer, adversarial review before every UAT round **and** every release gate                                                                                                                                                                                                                                                                            | `drawer_havdm_decisions_0475d2d73336a4a2481bdec6`                                                                                                                                                                  |
 | ARB-R8     | 2026-08-07 | Standing         | §3.1's three header lines bind the CHANGE ARTIFACT (spec, remediation plan, triage document, or a review of one), not the long-lived instruction file a governance change edits; `ai_rules.md` and `CLAUDE.md` are exempt and no retrofit is owed                                                                                                                                                                                                 | `drawer_havdm_decisions_ac026150b5fe8c5e6f70c519`                                                                                                                                                                  |
-| REV-IMPL   | 2026-08-08 | Pilot → v1.0.0   | Slice implementations join the §3 governed classes as class (d) at **one mandatory review round**; rounds 2+ are narrow with a defined repair lifecycle, and the owner may accept evidence-only residues with the merge (§3.4). ⚠ Part of the F5/F8 pilot — permanence decided at the v1.0.0 gate. ⚠ §3.4 states the evidence-only POPULATION and **no command is normative for it** (owner-ruled 2026-08-09, after seven rounds)                 | this document §3.4; case study `drawer_havdm_patterns_9b2499f0b71c059ee556d65a`; the five-round measurement behind the split `docs/reviews/pr139-defect-pattern-audit.md`                                          |
+| REV-IMPL   | 2026-08-08 | Pilot → v1.0.0   | Slice implementations join the §3 governed classes as class (d): **one full independent review before merge, no automatic follow-up round, and the owner decides whether a post-review change warrants re-review** (§3.4). ⚠ Part of the F5/F8 pilot — permanence decided at the v1.0.0 gate. ⚠ The mechanical evidence-only test was removed by the owner 2026-08-09 after eight rounds; no command is normative for §3.4                        | this document §3.4; case study `drawer_havdm_patterns_9b2499f0b71c059ee556d65a`; the five-round measurement behind the split `docs/reviews/pr139-defect-pattern-audit.md`                                          |
 | REV-RERUN  | 2026-08-08 | Pilot → v1.0.0   | A class-(d) reviewer MUST re-run the load-bearing spec, a deeper repeat than the author published, and `./tools/checks`; MEDIUM sweeps stay by-exception guidance; an unperformed re-run leaves a result UNVERIFIED (§3.5). ⚠ Binding on n=1 PR is an owner JUDGEMENT, reassessed at the v1.0.0 gate                                                                                                                                              | this document §3.5; case study `drawer_havdm_patterns_9b2499f0b71c059ee556d65a`                                                                                                                                    |
 | MP-LEASE   | 2026-08-08 | Standing         | Under the writer-lease collision the reviewer surfaces `MemPalace drawer candidates` in its committed review file and the write-enabled author files them with `added_by=<reviewer>`; never kill a process, never set `MEMPALACE_MCP_ALLOW_PEER_WRITER` (§2). ⚠ A REVIEWER-SPECIFIC EXCEPTION to the PR-body fallback, carried in `ai_rules.md` §11 itself so the two documents state one rule — every non-reviewing agent still uses the PR body | `drawer_havdm_decisions_1069fb46eb9173d1dc58a9a2` — current record, incl. which PR ratifies (history: `drawer_havdm_decisions_9f91fa0a88ed9df5b21c2482`; evidence: `drawer_havdm_review_65aecb8d3cb0de6511b03648`) |
