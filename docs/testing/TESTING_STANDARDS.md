@@ -856,165 +856,53 @@ review must say so in its "not checked" section.
 **Author side:** run the flake-prone repeat at the depth a reviewer is likely to
 use, and run a brand-new leg in isolation before folding it into a full-spec run.
 
-#### Evidence-only classification — the published commands
+#### Evidence-only classification — how to evidence it
 
-⚠⚠ **THE RULE IS NOT HERE. `docs/governance/OPERATING_AGREEMENT.md` §3.4(3)
-defines the evidence-only population and is authoritative; this section carries
-the commands that establish it.** The author publishes them with the repair and
-the reviewer re-runs them. **A defect in these commands is a defect in one pull
-request's evidence, correctable in that pull request — it is not a governance
-amendment.** That split was ruled on 2026-08-08 after a five-round arc in which
-this command lived in the governing text: **round 1 found the absence of a
-definition, the round-1 fix created the command, and rounds 2–5 then found four
-defects in it — each repair a governance amendment with its own review round.**
-See `docs/reviews/pr139-defect-pattern-audit.md`.
+⚠⚠ **THE RULE IS `docs/governance/OPERATING_AGREEMENT.md` §3.4(3) AND IT IS THE
+ONLY NORMATIVE TEXT.** It defines a population: which paths a repair touched
+across **every commit** in the range, and whether any allowed path was left as
+anything but an ordinary file. **Nothing in this section is a gate, a mandated
+command, or a required negative-case floor.** The author publishes whatever
+evidence they judge sufficient; the reviewer reads the range and decides.
 
-Check (0) must succeed and commands (1) and (2) must both print nothing:
+⭐⭐⭐ **WHY THERE IS NO PUBLISHED COMMAND HERE ANY MORE.** A `git log` pipeline
+was tried as the decider through seven review rounds of PR #139 and produced a
+new false accept in every one: incomplete blocklist, unanchored prefix, rename
+collapse, endpoint-only enumeration, delegated merge-record format, submodule
+suppression and replacement refs, then legacy grafts and `diff.relative`. **No
+round ever found a defect in the population definition itself.** Owner-ruled
+2026-08-09: the property is not mechanically decidable under hostile repository
+configuration, so no command is normative for it. The full seven-round record is
+`docs/reviews/governance-review-invariant-implementation-codex-review.md` and
+`docs/reviews/pr139-defect-pattern-audit.md`.
 
-```sh
-# (0) fail closed unless the previous review commit is an ancestor
-git --no-replace-objects merge-base --is-ancestor <previous review commit> HEAD
+**Hazards worth knowing when you build your own evidence — ADVISORY, and
+deliberately not a checklist.** Each was measured on git 2.43.0. They are listed
+because they are counter-intuitive, not because clearing them is sufficient:
 
-# (1) every path touched by EVERY commit in the range is allowed
-git --no-replace-objects log --format= --no-renames --diff-merges=separate \
-    --ignore-submodules=none --raw <previous review commit>..HEAD \
-  | awk -F'\t' 'NF>1 {print $2}' \
-  | grep -vE '^(docs/reviews/[^/]+\.md|PR_NOTES\.md|CODEX_SUMMARY\.md)$'
+- **Renames report only the destination**, so a behaviour file renamed to an
+  allowed review name vanishes; a pathname also cannot carry an object type, so
+  an allowed `.md` replaced by a symlink or gitlink needs a separate check.
+- **Endpoint trees are not the commit range.** A path added and removed inside
+  the range never appears in an endpoint diff, but it was still pushed.
+- **Ambient state decides which records EXIST, separately from how they are
+  formatted** — and this is the class that kept reopening. Measured suppressors:
+  `log.diffMerges=combined`/`dense-combined` (a combined record moves the mode
+  field); `diff.ignoreSubmodules=all`, **globally or as a correctly mapped
+  per-submodule `submodule.<name>.ignore=all`**; replacement refs, which can
+  also **fabricate ancestry**; `.git/info/grafts`, which still rewrites history
+  **even under `--no-replace-objects`**; and `diff.relative=true`, which drops
+  out-of-directory paths before any filter sees them.
+- **A known-bad liveness proof does not close that class.** A graft or a
+  replacement can target the reviewed range while leaving the range you chose
+  for the liveness check untouched — measured, twice.
+- **Silence and error are indistinguishable on stdout.** A mistyped option or a
+  mis-extracted `awk` program prints nothing and looks clean.
 
-# (2) no record left an allowed path as anything but an ordinary file
-git --no-replace-objects log --format= --no-renames --diff-merges=separate \
-    --ignore-submodules=none --raw <previous review commit>..HEAD \
-  | awk '$2 !~ /^(100644|000000)$/'
-```
-
-⚠⚠⚠ **BEFORE TRUSTING SILENCE, PROVE THE COMMANDS ARE LIVE.** Run both over a
-range you already know is review-requiring and confirm they print. **A command
-that errors — an unknown option on an older git, a typo, a bad extraction —
-writes to stderr and prints nothing on stdout, so a broken command is
-indistinguishable from a clean result.** This project has already nearly shipped
-one silent no-op: a mis-escaped `awk` program extracted as the empty string, and
-`awk ""` "passes" every case without running.
-
-**Six properties are load-bearing. Do not relax any of them.**
-
-**(a) It is an allowlist, not a blocklist.** A blocklist of executable
-directories cannot be completed: this repository carries behaviour-bearing files
-at the root, under `.github/workflows/`, `.claude/`, `templates/` and
-`test-dashboards/`, and a new one can appear any day. **An allowlist inverts the
-burden of proof — a path is evidence-only only if it matches a named pattern, so
-a behaviour-bearing path added tomorrow is review-requiring by default.**
-
-**(b) The alternatives are end-anchored, and the review alternative admits one
-level of `.md` only.** Drop the `$`, or widen `[^/]+\.md` to a bare prefix, and
-it stops being an allowlist of paths and becomes an allowlist of _prefixes_ —
-`PR_NOTES.md.sh` and `docs/reviews/some-tool.sh` then both pass. Testing only on
-real ranges cannot detect this: a range containing no hostile path returns the
-same output either way.
-
-**(c) `--no-renames` is mandatory, and command (2) is not optional.** Git detects
-renames by default and reports **only the destination**, so a behaviour-bearing
-file renamed into an allowed review pathname vanishes from the input. Measured:
-renaming `package.json` to `docs/reviews/x.md` made the earlier rename-detecting
-form print nothing while `package.json` had in fact been deleted. Command (2)
-exists because a pathname cannot carry an object type: without it, replacing an
-allowed `.md` with a symlink or a submodule passes command (1) unchanged.
-
-**(d) The enumeration is over COMMITS, not the two endpoint trees.** An endpoint
-diff answers "do the start and end trees differ only at allowed paths?" — the
-rule claims something stronger, that _the repair touched_ only allowed paths.
-Those come apart whenever a change is made and undone inside the range. Not
-bookkeeping: an intermediate workflow runs when it is pushed, an intermediate
-executable can be invoked, and the content stays in history either way.
-
-**(e) ⭐ The merge-record format must be PINNED, not delegated.** `-m` alone
-leaves the raw record format to the **`log.diffMerges` configuration variable**.
-Under `log.diffMerges=combined` or `dense-combined` a merge emits a _combined_
-record — `::100644 100644 120000 … MM<TAB>path` — in which `$2` is a **parent**
-mode, not the destination, so command (2) reads the wrong field and stays
-silent. **Measured on git 2.43.0: with `-m`, a merge that resolved an allowed
-`.md` to a symlink was correctly rejected under `separate` and `first-parent`
-and SILENTLY CERTIFIED EVIDENCE-ONLY under `combined` and `dense-combined`;
-with `--diff-merges=separate` it was correctly rejected under all four.** ⚠ Do
-not add `--find-copies-harder`: it re-enables rename detection regardless of its
-order relative to `--no-renames` and reproduces the rename bypass.
-
-**(f) ⭐⭐ PINNING THE FORMAT DOES NOT PIN THE POPULATION — neutralise the
-ambient state that decides which records exist at all.** Two measured false
-accepts, both found by round 6 after `--diff-merges=separate` had closed the
-format question:
-
-- **`diff.ignoreSubmodules=all` suppresses the gitlink record entirely**, so a
-  `160000` submodule added at an allowed path made command (2) silent while the
-  path passed command (1). `--ignore-submodules=none` restores the record. ⓘ
-  Swept: `dirty` and `untracked` do not suppress it, and a per-submodule
-  `submodule.<name>.ignore` did not either — but `--ignore-submodules=none`
-  overrides all of them, so the option is written unconditionally rather than
-  keyed to the one value observed to bite.
-- **A replacement ref substitutes the commit git reads.** `git replace <real>
-<decoy>` made a commit that added `src/replaced.ts` read as an innocuous
-  same-parent commit; both commands went silent while
-  `git --no-replace-objects diff-tree` still showed the path.
-  ⚠⚠ **And it is not only the log commands: a replacement can FAKE ANCESTRY so
-  check (0) wrongly succeeds.** Measured — with an unrelated commit replaced by
-  one parented on the previous review commit, `git merge-base --is-ancestor`
-  returned success where the truth is that no ancestry exists;
-  `--no-replace-objects` correctly failed closed. **That is why all three reads
-  carry the flag, not just the two that print.**
-
-⚠ **A known-bad live-proof does not close this class**, which is why it is a
-property and not a footnote: an ordinary bad file still prints under
-`diff.ignoreSubmodules=all`, and a replacement can target the reviewed range
-without touching the range you chose for the liveness check. **Before adding any
-option or trusting any silence, ask what ambient state decides which records
-reach the filter — not merely how they are formatted.**
-
-⚠ **The eight negative cases every future edit of these commands must be run
-against — all eight must print:**
-
-1. `PR_NOTES.md.sh` added;
-2. any behaviour-bearing file **renamed** into `docs/reviews/x.md`;
-3. an allowed `.md` path **replaced by a symlink**;
-4. a behaviour-bearing path **added in one commit and removed in a later one**;
-5. an allowed file **made executable and then restored**;
-6. case 3 performed **by a merge commit whose resolution differs from both
-   parents**, run under `git -c log.diffMerges=combined` **and**
-   `-c log.diffMerges=dense-combined`;
-7. a **gitlink at an allowed path** under `git -c diff.ignoreSubmodules=all`;
-8. a behaviour commit **hidden behind a replacement ref** (`git replace <real>
-<same-parent decoy>`) — and, separately, an unrelated commit replaced by one
-   parented on the previous review commit, where **check (0) must fail closed**.
-
-**Build them as real commits on a throwaway branch** — this class of defect
-lives in git's own behaviour, not in the regex, and feeding synthetic strings to
-`grep` cannot reach it. Confirm the false-positive controls stay silent too: a
-review-document-only change, and an allowed→allowed rename.
-
-ⓘ **Two accepting behaviours are correct, not defects — do not "fix" them.**
-(1) The commands classify **pathnames and object types, never content**: copying
-a behaviour file to an allowed name is accepted, which is the same
-already-assessed risk as any review document (no tool reads, follows or executes
-fenced content from these paths; a future consumer would itself be a
-non-allowlisted change and draw review). (2) A **non-ASCII allowed path** is
-accepted under `core.quotePath=false` and rejected under the default, because
-git quotes it and the quoted form misses the allowlist — an asymmetry that errs
-towards _requiring_ review, which is the safe direction.
-
-⚠ **Commit before you test on a throwaway branch.** A throwaway branch inherits
-your dirty tree and `git reset --hard` eats it.
-
-**The six defects these commands have had**, each found by running them against
-real git state: the incomplete blocklist
-(`drawer_havdm_review_b23fc37ce14ccdeaf159e6ca`, round 2); the unanchored prefix
-(`drawer_havdm_review_d086b4e07dc28938830173ae`, round 3); the rename collapse
-(`drawer_havdm_review_c922769aee0360b071fa5566`, round 4); the endpoint-only
-enumeration (`drawer_havdm_review_eb44509d2f400cc6e86bcedc`, round 5); the
-delegated merge-record format
-(`drawer_havdm_governance_66a9a195ba4302d0fe346fd4`, found by audit); and the
-delegated record _population_ — submodule suppression and replacement refs
-(`drawer_havdm_review_90707252302c49840361e152`, round 6). ⚠ **Five were found
-by a review round (2, 3, 4, 5 and 6) and one by audit — and EVERY ONE was a case
-the then-current negative-case list did not name.** Treat the list above as a
-floor, never a ceiling.
+⚠ **Build any check you do write as real commits on a throwaway branch** — this
+class of defect lives in git's own behaviour, not in a regex, and feeding
+synthetic strings to `grep` cannot reach it. **Commit first:** a throwaway
+branch inherits your dirty tree and `git reset --hard` eats it.
 
 #### Command Request Shortcuts (for user prompts)
 

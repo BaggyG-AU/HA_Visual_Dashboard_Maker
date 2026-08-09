@@ -273,44 +273,37 @@ round and the owner could merge unreviewed new work.
    ancestor** of `HEAD` — after a rebase or a force-push — the range cannot
    enumerate what the repair touched, and the repair **is not evidence-only**.
 
-   ⚠⚠ **The population above is the rule. The commands that establish it are
-   EVIDENCE, and they live elsewhere:** the author publishes them with the
-   repair and the reviewer re-runs them, per
-   `docs/testing/TESTING_STANDARDS.md` → **"Evidence-only classification — the
-   published commands"**, which carries a current working form, the negative
-   cases any replacement must pass, and the defects the earlier forms had.
-   **A defect in those commands is a defect in one pull request's evidence —
-   correctable in that pull request and caught by the ordinary round. It is not
-   an amendment to this section.**
+   ⚠⚠ **The population above is the rule, and NO COMMAND IS NORMATIVE FOR IT
+   — not here and not anywhere else in this repository.** The author publishes
+   whatever evidence they judge sufficient; the reviewer reads the range and
+   decides. A disagreement is an ordinary review finding in that pull request,
+   never an amendment to this section. Hazards worth knowing when building that
+   evidence are advisory only, in `docs/testing/TESTING_STANDARDS.md` →
+   **"Evidence-only classification — how to evidence it"**.
 
 4. **The sequence stops when no repair requiring a follow-up under (2)
    remains.** The owner may then merge.
 
-⚠⚠⚠ **WHY THE COMMANDS ARE NOT IN THIS DOCUMENT, WHICH IS ITSELF A RULING OF
-2026-08-08.** Between rounds 1 and 5 of PR #139 the mechanical command _was_ the
-definition of "evidence-only", and it lived here. **The measured chain, stated
-exactly, because an earlier draft of this paragraph compressed it into a false
-one and round 6 filed that as a finding (R6-M3):**
+⚠⚠⚠ **WHY NO COMMAND DECIDES THIS — RULED BY THE OWNER 2026-08-09, AND IT
+SUPERSEDES THE 2026-08-08 RULING THAT ONLY MOVED THE COMMANDS ELSEWHERE.**
+Between rounds 1 and 5 of PR #139 a `git log` pipeline _was_ the definition of
+"evidence-only" and lived here; round 5's fix moved it to
+`docs/testing/TESTING_STANDARDS.md`. **That half-move failed, and round 7
+measured why: `TESTING_STANDARDS.md` is not on the (3)(i) allowlist, so
+repairing the command there is still a non-evidence-only change that forces
+another round.** The command is therefore no longer normative anywhere.
 
-1. **Round 1 found no command defect — there was no command.** Its finding M2
-   was the absence of a repair trigger and a definition.
-2. **The round-1 fix CREATED the command**, as M2's answer.
-3. **Rounds 2, 3, 4 and 5 then found four defects in it** — an incomplete
-   blocklist, an unanchored prefix, a rename collapse, an endpoint-only
-   enumeration — **and every repair was a governance amendment requiring its own
-   review round.**
-4. **A fifth defect** (the record format left to the `log.diffMerges`
-   configuration) **was found by audit**, in a form that had already passed all
-   five negative cases this section then mandated. **A sixth** (submodule
-   suppression and replacement refs deciding which records exist at all) **was
-   found by round 6, after the commands had already moved out.**
-
-⭐⭐ **The population a rule governs is stable; the command that decides it is
-not. Putting a shell pipeline in the normative position made every deficiency in
-the pipeline a deficiency in the law.** ⭐ Defect six is the split working as
-intended: it landed on the evidence, cost one round, and amended no rule. Full
-measurement: `docs/reviews/pr139-defect-pattern-audit.md`; round 6's findings
-`drawer_havdm_review_90707252302c49840361e152`.
+**Seven consecutive rounds each found a NEW false-accept route in the same
+pipeline** — incomplete blocklist, unanchored prefix, rename collapse,
+endpoint-only enumeration, delegated merge-record format, submodule suppression
+and replacement refs, then legacy grafts and `diff.relative`. **Not one round
+found a defect in the population definition in (3) above.** ⭐⭐ **The
+population a rule governs is stable; the command that decides it is not — and
+seven rounds is the evidence that this property is not mechanically decidable
+under hostile repository configuration. A correct rule applied to an
+undecidable property is a defect generator.** Full measurement:
+`docs/reviews/pr139-defect-pattern-audit.md` and rounds 1–7 of
+`docs/reviews/governance-review-invariant-implementation-codex-review.md`.
 
 ⚠ **Adding a path to the evidence-only population in (3)(i) is itself a §3(b)
 governance change.** Step (2) carries no surface list of its own — it defers to
