@@ -496,6 +496,44 @@ When adding or modifying DSL methods:
 
 ---
 
+## EVIDENCE SURFACES NO GATE COVERS — `tools/check-pr-evidence.sh`
+
+`./tools/checks` gates `src/` and `tests/`. It gates **nothing** that carried a
+finding through PR #137's six review rounds:
+
+| Artifact         | Defects across #137's six rounds | Gated by `./tools/checks`?                                         |
+| ---------------- | -------------------------------- | ------------------------------------------------------------------ |
+| `src/`           | **zero**                         | lint + typecheck + unit                                            |
+| `tests/`         | round 1 only, closed round 2     | lint + typecheck                                                   |
+| `tools/*.sh`     | M4 — **five rounds**             | **nothing.** `prettier --file-info` returns `inferredParser: null` |
+| the live PR body | R2-m1 — **five rounds**          | **nothing.** It is not a file in the repository                    |
+
+⭐ The most heavily gated artifact was never wrong once; the two artifacts that
+carried the five-round findings are gated by nothing at all.
+
+```bash
+bash tools/check-pr-evidence.sh          # the PR for the current branch
+bash tools/check-pr-evidence.sh 137      # a specific PR
+bash tools/check-pr-evidence.sh --no-pr  # changed .md/.sh only
+```
+
+It reports **candidates for a human to justify or delete** — counts presented as
+evidence, universals, evidence-language words (`accepted` / `held` / `confirmed`
+for checks nobody ran), and commit SHAs quoted in the PR body. **Only the SHA
+section decides anything**: whether a SHA is HEAD, an ancestor, or unknown is a
+fact checked with `git`. The rest is a grep and is **not exhaustive** — no fixed
+word list finds every stale count.
+
+**It is advisory by default** (`--strict` makes findings exit 1). A noisy
+blocking gate gets ignored, and an ignored gate is worse than none.
+
+> ⓘ On its first run it flagged PR #137's opening line — "**Four commits**"
+> beside a list enumerating **five**, on a branch that ended with **twelve**. A
+> count contradicting its own adjacent enumeration, in the first sentence,
+> missed by all six review rounds including round 5's explicit exact-body read.
+
+---
+
 ## DEFINITION OF DONE (TESTING)
 
 A feature is not complete unless:
@@ -505,6 +543,8 @@ A feature is not complete unless:
 - No raw selectors were added to test specs
 - New UI layers are explicitly handled in the DSL
 - At least one test validates the new user path
+- `bash tools/check-pr-evidence.sh` has been run and every candidate it reports
+  is either justified or removed
 
 ---
 
