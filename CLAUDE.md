@@ -38,7 +38,9 @@ bootstrap-only fallback with **no duplication** between the two.
 
 > **If reads work but writes are refused**, your server is latched read-only
 > because another Claude Code window claimed the palace writer lease first.
-> Retrying will never succeed — reload the window to restart the server. Do not
+> Retrying will never succeed — reload the window to restart the server, which
+> cannot help while another window still holds the lease; **if you are the
+> independent reviewer, take the MP-LEASE exception below instead.** Do not
 > set `MEMPALACE_MCP_ALLOW_PEER_WRITER`. See
 > [`MEMPALACE_PROTOCOL.md`](docs/governance/MEMPALACE_PROTOCOL.md) §5.1.
 
