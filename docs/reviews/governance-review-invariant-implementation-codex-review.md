@@ -1846,3 +1846,229 @@ tree/blob IDs equal main.
   live while making the reviewed transient-change range cleanly silent. Also
   pin `--no-relative` when a repository-wide raw population must not depend on
   the caller's working directory.
+
+## Round 8
+
+Author: Claude Opus (`7d30703`, `80cfef2`, and `58fc230`)
+Reviewer: OpenAI Codex (GPT-5), independent reviewer; did not author these commits
+Owner gate: BaggyG-AU reads PR #139 and this round together; only the owner signs off and merges
+
+**Verdict: CHANGES-REQUIRED (high confidence).** **Merge readiness: not ready.**
+Option B operationally resolves R7-M1 and R7-N1: no command remains normative,
+and a defect in the advisory hazard list no longer compels a repair. The
+narrowing nevertheless reopens the exact false-lineage class closed as R6-M3
+and states a repeated engineering failure as proof of mechanical
+undecidability. Both claims appear in the normative Operating Agreement and are
+false on the committed record.
+
+Correcting them changes non-allowlisted governance/testing paths, so §3.4(2)
+would force round 9. At the explicit round-8 go/no-go requested by the owner,
+**drop class (d) entirely rather than commission another repair round.** The
+narrowed design has broken the command-defect generator, but this ratification
+has not become cheap enough to land: the same historical-count defect has now
+been recreated after it was already found, repaired, and independently closed.
+
+### Disposition
+
+| Item                              | Disposition   | Merge effect                                  | Round-8 judgement                                                                                                                                                                                                          |
+| --------------------------------- | ------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R7-M1 — normative false accepts   | **RESOLVED**  | None                                          | The pipeline and negative-case floor are deleted from normative status. No surviving operative text requires a particular command, and the finite §3.4(3) population remains followable by a reviewer.                     |
+| R7-N1 — false per-submodule claim | **RESOLVED**  | None                                          | The normative block containing the false sentence is gone. The advisory replacement correctly says a mapped `submodule.<name>.ignore=all` suppresses; a fresh fixture also confirmed the former explicit override worked.  |
+| Option B narrowing                | **REGRESSED** | **MERGE-BLOCKING; correction forces round 9** | Commit `7d30703` reintroduces R6-M3's false causal count and adds an unsupported undecidability premise. `80cfef2` corrects the adjacent population-definition claim but leaves both defects live in two current surfaces. |
+
+### R8-M1 — `7d30703` recreates the false round lineage closed as R6-M3
+
+The Operating Agreement now says **“Seven consecutive rounds each found a NEW
+false-accept route in the same pipeline”**
+(`OPERATING_AGREEMENT.md:296-306`). Testing Standards says the pipeline was
+tried through seven review rounds and produced a false accept **“in every one”**
+(`TESTING_STANDARDS.md:868-877`). `git blame` assigns both statements to
+`7d30703`.
+
+The committed review and audit prove a different sequence:
+
+1. Round 1 found M2, the absence of a repair trigger and definition. There was
+   no pipeline; the round-1 fix `bcba77a` created it.
+2. Rounds 2–5 found the blocklist, prefix, rename, and endpoint defects.
+3. The merge-record-format defect was found by the separate pre-round-6 audit,
+   not by a review round.
+4. Rounds 6 and 7 found the two later ambient-state populations.
+
+That is not seven consecutive review rounds in which every round found a
+pipeline false accept. It is the same causal compression R6-M3 rejected and
+Round 7 independently marked resolved. Commit `80cfef2` correctly narrows the
+adjacent statement from “not one round found a definition defect” to “once the
+definition existed,” but it does not sweep or correct the preceding false
+round claim.
+
+**Required correction.** State the measured sequence above without assigning
+the audit to a review round or inventing a round-1 pipeline. This is
+merge-blocking for the same reason R6-M3 was: the false causal history is the
+normative rationale for the structural ruling, and it directly contradicts the
+primary records it cites.
+
+### R8-M2 — repeated pipeline failure does not make the property undecidable
+
+The Operating Agreement calls seven rounds “the evidence that this property is
+not mechanically decidable under hostile repository configuration” and then
+invokes the rule that an undecidable property is a defect generator
+(`OPERATING_AGREEMENT.md:303-306`). Testing Standards restates the conclusion
+as an owner ruling (`TESTING_STANDARDS.md:875-877`). Seven failed forms of one
+shell pipeline establish that those forms were unreliable; they do not prove
+that no mechanical decision procedure exists.
+
+The §3.4(3) property is finite and mechanically decidable in principle. A
+config-independent implementation can:
+
+1. read the exact previous-review and `HEAD` commit objects and traverse their
+   literal parent OIDs, ignoring replacement refs and graft presentation;
+2. fail closed on a missing, malformed, or unreachable object;
+3. compute the finite set reachable from `HEAD` but not from the previous
+   review; and
+4. recursively compare each immutable tree map against every parent, checking
+   raw pathname bytes and modes against (3)(i) and (ii).
+
+This algorithm does not consult `diff.*` or `log.*` presentation settings.
+Under Git's object-identity model, content-addressed IDs prevent an alternate
+store from silently substituting different bytes; unavailable objects fail
+closed. On Git 2.43.0 I
+also re-confirmed the key separation: with an active `.git/info/grafts`,
+`--no-replace-objects rev-list` reported the grafted parent while
+`--no-replace-objects cat-file -p` returned the commit object's actual parent.
+A purpose-built raw-object walker can therefore avoid the mechanism that broke
+the former pipeline. A more conservative certificate can also reject any
+ambient state it has not neutralized; false rejection costs a review but cannot
+create a false evidence-only acceptance.
+
+The owner's conclusion can still stand as a cost judgement: maintaining a
+normative decider proved more expensive than letting the reviewer trace a
+range. Its stated premise must say that. **Required correction:** replace the
+claim of undecidability with the measured claim that the attempted pipeline was
+not a reliable or cost-effective normative decider under ambient Git state.
+The current wording is merge-blocking because it writes a false universal into
+the binding rationale and would preclude a future sound tool on grounds the
+evidence does not establish.
+
+### The forcing chain is broken, and §3.4(3) remains followable
+
+The author's weakest claim 1 has a split answer. Testing Standards remains
+outside the allowlist, so an author who voluntarily edits its advisory hazard
+list during a repair still makes that repair non-evidence-only and draws a
+round. That is correct scope classification. What Option B removes is the
+causal requirement to edit it: no command or checklist there decides the
+certificate, so a newly discovered advisory hazard does not invalidate §3.4 or
+compel a finding-driven repair. The round-on-round command-defect generator is
+therefore removed, not renamed.
+
+I applied §3.4(3) to two genuinely nontrivial histories built as real commits:
+
+- **Hard positive — evidence-only.** From the previous review, one side added
+  `CODEX_SUMMARY.md`, another renamed `docs/reviews/a.md` to
+  `docs/reviews/b.md`, and a two-parent merge combined them. Comparing every
+  commit with every parent produced only the three allowed pathnames and modes
+  `000000`/`100644`; both rename sides were allowed. The range qualifies.
+- **Hard negative — not evidence-only despite a clean endpoint.** A behavior
+  file moved from `src/tool.sh` into `docs/reviews/renamed.md` and later moved
+  back; an allowed review file became a symlink and was restored; two later
+  branches added only `PR_NOTES.md` and `docs/reviews/side.md` and merged. The
+  endpoint diff showed only those two allowed additions, but the per-commit hand
+  trace exposed both `src/tool.sh` sides and the transient `120000` mode. The
+  range does not qualify.
+
+Those decisions took a finite commit/parent trace and no normative command.
+The definition is usable without the deleted mechanism.
+
+The actual commissioned range also classifies cleanly: `06246fc..58fc230`
+contains three commits; their complete per-parent trace touches only
+`docs/governance/OPERATING_AGREEMENT.md` and
+`docs/testing/TESTING_STANDARDS.md`, always as `100644`. Neither path is
+allowed, so the repair is not evidence-only and this round was required.
+
+### Normative-effect sweep and advisory accuracy
+
+I stated the swept class as **text or executable behavior that makes a
+particular evidence mechanism binding**, then enumerated it three ways: current
+references to §3.4/REV-IMPL/evidence-only, modal language near Git/diff/range
+terms, and executable consumers of the two documents. I read the complete
+current §3.4 and Testing Standards evidence-only section rather than trusting
+the searches.
+
+- The only current operative surfaces are §3.4 itself, the explicitly advisory
+  Testing Standards section, and the corrected REV-IMPL index row.
+  `ai_rules.md` and `CLAUDE.md` each contain zero evidence-only references.
+- No old pipeline, fenced command, mandatory negative-case floor, or text whose
+  effect requires a particular certificate survives outside historical review
+  files. `tools/check-e2e-guardrails.sh` names Testing Standards only in a
+  comment describing unrelated E2E rules; it does not read either document.
+- The seven-round review (1,848 lines before this section) and the 596-line
+  defect audit remain committed. The current committed repair is a net deletion
+  of 115 lines (96 added / 211 deleted). The author's pre-format net of 119
+  deleted lines cannot be regenerated from the committed trees and is
+  **UNVERIFIED**; the load-bearing direction, net deletion, holds.
+
+The advisory list is correctly labelled “not a checklist” and says clearing it
+is insufficient. Its R7-specific facts hold: a correctly mapped
+`submodule.<name>.ignore=all` suppressed the gitlink in my fresh fixture and an
+explicit `--ignore-submodules=none` restored it; a graft still rewrote history
+under `--no-replace-objects`; and `diff.relative=true` suppressed an
+out-of-directory path when invoked from a subdirectory.
+
+### R8-N1 — three advisory hazard descriptions are overbroad
+
+These are prose defects, but **not merge-blocking** under the owner's Option B
+because the list is explicitly non-normative and incomplete:
+
+- “Renames report only the destination” is true of the former `--name-only`
+  form, not Git rename output generally. In a fresh real rename,
+  `git diff -M --name-only` printed only the destination, while
+  `--name-status` and `--raw` printed both source and destination.
+- `log.diffMerges=combined` and `dense-combined` are grouped under “measured
+  suppressors,” but they did not suppress the record; they changed its shape so
+  the former `$2` parser read a parent mode. The distinction is the point of the
+  old format/population split.
+- `diff.relative=true` drops out-of-directory paths only when Git is invoked
+  below the repository root. My rerun produced one record from the root and
+  zero from `docs/reviews/`; the advisory sentence omits that precondition.
+
+Qualify these if the advisory paragraph is touched later. They do not reopen
+R7-M1, alter §3.4's population, or require another repair in this pull request.
+
+### Checked clean and not checked
+
+- **Repository gate:** `./tools/checks` exited **0**; all four steps passed.
+  ESLint reported 0 errors / 145 warnings, Prettier and `tsc --noEmit` were
+  clean, and Vitest passed 1,335 tests across 101 files.
+- **Checked clean:** live remote head/base and PR state; exact three-commit
+  population and modes; docs-only boundary; R7-M1/R7-N1 deletion; effect-keyed
+  normativity sweep; §4 correction; hard positive and negative hand traces;
+  forcing-chain analysis; raw-object decidability; per-submodule, graft,
+  relative-path, and rename advisory facts; committed review/audit preservation;
+  current net deletion and whitespace.
+- **Could not check:** the author's uncommitted pre-format line count; behavior
+  on Git versions other than 2.43.0; a production implementation of the raw
+  object-walk algorithm; platform-specific case-insensitive filesystem behavior.
+  These remain **UNVERIFIED**.
+- **Not run:** e2e, integration, or UAT. The commission limits repository
+  re-run scope to `./tools/checks`, and the in-scope commits are docs-only.
+- **Not changed:** either governance/testing source, PR body, `[STATE]`, UAT,
+  branch topology, or merge state. This round changes only this review file. No
+  MemPalace write was attempted under MP-LEASE.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"` — **PR #139 Round-8 review:**
+  CHANGES-REQUIRED, high confidence. Option B resolves R7-M1/R7-N1 and breaks
+  the normative-command defect generator; §3.4 remains hand-decidable on hard
+  merge/history cases. `7d30703` nevertheless recreates R6-M3's false lineage:
+  round 1 had no pipeline and the merge-format defect came from the audit, so
+  seven review rounds did not each find a false accept. The same commit also
+  overclaims mechanical undecidability; the finite raw commit/tree graph admits
+  an exact config-independent decision procedure. Correcting the two current
+  surfaces would force round 9. At the owner's requested round-8 go/no-go, drop
+  class (d) rather than continue this ratification.
+- `practice/claims`, `added_by="codex"` candidate — **Repeated failure of one
+  implementation is not proof that its finite property is undecidable.**
+  Separate “the attempted mechanism was not reliable or cost-effective” from
+  “no algorithm can decide the property.” Before publishing the latter, state
+  the finite inputs and test whether a raw-state traversal or a fail-closed
+  certificate decides them without the failed presentation layer.
