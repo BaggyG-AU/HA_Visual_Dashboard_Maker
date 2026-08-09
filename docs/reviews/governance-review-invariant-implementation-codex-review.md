@@ -2072,3 +2072,162 @@ R7-M1, alter §3.4's population, or require another repair in this pull request.
   “no algorithm can decide the property.” Before publishing the latter, state
   the finite inputs and test whether a raw-state traversal or a fail-closed
   certificate decides them without the failed presentation layer.
+
+## Round 9
+
+Author: Claude Opus (`c28559f`, Option C implementation)
+Reviewer: OpenAI Codex (GPT-5), independent reviewer; did not author this commit
+Owner gate: BaggyG-AU reads PR #139 and this round together; only the owner signs off and merges
+
+**Verdict: APPROVE (high confidence).** **Merge readiness: ready.** Commit
+`c28559f` implements Option C as a complete semantic deletion. The old
+evidence-only population, automatic repair lifecycle, allowlist, mechanical
+decider and advisory mirror are gone; no surviving rule needs them. The new
+class-(d) lifecycle retains the independently valuable first full review and
+places every later re-review decision with the owner. PR #139 is now mergeable,
+and the owner should **retain class (d), not drop it**.
+
+### Disposition
+
+| Item                                         | Disposition  | Merge effect | Round-9 judgement                                                                                                                                                                                                                                 |
+| -------------------------------------------- | ------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R8-M1 — false seven-round lineage            | **RESOLVED** | None         | Both false surfaces are deleted. The surviving history distinguishes rounds 2–7 from the separate audit and does not invent a round-1 pipeline.                                                                                                   |
+| R8-M2 — unsupported undecidability claim     | **RESOLVED** | None         | The Testing Standards claim is deleted. §3.4 expressly says the outcome is a judgement about one implementation's reliability and cost as a normative decider, **not** a claim that no decision procedure exists.                                 |
+| R8-N1 — overbroad advisory hazard prose      | **RESOLVED** | None         | The entire non-normative evidence-only section containing all three descriptions is deleted.                                                                                                                                                      |
+| Safeguard 1 — delete both dependent surfaces | **RESOLVED** | None         | The old 111-line §3.4 machinery and the 50-line Testing Standards mirror are absent. The compact replacement contains no allowlist, population, range classifier or required certificate.                                                         |
+| Safeguard 2 — explicit stopping rule         | **RESOLVED** | None         | One full review is mandatory before merge; no automatic follow-up is required; the owner decides whether each post-review change warrants re-review. Read with the standing owner sign-off and merge gate, the clause has an accountable decider. |
+| Safeguard 3 — effect-keyed sweep/retentions  | **RESOLVED** | None         | The live class list, §3.3 cost trigger and REV-IMPL row match the new lifecycle. The generic clean-round clarification and both class-(d) rollback triggers remain; §3.5 is independent; no executable consumer relies on deleted machinery.      |
+
+### The stopping rule closes the old hole
+
+The clause is normatively self-executing even though it is deliberately not
+machine-enforced. Section 3 already requires the owner to sign off while reading
+artifact and review together, and §1 reserves the merge action to the owner.
+After a post-review change, a compliant owner therefore has two choices: decide
+that it warrants re-review and request one, or decide that it does not and merge.
+The owner cannot merge while “simply not deciding” without violating the express
+assignment that the **OWNER decides**. Silence alone performs no merge; an owner
+merge is the sign-off that exercises the discretion.
+
+This is materially different from the old M2 hole. The old text simultaneously
+promised narrow later rounds and acceptance of a residue without assigning the
+boundary between them. The new text deliberately creates no automatic later
+round and names the person who decides. Requiring a separate recorded checkbox
+could improve auditability, but it is not necessary to make the rule determinate
+and would add an enforcement mechanism that Option C did not adopt.
+
+### Independent history derivation
+
+I re-derived the count from the committed primary review and audit rather than
+from the new prose:
+
+| Source         | False-accept route found                                                             |
+| -------------- | ------------------------------------------------------------------------------------ |
+| Round 2        | executable-directory blocklist omitted other behaviour-bearing surfaces              |
+| Round 3        | prefix regex accepted non-allowlisted suffixes and descendants                       |
+| Round 4        | rename-collapsing `--name-only` output omitted the source side                       |
+| Round 5        | endpoint comparison omitted transient paths and modes                                |
+| Separate audit | delegated merge-record format changed what the parser consumed                       |
+| Round 6        | submodule suppression and replacement refs changed or replaced the record population |
+| Round 7        | legacy grafts and `diff.relative` changed the revision walk or path scope            |
+
+That is **six review rounds (2–7) plus one separate audit**, producing seven
+distinct route groups. Round 1 found that no definition or pipeline existed;
+its repair created the first pipeline. Round 8 found false prose about the
+history and decidability, not another pipeline route. The replacement account
+at `OPERATING_AGREEMENT.md:236-246` is therefore accurate. Its statement that
+the removal is not proof of undecidability also preserves the exact R8-M2
+boundary.
+
+### Effect-keyed deletion and surviving rules
+
+I defined the swept class as **any live obligation, exception, authority or
+packaging rule whose meaning depended on classifying repairs through the deleted
+population or on automatically commissioning a later narrow round**. This goes
+past the author's four keys by looking for consequences of a post-review change
+even where the old terms and section pointers are absent. I searched those
+effects and read the current Operating Agreement §§2–4 and the surrounding
+Testing Standards surface end to end.
+
+- The §3 class list and REV-IMPL row state the same three-part lifecycle. The
+  superseded governance-review source says “one mandatory round, not
+  review-until-approve,” which is compatible with it.
+- §2's reference to post-review fix commits governs branch-history preservation
+  only; it does not require another review or classify a repair.
+- The old allowlist, path/mode population, previous-review range and advisory
+  certificate existed only to decide whether §3.4 forced another round. Once
+  that automatic consequence is deleted, no live rule has an undefined term.
+- The retained governed-rule-surfaces sentence is independently meaningful:
+  §3 class (b) already treats substantive governance text as the product. It
+  does not refer to or require the deleted allowlist.
+- §3.5 is 60 lines from its heading through its final rule. Within that complete
+  surface there are zero occurrences of `evidence-only`, `§3.4`, `allowlist`,
+  `population` or `follow-up`; its subject remains the live class-(d) artifact.
+- No source, test, tool, workflow, package script or configuration reads either
+  changed document. `tools/check-e2e-guardrails.sh` names Testing Standards in a
+  comment about unrelated E2E conventions; `sectionsLayout.spec.ts` refers to a
+  “source view,” not a read operation on the Operating Agreement.
+
+### R9-N1 — the self-pass enumeration has two harmless count errors
+
+The author's semantic conclusion is clean, but two published enumeration
+details are not exact:
+
+- The commission and commit message say the only current `evidence-only` hits
+  outside historical reviews are REV-IMPL and the unrelated adversarial-review
+  rule. A repository-wide `rg` also returns
+  `OPERATING_AGREEMENT.md:236`, the new sentence saying that no mechanical
+  evidence-only test remains.
+- The commission calls §3.5 a 61-line section. Counting from its heading through
+  the line before `## 4` returns **60**; 61 includes the next section's heading.
+
+These inaccuracies do not identify a stale dependency. The omitted hit records
+the deletion rather than relying on deleted machinery, and the §3.5 content was
+read in full and is independent. The committed review now corrects the
+enumeration. This is an **owner-acceptable, non-blocking note**, not a reason to
+alter either governing document or commission another round.
+
+### Checked clean and not checked
+
+- **Live scope:** after fetching, local and remote head were both
+  `c28559ffef749970b20b0332fc9843ecab2e9d16`; local and remote `main` were both
+  `e1773f9e4b97bddc9002df55aa9620870f0660dc`. PR #139 was open, non-draft,
+  mergeable and based on `main`. `fc4aec9..c28559f` contains exactly one commit,
+  modifying only the two stated Markdown files as ordinary `100644` files.
+- **Repository gate:** `./tools/checks` exited **0** with **4/4 steps**. ESLint
+  reported 0 errors / 145 warnings; Prettier and `tsc --noEmit` were clean;
+  Vitest passed **1,335 tests across 101 files**.
+- **Checked clean:** complete commit diff and deletion boundaries; all six
+  required dispositions; corrected primary-record history; stopping-rule
+  semantics; class-(d) scope and owner gate; §3.3 retentions; §3.5 independence;
+  REV-IMPL; superseded governance-review references; executable consumers;
+  document modes; line counts; net deletion (**35 additions / 164 deletions =
+  129 net deleted lines**); and whitespace.
+- **Could not check:** whether a future owner will consciously apply the
+  post-review-change decision, or the author's claim that its gate passed on the
+  first attempt. Those are **UNVERIFIED**. The rule itself assigns the decision,
+  and my own gate result is reported above.
+- **Not run:** e2e, integration or UAT. The commission requires
+  `./tools/checks`; the scoped commit changes only Markdown and no executable
+  consumer reads it.
+- **Not changed:** either governance/testing source, PR body, `[STATE]`, UAT,
+  branch topology or merge state. This round changes only this review file. No
+  MemPalace operation was attempted under MP-LEASE.
+
+### MemPalace drawer candidates
+
+- `havdm/review`, `added_by="codex"` — **PR #139 Round-9 review:** APPROVE,
+  high confidence; merge-ready. Option C completely removes the evidence-only
+  classifier and automatic follow-up machinery from both operative surfaces,
+  retains a determinate one-round lifecycle with owner discretion over later
+  changes, preserves both class-(d) rollback triggers and independent §3.5
+  re-run scope, and leaves no live consumer dependent on deleted terms. The
+  corrected history is six review rounds plus one audit, not seven consecutive
+  review rounds, and it expressly makes no undecidability claim. Retain class
+  (d); do not commission round 10.
+- `practice/review`, `added_by="codex"` candidate — **When deleting a decision
+  mechanism, sweep its consequences rather than its vocabulary.** Enumerate
+  every surviving obligation, exception, authority and packaging rule that used
+  the deleted classification or trigger, including prose that describes what
+  happens after the governed event without naming the old mechanism. A clean
+  token sweep is corroboration; the end-to-end consequence trace is the result.
