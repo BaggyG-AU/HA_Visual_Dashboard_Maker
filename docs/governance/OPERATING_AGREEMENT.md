@@ -296,8 +296,10 @@ another round.** The command is therefore no longer normative anywhere.
 **Seven consecutive rounds each found a NEW false-accept route in the same
 pipeline** — incomplete blocklist, unanchored prefix, rename collapse,
 endpoint-only enumeration, delegated merge-record format, submodule suppression
-and replacement refs, then legacy grafts and `diff.relative`. **Not one round
-found a defect in the population definition in (3) above.** ⭐⭐ **The
+and replacement refs, then legacy grafts and `diff.relative`. **Once (3)
+existed, not one round found a defect in it** — round 1's M2 was the absence of
+any definition, and the fix that answered it created both (3) and the command;
+every later finding landed on the command. ⭐⭐ **The
 population a rule governs is stable; the command that decides it is not — and
 seven rounds is the evidence that this property is not mechanically decidable
 under hostile repository configuration. A correct rule applied to an

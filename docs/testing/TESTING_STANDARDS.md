@@ -869,8 +869,10 @@ evidence they judge sufficient; the reviewer reads the range and decides.
 was tried as the decider through seven review rounds of PR #139 and produced a
 new false accept in every one: incomplete blocklist, unanchored prefix, rename
 collapse, endpoint-only enumeration, delegated merge-record format, submodule
-suppression and replacement refs, then legacy grafts and `diff.relative`. **No
-round ever found a defect in the population definition itself.** Owner-ruled
+suppression and replacement refs, then legacy grafts and `diff.relative`. **Once the
+definition existed, no round found a defect in it** — round 1's finding was that
+there was no definition at all, and the fix that answered it created both the
+definition and the command. Owner-ruled
 2026-08-09: the property is not mechanically decidable under hostile repository
 configuration, so no command is normative for it. The full seven-round record is
 `docs/reviews/governance-review-invariant-implementation-codex-review.md` and
