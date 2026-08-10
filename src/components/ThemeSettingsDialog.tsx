@@ -24,6 +24,7 @@ import {
 import { useThemeStore } from '../store/themeStore';
 import { themeService } from '../services/themeService';
 import { buildThemeOptions } from '../features/theme-manager';
+import { ThemeNoEffectBadge } from './ThemeNoEffectBadge';
 import * as monaco from 'monaco-editor';
 
 const { Text } = Typography;
@@ -202,9 +203,12 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
   // ⭐ RC5: available (built-ins + any HA themes) UNION saved. Previously read
   // `availableThemes` alone, which disagreed with `resolveThemeByName` — a saved
   // theme resolved but could not be selected.
+  // ⚠ Keyed to `localDarkMode`, not the store's `darkMode`: this dialog edits
+  // the mode, and the badge must describe the theme as it will apply once the
+  // dialog is saved rather than as it applies right now.
   const themeOptions = useMemo(() => {
-    return buildThemeOptions(availableThemes, savedThemes);
-  }, [availableThemes, savedThemes]);
+    return buildThemeOptions(availableThemes, savedThemes, localDarkMode);
+  }, [availableThemes, savedThemes, localDarkMode]);
 
   const savedThemeOptions = useMemo(() => {
     return Object.keys(savedThemes).map((name) => ({
@@ -296,6 +300,23 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                 style={{ width: '100%', marginTop: '8px' }}
                 placeholder="Select theme"
                 disabled={themeOptions.length === 0}
+                optionRender={(option) => (
+                  <Space
+                    size={4}
+                    style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}
+                  >
+                    <span>{option.label}</span>
+                    {option.data?.definesNoCanvasColors && <ThemeNoEffectBadge />}
+                  </Space>
+                )}
+                labelRender={({ label, value }) => (
+                  <Space size={4} style={{ display: 'flex' }}>
+                    <span>{label}</span>
+                    {themeOptions.some(
+                      (option) => option.value === value && option.definesNoCanvasColors,
+                    ) && <ThemeNoEffectBadge />}
+                  </Space>
+                )}
               />
             </div>
 

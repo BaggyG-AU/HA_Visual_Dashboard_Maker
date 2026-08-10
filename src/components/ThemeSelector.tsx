@@ -3,6 +3,7 @@ import { Select, Tooltip, Space, Switch, Badge, Button, theme } from 'antd';
 import { BgColorsOutlined, SunOutlined, MoonOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useThemeStore } from '../store/themeStore';
 import { buildThemeOptions } from '../features/theme-manager';
+import { ThemeNoEffectBadge } from './ThemeNoEffectBadge';
 
 interface ThemeSelectorProps {
   onRefreshThemes: () => Promise<void>;
@@ -48,9 +49,14 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
     }
   };
 
-  const themeOptions = buildThemeOptions(availableThemes, savedThemes);
+  const themeOptions = buildThemeOptions(availableThemes, savedThemes, darkMode);
 
   const hasThemes = themeOptions.length > 0;
+
+  // ⚠ `labelRender` receives only `{ label, value }` — antd does not thread the
+  // option's own fields through it — so the badge state is looked up by value.
+  const marksNoEffect = (value: unknown) =>
+    themeOptions.some((option) => option.value === value && option.definesNoCanvasColors);
 
   return (
     <Space size="small" data-testid="theme-selector">
@@ -64,6 +70,23 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
           placeholder="Select theme"
           suffixIcon={<BgColorsOutlined />}
           disabled={!hasThemes}
+          optionRender={(option) => (
+            <Space
+              size={4}
+              style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}
+            >
+              <span>{option.label}</span>
+              {option.data?.definesNoCanvasColors && <ThemeNoEffectBadge />}
+            </Space>
+          )}
+          labelRender={({ label, value }) => (
+            <Space size={4} style={{ display: 'flex' }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {label}
+              </span>
+              {marksNoEffect(value) && <ThemeNoEffectBadge compact />}
+            </Space>
+          )}
           popupRender={(menu) => (
             <>
               {menu}
