@@ -12,7 +12,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
+      # fetch-depth: 0 is load-bearing, not incidental. The default shallow
+      # checkout leaves neither `main` nor `origin/main` resolvable, and
+      # tests/unit/author-ledger.spec.ts needs a base ref to compute the
+      # changed population. On PR #140 that detector was written to skip when
+      # no base ref existed, so CI reported success having certified nothing —
+      # merge-blocker M2 of docs/reviews/self-pass-gate-adversarial-review-codex.md.
+      # The detector now fails closed instead, which makes this line the
+      # difference between a green CI run and a red one.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
