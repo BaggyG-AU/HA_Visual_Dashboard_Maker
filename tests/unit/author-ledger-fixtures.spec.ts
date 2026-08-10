@@ -290,6 +290,45 @@ describe('self-pass gate — the green control and the round-2 scoping', () => {
     expectRed(checkDispositions(ctx));
   });
 
+  /**
+   * ⭐⭐ ROUND-5 N1 — THE MUTATION MUST REACH THE VALIDATOR IT IS NAMED FOR.
+   *
+   * The round-4 pair above asserts `checkOwnerAcceptance()` is empty, but its
+   * mutation sets a row to `PASS` — and that check only ever reacts to an
+   * `OWNER-ACCEPTED` row lacking an `owner:` citation. A `PASS` row cannot match
+   * it, so that assertion was ALREADY empty before the guard existed and would
+   * stay green if the guard were deleted. The implementation was right; the
+   * evidence for it was vacuous.
+   *
+   * ⚠ A regression fixture naming TWO guards must fail against the OLD
+   * implementation for EACH guard separately. This pair gives the
+   * owner-acceptance leg its own mutation, on both sides of the boundary.
+   */
+  it('an out-of-scope branch stays GREEN with an INHERITED uncited OWNER-ACCEPTED row', () => {
+    // The base already carries a row accepted without citing the owner.
+    setRow('C01', 'OWNER-ACCEPTED', 'The residue was accepted. (no citation)');
+    g('add', '-A');
+    g('commit', '-q', '-m', 'fixture: a base carrying an uncited acceptance');
+    g('update-ref', 'refs/remotes/origin/main', g('rev-parse', 'HEAD').trim());
+    // The branch changes ONE out-of-scope path and touches neither artifact.
+    writeFileSync(join(dir, UNRELATED_FILE), 'notes, a later unrelated branch\n');
+    g('add', '-A');
+    g('commit', '-q', '-m', 'chore: an ordinary unrelated change');
+    const ctx = loadContext(dir);
+    expect(ctx.changed).toEqual([UNRELATED_FILE]); // out of scope…
+    expect(ctx.owesLedger).toBe(false); // …so nothing is owed…
+    expect(checkOwnerAcceptance(ctx)).toEqual([]); // …and THIS check is the one under test
+    expect(runGate(ctx)).toEqual([]);
+  });
+
+  /** ⚠ ROUND-5 N1's PAIRED CONTROL — the same uncited row on an OBLIGATED branch. */
+  it('an obligated branch with the SAME uncited OWNER-ACCEPTED row is still red', () => {
+    setRow('C01', 'OWNER-ACCEPTED', 'The residue was accepted. (no citation)');
+    const ctx = loadContext(dir);
+    expect(ctx.owesLedger).toBe(true); // obligated — the paired half
+    expectRed(checkOwnerAcceptance(ctx));
+  });
+
   it('a branch touching this gate DOES owe, even though nothing governed changed', () => {
     g('update-ref', 'refs/remotes/origin/main', certified);
     writeFileSync(join(dir, GATE_OWN_FILE), '#!/usr/bin/env bash\necho edited\n');

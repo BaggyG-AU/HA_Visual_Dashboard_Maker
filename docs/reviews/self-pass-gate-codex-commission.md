@@ -149,6 +149,49 @@ not a better-dressed proxy"; the deliberate `GATE_OWN` non-fix is "sound";
 guard correction is RESOLVED; and not re-driving the sixteen-state table is "an
 adequate boundary for this diff".
 
+## What round 5 changed about this document — and about the mechanism
+
+Round 5 (`docs/reviews/self-pass-gate-codex-round5-review.md`, commit `6cfbe57`)
+was a **deliberately narrow** commission — the remedy plus the four round-4
+repairs, with the gate's design explicitly out of scope. It returned
+**CHANGES-REQUIRED** with two merge-blockers and one non-blocker, and it cleared
+the code class outright. The owner ruled **fix all three, and repair the remedy
+as well**.
+
+1. **`C01` was still a false `FIXED`** (round-5 M1). Round 4 deleted the false
+   sentence but left the label, so the row went on answering "yes" to a
+   commissioned question its own evidence answers "no". ⚠ **The generalisation
+   matters more than the row:** round 4 swept for cells that contradict
+   themselves, which is a test a row can pass while still answering the wrong
+   question — the question lives in a different file. **FIXED**: `C01` is now
+   `OWNER-ACCEPTED` with the owner citation, and `C56` is regenerated from a
+   sweep keyed on the commission rather than on each cell's own wording. `C58`.
+2. **The `GATE_OWN` role sweep omitted the live PR body** (round-5 M2), so
+   `C57`'s universal was false. ⚠⚠⚠ **THE DEFECT WAS THE POPULATION, NOT THE
+   SWEEP.** Round 4 derived its members from `git diff --name-only`, which cannot
+   contain a surface that is not a repository file. **FIXED**: the population is
+   re-derived by ROLE and now has eight members, two of them external — the live
+   PR body, and the MemPalace `[STATE]` drawer, which the reviewer could not see
+   at all. `C59`.
+3. **A fixture named two guards and exercised one** (round-5 N1). Its mutation
+   set a row to `PASS`, which `checkOwnerAcceptance()` can never match, so that
+   assertion was already empty before the guard existed. **FIXED**, with a new
+   paired fixture proven against the old implementation. `C60`.
+
+⚠⚠ **WHAT ROUND 5 CLEARED, so a later round does not re-open it:** the
+eight-check scope class is **RESOLVED** and independently re-derived — eight
+exported checks, all eight composed, seven guarded, and the unguarded
+`checkGovernedObligation()` judged **sound**. `C22` is confirmed a false
+positive. `C53` and the hosted commit inventory hold. No serious out-of-scope
+defect was found.
+
+⚠ **The remedy verdict was PARTLY, not APPROVE.** The two skills catch a local
+self-contradiction but are **not a population mechanism**, and round-5 M2 is the
+live proof: an agent following both exactly would still have shipped `C57`,
+because the omitted member was external to Git. That is a finding about the
+author's process, not about this gate, and it was repaired outside this
+repository.
+
 ## Commissioned checks
 
 Each row is **one independently falsifiable question**, and each carries a
@@ -163,65 +206,68 @@ Each row is **one independently falsifiable question**, and each carries a
 definition, so disclosing it is not answering it; out-of-scope observations go
 in the ledger's prose sections, which carry no `C<n>` ID and are not parsed.
 
-| ID  | Kind      | Check                                                                                                                                                                          |
-| --- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| C01 | EMPIRICAL | Does the certified target cover branch commit messages, so a content commit cannot leave a green certificate valid? (round-0 M1)                                               |
-| C02 | EMPIRICAL | With no resolvable base ref, does the detector FAIL rather than skip? (round-0 M2; the CI half of the old compound row is now C11)                                             |
-| C03 | EMPIRICAL | Are the required ledger rows derived from THIS tracked commission rather than from the ledger itself? (round-0 M3)                                                             |
-| C04 | EMPIRICAL | Does governed-change discovery decompose renames and see the PREIMAGE, not only the destination? (round-0 M4)                                                                  |
-| C05 | EMPIRICAL | Does the governed fingerprint cover UNTRACKED governed additions? (round-0 M4; the mode half of the old compound row is now C12)                                               |
-| C06 | EMPIRICAL | Is the live PR-body read MANDATORY where the ledger claims it? (round-0 M5; the propagation half of the old compound row is now C13)                                           |
-| C07 | EMPIRICAL | Does the gate go RED when a commissioned question has no ledger row, proven on known-bad input rather than asserted? (round-0 M3)                                              |
-| C08 | EMPIRICAL | Is the ledger REGENERATED for this branch rather than copied from PR #140?                                                                                                     |
-| C09 | EMPIRICAL | Does the PR body avoid claiming the PR #140 M1 class is addressed, given the append-only observation control is deliberately not built?                                        |
-| C10 | EMPIRICAL | Does anything in this PR place normative text in `docs/governance/**`, `docs/templates/**`, `ai_rules.md` or `CLAUDE.md`?                                                      |
-| C11 | EMPIRICAL | Does CI resolve a base ref — is `fetch-depth: 0` present in the workflow that runs this suite? (split from C02)                                                                |
-| C12 | EMPIRICAL | Does the governed fingerprint cover file MODE as well as content? (split from C05)                                                                                             |
-| C13 | EMPIRICAL | Does a `gh` read failure PROPAGATE rather than passing an empty body off as a successful read? (split from C06)                                                                |
-| C14 | EMPIRICAL | Does the gate go RED when the commission FILE is absent while there is work to certify? (round-1 M1)                                                                           |
-| C15 | EMPIRICAL | Does the gate go RED when the commission's exact `Commissioned checks` heading is missing? (round-1 M1)                                                                        |
-| C16 | EMPIRICAL | Does the gate go RED when that section is present but parses to ZERO rows? (round-1 M1)                                                                                        |
-| C17 | EMPIRICAL | Does the gate go RED when two commission rows carry the SAME ID, collapsing two obligations into one? (round-1 M1)                                                             |
-| C18 | EMPIRICAL | Does the gate go RED when a commissioned question is dropped, with its ledger row, AFTER the reviewer's deliverable was committed? (round-1 M1)                                |
-| C19 | EMPIRICAL | Is the residual case — dropping a question and its row BEFORE any reviewer deliverable exists — measured and recorded as OPEN? (round-1 M1)                                    |
-| C20 | EMPIRICAL | Does the gate go RED when an EMPIRICAL row is dispositioned `DISCLOSED`? (round-1 M2)                                                                                          |
-| C21 | EMPIRICAL | Does the gate go RED when an EMPIRICAL row is dispositioned `NORMATIVE`? (round-1 M2)                                                                                          |
-| C22 | EMPIRICAL | Is every disposition in the vocabulary exercised against BOTH an empirical and a genuinely normative row? (round-1 M2)                                                         |
-| C23 | EMPIRICAL | Does the gate go RED on a LATER branch that inherits this commission and this ledger unchanged? (round-1 M3)                                                                   |
-| C24 | EMPIRICAL | Does the gate go RED on a later commit whose whole message carries no count-shaped candidate at all? (round-1 M3)                                                              |
-| C25 | EMPIRICAL | Is a hash over the commit-MESSAGE range a feasible certificate input, contrary to the withdrawn "infinite regress" rationale? (round-1 M3)                                     |
-| C26 | EMPIRICAL | Has that false rationale been corrected in EVERY place it was written down, rather than only where the reviewer quoted it? (round-1 M3)                                        |
-| C27 | EMPIRICAL | Does the fingerprint see an UNSTAGED content edit to a tracked governed file? (round-1 M4)                                                                                     |
-| C28 | EMPIRICAL | Does the fingerprint see an UNSTAGED deletion of a tracked governed file? (round-1 M4)                                                                                         |
-| C29 | EMPIRICAL | Does the fingerprint see an UNSTAGED mode change on a tracked governed file? (round-1 M4)                                                                                      |
-| C30 | EMPIRICAL | Does the fingerprint still see the STAGED mode change the index-only version already caught? (round-1 M4, regression control)                                                  |
-| C31 | EMPIRICAL | Does the fingerprint see a tracked governed file replaced by a SYMLINK — type, not only content? (round-1 M4)                                                                  |
-| C32 | EMPIRICAL | Does the advisory generator exit non-zero when the base ref RESOLVES but shares no ancestor with HEAD? (round-1 N1)                                                            |
-| C33 | EMPIRICAL | Does the advisory generator emit BOTH sides of a STAGED rename? (round-1 N2)                                                                                                   |
-| C34 | EMPIRICAL | Does the advisory generator keep a pathname containing a newline as ONE record? (round-1 N2)                                                                                   |
-| C35 | EMPIRICAL | Is each row of this table one independently falsifiable question, with the three compound rows round 1 named now split? (round-1, atomicity)                                   |
-| C36 | EMPIRICAL | Is a false claim present ONLY in the live PR body outside the blocking path, and is that boundary measured and stated rather than implied?                                     |
-| C37 | EMPIRICAL | Does every constructed state round 1 reported as a false accept now go RED, with the green control still GREEN?                                                                |
-| C38 | EMPIRICAL | Are the hostile cases RE-RUN by the gate on every `./tools/checks`, rather than recorded as prose nobody executes again?                                                       |
-| C39 | NORMATIVE | The agent never merges, and the owner alone decides whether this correction warrants another independent round. (`OPERATING_AGREEMENT.md` §3(d))                               |
-| C40 | EMPIRICAL | Was N1's CLASS — a git command that defines a population failing silently — swept in the TypeScript detector too, not only in the shell script it was reported against?        |
-| C41 | EMPIRICAL | Is the obligation SCOPED, so a branch touching neither governed text nor this gate's own files owes nothing? (round-2, the repository-wide tax)                                |
-| C42 | EMPIRICAL | Does DELETING the commission and ledger escape the obligation, or is removing them itself a change to this gate? (round-2, the corollary of scoping)                           |
-| C43 | EMPIRICAL | Does any surviving text — code, commission, ledger or PR body — still claim the certificate binds branch content, HEAD, or fresh execution? (round-2 M1 overclaim)             |
-| C44 | EMPIRICAL | Is each cut mechanism documented AT ITS CUT SITE with the measurement that killed it, so it is not proposed again in round 3? (round-2 M1 and M2)                              |
-| C45 | EMPIRICAL | Can a reviewed question be REPLACED under a retained ID, and is that residue disclosed rather than implied closed? (round-2 M2, second bypass)                                 |
-| C46 | EMPIRICAL | Can a same-message amend change tracked NON-GOVERNED content without invalidating anything, and is that residue disclosed? (round-2 M1, the tree blind spot)                   |
-| C47 | EMPIRICAL | Does the commit-message candidate leg accept a candidate that appears ANYWHERE in the ledger rather than in a dispositioned row, and has this ledger's own growth weakened it? |
-| C48 | EMPIRICAL | Does an OUT-OF-SCOPE branch stay green when its commit message carries a count-shaped claim — is every check composed by `runGate()` inside the scope? (round-3 M1)            |
-| C49 | EMPIRICAL | Does an OBLIGATED branch with a count-shaped commit message still go RED, so scoping the candidate leg did not disable round-0 M1 globally? (round-3 M1, paired control)       |
-| C50 | EMPIRICAL | Does any surviving text describe either CUT mechanism as live, enumerated by a labelled hand trace over every governing surface rather than by a token grep? (round-3 M2)      |
-| C51 | EMPIRICAL | Does `GATE_OWN`'s stated claim match what it covers, with the execution surfaces it does NOT cover named rather than implied? (round-3 N1)                                     |
-| C52 | EMPIRICAL | Does the C22 guard's stated property match what it actually asserts, given it cannot detect a deleted cell test? (round-3 N2)                                                  |
-| C53 | EMPIRICAL | Do the commit inventories in this document, the ledger and the PR body match `git rev-list --count`, rather than a static total that goes stale? (round-3 N3)                  |
-| C54 | EMPIRICAL | Does an OUT-OF-SCOPE branch stay green when the ledger it INHERITS is already invalid — is every ledger-reading check inside the scope? (round-4 M1)                           |
-| C55 | EMPIRICAL | Does an OBLIGATED branch carrying the same invalid ledger row still go RED, so scoping those checks did not disable them? (round-4 M1, paired control)                         |
-| C56 | EMPIRICAL | Does any ledger cell contradict its own disposition — evidence that refutes the label it carries? (round-4 M2, the C01 class)                                                  |
-| C57 | EMPIRICAL | Does every current description of the obligation scope match the six-artifact predicate, rather than implying a wider tamper boundary? (round-4 N1)                            |
+| ID  | Kind      | Check                                                                                                                                                                                   |
+| --- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C01 | EMPIRICAL | Does the certified target cover branch commit messages, so a content commit cannot leave a green certificate valid? (round-0 M1)                                                        |
+| C02 | EMPIRICAL | With no resolvable base ref, does the detector FAIL rather than skip? (round-0 M2; the CI half of the old compound row is now C11)                                                      |
+| C03 | EMPIRICAL | Are the required ledger rows derived from THIS tracked commission rather than from the ledger itself? (round-0 M3)                                                                      |
+| C04 | EMPIRICAL | Does governed-change discovery decompose renames and see the PREIMAGE, not only the destination? (round-0 M4)                                                                           |
+| C05 | EMPIRICAL | Does the governed fingerprint cover UNTRACKED governed additions? (round-0 M4; the mode half of the old compound row is now C12)                                                        |
+| C06 | EMPIRICAL | Is the live PR-body read MANDATORY where the ledger claims it? (round-0 M5; the propagation half of the old compound row is now C13)                                                    |
+| C07 | EMPIRICAL | Does the gate go RED when a commissioned question has no ledger row, proven on known-bad input rather than asserted? (round-0 M3)                                                       |
+| C08 | EMPIRICAL | Is the ledger REGENERATED for this branch rather than copied from PR #140?                                                                                                              |
+| C09 | EMPIRICAL | Does the PR body avoid claiming the PR #140 M1 class is addressed, given the append-only observation control is deliberately not built?                                                 |
+| C10 | EMPIRICAL | Does anything in this PR place normative text in `docs/governance/**`, `docs/templates/**`, `ai_rules.md` or `CLAUDE.md`?                                                               |
+| C11 | EMPIRICAL | Does CI resolve a base ref — is `fetch-depth: 0` present in the workflow that runs this suite? (split from C02)                                                                         |
+| C12 | EMPIRICAL | Does the governed fingerprint cover file MODE as well as content? (split from C05)                                                                                                      |
+| C13 | EMPIRICAL | Does a `gh` read failure PROPAGATE rather than passing an empty body off as a successful read? (split from C06)                                                                         |
+| C14 | EMPIRICAL | Does the gate go RED when the commission FILE is absent while there is work to certify? (round-1 M1)                                                                                    |
+| C15 | EMPIRICAL | Does the gate go RED when the commission's exact `Commissioned checks` heading is missing? (round-1 M1)                                                                                 |
+| C16 | EMPIRICAL | Does the gate go RED when that section is present but parses to ZERO rows? (round-1 M1)                                                                                                 |
+| C17 | EMPIRICAL | Does the gate go RED when two commission rows carry the SAME ID, collapsing two obligations into one? (round-1 M1)                                                                      |
+| C18 | EMPIRICAL | Does the gate go RED when a commissioned question is dropped, with its ledger row, AFTER the reviewer's deliverable was committed? (round-1 M1)                                         |
+| C19 | EMPIRICAL | Is the residual case — dropping a question and its row BEFORE any reviewer deliverable exists — measured and recorded as OPEN? (round-1 M1)                                             |
+| C20 | EMPIRICAL | Does the gate go RED when an EMPIRICAL row is dispositioned `DISCLOSED`? (round-1 M2)                                                                                                   |
+| C21 | EMPIRICAL | Does the gate go RED when an EMPIRICAL row is dispositioned `NORMATIVE`? (round-1 M2)                                                                                                   |
+| C22 | EMPIRICAL | Is every disposition in the vocabulary exercised against BOTH an empirical and a genuinely normative row? (round-1 M2)                                                                  |
+| C23 | EMPIRICAL | Does the gate go RED on a LATER branch that inherits this commission and this ledger unchanged? (round-1 M3)                                                                            |
+| C24 | EMPIRICAL | Does the gate go RED on a later commit whose whole message carries no count-shaped candidate at all? (round-1 M3)                                                                       |
+| C25 | EMPIRICAL | Is a hash over the commit-MESSAGE range a feasible certificate input, contrary to the withdrawn "infinite regress" rationale? (round-1 M3)                                              |
+| C26 | EMPIRICAL | Has that false rationale been corrected in EVERY place it was written down, rather than only where the reviewer quoted it? (round-1 M3)                                                 |
+| C27 | EMPIRICAL | Does the fingerprint see an UNSTAGED content edit to a tracked governed file? (round-1 M4)                                                                                              |
+| C28 | EMPIRICAL | Does the fingerprint see an UNSTAGED deletion of a tracked governed file? (round-1 M4)                                                                                                  |
+| C29 | EMPIRICAL | Does the fingerprint see an UNSTAGED mode change on a tracked governed file? (round-1 M4)                                                                                               |
+| C30 | EMPIRICAL | Does the fingerprint still see the STAGED mode change the index-only version already caught? (round-1 M4, regression control)                                                           |
+| C31 | EMPIRICAL | Does the fingerprint see a tracked governed file replaced by a SYMLINK — type, not only content? (round-1 M4)                                                                           |
+| C32 | EMPIRICAL | Does the advisory generator exit non-zero when the base ref RESOLVES but shares no ancestor with HEAD? (round-1 N1)                                                                     |
+| C33 | EMPIRICAL | Does the advisory generator emit BOTH sides of a STAGED rename? (round-1 N2)                                                                                                            |
+| C34 | EMPIRICAL | Does the advisory generator keep a pathname containing a newline as ONE record? (round-1 N2)                                                                                            |
+| C35 | EMPIRICAL | Is each row of this table one independently falsifiable question, with the three compound rows round 1 named now split? (round-1, atomicity)                                            |
+| C36 | EMPIRICAL | Is a false claim present ONLY in the live PR body outside the blocking path, and is that boundary measured and stated rather than implied?                                              |
+| C37 | EMPIRICAL | Does every constructed state round 1 reported as a false accept now go RED, with the green control still GREEN?                                                                         |
+| C38 | EMPIRICAL | Are the hostile cases RE-RUN by the gate on every `./tools/checks`, rather than recorded as prose nobody executes again?                                                                |
+| C39 | NORMATIVE | The agent never merges, and the owner alone decides whether this correction warrants another independent round. (`OPERATING_AGREEMENT.md` §3(d))                                        |
+| C40 | EMPIRICAL | Was N1's CLASS — a git command that defines a population failing silently — swept in the TypeScript detector too, not only in the shell script it was reported against?                 |
+| C41 | EMPIRICAL | Is the obligation SCOPED, so a branch touching neither governed text nor this gate's own files owes nothing? (round-2, the repository-wide tax)                                         |
+| C42 | EMPIRICAL | Does DELETING the commission and ledger escape the obligation, or is removing them itself a change to this gate? (round-2, the corollary of scoping)                                    |
+| C43 | EMPIRICAL | Does any surviving text — code, commission, ledger or PR body — still claim the certificate binds branch content, HEAD, or fresh execution? (round-2 M1 overclaim)                      |
+| C44 | EMPIRICAL | Is each cut mechanism documented AT ITS CUT SITE with the measurement that killed it, so it is not proposed again in round 3? (round-2 M1 and M2)                                       |
+| C45 | EMPIRICAL | Can a reviewed question be REPLACED under a retained ID, and is that residue disclosed rather than implied closed? (round-2 M2, second bypass)                                          |
+| C46 | EMPIRICAL | Can a same-message amend change tracked NON-GOVERNED content without invalidating anything, and is that residue disclosed? (round-2 M1, the tree blind spot)                            |
+| C47 | EMPIRICAL | Does the commit-message candidate leg accept a candidate that appears ANYWHERE in the ledger rather than in a dispositioned row, and has this ledger's own growth weakened it?          |
+| C48 | EMPIRICAL | Does an OUT-OF-SCOPE branch stay green when its commit message carries a count-shaped claim — is every check composed by `runGate()` inside the scope? (round-3 M1)                     |
+| C49 | EMPIRICAL | Does an OBLIGATED branch with a count-shaped commit message still go RED, so scoping the candidate leg did not disable round-0 M1 globally? (round-3 M1, paired control)                |
+| C50 | EMPIRICAL | Does any surviving text describe either CUT mechanism as live, enumerated by a labelled hand trace over every governing surface rather than by a token grep? (round-3 M2)               |
+| C51 | EMPIRICAL | Does `GATE_OWN`'s stated claim match what it covers, with the execution surfaces it does NOT cover named rather than implied? (round-3 N1)                                              |
+| C52 | EMPIRICAL | Does the C22 guard's stated property match what it actually asserts, given it cannot detect a deleted cell test? (round-3 N2)                                                           |
+| C53 | EMPIRICAL | Do the commit inventories in this document, the ledger and the PR body match `git rev-list --count`, rather than a static total that goes stale? (round-3 N3)                           |
+| C54 | EMPIRICAL | Does an OUT-OF-SCOPE branch stay green when the ledger it INHERITS is already invalid — is every ledger-reading check inside the scope? (round-4 M1)                                    |
+| C55 | EMPIRICAL | Does an OBLIGATED branch carrying the same invalid ledger row still go RED, so scoping those checks did not disable them? (round-4 M1, paired control)                                  |
+| C56 | EMPIRICAL | Does any ledger cell contradict its own disposition — evidence that refutes the label it carries? (round-4 M2, the C01 class)                                                           |
+| C57 | EMPIRICAL | Does every current description of the obligation scope match the six-artifact predicate, rather than implying a wider tamper boundary? (round-4 N1)                                     |
+| C58 | EMPIRICAL | Does every completion-labelled row answer its COMMISSIONED QUESTION, rather than merely avoiding a contradiction inside its own cell? (round-5 M1, the C01 class generalised)           |
+| C59 | EMPIRICAL | Does the scope-description sweep enumerate surfaces OUTSIDE the repository — the live PR body and the MemPalace `[STATE]` drawer — which no changed-file list can contain? (round-5 M2) |
+| C60 | EMPIRICAL | Does each guard that a regression fixture names FAIL AGAINST THE OLD implementation, so the fixture is load-bearing for that specific guard rather than vacuously green? (round-5 N1)   |
 
 ## ⚠ What this still does NOT fix, stated rather than implied
 
