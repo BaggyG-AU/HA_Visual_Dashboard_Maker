@@ -22,15 +22,35 @@
  * cases, run against constructed repositories) drive IDENTICAL code. Neither
  * file re-implements a parser the other one uses.
  *
- * ⚠⚠ WHAT THIS STILL CANNOT DO — read before describing it to anyone.
+ * ⚠⚠⚠ ROUND 2 RETURNED CHANGES-REQUIRED AND THE OWNER CHOSE TO REDUCE
+ * (`docs/reviews/self-pass-gate-codex-round2-review.md`). Two mechanisms the
+ * round-1 fix added were CUT rather than repaired, because both were measured
+ * to be green bypasses and both were new machinery rather than repairs:
+ *   - the `docs/reviews/*-review.md` monotonic anchor (round-2 M2);
+ *   - the `base commit` + `commit-message range` lifecycle certificate
+ *     (round-2 M1).
+ * Each cut is documented at the site it was cut from, with the measurement.
+ * The rule that governed the choice is round 2's own: "Reduce the mechanism,
+ * bind one simple complete target, and keep human reviewer authority outside
+ * the self-authored gate."
+ *
+ * ⚠⚠ WHAT THIS CANNOT DO — read before describing it to anyone. This list got
+ * LONGER after round 2, which is the honest direction for a reduced mechanism.
  *   - It cannot decide whether a claim is TRUE.
- *   - It cannot see a question the author never wrote down. The commission is
- *     tracked and mandatory, so a written question cannot be silently dropped
- *     and a deletion is a visible diff — that is a VISIBILITY change, not a
- *     completeness guarantee, and it does not close the omission class.
+ *   - It cannot see a question the author never wrote down, NOR one deleted
+ *     later. Round 1's fix claimed to close the second half; round 2 measured
+ *     two bypasses and it was cut. The tracked commission makes a deletion a
+ *     VISIBLE DIFF for the owner and the reviewer, and that is all it does.
+ *   - It certifies the GOVERNED TREE ONLY. `src/`, tests, tools, the
+ *     commission text and this ledger's evidence are all outside the
+ *     fingerprint. Nothing here binds branch content or HEAD.
+ *   - It cannot tell a re-run from an inherited evidence row.
+ *     `checkLedgerFreshness()` proves the ledger was EDITED on this branch and
+ *     nothing more.
  *   - Row atomicity is enforced as one unique ID per row. Whether a row's
  *     natural-language CONTENT is one question is not mechanically decidable;
- *     round 1 found three rows that bundled two, and they were split by hand.
+ *     round 1 found three rows that bundled two, and round 2 measured that a
+ *     question can be REPLACED under a retained ID.
  *   - A false claim that exists only in the live PR body is outside the
  *     blocking path. `tools/claims-worklist.sh --require-pr` reads it, but this
  *     detector does not invoke that script.
@@ -48,6 +68,23 @@ export const LEDGER = 'docs/reviews/self-pass-gate-author-ledger.md';
 const GOVERNED = [/^docs\/governance\//, /^docs\/templates\//, /^ai_rules\.md$/, /^CLAUDE\.md$/];
 
 export const isGoverned = (p: string): boolean => GOVERNED.some((re) => re.test(p));
+
+/**
+ * This gate's own files. Changing the mechanism obliges a ledger for the same
+ * reason changing governed text does: the author is the only one who can say
+ * what they ran. Both artifacts are included, so a branch that edits the
+ * commission or the ledger cannot thereby escape owing one.
+ */
+const GATE_OWN = [
+  /^tests\/support\/authorLedger\.ts$/,
+  /^tests\/unit\/author-ledger\.spec\.ts$/,
+  /^tests\/unit\/author-ledger-fixtures\.spec\.ts$/,
+  /^tools\/claims-worklist\.sh$/,
+  new RegExp(`^${COMMISSION.replace(/[.]/g, '\\.')}$`),
+  new RegExp(`^${LEDGER.replace(/[.]/g, '\\.')}$`),
+];
+
+export const isGateOwn = (p: string): boolean => GATE_OWN.some((re) => re.test(p));
 
 /**
  * The KIND of a commissioned question, parsed from the commission table.
@@ -107,8 +144,6 @@ export interface LedgerRow {
 
 export interface Certificate {
   fingerprint: string | null;
-  baseCommit: string | null;
-  messageRange: string | null;
 }
 
 export interface GateContext {
@@ -118,15 +153,25 @@ export interface GateContext {
   head: string;
   /** Committed range, plus uncommitted and untracked work. */
   changed: string[];
-  /**
-   * Whether this checkout has anything to certify: commits ahead of the base,
-   * or a dirty tree. ⚠ This is NOT "the input was missing so nothing is owed" —
-   * that early return is the round-1 M1 defect. It is a positive, decidable
-   * fact about Git state, and it is the only condition under which the
-   * commission and ledger are not required. On `main` with a clean tree it is
-   * false, which is what keeps the post-merge CI push build green.
-   */
+  /** Commits ahead of the base, or a dirty tree. A fact, not an obligation. */
   hasBranchWork: boolean;
+  /**
+   * ⭐ ROUND-2: WHEN A LEDGER IS OWED, SCOPED.
+   *
+   * Branch work AND a change to a governed artifact or to this gate's own
+   * files. ⚠ This is NOT "the input was missing so nothing is owed" — that
+   * early return is the round-1 M1 defect, and it is why the condition is a
+   * decidable fact about WHAT CHANGED rather than about whether the commission
+   * happens to exist.
+   *
+   * Round 2 called the previous condition — any branch work at all — "a policy
+   * mechanism introduced through an ordinary unit test", applying to every
+   * contributor, dependency bump and reviewer-only branch in the repository
+   * forever. The owner chose to reduce rather than escalate. A branch that
+   * touches neither governed text nor this mechanism now owes nothing and the
+   * gate says nothing about it.
+   */
+  owesLedger: boolean;
   commissionRaw: string | null;
   commission: CommissionedRow[];
   ledgerRaw: string | null;
@@ -273,30 +318,32 @@ export function governedFingerprint(repo: string): string {
 }
 
 /**
- * ⭐ ROUND-1 M3 — THE COMMIT-MESSAGE RANGE HASH, AND THE RATIONALE IT REPLACES.
+ * ⚠⚠⚠ WHAT ROUND 2 CUT FROM HERE, AND WHY — read before proposing it again.
  *
- * ⚠⚠ THE PREVIOUS VERSION OF THIS FILE ASSERTED THAT A LITERAL HASH OF COMMIT
- * MESSAGES IS IMPOSSIBLE — "recording the new hash needs another commit, whose
- * message changes the hash again, an infinite regress." THAT WAS FALSE, AND THE
- * REVIEWER REFUTED IT BY MEASUREMENT: `git commit --amend --no-edit
- * --allow-empty` changed HEAD from `9c5148a…` to `1c4dfb5…` while the SHA-256
- * of `git log --format='%B' origin/main..HEAD` stayed byte-identical at
- * `23b191d6812fb8dd1ec9ce3e41bc5a9683e3dc6520a23cb8ad0e278a9769d30f`.
+ * The round-1 fix added a `commit-message range` hash (sha256 over
+ * `git log --no-merges --format=%B base..HEAD`) and a `base commit`
+ * declaration, together billed as binding the certificate to a base/head
+ * lifecycle. **Round 2 measured that they do not bind what the wording
+ * claimed.** From a clean, certified head the reviewer staged a change to
+ * tracked, non-governed `tools/claims-worklist.sh` and ran the prescribed
+ * `git commit --amend --no-edit`. HEAD moved, the TREE moved, the message hash
+ * was byte-identical, and the gate returned exit 0, 9 of 9. Source, tests,
+ * tools, commission text and ledger evidence were all outside the binding.
+ * That was not a determined history rewrite; it was the amend loop the
+ * mechanism itself prescribed.
  *
- * The regress is only real for a HEAD SHA. A MESSAGE range is stable under an
- * amend that preserves the message, so the author can commit with the final
- * message, compute the hash, write it into the ledger, and `--amend --no-edit`.
- * `tests/unit/author-ledger-fixtures.spec.ts` builds its fixture that exact way
- * and therefore demonstrates the property on every run.
+ * ⓘ THE UNDERLYING FACT REMAINS TRUE AND IS NOT BEING RE-DENIED. A literal
+ * message-range hash IS feasible; the round-0 "infinite regress" rationale was
+ * false and stays corrected. The regress is real only for a HEAD SHA. What
+ * round 2 established is narrower and decisive: **feasible is not sufficient.**
+ * A hash that is deliberately stable across an amend is deliberately blind to
+ * what that amend changed, so it can never be a tree certificate.
  *
- * `--no-merges` is load-bearing: on a `pull_request` event `actions/checkout`
- * builds a synthetic merge commit whose message would otherwise enter the range
- * and make the CI hash disagree with the author's.
+ * The owner chose to REDUCE rather than escalate to a whole-tree digest or an
+ * external CI attestation. What replaces it is two much smaller checks with
+ * much smaller claims: `checkLedgerFreshness()` below, and the scoped
+ * `owesLedger`. Neither claims to certify branch content.
  */
-export function messageRangeHash(repo: string, mergeBase: string): string {
-  return sha256(git(repo, 'log', '--no-merges', '--format=%B', `${mergeBase}..HEAD`));
-}
-
 const COMMISSION_HEADING_RE = /^##\s+Commissioned checks\s*$/m;
 
 export function parseCommission(body: string): CommissionedRow[] {
@@ -317,22 +364,11 @@ export function parseLedger(body: string): LedgerRow[] {
   }));
 }
 
-const CERT_RE = {
-  fingerprint: /^governed fingerprint:\s*`([^`]*)`\s*$/m,
-  baseCommit: /^base commit:\s*`([^`]*)`\s*$/m,
-  messageRange: /^commit-message range:\s*`([^`]*)`\s*$/m,
-};
+const CERT_RE = { fingerprint: /^governed fingerprint:\s*`([^`]*)`\s*$/m };
 
 export function parseCertificate(body: string): Certificate {
-  const grab = (re: RegExp) => {
-    const m = body.match(re);
-    return m ? m[1] : null;
-  };
-  return {
-    fingerprint: grab(CERT_RE.fingerprint),
-    baseCommit: grab(CERT_RE.baseCommit),
-    messageRange: grab(CERT_RE.messageRange),
-  };
+  const m = body.match(CERT_RE.fingerprint);
+  return { fingerprint: m ? m[1] : null };
 }
 
 function readIfPresent(repo: string, rel: string): string | null {
@@ -350,13 +386,16 @@ export function loadContext(repoOverride?: string): GateContext {
   const dirty = git(repo, 'status', '--porcelain', '-z').length > 0;
   const commissionRaw = readIfPresent(repo, COMMISSION);
   const ledgerRaw = readIfPresent(repo, LEDGER);
+  const changed = changedPaths(repo, mergeBase);
+  const hasBranchWork = mergeBase !== head || dirty;
   return {
     repo,
     base,
     mergeBase,
     head,
-    changed: changedPaths(repo, mergeBase),
-    hasBranchWork: mergeBase !== head || dirty,
+    changed,
+    hasBranchWork,
+    owesLedger: hasBranchWork && changed.some((p) => isGoverned(p) || isGateOwn(p)),
     commissionRaw,
     commission: commissionRaw === null ? [] : parseCommission(commissionRaw),
     ledgerRaw,
@@ -396,7 +435,7 @@ export function checkGovernedObligation(ctx: GateContext): string[] {
  */
 export function checkCommissionInput(ctx: GateContext): string[] {
   const failures: string[] = [];
-  if (!ctx.hasBranchWork) return failures;
+  if (!ctx.owesLedger) return failures;
   if (ctx.commissionRaw === null) {
     failures.push(
       `${COMMISSION} is absent, and this checkout has work to certify ` +
@@ -435,71 +474,70 @@ export function checkCommissionInput(ctx: GateContext): string[] {
 }
 
 /**
- * ⭐ ROUND-1 M1, SECOND HALF — THE COMMISSION MAY NOT SHRINK AFTER A REVIEWER
- * HAS READ IT.
+ * ⭐ ROUND-2 M2 — WHAT WAS HERE, AND WHY IT WAS CUT RATHER THAN REPAIRED.
  *
- * Round 1's objection: the author's only deletion control removed a LEDGER row
- * while its commission row remained. It never tested disappearance of the
- * upstream question, so it could not establish that the commissioned population
- * was deletion-resistant.
+ * The round-1 fix added a pair of functions that found the newest commit
+ * touching `docs/reviews/*-review.md`, read the commission as it stood there,
+ * and refused any id that had since vanished. The idea was that a
+ * self-authored artifact needs an anchor the author does not write, and that
+ * the reviewer's own committed deliverable is one.
  *
- * ⚠ Deleting a question together with its ledger row leaves both artifacts
- * internally consistent, so NO check reading only those two files can catch it.
- * The anchor has to be something the author does not write, and there is
- * exactly one on the branch: the reviewer's own committed deliverable. Every
- * commit that adds or edits `docs/reviews/*-review.md` snapshots the commission
- * the reviewer was looking at, and no later commit may drop an id from it.
+ * ⚠⚠ ROUND 2 MEASURED TWO INDEPENDENT BYPASSES AND BOTH ARE DECISIVE:
+ *   1. THE ANCHOR AUTHENTICATED A FILENAME, NOT A REVIEWER. The author writes
+ *      `docs/reviews/author-self-review.md`, commits it, and it becomes the
+ *      newest snapshot — containing whatever the commission says by then.
+ *      Measured with a commissioned question already deleted: exit 0, 9 of 9.
+ *   2. IT PROTECTED IDS, NOT QUESTIONS. Replacing a reviewed question's text
+ *      with an unrelated one under the same id and kind: exit 0, 9 of 9. The
+ *      property claimed — "narrowed and split, never deleted" — is not
+ *      something an id comparison can express, and hashing the question text
+ *      instead would forbid the legitimate narrowing this branch performed on
+ *      C02, C05 and C06.
  *
- * ⚠⚠ WHAT THIS DOES NOT CLOSE, STATED RATHER THAN IMPLIED: before any review
- * commit exists there is no anchor, so an author who deletes a question in the
- * same round that wrote it is still invisible here — the same class as never
- * writing it down. `tests/unit/author-ledger-fixtures.spec.ts` pins that
- * boundary with a test that asserts the gate stays GREEN, so the limit is
- * executable rather than a paragraph nobody re-reads.
+ * ⚠ THE REPLACEMENT IS NOTHING. `OPERATING_AGREEMENT.md` §3 deliberately does
+ * not machine-enforce author != reviewer; that invariant lives at the human
+ * owner gate, and repo-local code cannot infer a counterparty from a path it
+ * does not control. Deleting a question before the owner reads the diff is
+ * therefore OUT OF SCOPE for this mechanism, stated plainly and pinned by the
+ * `KNOWN-OPEN:` fixture rather than by a check that only appears to close it.
+ *
+ * ⚠⚠⚠ DO NOT RE-ADD A FILENAME, AUTHOR-NAME OR COMMIT-ORDER HEURISTIC HERE.
+ * Round 2's own diagnostic: "Do not add a third round of reviewer-anchor
+ * heuristics."
  */
-export function reviewedCommissionSnapshot(
-  ctx: GateContext,
-): { sha: string; ids: string[] } | null {
-  // ⚠ `git()` for the enumeration — see checkCommitMessageCandidates: a failed
-  // log must not read as "no reviewer deliverable, so no anchor". An empty
-  // result from a SUCCESSFUL log genuinely means there is none.
-  const log = git(
-    ctx.repo,
-    'log',
-    '--format=%H',
-    `${ctx.mergeBase}..HEAD`,
-    '--',
-    'docs/reviews/*-review.md',
-  );
-  const shas = log.trim().split('\n').filter(Boolean);
-  if (shas.length === 0) return null;
-  const sha = shas[0]; // newest first
-  // `tryGit` IS correct here: the commission legitimately did not exist at that
-  // commit on a branch that introduces it, and absence is a real answer.
-  const body = tryGit(ctx.repo, 'show', `${sha}:${COMMISSION}`);
-  if (body === null) return null;
-  return { sha, ids: parseCommission(body).map((r) => r.id) };
-}
 
-export function checkCommissionMonotonic(ctx: GateContext): string[] {
-  if (!ctx.hasBranchWork) return [];
-  const snapshot = reviewedCommissionSnapshot(ctx);
-  if (snapshot === null) return [];
-  const now = new Set(ctx.commission.map((r) => r.id));
-  const dropped = snapshot.ids.filter((id) => !now.has(id));
-  return dropped.length === 0
+/**
+ * ⭐ ROUND-2 — THE LEDGER MUST BE AUTHORED ON THIS BRANCH.
+ *
+ * This is what remains of round-1's M3 lifecycle repair after the base/message
+ * certificate was cut, and it is deliberately the smallest thing that keeps
+ * round 1's MEASURED state red: a later branch that inherits the commission and
+ * ledger unchanged and certifies nothing.
+ *
+ * ⚠ ITS CLAIM IS NARROW AND IS NOT TO BE WIDENED IN PROSE. It says the ledger
+ * was EDITED on this branch. It does NOT say the checks were re-run, that the
+ * evidence is fresh, or that branch content is certified — round 2 measured a
+ * future branch passing with every evidence row inherited byte-for-byte, and
+ * this check would still accept that. A one-character edit satisfies it. It
+ * converts silent inheritance into a visible diff, which is visibility, not
+ * completeness.
+ */
+export function checkLedgerFreshness(ctx: GateContext): string[] {
+  if (!ctx.owesLedger) return [];
+  if (ctx.ledgerRaw === null) return []; // checkLedgerCoverage owns absence
+  return ctx.changed.includes(LEDGER)
     ? []
     : [
-        `commissioned questions present when the reviewer's deliverable was committed at ` +
-          `${snapshot.sha.slice(0, 7)} have since been dropped: ${dropped.join(', ')}. ` +
-          `A question may be NARROWED and split, never deleted, once it has been reviewed.`,
+        `${LEDGER} was not touched by this branch (nothing in the range ` +
+          `${ctx.mergeBase.slice(0, 7)}...HEAD, the index, the working tree or untracked ` +
+          `files). A branch that owes a ledger may not inherit one unchanged.`,
       ];
 }
 
 /** Round 0, M3 — the required row set comes from the COMMISSION, not the ledger. */
 export function checkLedgerCoverage(ctx: GateContext): string[] {
   const failures: string[] = [];
-  if (!ctx.hasBranchWork) return failures;
+  if (!ctx.owesLedger) return failures;
   if (ctx.ledgerRaw === null) {
     failures.push(`${LEDGER} is absent, and this checkout has work to certify`);
     return failures;
@@ -609,57 +647,48 @@ export function checkCommitMessageCandidates(ctx: GateContext): string[] {
 }
 
 /**
- * ⭐ ROUND-1 M3 — THE CERTIFICATE IS BOUND TO A BASE/HEAD LIFECYCLE.
+ * THE GOVERNED FINGERPRINT — the whole certificate, and the whole of its claim.
  *
- * Round 1 simulated the post-merge state — `origin/main` set to this PR's
- * content commit, one later commit added, and NEITHER tracked artifact
- * regenerated — and the spec returned exit 0, 7/7 passing. A future branch
- * inherited a green execution ledger for work nobody had commissioned.
+ * ⚠⚠ WHAT THIS CERTIFIES: the governed tree, in the index AND the working tree
+ * AND as untracked additions, at the moment the gate runs. That is round-1's M4
+ * repair and round 2 marked it RESOLVED.
  *
- * Three declarations now pin the ledger to the state it was computed against:
- *   governed fingerprint  the governed tree, index AND working tree (M4)
- *   base commit           the merge base this branch's population is measured from
- *   commit-message range  sha256 of every non-merge message since that base
+ * ⚠⚠⚠ WHAT IT DOES NOT CERTIFY, AND MUST NEVER BE DESCRIBED AS CERTIFYING:
+ * anything outside the four governed path classes. Not `src/`, not the tests,
+ * not the tools, not the commission text, not this ledger's own evidence. The
+ * round-1 fix added `base commit` and `commit-message range` and called the
+ * result a base/head lifecycle binding; round 2 measured that a same-message
+ * amend changed the tracked tree while all three declarations stayed valid and
+ * the gate stayed green. Both were cut rather than widened — see the block
+ * above `checkLedgerFreshness()`.
  *
- * A later branch has a different merge base and a different message range, so
- * the inherited ledger is stale and the gate is red until it is regenerated.
- * ⚠ THE STANDING CONSEQUENCE, STATED PLAINLY: once this lands, ANY branch with
- * work to certify owes its own commission and its own regenerated ledger. That
- * is the point of the repair and it is also a real tax on every future PR.
+ * A whole-tree digest or an external CI attestation over the HEAD SHA would
+ * genuinely close that class. Both were considered and neither was built: the
+ * first raises the amend tax on every commit, and the second re-opens a
+ * standing owner ruling that this gate stays a local `vitest` check. The
+ * residue is disclosed, not repaired.
  */
 export function checkCertificate(ctx: GateContext): string[] {
   const failures: string[] = [];
-  if (!ctx.hasBranchWork) return failures;
+  if (!ctx.owesLedger) return failures;
   if (ctx.ledgerRaw === null) {
     failures.push(`${LEDGER} is absent, so no certificate exists`);
     return failures;
   }
-  const declared = parseCertificate(ctx.ledgerRaw);
-  const computed: Certificate = {
-    fingerprint: governedFingerprint(ctx.repo),
-    baseCommit: ctx.mergeBase,
-    messageRange: messageRangeHash(ctx.repo, ctx.mergeBase),
-  };
+  const declared = parseCertificate(ctx.ledgerRaw).fingerprint;
+  const computed = governedFingerprint(ctx.repo);
   // ⚠ Match the DECLARATION, then compare — never key the regex on the expected
   // SHAPE. Keying it on `[0-9a-f]{12}` meant a malformed value simply failed to
   // match and the assertion was skipped in silence, found by writing
   // `PLACEHOLDER00` into the ledger and watching the test pass. An unparseable
   // certificate must be a failure, never a no-op.
-  for (const field of ['fingerprint', 'baseCommit', 'messageRange'] as const) {
-    const label = {
-      fingerprint: 'governed fingerprint',
-      baseCommit: 'base commit',
-      messageRange: 'commit-message range',
-    }[field];
-    if (declared[field] === null) {
-      failures.push(`${LEDGER} must declare "${label}: \`<value>\`"`);
-    } else if (declared[field] !== computed[field]) {
-      failures.push(
-        `${LEDGER} declares ${label} "${declared[field]}" but this checkout computes ` +
-          `"${computed[field]}". The certificate is stale: re-run the commission and regenerate ` +
-          `the ledger for THIS base and THIS branch.`,
-      );
-    }
+  if (declared === null) {
+    failures.push(`${LEDGER} must declare "governed fingerprint: \`<value>\`"`);
+  } else if (declared !== computed) {
+    failures.push(
+      `${LEDGER} declares governed fingerprint "${declared}" but this checkout computes ` +
+        `"${computed}". Re-run the commission and regenerate the ledger for THIS tree.`,
+    );
   }
   return failures;
 }
@@ -669,7 +698,7 @@ export function runGate(ctx: GateContext): string[] {
   return [
     ...checkGovernedObligation(ctx),
     ...checkCommissionInput(ctx),
-    ...checkCommissionMonotonic(ctx),
+    ...checkLedgerFreshness(ctx),
     ...checkLedgerCoverage(ctx),
     ...checkDispositions(ctx),
     ...checkOwnerAcceptance(ctx),

@@ -27,13 +27,21 @@
  *   M4  the fingerprint read the INDEX, so an unstaged edit, deletion or
  *       `chmod` on a tracked governed file was invisible.
  * Each repair is named at the assertion that closes it.
+ *
+ * ⚠⚠⚠ ROUND 2 THEN RETURNED CHANGES-REQUIRED and the owner chose to REDUCE.
+ * The monotonic reviewer anchor and the base/message lifecycle certificate
+ * were CUT — both were measured green bypasses — and the assertions that drove
+ * them are gone from this file. What replaced them is one smaller assertion
+ * (the ledger was authored on this branch) and a scoped obligation. The
+ * measurements and the reasoning live at the cut sites in
+ * `tests/support/authorLedger.ts`.
  */
 
 import { describe, it, expect } from 'vitest';
 import {
   checkCertificate,
   checkCommissionInput,
-  checkCommissionMonotonic,
+  checkLedgerFreshness,
   checkCommitMessageCandidates,
   checkDispositions,
   checkGovernedObligation,
@@ -62,8 +70,8 @@ describe('author execution ledger (the self-pass gate)', () => {
     expect(checkCommissionInput(ctx)).toEqual([]);
   });
 
-  it('M1 (round 1) — no commissioned question has been dropped since the reviewer read it', () => {
-    expect(checkCommissionMonotonic(ctx)).toEqual([]);
+  it('M3 (round 2) — the ledger was authored on this branch, not inherited', () => {
+    expect(checkLedgerFreshness(ctx)).toEqual([]);
   });
 
   it('M3 — every commissioned check has exactly one ledger row', () => {
