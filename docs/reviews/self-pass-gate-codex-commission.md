@@ -2,7 +2,7 @@ Author: Claude Opus (claude-code)
 Reviewer: OpenAI Codex
 Owner gate: micah/BaggyG-AU
 
-# Commission — the author self-pass gate, second attempt, rounds 1 and 2
+# Commission — the author self-pass gate, second attempt, rounds 1 to 3
 
 This is a **tracked** commission. It exists because the first attempt at this
 mechanism was withdrawn, and merge-blocker **M3** of that review
@@ -58,16 +58,58 @@ several rows below now read `OWNER-ACCEPTED` instead of `FIXED`.
    bind, it did not bind.
 3. **C22's false PASS is repaired** (round-2 M3). It claimed every disposition
    was exercised against both kinds; four normative cells were absent. All
-   twelve are now fixtures, with a guard test so the claim cannot drift again.
+   twelve are now fixtures. ⚠ Round 2 added "with a guard test so the claim
+   cannot drift again"; round-3 N2 measured that too broad and it is withdrawn —
+   the guard catches a disposition ADDED to the matrix, not a cell test deleted.
+   See `C52`.
 4. **The obligation is SCOPED.** It applies to branches touching governed text
    or this gate's own files, not to every branch in the repository forever.
 
 ⚠⚠ **THE HONEST SHAPE OF THIS ROUND: two of the three merge-blockers were
 answered by WITHDRAWING A CLAIM, not by turning a green state red.** A
 same-message amend still changes untracked-by-the-certificate content; a
-question can still be deleted or replaced. Nothing now says otherwise. Rows
-`C18`, `C24`, `C45` and `C46` record those residues as `OWNER-ACCEPTED` and
-name the owner decision that accepted them.
+question can still be deleted or replaced. Nothing now says otherwise. ⚠ Round 2
+listed **four** rows here and there were **five** — a static list of a growing
+set, going false at the moment its next member landed. The rows dispositioned
+`OWNER-ACCEPTED` are whatever `grep -cE '^\| C[0-9]+ .*\| OWNER-ACCEPTED '`
+returns against the ledger; at the time of writing that is `C18`, `C24`, `C45`,
+`C46` and `C47`, each naming the owner decision that accepted it.
+
+## What round 3 changed about this document — and about the mechanism
+
+Round 3 (`docs/reviews/self-pass-gate-codex-round3-review.md`, commit `b260ff5`)
+returned **CHANGES-REQUIRED** with two merge-blockers and three non-blockers.
+Both blockers were reproduced independently by the author before any change was
+made. The owner ruled **fix both**.
+
+1. **The scoped obligation was not actually scoped** (round-3 M1).
+   `checkCommitMessageCandidates()` had no `!ctx.owesLedger` return while
+   `runGate()` called it unconditionally, so an out-of-scope branch still went
+   RED on a count-shaped commit message — falsifying this document's own claim
+   that an ordinary branch owes nothing. **FIXED**, with a paired fixture on each
+   side of the boundary. `C48` and `C49`.
+2. **`C43` was a false `FIXED`** (round-3 M2). Its four-surface sweep was keyed on
+   the round-1 fix's own wording rather than on the cut mechanisms' names and
+   behaviours, and six present-tense survivors described both cut mechanisms as
+   live. **FIXED**, and `C43` is re-dispositioned on a labelled hand trace rather
+   than a token grep. `C50`.
+3. **`GATE_OWN`'s claim is narrowed** (round-3 N1) — `C51`; **the C22 guard's
+   stated property now matches what it asserts** (round-3 N2) — `C52`; **the
+   branch inventories are derived from Git** (round-3 N3) — `C53`.
+
+⚠⚠ **THE HONEST SHAPE OF THIS ROUND: ROUND 3 FOUND A FALSE DISPOSITION IN THIS
+LEDGER FOR THE SECOND ROUND RUNNING** — `C22 PASS` in round 2, `C43 FIXED` now.
+Both were universals asserted without running the enumeration that backs them,
+in the mechanism built to catch exactly that. Round 3's own diagnostic is that
+the dominant shape is again fix-generated new work: the round-2 scoping forgot
+one composed check, and the round-2 deletion swept vocabulary rather than
+consequences. **Neither cut mechanism is restored and neither should be.**
+
+⭐ Four of round-3 M2's six survivors had already been found by the author while
+authoring the round-3 commission, and were reported to the owner but deliberately
+**kept out of the reviewer's prompt**, because that prompt asked the reviewer to
+judge whether the withdrawal was honest and complete. The reviewer found the
+class independently and added two surfaces the author had missed.
 
 ## Commissioned checks
 
@@ -132,6 +174,12 @@ in the ledger's prose sections, which carry no `C<n>` ID and are not parsed.
 | C45 | EMPIRICAL | Can a reviewed question be REPLACED under a retained ID, and is that residue disclosed rather than implied closed? (round-2 M2, second bypass)                                 |
 | C46 | EMPIRICAL | Can a same-message amend change tracked NON-GOVERNED content without invalidating anything, and is that residue disclosed? (round-2 M1, the tree blind spot)                   |
 | C47 | EMPIRICAL | Does the commit-message candidate leg accept a candidate that appears ANYWHERE in the ledger rather than in a dispositioned row, and has this ledger's own growth weakened it? |
+| C48 | EMPIRICAL | Does an OUT-OF-SCOPE branch stay green when its commit message carries a count-shaped claim — is every check composed by `runGate()` inside the scope? (round-3 M1)            |
+| C49 | EMPIRICAL | Does an OBLIGATED branch with a count-shaped commit message still go RED, so scoping the candidate leg did not disable round-0 M1 globally? (round-3 M1, paired control)       |
+| C50 | EMPIRICAL | Does any surviving text describe either CUT mechanism as live, enumerated by a labelled hand trace over every governing surface rather than by a token grep? (round-3 M2)      |
+| C51 | EMPIRICAL | Does `GATE_OWN`'s stated claim match what it covers, with the execution surfaces it does NOT cover named rather than implied? (round-3 N1)                                     |
+| C52 | EMPIRICAL | Does the C22 guard's stated property match what it actually asserts, given it cannot detect a deleted cell test? (round-3 N2)                                                  |
+| C53 | EMPIRICAL | Do the commit inventories in this document, the ledger and the PR body match `git rev-list --count`, rather than a static total that goes stale? (round-3 N3)                  |
 
 ## ⚠ What this still does NOT fix, stated rather than implied
 
@@ -140,15 +188,22 @@ If a check is absent from the table above, no mechanism here notices. Round 1
 sharpened that limit rather than removing it, and two specific residues are
 worth naming because they are easy to mistake for closed:
 
-- **Deleting a question before any reviewer deliverable exists is invisible.**
-  Once a reviewer has committed a review document, `checkCommissionMonotonic()`
-  refuses a commission that has since lost an ID. Before that commit there is no
-  anchor the author does not control, so deleting a question together with its
-  ledger row leaves both artifacts internally consistent and the gate green.
-  This is the same class as never writing it down. **It is measured, not
+- **Deleting a question is invisible AT ANY TIME, and so is replacing one under
+  a retained ID.** ⚠⚠ ROUND-3 M2 CORRECTED THIS PARAGRAPH: it previously said the
+  residue was open only _before_ a reviewer had committed a review document, and
+  named `checkCommissionMonotonic()` as closing it afterwards. **That function
+  does not exist** — it was cut in round 2 after two measured bypasses — so the
+  qualifier was false and the sentence described a protection the reader does not
+  have. There is no anchor at any point: deleting a question together with its
+  ledger row leaves both artifacts internally consistent and the gate green,
+  which is the same class as never writing it down. **It is measured, not
   reasoned about**, by the test named `KNOWN-OPEN:` in
   `tests/unit/author-ledger-fixtures.spec.ts`, which asserts the gate stays
   GREEN — so if a future change closes it, that test fails and must be rewritten.
+  ⓘ Rows `C18` and `C19` keep the narrower wording they were commissioned with in
+  round 1. They are **not** rewritten, because replacing a question's text under a
+  retained ID is exactly the residue `C45` discloses; their ledger rows carry the
+  correction instead.
 - **Row atomicity is enforced as one unique ID per row.** Whether a row's
   natural-language CONTENT is one question is not mechanically decidable. Round
   1 found three rows that bundled two; they were split by hand, and the next
@@ -182,8 +237,16 @@ than from the artifacts: `merge-base(base, HEAD) == HEAD` with a clean tree —
 
 ## Named hostile cases
 
-Construct these; do not reason about them. Every one below is now a test in
-`tests/unit/author-ledger-fixtures.spec.ts` and runs on every `./tools/checks`.
+Construct these; do not reason about them.
+
+⚠⚠ **ROUND-3 M2 CORRECTED THIS SENTENCE.** It used to read "Every one below is
+now a test in `tests/unit/author-ledger-fixtures.spec.ts` and runs on every
+`./tools/checks`" — an unverified universal, and false: **case 5's fixture was
+deleted in round 2 along with the reviewer anchor it depended on.** Cases 1, 2,
+3, 4, 6, 7 and 8 are tests and run on every `./tools/checks`. **Case 5 is NOT a
+test and cannot be one** — it is the residue recorded at `C18`, and what stands
+in its place is the `KNOWN-OPEN:` fixture asserting the gate stays GREEN. It is
+listed below unchanged so the history of what was once claimed stays legible.
 
 1. **Rename across the governed boundary.** Move a file from
    `docs/governance/` to `docs/reviews/`, commit, and confirm the detector sees
@@ -235,11 +298,27 @@ longer exist; they are replaced rather than kept as history.
    who set it to their own HEAD would make `hasBranchWork` false and skip the
    checks. Such an author could equally delete the spec, so it is not a new
    capability; it is named here rather than left for the reviewer to find.
-7. **The scoping predicate is a list of paths I maintain by hand.** `GATE_OWN`
-   names six files. If the mechanism grows a seventh and nobody adds it, a
-   branch can change this gate without owing a ledger. There is no generated
-   check on that list.
-8. **The commit-message candidate leg matches a substring anywhere in the
+7. ⚠⚠ **`GATE_OWN` IS SIX ENUMERATED AUTHOR ARTIFACTS, NOT A TAMPER BOUNDARY —
+   AND THE GAP IS PRESENT, NOT FUTURE.** Round 3's N1 corrected this claim: it
+   used to say the risk was the mechanism "growing a seventh file" nobody adds.
+   **Surfaces that decide whether these specs RUN AT ALL are already outside the
+   list** — `tools/checks`, the `test:unit` script in `package.json`,
+   `vitest.config.ts` and `.github/workflows/ci.yml` — as is deleting either spec
+   outright. **Lengthening the regex list would NOT fix that:** a local Vitest
+   check cannot enforce anything once its own runner is disabled, so a longer
+   list buys the appearance of protection and not the property. What this list
+   catches is EDITS TO THE SIX AUTHOR ARTIFACTS. Runner, configuration and
+   test-deletion tampering are outside this mechanism and live at the human owner
+   gate. There is no generated check on the list.
+
+8. **The twelve-cell disposition matrix is kept complete BY HAND.** Round 3's N2
+   corrected an overstatement here: the guard test asserts only that
+   `DISPOSITION_MATRIX` has the six expected KEYS, so it catches a disposition
+   added without its two cells and **does not notice one of the twelve cell tests
+   being deleted.** No count of cell tests is asserted anywhere. Keeping the
+   twelve complete is a reviewer's enumeration, which is why `C22` asks for one
+   every round rather than for a green suite.
+9. **The commit-message candidate leg matches a substring anywhere in the
    ledger**, not a dispositioned row — round 1 said so and it is now measurably
    weaker, because this ledger's own attack table contains count-shaped strings
    that therefore auto-satisfy candidates. See `C47`.

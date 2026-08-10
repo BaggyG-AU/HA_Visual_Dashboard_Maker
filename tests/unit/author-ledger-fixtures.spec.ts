@@ -226,6 +226,31 @@ describe('self-pass gate — the green control and the round-2 scoping', () => {
     expectRed(checkCommissionInput(ctx));
   });
 
+  /**
+   * ⭐⭐ ROUND-3 M1. The scoping above was incomplete: `checkCommitMessageCandidates()`
+   * had no `!ctx.owesLedger` return and `runGate()` called it unconditionally, so
+   * an out-of-scope branch still went RED on a count-shaped commit message.
+   * Round 3 measured exit 1, 8 of 9 on a later branch that changed only the mode
+   * of an unrelated file and committed `chore: 991 tests passed`.
+   *
+   * ⚠ THE FIXTURE ABOVE COULD NOT SEE THIS, and that is the lesson: its commit
+   * message is `chore: an ordinary unrelated change`, which contains no count
+   * candidate, so it exercised the scope and the candidate leg's interaction not
+   * at all. One mutation per fixture, but the mutation has to reach the leg.
+   */
+  it('an out-of-scope branch stays GREEN even when its commit message carries a count', () => {
+    g('update-ref', 'refs/remotes/origin/main', certified);
+    writeFileSync(join(dir, UNRELATED_FILE), 'notes, edited again\n');
+    g('add', '-A');
+    g('commit', '-q', '-m', 'chore: 991 tests passed');
+    const ctx = loadContext(dir);
+    expect(ctx.hasBranchWork).toBe(true);
+    expect(ctx.changed).toEqual([UNRELATED_FILE]); // out of scope…
+    expect(ctx.owesLedger).toBe(false); // …so nothing is owed…
+    expect(checkCommitMessageCandidates(ctx)).toEqual([]); // …including this leg
+    expect(runGate(ctx)).toEqual([]);
+  });
+
   it('a branch touching this gate DOES owe, even though nothing governed changed', () => {
     g('update-ref', 'refs/remotes/origin/main', certified);
     writeFileSync(join(dir, GATE_OWN_FILE), '#!/usr/bin/env bash\necho edited\n');
@@ -310,8 +335,17 @@ describe('round-1 M1 — the commissioned population is mandatory, unique and ty
  * universals, in the mechanism built to catch them.
  *
  * The matrix is 6 dispositions x 2 kinds. Every cell below is either a baseline
- * row, a green case, or a red case; the count is asserted at the end so the
- * claim cannot drift from the fixtures again.
+ * row, a green case, or a red case.
+ *
+ * ⚠⚠ ROUND-3 N2 — WHAT THE GUARD AT THE END DOES AND DOES NOT DO. This comment
+ * used to say "the count is asserted at the end so the claim cannot drift from
+ * the fixtures again". IT IS NOT. No count of CELL TESTS is asserted anywhere.
+ * The guard compares `DISPOSITION_MATRIX`'s keys against six named strings, so
+ * it catches a disposition ADDED to the matrix without its two cells — and
+ * DELETING one of the twelve tests below leaves it green. Keeping the twelve
+ * complete is a reviewer's hand enumeration, not a mechanised property. Round 2
+ * found this exact claim overstated in ledger row C22; the fix is the honest
+ * sentence, not a second mechanism.
  */
 describe('round-1 M2 / round-2 M3 — every disposition against BOTH kinds', () => {
   // ---- EMPIRICAL rows (C01, C02) ----
@@ -430,9 +464,18 @@ describe('round-2 — what replaced the lifecycle certificate', () => {
     expectRed(checkCertificate(loadContext(dir)));
   });
 
+  /**
+   * ⚠ ROUND-3 M1's PAIRED CONTROL — DO NOT DELETE IT WHEN TIDYING. Scoping the
+   * candidate leg to `owesLedger` must not disable round-0 M1 globally, so this
+   * asserts the obligated case is still caught. The `owesLedger` assertion is
+   * explicit for exactly that reason: without it, a future change that made this
+   * branch out-of-scope would turn the test green and look like a pass.
+   */
   it('an undispositioned count candidate in a commit message is red', () => {
     g('commit', '-q', '--allow-empty', '-m', 'chore: 999 tests passed');
-    expectRed(checkCommitMessageCandidates(loadContext(dir)));
+    const ctx = loadContext(dir);
+    expect(ctx.owesLedger).toBe(true); // obligated — the paired half of round-3 M1
+    expectRed(checkCommitMessageCandidates(ctx));
   });
 });
 

@@ -90,7 +90,12 @@ describe('author execution ledger (the self-pass gate)', () => {
     expect(checkCommitMessageCandidates(ctx)).toEqual([]);
   });
 
-  it('M3 (round 1) — the certificate is bound to this base, this message range and this working tree', () => {
+  // ⚠ ROUND-3 M2: this title used to say "bound to this base, this message range
+  // and this working tree". `base commit` and `commit-message range` were CUT in
+  // round 2 and the body never tested them — an assertion TITLE claiming a
+  // property the assertion does not exercise, which is round-1 M2's own defect
+  // class committed again. The certificate is the governed tree and nothing else.
+  it('M4 (round 1) — the certificate covers the GOVERNED TREE ONLY: index, working tree, untracked', () => {
     expect(checkCertificate(ctx)).toEqual([]);
   });
 });

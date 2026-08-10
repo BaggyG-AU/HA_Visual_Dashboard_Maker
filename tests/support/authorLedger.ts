@@ -70,10 +70,25 @@ const GOVERNED = [/^docs\/governance\//, /^docs\/templates\//, /^ai_rules\.md$/,
 export const isGoverned = (p: string): boolean => GOVERNED.some((re) => re.test(p));
 
 /**
- * This gate's own files. Changing the mechanism obliges a ledger for the same
- * reason changing governed text does: the author is the only one who can say
- * what they ran. Both artifacts are included, so a branch that edits the
- * commission or the ledger cannot thereby escape owing one.
+ * SIX ENUMERATED AUTHOR ARTIFACTS. Changing one of them obliges a ledger for
+ * the same reason changing governed text does: the author is the only one who
+ * can say what they ran. Both the commission and the ledger are included, so a
+ * branch that edits or deletes either cannot thereby escape owing one.
+ *
+ * ⚠⚠ ROUND-3 N1 — THIS IS A LIST, NOT A BOUNDARY, AND THE CLAIM IS NARROWED TO
+ * SAY SO. It was previously described as "this gate's own files", which reads as
+ * tamper resistance. It is not. The surfaces that decide whether these specs RUN
+ * AT ALL are deliberately OUTSIDE it and are named here rather than left to be
+ * discovered: `tools/checks`, the `test:unit` script in `package.json`,
+ * `vitest.config.ts`, and `.github/workflows/ci.yml`. Deleting either spec is
+ * outside it too.
+ * ⚠ ADDING THEM WOULD NOT FIX THAT. A local Vitest check cannot enforce anything
+ * once its own runner is disabled, so a longer regex list would buy the
+ * appearance of protection and not the property — the round-2 lesson about
+ * machinery that looks like a security control. The honest statement is that
+ * this list catches EDITS TO THE SIX AUTHOR ARTIFACTS, and that runner,
+ * configuration and test-deletion tampering are outside this mechanism entirely
+ * and live at the human owner gate.
  */
 const GATE_OWN = [
   /^tests\/support\/authorLedger\.ts$/,
@@ -615,17 +630,33 @@ const COUNT_RE =
   /[^0-9a-zA-Z_]([0-9]{1,6})[ \t]+(specs?|files?|tests?|paths?|rows?|drawers?|cards?|legs?|commits?|rounds?|surfaces?|warnings?|errors?)\b/g;
 
 /**
- * Round 0, M1 — branch commit messages are a CHECKED POPULATION, not merely a
- * hashed one. The hash below catches STALENESS; this catches an undispositioned
- * numeric claim, and it fired on this PR's own content commit.
+ * Round 0, M1 — branch commit messages are a CHECKED POPULATION. This catches
+ * an undispositioned numeric claim, and it fired on this PR's own content
+ * commit.
  *
  * ⚠ Round 1's boundary, recorded rather than overstated: this key matches only
- * count-shaped claims. A later commit whose whole message was `all checks
- * passed` went undetected HERE. It is now caught by the message-range hash, not
- * by this leg, and this leg remains a candidate generator rather than a
- * semantic claim detector.
+ * count-shaped claims. A later commit whose whole message is `all checks
+ * passed` goes undetected, and NOTHING ELSE CATCHES IT — the `commit-message
+ * range` hash that used to was cut in round 2. That residue is ledger row C24,
+ * `OWNER-ACCEPTED`. This leg is a candidate generator, not a semantic claim
+ * detector.
+ *
+ * ⭐⭐ ROUND-3 M1 — THIS CHECK IS INSIDE THE SCOPE, AND IT WAS NOT.
+ * Round 2 scoped the obligation to governed text and this gate's own files, and
+ * four checks were given the `!ctx.owesLedger` return. This one was missed while
+ * `runGate()` went on calling it unconditionally, so an ordinary branch that
+ * owed nothing still went RED on a count-shaped commit message. Round 3
+ * measured it: a later branch changing only the mode of unrelated
+ * `package.json`, committed as `chore: 991 tests passed`, returned exit 1,
+ * 8 of 9 — while the identical branch with a count-free message returned 9 of 9.
+ * That falsified this mechanism's own published claim that an ordinary branch
+ * owes nothing and the gate is silent about it.
+ * ⚠ The paired control is deliberate and must stay: an OBLIGATED branch with a
+ * count-shaped message is still red (`an undispositioned count candidate in a
+ * commit message is red`), so this scoping cannot disable round-0 M1 globally.
  */
 export function checkCommitMessageCandidates(ctx: GateContext): string[] {
+  if (!ctx.owesLedger) return [];
   // ⚠ `git()`, not `tryGit()`. Round 1's N1 was a git command that DEFINES a
   // population failing silently, so the caller carried on with an empty one.
   // That finding named the shell twin; the same shape was here, and swapping a
