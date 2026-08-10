@@ -173,8 +173,14 @@ export interface GateContext {
   /**
    * ⭐ ROUND-2: WHEN A LEDGER IS OWED, SCOPED.
    *
-   * Branch work AND a change to a governed artifact or to this gate's own
-   * files. ⚠ This is NOT "the input was missing so nothing is owed" — that
+   * Branch work AND a change to a governed artifact or to one of the SIX
+   * ENUMERATED ARTIFACTS in `GATE_OWN`. ⚠⚠ ROUND-4 N1: this contract used to
+   * say "this gate's own files" and "this mechanism", which reads as tamper
+   * resistance the predicate does not provide. It covers SIX NAMED FILES. The
+   * surfaces that decide whether these specs run at all — `tools/checks`, the
+   * `test:unit` script, `vitest.config.ts`, `.github/workflows/ci.yml` — and
+   * deleting either spec are all OUTSIDE it, by the deliberate design recorded
+   * above `GATE_OWN`. ⚠ This is NOT "the input was missing so nothing is owed" — that
    * early return is the round-1 M1 defect, and it is why the condition is a
    * decidable fact about WHAT CHANGED rather than about whether the commission
    * happens to exist.
@@ -183,8 +189,10 @@ export interface GateContext {
    * mechanism introduced through an ordinary unit test", applying to every
    * contributor, dependency bump and reviewer-only branch in the repository
    * forever. The owner chose to reduce rather than escalate. A branch that
-   * touches neither governed text nor this mechanism now owes nothing and the
-   * gate says nothing about it.
+   * touches neither governed text nor one of those six files now owes nothing,
+   * and the gate says nothing about it — which is a promise EVERY check composed
+   * by `runGate()` must keep. Round 3 broke it in one check and round 4 in two
+   * more; each is now scoped and pinned by a fixture on both sides.
    */
   owesLedger: boolean;
   commissionRaw: string | null;
@@ -424,7 +432,20 @@ export function loadContext(repoOverride?: string): GateContext {
 // nothing is owed" is the exact fail-open shape round 1 measured four times.
 // ---------------------------------------------------------------------------
 
-/** Round 0, M4 — a governed change obliges a commission via either side of a rename. */
+/**
+ * Round 0, M4 — a governed change obliges a commission via either side of a rename.
+ *
+ * ⚠⚠ ROUND-4: THIS CHECK IS DELIBERATELY **NOT** SCOPED, AND THE REASONING IS
+ * HERE SO ROUND 5 CAN JUDGE IT RATHER THAN GUESS. Two legs, two reasons:
+ *   - The obligation leg is SELF-LIMITING. It fires only when a GOVERNED path is
+ *     in `ctx.changed`, and any governed path in `ctx.changed` makes `owesLedger`
+ *     true by definition. An `!owesLedger` return would be dead code.
+ *   - The NUL mis-parse leg is a PARSER-INTEGRITY assertion, not an obligation.
+ *     If the changed-path parser emitted an empty field, every downstream scope
+ *     decision — including `owesLedger` itself — was computed from corrupt input.
+ *     Scoping it would mean trusting the very value it exists to distrust.
+ * ⓘ If a reviewer disagrees, the leg to argue about is the second one.
+ */
 export function checkGovernedObligation(ctx: GateContext): string[] {
   const failures: string[] = [];
   if (!ctx.changed.every((p) => p.length > 0)) {
@@ -583,9 +604,19 @@ export function checkLedgerCoverage(ctx: GateContext): string[] {
   return failures;
 }
 
-/** ⭐ ROUND-1 M2 — a disposition is legal only for the KIND it is awarded to. */
+/**
+ * ⭐ ROUND-1 M2 — a disposition is legal only for the KIND it is awarded to.
+ *
+ * ⭐⭐ ROUND-4 M1 — SCOPED, LIKE EVERY OTHER LEDGER-READING CHECK. Round 3 scoped
+ * five checks and left this one and `checkOwnerAcceptance()` reading an INHERITED
+ * ledger on a branch that owes nothing. Round 4 measured it: a child branch whose
+ * only change was an unrelated path, inheriting a ledger that already carried an
+ * illegal disposition, returned exit 1 — the gate speaking about a branch it had
+ * just declared out of scope. Reproduced by the author before the fix.
+ */
 export function checkDispositions(ctx: GateContext): string[] {
   const failures: string[] = [];
+  if (!ctx.owesLedger) return failures;
   const kindById = new Map(ctx.commission.map((r) => [r.id, r.kind]));
   for (const r of ctx.ledger) {
     if (r.evidence.length === 0) failures.push(`row ${r.id} has no evidence`);
@@ -617,8 +648,12 @@ export function checkDispositions(ctx: GateContext): string[] {
   return failures;
 }
 
-/** OWNER-ACCEPTED is the only route by which an unresolved in-scope residue passes. */
+/**
+ * OWNER-ACCEPTED is the only route by which an unresolved in-scope residue passes.
+ * ⭐⭐ ROUND-4 M1 — scoped for the same reason as `checkDispositions()` above.
+ */
 export function checkOwnerAcceptance(ctx: GateContext): string[] {
+  if (!ctx.owesLedger) return [];
   return ctx.ledger
     .filter(
       (r) => r.disposition === 'OWNER-ACCEPTED' && !r.evidence.toLowerCase().includes('owner:'),
@@ -642,8 +677,9 @@ const COUNT_RE =
  * detector.
  *
  * ⭐⭐ ROUND-3 M1 — THIS CHECK IS INSIDE THE SCOPE, AND IT WAS NOT.
- * Round 2 scoped the obligation to governed text and this gate's own files, and
- * four checks were given the `!ctx.owesLedger` return. This one was missed while
+ * Round 2 scoped the obligation to governed text and the six enumerated
+ * `GATE_OWN` artifacts, and four checks were given the `!ctx.owesLedger`
+ * return. This one was missed while
  * `runGate()` went on calling it unconditionally, so an ordinary branch that
  * owed nothing still went RED on a count-shaped commit message. Round 3
  * measured it: a later branch changing only the mode of unrelated

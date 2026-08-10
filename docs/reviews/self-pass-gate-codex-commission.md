@@ -2,7 +2,7 @@ Author: Claude Opus (claude-code)
 Reviewer: OpenAI Codex
 Owner gate: micah/BaggyG-AU
 
-# Commission — the author self-pass gate, second attempt, rounds 1 to 3
+# Commission — the author self-pass gate, second attempt, rounds 1 to 4
 
 This is a **tracked** commission. It exists because the first attempt at this
 mechanism was withdrawn, and merge-blocker **M3** of that review
@@ -63,7 +63,10 @@ several rows below now read `OWNER-ACCEPTED` instead of `FIXED`.
    the guard catches a disposition ADDED to the matrix, not a cell test deleted.
    See `C52`.
 4. **The obligation is SCOPED.** It applies to branches touching governed text
-   or this gate's own files, not to every branch in the repository forever.
+   or one of the six enumerated artifacts in `GATE_OWN`, not to every branch in
+   the repository forever. ⚠ Round-4 N1: "this gate's own files" is shorthand for
+   those six named files and nothing wider — runners, configuration and spec
+   deletion are outside the mechanism.
 
 ⚠⚠ **THE HONEST SHAPE OF THIS ROUND: two of the three merge-blockers were
 answered by WITHDRAWING A CLAIM, not by turning a green state red.** A
@@ -110,6 +113,41 @@ authoring the round-3 commission, and were reported to the owner but deliberatel
 **kept out of the reviewer's prompt**, because that prompt asked the reviewer to
 judge whether the withdrawal was honest and complete. The reviewer found the
 class independently and added two surfaces the author had missed.
+
+## What round 4 changed about this document — and about the mechanism
+
+Round 4 (`docs/reviews/self-pass-gate-codex-round4-review.md`, commit `aae3b50`)
+returned **CHANGES-REQUIRED** with two merge-blockers and two non-blockers. Both
+blockers were reproduced independently by the author before any change was made.
+The owner ruled **fix both**.
+
+1. **The scope leaked in two more checks** (round-4 M1). Round 3 scoped five and
+   left `checkDispositions()` and `checkOwnerAcceptance()` reading an INHERITED
+   ledger on a branch that owed nothing. **FIXED**, with a paired fixture either
+   side. `C54` and `C55`.
+2. **`C01` contradicted its own disposition** (round-4 M2) — it called branch
+   messages "a hashed input" after that hash was cut, in a cell labelled `FIXED`.
+   **FIXED**, and the class was swept. `C56`.
+3. **The `GATE_OWN` narrowing was incomplete** (round-4 N1) — the wider wording
+   survived in the public `owesLedger` contract docblock and four other current
+   surfaces. **FIXED**, swept by role. `C57`. **`C53` is corrected** (round-4 N2):
+   its label said `FIXED` while its own evidence said the PR-body edit was owed.
+
+⚠⚠⚠ **THE HONEST SHAPE, AND IT IS THE THIRD CONSECUTIVE ROUND: `C22` false in
+round 2, `C43` false in round 3, `C01` and `C53` false in round 4.** Three rounds
+of "be more careful" did not work. **What changed this round is the process, not
+the resolve:** the author now separates the edit pass from a reading pass in
+which every completion claim must carry a quote read fresh from disk, or be
+marked NOT CHECKED. Round 4's own finding — that a fix and its untouched twin
+twenty lines away are one `git diff` apart and two memories apart — is what that
+pass is built to catch.
+
+⭐ Round 4 also CLEARED several round-3 judgement calls, recorded so a later
+round does not re-open them: the C43 hand trace is "the right kind of instrument…
+not a better-dressed proxy"; the deliberate `GATE_OWN` non-fix is "sound";
+`tools/claims-worklist.sh` is genuinely clean of both cut mechanisms; the C22
+guard correction is RESOLVED; and not re-driving the sixteen-state table is "an
+adequate boundary for this diff".
 
 ## Commissioned checks
 
@@ -180,6 +218,10 @@ in the ledger's prose sections, which carry no `C<n>` ID and are not parsed.
 | C51 | EMPIRICAL | Does `GATE_OWN`'s stated claim match what it covers, with the execution surfaces it does NOT cover named rather than implied? (round-3 N1)                                     |
 | C52 | EMPIRICAL | Does the C22 guard's stated property match what it actually asserts, given it cannot detect a deleted cell test? (round-3 N2)                                                  |
 | C53 | EMPIRICAL | Do the commit inventories in this document, the ledger and the PR body match `git rev-list --count`, rather than a static total that goes stale? (round-3 N3)                  |
+| C54 | EMPIRICAL | Does an OUT-OF-SCOPE branch stay green when the ledger it INHERITS is already invalid — is every ledger-reading check inside the scope? (round-4 M1)                           |
+| C55 | EMPIRICAL | Does an OBLIGATED branch carrying the same invalid ledger row still go RED, so scoping those checks did not disable them? (round-4 M1, paired control)                         |
+| C56 | EMPIRICAL | Does any ledger cell contradict its own disposition — evidence that refutes the label it carries? (round-4 M2, the C01 class)                                                  |
+| C57 | EMPIRICAL | Does every current description of the obligation scope match the six-artifact predicate, rather than implying a wider tamper boundary? (round-4 N1)                            |
 
 ## ⚠ What this still does NOT fix, stated rather than implied
 
@@ -219,7 +261,8 @@ certificate lines. It owed churn, not execution.
 
 After the reduction the cost is smaller and stated exactly:
 
-- **A branch touching neither governed text nor this gate's own files owes
+- **A branch touching neither governed text nor one of the six enumerated
+  `GATE_OWN` artifacts owes
   nothing.** The gate is silent. That is most branches, and it is the whole
   point of scoping the obligation.
 - **A branch that does touch them owes a commission, a ledger with one row per

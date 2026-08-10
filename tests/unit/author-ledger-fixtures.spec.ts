@@ -69,7 +69,7 @@ import {
 
 const REAL = resolve(__dirname, '..', '..');
 const GOVERNED_FILE = 'docs/governance/OPERATING_AGREEMENT.md';
-/** A tracked file that is this gate's own but is NOT governed — see GATE_OWN. */
+/** One of the six enumerated GATE_OWN artifacts, and NOT governed — see GATE_OWN. */
 const GATE_OWN_FILE = 'tools/claims-worklist.sh';
 /** Tracked, and neither governed nor gate-own: the scoping control. */
 const UNRELATED_FILE = 'docs/notes.md';
@@ -145,8 +145,9 @@ beforeAll(() => {
   cpSync(join(REAL, 'docs/templates'), join(dir, 'docs/templates'), { recursive: true });
   copyFileSync(join(REAL, 'ai_rules.md'), join(dir, 'ai_rules.md'));
   copyFileSync(join(REAL, 'CLAUDE.md'), join(dir, 'CLAUDE.md'));
-  // Two tracked non-governed files: one this gate owns, one it does not. They
-  // are what makes the round-2 scoping behaviour testable at all.
+  // Two tracked non-governed files: one of the six enumerated GATE_OWN
+  // artifacts, and one outside both scopes. They are what makes the round-2
+  // scoping behaviour testable at all.
   mkdirSync(join(dir, 'tools'), { recursive: true });
   writeFileSync(join(dir, GATE_OWN_FILE), '#!/usr/bin/env bash\necho fixture\n');
   writeFileSync(join(dir, UNRELATED_FILE), 'notes\n');
@@ -195,7 +196,7 @@ describe('self-pass gate — the green control and the round-2 scoping', () => {
    * every branch in the repository — dependency bumps, external contributions,
    * reviewer-only branches — owe a commission forever. Round 2 called that a
    * policy mechanism smuggled in through a unit test. It is now scoped to
-   * governed text and this gate's own files.
+   * governed text and the six enumerated GATE_OWN artifacts.
    */
   it('an ordinary later branch touching neither governed text nor this gate owes nothing', () => {
     g('update-ref', 'refs/remotes/origin/main', certified);
@@ -249,6 +250,44 @@ describe('self-pass gate — the green control and the round-2 scoping', () => {
     expect(ctx.owesLedger).toBe(false); // …so nothing is owed…
     expect(checkCommitMessageCandidates(ctx)).toEqual([]); // …including this leg
     expect(runGate(ctx)).toEqual([]);
+  });
+
+  /**
+   * ⭐⭐ ROUND-4 M1. Round 3 scoped five checks and MISSED `checkDispositions()`
+   * and `checkOwnerAcceptance()`, which went on reading an INHERITED ledger on a
+   * branch that owed nothing. Measured: a child branch whose only change was an
+   * unrelated path, inheriting a ledger that already carried an illegal
+   * disposition, returned exit 1 — the gate speaking about a branch it had just
+   * declared out of scope.
+   *
+   * ⚠ THE CORRUPTION MUST BE IN THE INHERITED BASE, NOT ON THE BRANCH. The first
+   * attempt at this fixture edited the ledger on the branch — but the ledger is
+   * itself a GATE_OWN file, so that made `owesLedger` TRUE and tested nothing.
+   */
+  it('an out-of-scope branch stays GREEN even when the INHERITED ledger is invalid', () => {
+    // The base already carries a ledger with an illegal disposition.
+    setRow('C03', 'PASS', 'a NORMATIVE row dispositioned PASS — illegal for its kind');
+    g('add', '-A');
+    g('commit', '-q', '-m', 'fixture: a base carrying an invalid inherited ledger');
+    g('update-ref', 'refs/remotes/origin/main', g('rev-parse', 'HEAD').trim());
+    // The branch changes ONE out-of-scope path and touches neither artifact.
+    writeFileSync(join(dir, UNRELATED_FILE), 'notes, later branch\n');
+    g('add', '-A');
+    g('commit', '-q', '-m', 'chore: an ordinary unrelated change');
+    const ctx = loadContext(dir);
+    expect(ctx.changed).toEqual([UNRELATED_FILE]); // out of scope…
+    expect(ctx.owesLedger).toBe(false); // …so nothing is owed…
+    expect(checkDispositions(ctx)).toEqual([]); // …and neither ledger reader speaks
+    expect(checkOwnerAcceptance(ctx)).toEqual([]);
+    expect(runGate(ctx)).toEqual([]);
+  });
+
+  /** ⚠ ROUND-4 M1's PAIRED CONTROL — the same invalid row on an OBLIGATED branch. */
+  it('an obligated branch with the SAME invalid ledger row is still red', () => {
+    setRow('C03', 'PASS', 'a NORMATIVE row dispositioned PASS — illegal for its kind');
+    const ctx = loadContext(dir);
+    expect(ctx.owesLedger).toBe(true); // obligated — the paired half
+    expectRed(checkDispositions(ctx));
   });
 
   it('a branch touching this gate DOES owe, even though nothing governed changed', () => {
