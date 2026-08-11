@@ -62,6 +62,17 @@ the replacement on 2026-08-11:**
 > Cards, editors and other styling on the canvas may still change. Your Home
 > Assistant dashboard is unaffected either way.
 
+⚠⚠⚠ **RETRACTED AFTER ROUND 4 (finding R4-M1). THE WORDING QUOTED ABOVE IS NO
+LONGER IN THE PRODUCT.** It is true only once a badged theme has been selected,
+and `ThemeNoEffectBadge` renders in eight contexts — four option rows plus two
+collapsed values that stay pending until Apply or Load — where it describes a
+state that does not yet exist. Measured: with Material You applied, hovering
+Mushroom's option badge left the canvas rich and all six swatches on screen
+while that tooltip claimed HAVDM's defaults and no swatches. **The fifth wording
+is a pure absence claim about the theme object and is recorded in
+`docs/reviews/f3-theme-canvas-badge-author-response-round4.md`.** The paragraph
+below is left as the record of what round 3 reasoned, not as a live claim.
+
 It says what the canvas **does** rather than that it stays as it was, and what
 the panel **lacks** rather than that it is empty. The subtree concession round 3
 judged sound is unchanged. The predicate is unchanged.

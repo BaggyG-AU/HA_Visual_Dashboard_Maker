@@ -8,20 +8,26 @@ import { InfoCircleOutlined } from '@ant-design/icons';
  * ⭐ F3 / HA-06 (interim). `themeService.getThemeColors()` maps six theme keys
  * onto the two surfaces HAVDM previews: the canvas background/text pair in
  * `App.tsx` and the six swatches of `ThemePreviewPanel`, which returns `null`
- * for any unset field. A theme defining none of the six is selectable, applies
- * cleanly, and changes neither surface's colours — the canvas falls back to
- * HAVDM's own antd token and the Theme Preview card renders no colour swatches.
+ * for any unset field. A theme defining none of the six is selectable and
+ * applies cleanly; ONCE APPLIED, the canvas falls back to HAVDM's own antd
+ * token and the Theme Preview card renders no colour swatches.
  * Measured on the reference instance: four of its five installed themes.
  *
- * ⚠⚠ NEITHER OF THOSE IS "UNCHANGED" OR "EMPTY", AND SAYING SO COST A REVIEW
- * ROUND (Codex round 3, finding R3-M1). `App.tsx` maps every absent colour to
- * `undefined` and then resolves `canvasThemeBackground ?? token.colorBgContainer`,
- * so switching FROM a rich theme REPLACES its colours rather than retaining
- * them. And `ThemePreviewPanel` always renders its Card, the theme name, the
- * mode Tag, a Divider and a "Colors" heading — only each missing SWATCH returns
- * `null`. The measurement is pinned in
- * `tests/integration/theme-no-effect-badge.spec.ts` ("a badged theme replaces
- * the canvas colours with HAVDM own and empties the swatches").
+ * ⚠⚠ "ONCE APPLIED" IS LOAD-BEARING, AND NEITHER SURFACE IS "UNCHANGED" OR
+ * "EMPTY". Saying otherwise cost a review round (Codex round 3, finding R3-M1).
+ * `App.tsx` maps every absent colour to `undefined` and then resolves
+ * `canvasThemeBackground ?? token.colorBgContainer`, so switching FROM a rich
+ * theme REPLACES its colours rather than retaining them. And
+ * `ThemePreviewPanel` always renders its Card, the theme name, the mode Tag, a
+ * Divider and a "Colors" heading — only each missing SWATCH returns `null`. The
+ * measurement is pinned in `tests/integration/theme-no-effect-badge.spec.ts`
+ * ("a badged theme replaces the canvas colours with HAVDM own and empties the
+ * swatches").
+ *
+ * ⚠⚠⚠ AND SAYING ANY OF IT IN THE TOOLTIP COST A FOURTH ROUND (Codex round 4,
+ * finding R4-M1). NONE of the paragraph above may reach the user, because THIS
+ * COMPONENT CANNOT TELL WHETHER ITS THEME IS APPLIED. The string's own docblock
+ * below is the binding rule; read it before touching the wording.
  *
  * ⚠ THE WORDING IS NEGATIVE ON PURPOSE. The predicate establishes only what a
  * theme does NOT define. It never establishes what the theme DOES do, and one
@@ -51,28 +57,60 @@ import { InfoCircleOutlined } from '@ant-design/icons';
  */
 
 /**
- * ⚠⚠⚠ THIS STRING IS THE PRODUCT CLAIM. IT MAY PROMISE ONLY WHAT
- * `definesNoCanvasColors` ESTABLISHES — the canvas `<Content>`'s OWN
- * background/text pair and the six `ThemePreviewPanel` swatches. It may NOT
- * speak for the canvas SUBTREE, whose bundled stylesheets consume hundreds of
- * custom properties this predicate cannot see.
+ * ⚠⚠⚠ THIS STRING IS THE PRODUCT CLAIM, AND IT IS A CLAIM ABOUT THE THEME
+ * OBJECT — NEVER ABOUT WHAT IS ON SCREEN. That distinction is the whole content
+ * of Codex's round-4 review of PR #142 (finding R4-M1), and it is the thing
+ * FOUR successive wordings got wrong, one adjacent clause at a time.
  *
- * ⚠⚠ CORRECTED AFTER CODEX'S ROUND-2 REVIEW OF PR #142 (finding R2-M1). The
- * round-1 fix narrowed the LABEL to "no preview colours" but left this string
- * reading *"…so the canvas and the Theme Preview panel will not change. Other
- * styling may still differ."* — which moved M1's disproved canvas-wide claim
- * rather than retracting it, and then contradicted itself in the next sentence.
- * A user reads "the canvas" as everything they see on it, not as the `<Content>`
- * root as distinct from its descendants. The wording below names the two
- * surfaces and concedes the third in the user's own vocabulary.
- * ⓘ The owner signed off this wording on 2026-08-11, as he did the label before
- * it. **Do not re-word a user-facing claim here without putting it to him.**
+ * ⚠⚠ WHY IT CANNOT DESCRIBE THE SCREEN. `definesNoCanvasColors` is a pure
+ * function of a theme object. This one component renders in EIGHT contexts and
+ * cannot tell them apart:
+ *
+ *   - `ThemeSelector`'s `theme-select` — `optionRender` + `labelRender`.
+ *     `onChange={setTheme}`, so the collapsed value APPLIES IMMEDIATELY.
+ *   - `ThemeSettingsDialog`'s `theme-settings-select` — `onChange` only sets
+ *     local state; `setTheme` runs in `handleApply`, so it is PENDING.
+ *   - `theme-manager-saved-select` — `loadSavedTheme` runs in
+ *     `handleLoadSavedTheme`, so it is PENDING until Load.
+ *   - `theme-manager-view-override` — `setViewOverride` APPLIES IMMEDIATELY.
+ *
+ * FOUR of the eight are option rows in an open dropdown, where the hovered
+ * theme is not applied at all; TWO more are collapsed values still waiting for
+ * Apply or Load. So SIX of the eight can show this badge while the canvas is
+ * painted by some OTHER theme. Codex measured exactly that: with Material You
+ * applied, hovering Mushroom's option badge left the canvas at
+ * `rgb(238, 237, 244)` / `rgb(26, 27, 33)` and all six swatches on screen, while
+ * the round-4 tooltip claimed HAVDM's defaults and no swatches.
+ *
+ * ⚠⚠⚠ THE BINDING RULE, AND DO NOT REGRESS IT: THIS STRING MAY STATE ONLY WHAT
+ * IS TRUE OF THE THEME. It may not say what the canvas or the panel shows, in
+ * any tense, because no tense is true in all eight contexts — a "would" wording
+ * is right on an option row and wrong on the applied value, and a present-tense
+ * one is wrong the other way round. Round 4 put both to the owner and he chose
+ * the absence claim on 2026-08-11, his FOURTH sign-off of this one string.
+ * **Do not re-word a user-facing claim here without putting it to him.**
+ *
+ * ⚠ THE FOUR RETRACTED WORDINGS, so that nobody rebuilds one:
+ *   1. "no preview EFFECT" — round 1, finding M1. Bundled canvas CSS (Swiper,
+ *      Allotment, Monaco) consumes published theme variables.
+ *   2. "the canvas … WILL NOT CHANGE" — round 2, finding R2-M1. The same
+ *      disproved claim moved into the tooltip rather than retracted.
+ *   3. "STAY AS THEY ARE" / "STAYS EMPTY" — round 3, finding R3-M1. False on
+ *      the transition, and false of the rendered panel.
+ *   4. "uses HAVDM's own DEFAULT COLOURS" / "shows NO COLOUR SWATCHES" —
+ *      round 4, finding R4-M1. True only AFTER selection.
+ * All four are asserted ABSENT by the wording leg in
+ * `tests/integration/theme-no-effect-badge.spec.ts`, and the fourth is asserted
+ * absent from the INACTIVE-OPTION context that disproved it.
+ *
+ * ⚠ The subtree concession has survived all five wordings and must keep
+ * surviving: this predicate speaks for the canvas `<Content>`'s own
+ * background/text pair and the six `ThemePreviewPanel` swatches, and for
+ * nothing below them — hence "Other styling in HAVDM may still differ".
  */
 export const THEME_NO_PREVIEW_COLOURS_TOOLTIP =
-  "This theme defines none of the colours HAVDM reads, so the canvas uses HAVDM's own " +
-  'default colours and the Theme Preview panel shows no colour swatches. Cards, editors ' +
-  'and other styling on the canvas may still change. Your Home Assistant dashboard is ' +
-  'unaffected either way.';
+  "This theme sets none of the colours HAVDM's canvas and Theme Preview panel read. " +
+  'Other styling in HAVDM may still differ. Your Home Assistant dashboard is unaffected.';
 
 export const THEME_NO_PREVIEW_COLOURS_LABEL = 'no preview colours';
 

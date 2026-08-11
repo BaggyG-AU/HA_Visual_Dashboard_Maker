@@ -22,6 +22,23 @@ import { mockHAWebSocket } from '../helpers/mockHelpers';
 import { REAL_HA_THEMES } from '../fixtures/realHaThemes';
 import { ThemeManagerDSL } from '../support/dsl/themeManager';
 
+/**
+ * ⚠⚠⚠ EVERY RENDERED-STATE CLAIM THIS ONE TOOLTIP HAS ALREADY BEEN WRONG ABOUT,
+ * in the order the review rounds killed them. Both wording legs below assert
+ * that none of these is on screen; the second asserts it from the very context
+ * that disproved the last one.
+ *
+ * ⚠ ADD TO THIS LIST, NEVER REPLACE IT. A retraction that is only checked in the
+ * round that made it is a retraction nobody is holding to.
+ */
+const RETRACTED_CLAIMS = [
+  'the canvas and the Theme Preview panel will not change', // round 1's, retracted in round 2
+  'stay as they are', // round 2's transition claim, disproved in round 3
+  'stays empty', // round 2's preview-panel claim, disproved in round 3
+  "uses HAVDM's own default colours", // round 3's, disproved in round 4 (R4-M1)
+  'shows no colour swatches', // round 3's, disproved in round 4 (R4-M1)
+];
+
 /** The shape `__testThemeApi.applyThemes` expects — HA's `frontend/get_themes`. */
 const realThemePayload = {
   default_theme: 'default',
@@ -337,6 +354,27 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
       .getByTestId('canvas-surface')
       .evaluate((el) => window.getComputedStyle(el).backgroundColor);
 
+  /**
+   * The canvas `<Content>`'s computed TEXT colour — the other half of the pair
+   * `App.tsx` resolves.
+   *
+   * ⚠ Added after Codex round 4. `App.tsx` resolves TWO values,
+   * `canvasThemeBackground ?? token.colorBgContainer` AND
+   * `canvasThemeText ?? token.colorText`, and the control leg below measured
+   * only the first while the wording of the day said "colours", plural. Codex
+   * measured the text transition as `rgb(26, 27, 33)` →
+   * `rgba(255, 255, 255, 0.85)` — the same shape as the background's, and
+   * equally unmeasured.
+   */
+  const canvasText = (ctx: Awaited<ReturnType<typeof launchWithDSL>>) =>
+    ctx.window.getByTestId('canvas-surface').evaluate((el) => window.getComputedStyle(el).color);
+
+  /** The Theme Preview card, located by its own title rather than by position. */
+  const previewCardOf = (ctx: Awaited<ReturnType<typeof launchWithDSL>>) =>
+    ctx.window
+      .locator('.ant-card')
+      .filter({ has: ctx.window.getByText('Theme Preview', { exact: true }) });
+
   /** Pick a theme through the real header control. */
   const pickTheme = async (ctx: Awaited<ReturnType<typeof launchWithDSL>>, name: string) => {
     await ctx.window.getByTestId('theme-select').click();
@@ -367,10 +405,17 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
    *     Tag, a Divider and a "Colors" heading. Only each missing SWATCH returns
    *     `null`. The panel is not empty; it has no colour swatches.
    *
-   * ⚠ Three canvas readings, not two, because "uses HAVDM's own default colours"
-   * is a claim about WHICH value it falls back to, and only the no-theme
-   * baseline can establish that. Two readings could show the colour changed
-   * without showing what it changed TO.
+   * ⚠ Three canvas readings, not two, for EACH of background and text: "falls
+   * back to HAVDM's own default" is a claim about WHICH value it lands on, and
+   * only a no-theme baseline can establish that. Two readings could show the
+   * colour changed without showing what it changed TO.
+   *
+   * ⚠⚠ SINCE ROUND 4 THIS LEG NO LONGER BACKS A PRODUCT CLAIM. The tooltip is
+   * now a pure absence claim about the theme object and says nothing about
+   * rendered state (finding R4-M1), so what this leg pins is the BEHAVIOUR
+   * itself — the thing the canvas fidelity contract will one day have to
+   * describe. Keep it: it is the only place the rich→badged transition is
+   * measured at all, and it is what makes any future richer claim checkable.
    *
    * ⚠ The swatches are counted by their `<Text code>` colour literal — one per
    * rendered swatch — rather than by a class substring. Codex's first probe here
@@ -384,21 +429,22 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
       await connectWithRealThemes(ctx);
 
       const noThemeBackground = await canvasBackground(ctx);
+      const noThemeText = await canvasText(ctx);
       expect(
         noThemeBackground,
         'the canvas must report a computed background to compare',
       ).toBeTruthy();
+      expect(noThemeText, 'the canvas must report a computed text colour to compare').toBeTruthy();
 
       // A rich theme: all six mapped fields defined.
       await pickTheme(ctx, 'Material You');
       await expect.poll(() => canvasBackground(ctx), { timeout: 5000 }).not.toBe(noThemeBackground);
       const richBackground = await canvasBackground(ctx);
+      const richText = await canvasText(ctx);
 
       // ⚠ `.ant-card` matches a class TOKEN, so it cannot match
       // `ant-card-head-title`; the filter then pins it to the Theme Preview card.
-      const previewCard = ctx.window
-        .locator('.ant-card')
-        .filter({ has: ctx.window.getByText('Theme Preview', { exact: true }) });
+      const previewCard = previewCardOf(ctx);
       await expect(previewCard, 'the Theme Preview card must be locatable').toHaveCount(1);
       await expect(
         previewCard.locator('code'),
@@ -409,6 +455,7 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
       await pickTheme(ctx, 'Mushroom Square');
       await expect.poll(() => canvasBackground(ctx), { timeout: 5000 }).not.toBe(richBackground);
       const badgedBackground = await canvasBackground(ctx);
+      const badgedText = await canvasText(ctx);
 
       expect(
         badgedBackground,
@@ -418,6 +465,17 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
         badgedBackground,
         'and it falls back to exactly what HAVDM shows with no theme at all — its OWN default',
       ).toBe(noThemeBackground);
+
+      // ⚠ THE SAME PAIR OF READINGS FOR TEXT — Codex round 4, H2. `App.tsx`
+      // resolves `canvasThemeText ?? token.colorText` beside the background, and
+      // measuring only one of the two left half of "colours" unevidenced.
+      expect(
+        badgedText,
+        'the text colour is REPLACED on the transition too, not retained',
+      ).not.toBe(richText);
+      expect(badgedText, 'and it falls back to the same no-theme value the background does').toBe(
+        noThemeText,
+      );
 
       await expect(
         previewCard.locator('code'),
@@ -434,21 +492,31 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
   });
 
   /**
-   * ⚠⚠⚠ RED LEG for Codex round-3 finding R3-M1 — the TOOLTIP, on its FOURTH
-   * wording and the owner's THIRD sign-off of this one string.
+   * ⚠⚠⚠ RED LEG for Codex round-4 finding R4-M1 — the TOOLTIP, on its FIFTH
+   * wording and the owner's FOURTH sign-off of this one string.
    *
-   * Round 1's fix narrowed the LABEL and moved the canvas-wide claim into the
-   * tooltip (round 2's R2-M1). Round 2's fix retracted the canvas-wide claim but
-   * replaced it with two statements that are simply FALSE of the rendered
-   * product (round 3's R3-M1). The wording now names what the leg above
-   * MEASURES, and the two legs are deliberately separate: a behavioural failure
-   * must not stop the run before the wording is checked.
+   * Four wordings died here, each fixing the clause the reviewer named and
+   * leaving an adjacent one wrong: "no preview EFFECT" (round 1, M1), "will not
+   * change" (round 2, R2-M1), "stay as they are" / "stays empty" (round 3,
+   * R3-M1), and "uses HAVDM's own default colours" / "shows no colour swatches"
+   * (round 4, R4-M1). ⭐⭐⭐ **THE FIFTH IS A DIFFERENT KIND OF CLAIM, NOT A
+   * FIFTH PHRASING.** It states a property of the THEME OBJECT and says nothing
+   * about rendered state, because the predicate is a pure function of a theme
+   * while the component renders in eight contexts, six of which can display it
+   * over a canvas painted by some other theme entirely.
+   *
+   * ⚠ This leg still selects the theme first, and that is FINE now — an absence
+   * claim is true in the applied context too. The leg that proves it is true in
+   * the contexts that killed wording four is the INACTIVE-OPTION leg below, and
+   * this one cannot substitute for it. The two are deliberately separate, as is
+   * the behavioural control above: a failure in one must not stop the run before
+   * the others are checked.
    *
    * ⚠ This asserts the RENDERED tooltip, not the exported constant. The
    * constant being right while the string never reaches the user is exactly the
    * failure mode this whole spec exists to catch.
    */
-  test('the tooltip states what the canvas and the preview panel actually do', async () => {
+  test('the tooltip states only what is true of the theme itself', async () => {
     const ctx = await launchWithDSL();
     try {
       await ctx.appDSL.waitUntilReady();
@@ -471,29 +539,133 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
         ctx.window.locator('.ant-tooltip-container', { hasText: text });
 
       await expect(
-        tooltipSaying("the canvas uses HAVDM's own default colours"),
-        'the tooltip must say what the canvas DOES, not that it stays as it was',
+        tooltipSaying("This theme sets none of the colours HAVDM's canvas and Theme Preview"),
+        'the tooltip must state a property of the THEME, not of the screen',
       ).toBeVisible({ timeout: 5000 });
       await expect(
-        tooltipSaying('the Theme Preview panel shows no colour swatches'),
-        'the panel is not empty — it keeps its card, name, mode tag and "Colors" heading',
+        tooltipSaying('Other styling in HAVDM may still differ'),
+        'the subtree concession round 3 judged sound must survive this rewording too',
       ).toBeVisible({ timeout: 5000 });
       await expect(
-        tooltipSaying('Cards, editors and other styling on the canvas may still change'),
-        'the subtree concession round 3 judged sound must survive this rewording',
+        tooltipSaying('Your Home Assistant dashboard is unaffected'),
+        'the HA reassurance must survive this rewording',
       ).toBeVisible({ timeout: 5000 });
 
-      // The three claims this string has already been wrong about, in order.
-      for (const disproved of [
-        'the canvas and the Theme Preview panel will not change', // round 1's, retracted in round 2
-        'stay as they are', // round 2's transition claim, disproved in round 3
-        'stays empty', // round 2's preview-panel claim, disproved in round 3
-      ]) {
+      for (const disproved of RETRACTED_CLAIMS) {
         await expect(
           tooltipSaying(disproved),
           `a disproved claim must be RETRACTED, not reworded around: "${disproved}"`,
         ).toHaveCount(0);
       }
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  /**
+   * ⚠⚠⚠ RED LEG for Codex round-4 finding R4-M1 — and the ONE that recreates the
+   * semantic defect rather than merely discriminating old text from new.
+   *
+   * ⭐⭐⭐ WHY THE LEG ABOVE IS NOT ENOUGH, WHICH IS ROUND 4'S SHARPEST LESSON.
+   * `fail-against-old` proves a wording test can tell the old string from the
+   * new one. It does NOT prove the new string is TRUE. Every previous round's
+   * wording leg passed on the day it was written and was false within a week,
+   * because each one selected the badged theme FIRST and then read the tooltip —
+   * measuring the single context in which the claim happened to hold.
+   *
+   * ⚠⚠ THE DEFECT IS TEMPORAL AND CONTEXTUAL. `ThemeNoEffectBadge` renders in
+   * eight places; six of them — four `optionRender` rows and the two collapsed
+   * values that stay PENDING until Apply or Load — can display the badge while
+   * the canvas is painted by a completely different theme. This leg holds a rich
+   * theme ACTIVE, hovers a badged theme's INACTIVE option row, and asserts both
+   * halves at once: that the rich theme is still on screen, and that the tooltip
+   * claims nothing that contradicts it.
+   *
+   * ⚠ It is a RED leg, not a control: on `8aa8c1a` `src/` the tooltip said the
+   * canvas "uses HAVDM's own default colours" and the panel "shows no colour
+   * swatches" while this leg measures Material You's colours and six swatches
+   * still on screen, so the absence assertions fail against that source.
+   */
+  test('the tooltip claims nothing about the screen, so it holds beside an INACTIVE option', async () => {
+    const ctx = await launchWithDSL();
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await connectWithRealThemes(ctx);
+
+      // Apply a RICH theme, and pin what it actually put on screen.
+      await pickTheme(ctx, 'Material You');
+      const previewCard = previewCardOf(ctx);
+      await expect(previewCard, 'the Theme Preview card must be locatable').toHaveCount(1);
+      await expect(
+        previewCard.locator('code'),
+        'the rich theme must render all six swatches before we open the picker',
+      ).toHaveCount(6);
+      const richBackground = await canvasBackground(ctx);
+      const richText = await canvasText(ctx);
+      expect(richBackground, 'the rich theme must paint a canvas background').toBeTruthy();
+
+      // Open the picker and hover a BADGED theme's option row WITHOUT selecting it.
+      await ctx.window.getByTestId('theme-select').click();
+      const badgedOption = ctx.window.locator('.ant-select-item-option[title="Mushroom Square"]');
+      await expect(badgedOption).toBeVisible({ timeout: 5000 });
+      const optionBadge = badgedOption.getByTestId('theme-no-effect-badge');
+      await expect(optionBadge, 'the inactive option row must carry the badge').toBeVisible({
+        timeout: 5000,
+      });
+      await optionBadge.hover();
+
+      const tooltipSaying = (text: string) =>
+        ctx.window.locator('.ant-tooltip-container', { hasText: text });
+
+      // ⚠⚠⚠ THE ASSERTION ORDER IN THIS LEG IS DELIBERATE AND MUST NOT BE
+      // "TIDIED" — round 4's own lesson, learned by measurement while writing it.
+      // The first draft asserted the NEW wording first. Run against `8aa8c1a`
+      // `src/` it duly failed — but it failed because the new phrase was absent,
+      // which proves only that the leg tells old text from new. That is exactly
+      // the substitution R4-M1 warns about. The defect assertions therefore come
+      // FIRST, so a run against the old source fails on the thing that is
+      // actually WRONG with it.
+
+      // ⚠ Wording-NEUTRAL precondition (rule 9): prove the badge's tooltip
+      // actually opened before reading anything out of it. Every wording of this
+      // string has begun "This theme…", so this anchor holds on old and new
+      // source alike — and without it, "the phrase is absent" is
+      // indistinguishable from "the tooltip never opened".
+      await expect(
+        tooltipSaying('This theme'),
+        "the badge's tooltip must be open before its contents are judged",
+      ).toBeVisible({ timeout: 5000 });
+
+      // ⭐ THE CONTEXT THAT MAKES A RENDERED-STATE CLAIM FALSE, measured while
+      // that tooltip is on screen: Material You is still applied, still painting.
+      expect(
+        await canvasBackground(ctx),
+        'hovering an option must not apply it — the rich background must still be painted',
+      ).toBe(richBackground);
+      expect(
+        await canvasText(ctx),
+        'hovering an option must not apply it — the rich text colour must still be painted',
+      ).toBe(richText);
+      await expect(
+        previewCard.locator('code'),
+        'and the Preview panel must still show the RICH theme\'s six swatches, not "no colour swatches"',
+      ).toHaveCount(6);
+
+      // ⭐⭐⭐ THE FAIL-AGAINST-DEFECT ASSERTION. Given the three readings above,
+      // every one of these is measurably FALSE of what the user can see right
+      // now. On `8aa8c1a` `src/` the tooltip carried two of them.
+      for (const disproved of RETRACTED_CLAIMS) {
+        await expect(
+          tooltipSaying(disproved),
+          `beside an inactive option this is measurably FALSE, so it must be absent: "${disproved}"`,
+        ).toHaveCount(0);
+      }
+
+      // Only now the positive: what the string may say instead.
+      await expect(
+        tooltipSaying("This theme sets none of the colours HAVDM's canvas and Theme Preview"),
+        'the absence claim must be the thing the user reads on an inactive option too',
+      ).toBeVisible({ timeout: 5000 });
     } finally {
       await close(ctx);
     }

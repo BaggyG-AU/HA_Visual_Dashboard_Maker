@@ -36,6 +36,14 @@ export interface ThemeOption {
    * fallback rather than leaving them, and the Preview card keeps its title, the
    * theme name, the mode Tag and a "Colors" heading whatever the swatches do.
    *
+   * ⚠⚠ AND NONE OF THIS PARAGRAPH MAY BE COPIED INTO THE USER-FACING TOOLTIP —
+   * CODEX'S ROUND-4 REVIEW (finding R4-M1). What is written here describes the
+   * APPLIED outcome, which is the right thing for a docblock about the predicate
+   * and the wrong thing for a badge that also renders beside inactive option
+   * rows and pending selections. `THEME_NO_PREVIEW_COLOURS_TOOLTIP` in
+   * `src/components/ThemeNoEffectBadge.tsx` is now a pure absence claim about the
+   * theme object; its docblock carries the binding rule.
+   *
    * ⚠⚠⚠ WHAT THIS FLAG DOES **NOT** ESTABLISH — CORRECTED AFTER CODEX'S ROUND-1
    * REVIEW OF PR #142 (finding M1). It once carried the label "no preview
    * effect", on the reasoning that `grep -rn 'var(--' src/` returned only
