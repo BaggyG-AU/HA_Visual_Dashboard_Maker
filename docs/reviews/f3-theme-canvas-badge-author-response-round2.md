@@ -222,7 +222,9 @@ Under that statement there are **44 further sites across 23 files**, measured by
 matching `new RegExp(` + a template literal containing an interpolation across
 `tests/`, and separating the escaped from the unescaped:
 
-- **44 unescaped.** Example: `attributeDisplay.ts:74` —
+- **44 unescaped.** Example: `tests/support/dsl/attributeDisplay.ts:74` — ⚠ the
+  full path matters: `src/types/attributeDisplay.ts` shares the basename and is a
+  different file entirely —
   `getByRole('option', { name: new RegExp(\`^\${value}$\`, 'i') })`. A value
 containing `(`or`[`throws or mis-matches: the same defect in different
 syntax, and it sits in a sibling of the`selectAntOption` I just fixed.
