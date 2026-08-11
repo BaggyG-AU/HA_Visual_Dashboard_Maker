@@ -18,7 +18,7 @@ export interface ThemeOption {
    *   2. `ThemePreviewPanel.tsx:39` — the "Theme Preview" card, which renders
    *      one swatch per field for ALL SIX and returns `null` for any unset one.
    *
-   * ⚠ The third is `definesNoCanvasColors` in THIS FILE (`:73`), which is why
+   * ⚠ The third is `definesNoCanvasColors` in THIS FILE, which is why
    * the count matters: it is a caller, not a surface, and it exists to describe
    * the other two. Codex's round-2 review (finding R2-N2) caught this docblock
    * calling the population "exactly TWO consumers" without saying two of WHAT.

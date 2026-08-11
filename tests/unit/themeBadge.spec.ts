@@ -196,9 +196,9 @@ describe('buildThemeOptions marks themes with no mapped preview colours', () => 
    * `getThemeColors` has two SURFACE consumers: the canvas in `App.tsx:496`,
    * which reads only `primaryBackground` and `primaryText`, and
    * `ThemePreviewPanel:39`, which renders a swatch for ALL SIX and returns
-   * `null` for any unset one. (The predicate itself is a third CALLER, at
-   * `src/features/theme-manager/themeOptions.ts:73` — it describes those two
-   * rather than being one of them.) A theme
+   * `null` for any unset one. (The predicate itself is a third CALLER —
+   * `definesNoCanvasColors` in `src/features/theme-manager/themeOptions.ts` —
+   * and it describes those two rather than being one of them.) A theme
    * defining only `primary-color` therefore leaves the canvas untouched but
    * still renders a Primary swatch — a visible effect. Marking it would tell
    * the user a lie about their own theme, so the predicate must stay false

@@ -396,11 +396,15 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
    * The class is a BEHAVIOUR, not a widget list: **every collapsed-Select
    * renderer that decides whether the badge is shown** — i.e. every
    * `labelRender` in `src/` that can render `ThemeNoEffectBadge`. Enumerated by
-   * grepping `labelRender` across `src/` and reading each hit, there are FOUR:
-   * `ThemeSelector.tsx:82`, and `ThemeSettingsDialog.tsx:335,438,489`.
+   * grepping `labelRender` across `src/` and reading each hit, there are FOUR —
+   * named by test-id rather than line, because every one of these lines moved
+   * when this round edited the file above them: `theme-select` in
+   * `ThemeSelector.tsx`, and `theme-settings-select`,
+   * `theme-manager-saved-select` and `theme-manager-view-override` in
+   * `ThemeSettingsDialog.tsx`.
    *
    * ⚠ Codex named TWO of them. The sweep found a THIRD uncovered member,
-   * `theme-settings-select` (`ThemeSettingsDialog.tsx:335`), which is not new in
+   * `theme-settings-select`, which is not new in
    * the fix round at all — it shipped in the slice `c1acb52` and round 1 missed
    * it too, despite round 1 requiring "selected/collapsed state where
    * applicable". The fourth, `ThemeSelector`'s, is already covered by "carries

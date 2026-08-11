@@ -25,8 +25,8 @@ the review reported, and this response names the extra members it found.
 
 ## R2-M1 — the tooltip repeats M1's disproved canvas-wide claim
 
-**CONFIRMED.** At the reviewed head, `src/components/ThemeNoEffectBadge.tsx:44-45`
-read:
+**CONFIRMED.** At the reviewed head `d786d28`, `src/components/ThemeNoEffectBadge.tsx:44-45`
+read (a HISTORICAL anchor — this round's edits moved those lines):
 
 > This theme defines none of the colours HAVDM reads, so the canvas and the Theme
 > Preview panel will not change. Other styling may still differ.
@@ -45,12 +45,12 @@ across `src/`, then reading `ThemeNoEffectBadge.tsx` and `ThemeSettingsDialog.ts
 end to end, because the class is behavioural and a token grep cannot enumerate
 it. **Four members, one fixed, one disclosed and deliberately left, two correct:**
 
-| Member                              | Disposition                                                                                                                                                                                                                                                                                                                                                                                                      |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ThemeNoEffectBadge.tsx` tooltip    | **FIXED** — see below                                                                                                                                                                                                                                                                                                                                                                                            |
-| `ThemeNoEffectBadge.tsx` label      | Correct already: "no preview colours" claims only what the predicate establishes                                                                                                                                                                                                                                                                                                                                 |
-| `ThemeSettingsDialog.tsx:382` Alert | ⚠ **DISCLOSED, NOT FIXED.** "Changes will be visible immediately when you click Apply" overclaims in the OPPOSITE direction for a badged theme. Pre-existing, untouched by this branch, not reported by round 2. **Raised for the owner rather than swept up silently** — fixing it is a user-facing wording change round 2 did not ask for, and scope-control failure is the diagnosis this very round carries. |
-| `ThemeSettingsDialog.tsx:549` Alert | Correct, and corroborates M1's mechanism: "applied to the canvas container. Card renderers inherit these values."                                                                                                                                                                                                                                                                                                |
+| Member                                                       | Disposition                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ThemeNoEffectBadge.tsx` tooltip                             | **FIXED** — see below                                                                                                                                                                                                                                                                                                                                                                                            |
+| `ThemeNoEffectBadge.tsx` label                               | Correct already: "no preview colours" claims only what the predicate establishes                                                                                                                                                                                                                                                                                                                                 |
+| `ThemeSettingsDialog.tsx`, the "Theme Preview" Alert         | ⚠ **DISCLOSED, NOT FIXED.** "Changes will be visible immediately when you click Apply" overclaims in the OPPOSITE direction for a badged theme. Pre-existing, untouched by this branch, not reported by round 2. **Raised for the owner rather than swept up silently** — fixing it is a user-facing wording change round 2 did not ask for, and scope-control failure is the diagnosis this very round carries. |
+| `ThemeSettingsDialog.tsx`, the "CSS Variables Preview" Alert | Correct, and corroborates M1's mechanism: "applied to the canvas container. Card renderers inherit these values."                                                                                                                                                                                                                                                                                                |
 
 **The remedy, signed off by the owner on 2026-08-11** (a user-facing claim, and
 the second time this string has been reworded, so it went to him rather than
@@ -125,12 +125,12 @@ The class is a BEHAVIOUR: **every collapsed-Select renderer that decides whether
 the badge is shown.** Enumerated by grepping `labelRender` across `src/` and
 reading each hit — four members:
 
-| `labelRender`                 | Surface                       | Checked-in selected-state coverage before this round                                   |
-| ----------------------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
-| `ThemeSelector.tsx:82`        | `theme-select`                | ✅ covered ("carries the badge onto the selected value once a badged theme is chosen") |
-| `ThemeSettingsDialog.tsx:335` | `theme-settings-select`       | ❌ **none — and NOT named by round 2**                                                 |
-| `ThemeSettingsDialog.tsx:438` | `theme-manager-saved-select`  | ❌ none (round 2 named this)                                                           |
-| `ThemeSettingsDialog.tsx:489` | `theme-manager-view-override` | ❌ none (round 2 named this)                                                           |
+| `labelRender`             | Surface                       | Checked-in selected-state coverage before this round                                   |
+| ------------------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
+| `ThemeSelector.tsx`       | `theme-select`                | ✅ covered ("carries the badge onto the selected value once a badged theme is chosen") |
+| `ThemeSettingsDialog.tsx` | `theme-settings-select`       | ❌ **none — and NOT named by round 2**                                                 |
+| `ThemeSettingsDialog.tsx` | `theme-manager-saved-select`  | ❌ none (round 2 named this)                                                           |
+| `ThemeSettingsDialog.tsx` | `theme-manager-view-override` | ❌ none (round 2 named this)                                                           |
 
 ⚠ **The third member is not new in the fix round at all.** `theme-settings-select`'s
 `labelRender` shipped in the slice `c1acb52` (verified: `git show
@@ -215,20 +215,20 @@ population, its consumers, or how the specs select an option._ Swept on three
 different keys (the number "four", "two consumers", "anchored"), then by reading
 the F3 docblocks end to end — which is what found the two the review missed.
 
-| #   | Site                                | False claim                                                                     | Named by round 2 |
-| --- | ----------------------------------- | ------------------------------------------------------------------------------- | ---------------- |
-| 1   | `themeOptions.ts:88-95`             | "ALL FOUR THEME-APPLICATION CONTROLS", with the class defined as the wider role | ✅ yes           |
-| 2   | `themeOptions.ts:12-18`             | `getThemeColors` "has exactly TWO consumers"                                    | ✅ yes           |
-| 3   | `themeBadge.spec.ts` describe title | "marks themes with no canvas effect"                                            | ✅ yes           |
-| 4   | `themeBadge.spec.ts:327-332`        | the DSL "matches anchored `^${name}$` text"                                     | ✅ yes           |
-| 5   | `themeBadge.spec.ts:196`            | the same "two consumers" claim, in a second file                                | ❌ **swept**     |
-| 6   | `theme-no-effect-badge.spec.ts:133` | "Four controls apply a theme, not two"                                          | ❌ **swept**     |
+| #   | Site — anchors are AT THE REVIEWED HEAD `d786d28`, not current | False claim                                                                     | Named by round 2 |
+| --- | -------------------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------- |
+| 1   | `themeOptions.ts:88-95`                                        | "ALL FOUR THEME-APPLICATION CONTROLS", with the class defined as the wider role | ✅ yes           |
+| 2   | `themeOptions.ts:12-18`                                        | `getThemeColors` "has exactly TWO consumers"                                    | ✅ yes           |
+| 3   | `themeBadge.spec.ts` describe title                            | "marks themes with no canvas effect"                                            | ✅ yes           |
+| 4   | `themeBadge.spec.ts:327-332`                                   | the DSL "matches anchored `^${name}$` text"                                     | ✅ yes           |
+| 5   | `themeBadge.spec.ts:196`                                       | the same "two consumers" claim, in a second file                                | ❌ **swept**     |
+| 6   | `theme-no-effect-badge.spec.ts:133`                            | "Four controls apply a theme, not two"                                          | ❌ **swept**     |
 
 All six corrected. The substantive corrections:
 
 - **`getThemeColors` has THREE callers in `src/`, of which two are preview
-  surfaces**: `App.tsx:496`, `ThemePreviewPanel.tsx:39`, and the predicate itself
-  at `themeOptions.ts:73`. The prose now says two of _what_.
+  surfaces**: `App.tsx:496`, `ThemePreviewPanel.tsx:39`, and `definesNoCanvasColors` in
+  `themeOptions.ts` itself. The prose now says two of _what_.
 - **Four is the population of theme option SELECTS, not of theme-application
   actions.** Verified in `src/store/themeStore.ts`: `setSyncWithHA(true)`,
   `importThemeManager`, `setViewOverride` (clearing) and `setActiveViewKey` all
@@ -262,8 +262,8 @@ All logs persisted at the moment of measurement.
 - The full e2e and integration suites are **NOT MEASURED** at this head. The
   spec-level re-runs above cover every spec these changes touch, enumerated from
   the changed files rather than assumed.
-- `ThemeSettingsDialog.tsx:382`'s opposite-direction overclaim is **reported, not
-  fixed** — see R2-M1.
+- The "Theme Preview" Alert's opposite-direction overclaim in
+  `ThemeSettingsDialog.tsx` is **reported, not fixed** — see R2-M1.
 - The two watched items round 2 disclosed (`apexcharts.visual:26` at 3,341 px vs
   the drawer's 3,126, and the one-fire `yaml-entity-insert.spec.ts:151` flake
   candidate) are **not touched by this round** and nothing here bears on them.
@@ -287,6 +287,33 @@ members round 2 did not name** (a third uncovered `labelRender`, two more false
 prose sites) and **two more** in R2-N1. Both the author and the reviewer sampled
 where the class was behavioural. That is the documented default failure mode, and
 it is the reason this round closes by class rather than by finding.
+
+## One defect this response's own reading pass found
+
+⚠ **The first draft of this document, and of three docblocks it describes, cited
+`path:line` anchors that this round's own edits had already invalidated.**
+Namespacing `overrideThemeOptions` added ~57 lines to `ThemeSettingsDialog.tsx`
+and the corrected docblock added 6 to `themeOptions.ts`, moving every anchor
+below them — so prose written to FIX R2-N2 ("current-head prose states false
+populations") immediately became a new member of that same class.
+
+Found by sweeping **all 52 `path:line` anchors across the nine changed files**
+mechanically and resolving each against the file it names. **Eight were stale:**
+the two `ThemeSettingsDialog.tsx` Alert anchors, the three `labelRender`
+anchors, `themeOptions.ts`'s predicate anchor in two files, and
+`themeOptions.ts:88`. All eight are now stated as **symbols** — a test-id, a
+function name, an Alert's message — rather than line numbers, which is the code
+map's own standing rule (`drawer_havdm_src_3488d55dd69286718dfaddce`: "LINE
+NUMBERS DECAY. RE-VERIFY ANY `:NNN` ANCHOR BEFORE RELYING ON IT, AND PREFER THE
+GREP SYMBOLS"). Anchors that are deliberately historical — the reviewed head's
+tooltip lines, the quoted error trace, the R2-N2 site table — are kept and
+explicitly labelled as being at `d786d28`.
+
+⭐ This is the third consecutive round in which the author's own reading pass
+found a defect in work already declared finished, and the second in which that
+defect was **created by the fix for the previous round's finding**. It is this
+response's own diagnosis of round 3, reproduced one level down: the fix was not
+swept as new work.
 
 ## MemPalace drawer candidates
 
