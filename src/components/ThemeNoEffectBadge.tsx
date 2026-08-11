@@ -9,9 +9,19 @@ import { InfoCircleOutlined } from '@ant-design/icons';
  * onto the two surfaces HAVDM previews: the canvas background/text pair in
  * `App.tsx` and the six swatches of `ThemePreviewPanel`, which returns `null`
  * for any unset field. A theme defining none of the six is selectable, applies
- * cleanly, and leaves both untouched — the canvas keeps its antd token and the
- * Theme Preview card is empty. Measured on the reference instance: four of its
- * five installed themes.
+ * cleanly, and changes neither surface's colours — the canvas falls back to
+ * HAVDM's own antd token and the Theme Preview card renders no colour swatches.
+ * Measured on the reference instance: four of its five installed themes.
+ *
+ * ⚠⚠ NEITHER OF THOSE IS "UNCHANGED" OR "EMPTY", AND SAYING SO COST A REVIEW
+ * ROUND (Codex round 3, finding R3-M1). `App.tsx` maps every absent colour to
+ * `undefined` and then resolves `canvasThemeBackground ?? token.colorBgContainer`,
+ * so switching FROM a rich theme REPLACES its colours rather than retaining
+ * them. And `ThemePreviewPanel` always renders its Card, the theme name, the
+ * mode Tag, a Divider and a "Colors" heading — only each missing SWATCH returns
+ * `null`. The measurement is pinned in
+ * `tests/integration/theme-no-effect-badge.spec.ts` ("a badged theme replaces
+ * the canvas colours with HAVDM own and empties the swatches").
  *
  * ⚠ THE WORDING IS NEGATIVE ON PURPOSE. The predicate establishes only what a
  * theme does NOT define. It never establishes what the theme DOES do, and one
@@ -59,9 +69,9 @@ import { InfoCircleOutlined } from '@ant-design/icons';
  * it. **Do not re-word a user-facing claim here without putting it to him.**
  */
 export const THEME_NO_PREVIEW_COLOURS_TOOLTIP =
-  'This theme defines none of the colours HAVDM reads, so the canvas background and ' +
-  'text stay as they are and the Theme Preview panel stays empty. Cards, editors and ' +
-  'other styling on the canvas may still change. Your Home Assistant dashboard is ' +
+  "This theme defines none of the colours HAVDM reads, so the canvas uses HAVDM's own " +
+  'default colours and the Theme Preview panel shows no colour swatches. Cards, editors ' +
+  'and other styling on the canvas may still change. Your Home Assistant dashboard is ' +
   'unaffected either way.';
 
 export const THEME_NO_PREVIEW_COLOURS_LABEL = 'no preview colours';

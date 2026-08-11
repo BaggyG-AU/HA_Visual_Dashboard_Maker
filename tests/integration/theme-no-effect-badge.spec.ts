@@ -331,33 +331,130 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
     }
   });
 
+  /** The canvas `<Content>`'s computed background — the surface the badge speaks for. */
+  const canvasBackground = (ctx: Awaited<ReturnType<typeof launchWithDSL>>) =>
+    ctx.window
+      .getByTestId('canvas-surface')
+      .evaluate((el) => window.getComputedStyle(el).backgroundColor);
+
+  /** Pick a theme through the real header control. */
+  const pickTheme = async (ctx: Awaited<ReturnType<typeof launchWithDSL>>, name: string) => {
+    await ctx.window.getByTestId('theme-select').click();
+    const option = ctx.window.locator(`.ant-select-item-option[title="${name}"]`);
+    await expect(option).toBeVisible({ timeout: 5000 });
+    await option.click();
+  };
+
   /**
-   * ⚠⚠⚠ RED LEG for Codex round-2 finding R2-M1 — the TOOLTIP, which round 1's
-   * fix left carrying the very claim round 1 disproved.
+   * ⚠⚠⚠ CONTROL LEG — Codex round-3 finding R3-M1, and the MEASUREMENT the two
+   * previous tooltip wordings were written without.
    *
-   * The round-1 fix narrowed the LABEL to "no preview colours" and moved the
-   * canvas-wide claim into the tooltip, where it read: *"…so the canvas and the
-   * Theme Preview panel will not change. Other styling may still differ."* The
-   * first sentence is the claim `tests/unit/themeBadge.spec.ts` ("still marks a
-   * theme whose only key is consumed by bundled canvas CSS") falsifies: a theme
-   * defining only `swiper-theme-color` is badged while the real carousel arrow
-   * recolours, because the canvas SUBTREE renders Swiper, Allotment and Monaco.
-   * A user reads "the canvas" as everything they can see on it.
+   * State it plainly: **this leg passes on `508e33d` too.** The behaviour did not
+   * change; the CLAIM did, for the third time. It is a control, not a red leg —
+   * exactly like the Swiper counterexample in `tests/unit/themeBadge.spec.ts`.
    *
-   * ⚠ This asserts the RENDERED tooltip, not the exported constant. The
-   * constant being right while the string never reaches the user is exactly the
-   * failure mode this whole spec exists to catch.
+   * ⚠⚠ WHY IT EXISTS. Round 2's tooltip said a badged theme leaves the canvas
+   * background/text "as they are" and the Theme Preview panel "empty". **Both
+   * were false, and the checked-in wording leg could not tell** — it asserted
+   * only that the phrases RENDER, so it passed while they lied. Codex measured
+   * the transition and found:
+   *   - `App.tsx` maps every absent colour to `undefined`
+   *     (`colors.primaryBackground || undefined`) and then resolves
+   *     `canvasThemeBackground ?? token.colorBgContainer`. Switching from a rich
+   *     theme does NOT retain its colours — it REPLACES them with HAVDM's own
+   *     antd tokens.
+   *   - `ThemePreviewPanel` always renders the Card, the theme name, the mode
+   *     Tag, a Divider and a "Colors" heading. Only each missing SWATCH returns
+   *     `null`. The panel is not empty; it has no colour swatches.
+   *
+   * ⚠ Three canvas readings, not two, because "uses HAVDM's own default colours"
+   * is a claim about WHICH value it falls back to, and only the no-theme
+   * baseline can establish that. Two readings could show the colour changed
+   * without showing what it changed TO.
+   *
+   * ⚠ The swatches are counted by their `<Text code>` colour literal — one per
+   * rendered swatch — rather than by a class substring. Codex's first probe here
+   * matched `ant-card-head-title` because that string CONTAINS `ant-card`; a
+   * failure of the locator, not of the product.
    */
-  test('the tooltip names only the surfaces the predicate can establish', async () => {
+  test('a badged theme replaces the canvas colours with HAVDM own and empties the swatches', async () => {
     const ctx = await launchWithDSL();
     try {
       await ctx.appDSL.waitUntilReady();
       await connectWithRealThemes(ctx);
 
-      await ctx.window.getByTestId('theme-select').click();
-      const options = ctx.window.locator('.ant-select-item-option');
-      await expect(options.first()).toBeVisible({ timeout: 5000 });
-      await ctx.window.locator('.ant-select-item-option[title="Mushroom Square"]').click();
+      const noThemeBackground = await canvasBackground(ctx);
+      expect(
+        noThemeBackground,
+        'the canvas must report a computed background to compare',
+      ).toBeTruthy();
+
+      // A rich theme: all six mapped fields defined.
+      await pickTheme(ctx, 'Material You');
+      await expect.poll(() => canvasBackground(ctx), { timeout: 5000 }).not.toBe(noThemeBackground);
+      const richBackground = await canvasBackground(ctx);
+
+      // ⚠ `.ant-card` matches a class TOKEN, so it cannot match
+      // `ant-card-head-title`; the filter then pins it to the Theme Preview card.
+      const previewCard = ctx.window
+        .locator('.ant-card')
+        .filter({ has: ctx.window.getByText('Theme Preview', { exact: true }) });
+      await expect(previewCard, 'the Theme Preview card must be locatable').toHaveCount(1);
+      await expect(
+        previewCard.locator('code'),
+        'a theme defining all six must render all six colour swatches',
+      ).toHaveCount(6);
+
+      // The badged theme: none of the six.
+      await pickTheme(ctx, 'Mushroom Square');
+      await expect.poll(() => canvasBackground(ctx), { timeout: 5000 }).not.toBe(richBackground);
+      const badgedBackground = await canvasBackground(ctx);
+
+      expect(
+        badgedBackground,
+        'THE FALSIFIER for "stay as they are": the rich theme\'s canvas colour is REPLACED, not retained',
+      ).not.toBe(richBackground);
+      expect(
+        badgedBackground,
+        'and it falls back to exactly what HAVDM shows with no theme at all — its OWN default',
+      ).toBe(noThemeBackground);
+
+      await expect(
+        previewCard.locator('code'),
+        'THE FALSIFIER for "stays empty": no colour swatches…',
+      ).toHaveCount(0);
+      await expect(
+        previewCard,
+        '…but the card, the theme name, the mode tag and the "Colors" heading all still render',
+      ).toContainText('Mushroom Square');
+      await expect(previewCard).toContainText('Colors');
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  /**
+   * ⚠⚠⚠ RED LEG for Codex round-3 finding R3-M1 — the TOOLTIP, on its FOURTH
+   * wording and the owner's THIRD sign-off of this one string.
+   *
+   * Round 1's fix narrowed the LABEL and moved the canvas-wide claim into the
+   * tooltip (round 2's R2-M1). Round 2's fix retracted the canvas-wide claim but
+   * replaced it with two statements that are simply FALSE of the rendered
+   * product (round 3's R3-M1). The wording now names what the leg above
+   * MEASURES, and the two legs are deliberately separate: a behavioural failure
+   * must not stop the run before the wording is checked.
+   *
+   * ⚠ This asserts the RENDERED tooltip, not the exported constant. The
+   * constant being right while the string never reaches the user is exactly the
+   * failure mode this whole spec exists to catch.
+   */
+  test('the tooltip states what the canvas and the preview panel actually do', async () => {
+    const ctx = await launchWithDSL();
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await connectWithRealThemes(ctx);
+
+      await pickTheme(ctx, 'Mushroom Square');
 
       const badge = ctx.window.getByTestId('theme-selector').getByTestId('theme-no-effect-badge');
       await expect(badge).toBeVisible({ timeout: 5000 });
@@ -374,17 +471,29 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
         ctx.window.locator('.ant-tooltip-container', { hasText: text });
 
       await expect(
-        tooltipSaying('canvas background and text'),
-        'the tooltip must name the two surfaces the predicate measures, not "the canvas"',
+        tooltipSaying("the canvas uses HAVDM's own default colours"),
+        'the tooltip must say what the canvas DOES, not that it stays as it was',
+      ).toBeVisible({ timeout: 5000 });
+      await expect(
+        tooltipSaying('the Theme Preview panel shows no colour swatches'),
+        'the panel is not empty — it keeps its card, name, mode tag and "Colors" heading',
       ).toBeVisible({ timeout: 5000 });
       await expect(
         tooltipSaying('Cards, editors and other styling on the canvas may still change'),
-        'it must concede the subtree it cannot speak for — cards and editors',
+        'the subtree concession round 3 judged sound must survive this rewording',
       ).toBeVisible({ timeout: 5000 });
-      await expect(
-        tooltipSaying('the canvas and the Theme Preview panel will not change'),
-        'the disproved canvas-wide claim must be RETRACTED, not merely followed by a concession',
-      ).toHaveCount(0);
+
+      // The three claims this string has already been wrong about, in order.
+      for (const disproved of [
+        'the canvas and the Theme Preview panel will not change', // round 1's, retracted in round 2
+        'stay as they are', // round 2's transition claim, disproved in round 3
+        'stays empty', // round 2's preview-panel claim, disproved in round 3
+      ]) {
+        await expect(
+          tooltipSaying(disproved),
+          `a disproved claim must be RETRACTED, not reworded around: "${disproved}"`,
+        ).toHaveCount(0);
+      }
     } finally {
       await close(ctx);
     }

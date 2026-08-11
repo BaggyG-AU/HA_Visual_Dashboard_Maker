@@ -16,8 +16,8 @@ import type { Theme } from '../../src/types/homeassistant';
  * ~30 CSS custom properties on the canvas element, and `getThemeColors()` maps
  * exactly six of them onto the two surfaces HAVDM previews: the canvas
  * background/text pair in `App.tsx` and the six swatches of
- * `ThemePreviewPanel`. A theme defining NONE of those six leaves both surfaces
- * untouched, and the picker used to say nothing about it. This badge marks
+ * `ThemePreviewPanel`. A theme defining NONE of those six sets no colour on
+ * either surface, and the picker used to say nothing about it. This badge marks
  * exactly that case — and, since Codex's round-1 review of PR #142, says only
  * that: **"no preview colours"**, not "no preview effect".
  *
@@ -199,8 +199,8 @@ describe('buildThemeOptions marks themes with no mapped preview colours', () => 
    * `null` for any unset one. (The predicate itself is a third CALLER —
    * `definesNoCanvasColors` in `src/features/theme-manager/themeOptions.ts` —
    * and it describes those two rather than being one of them.) A theme
-   * defining only `primary-color` therefore leaves the canvas untouched but
-   * still renders a Primary swatch — a visible effect. Marking it would tell
+   * defining only `primary-color` therefore sets no canvas colour but still
+   * renders a Primary swatch — a visible effect. Marking it would tell
    * the user a lie about their own theme, so the predicate must stay false
    * here. This is the assertion that fails if anyone later "optimises" the
    * predicate down to the two fields the canvas reads.

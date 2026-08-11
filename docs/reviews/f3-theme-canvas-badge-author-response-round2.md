@@ -10,8 +10,12 @@ Responds to `docs/reviews/f3-theme-canvas-badge-codex-round2-review.md` (verdict
 fix round `354d107` against `fcbd264`.
 
 **All five findings are CONFIRMED. None is FALSE, ALREADY-CONCEDED or
-OUT-OF-SCOPE.** Two of the five turned out to be samples of a larger class than
-the review reported, and this response names the extra members it found.
+OUT-OF-SCOPE.** ⚠ **CORRECTED AFTER ROUND 3 (finding R3-N2): THREE of the five
+were samples of a larger class, not two, and the extra members total FIVE, not
+four.** R2-M3 named two and the sweep found three (+1); R2-N1 named three and the
+sweep found five (+2); R2-N2 named **four** sites — its third bullet carried two —
+and the sweep found six (+2). The original sentence contradicted this response's
+own disposition table immediately below it.
 
 ## Disposition
 
@@ -21,7 +25,7 @@ the review reported, and this response names the extra members it found.
 | **R2-M2** | BLOCKING     | **CONFIRMED** | Selects whose option list can hold two options per value                                                                   |
 | **R2-M3** | BLOCKING     | **CONFIRMED** | Every `labelRender` that can render the badge — **4, not 2**                                                               |
 | **R2-N1** | non-blocking | **CONFIRMED** | CSS-selector matchers built from a caller's name — **5, not 3**; ⚠ the wider regex form is **44 more, reported not fixed** |
-| **R2-N2** | non-blocking | **CONFIRMED** | Current-head prose stating the badge's populations — **6, not 3**                                                          |
+| **R2-N2** | non-blocking | **CONFIRMED** | Current-head prose stating the badge's populations — **6, not 4**                                                          |
 
 ## R2-M1 — the tooltip repeats M1's disproved canvas-wide claim
 
@@ -295,9 +299,19 @@ All logs persisted at the moment of measurement.
 
 ## Evidence boundary
 
-- The full e2e and integration suites are **NOT MEASURED** at this head. The
-  spec-level re-runs above cover every spec these changes touch, enumerated from
-  the changed files rather than assumed.
+- The full e2e and integration suites are **NOT MEASURED** at this head.
+  ⚠⚠ **CORRECTED AFTER ROUND 3 (finding R3-N1): the claim that the spec-level
+  re-runs covered "every spec these changes touch" was FALSE.** The enumeration
+  was `grep` for consumers of `ThemeManagerDSL` and `SmartActionsDSL`, and **a
+  grep for DSL importers cannot enumerate DIRECT COMPONENT CONSUMERS.**
+  `tests/e2e/offline-local-content.spec.ts` opens the changed
+  `ThemeSettingsDialog` and drives `theme-settings-select` and
+  `theme-settings-apply` without importing either DSL, and it was missed. It has
+  since been run: **REAL_EXIT=0, 4 passed** — no regression, and Codex's full e2e
+  run also included and passed it, so there is no product defect here. **The
+  defect was the evidence boundary, not the code.** The honest statement is: the
+  re-runs covered the specs that import the changed DSLs, plus the theme specs,
+  and they missed a direct component consumer.
 - The "Theme Preview" Alert's opposite-direction overclaim in
   `ThemeSettingsDialog.tsx` is **reported, not fixed** — see R2-M1.
 - The **44 unescaped regex matchers across 23 untouched files** are **reported,
@@ -321,11 +335,27 @@ docblocks — was written as settling-up rather than as new work owing its own
 class sweep. R2-M2 is a scope-control failure inside that; R2-M1, R2-M3 and R2-N2
 are unswept new work.
 
-The corroboration is in this response: sweeping those same classes found **two
-members round 2 did not name** (a third uncovered `labelRender`, two more false
-prose sites) and **two more** in R2-N1. Both the author and the reviewer sampled
-where the class was behavioural. That is the documented default failure mode, and
-it is the reason this round closes by class rather than by finding.
+The corroboration is in this response: sweeping those same classes found **five
+members round 2 did not name**, across **three** of its five findings. Both the
+author and the reviewer sampled where the class was behavioural. That is the
+documented default failure mode, and it is the reason this round closes by class
+rather than by finding.
+
+### ⚠⚠ WITHDRAWN AFTER ROUND 3 — "unswept new work" is NOT a third failure mode
+
+Codex's round-3 finding R3-N2 rejects the framing above and **is right, so it is
+withdrawn rather than defended.** The test of a distinct cause is whether it
+implies a distinct remedy, and this one does not: the remedy for "the fix's own
+new work was not swept" is exactly the remedy already on the books — _treat the
+fix as new work and sweep its behavioural class._ What the phrase usefully names
+is **where** the sampling happened (the new tooltip, the new legs, the sentinel
+behaviour, the rewritten docblocks); that is a location, not a mechanism.
+
+**The correct classification is the existing two.** R2-M2 is the scope-control
+case, because a fix created a new collision that did not exist before it. R2-M1,
+R2-M3 and R2-N2 are **under-reaching sweep failures** — the same cause round 2
+already named. The arithmetic above still stands as evidence that the sampling
+was real and mutual; it just is not evidence of a third category.
 
 ## One defect this response's own reading pass found
 

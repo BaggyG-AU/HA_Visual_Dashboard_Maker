@@ -24,10 +24,17 @@ export interface ThemeOption {
    * calling the population "exactly TWO consumers" without saying two of WHAT.
    *
    * ⚠⚠ THAT UNION IS WHY THE PREDICATE TESTS ALL SIX AND NOT THE CANVAS'S TWO.
-   * A theme defining, say, only `primary-color` leaves the canvas untouched but
-   * still renders a Primary swatch — a visible effect, so it must NOT be
-   * marked. Only a theme defining NONE of the six is inert on both surfaces:
-   * canvas unchanged AND the Theme Preview card completely empty.
+   * A theme defining, say, only `primary-color` sets no canvas colour but still
+   * renders a Primary swatch — a visible effect, so it must NOT be marked. Only
+   * a theme defining NONE of the six sets no colour on either surface: the
+   * canvas falls back to HAVDM's own antd token, and the Theme Preview card
+   * renders no colour swatches.
+   *
+   * ⚠⚠⚠ SAY "SETS NO COLOUR", NEVER "UNCHANGED" OR "EMPTY" — CORRECTED AFTER
+   * CODEX'S ROUND-3 REVIEW (finding R3-M1). Both of those were measured false:
+   * switching from a rich theme REPLACES the canvas colours with the antd
+   * fallback rather than leaving them, and the Preview card keeps its title, the
+   * theme name, the mode Tag and a "Colors" heading whatever the swatches do.
    *
    * ⚠⚠⚠ WHAT THIS FLAG DOES **NOT** ESTABLISH — CORRECTED AFTER CODEX'S ROUND-1
    * REVIEW OF PR #142 (finding M1). It once carried the label "no preview
