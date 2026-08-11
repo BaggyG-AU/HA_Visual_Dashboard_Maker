@@ -10,16 +10,34 @@ import { REAL_HA_THEMES } from '../fixtures/realHaThemes';
 import type { Theme } from '../../src/types/homeassistant';
 
 /**
- * F3 / HA-06 — the interim "no preview effect" badge.
+ * F3 / HA-06 — the interim "no preview colours" badge.
  *
  * ⭐ WHAT THIS PINS. `themeService.applyThemeToElement` publishes a theme as
- * ~30 CSS custom properties, but HAVDM has no `var(--…)` consumers anywhere in
- * `src/` (`grep -rn 'var(--' src/` returns two hits, both comments saying so).
- * The only real canvas outcome is the RC5 two-colour workaround in `App.tsx`,
- * which reads `primaryBackground` and `primaryText` out of
- * `themeService.getThemeColors()`. A theme that defines NONE of the fields that
- * function reads therefore changes nothing the user can see, and the picker
- * said nothing about it. This badge marks exactly that case.
+ * ~30 CSS custom properties on the canvas element, and `getThemeColors()` maps
+ * exactly six of them onto the two surfaces HAVDM previews: the canvas
+ * background/text pair in `App.tsx` and the six swatches of
+ * `ThemePreviewPanel`. A theme defining NONE of those six leaves both surfaces
+ * untouched, and the picker used to say nothing about it. This badge marks
+ * exactly that case — and, since Codex's round-1 review of PR #142, says only
+ * that: **"no preview colours"**, not "no preview effect".
+ *
+ * ⚠⚠⚠ WHY THE WORDING IS THAT NARROW — READ BEFORE WIDENING IT AGAIN.
+ * The original claim rested on `grep -rn 'var(--' src/` returning only
+ * comments, read as "nothing consumes a published theme variable". **A source
+ * grep cannot enumerate that class.** `applyThemeToElement` publishes EVERY
+ * string-valued theme key, `Theme` accepts any key
+ * (`src/types/homeassistant.ts:81-84`), and the canvas subtree
+ * (`App.tsx:3097-3460`) renders bundled stylesheets that read hundreds of
+ * custom properties: Swiper via `BaseCard.tsx:759`, Allotment and Monaco via
+ * `SplitViewEditor.tsx:486,525-550`. Codex demonstrated a theme defining only
+ * `swiper-theme-color` that this predicate badges while the real carousel arrow
+ * changed from `rgb(0, 122, 255)` to `rgb(255, 0, 0)`. Closing that gap needs
+ * computed styles over a rendered document — the canvas fidelity contract's
+ * mechanism, a separate scoped item — so the interim fix was to stop claiming
+ * more than the predicate establishes.
+ * ⓘ For the record, since three different numbers are in circulation:
+ * `grep -rn 'var(--' src/` returned 0 before RC5, 2 on `6bf5f62`, and 5 at this
+ * branch's head. None of them measures the property that matters.
  *
  * ⚠⚠⚠ THE RED LEG, AND WHY IT IS VALID.
  * The discriminating assertions below go through `buildThemeOptions`, which
@@ -193,14 +211,30 @@ describe('buildThemeOptions marks themes with no canvas effect', () => {
 
   /**
    * KNOWN-OPEN: a theme whose value is an UNRESOLVABLE `var()` reference is not
-   * badged, even though it paints nothing.
+   * badged, even though it paints no colour on the canvas.
    *
    * ⚠ This asserts the CURRENT, PASSING behaviour so the limit is pinned rather
    * than described in prose nobody re-reads. `definesNoCanvasColors` is a pure
    * function over the theme object: it can see that a value is a non-empty
    * string, but not whether that string resolves to a colour in a browser.
-   * `var(--does-not-exist)` is truthy, so the theme escapes the badge while
-   * having no visible effect — the exact case the badge exists to mark.
+   *
+   * ⚠⚠ CORRECTED AFTER CODEX'S ROUND-1 REVIEW (finding N2). This docblock used
+   * to call the unbadged theme a case of "no visible effect" that escapes the
+   * badge. **That was wrong, and the assertion below is right for a reason the
+   * prose got backwards.** `var(--does-not-exist)` is TRUTHY, so
+   * `ThemePreviewPanel.ColorSwatch` does not take its `if (!color) return null`
+   * path (`src/components/ThemePreviewPanel.tsx:45`) — it renders the labelled
+   * Background row with that literal string as its caption
+   * (`:53,62-64`). Under this badge's own canvas ∪ preview-panel union the
+   * theme therefore DOES have a visible effect, so leaving it unbadged is
+   * simply correct, not a conceded limit. The genuinely open half is narrower:
+   * the CANVAS alone stays unpainted, and the predicate cannot tell that from a
+   * literal colour.
+   * ⓘ Empty strings are correctly badged either way — the canvas normalises
+   * both selected colours with `|| undefined` (`src/App.tsx:498-499`) and the
+   * swatches return `null` for falsy values. `none`, `transparent` and
+   * whitespace stay unbadged and render a preview row, which is the same
+   * conservative direction.
    *
    * ⓘ NOT hypothetical in form: `Material You` reaches the canvas through
    * `var(--md-sys-color-surface-container)` and paints only because that chain
@@ -208,8 +242,8 @@ describe('buildThemeOptions marks themes with no canvas effect', () => {
    * reference instance. A theme whose chain does NOT bottom out would slip
    * through, and no theme on that instance does.
    *
-   * ⚠ Closing this needs computed styles, i.e. a rendered document — a
-   * different mechanism from a pure predicate, and it belongs with the canvas
+   * ⚠ Closing the canvas half needs computed styles, i.e. a rendered document —
+   * a different mechanism from a pure predicate, and it belongs with the canvas
    * fidelity contract rather than this interim marking. Whoever closes it
    * BREAKS THIS TEST and must correct the docblocks in the same commit.
    */
@@ -220,6 +254,39 @@ describe('buildThemeOptions marks themes with no canvas effect', () => {
     const options = buildThemeOptions({ Unresolvable: unresolvable }, {});
 
     expect(optionFor(options, 'Unresolvable')?.definesNoCanvasColors).toBe(false);
+  });
+
+  /**
+   * ⚠⚠⚠ CODEX ROUND-1 FINDING M1, PINNED — AND NOT A RED LEG. State it plainly:
+   * this assertion passes on `6bf5f62`, on `c1acb52` and here. **The behaviour
+   * did not change; the CLAIM did.**
+   *
+   * A theme defining only `swiper-theme-color` defines none of the six mapped
+   * fields, so it is badged. `applyThemeToElement` still publishes it as
+   * `--swiper-theme-color` on the canvas element
+   * (`src/services/themeService.ts:35-39`), where Swiper's bundled navigation
+   * CSS reads `color: var(--swiper-navigation-color, var(--swiper-theme-color))`
+   * below `BaseCard.tsx:759`. Codex measured the real arrow moving from
+   * `rgb(0, 122, 255)` to `rgb(255, 0, 0)` while this predicate badged it.
+   *
+   * Under the OLD label — "no preview effect" — that made the badge a false
+   * product claim. Under **"no preview colours"** it is true: the theme really
+   * does define none of the colours HAVDM previews. **This leg is here so that
+   * anyone widening the wording back towards "no effect" has to read why it was
+   * narrowed**, and so the counterexample survives as an executable case rather
+   * than a paragraph in a review file.
+   *
+   * ⓘ Swiper is a sample, not the population. The canvas subtree
+   * (`App.tsx:3097-3460`) also renders Allotment (`SplitViewEditor.tsx:486`,
+   * incl. `background-color: var(--separator-border)`) and Monaco
+   * (`SplitViewEditor.tsx:525-550`, 238 distinct custom properties). No pure
+   * predicate over the theme object can enumerate that class.
+   */
+  it('still marks a theme whose only key is consumed by bundled canvas CSS', () => {
+    const swiperOnly = { 'swiper-theme-color': 'rgb(255, 0, 0)' } as unknown as Theme;
+    const options = buildThemeOptions({ 'Swiper Only': swiperOnly }, {});
+
+    expect(optionFor(options, 'Swiper Only')?.definesNoCanvasColors).toBe(true);
   });
 
   /**

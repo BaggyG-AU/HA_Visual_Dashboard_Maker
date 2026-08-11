@@ -6,12 +6,10 @@ export interface ThemeOption {
   label: string;
   value: string;
   /**
-   * True when selecting this theme will change nothing the user can see.
+   * True when this theme defines none of the colours HAVDM's preview reads.
    *
-   * ⭐ F3 / HA-06 (interim). `themeService.applyThemeToElement` publishes a
-   * theme as ~30 CSS custom properties, but nothing in `src/` reads a single
-   * `var(--…)` — so a theme reaches the user through exactly ONE funnel,
-   * `themeService.getThemeColors()`, and that function has exactly TWO
+   * ⭐ F3 / HA-06 (interim). `themeService.getThemeColors()` is the funnel that
+   * maps a theme onto the two surfaces HAVDM previews, and it has exactly TWO
    * consumers:
    *
    *   1. `App.tsx` — the RC5 canvas workaround, which reads `primaryBackground`
@@ -23,14 +21,31 @@ export interface ThemeOption {
    * A theme defining, say, only `primary-color` leaves the canvas untouched but
    * still renders a Primary swatch — a visible effect, so it must NOT be
    * marked. Only a theme defining NONE of the six is inert on both surfaces:
-   * canvas unchanged AND the Theme Preview card completely empty. That is what
-   * makes "no preview effect" literally accurate rather than approximate.
+   * canvas unchanged AND the Theme Preview card completely empty.
    *
-   * ⚠ This is NOT a claim about what the theme does elsewhere. It is a purely
-   * NEGATIVE fact about HAVDM — four of the five themes on the reference
-   * instance satisfy it, and one of those (`Mushroom`) defines no variables
-   * whatsoever, so any positive reading ("styles cards", "shape only") would be
-   * false of that member. The user-facing wording is correspondingly negative.
+   * ⚠⚠⚠ WHAT THIS FLAG DOES **NOT** ESTABLISH — CORRECTED AFTER CODEX'S ROUND-1
+   * REVIEW OF PR #142 (finding M1). It once carried the label "no preview
+   * effect", on the reasoning that `grep -rn 'var(--' src/` returned only
+   * comments and therefore nothing consumed a published theme variable. **That
+   * reasoning was wrong, because a grep of this repository's sources cannot
+   * enumerate the stylesheets its dependencies bundle.**
+   * `themeService.applyThemeToElement` publishes EVERY string-valued theme key
+   * as a custom property on the canvas element, `Theme` accepts any key
+   * (`src/types/homeassistant.ts:81-84`), and the canvas subtree
+   * (`App.tsx:3097-3460`) renders Swiper (`BaseCard.tsx:759`), Allotment and
+   * Monaco (`SplitViewEditor.tsx:486,525-550`) — hundreds of `var(--…)`
+   * consumers between them. A theme defining only `swiper-theme-color` is
+   * marked here while visibly recolouring the real carousel arrow.
+   * **So: this flag says the MAPPED PREVIEW COLOURS are absent. It does not say
+   * the theme has no effect, and the badge must not either.** Deciding the
+   * wider question needs computed styles over a rendered document — the canvas
+   * fidelity contract's mechanism, which is its own scoped item.
+   *
+   * ⚠ Also not a claim about what the theme does in Home Assistant. Four of the
+   * five themes on the reference instance satisfy the predicate, and one
+   * (`Mushroom`) defines no variables whatsoever, so any positive reading
+   * ("styles cards", "shape only") would be false of that member. The
+   * user-facing wording is correspondingly negative.
    *
    * ⚠ Mode-sensitive, because both consumers are: computed for the `darkMode`
    * passed to `buildThemeOptions`, matching the argument its consumers pass to
@@ -70,16 +85,31 @@ function definesNoCanvasColors(theme: Theme, darkMode: boolean): boolean {
  * never be selected — the picker disagreed with the resolver. Both now call
  * this, so they cannot drift apart again.
  *
+ * ⭐⭐ AND SINCE PR #142's ROUND-1 FIX, ALL FOUR THEME-APPLICATION CONTROLS CALL
+ * IT — not just the two obvious pickers. The class is a ROLE: every control
+ * whose completed action changes which theme is in effect for the preview.
+ * `theme-select` and `theme-settings-select` call `setTheme`;
+ * `theme-manager-saved-select` + Load calls `loadSavedTheme`; and
+ * `theme-manager-view-override` calls `setViewOverride`. The last two used to
+ * build their own option shapes by hand and dropped the badge flag on the
+ * floor. **If you add a fifth, build its options here.**
+ *
  * Ordering is deterministic: available themes first (built-ins and any from a
  * connected Home Assistant), then saved themes that are not already listed.
  *
- * ⚠ `label` stays a PLAIN STRING and the badge is a separate field. antd
- * derives an option's `title` attribute from a string label, and
- * `tests/e2e/theme-restore.spec.ts` selects
- * `.ant-select-item-option[title="<name>"]` while
- * `tests/support/dsl/themeManager.ts` matches anchored `^<name>$` text.
- * Rendering the badge into the label would break both. Consumers render it via
- * antd's `optionRender` / `labelRender` instead.
+ * ⚠ `label` stays a PLAIN STRING and the badge is a separate field, because
+ * antd derives an option's `title` attribute from a string label and that
+ * attribute is how every spec in the suite now selects a theme option
+ * (`tests/e2e/theme-restore.spec.ts`, `tests/support/dsl/themeManager.ts`,
+ * `tests/integration/theme-no-effect-badge.spec.ts`). Rendering the badge INTO
+ * the label would destroy that identity. Consumers render it via antd's
+ * `optionRender` / `labelRender` instead.
+ * ⚠⚠ NOTE THE DIRECTION OF THAT ARGUMENT, because it was inverted once and
+ * Codex's round-1 review (finding M2) caught it: keeping `label` a plain string
+ * is a constraint on HOW the badge is rendered. It is NOT a reason to leave a
+ * control unbadged. Every Select that applies a theme renders the badge; the
+ * specs were retargeted to `title` rather than the product narrowed to fit
+ * them.
  *
  * ⚠ `darkMode` defaults to `false` so the two-argument callers that predate the
  * badge keep compiling and keep meaning what they meant.

@@ -23,7 +23,7 @@ import {
 } from '@ant-design/icons';
 import { useThemeStore } from '../store/themeStore';
 import { themeService } from '../services/themeService';
-import { buildThemeOptions } from '../features/theme-manager';
+import { buildThemeOptions, type ThemeOption } from '../features/theme-manager';
 import { ThemeNoEffectBadge } from './ThemeNoEffectBadge';
 import * as monaco from 'monaco-editor';
 
@@ -210,19 +210,42 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
     return buildThemeOptions(availableThemes, savedThemes, localDarkMode);
   }, [availableThemes, savedThemes, localDarkMode]);
 
+  // ⚠⚠ CODEX ROUND-1 FINDING M2. This used to build a SECOND option shape by
+  // hand — `{label, value}` only — which silently discarded the badge flag, so
+  // loading a saved theme applied it with no warning while the same theme was
+  // badged in the header picker. It now goes through `buildThemeOptions` like
+  // every other theme option list. Passing `{}` as the available themes yields
+  // exactly the saved ones, in the same order `Object.keys(savedThemes)` gave.
   const savedThemeOptions = useMemo(() => {
-    return Object.keys(savedThemes).map((name) => ({
-      label: name,
-      value: name,
-    }));
-  }, [savedThemes]);
+    return buildThemeOptions({}, savedThemes, localDarkMode);
+  }, [savedThemes, localDarkMode]);
 
   // ⚠ `themeOptions` ALREADY unions the saved themes, so the previous extra
   // `savedThemeOptions.filter(...)` spread here would now duplicate every one of
   // them in this list. Do not reinstate it.
-  const overrideThemeOptions = useMemo(() => {
-    return [{ label: 'No override (use global theme)', value: '__none__' }, ...themeOptions];
+  // ⚠ The sentinel carries `definesNoCanvasColors: false` explicitly rather
+  // than omitting the field: it keeps the array a homogeneous `ThemeOption[]`,
+  // and "no override" is not a theme, so it has no predicate to evaluate and
+  // must never be badged.
+  const overrideThemeOptions = useMemo<ThemeOption[]>(() => {
+    return [
+      { label: 'No override (use global theme)', value: '__none__', definesNoCanvasColors: false },
+      ...themeOptions,
+    ];
   }, [themeOptions]);
+
+  /**
+   * ⚠ antd threads the option's own fields through `optionRender` (as
+   * `option.data`) but NOT through `labelRender`, which receives only
+   * `{ label, value }`. Both renderers therefore resolve the flag by value
+   * against the list the Select was given — one helper per list, so a Select
+   * can never read another Select's population.
+   */
+  const marksNoEffect = useCallback(
+    (options: ThemeOption[], value: unknown) =>
+      options.some((option) => option.value === value && option.definesNoCanvasColors),
+    [],
+  );
 
   // Generate YAML from current theme
   const themeYaml = currentTheme ? themeService.generateThemeCSS(currentTheme, localDarkMode) : '';
@@ -403,6 +426,21 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                   options={savedThemeOptions}
                   style={{ width: '100%' }}
                   placeholder="Select saved theme"
+                  optionRender={(option) => (
+                    <Space
+                      size={4}
+                      style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}
+                    >
+                      <span>{option.label}</span>
+                      {option.data?.definesNoCanvasColors && <ThemeNoEffectBadge />}
+                    </Space>
+                  )}
+                  labelRender={({ label, value }) => (
+                    <Space size={4} style={{ display: 'flex' }}>
+                      <span>{label}</span>
+                      {marksNoEffect(savedThemeOptions, value) && <ThemeNoEffectBadge compact />}
+                    </Space>
+                  )}
                 />
                 <Button
                   data-testid="theme-manager-load"
@@ -439,6 +477,21 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                   }
                   style={{ width: '100%' }}
                   disabled={!activeViewKey}
+                  optionRender={(option) => (
+                    <Space
+                      size={4}
+                      style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}
+                    >
+                      <span>{option.label}</span>
+                      {option.data?.definesNoCanvasColors && <ThemeNoEffectBadge />}
+                    </Space>
+                  )}
+                  labelRender={({ label, value }) => (
+                    <Space size={4} style={{ display: 'flex' }}>
+                      <span>{label}</span>
+                      {marksNoEffect(overrideThemeOptions, value) && <ThemeNoEffectBadge compact />}
+                    </Space>
+                  )}
                 />
                 <Button
                   data-testid="theme-manager-view-clear"
@@ -555,6 +608,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
       localDarkMode,
       localSyncWithHA,
       localThemeName,
+      marksNoEffect,
       overrideThemeOptions,
       savedThemeName,
       savedThemeOptions,

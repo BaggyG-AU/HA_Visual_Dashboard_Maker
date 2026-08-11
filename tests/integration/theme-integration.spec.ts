@@ -159,14 +159,17 @@ test.describe('Theme Integration', () => {
       await ctx.window.getByTestId('theme-manager-save').click();
 
       await ctx.window.getByTestId('theme-manager-saved-select').click();
-      const options = ctx.window.locator('.ant-select-item-option');
-      await expect(options.filter({ hasText: /^snapshot-integration$/ }).first()).toBeVisible({
-        timeout: 5000,
-      });
-      await options
-        .filter({ hasText: /^snapshot-integration$/ })
-        .first()
-        .click();
+      // ⚠ Selected by the antd-derived `title`, not by anchored row text: this
+      // Select renders the "no preview colours" badge, so a `^name$` matcher
+      // would miss any badged option. `snapshot-integration` is saved from the
+      // mock theme, which defines every colour and is never badged — but a
+      // matcher that only works because of the fixture's shape is the coupling
+      // Codex's M2 finding was about, so it does not survive here either.
+      const savedOption = ctx.window.locator(
+        '.ant-select-item-option[title="snapshot-integration"]',
+      );
+      await expect(savedOption.first()).toBeVisible({ timeout: 5000 });
+      await savedOption.first().click();
 
       await ctx.window.getByTestId('theme-manager-load').click();
       await expect(ctx.window.getByTestId('theme-settings-sync')).not.toBeChecked();
@@ -180,9 +183,7 @@ test.describe('Theme Integration', () => {
       await ctx.window.getByTestId('theme-manager-import').click();
 
       await ctx.window.getByTestId('theme-manager-saved-select').click();
-      await expect(options.filter({ hasText: /^snapshot-integration$/ }).first()).toBeVisible({
-        timeout: 5000,
-      });
+      await expect(savedOption.first()).toBeVisible({ timeout: 5000 });
       await ctx.window.keyboard.press('Escape');
 
       await ctx.settings.close();

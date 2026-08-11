@@ -2,7 +2,7 @@ import { Theme } from '../types/homeassistant';
 import { logger } from './logger';
 // ⚠ Imported from the leaf modules, NOT the `../features/theme-manager` barrel.
 // The barrel re-exports `themeOptions`, which now calls back into this service
-// to compute the "no preview effect" badge — going through the barrel would
+// to compute the "no preview colours" badge — going through the barrel would
 // make that a circular import (themeService → barrel → themeOptions →
 // themeService). `types` and `storage` import nothing from `src/services`, so
 // this direction is acyclic. Do not collapse these back into the barrel.
