@@ -155,15 +155,33 @@ option row in a Select that now renders the badge.** Enumerated by grepping
 token list alone cannot answer that, since most hits are entity pickers and
 card-option Selects that this change does not touch.
 
-Nine sites reach the four theme Selects:
+**Six members**, plus 19 further sites examined and excluded:
 
-| Site                                                                                                  | Disposition                                                                                             |
-| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `tests/support/dsl/themeManager.ts:22, 64, 73`                                                        | **retargeted** to `[title="…"]`                                                                         |
-| `tests/integration/theme-integration.spec.ts:161-183`                                                 | **retargeted** — it worked only because the mock theme defines every colour, which is the same coupling |
-| `tests/integration/theme-integration.spec.ts:29,54,82`                                                | safe — visibility/`.first()` only, no text dependency                                                   |
-| `tests/e2e/theme-integration` built-in targets (`:57`), `tests/e2e/offline-local-content.spec.ts:109` | safe — built-ins can never be badged, and that invariant is itself pinned by two legs                   |
-| `tests/e2e/theme-restore.spec.ts:79`, `tests/integration/theme-no-effect-badge.spec.ts`               | already `[title="…"]`                                                                                   |
+| Member (text-dependent, in a badging Select)                                       | Disposition                                                                                                 |
+| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `tests/support/dsl/themeManager.ts` — the three `^name$` matchers                  | **retargeted** to `[title="…"]` (now `:37`, `:77`, `:84`)                                                   |
+| `tests/integration/theme-integration.spec.ts` — the `snapshot-integration` matcher | **retargeted** (now `:169`) — it worked only because the mock theme defines every colour, the same coupling |
+| `tests/integration/theme-integration.spec.ts:56` — `^HAVDM Default$`               | **left unchanged**: targets a built-in, which can never be badged                                           |
+| `tests/e2e/offline-local-content.spec.ts:109` — `^HAVDM High Contrast$`            | **left unchanged**: same reason                                                                             |
+
+⚠ The two left unchanged are safe only because of an invariant, so the invariant
+is pinned rather than assumed: `tests/unit/themeBadge.spec.ts` → `marks no
+built-in theme`, and `tests/integration/theme-no-effect-badge.spec.ts:176` →
+`leaves a built-in theme unbadged with no HA connection`.
+
+**Excluded, after reading each:** 11 sites already select by `[title="…"]`
+(`theme-restore.spec.ts:79` and every option locator in
+`theme-no-effect-badge.spec.ts`), and 8 depend on neither text nor identity —
+`options.first()` / visibility only (`theme-integration.spec.ts:29,54,82`,
+`theme-no-effect-badge.spec.ts:58,104,184`, `theme-restore.spec.ts:70`,
+`offline-local-content.spec.ts:74`).
+
+⚠⚠ **This table replaces an earlier count of "nine sites … 4 retargeted, 3
+already title-based, 2 safe", which was wrong.** It double-counted the
+already-identity-based group and folded three non-members into the population.
+The reading pass over this very response caught it — which is the second defect
+that pass found in my own finished work, after the commit-message figure in
+§5.1.
 
 ## 3. N1 — CONFIRMED, with one correction to the reviewer
 
@@ -220,6 +238,20 @@ confirmed the conservative direction holds.
 
 ⚠ **`tests/unit/builtInThemes.spec.ts` remains byte-unchanged**, as the
 commission's §5 requires.
+
+### 5.1 Correction to my own fix commit's message
+
+⚠ **`354d107`'s message states the fix-round red leg as "3 failed / 12 passed".
+That is wrong. It was 3 failed / 3 passed**, and the same sentence contradicts
+itself by going on to say "all three controls passed". The 12 is a carry-over
+from the unit red leg's control count.
+
+The table above is correct. **The commit message is not being amended** — this
+project supersedes rather than rewrites, `354d107` is already pushed and the
+reviewer's commit sits beside it, and a visible correction is louder than a
+silent force-push. This is the same class of defect N1 reports in the original
+commit message, found the same way: by re-reading a finished artifact against
+the measurement instead of against memory.
 
 ## 6. What this response does NOT do
 
