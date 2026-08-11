@@ -15,13 +15,13 @@ the review reported, and this response names the extra members it found.
 
 ## Disposition
 
-| Finding   | Severity     | Verdict       | Class swept                                                          |
-| --------- | ------------ | ------------- | -------------------------------------------------------------------- |
-| **R2-M1** | BLOCKING     | **CONFIRMED** | User-facing strings claiming a theme's scope of effect               |
-| **R2-M2** | BLOCKING     | **CONFIRMED** | Selects whose option list can hold two options per value             |
-| **R2-M3** | BLOCKING     | **CONFIRMED** | Every `labelRender` that can render the badge — **4, not 2**         |
-| **R2-N1** | non-blocking | **CONFIRMED** | Matchers building a CSS selector from a caller's name — **5, not 3** |
-| **R2-N2** | non-blocking | **CONFIRMED** | Current-head prose stating the badge's populations — **6, not 3**    |
+| Finding   | Severity     | Verdict       | Class swept                                                                                                                |
+| --------- | ------------ | ------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **R2-M1** | BLOCKING     | **CONFIRMED** | User-facing strings claiming a theme's scope of effect                                                                     |
+| **R2-M2** | BLOCKING     | **CONFIRMED** | Selects whose option list can hold two options per value                                                                   |
+| **R2-M3** | BLOCKING     | **CONFIRMED** | Every `labelRender` that can render the badge — **4, not 2**                                                               |
+| **R2-N1** | non-blocking | **CONFIRMED** | CSS-selector matchers built from a caller's name — **5, not 3**; ⚠ the wider regex form is **44 more, reported not fixed** |
+| **R2-N2** | non-blocking | **CONFIRMED** | Current-head prose stating the badge's populations — **6, not 3**                                                          |
 
 ## R2-M1 — the tooltip repeats M1's disproved canvas-wide claim
 
@@ -181,8 +181,8 @@ Error: Unexpected token "" while parsing css selector
    at support/dsl/themeManager.ts:85
 ```
 
-**Class sweep.** The class is a BEHAVIOUR: _a matcher that builds a CSS attribute
-selector out of a caller-supplied name._ Swept with `\[title="\${` and then by
+**Class sweep.** The class as swept: _a matcher that builds a **CSS attribute
+selector** out of a caller-supplied name._ Swept with `\[title="\${` and then by
 reading every interpolated `locator()` call in `tests/`, since a token grep keyed
 on `title=` would miss a `:has-text()` form. **Five members — round 2 named
 three:**
@@ -205,6 +205,42 @@ exact: true }))` — `getByTitle` takes the value as **data** and escapes it, wh
 `and()` keeps the match pinned to an option row rather than any titled
 descendant. `grep -rn '\[title="\${' tests/` now returns only prose describing
 the old form.
+
+### ⚠⚠ AND THE CORRECTION TO MY OWN CLASS STATEMENT — FOUND AFTER THE FIX, BEFORE COMMISSIONING ROUND 3
+
+**The class above is narrower than the behaviour, and I keyed it on the
+vocabulary of the instance the reviewer handed me.** R2-N1 arrived as a
+`[title="…"]` CSS defect, so I swept for CSS-selector construction. Stated as a
+BEHAVIOUR the class is wider: _a matcher that splices an unescaped
+caller-supplied value into **matcher syntax** — CSS **or regex**._
+
+Under that statement there are **44 further sites across 23 files**, measured by
+matching `new RegExp(` + a template literal containing an interpolation across
+`tests/`, and separating the escaped from the unescaped:
+
+- **44 unescaped.** Example: `attributeDisplay.ts:74` —
+  `getByRole('option', { name: new RegExp(\`^\${value}$\`, 'i') })`. A value
+containing `(`or`[`throws or mis-matches: the same defect in different
+syntax, and it sits in a sibling of the`selectAntOption` I just fixed.
+- **5 correctly escaped**, which is what shows the pattern is known and applied
+  inconsistently rather than unknown: `weatherViz.ts:129` (a local
+  `escapeRegex`), `colorPicker.ts:403` and `iconColor.ts:112` (pre-escaped
+  values), `authorLedger.ts:98-99` (escaped by hand).
+
+⚠ **REPORTED, NOT FIXED — a scope judgement, not an oversight.** **Every one of
+the 44 is in a file this branch never touched**, measured against
+`git diff --name-only 6bf5f62...HEAD`. They span carousel, layout, settings,
+calendar, ApexCharts and eighteen other DSLs with no connection to F3. Rewriting
+23 files of unrelated test helpers inside a theme-badge PR is the over-reach half
+of the very rule this round is being judged against. **Raised for the owner as
+its own item.**
+
+⭐ The lesson is the one this response already draws about the author and the
+reviewer, now drawn about this sweep: _a mechanical sweep is only as good as the
+key it is keyed on, and keying it on the token the first instance happened to use
+finds what shares that token, not the class._ The five-member sweep is correct
+for the class I stated, and **the class I stated was the reviewer's vocabulary
+rather than the behaviour.**
 
 ## R2-N2 — current-head prose states false populations
 
@@ -264,6 +300,9 @@ All logs persisted at the moment of measurement.
   the changed files rather than assumed.
 - The "Theme Preview" Alert's opposite-direction overclaim in
   `ThemeSettingsDialog.tsx` is **reported, not fixed** — see R2-M1.
+- The **44 unescaped regex matchers across 23 untouched files** are **reported,
+  not fixed** — see R2-N1's class correction. None is in a file this branch
+  changed.
 - The two watched items round 2 disclosed (`apexcharts.visual:26` at 3,341 px vs
   the drawer's 3,126, and the one-fire `yaml-entity-insert.spec.ts:151` flake
   candidate) are **not touched by this round** and nothing here bears on them.
