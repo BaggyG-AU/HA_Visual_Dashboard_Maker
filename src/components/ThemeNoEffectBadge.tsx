@@ -40,10 +40,29 @@ import { InfoCircleOutlined } from '@ant-design/icons';
  * item and the only mechanism that could support the wider claim.
  */
 
+/**
+ * ⚠⚠⚠ THIS STRING IS THE PRODUCT CLAIM. IT MAY PROMISE ONLY WHAT
+ * `definesNoCanvasColors` ESTABLISHES — the canvas `<Content>`'s OWN
+ * background/text pair and the six `ThemePreviewPanel` swatches. It may NOT
+ * speak for the canvas SUBTREE, whose bundled stylesheets consume hundreds of
+ * custom properties this predicate cannot see.
+ *
+ * ⚠⚠ CORRECTED AFTER CODEX'S ROUND-2 REVIEW OF PR #142 (finding R2-M1). The
+ * round-1 fix narrowed the LABEL to "no preview colours" but left this string
+ * reading *"…so the canvas and the Theme Preview panel will not change. Other
+ * styling may still differ."* — which moved M1's disproved canvas-wide claim
+ * rather than retracting it, and then contradicted itself in the next sentence.
+ * A user reads "the canvas" as everything they see on it, not as the `<Content>`
+ * root as distinct from its descendants. The wording below names the two
+ * surfaces and concedes the third in the user's own vocabulary.
+ * ⓘ The owner signed off this wording on 2026-08-11, as he did the label before
+ * it. **Do not re-word a user-facing claim here without putting it to him.**
+ */
 export const THEME_NO_PREVIEW_COLOURS_TOOLTIP =
-  'This theme defines none of the colours HAVDM reads, so the canvas and the Theme ' +
-  'Preview panel will not change. Other styling may still differ. Your Home Assistant ' +
-  'dashboard is unaffected either way.';
+  'This theme defines none of the colours HAVDM reads, so the canvas background and ' +
+  'text stay as they are and the Theme Preview panel stays empty. Cards, editors and ' +
+  'other styling on the canvas may still change. Your Home Assistant dashboard is ' +
+  'unaffected either way.';
 
 export const THEME_NO_PREVIEW_COLOURS_LABEL = 'no preview colours';
 

@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { Locator, Page, expect } from '@playwright/test';
 
 /**
  * ⚠⚠ OPTIONS ARE SELECTED BY THE antd-DERIVED `title`, NEVER BY ANCHORED ROW TEXT.
@@ -19,6 +19,27 @@ import { Page, expect } from '@playwright/test';
 export class ThemeManagerDSL {
   constructor(private window: Page) {}
 
+  /**
+   * An option row identified by its antd-derived `title`, with the name ESCAPED.
+   *
+   * ⚠⚠ CODEX ROUND-2 FINDING R2-N1. These matchers used to build the selector by
+   * interpolating the name straight into `[title="${name}"]`. Save and import
+   * both accept a name containing `"` — `src/features/theme-manager/storage.ts`
+   * only trims it and rejects the empty string — and such a name TERMINATES the
+   * attribute selector, so the DSL threw `Unexpected token "" while parsing css
+   * selector` instead of finding the option. `getByTitle` takes the value as
+   * DATA rather than as selector syntax and escapes it itself; `and()` keeps the
+   * match pinned to an option row rather than any titled descendant.
+   *
+   * ⚠ Never reintroduce a CSS string built from a theme name. The product
+   * accepts names this repository's fixtures do not contain.
+   */
+  private optionByTitle(root: Locator | Page, name: string): Locator {
+    return root
+      .locator('.ant-select-item-option')
+      .and(this.window.getByTitle(name, { exact: true }));
+  }
+
   async openThemeManagerTab(): Promise<void> {
     await this.window
       .getByRole('tab', { name: /Theme Manager/i })
@@ -34,7 +55,7 @@ export class ThemeManagerDSL {
 
   async selectSavedTheme(name: string): Promise<void> {
     await this.window.getByTestId('theme-manager-saved-select').click();
-    const option = this.window.locator(`.ant-select-item-option[title="${name}"]`).first();
+    const option = this.optionByTitle(this.window, name).first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click();
   }
@@ -74,14 +95,14 @@ export class ThemeManagerDSL {
       .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
       .last();
     await expect(dropdown).toBeVisible({ timeout: 5000 });
-    const option = dropdown.locator(`.ant-select-item-option[title="${optionText}"]`).first();
+    const option = this.optionByTitle(dropdown, optionText).first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await option.click();
   }
 
   async expectSavedThemeVisible(name: string): Promise<void> {
     await this.window.getByTestId('theme-manager-saved-select').click();
-    const option = this.window.locator(`.ant-select-item-option[title="${name}"]`).first();
+    const option = this.optionByTitle(this.window, name).first();
     await expect(option).toBeVisible({ timeout: 5000 });
     await this.window.keyboard.press('Escape');
   }

@@ -143,7 +143,7 @@ describe('the real installed themes — what getThemeColors actually returns', (
   });
 });
 
-describe('buildThemeOptions marks themes with no canvas effect', () => {
+describe('buildThemeOptions marks themes with no mapped preview colours', () => {
   /** ⚠ RED LEG — fails on base with `undefined !== true`. */
   it.each(REAL_THEMES_WITH_NO_CANVAS_COLOURS)('marks the real %s theme', (themeName) => {
     const options = buildThemeOptions(REAL_HA_THEMES, {});
@@ -193,9 +193,12 @@ describe('buildThemeOptions marks themes with no canvas effect', () => {
    * ⚠ RED LEG on the boundary, and the case that decides WHY the predicate
    * tests all six fields rather than the canvas's two.
    *
-   * `getThemeColors` has two consumers: the canvas in `App.tsx`, which reads
-   * only `primaryBackground` and `primaryText`, and `ThemePreviewPanel`, which
-   * renders a swatch for ALL SIX and returns `null` for any unset one. A theme
+   * `getThemeColors` has two SURFACE consumers: the canvas in `App.tsx:496`,
+   * which reads only `primaryBackground` and `primaryText`, and
+   * `ThemePreviewPanel:39`, which renders a swatch for ALL SIX and returns
+   * `null` for any unset one. (The predicate itself is a third CALLER, at
+   * `src/features/theme-manager/themeOptions.ts:73` — it describes those two
+   * rather than being one of them.) A theme
    * defining only `primary-color` therefore leaves the canvas untouched but
    * still renders a Primary swatch — a visible effect. Marking it would tell
    * the user a lie about their own theme, so the predicate must stay false
@@ -324,12 +327,17 @@ describe('buildThemeOptions keeps the contract the rest of the suite depends on'
   /**
    * CONTROL LEG — passes on base AND branch.
    *
-   * ⚠ `label` must stay a PLAIN STRING. `tests/e2e/theme-restore.spec.ts:79`
-   * clicks `.ant-select-item-option[title="${themeName}"]`, and
-   * `tests/support/dsl/themeManager.ts` matches anchored `^${name}$` text —
-   * antd derives that `title` from a string label. Rendering the badge INTO the
-   * label would change both and break those selectors, which is why the badge
-   * is a separate field rendered via `optionRender`/`labelRender` instead.
+   * ⚠ `label` must stay a PLAIN STRING. Both `tests/e2e/theme-restore.spec.ts`
+   * and `tests/support/dsl/themeManager.ts` select an option by its `title`,
+   * which antd derives from a string label. Rendering the badge INTO the label
+   * would change that attribute and break every one of those selectors, which
+   * is why the badge is a separate field rendered via
+   * `optionRender`/`labelRender` instead.
+   * ⚠⚠ CORRECTED AFTER CODEX'S ROUND-2 REVIEW (finding R2-N2): this used to say
+   * the Theme Manager DSL "matches anchored `^${name}$` text". It did before
+   * PR #142's round-1 fix; that fix retargeted it to `title`, and round 2's
+   * R2-N1 then replaced the raw CSS interpolation with an escaping
+   * `getByTitle` matcher. The DSL has not matched row text for two rounds.
    */
   it('leaves label and value as the bare theme name for every real theme', () => {
     const options = buildThemeOptions(REAL_HA_THEMES, {});

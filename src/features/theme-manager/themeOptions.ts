@@ -9,13 +9,19 @@ export interface ThemeOption {
    * True when this theme defines none of the colours HAVDM's preview reads.
    *
    * ⭐ F3 / HA-06 (interim). `themeService.getThemeColors()` is the funnel that
-   * maps a theme onto the two surfaces HAVDM previews, and it has exactly TWO
-   * consumers:
+   * maps a theme onto the two surfaces HAVDM previews. It has THREE callers in
+   * `src/`, of which TWO are the preview surfaces this predicate is about:
    *
-   *   1. `App.tsx` — the RC5 canvas workaround, which reads `primaryBackground`
-   *      and `primaryText` and applies them to the canvas `<Content>`.
-   *   2. `ThemePreviewPanel.tsx` — the "Theme Preview" card, which renders one
-   *      swatch per field for ALL SIX and returns `null` for any that is unset.
+   *   1. `App.tsx:496` — the RC5 canvas workaround, which reads
+   *      `primaryBackground` and `primaryText` and applies them to the canvas
+   *      `<Content>`.
+   *   2. `ThemePreviewPanel.tsx:39` — the "Theme Preview" card, which renders
+   *      one swatch per field for ALL SIX and returns `null` for any unset one.
+   *
+   * ⚠ The third is `definesNoCanvasColors` in THIS FILE (`:73`), which is why
+   * the count matters: it is a caller, not a surface, and it exists to describe
+   * the other two. Codex's round-2 review (finding R2-N2) caught this docblock
+   * calling the population "exactly TWO consumers" without saying two of WHAT.
    *
    * ⚠⚠ THAT UNION IS WHY THE PREDICATE TESTS ALL SIX AND NOT THE CANVAS'S TWO.
    * A theme defining, say, only `primary-color` leaves the canvas untouched but
@@ -85,14 +91,22 @@ function definesNoCanvasColors(theme: Theme, darkMode: boolean): boolean {
  * never be selected — the picker disagreed with the resolver. Both now call
  * this, so they cannot drift apart again.
  *
- * ⭐⭐ AND SINCE PR #142's ROUND-1 FIX, ALL FOUR THEME-APPLICATION CONTROLS CALL
- * IT — not just the two obvious pickers. The class is a ROLE: every control
- * whose completed action changes which theme is in effect for the preview.
- * `theme-select` and `theme-settings-select` call `setTheme`;
- * `theme-manager-saved-select` + Load calls `loadSavedTheme`; and
- * `theme-manager-view-override` calls `setViewOverride`. The last two used to
- * build their own option shapes by hand and dropped the badge flag on the
- * floor. **If you add a fifth, build its options here.**
+ * ⭐⭐ AND SINCE PR #142's ROUND-1 FIX, ALL FOUR THEME **OPTION SELECTS** CALL IT
+ * — not just the two obvious pickers. `theme-select` and `theme-settings-select`
+ * call `setTheme`; `theme-manager-saved-select` + Load calls `loadSavedTheme`;
+ * and `theme-manager-view-override` calls `setViewOverride`. The last two used
+ * to build their own option shapes by hand and dropped the badge flag on the
+ * floor. **If you add a fifth SELECT, build its options here.**
+ *
+ * ⚠⚠ FOUR IS THE POPULATION OF SELECTS, NOT OF THEME-APPLICATION ACTIONS —
+ * CORRECTED AFTER CODEX'S ROUND-2 REVIEW (finding R2-N2), which caught this
+ * docblock defining the class as the wider role "every control whose completed
+ * action changes which theme is in effect" and then counting only four.
+ * `setSyncWithHA(true)`, `importThemeManager`, clearing an override and changing
+ * the active view all re-derive the effective theme through
+ * `deriveEffectiveThemeState` (`src/store/themeStore.ts`), and none of them has
+ * an option list to build. They need no badge of their own: the theme each
+ * leaves in effect is displayed by a Select that does carry one.
  *
  * Ordering is deterministic: available themes first (built-ins and any from a
  * connected Home Assistant), then saved themes that are not already listed.

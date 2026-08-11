@@ -62,7 +62,14 @@ export class SmartActionsDSL {
     await selectField.locator('.ant-select-content').click();
 
     const dropdown = this.window.locator('.ant-select-dropdown:visible').last();
-    const option = dropdown.locator(`.ant-select-item-option[title="${label}"]`);
+    // ⚠ SWEPT MEMBER of Codex round-2 finding R2-N1's class: a matcher that
+    // builds a CSS attribute selector out of a caller-supplied name. Action
+    // labels are controlled here, so this one was never reachable — but the
+    // defect is structural, and `getByTitle` escapes the value instead of
+    // splicing it into selector syntax.
+    const option = dropdown
+      .locator('.ant-select-item-option')
+      .and(this.window.getByTitle(label, { exact: true }));
 
     await option.waitFor({ state: 'visible', timeout: 5000 });
     await option.click();
