@@ -119,7 +119,7 @@ consumers.**
 passed** — and round 3's full e2e run also included and passed it. **The defect
 was the evidence boundary, not the code.**
 
-**Population re-derived three ways** rather than one, which is the actual
+**Population re-derived four ways** rather than one, which is the actual
 correction:
 
 | Enumeration key                                    | Specs found                                                                               |
@@ -127,10 +127,32 @@ correction:
 | direct `theme-settings-select` / `-apply` test-ids | `offline-local-content`, `theme-no-effect-badge`                                          |
 | imports of the changed DSLs                        | `theme-manager`, `theme-no-effect-badge`                                                  |
 | `theme-select` / `theme-selector` test-ids         | `theme-integration`, `theme-integration-mocked`, `theme-restore`, `theme-no-effect-badge` |
+| specs that READ canvas/theme rendering             | `theme-chrome`                                                                            |
 
-Union with the `SmartActionsDSL` consumer `smart-actions` gives **eight** specs.
-Round 2 ran seven and missed `offline-local-content`. The round-2 response's
-claim is corrected in place to say which consumers were covered.
+⚠⚠ **THE FOURTH ROW WAS ADDED AFTER CODEX'S ROUND-4 REVIEW (finding R4-N1), AND
+THE DEFECT IT REPAIRS IS IN THIS DERIVATION, NOT IN THE POPULATION.** The three
+rows above it list **six** unique specs — `offline-local-content`,
+`theme-no-effect-badge`, `theme-manager`, `theme-integration`,
+`theme-integration-mocked`, `theme-restore` — and **seven** once the
+`SmartActionsDSL` consumer `smart-actions` is added. This section claimed
+**eight**, and the eighth was not derivable from any key it published.
+
+`tests/e2e/theme-chrome.spec.ts` is that member. It imports neither changed DSL
+and drives neither Select — its only imports are `@playwright/test` and
+`../support` — and it reaches the theme through `readCanvasColours`, which reads
+the computed `backgroundColor` **and** `color` off `[data-testid="canvas-surface"]`.
+That is the exact surface this badge makes a claim about. ⭐ **A key built from
+test-ids and DSL imports enumerates specs by what they DRIVE; it cannot see a
+spec that only OBSERVES.** That is R3-N1's own lesson one level up, which is
+precisely why it survived the correction written for R3-N1.
+
+**The population of eight was right; only the published derivation of it was
+wrong.** `theme-chrome` was already in round 2's own focused run — see the
+`theme-manager` + `theme-restore` + `theme-chrome` + `smart-actions` row of
+`docs/reviews/f3-theme-canvas-badge-author-response-round2.md`, REAL_EXIT=0, 8
+passed — so round 2 ran seven and missed `offline-local-content`, which round 3
+then ran. The round-2 response's claim is corrected in place to say which
+consumers were covered.
 
 **The stale red-leg signature is also mine.** The round-3 commission predicted
 the `d786d28` red leg would fail with `Received string: "__none__"`. It failed on
