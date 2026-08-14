@@ -106,10 +106,23 @@ interface ThemeNoEffectBadgeProps {
    *
    * ⚠⚠ DO NOT PASS IT ON AN `optionRender` ROW. Those render inside an open
    * `listbox`, where arrow keys are the expected model and a tab stop per
-   * option would fight the Select's own keyboard behaviour. Option rows carry
-   * the full explanation as their `aria-label` instead (below), so it joins the
-   * option's accessible name without adding a stop. Two contexts, two
+   * option would fight the Select's own keyboard behaviour. Two contexts, two
    * mechanisms, one qualification — that split is deliberate and owner-ruled.
+   *
+   * ⚠⚠⚠ CORRECTED AFTER CODEX ROUND-6 FINDING R6-M2. This paragraph used to end
+   * "Option rows carry the full explanation as their `aria-label` instead, so it
+   * joins the option's accessible name without adding a stop." **THAT WAS FALSE,
+   * and it is the claim round 6 disproved.** antd renders a SEPARATE HIDDEN 0×0
+   * `role="listbox"` whose `role="option"` children are the real accessible
+   * options; the visible rows this component renders into are `role="generic"`
+   * and are not options at all, so an `aria-label` here joins nothing. Measured:
+   * every `[role="option"]` in the document had `hasBadge: false`.
+   * **The option rows' qualification now comes from the OPTION DATA** —
+   * `buildThemeOptions` in `../features/theme-manager/themeOptions.ts` attaches
+   * `aria-label` and `aria-description` to badged options, which antd spreads
+   * onto that hidden node. ⚠ The `aria-label` this component still sets is for
+   * the COLLAPSED value, where the badge is a real focusable node with a role
+   * that accepts a name; it is not what an option row announces.
    */
   focusable?: boolean;
 }
