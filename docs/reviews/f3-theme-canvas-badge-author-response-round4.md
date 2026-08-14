@@ -193,15 +193,51 @@ commented as such.
 
 ## Evidence — all headless, `--workers=1`, sequential, no concurrent reviewer run
 
-| Check                                                             | Real result                                                                                                                                                                                                                                                              |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **RED**, 14 badge legs on `8aa8c1a` `src/`, first ordering        | **REAL_EXIT=1, 2 failed / 12 passed** — both on the NEW PHRASE being absent. Discrimination only; the leg was rewritten                                                                                                                                                  |
-| **RED**, 14 badge legs on `8aa8c1a` `src/`, defect-first ordering | **REAL_EXIT=1, 2 failed / 12 passed** — the inactive-option leg fails on `"uses HAVDM's own default colours"`, expected 0 received 1                                                                                                                                     |
-| — the transition CONTROL among the 12 passed                      | ✅ **labelled a CONTROL.** It passes on old source too: the behaviour did not change, the claim did                                                                                                                                                                      |
-| Source restored after the red runs                                | **`sha256sum -c` OK** — byte-identical to the pre-red file                                                                                                                                                                                                               |
-| **GREEN**, same 14 legs at this head                              | **REAL_EXIT=0, 14 passed**                                                                                                                                                                                                                                               |
-| `./tools/checks` re-run AFTER committing                          | see the PR body — REAL_EXIT and the 4/4 step count are reported there against the committed head                                                                                                                                                                         |
-| Full e2e / full integration                                       | ⚠⚠ **NOT MEASURED at this head — the owner forbade another full pass this round.** Codex's run at `9823d81` is the evidence of record: integration exit 0, 229 passed / 19 skipped of 248; e2e exit 1, 316 / 7 / 2 of 325, all seven canonical signatures, no new family |
+| Check                                                                  | Real result                                                                                                                                   |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **RED**, 14 badge legs on `8aa8c1a` `src/`, first ordering             | **REAL_EXIT=1, 2 failed / 12 passed** — both on the NEW PHRASE being absent. Discrimination only; the leg was rewritten                       |
+| **RED**, 14 badge legs on `8aa8c1a` `src/`, defect-first ordering      | **REAL_EXIT=1, 2 failed / 12 passed** — the inactive-option leg fails on `"uses HAVDM's own default colours"`, expected 0 received 1          |
+| — the transition CONTROL among the 12 passed                           | ✅ **labelled a CONTROL.** It passes on old source too: the behaviour did not change, the claim did                                           |
+| Source restored after the red runs                                     | **`sha256sum -c` OK** — byte-identical to the pre-red file                                                                                    |
+| **GREEN**, same 14 legs at `a0d53e4`                                   | **REAL_EXIT=0, 14 passed**                                                                                                                    |
+| ⭐ **A FIFTEENTH LEG, added by the round-5 pre-commission self-check** | See below. **RED REAL_EXIT=1, 3 failed / 12 passed** on `8aa8c1a` `src/`; **GREEN REAL_EXIT=0, 15 passed**; source restored `sha256sum -c` OK |
+
+### ⭐⭐ What running the round-5 commission against myself caught, before sending it
+
+**The claim "the fifth wording is true in all EIGHT contexts" was measured in
+TWO** — both of them `theme-select`, one applied and one an option row.
+**Neither was a PENDING context, and the two pending ones are exactly what
+R4-M1 named.** A claim checked in its two easiest contexts is not a claim
+checked across its population.
+
+Added: **`the tooltip holds on a PENDING collapsed value, before Apply`** —
+applies Material You through the header picker, stages Mushroom Square in
+`theme-settings-select` **without pressing Apply**, hovers the collapsed badge,
+and asserts defect-first that the rich canvas colours are still painted and that
+no retracted claim is on screen. ⚠ **The distinction from an option row is real:
+here the dropdown is CLOSED and the theme is the Select's committed value, so it
+looks identical to the applied case and a user cannot tell them apart.**
+
+⚠⚠ **AND IT FAILED FOR THE WRONG REASON FIRST — rule 9, caught by reading the
+failure rather than the exit code.** Its first red run threw
+`strict mode violation: locator('.ant-select-item-option[title="Mushroom Square"]') resolved to 2 elements`,
+because the header picker's popup stays MOUNTED behind the dialog. That is a
+locator defect, not a product defect, and it would have read as a passing red.
+Scoped to `.ant-select-dropdown:not(.ant-select-dropdown-hidden)`, the leg then
+failed on the defect: `"uses HAVDM's own default colours"`, **expected 0,
+received 1**, with Material You still painting.
+
+ⓘ **Two other self-check results, recorded because a self-check reporting zero
+findings is the one to trust least.** (1) The R4-M1 class sweep was re-run
+**repo-wide** rather than over branch-changed files only — the changed-file list
+is a floor, not a population — and found **no new members**. (2) All four badged
+themes in `REAL_HA_THEMES` were read: they define **only shape variables**
+(border radii, spacing, box-shadow, border width) and **not one colour between
+them**, so the new wording is straightforwardly true of the real installed
+population. The residual risk is about the _general_ population the predicate
+admits, and it is carried into the round-5 commission as H1.
+| `./tools/checks` re-run AFTER committing | see the PR body — REAL_EXIT and the 4/4 step count are reported there against the committed head |
+| Full e2e / full integration | ⚠⚠ **NOT MEASURED at this head — the owner forbade another full pass this round.** Codex's run at `9823d81` is the evidence of record: integration exit 0, 229 passed / 19 skipped of 248; e2e exit 1, 316 / 7 / 2 of 325, all seven canonical signatures, no new family |
 
 ⚠ **A new unit-suite flake, reported not diagnosed.** The first gate run at
 `211daac` returned REAL_EXIT=1: `tests/unit/DeployDialog.spec.tsx > 'errors

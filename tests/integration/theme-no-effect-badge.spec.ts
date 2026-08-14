@@ -672,6 +672,104 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
   });
 
   /**
+   * ⚠⚠⚠ THE SECOND TEMPORAL REGIME — the PENDING collapsed value, and the
+   * context R4-M1 named that the leg above does NOT reach.
+   *
+   * ⭐ WHY THIS LEG EXISTS, AND IT IS A SELF-CAUGHT GAP. The round-4 fix claimed
+   * the new wording is true in all EIGHT render contexts. Running the round-5
+   * commission against that claim before sending it showed the tooltip TEXT was
+   * asserted in only TWO — both of them `theme-select`, one applied and one an
+   * option row. **Neither is a PENDING context, and the two pending ones are
+   * precisely what R4-M1 called out**: `theme-settings-select` does not apply
+   * until `handleApply`, and `theme-manager-saved-select` does not until
+   * `handleLoadSavedTheme`. A claim measured in the two easiest contexts is not
+   * a claim measured across its population.
+   *
+   * ⚠⚠ THE DISTINCTION FROM AN OPTION ROW IS REAL, NOT COSMETIC. Here the
+   * dropdown is CLOSED and the theme is the Select's committed value — it looks
+   * exactly like the applied case in `ThemeSelector`, and a user has no way to
+   * tell them apart. That is what makes a present-tense rendered-state claim
+   * indefensible here: the same pixels mean "applied" in one Select and
+   * "staged, pending Apply" in another.
+   *
+   * ⚠ Assertion order is defect-first for the same reason as the leg above.
+   */
+  test('the tooltip holds on a PENDING collapsed value, before Apply', async () => {
+    const ctx = await launchWithDSL();
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await connectWithRealThemes(ctx);
+
+      // Apply a RICH theme through the header picker, and pin what it painted.
+      await pickTheme(ctx, 'Material You');
+      const richBackground = await canvasBackground(ctx);
+      const richText = await canvasText(ctx);
+      expect(richBackground, 'the rich theme must paint a canvas background').toBeTruthy();
+
+      // Stage a BADGED theme in the dialog picker — and do NOT press Apply.
+      await ctx.settings.open();
+      await ctx.settings.selectTab('Appearance');
+      const select = ctx.window.getByTestId('theme-settings-select');
+      await expect(select).toBeVisible({ timeout: 5000 });
+      await select.click();
+      // ⚠ SCOPE THE OPTION TO THE *OPEN* DROPDOWN. The header picker's popup
+      // stays MOUNTED after `pickTheme`, so an unscoped
+      // `.ant-select-item-option[title="Mushroom Square"]` resolves to TWO
+      // elements and Playwright's strict mode throws. Measured: this leg's first
+      // run failed on exactly that — a locator error, not a product defect, and
+      // rule 9 says a red that fails for the wrong reason has proved nothing.
+      const dropdown = ctx.window
+        .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
+        .last();
+      await expect(dropdown).toBeVisible({ timeout: 5000 });
+      await dropdown.locator('.ant-select-item-option[title="Mushroom Square"]').click();
+
+      const badge = select.getByTestId('theme-no-effect-badge');
+      await expect(
+        badge,
+        'the staged-but-unapplied value must carry the badge — that is the whole hazard',
+      ).toBeVisible({ timeout: 5000 });
+      await badge.hover();
+
+      const tooltipSaying = (text: string) =>
+        ctx.window.locator('.ant-tooltip-container', { hasText: text });
+
+      // Wording-neutral precondition (rule 9), as above.
+      await expect(
+        tooltipSaying('This theme'),
+        "the badge's tooltip must be open before its contents are judged",
+      ).toBeVisible({ timeout: 5000 });
+
+      // ⭐ THE CONTEXT: nothing has been applied, so Material You is still painting.
+      expect(
+        await canvasBackground(ctx),
+        'staging a theme must not apply it — the rich background must still be painted',
+      ).toBe(richBackground);
+      expect(
+        await canvasText(ctx),
+        'staging a theme must not apply it — the rich text colour must still be painted',
+      ).toBe(richText);
+
+      // Therefore no rendered-state claim may be on screen here either.
+      for (const disproved of RETRACTED_CLAIMS) {
+        await expect(
+          tooltipSaying(disproved),
+          `beside a PENDING collapsed value this is measurably FALSE, so it must be absent: "${disproved}"`,
+        ).toHaveCount(0);
+      }
+
+      await expect(
+        tooltipSaying("This theme sets none of the colours HAVDM's canvas and Theme Preview"),
+        'the absence claim must hold in the pending regime too',
+      ).toBeVisible({ timeout: 5000 });
+
+      await ctx.settings.close();
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  /**
    * ⚠⚠⚠ THE THREE SELECTED-VALUE LEGS — Codex round-2 finding R2-M3.
    *
    * The class is a BEHAVIOUR, not a widget list: **every collapsed-Select
