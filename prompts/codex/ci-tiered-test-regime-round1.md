@@ -1,4 +1,13 @@
-# HAVDM Independent Review Commission — PR #143, the tiered test regime (Codex)
+# Independent review — PR #143, the tiered test regime (round 1)
+
+You are the **independent reviewer**. You did not author any of this branch.
+Your verdict lands as a committed document,
+`docs/reviews/ci-tiered-test-regime-codex-round1-review.md`, on this branch —
+not as a chat reply.
+
+**Repository:** `HA_Visual_Dashboard_Maker` (HAVDM) — an Electron + React +
+TypeScript desktop app for building Home Assistant dashboards.
+
 
 **Author:** Claude Opus 5, 2026-08-14
 **Reviewer:** OpenAI Codex — independent, has not authored any of this branch
