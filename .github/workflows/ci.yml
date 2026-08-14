@@ -115,6 +115,41 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y xvfb
       - name: Build application
         run: npm run package
+      # ⚠⚠⚠ MEASURED LIMITATION, STATED HERE BECAUSE THE NUMBER ALONE LIES.
+      # `--only-changed` walks the IMPORT GRAPH OF TEST FILES. The e2e and
+      # integration specs launch the PACKAGED ELECTRON APP; they do not import
+      # `src/`. Measured 2026-08-14 on this branch: an isolated one-line edit to
+      # `src/components/BaseCard.tsx` selects `Total: 0 tests in 0 files` in BOTH
+      # projects. Only four test files import `src/` directly
+      # (integration/service-layer, integration/error-scenarios,
+      # integration/dashboard-generator, support/dsl/yamlEditor).
+      #
+      # SO: FOR A `src/`-ONLY CHANGE — the commonest kind — THIS JOB RUNS NOTHING
+      # AND GOES GREEN. That is a real gap, not a subtlety, and it is the same
+      # shape as PR #140's merge-blocker M2 ("CI reported success having
+      # certified nothing"). It is mitigated ONLY by tier 2/3 being the actual
+      # gate. The step below prints the selection so a vacuous pass is VISIBLE in
+      # the log rather than indistinguishable from a real one.
+      #
+      # ⓘ OPEN DECISION FOR THE OWNER: whether a `src/`-touching diff should fall
+      # back to a named smoke set here. That needs a smoke set chosen on merit,
+      # which is not this PR's business.
+      - name: Report what tier 1 selected (a vacuous pass must be visible)
+        run: |
+          set -o pipefail
+          echo "::group::tier-1 selection"
+          e2e=$(npx playwright test --project=electron-e2e --grep-invert @visual \
+                --only-changed=origin/${{ github.base_ref }} --pass-with-no-tests --list 2>&1 | tail -1)
+          int=$(npx playwright test --project=electron-integration \
+                --only-changed=origin/${{ github.base_ref }} --pass-with-no-tests --list 2>&1 | tail -1)
+          echo "e2e selection        : $e2e"
+          echo "integration selection: $int"
+          if [ "${e2e#*: 0 tests}" != "$e2e" ] && [ "${int#*: 0 tests}" != "$int" ]; then
+            echo "::warning title=Tier 1 ran no specs::--only-changed selected nothing. \
+          This is EXPECTED for a src/-only change and means tier 1 certified nothing. \
+          Tier 2 (label the PR 'full-suite') is the gate."
+          fi
+          echo "::endgroup::"
       - name: Affected e2e specs
         run: >-
           bash tools/test-headless.sh

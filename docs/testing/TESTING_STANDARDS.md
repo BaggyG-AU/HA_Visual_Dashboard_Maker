@@ -856,12 +856,28 @@ public — so the expensive tiers cost wall-clock, not the maintainer's machine.
 
 **Three rules that make the tiers mean something:**
 
-1. **`--only-changed` is a heuristic and Playwright documents it as one.** T1 is
-   fast feedback, never a merge gate. T2/T3 are the safety net behind it.
+1. ⚠⚠⚠ **T1 RUNS NOTHING FOR A `src/`-ONLY CHANGE, AND GOES GREEN.** This is
+   measured, not theoretical: on 2026-08-14 an isolated one-line edit to
+   `src/components/BaseCard.tsx` selected `Total: 0 tests in 0 files` in **both**
+   Playwright projects. `--only-changed` walks the **import graph of test
+   files**, and the e2e/integration specs launch the **packaged Electron app**
+   rather than importing `src/` — only four test files import `src/` at all
+   (`integration/service-layer`, `integration/error-scenarios`,
+   `integration/dashboard-generator`, `support/dsl/yamlEditor`).
+   **So for the commonest kind of change, T1's spec job certifies NOTHING.**
+   It prints its selection to the log and emits a `::warning` when the selection
+   is empty, so a vacuous pass is visible rather than indistinguishable from a
+   real one — but **a green T1 is not evidence about `src/`.** Playwright also
+   documents `--only-changed` as a heuristic that can miss tests. **T2/T3 are
+   the gate; T1 is fast feedback and nothing more.**
+   ⓘ Open decision: whether a `src/`-touching diff should fall back to a named
+   smoke set. That needs a smoke set chosen on merit.
 2. **Visual specs are tagged `@visual` and excluded from T1 and T2.** Six of the
-   seven canonical e2e failures are visual, and whether this project's
-   WSL2-generated `-linux` baselines reproduce on a GitHub runner is
-   **unmeasured**. The T3 visual job is an experiment answering that question
+   seven canonical e2e failures are visual. ⭐ **MEASURED 2026-08-14 (run
+   31802864528): GitHub's `ubuntu-latest` DOES reproduce the WSL2-generated
+   `-linux` baselines — 12 of 19 visual tests passed and the 6 failures were
+   exactly the manifest's set, reason classes included. No Docker image is
+   needed.** The T3 visual job answered that question
    before it is ever a gate.
 3. **Green/red is decided by `tools/check-suite-signatures.cjs`, not by
    Playwright's exit code.** Seven known failures mean a raw exit code cannot
