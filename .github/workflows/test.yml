@@ -77,6 +77,11 @@ jobs:
         run: npm ci
       - name: Install Playwright system dependencies
         run: npx playwright install-deps
+      # Required, not optional — see the long note in ci.yml: specs that
+      # destructure the built-in `page` fixture launch a real Chromium even
+      # though they immediately discard it and use launchWithDSL().
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
       - name: Install Xvfb
         run: sudo apt-get update && sudo apt-get install -y xvfb
       - name: Build application
@@ -188,6 +193,11 @@ jobs:
         run: npm ci
       - name: Install Playwright system dependencies
         run: npx playwright install-deps
+      # Required, not optional — see the long note in ci.yml: specs that
+      # destructure the built-in `page` fixture launch a real Chromium even
+      # though they immediately discard it and use launchWithDSL().
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
       - name: Install Xvfb
         run: sudo apt-get update && sudo apt-get install -y xvfb
       - name: Build application
