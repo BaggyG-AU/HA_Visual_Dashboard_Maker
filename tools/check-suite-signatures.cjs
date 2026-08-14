@@ -169,6 +169,11 @@ function collectOutcomes(report) {
 }
 
 const keyOf = (o) => `${o.file} › ${o.titlePath.join(' › ')}`;
+// Identity used for DUPLICATE DETECTION includes the project. `keyOf` deliberately
+// does not, because the manifest is written in project-agnostic terms — but two
+// Playwright projects can legitimately match the same spec path, and collapsing
+// them would hide a doubled report. Keep the two notions separate.
+const dupKeyOf = (o) => `${o.project} :: ${keyOf(o)}`;
 
 // --------------------------------------------------------------------- report
 
@@ -236,6 +241,42 @@ function main() {
   }
 
   let status = 0;
+
+  // ⚠⚠ THE DUPLICATION GUARD — the mirror of the truncation guard below, and the
+  // one that is easy to forget because it is not a "missing" failure but a
+  // DOUBLED one. Found by the author's own self-check before review, 2026-08-14:
+  // a report whose suites were merged twice (an artifact-name collision, or
+  // `merge-multiple: true` picking up overlapping blobs) produced
+  // `unexpected failures: 2 (manifest expects 1)` and STILL PASSED, because the
+  // set comparison collapses identical keys in a Map. A floor cannot catch a
+  // report that is too BIG.
+  const seen = new Map();
+  for (const o of outcomes) {
+    const k = dupKeyOf(o);
+    seen.set(k, (seen.get(k) || 0) + 1);
+  }
+  const duplicated = [...seen.entries()].filter(([, n]) => n > 1);
+  if (duplicated.length) {
+    status = 1;
+    console.log(
+      `\n❌ REPORT CONTAINS ${duplicated.length} DUPLICATED TEST IDENTITIES.` +
+        '\n    A shard was probably merged twice. The failure SET can still look correct' +
+        '\n    while the run is not, so this is a hard failure rather than a warning.',
+    );
+    for (const [k, n] of duplicated.slice(0, 10)) console.log(`    x${n}  ${k}`);
+  }
+
+  // ⚠ COUNT AS WELL AS SET. Independent of the duplicate guard above: if the
+  // number of unexpected failures does not equal the number expected, something
+  // is wrong even when every key matches.
+  if (failures.length !== expected.length) {
+    status = 1;
+    console.log(
+      `\n❌ FAILURE COUNT MISMATCH — ${failures.length} unexpected failures, manifest expects ${expected.length}.` +
+        '\n    The set comparison below may still look clean; a count disagreement means' +
+        '\n    the report is not what it claims to be.',
+    );
+  }
 
   // ⚠ THE TRUNCATION GUARD. A run that dies part-way — the 30-minute guillotine
   // that killed the old nightly 160 times — produces a SHORT report, not an
