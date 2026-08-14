@@ -37,6 +37,7 @@ const RETRACTED_CLAIMS = [
   'stays empty', // round 2's preview-panel claim, disproved in round 3
   "uses HAVDM's own default colours", // round 3's, disproved in round 4 (R4-M1)
   'shows no colour swatches', // round 3's, disproved in round 4 (R4-M1)
+  "HAVDM's canvas and Theme Preview panel read", // round 4's, disproved in round 5 (R5-M1)
 ];
 
 /** The shape `__testThemeApi.applyThemes` expects — HA's `frontend/get_themes`. */
@@ -128,6 +129,144 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
         selector.getByTestId('theme-no-effect-badge'),
         'a badged theme must stay marked after selection, not only while the list is open',
       ).toBeVisible({ timeout: 5000 });
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  /**
+   * ⚠⚠⚠ RED LEG for Codex round-5 finding R5-M2 — THE QUALIFICATION MUST BE
+   * REACHABLE WITHOUT A MOUSE.
+   *
+   * The tooltip is not decoration: it carries the limitation that stops "no
+   * preview colours" being read as the wider "no effect" claim four rounds
+   * disproved. Until round 5 it was HOVER-ONLY. Both arms rendered at
+   * `tabIndex=-1`, focus would not land on either, and a keyboard user got the
+   * three-word label and none of the qualification.
+   *
+   * ⚠ TWO CONTEXTS, TWO MECHANISMS, and this leg checks both:
+   *   - the four `labelRender` (collapsed) badges take `focusable`, so they are
+   *     a real tab stop and the tooltip opens on FOCUS;
+   *   - the four `optionRender` badges must NOT be tab stops — they live in an
+   *     open `listbox` where arrow keys are the model — so they carry the whole
+   *     explanation as their accessible name instead.
+   */
+  test('the badge explanation is reachable without a mouse', async () => {
+    const ctx = await launchWithDSL();
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await connectWithRealThemes(ctx);
+
+      // ⚠⚠ ASSERTION ORDER IS DELIBERATE AND MUST NOT BE "TIDIED". The
+      // WORDING-INDEPENDENT keyboard assertions come first, so a run against old
+      // source fails on the R5-M2 defect itself — `tabIndex=-1` — and not on the
+      // R5-M1 wording being absent. Measured: the first draft of this leg led
+      // with the accessible name and duly failed against `6eb47d8`, but on a
+      // null `aria-label`, which conflates two separate findings.
+      await pickTheme(ctx, 'Mushroom Square');
+
+      const badge = ctx.window.getByTestId('theme-selector').getByTestId('theme-no-effect-badge');
+      await expect(badge).toBeVisible({ timeout: 5000 });
+
+      expect(
+        await badge.getAttribute('tabIndex'),
+        'the collapsed badge must be a real tab stop — `tabIndex=-1` is what R5-M2 measured',
+      ).toBe('0');
+
+      // ⚠ FOCUS, not hover — the whole point. `.focus()` drives the DOM the way
+      // a Tab key would land, and R5-M2 measured that this did not move
+      // `document.activeElement` at all before the fix.
+      await badge.focus();
+      expect(
+        await ctx.window.evaluate(() => document.activeElement?.getAttribute('data-testid')),
+        'focus must actually land on the badge',
+      ).toBe('theme-no-effect-badge');
+
+      await expect(
+        ctx.window.locator('.ant-tooltip-container').locator('visible=true'),
+        'and focusing it must open the explanation, with no pointer involved',
+      ).toHaveCount(1);
+
+      // Only now the wording-dependent half: what that accessible name says.
+      expect(
+        await badge.getAttribute('aria-label'),
+        'the collapsed badge name must be the sentence, not the three-word label',
+      ).toContain('six colour values HAVDM maps');
+
+      // An OPTION-ROW badge: deliberately NOT a tab stop, so its accessible name
+      // has to carry the whole qualification instead.
+      await ctx.window.getByTestId('theme-select').click();
+      const option = ctx.window.locator('.ant-select-item-option[title="Mushroom Square"]');
+      await expect(option).toBeVisible({ timeout: 5000 });
+      const optionBadge = option.getByTestId('theme-no-effect-badge');
+      await expect(optionBadge).toBeVisible({ timeout: 5000 });
+      expect(
+        await optionBadge.getAttribute('tabIndex'),
+        'an option row must NOT add a tab stop inside the listbox',
+      ).not.toBe('0');
+      expect(
+        await optionBadge.getAttribute('aria-label'),
+        'an option-row badge must expose the full qualification as its accessible name',
+      ).toContain('six colour values HAVDM maps');
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  /**
+   * ⚠⚠⚠ RED LEG for Codex round-5 finding R5-N1 — ONE HOVER, ONE TOOLTIP.
+   *
+   * `ThemeSelector` used to wrap the whole Select in a Tooltip reading "Select
+   * theme for preview", while `labelRender` rendered the badge and ITS tooltip
+   * inside that same Select. Hovering the badge opened both, as two fully
+   * opaque overlapping overlays (measured ~170×34 and ~250×122).
+   *
+   * ⚠ This leg counts CONTAINERS, not text. Asserting "the badge tooltip is
+   * visible" passed throughout the defect — it was visible, with another
+   * tooltip on top of it. The count is the only assertion that discriminates.
+   */
+  test('hovering the collapsed badge opens exactly one tooltip', async () => {
+    const ctx = await launchWithDSL();
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await connectWithRealThemes(ctx);
+
+      await pickTheme(ctx, 'Mushroom Square');
+
+      const badge = ctx.window.getByTestId('theme-selector').getByTestId('theme-no-effect-badge');
+      await expect(badge).toBeVisible({ timeout: 5000 });
+      await badge.hover();
+
+      // ⚠ `.ant-tooltip-container` is the class antd 6.1.4 actually renders text
+      // into (measured, see the wording leg), and `visible=true` filters out any
+      // container left mounted-but-hidden from an earlier open/close.
+      // ⚠⚠⚠ THE DISCRIMINATING ASSERTION IS THE PARENT-TEXT ONE, AND THAT IS A
+      // MEASUREMENT, NOT AN ASSUMPTION. The first draft of this leg led with the
+      // visible-container COUNT and asserted in its own comment that the count
+      // was the defect assertion. Run against `6eb47d8` the count assertion
+      // PASSED — exactly one container was visible — and only the parent-text
+      // assertion failed, `Expected: 0  Received: 1`. So the count is a CONTROL
+      // here, not a red, and it is labelled as one. Codex measured two
+      // simultaneously visible overlays; at this leg's timing only one container
+      // was visible and it was the parent's. Both are R5-N1: the parent tooltip
+      // fires on a badge hover and obscures or replaces the explanation.
+      await expect(
+        ctx.window.locator('.ant-tooltip-container', { hasText: 'Select theme for preview' }),
+        "THE FALSIFIER: hovering the badge must not summon the Select's own tooltip",
+      ).toHaveCount(0);
+
+      const visibleTooltips = ctx.window.locator('.ant-tooltip-container').locator('visible=true');
+      await expect(visibleTooltips.first(), "the badge's own tooltip must open").toBeVisible({
+        timeout: 5000,
+      });
+      await expect(
+        visibleTooltips,
+        "CONTROL (passes on old source too): exactly one overlay, and it is the badge's",
+      ).toHaveCount(1);
+      await expect(
+        visibleTooltips,
+        'and the one overlay must be the explanation, not the Select hint',
+      ).toContainText('six colour values HAVDM maps');
     } finally {
       await close(ctx);
     }
@@ -531,20 +670,25 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
       // ⚠ antd 6.1.4 renders tooltip text into `.ant-tooltip-container`, NOT
       // `.ant-tooltip-inner` — measured, because the first version of this leg
       // used the older class and failed for the WRONG reason (element not
-      // found), which would have read as a passing red leg. The header Select
-      // carries its own "Select theme for preview" tooltip, so two are open at
-      // once; each assertion below therefore identifies its container by the
-      // text it is asserting about rather than by position.
+      // found), which would have read as a passing red leg.
+      // ⚠⚠ THE HEADER SELECT USED TO CARRY ITS OWN "Select theme for preview"
+      // TOOLTIP, so TWO opened at once and every assertion had to identify its
+      // container by text rather than by position. Codex round-5 finding R5-N1
+      // established that the overlap was a PRODUCT defect, not merely a locator
+      // fact — this docblock recording it as the latter is what the finding
+      // called out. The outer Tooltip is gone; the text-scoped locator is kept
+      // because it is the more honest form, and the leg below now asserts that
+      // exactly ONE tooltip opens.
       const tooltipSaying = (text: string) =>
         ctx.window.locator('.ant-tooltip-container', { hasText: text });
 
       await expect(
-        tooltipSaying("This theme sets none of the colours HAVDM's canvas and Theme Preview"),
+        tooltipSaying('This theme sets none of the six colour values HAVDM maps'),
         'the tooltip must state a property of the THEME, not of the screen',
       ).toBeVisible({ timeout: 5000 });
       await expect(
-        tooltipSaying('Other styling in HAVDM may still differ'),
-        'the subtree concession round 3 judged sound must survive this rewording too',
+        tooltipSaying('including colours used by cards and editors on the canvas'),
+        'R5-M1: the concession must name COLOURS explicitly, not just "other styling"',
       ).toBeVisible({ timeout: 5000 });
       await expect(
         tooltipSaying('Your Home Assistant dashboard is unaffected'),
@@ -663,7 +807,7 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
 
       // Only now the positive: what the string may say instead.
       await expect(
-        tooltipSaying("This theme sets none of the colours HAVDM's canvas and Theme Preview"),
+        tooltipSaying('This theme sets none of the six colour values HAVDM maps'),
         'the absence claim must be the thing the user reads on an inactive option too',
       ).toBeVisible({ timeout: 5000 });
     } finally {
@@ -759,7 +903,7 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
       }
 
       await expect(
-        tooltipSaying("This theme sets none of the colours HAVDM's canvas and Theme Preview"),
+        tooltipSaying('This theme sets none of the six colour values HAVDM maps'),
         'the absence claim must hold in the pending regime too',
       ).toBeVisible({ timeout: 5000 });
 

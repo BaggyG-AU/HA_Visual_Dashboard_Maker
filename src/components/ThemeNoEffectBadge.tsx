@@ -90,7 +90,7 @@ import { InfoCircleOutlined } from '@ant-design/icons';
  * the absence claim on 2026-08-11, his FOURTH sign-off of this one string.
  * **Do not re-word a user-facing claim here without putting it to him.**
  *
- * ⚠ THE FOUR RETRACTED WORDINGS, so that nobody rebuilds one:
+ * ⚠ THE FIVE RETRACTED WORDINGS, so that nobody rebuilds one:
  *   1. "no preview EFFECT" — round 1, finding M1. Bundled canvas CSS (Swiper,
  *      Allotment, Monaco) consumes published theme variables.
  *   2. "the canvas … WILL NOT CHANGE" — round 2, finding R2-M1. The same
@@ -99,18 +99,37 @@ import { InfoCircleOutlined } from '@ant-design/icons';
  *      the transition, and false of the rendered panel.
  *   4. "uses HAVDM's own DEFAULT COLOURS" / "shows NO COLOUR SWATCHES" —
  *      round 4, finding R4-M1. True only AFTER selection.
- * All four are asserted ABSENT by the wording leg in
+ * All five are asserted ABSENT by the wording leg in
  * `tests/integration/theme-no-effect-badge.spec.ts`, and the fourth is asserted
  * absent from the INACTIVE-OPTION context that disproved it.
  *
- * ⚠ The subtree concession has survived all five wordings and must keep
- * surviving: this predicate speaks for the canvas `<Content>`'s own
- * background/text pair and the six `ThemePreviewPanel` swatches, and for
- * nothing below them — hence "Other styling in HAVDM may still differ".
+ *   5. "sets none of the colours HAVDM's canvas … READ" — round 5, finding
+ *      R5-M1. The object of "sets none" was WIDER THAN THE PREDICATE: the
+ *      canvas subtree really does read colours this predicate cannot see.
+ *
+ * ⚠⚠⚠ R5-M1 IS WHY THE SENTENCE NOW NAMES THE NUMBER SIX. The fifth wording was
+ * the right KIND of claim — a property of the theme object — but its object was
+ * "the colours HAVDM's canvas reads", and on the ordinary reading that includes
+ * the colour custom properties bundled stylesheets below the canvas consume.
+ * `applyThemeToElement` publishes EVERY string-valued key, so a theme whose only
+ * key is `swiper-theme-color` is badged by this predicate AND sets a colour the
+ * canvas subtree reads — the executable counterexample pinned at
+ * `tests/unit/themeBadge.spec.ts` ("still marks a theme whose only key is
+ * consumed by bundled canvas CSS"). **A downstream "other styling may differ"
+ * caveat cannot cure a false first sentence**, which is the R2-M1 shape all over
+ * again. The object of "sets none" must therefore be exactly what
+ * `getThemeColors` maps: SIX values, named as such.
+ *
+ * ⚠ The subtree concession has survived all six wordings and must keep
+ * surviving — and R5-M1 also required it to be WIDENED. "Other styling" read as
+ * non-colour styling, which is precisely how the first sentence came to look
+ * like a denial of all canvas colour. It now says "including colours used by
+ * cards and editors on the canvas" in so many words.
  */
 export const THEME_NO_PREVIEW_COLOURS_TOOLTIP =
-  "This theme sets none of the colours HAVDM's canvas and Theme Preview panel read. " +
-  'Other styling in HAVDM may still differ. Your Home Assistant dashboard is unaffected.';
+  'This theme sets none of the six colour values HAVDM maps to its canvas and Theme ' +
+  'Preview panel. Other styling — including colours used by cards and editors on the ' +
+  'canvas — may still differ. Your Home Assistant dashboard is unaffected.';
 
 export const THEME_NO_PREVIEW_COLOURS_LABEL = 'no preview colours';
 
@@ -119,10 +138,32 @@ interface ThemeNoEffectBadgeProps {
    * Icon only, no text. Used for the SELECTED value, where `ThemeSelector`'s
    * Select is 200px wide and a theme name like "Mushroom Square Shadow"
    * already fills it, and for the two Theme Manager Selects that share their
-   * row with Load/Delete or Clear buttons. The tooltip carries the explanation
-   * in both forms.
+   * row with Load/Delete or Clear buttons.
+   *
+   * ⚠ `compact` IS NOT "is this the collapsed value" — see `focusable`. Three
+   * of the four collapsed renderers pass `compact`; `theme-settings-select`'s
+   * passes the full Tag. They are independent axes and conflating them was
+   * available as a bug and is called out here so nobody reintroduces it.
    */
   compact?: boolean;
+
+  /**
+   * ⭐⭐ Give this badge a KEYBOARD STOP — Codex round-5 finding R5-M2.
+   *
+   * Pass it at the four `labelRender` (collapsed-value) sites and NOWHERE else.
+   * The explanation below is the qualification that keeps this badge from being
+   * read as the wider "no effect" claim, and until round 5 it was reachable
+   * ONLY by hovering a mouse: both arms rendered at `tabIndex=-1`, focus would
+   * not land, and a keyboard user got the bare label "no preview colours".
+   *
+   * ⚠⚠ DO NOT PASS IT ON AN `optionRender` ROW. Those render inside an open
+   * `listbox`, where arrow keys are the expected model and a tab stop per
+   * option would fight the Select's own keyboard behaviour. Option rows carry
+   * the full explanation as their `aria-label` instead (below), so it joins the
+   * option's accessible name without adding a stop. Two contexts, two
+   * mechanisms, one qualification — that split is deliberate and owner-ruled.
+   */
+  focusable?: boolean;
 }
 
 /**
@@ -131,24 +172,43 @@ interface ThemeNoEffectBadgeProps {
  * fix narrowed the CLAIM, and renaming the test id would have rippled through
  * six assertions in two specs for no user-visible gain. The strings above are
  * the contract; these identifiers are not.
+ *
+ * ⚠⚠ THE ACCESSIBLE NAME IS THE WHOLE TOOLTIP, NOT THE LABEL — R5-M2. It used
+ * to be `THEME_NO_PREVIEW_COLOURS_LABEL`, which handed assistive users the
+ * three-word claim and withheld every qualification on it. The visible Tag still
+ * reads "no preview colours"; the accessible name carries the sentence.
  */
-export const ThemeNoEffectBadge: React.FC<ThemeNoEffectBadgeProps> = ({ compact = false }) => (
-  <Tooltip title={THEME_NO_PREVIEW_COLOURS_TOOLTIP}>
-    {compact ? (
-      <InfoCircleOutlined
-        data-testid="theme-no-effect-badge"
-        aria-label={THEME_NO_PREVIEW_COLOURS_LABEL}
-        style={{ opacity: 0.65, flexShrink: 0 }}
-      />
-    ) : (
-      <Tag
-        data-testid="theme-no-effect-badge"
-        icon={<InfoCircleOutlined />}
-        bordered={false}
-        style={{ marginInlineEnd: 0, flexShrink: 0 }}
-      >
-        {THEME_NO_PREVIEW_COLOURS_LABEL}
-      </Tag>
-    )}
-  </Tooltip>
-);
+export const ThemeNoEffectBadge: React.FC<ThemeNoEffectBadgeProps> = ({
+  compact = false,
+  focusable = false,
+}) => {
+  // A focusable child is also what lets antd's Tooltip open on `focus` at all.
+  const keyboard = focusable ? { tabIndex: 0 } : {};
+
+  return (
+    <Tooltip
+      title={THEME_NO_PREVIEW_COLOURS_TOOLTIP}
+      trigger={focusable ? ['hover', 'focus'] : ['hover']}
+    >
+      {compact ? (
+        <InfoCircleOutlined
+          data-testid="theme-no-effect-badge"
+          aria-label={THEME_NO_PREVIEW_COLOURS_TOOLTIP}
+          {...keyboard}
+          style={{ opacity: 0.65, flexShrink: 0 }}
+        />
+      ) : (
+        <Tag
+          data-testid="theme-no-effect-badge"
+          aria-label={THEME_NO_PREVIEW_COLOURS_TOOLTIP}
+          icon={<InfoCircleOutlined />}
+          bordered={false}
+          {...keyboard}
+          style={{ marginInlineEnd: 0, flexShrink: 0 }}
+        >
+          {THEME_NO_PREVIEW_COLOURS_LABEL}
+        </Tag>
+      )}
+    </Tooltip>
+  );
+};

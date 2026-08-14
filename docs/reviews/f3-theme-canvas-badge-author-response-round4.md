@@ -91,6 +91,18 @@ preview-colour values":
 > read. Other styling in HAVDM may still differ. Your Home Assistant dashboard
 > is unaffected.
 
+⚠⚠⚠ **RETRACTED AFTER ROUND 5 (finding R5-M1). THE WORDING QUOTED ABOVE IS NO
+LONGER IN THE PRODUCT.** The KIND of claim was right and survives; its OBJECT
+was wider than the predicate. "The colours HAVDM's canvas … read" ordinarily
+includes the colour custom properties bundled stylesheets below the canvas
+consume, and `applyThemeToElement` publishes every string-valued key — so a
+theme whose only key is `swiper-theme-color` is badged **and** sets a colour the
+canvas subtree reads. **A downstream "other styling may differ" caveat cannot
+cure a false first sentence.** The sixth wording names the number six and widens
+the concession to say _colours_ explicitly; it is recorded in
+`docs/reviews/f3-theme-canvas-badge-author-response-round5.md`. The paragraph
+below is left as the record of what round 4 reasoned, not as a live claim.
+
 Every clause is a property of the theme. Nothing in it is about the screen, so
 it is true beside an inactive option, beside a pending collapsed value and after
 selection alike. **The predicate `definesNoCanvasColors` is UNCHANGED. The

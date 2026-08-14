@@ -394,7 +394,7 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                     <span>{label}</span>
                     {themeOptions.some(
                       (option) => option.value === value && option.definesNoCanvasColors,
-                    ) && <ThemeNoEffectBadge />}
+                    ) && <ThemeNoEffectBadge focusable />}
                   </Space>
                 )}
               />
@@ -495,7 +495,9 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                   labelRender={({ label, value }) => (
                     <Space size={4} style={{ display: 'flex' }}>
                       <span>{label}</span>
-                      {marksNoEffect(savedThemeOptions, value) && <ThemeNoEffectBadge compact />}
+                      {marksNoEffect(savedThemeOptions, value) && (
+                        <ThemeNoEffectBadge compact focusable />
+                      )}
                     </Space>
                   )}
                 />
@@ -548,7 +550,9 @@ export const ThemeSettingsDialog: React.FC<ThemeSettingsDialogProps> = ({
                   labelRender={({ label, value }) => (
                     <Space size={4} style={{ display: 'flex' }}>
                       <span>{label}</span>
-                      {marksNoEffect(overrideThemeOptions, value) && <ThemeNoEffectBadge compact />}
+                      {marksNoEffect(overrideThemeOptions, value) && (
+                        <ThemeNoEffectBadge compact focusable />
+                      )}
                     </Space>
                   )}
                 />
