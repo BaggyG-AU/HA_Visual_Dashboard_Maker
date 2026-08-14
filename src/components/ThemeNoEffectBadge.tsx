@@ -174,10 +174,27 @@ interface ThemeNoEffectBadgeProps {
  * six assertions in two specs for no user-visible gain. The strings above are
  * the contract; these identifiers are not.
  *
- * ⚠⚠ THE ACCESSIBLE NAME IS THE WHOLE TOOLTIP, NOT THE LABEL — R5-M2. It used
- * to be `THEME_NO_PREVIEW_COLOURS_LABEL`, which handed assistive users the
- * three-word claim and withheld every qualification on it. The visible Tag still
- * reads "no preview colours"; the accessible name carries the sentence.
+ * ⚠⚠ THE ACCESSIBLE NAME IS THE LABEL **THEN** THE WHOLE TOOLTIP — R5-M2, and
+ * then a self-check correction on top of it. It used to be
+ * `THEME_NO_PREVIEW_COLOURS_LABEL` alone, which handed assistive users the
+ * three-word claim and withheld every qualification on it.
+ *
+ * ⚠⚠⚠ BUT REPLACING IT WITH THE SENTENCE ALONE BROKE **WCAG 2.5.3 "LABEL IN
+ * NAME"**, and the accessibility fix therefore introduced an accessibility
+ * defect. The visible Tag reads "no preview colours"; a speech-input user says
+ * what they can see; and the accessible name did not contain that string at all,
+ * so the spoken label could not match the control. **The name now BEGINS with
+ * the visible label and continues into the qualification**, which satisfies
+ * 2.5.3 and still denies nobody the limits. ⚠ Keep it in that order — a name
+ * that merely CONTAINS the label somewhere is weaker for speech input than one
+ * that starts with it.
+ */
+const ACCESSIBLE_NAME = `${THEME_NO_PREVIEW_COLOURS_LABEL}. ${THEME_NO_PREVIEW_COLOURS_TOOLTIP}`;
+
+/**
+ * ⚠ The component name and `data-testid` still say "no effect" while the
+ * user-facing strings say "no preview colours" — see the note above the
+ * component itself.
  */
 export const ThemeNoEffectBadge: React.FC<ThemeNoEffectBadgeProps> = ({
   compact = false,
@@ -194,14 +211,14 @@ export const ThemeNoEffectBadge: React.FC<ThemeNoEffectBadgeProps> = ({
       {compact ? (
         <InfoCircleOutlined
           data-testid="theme-no-effect-badge"
-          aria-label={THEME_NO_PREVIEW_COLOURS_TOOLTIP}
+          aria-label={ACCESSIBLE_NAME}
           {...keyboard}
           style={{ opacity: 0.65, flexShrink: 0 }}
         />
       ) : (
         <Tag
           data-testid="theme-no-effect-badge"
-          aria-label={THEME_NO_PREVIEW_COLOURS_TOOLTIP}
+          aria-label={ACCESSIBLE_NAME}
           icon={<InfoCircleOutlined />}
           bordered={false}
           {...keyboard}

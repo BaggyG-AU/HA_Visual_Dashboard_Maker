@@ -208,6 +208,93 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
         await optionBadge.getAttribute('aria-label'),
         'an option-row badge must expose the full qualification as its accessible name',
       ).toContain('six colour values HAVDM maps');
+
+      // ⭐⭐ WCAG 2.5.3 "LABEL IN NAME" — a self-check correction, not a Codex
+      // finding. The R5-M2 fix first replaced the accessible name with the
+      // SENTENCE ALONE, so the name no longer contained the visible text "no
+      // preview colours" and a speech-input user saying what they can see could
+      // not match the control. **The accessibility fix had introduced an
+      // accessibility defect.** The name must now BEGIN with the visible label.
+      for (const [where, locator] of [
+        ['the option row', optionBadge],
+        ['the collapsed value', badge],
+      ] as const) {
+        expect(
+          await locator.getAttribute('aria-label'),
+          `${where}: the accessible name must START with the visible label (WCAG 2.5.3)`,
+        ).toMatch(/^no preview colours\./);
+      }
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  /**
+   * ⚠⚠ THE NON-COMPACT ARM, BY KEYBOARD — and this leg exists because Codex's
+   * round-5 remedy said so in as many words: *"verify both compact and
+   * noncompact forms by keyboard."* The first fix verified only the COMPACT
+   * arm, in `ThemeSelector`.
+   *
+   * `theme-settings-select`'s `labelRender` is the one collapsed renderer that
+   * passes the full `Tag` rather than the compact icon, so it is the only place
+   * the non-compact arm is ever focusable. ⚠ That asymmetry is exactly why
+   * `compact` must not be conflated with "is this the collapsed value".
+   *
+   * ⚠⚠ THIS LEG IS HALF CONTROL AND HALF RED, AND THAT IS MEASURED, NOT ASSUMED.
+   * Run against `aeceb01` the `tabIndex` and focus assertions **PASSED** — the
+   * round-5 fix had already made this arm focusable; it was simply never
+   * measured. Only the WCAG 2.5.3 assertion failed there. So the keyboard half
+   * is a CONTROL closing a coverage gap, and the name half is the red.
+   * ⓘ Saying which is which matters: on the previous round a count assertion was
+   * commented as "the defect assertion" and turned out to pass on the defective
+   * source. **A leg's red/control status is a measurement, not a label you get
+   * to choose while writing it.**
+   */
+  test('the non-compact collapsed badge is keyboard-reachable too', async () => {
+    const ctx = await launchWithDSL();
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await connectWithRealThemes(ctx);
+
+      await ctx.settings.open();
+      await ctx.settings.selectTab('Appearance');
+
+      const select = ctx.window.getByTestId('theme-settings-select');
+      await expect(select).toBeVisible({ timeout: 5000 });
+      await select.click();
+      const dropdown = ctx.window
+        .locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
+        .last();
+      await expect(dropdown).toBeVisible({ timeout: 5000 });
+      await dropdown.locator('.ant-select-item-option[title="Mushroom Square"]').click();
+
+      const tagBadge = select.getByTestId('theme-no-effect-badge');
+      await expect(tagBadge).toBeVisible({ timeout: 5000 });
+
+      expect(
+        await tagBadge.getAttribute('tabIndex'),
+        'the non-compact Tag arm must be a tab stop as well as the icon arm',
+      ).toBe('0');
+
+      await tagBadge.focus();
+      expect(
+        await ctx.window.evaluate(() => document.activeElement?.getAttribute('data-testid')),
+        'focus must land on the Tag arm',
+      ).toBe('theme-no-effect-badge');
+
+      await expect(
+        ctx.window.locator('.ant-tooltip-container', {
+          hasText: 'This theme sets none of the six colour values HAVDM maps',
+        }),
+        'and focusing the Tag must open the explanation, with no pointer involved',
+      ).toBeVisible({ timeout: 5000 });
+
+      expect(
+        await tagBadge.getAttribute('aria-label'),
+        'the Tag arm must satisfy WCAG 2.5.3 too — its visible text is the label',
+      ).toMatch(/^no preview colours\./);
+
+      await ctx.settings.close();
     } finally {
       await close(ctx);
     }
