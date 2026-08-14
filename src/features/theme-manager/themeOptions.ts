@@ -95,6 +95,18 @@ export interface ThemeOption {
    * ⚠ Present ONLY on badged options, so an unbadged theme keeps antd's own
    * plain-name behaviour and the `__none__` override sentinel can never acquire
    * either field.
+   *
+   * ⚠⚠⚠ A TRAP THIS CREATES FOR TEST AUTHORS, NAMED HERE SO NOBODY IS BITTEN BY
+   * IT. `aria-label` OVERRIDES antd's default option name, so a badged theme's
+   * accessible name is now `"<name>, no preview colours"` and **an exact
+   * `getByRole('option', { name: '<theme name>' })` NO LONGER MATCHES IT.**
+   * Every theme selector in the suite locates options by the antd-derived
+   * `title` attribute instead (`.ant-select-item-option[title="…"]`), which comes
+   * from `label` and is deliberately untouched — that is precisely why `label`
+   * must stay a plain string. **Select theme options by `title`, never by role
+   * name.** ⓘ Several DSLs elsewhere in the suite do use
+   * `getByRole('option', { name })`; none of them targets a theme Select, and
+   * none should start.
    */
   'aria-label'?: string;
   'aria-description'?: string;

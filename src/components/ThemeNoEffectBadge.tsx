@@ -61,10 +61,17 @@ import {
  */
 
 /**
- * ⚠⚠ THE TWO USER-FACING STRINGS MOVED OUT OF THIS FILE IN ROUND 6, VERBATIM AND
- * UNCHANGED, TO `src/features/theme-manager/themeBadgeCopy.ts`. The binding rule
- * that governs the wording moved WITH the string, so it is still the docblock
- * directly above it — read it there before touching either.
+ * ⚠⚠ THE TWO USER-FACING STRINGS MOVED OUT OF THIS FILE IN ROUND 6, TO
+ * `src/features/theme-manager/themeBadgeCopy.ts`. **The string constants moved
+ * BYTE-IDENTICALLY — verified by sha256 against `baa5313` — so no user-facing
+ * wording changed and the owner's wording gate was not reopened.** The binding
+ * rule that governs the wording moved WITH them, so it is still the docblock
+ * directly above the string — read it there before touching either.
+ * ⚠ ONE SENTENCE OF THAT DOCBLOCK WAS ADAPTED IN THE MOVE, AND SAYING SO MATTERS
+ * BECAUSE AN EARLIER DRAFT OF THIS COMMENT CLAIMED "VERBATIM AND UNCHANGED" OF
+ * THE WHOLE BLOCK, WHICH WAS FALSE. It read "This one component renders in EIGHT
+ * contexts"; outside the component that referent does not exist, so it now reads
+ * "One component renders this string in EIGHT contexts". Nothing else changed.
  *
  * ⭐ WHY THEY MOVED — Codex round-6 finding R6-M2. The qualification has to reach
  * assistive technology through antd's HIDDEN accessibility listbox, which is

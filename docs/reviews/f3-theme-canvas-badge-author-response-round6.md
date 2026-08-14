@@ -175,10 +175,23 @@ This is the split the finding itself recommended as "less duplicative".
 ⚠ **One structural change came with it.** `buildThemeOptions` needs the two
 user-facing strings, and it must not import a React component —
 `tests/unit/themeBadge.spec.ts` imports it directly and `src/features/` must not
-depend on `src/components/`. Both strings moved **verbatim, with their binding
-docblock**, to `src/features/theme-manager/themeBadgeCopy.ts`;
-`ThemeNoEffectBadge.tsx` re-exports them, so every existing import still works
-and there is still exactly one definition of each. **No wording changed.**
+depend on `src/components/`. Both strings moved to
+`src/features/theme-manager/themeBadgeCopy.ts` **byte-identically — sha256 of the
+constant block matches `baa5313` exactly — so no user-facing wording changed and
+the owner's wording gate was not reopened.** `ThemeNoEffectBadge.tsx` re-exports
+them, so every existing import still works and there is still exactly one
+definition of each.
+
+⚠ **CORRECTION, FOUND BY RUNNING THIS ROUND'S OWN COMMISSION AGAINST MYSELF
+BEFORE SENDING IT.** An earlier draft of this section, of the component's pointer
+comment, and of two MemPalace drawers said the binding docblock moved _"verbatim,
+unchanged"_. **That was false.** One sentence was adapted: it read _"This one
+component renders in EIGHT contexts"_, and outside the component that referent
+does not exist, so it now reads _"One component renders this string in EIGHT
+contexts"_. The edit is correct and necessary; **the claim of verbatimness was
+not**, and it had already reached four surfaces including two memory drawers. The
+string constants — the thing the wording gate actually governs — are
+byte-identical, and that is the claim worth making.
 
 **Class sweep.** The class is _every route by which a badged theme's
 qualification could reach assistive technology_, stated as a role before a key
@@ -285,7 +298,9 @@ therefore read **254**; nobody has measured that.
 ## NOT MEASURED
 
 **Full integration and full e2e were NOT RUN**, under the owner's standing
-narrowing for rounds 6 and 7. The standing record remains round 5 at `0e8ca23`:
+narrowing, which he set for round 6 and described as still in force. ⚠ He has
+not stated a scope for round 7; that is his to set, and this document should not
+be read as having assumed it. The standing record remains round 5 at `0e8ca23`:
 integration exit 0, **231 passed / 19 skipped of 250**; e2e exit 1, **316 passed
 / 7 failed / 2 skipped of 325**, all seven canonical, no new family. That record
 is **not** evidence for this head.
