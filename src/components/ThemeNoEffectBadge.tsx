@@ -99,13 +99,14 @@ import { InfoCircleOutlined } from '@ant-design/icons';
  *      the transition, and false of the rendered panel.
  *   4. "uses HAVDM's own DEFAULT COLOURS" / "shows NO COLOUR SWATCHES" —
  *      round 4, finding R4-M1. True only AFTER selection.
- * All five are asserted ABSENT by the wording leg in
- * `tests/integration/theme-no-effect-badge.spec.ts`, and the fourth is asserted
- * absent from the INACTIVE-OPTION context that disproved it.
- *
  *   5. "sets none of the colours HAVDM's canvas … READ" — round 5, finding
  *      R5-M1. The object of "sets none" was WIDER THAN THE PREDICATE: the
  *      canvas subtree really does read colours this predicate cannot see.
+ * All five are asserted ABSENT by the wording legs in
+ * `tests/integration/theme-no-effect-badge.spec.ts` — see `RETRACTED_CLAIMS`,
+ * which is appended to and never replaced — and the fourth is additionally
+ * asserted absent from the INACTIVE-OPTION and PENDING contexts that disproved
+ * it.
  *
  * ⚠⚠⚠ R5-M1 IS WHY THE SENTENCE NOW NAMES THE NUMBER SIX. The fifth wording was
  * the right KIND of claim — a property of the theme object — but its object was
