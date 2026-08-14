@@ -4,7 +4,11 @@
 **Reviewer:** OpenAI Codex — independent, has not authored any of this branch
 **Owner gate:** micah/BaggyG-AU arbitrates. This document decides nothing.
 **Commissioned by:** owner · **Scope:** PR #143, branch
-`feature/ci-tiered-test-regime`, commits `bb747cc..736c5c5` off `main` = `143f8c9`
+`feature/ci-tiered-test-regime`, branched off `main` = `143f8c9`. ⚠ **Review the
+branch AT ITS CURRENT HEAD, which you should resolve yourself** (`git rev-parse
+HEAD` after checkout) — no head SHA is pinned here on purpose, because a
+commission that names one goes stale the moment a fix commit lands, and this one
+has already moved once. The first content commit is `bb747cc`.
 
 **Governing rule — read this first.** `docs/governance/OPERATING_AGREEMENT.md`
 §3 class (d) as ratified by PR #139 (`075241a`): **ONE FULL INDEPENDENT REVIEW
