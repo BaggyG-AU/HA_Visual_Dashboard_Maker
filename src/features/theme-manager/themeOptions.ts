@@ -1,6 +1,7 @@
 import type { Theme } from '../../types/homeassistant';
 import type { SavedThemeRecord } from './types';
 import { themeService } from '../../services/themeService';
+import { THEME_NO_PREVIEW_COLOURS_TOOLTIP, optionAccessibleName } from './themeBadgeCopy';
 
 export interface ThemeOption {
   label: string;
@@ -73,6 +74,30 @@ export interface ThemeOption {
    * `getThemeColors`.
    */
   definesNoCanvasColors: boolean;
+
+  /**
+   * ⭐⭐⭐ THE ONLY ROUTE BY WHICH THE QUALIFICATION REACHES ASSISTIVE TECHNOLOGY
+   * IN AN OPEN DROPDOWN — Codex round-6 finding R6-M2.
+   *
+   * ⚠⚠⚠ DO NOT "SIMPLIFY" THESE ONTO THE RENDERED BADGE. antd v6.1.4 renders a
+   * SEPARATE HIDDEN 0×0 `role="listbox"` whose `role="option"` children are the
+   * real accessible options; the VISIBLE rows that `optionRender` decorates are
+   * `role="generic"` and are not options at all. Measured in the real Electron
+   * renderer: every `[role="option"]` in the document had `hasBadge: false` and
+   * a 0px-wide box, and the hidden listbox held only `aria-label="<theme name>"`.
+   * So the badge's own `aria-label` — however correct — is unreachable there.
+   *
+   * `@rc-component/select`'s `OptionList` spreads `pickAttrs(itemData, true)`
+   * onto that hidden option AFTER its default `aria-label`, and `pickAttrs`
+   * with `true` picks `role` plus every `aria-*` key. Putting them on the OPTION
+   * DATA is therefore the supported hook, and it wins over antd's default.
+   *
+   * ⚠ Present ONLY on badged options, so an unbadged theme keeps antd's own
+   * plain-name behaviour and the `__none__` override sentinel can never acquire
+   * either field.
+   */
+  'aria-label'?: string;
+  'aria-description'?: string;
 }
 
 /**
@@ -143,24 +168,44 @@ function definesNoCanvasColors(theme: Theme, darkMode: boolean): boolean {
  * ⚠ `darkMode` defaults to `false` so the two-argument callers that predate the
  * badge keep compiling and keep meaning what they meant.
  */
+/**
+ * One option, with the accessibility fields attached when — and only when — the
+ * theme is badged.
+ *
+ * ⚠ The two `aria-*` fields are what a screen reader actually receives for this
+ * theme in an OPEN dropdown; see their docblock on `ThemeOption` for why nothing
+ * `optionRender` draws can do that job. The NAME stays short (theme name plus
+ * the three-word visible label) and the qualification rides on the DESCRIPTION,
+ * owner-ruled 2026-08-14: four of the five themes on the reference instance are
+ * badged, so a ~45-word name would be announced in front of almost every option
+ * and make the list unusable by ear.
+ */
+function themeOption(name: string, theme: Theme, darkMode: boolean): ThemeOption {
+  if (!definesNoCanvasColors(theme, darkMode)) {
+    return { label: name, value: name, definesNoCanvasColors: false };
+  }
+
+  return {
+    label: name,
+    value: name,
+    definesNoCanvasColors: true,
+    'aria-label': optionAccessibleName(name),
+    'aria-description': THEME_NO_PREVIEW_COLOURS_TOOLTIP,
+  };
+}
+
 export function buildThemeOptions(
   availableThemes: Record<string, Theme>,
   savedThemes: Record<string, SavedThemeRecord>,
   darkMode = false,
 ): ThemeOption[] {
-  const options: ThemeOption[] = Object.entries(availableThemes).map(([name, theme]) => ({
-    label: name,
-    value: name,
-    definesNoCanvasColors: definesNoCanvasColors(theme, darkMode),
-  }));
+  const options: ThemeOption[] = Object.entries(availableThemes).map(([name, theme]) =>
+    themeOption(name, theme, darkMode),
+  );
 
   Object.entries(savedThemes).forEach(([name, record]) => {
     if (!availableThemes[name]) {
-      options.push({
-        label: name,
-        value: name,
-        definesNoCanvasColors: definesNoCanvasColors(record.theme, darkMode),
-      });
+      options.push(themeOption(name, record.theme, darkMode));
     }
   });
 

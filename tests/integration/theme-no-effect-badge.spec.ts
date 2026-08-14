@@ -65,6 +65,94 @@ async function connectWithRealThemes(ctx: Awaited<ReturnType<typeof launchWithDS
   }, realThemePayload);
 }
 
+/** What currently holds DOM focus, in one round trip. */
+const activeElement = (ctx: Awaited<ReturnType<typeof launchWithDSL>>) =>
+  ctx.window.evaluate(() => {
+    const el = document.activeElement as HTMLElement | null;
+    return {
+      testid: el?.getAttribute('data-testid') ?? null,
+      tag: el?.tagName ?? null,
+      text: (el?.textContent ?? '').trim().slice(0, 40),
+    };
+  });
+
+/**
+ * ⚠⚠⚠ REAL SEQUENTIAL TAB TRAVERSAL — Codex round-6 finding R6-M1, and the
+ * instrument the round-5 legs lacked.
+ *
+ * Those legs asserted `tabIndex="0"` and then called `locator.focus()`.
+ * **Neither decides sequential keyboard reachability.** `.focus()` lands on
+ * elements that are outside the browser's tab order entirely, so the check
+ * passed without exercising the claim it was said to prove — which is what
+ * round 6 was principally about.
+ *
+ * ⚠⚠ AND THE DIRECTION MATTERS, WHICH IS WHY THIS ASSERTS BOTH. The badge is
+ * rendered by `labelRender` into `.ant-select-content-value`, and that element
+ * **precedes** the Select's combobox `<input>` in DOM order (measured with
+ * `compareDocumentPosition`: "input FOLLOWS badge"). Tabbing FORWARD from the
+ * combobox therefore walks AWAY from the badge and can never reach it — that is
+ * what R6-M1 measured, at all four collapsed hosts, and it is a fact about the
+ * probe rather than about the product. The two assertions here are:
+ *
+ *   1. `Shift+Tab` from the owning combobox lands ON the badge. No programmatic
+ *      focus is involved anywhere in this step, so it alone establishes that the
+ *      badge really is in the browser's sequential focus order.
+ *   2. Walking back one more stop to the badge's true PREDECESSOR and pressing
+ *      `Tab` forward lands on the badge again — Codex's own prescription, "send
+ *      `Tab` from a real preceding focus target and assert the resulting active
+ *      element".
+ *
+ * ⚠ Step 2 explicitly re-focuses the predecessor before pressing `Tab`. Chromium
+ * keeps a *sequential focus navigation starting point* that a `blur()` does not
+ * reset, so a `Tab` after a bare blur resumes from wherever focus last was and
+ * measures nothing. An explicit `.focus()` does reset it. A first draft of this
+ * helper got that wrong and produced a traversal that skipped the badge for
+ * purely instrumental reasons.
+ *
+ * ⭐⭐⭐ PROVED LIVE ON KNOWN-BAD INPUT, WHICH IS THE WHOLE POINT OF REPLACING THE
+ * OLD INSTRUMENT. This helper PASSES on `baa5313`, so on its own that says
+ * nothing — a check that cannot fail is worse than no check, because it gets
+ * reported as evidence. Run against `6eb47d8`'s `src/` — round 5's base, where
+ * the badge had no `tabIndex` at all and the tooltip was hover-only — **all
+ * three legs that use it FAILED, on the helper's own assertion**:
+ *
+ *     Error: theme-manager-saved-select: Shift+Tab out of the combobox must
+ *            land on the badge …
+ *     -   "testid": "theme-no-effect-badge"
+ *     +   "testid": "theme-manager-save"
+ *
+ * i.e. focus skipped straight past the badge to the control before it. So the
+ * helper detects exactly the R5-M2 defect, and its PASS on `baa5313` is a real
+ * measurement rather than a vacuous one.
+ */
+async function expectReachableByTab(
+  ctx: Awaited<ReturnType<typeof launchWithDSL>>,
+  selectTestId: string,
+): Promise<void> {
+  const combobox = ctx.window.getByTestId(selectTestId).locator('input').first();
+  await combobox.focus();
+
+  await ctx.window.keyboard.press('Shift+Tab');
+  expect(
+    await activeElement(ctx),
+    `${selectTestId}: Shift+Tab out of the combobox must land on the badge — it sits immediately before it in the tab order`,
+  ).toMatchObject({ testid: 'theme-no-effect-badge' });
+
+  await ctx.window.keyboard.press('Shift+Tab');
+  const predecessor = await activeElement(ctx);
+  expect(
+    predecessor.testid,
+    `${selectTestId}: the badge must have a real preceding focus target to Tab forward from`,
+  ).not.toBe('theme-no-effect-badge');
+
+  await ctx.window.evaluate(() => (document.activeElement as HTMLElement)?.focus());
+  await ctx.window.keyboard.press('Tab');
+  expect(
+    await activeElement(ctx),
+    `${selectTestId}: FORWARD Tab from the real preceding control (${predecessor.testid ?? predecessor.text}) must arrive on the badge`,
+  ).toMatchObject({ testid: 'theme-no-effect-badge' });
+}
+
 test.describe('F3 — the "no preview colours" badge renders', () => {
   test('badges the real Mushroom themes and leaves Material You unbadged', async () => {
     const ctx = await launchWithDSL();
@@ -148,8 +236,21 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
    *   - the four `labelRender` (collapsed) badges take `focusable`, so they are
    *     a real tab stop and the tooltip opens on FOCUS;
    *   - the four `optionRender` badges must NOT be tab stops — they live in an
-   *     open `listbox` where arrow keys are the model — so they carry the whole
-   *     explanation as their accessible name instead.
+   *     open `listbox` where arrow keys are the model — so the qualification
+   *     reaches assistive technology through the OPTION DATA instead, which is
+   *     the separate leg "a badged option exposes the qualification…".
+   *
+   * ⚠⚠⚠ ROUND 6 REPLACED THIS LEG'S KEYBOARD INSTRUMENT, AND THE REPLACEMENT
+   * RE-CLASSIFIED IT. It used to assert `tabIndex="0"` and then call
+   * `locator.focus()`; neither decides sequential reachability, which is R6-M1's
+   * complaint and it is a fair one. It now calls `expectReachableByTab`, which
+   * presses real `Shift+Tab`/`Tab` and asserts on `document.activeElement`.
+   * **Measured against `baa5313`'s `src/`, the new keyboard assertions PASSED**
+   * — so this half is a CONTROL that closes an evidence gap, not a red, and
+   * R6-M1's claim that the collapsed badges are skipped by sequential Tab is
+   * measurably false. See the response document for the four-context table.
+   * ⓘ Rule 12 again: a leg's red/control status is a measurement, not a label
+   * chosen while writing it. This is the third consecutive round it has bitten.
    */
   test('the badge explanation is reachable without a mouse', async () => {
     const ctx = await launchWithDSL();
@@ -173,24 +274,24 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
         'the collapsed badge must be a real tab stop — `tabIndex=-1` is what R5-M2 measured',
       ).toBe('0');
 
-      // ⚠ FOCUS, not hover — the whole point. `.focus()` drives the DOM the way
-      // a Tab key would land, and R5-M2 measured that this did not move
-      // `document.activeElement` at all before the fix.
-      await badge.focus();
-      expect(
-        await ctx.window.evaluate(() => document.activeElement?.getAttribute('data-testid')),
-        'focus must actually land on the badge',
-      ).toBe('theme-no-effect-badge');
+      // ⚠⚠ THE ATTRIBUTE ABOVE IS NOT THE CLAIM. `tabIndex="0"` is necessary and
+      // not sufficient, and round 6 (R6-M1) was largely about the difference.
+      // This is the real thing: keyboard-only traversal, both directions.
+      await expectReachableByTab(ctx, 'theme-select');
 
       await expect(
         ctx.window.locator('.ant-tooltip-container').locator('visible=true'),
-        'and focusing it must open the explanation, with no pointer involved',
+        'and ARRIVING BY KEYBOARD must open the explanation, with no pointer involved',
       ).toHaveCount(1);
 
       // Only now the wording-dependent half: what that accessible name says.
+      // ⚠ R6-N1: this message used to read "the sentence, not the three-word
+      // label", which `832039b` had already made false — it deliberately made the
+      // name the label AND the sentence, in that order, for WCAG 2.5.3. The
+      // 2.5.3 half is asserted below; this assertion is the qualification half.
       expect(
         await badge.getAttribute('aria-label'),
-        'the collapsed badge name must be the sentence, not the three-word label',
+        'the collapsed badge name must CONTINUE into the qualification, not stop at the three-word label',
       ).toContain('six colour values HAVDM maps');
 
       // An OPTION-ROW badge: deliberately NOT a tab stop, so its accessible name
@@ -240,15 +341,19 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
    * the non-compact arm is ever focusable. ⚠ That asymmetry is exactly why
    * `compact` must not be conflated with "is this the collapsed value".
    *
-   * ⚠⚠ THIS LEG IS HALF CONTROL AND HALF RED, AND THAT IS MEASURED, NOT ASSUMED.
-   * Run against `aeceb01` the `tabIndex` and focus assertions **PASSED** — the
-   * round-5 fix had already made this arm focusable; it was simply never
-   * measured. Only the WCAG 2.5.3 assertion failed there. So the keyboard half
-   * is a CONTROL closing a coverage gap, and the name half is the red.
-   * ⓘ Saying which is which matters: on the previous round a count assertion was
-   * commented as "the defect assertion" and turned out to pass on the defective
-   * source. **A leg's red/control status is a measurement, not a label you get
-   * to choose while writing it.**
+   * ⚠⚠ THIS LEG IS ENTIRELY A CONTROL NOW, AND THAT IS MEASURED, NOT ASSUMED.
+   * Against `aeceb01` its `tabIndex` and focus assertions passed and only the
+   * WCAG 2.5.3 assertion failed, so it was recorded as half control, half red.
+   * Round 6 replaced the keyboard half with real `Tab` traversal
+   * (`expectReachableByTab`) and re-measured against `baa5313`: **every
+   * assertion in this leg now PASSES on old source**, because 2.5.3 landed in
+   * `832039b` and the keyboard behaviour was already correct. **So it is a pure
+   * CONTROL**, and it is labelled one rather than left carrying a stale "red".
+   * ⓘ On the previous round a count assertion was commented as "the defect
+   * assertion" and turned out to pass on the defective source. **A leg's
+   * red/control status is a measurement, not a label you get to choose while
+   * writing it** — and the corollary this round adds: **a leg's status also
+   * DECAYS, so re-measure it whenever you change its instrument.**
    */
   test('the non-compact collapsed badge is keyboard-reachable too', async () => {
     const ctx = await launchWithDSL();
@@ -276,11 +381,7 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
         'the non-compact Tag arm must be a tab stop as well as the icon arm',
       ).toBe('0');
 
-      await tagBadge.focus();
-      expect(
-        await ctx.window.evaluate(() => document.activeElement?.getAttribute('data-testid')),
-        'focus must land on the Tag arm',
-      ).toBe('theme-no-effect-badge');
+      await expectReachableByTab(ctx, 'theme-settings-select');
 
       await expect(
         ctx.window.locator('.ant-tooltip-container', {
@@ -301,6 +402,126 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
   });
 
   /**
+   * ⚠⚠⚠ RED LEG for Codex round-6 finding R6-M2 — WHAT ASSISTIVE TECHNOLOGY
+   * ACTUALLY RECEIVES FOR AN OPTION ROW, measured on the COMPUTED accessibility
+   * tree rather than on a DOM attribute.
+   *
+   * ⚠⚠ THE INSTRUMENT IS THE POINT. The round-5 legs read the option badge's raw
+   * `aria-label` attribute and called it the accessible name. That check stays
+   * green no matter what the browser does with the attribute, so it could not
+   * have failed if the claim were false — the exact substitution round 6 was
+   * about. `toHaveAccessibleName` / `toHaveAccessibleDescription` resolve the
+   * name the way a browser does.
+   *
+   * ⚠⚠⚠ AND `getByRole('option')` DELIBERATELY DOES NOT MATCH THE VISIBLE ROW.
+   * antd v6.1.4 renders a SEPARATE HIDDEN 0×0 `role="listbox"` holding the real
+   * `role="option"` nodes — only three of them, the active index and its two
+   * neighbours — while the visible rows `optionRender` decorates are
+   * `role="generic"` and are not options at all. Measured: every `[role=option]`
+   * in the document had `hasBadge: false` and a 0px-wide box, and before this
+   * fix the hidden option's whole accessible name was the bare theme name.
+   * **That is why the fix lives in `buildThemeOptions` and not in the badge.**
+   *
+   * ⚠ Select the badged theme FIRST so it becomes the active index and is one of
+   * the three options the hidden listbox renders.
+   *
+   * ⚠⚠ MEASURED RED against `baa5313`'s `src/`: **exit 1, this leg the only
+   * failure**, on `toHaveAccessibleName` — `Expected: "Mushroom Square, no
+   * preview colours"`, `Received: "Mushroom Square"`, the locator resolving to
+   * `<div role="option" id="test-id_list_7" aria-selected="true"
+   * aria-label="Mushroom Square">Mushroom Square</div>`. That is the defect
+   * itself, reached through a wording-neutral precondition.
+   */
+  test('a badged option exposes the qualification to assistive technology', async () => {
+    const ctx = await launchWithDSL();
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await connectWithRealThemes(ctx);
+
+      await pickTheme(ctx, 'Mushroom Square');
+      await ctx.window.getByTestId('theme-select').click();
+
+      // ⚠⚠ THE PRECONDITION IS WORDING-NEUTRAL ON PURPOSE, and a first draft of
+      // this leg got it wrong. Locating the option by its NAME (`/^Mushroom
+      // Square,/`) made the old-source run fail with "Received: 0" — i.e.
+      // because the new name was absent — which proves the leg can tell new
+      // text from old and proves nothing whatever about the defect. The hidden
+      // option's TEXT is antd's `value`, unchanged by this fix, so it identifies
+      // the row in both trees and the NAME assertion below is left to do the
+      // discriminating. Same trap as round 4's first replacement leg.
+      const badgedOption = ctx.window.getByRole('option').filter({ hasText: /^Mushroom Square$/ });
+      await expect(
+        badgedOption,
+        'the badged theme must be one of the options the hidden a11y listbox renders',
+      ).toHaveCount(1);
+
+      await expect(
+        badgedOption,
+        'THE FALSIFIER: a reader arrowing the list must hear the visible label, not the bare theme name',
+      ).toHaveAccessibleName('Mushroom Square, no preview colours');
+
+      await expect(
+        badgedOption,
+        'THE OTHER FALSIFIER: and the qualification must reach the computed accessibility tree',
+      ).toHaveAccessibleDescription(/sets none of the six colour values HAVDM maps/);
+
+      await ctx.window.keyboard.press('Escape');
+
+      // ⚠⚠ THE NEGATIVE CONTROL, and it is what stops this passing vacuously: a
+      // theme that defines all six must gain NEITHER field, so an unbadged
+      // option keeps antd's own plain-name behaviour.
+      await pickTheme(ctx, 'Material You');
+      await ctx.window.getByTestId('theme-select').click();
+
+      const unbadged = ctx.window.getByRole('option', { name: 'Material You' });
+      await expect(unbadged).toHaveCount(1);
+      await expect(
+        unbadged,
+        'CONTROL: an unbadged theme must not acquire the suffix',
+      ).toHaveAccessibleName('Material You');
+      await expect(
+        unbadged,
+        'CONTROL: nor a description — the qualification would be a lie about this theme',
+      ).toHaveAccessibleDescription('');
+
+      await ctx.window.keyboard.press('Escape');
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  /**
+   * ⚠⚠ COVERAGE, not a new claim — Codex round-6 hypothesis H6, which observed
+   * that only three of the eight contexts had ever been exercised by keyboard.
+   * The two keyboard legs above cover `theme-select` and `theme-settings-select`;
+   * these are the remaining two collapsed hosts. R6-M1 measured all four, so all
+   * four are pinned.
+   */
+  test('the saved-theme and per-view override badges are keyboard-reachable too', async () => {
+    const ctx = await launchWithDSL();
+    try {
+      const themeManager = await openThemeManagerWithSavedThemes(ctx);
+      await themeManager.expectActiveViewDetected();
+
+      await themeManager.selectSavedTheme('saved-inert');
+      await expect(
+        ctx.window.getByTestId('theme-manager-saved-select').getByTestId('theme-no-effect-badge'),
+      ).toBeVisible({ timeout: 5000 });
+      await expectReachableByTab(ctx, 'theme-manager-saved-select');
+
+      await themeManager.setViewOverride('saved-inert');
+      await expect(
+        ctx.window.getByTestId('theme-manager-view-override').getByTestId('theme-no-effect-badge'),
+      ).toBeVisible({ timeout: 5000 });
+      await expectReachableByTab(ctx, 'theme-manager-view-override');
+
+      await ctx.settings.close();
+    } finally {
+      await close(ctx);
+    }
+  });
+
+  /**
    * ⚠⚠⚠ RED LEG for Codex round-5 finding R5-N1 — ONE HOVER, ONE TOOLTIP.
    *
    * `ThemeSelector` used to wrap the whole Select in a Tooltip reading "Select
@@ -310,7 +531,14 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
    *
    * ⚠ This leg counts CONTAINERS, not text. Asserting "the badge tooltip is
    * visible" passed throughout the defect — it was visible, with another
-   * tooltip on top of it. The count is the only assertion that discriminates.
+   * tooltip on top of it.
+   *
+   * ⚠⚠ R6-N1: this paragraph used to end "The count is the only assertion that
+   * discriminates", which contradicts the leg's own inline record below, the
+   * round-5 author response and the `cfb82db` commit message — all three say the
+   * count PASSED on defective source and is a CONTROL, and that the
+   * parent-tooltip-text assertion is the falsifier. The measurement wins:
+   * **the parent-text assertion discriminates; the count is a control.**
    */
   test('hovering the collapsed badge opens exactly one tooltip', async () => {
     const ctx = await launchWithDSL();
