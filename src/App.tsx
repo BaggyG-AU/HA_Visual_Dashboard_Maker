@@ -3109,9 +3109,16 @@ const App: React.FC = () => {
                   // picking a theme has a visible outcome (UAT THEME-01/THEME-03
                   // both Expect "the canvas visibly reflects it"). Before this,
                   // themeService.applyThemeToElement set ~30 CSS custom
-                  // properties on this very element and NOTHING in src/ read a
-                  // single one — `grep -rn "var(--" src/` returned 0. The picker
-                  // worked; the pipeline dead-ended here.
+                  // properties on this very element and no HAVDM-authored rule
+                  // read one; the picker worked, the pipeline dead-ended here.
+                  // ⚠⚠ DO NOT RE-DERIVE "nothing consumes them" FROM A SOURCE
+                  // GREP. Codex's round-1 review of PR #142 (finding M1) showed
+                  // that BUNDLED stylesheets below this element do consume them
+                  // — Swiper via BaseCard.tsx:759, Allotment and Monaco via
+                  // SplitViewEditor.tsx:486,525-550 — and a theme key can shadow
+                  // any of them, because applyThemeToElement publishes every
+                  // string-valued key. `grep -rn "var(--" src/` sees this repo's
+                  // own sources only, and cannot answer that question.
                   // ⚠ SCOPE: the canvas SURFACE only. Card renderers stay on
                   // their own colours by design — per THE VISION a renderer that
                   // mimics HA is being faithful, and re-theming them would move

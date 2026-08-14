@@ -76,7 +76,14 @@ const offeredThemes = async (ctx: Ctx): Promise<string[]> => {
 
 /** Pick a theme through the real main-screen control. */
 const pickTheme = async (ctx: Ctx, themeName: string) => {
-  await ctx.window.locator(`.ant-select-item-option[title="${themeName}"]`).click();
+  // ⚠ SWEPT MEMBER of Codex round-2 finding R2-N1's class. Theme names reach
+  // this helper from the fixture, so the quote defect was not reachable here —
+  // but a theme name is exactly the kind of value a user controls, and
+  // `getByTitle` escapes it rather than splicing it into CSS.
+  await ctx.window
+    .locator('.ant-select-item-option')
+    .and(ctx.window.getByTitle(themeName, { exact: true }))
+    .click();
 };
 
 test.describe('THEME-01: a chosen theme survives a restart', () => {
