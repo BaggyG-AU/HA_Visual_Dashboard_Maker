@@ -19,7 +19,8 @@
     "",
     "`reasonClassVerified` records whether the class was read from an actual Playwright",
     "JSON report in this repository, or inferred from the drawer's prose description.",
-    "The first green visual CI run is what converts the `false` entries."
+    "The first green visual CI run is what converts the `false` entries.",
+    "\u2b50 2026-08-14: the visual tier was MEASURED on ubuntu-latest (run 31802864528). 12 of 19 passed against the WSL2-generated -linux baselines, 1 skipped, and the 6 failures were EXACTLY this manifest's visual set, reason classes included. GitHub's Ubuntu therefore renders like the maintainer's WSL2+Xvfb box for these snapshots, and NO Docker image is required. Nothing was re-baselined to achieve this."
   ],
   "expectedFailures": [
     {
@@ -32,7 +33,7 @@
       "reasonClass": "locator-not-visible",
       "reasonClassVerified": true,
       "baselineRef": "calendar.spec:29",
-      "note": "expect(getByTestId('calendar-event-badge').first()).toBeVisible() — the badge is never found. Measured on this branch 2026-08-14: exit 1, 1 failed / 1 passed, failing at tests/e2e/calendar.spec.ts:45:72. THE ONLY EXPECTED FAILURE IN THE ENTIRE BEHAVIOURAL TIER."
+      "note": "expect(getByTestId('calendar-event-badge').first()).toBeVisible() \u2014 the badge is never found. Measured on this branch 2026-08-14: exit 1, 1 failed / 1 passed, failing at tests/e2e/calendar.spec.ts:45:72. THE ONLY EXPECTED FAILURE IN THE ENTIRE BEHAVIOURAL TIER."
     },
     {
       "tier": "visual",
@@ -42,9 +43,9 @@
         "captures line, area, and bar preview snapshots"
       ],
       "reasonClass": "snapshot-mismatch",
-      "reasonClassVerified": false,
+      "reasonClassVerified": true,
       "baselineRef": "apexcharts.visual:26",
-      "note": "apexcharts-line.png. Diff magnitude measured at 3,126 / 3,341 / 3,261 / 3,285 / 3,384 px across five rounds — flagged seven times, never diagnosed."
+      "note": "apexcharts-line.png. Diff magnitude measured at 3,126 / 3,341 / 3,261 / 3,285 / 3,384 px across five rounds \u2014 flagged seven times, never diagnosed. \u2b50 REASON CLASS VERIFIED 2026-08-14 by GitHub Actions run 31802864528 (job 'visual'): 19 tests, 6 unexpected failures, exact match to this manifest including reason class."
     },
     {
       "tier": "visual",
@@ -55,9 +56,9 @@
         "formats, reorders, persists, and updates attribute display"
       ],
       "reasonClass": "snapshot-mismatch",
-      "reasonClassVerified": false,
+      "reasonClassVerified": true,
       "baselineRef": "attribute-display:95",
-      "note": "128 px (ratio 0.01), via attributeDisplay.expectLayoutScreenshot at tests/support/dsl/attributeDisplay.ts:373. Note this spec file is MIXED — its sibling test at :23 is behavioural and is not tagged @visual."
+      "note": "128 px (ratio 0.01), via attributeDisplay.expectLayoutScreenshot at tests/support/dsl/attributeDisplay.ts:373. Note this spec file is MIXED \u2014 its sibling test at :23 is behavioural and is not tagged @visual. \u2b50 REASON CLASS VERIFIED 2026-08-14 by GitHub Actions run 31802864528 (job 'visual'): 19 tests, 6 unexpected failures, exact match to this manifest including reason class."
     },
     {
       "tier": "visual",
@@ -67,18 +68,18 @@
         "captures visual snapshots for background types"
       ],
       "reasonClass": "snapshot-mismatch",
-      "reasonClassVerified": false,
+      "reasonClassVerified": true,
       "baselineRef": "card-background.visual:8",
-      "note": "8 px (ratio 0.01), via expect(Buffer).toMatchSnapshot at tests/support/dsl/canvas.ts:287. This spec file is MIXED — the frame-rate test at :71 is behavioural and is not tagged @visual."
+      "note": "8 px (ratio 0.01), via expect(Buffer).toMatchSnapshot at tests/support/dsl/canvas.ts:287. This spec file is MIXED \u2014 the frame-rate test at :71 is behavioural and is not tagged @visual. \u2b50 REASON CLASS VERIFIED 2026-08-14 by GitHub Actions run 31802864528 (job 'visual'): 19 tests, 6 unexpected failures, exact match to this manifest including reason class."
     },
     {
       "tier": "visual",
       "file": "e2e/popup.visual.spec.ts",
       "titlePath": ["Popup Visual Regression", "captures popup open states and sizes"],
       "reasonClass": "snapshot-mismatch",
-      "reasonClassVerified": false,
+      "reasonClassVerified": true,
       "baselineRef": "popup.visual:20",
-      "note": "THE ONLY FULL-VIEWPORT (1920x1080) SNAPSHOT IN THE SUITE, and the most load-sensitive test in it: 158,669 px under FULL-SUITE load vs 16,372 px ISOLATED on the same code. Its signature also MOVED post-F4, base isolated 16,372 -> 21,919 px, reproduced exactly twice. This is why the visual job runs un-sharded at --workers=1."
+      "note": "THE ONLY FULL-VIEWPORT (1920x1080) SNAPSHOT IN THE SUITE, and the most load-sensitive test in it: 158,669 px under FULL-SUITE load vs 16,372 px ISOLATED on the same code. Its signature also MOVED post-F4, base isolated 16,372 -> 21,919 px, reproduced exactly twice. This is why the visual job runs un-sharded at --workers=1. \u2b50 REASON CLASS VERIFIED 2026-08-14 by GitHub Actions run 31802864528 (job 'visual'): 19 tests, 6 unexpected failures, exact match to this manifest including reason class."
     },
     {
       "tier": "visual",
@@ -88,18 +89,18 @@
         "captures orientation and marker variants"
       ],
       "reasonClass": "snapshot-mismatch",
-      "reasonClassVerified": false,
+      "reasonClassVerified": true,
       "baselineRef": "advanced-slider.visual:16",
-      "note": "Size mismatch, expected 586x882 received 586x818. Was once wrongly recorded as retired; proved failing on a byte-identical base src/ and independently reproduced by the reviewer. It is the SEVENTH expected failure — the count is 7, not 6."
+      "note": "Size mismatch, expected 586x882 received 586x818. Was once wrongly recorded as retired; proved failing on a byte-identical base src/ and independently reproduced by the reviewer. It is the SEVENTH expected failure \u2014 the count is 7, not 6. \u2b50 REASON CLASS VERIFIED 2026-08-14 by GitHub Actions run 31802864528 (job 'visual'): 19 tests, 6 unexpected failures, exact match to this manifest including reason class."
     },
     {
       "tier": "visual",
       "file": "e2e/tabs.visual.spec.ts",
       "titlePath": ["Tabs Visual Regression", "captures tab positions and active states"],
       "reasonClass": "count-mismatch",
-      "reasonClassVerified": false,
+      "reasonClassVerified": true,
       "baselineRef": "tabs.visual:33",
-      "note": "NOT a snapshot failure. expect(locator('.ant-select-dropdown:visible')).toHaveCount(0) at tests/support/dsl/tabs.ts:11 — an antd Select dropdown that never closes, so the test never reaches its snapshot."
+      "note": "NOT a snapshot failure. expect(locator('.ant-select-dropdown:visible')).toHaveCount(0) at tests/support/dsl/tabs.ts:11 \u2014 an antd Select dropdown that never closes, so the test never reaches its snapshot. \u2b50 REASON CLASS VERIFIED 2026-08-14 by GitHub Actions run 31802864528 (job 'visual'): 19 tests, 6 unexpected failures, exact match to this manifest including reason class."
     }
   ]
 }
