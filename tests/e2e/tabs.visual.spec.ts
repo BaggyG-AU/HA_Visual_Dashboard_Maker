@@ -29,7 +29,7 @@ tabs:
       content: "## Media"
 `;
 
-test.describe('Tabs Visual Regression', () => {
+test.describe('Tabs Visual Regression', { tag: '@visual' }, () => {
   test('captures tab positions and active states', async ({ page }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();

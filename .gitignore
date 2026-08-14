@@ -47,6 +47,13 @@ coverage/
 test-results/
 playwright-report/
 playwright/.cache/
+# Sharded-CI artifacts (.github/workflows/test.yml). Produced under CI, but a
+# local run with CI=1 emits them too — playwright.config.ts selects the `blob`
+# reporter whenever process.env.CI is set.
+blob-report/
+all-blob-reports/
+merged-results.json
+visual-results.json
 tests/screenshots/
 *.trace.zip
 

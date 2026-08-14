@@ -22,7 +22,7 @@ series:
     axis: right
 `;
 
-test.describe('Native Graphs Visual Regression', () => {
+test.describe('Native Graphs Visual Regression', { tag: '@visual' }, () => {
   test('captures line, bar, area, and pie snapshots', async ({ page }) => {
     void page;
     const ctx = await launchWithDSL();

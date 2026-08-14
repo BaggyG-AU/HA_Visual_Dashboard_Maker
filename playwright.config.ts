@@ -19,12 +19,21 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0, // Retry failed tests in CI
   workers: 1, // Only 1 worker for Electron tests (avoid conflicts)
 
-  // Reporter configuration
-  reporter: [
-    ['html', { outputFolder: 'test-results/html' }],
-    ['json', { outputFile: 'test-results/results.json' }],
-    ['list'], // Console output
-  ],
+  // Reporter configuration.
+  //
+  // Under CI the suites are SHARDED across runners (see .github/workflows/test.yml),
+  // and a shard cannot write a useful standalone html/json report — it only ever saw
+  // its own quarter of the suite. `blob` emits a machine-readable zip per shard which
+  // a downstream job recombines with `npx playwright merge-reports`, producing the
+  // single html + json pair that `tools/check-suite-signatures.cjs` then triages.
+  // Locally there is no sharding, so the direct reporters stay.
+  reporter: process.env.CI
+    ? [['blob'], ['list']]
+    : [
+        ['html', { outputFolder: 'test-results/html' }],
+        ['json', { outputFile: 'test-results/results.json' }],
+        ['list'], // Console output
+      ],
 
   // Global test settings
   use: {

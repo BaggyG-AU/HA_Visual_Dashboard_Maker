@@ -92,109 +92,111 @@ test.describe('Entity Attribute Display (Feature 3.4)', () => {
   test.describe('Attribute display workflow', () => {
     test.describe.configure({ timeout: 120000 });
 
-    test('formats, reorders, persists, and updates attribute display', async ({
-      page,
-    }, testInfo) => {
-      // This workflow adds multiple attributes, changes formats, reorders rows, and verifies YAML.
-      // On slower environments this can exceed 120s.
-      test.setTimeout(180_000);
+    test(
+      'formats, reorders, persists, and updates attribute display',
+      { tag: '@visual' },
+      async ({ page }, testInfo) => {
+        // This workflow adds multiple attributes, changes formats, reorders rows, and verifies YAML.
+        // On slower environments this can exceed 120s.
+        test.setTimeout(180_000);
 
-      void page;
-      const ctx = await launchWithDSL();
-      const {
-        appDSL,
-        dashboard,
-        palette,
-        canvas,
-        properties,
-        yamlEditor,
-        entityContext,
-        attributeDisplay,
-      } = ctx;
+        void page;
+        const ctx = await launchWithDSL();
+        const {
+          appDSL,
+          dashboard,
+          palette,
+          canvas,
+          properties,
+          yamlEditor,
+          entityContext,
+          attributeDisplay,
+        } = ctx;
 
-      try {
-        await appDSL.waitUntilReady();
-        await appDSL.setConnected(true);
-        await entityContext.setEntities(TEST_ENTITIES, testInfo);
-        await seedEntityCache(ctx.window, [
-          {
-            entity_id: 'sensor.environment',
-            domain: 'sensor',
-            state: '22.5',
-            attributes: {
-              friendly_name: 'Environment Sensor',
-              battery: 97.4,
-              is_online: true,
-              last_seen: '2025-01-01T12:30:00.000Z',
-              unit_of_measurement: 'C',
+        try {
+          await appDSL.waitUntilReady();
+          await appDSL.setConnected(true);
+          await entityContext.setEntities(TEST_ENTITIES, testInfo);
+          await seedEntityCache(ctx.window, [
+            {
+              entity_id: 'sensor.environment',
+              domain: 'sensor',
+              state: '22.5',
+              attributes: {
+                friendly_name: 'Environment Sensor',
+                battery: 97.4,
+                is_online: true,
+                last_seen: '2025-01-01T12:30:00.000Z',
+                unit_of_measurement: 'C',
+              },
             },
-          },
-        ]);
+          ]);
 
-        await dashboard.createNew();
-        await palette.expandCategory('Controls');
-        await palette.addCard('button');
-        await canvas.expectCardCount(1);
-        await canvas.selectCard(0);
-        await properties.expectVisible();
+          await dashboard.createNew();
+          await palette.expandCategory('Controls');
+          await palette.addCard('button');
+          await canvas.expectCardCount(1);
+          await canvas.selectCard(0);
+          await properties.expectVisible();
 
-        await properties.switchTab('YAML');
-        await yamlEditor.expectMonacoVisible('properties', testInfo);
-        const { value: entityYaml } = await yamlEditor.getEditorContentWithDiagnostics(
-          testInfo,
-          'properties',
-        );
-        const parsedEntity = (yaml.load(entityYaml) as Record<string, unknown>) || {};
-        parsedEntity.entity = 'sensor.environment';
-        const nextEntityYaml = yaml.dump(parsedEntity, {
-          lineWidth: -1,
-          noRefs: true,
-          sortKeys: false,
-        });
-        await yamlEditor.setEditorContent(nextEntityYaml, 'properties', testInfo);
-        await properties.switchTab('Form');
+          await properties.switchTab('YAML');
+          await yamlEditor.expectMonacoVisible('properties', testInfo);
+          const { value: entityYaml } = await yamlEditor.getEditorContentWithDiagnostics(
+            testInfo,
+            'properties',
+          );
+          const parsedEntity = (yaml.load(entityYaml) as Record<string, unknown>) || {};
+          parsedEntity.entity = 'sensor.environment';
+          const nextEntityYaml = yaml.dump(parsedEntity, {
+            lineWidth: -1,
+            noRefs: true,
+            sortKeys: false,
+          });
+          await yamlEditor.setEditorContent(nextEntityYaml, 'properties', testInfo);
+          await properties.switchTab('Form');
 
-        await attributeDisplay.selectAttributes(['battery', 'is_online', 'last_seen'], testInfo);
-        await attributeDisplay.setLayout('table');
-        await attributeDisplay.setNumberFormat('battery', 0, '%', testInfo);
-        await attributeDisplay.setBooleanFormat('is_online', 'Online', 'Offline');
-        await attributeDisplay.setTimestampFormat('last_seen', 'absolute');
+          await attributeDisplay.selectAttributes(['battery', 'is_online', 'last_seen'], testInfo);
+          await attributeDisplay.setLayout('table');
+          await attributeDisplay.setNumberFormat('battery', 0, '%', testInfo);
+          await attributeDisplay.setBooleanFormat('is_online', 'Online', 'Offline');
+          await attributeDisplay.setTimestampFormat('last_seen', 'absolute');
 
-        await attributeDisplay.expectPreview('battery', '97 %');
-        await attributeDisplay.expectPreview('is_online', 'Online');
-        await attributeDisplay.expectPreview('last_seen', '2025');
+          await attributeDisplay.expectPreview('battery', '97 %');
+          await attributeDisplay.expectPreview('is_online', 'Online');
+          await attributeDisplay.expectPreview('last_seen', '2025');
 
-        await attributeDisplay.reorderAttribute('last_seen', 'battery');
+          await attributeDisplay.reorderAttribute('last_seen', 'battery');
 
-        await attributeDisplay.expectRenderedAttribute('battery', '97 %');
-        await attributeDisplay.expectRenderedAttribute('is_online', 'Online');
-        await attributeDisplay.expectRenderedAttribute('last_seen', '2025');
+          await attributeDisplay.expectRenderedAttribute('battery', '97 %');
+          await attributeDisplay.expectRenderedAttribute('is_online', 'Online');
+          await attributeDisplay.expectRenderedAttribute('last_seen', '2025');
 
-        await attributeDisplay.expectLayoutVisible('table');
-        await attributeDisplay.expectLayoutScreenshot('table', 'attribute-display-table.png');
+          await attributeDisplay.expectLayoutVisible('table');
+          await attributeDisplay.expectLayoutScreenshot('table', 'attribute-display-table.png');
 
-        await entityContext.patchEntity(
-          'sensor.environment',
-          { attributes: { battery: 55.2 } },
-          testInfo,
-        );
-        await attributeDisplay.expectRenderedAttribute('battery', '55 %');
+          await entityContext.patchEntity(
+            'sensor.environment',
+            { attributes: { battery: 55.2 } },
+            testInfo,
+          );
+          await attributeDisplay.expectRenderedAttribute('battery', '55 %');
 
-        await properties.switchTab('YAML');
-        await yamlEditor.expectMonacoVisible('properties', testInfo);
-        const { value: buttonYaml } = await yamlEditor.getEditorContentWithDiagnostics(
-          testInfo,
-          'properties',
-        );
-        const parsed = (yaml.load(buttonYaml) as Record<string, unknown>) || {};
-        expect(parsed.attribute_display_layout).toBe('table');
-        const attributeDisplayConfig = parsed.attribute_display as Array<Record<string, unknown>>;
-        expect(Array.isArray(attributeDisplayConfig)).toBe(true);
-        expect(attributeDisplayConfig[0]?.attribute).toBe('last_seen');
-        expect(attributeDisplayConfig[1]?.attribute).toBe('battery');
-      } finally {
-        await close(ctx);
-      }
-    });
+          await properties.switchTab('YAML');
+          await yamlEditor.expectMonacoVisible('properties', testInfo);
+          const { value: buttonYaml } = await yamlEditor.getEditorContentWithDiagnostics(
+            testInfo,
+            'properties',
+          );
+          const parsed = (yaml.load(buttonYaml) as Record<string, unknown>) || {};
+          expect(parsed.attribute_display_layout).toBe('table');
+          const attributeDisplayConfig = parsed.attribute_display as Array<Record<string, unknown>>;
+          expect(Array.isArray(attributeDisplayConfig)).toBe(true);
+          expect(attributeDisplayConfig[0]?.attribute).toBe('last_seen');
+          expect(attributeDisplayConfig[1]?.attribute).toBe('battery');
+        } finally {
+          await close(ctx);
+        }
+      },
+    );
   });
 });

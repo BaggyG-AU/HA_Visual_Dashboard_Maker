@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { launchWithDSL, close } from '../support';
 
-test.describe('Icon Color visual regression', () => {
+test.describe('Icon Color visual regression', { tag: '@visual' }, () => {
   test('captures solid and gradient icon colors', async ({ page }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();

@@ -6,6 +6,14 @@ on:
   push:
     branches: [main]
 
+# PR #142 stacked TWELVE CI runs on one branch, each doing the full install +
+# build, because every push started a run and nothing cancelled the previous
+# one. Only the newest commit's result can gate a merge, so the older runs were
+# pure waste.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci:
     name: ci
@@ -20,6 +28,8 @@ jobs:
       # merge-blocker M2 of docs/reviews/self-pass-gate-adversarial-review-codex.md.
       # The detector now fails closed instead, which makes this line the
       # difference between a green CI run and a red one.
+      #
+      # The affected-specs job below ALSO depends on it, for `--only-changed`.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -49,3 +59,67 @@ jobs:
         run: npm run test:unit
       - name: Build
         run: npm run package
+
+  # ---------------------------------------------------------------- TIER 1 ---
+  # The specs the diff actually reaches, on every PR. Fast feedback, NOT a gate
+  # for merge: `--only-changed` analyses the import graph and is documented by
+  # Playwright as a HEURISTIC THAT CAN MISS TESTS. The full behavioural suite
+  # (tier 2, .github/workflows/test.yml) is the safety net behind it.
+  #
+  # ⚠ VISUAL SPECS ARE EXCLUDED HERE ON PURPOSE. Six of the seven canonical e2e
+  # failures are visual, and whether this project's WSL2-generated `-linux`
+  # baselines even reproduce on a GitHub runner is UNMEASURED. Letting them into
+  # a per-push job would make tier 1 permanently red, which is exactly how the
+  # old nightly became something everybody ignored.
+  affected-specs:
+    name: affected specs (tier 1)
+    # On a push to `main`, `origin/main` IS the commit under test, so
+    # `--only-changed` would select nothing. Tier 3 covers `main`.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      # Electron tests launch the BUNDLED Electron binary, never a downloaded
+      # browser, so `playwright install chromium` is dead weight — it cost
+      # 3m31s in nightly run 31732899567. `install-deps` keeps the OS libraries
+      # Electron/Chromium actually link against and skips the download.
+      - name: Install Playwright system dependencies
+        run: npx playwright install-deps
+      # tools/test-headless.sh requires xvfb-run and exits 127 without it.
+      - name: Install Xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Build application
+        run: npm run package
+      - name: Affected e2e specs
+        run: >-
+          bash tools/test-headless.sh
+          --project=electron-e2e
+          --grep-invert @visual
+          --only-changed=origin/${{ github.base_ref }}
+          --pass-with-no-tests
+          --workers=1
+      - name: Affected integration specs
+        run: >-
+          bash tools/test-headless.sh
+          --project=electron-integration
+          --only-changed=origin/${{ github.base_ref }}
+          --pass-with-no-tests
+          --workers=1
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: affected-specs-artifacts-${{ github.run_number }}
+          path: |
+            test-results/
+            !test-results/**/*.zip
+          retention-days: 7

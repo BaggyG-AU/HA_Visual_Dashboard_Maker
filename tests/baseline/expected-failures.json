@@ -1,0 +1,105 @@
+{
+  "$comment": [
+    "THE SEVEN CANONICAL e2e FAILURES. A suite run containing EXACTLY these is a pass;",
+    "one containing more, fewer, or the same tests failing for a different reason is a",
+    "fail. Consumed by tools/check-suite-signatures.cjs.",
+    "",
+    "IDENTITY IS `file` + `titlePath`, NOT LINE NUMBERS. Line numbers decay on every",
+    "edit above them; the `baselineRef` field below carries the file:line form purely",
+    "so an entry can be matched against the suite-baseline drawer by eye.",
+    "",
+    "REASON CLASSES, NEVER PIXEL COUNTS. apexcharts has measured 3,126 / 3,341 / 3,261",
+    "/ 3,285 / 3,384 differing pixels across five rounds; an exact-count assertion",
+    "would be permanently red.",
+    "",
+    "AUTHORITY for the seven and their signatures: MemPalace drawer",
+    "drawer_havdm_testing_127a89e2ddcdeb101452523a (HAVDM suite baseline + failure",
+    "signatures + flake ledger). NOTHING HERE IS A LICENCE TO RE-BASELINE: retiring an",
+    "entry needs a cause and the owner's authorisation.",
+    "",
+    "`reasonClassVerified` records whether the class was read from an actual Playwright",
+    "JSON report in this repository, or inferred from the drawer's prose description.",
+    "The first green visual CI run is what converts the `false` entries."
+  ],
+  "expectedFailures": [
+    {
+      "tier": "behavioural",
+      "file": "e2e/calendar.spec.ts",
+      "titlePath": [
+        "Calendar View Card",
+        "renders month/week/day views with event badges and agenda"
+      ],
+      "reasonClass": "locator-not-visible",
+      "reasonClassVerified": true,
+      "baselineRef": "calendar.spec:29",
+      "note": "expect(getByTestId('calendar-event-badge').first()).toBeVisible() — the badge is never found. Measured on this branch 2026-08-14: exit 1, 1 failed / 1 passed, failing at tests/e2e/calendar.spec.ts:45:72. THE ONLY EXPECTED FAILURE IN THE ENTIRE BEHAVIOURAL TIER."
+    },
+    {
+      "tier": "visual",
+      "file": "e2e/apexcharts.visual.spec.ts",
+      "titlePath": [
+        "ApexCharts Visual Regression",
+        "captures line, area, and bar preview snapshots"
+      ],
+      "reasonClass": "snapshot-mismatch",
+      "reasonClassVerified": false,
+      "baselineRef": "apexcharts.visual:26",
+      "note": "apexcharts-line.png. Diff magnitude measured at 3,126 / 3,341 / 3,261 / 3,285 / 3,384 px across five rounds — flagged seven times, never diagnosed."
+    },
+    {
+      "tier": "visual",
+      "file": "e2e/attribute-display.spec.ts",
+      "titlePath": [
+        "Entity Attribute Display (Feature 3.4)",
+        "Attribute display workflow",
+        "formats, reorders, persists, and updates attribute display"
+      ],
+      "reasonClass": "snapshot-mismatch",
+      "reasonClassVerified": false,
+      "baselineRef": "attribute-display:95",
+      "note": "128 px (ratio 0.01), via attributeDisplay.expectLayoutScreenshot at tests/support/dsl/attributeDisplay.ts:373. Note this spec file is MIXED — its sibling test at :23 is behavioural and is not tagged @visual."
+    },
+    {
+      "tier": "visual",
+      "file": "e2e/card-background.visual.spec.ts",
+      "titlePath": [
+        "Card Background Customization - Visual and Performance",
+        "captures visual snapshots for background types"
+      ],
+      "reasonClass": "snapshot-mismatch",
+      "reasonClassVerified": false,
+      "baselineRef": "card-background.visual:8",
+      "note": "8 px (ratio 0.01), via expect(Buffer).toMatchSnapshot at tests/support/dsl/canvas.ts:287. This spec file is MIXED — the frame-rate test at :71 is behavioural and is not tagged @visual."
+    },
+    {
+      "tier": "visual",
+      "file": "e2e/popup.visual.spec.ts",
+      "titlePath": ["Popup Visual Regression", "captures popup open states and sizes"],
+      "reasonClass": "snapshot-mismatch",
+      "reasonClassVerified": false,
+      "baselineRef": "popup.visual:20",
+      "note": "THE ONLY FULL-VIEWPORT (1920x1080) SNAPSHOT IN THE SUITE, and the most load-sensitive test in it: 158,669 px under FULL-SUITE load vs 16,372 px ISOLATED on the same code. Its signature also MOVED post-F4, base isolated 16,372 -> 21,919 px, reproduced exactly twice. This is why the visual job runs un-sharded at --workers=1."
+    },
+    {
+      "tier": "visual",
+      "file": "e2e/advanced-slider.visual.spec.ts",
+      "titlePath": [
+        "Advanced Slider Visual Regression",
+        "captures orientation and marker variants"
+      ],
+      "reasonClass": "snapshot-mismatch",
+      "reasonClassVerified": false,
+      "baselineRef": "advanced-slider.visual:16",
+      "note": "Size mismatch, expected 586x882 received 586x818. Was once wrongly recorded as retired; proved failing on a byte-identical base src/ and independently reproduced by the reviewer. It is the SEVENTH expected failure — the count is 7, not 6."
+    },
+    {
+      "tier": "visual",
+      "file": "e2e/tabs.visual.spec.ts",
+      "titlePath": ["Tabs Visual Regression", "captures tab positions and active states"],
+      "reasonClass": "count-mismatch",
+      "reasonClassVerified": false,
+      "baselineRef": "tabs.visual:33",
+      "note": "NOT a snapshot failure. expect(locator('.ant-select-dropdown:visible')).toHaveCount(0) at tests/support/dsl/tabs.ts:11 — an antd Select dropdown that never closes, so the test never reaches its snapshot."
+    }
+  ]
+}
