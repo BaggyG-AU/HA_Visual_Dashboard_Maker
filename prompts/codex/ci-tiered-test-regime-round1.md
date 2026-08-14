@@ -216,9 +216,14 @@ been your findings.**
   `Total: 0 tests in 0 files`, both projects. Made visible in `736c5c5`;
   **not** fixed. Named as an open owner decision.
 - **§3.3 → the `@visual` population holds under a second key.** Re-enumerated
-  by behaviour (specs reaching any of 11 DSL screenshot methods or a direct
+  by behaviour (specs reaching any DSL screenshot method or a direct
   `toHaveScreenshot`/`toMatchSnapshot`) rather than by snapshot directory. Both
-  keys return the same 17 files.
+  keys return the same 17 files. ⚠ **CORRECTED per round-1 finding N1: this said
+  "11 DSL screenshot methods", which counted unique method NAMES. There are 13
+  implementations across 12 modules — `expectLayoutScreenshot` exists in both
+  `layout.ts` and `attributeDisplay.ts`, and `expectCardScreenshot` in both
+  `accordion.ts` and `tabs.ts`. Counting names collapsed each pair. The partition
+  result is unaffected; the supporting count was wrong.**
 - **§3.1 → six other legs proven red-before-green**, in this checkout: green→0;
   extra failure, vanished expected failure, changed reason class, duplicated
   report, missing report, truncated report → 1. Re-verified against the REAL

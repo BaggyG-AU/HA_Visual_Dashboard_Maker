@@ -20,7 +20,26 @@
     "`reasonClassVerified` records whether the class was read from an actual Playwright",
     "JSON report in this repository, or inferred from the drawer's prose description.",
     "The first green visual CI run is what converts the `false` entries.",
-    "\u2b50 2026-08-14: the visual tier was MEASURED on ubuntu-latest (run 31802864528). 12 of 19 passed against the WSL2-generated -linux baselines, 1 skipped, and the 6 failures were EXACTLY this manifest's visual set, reason classes included. GitHub's Ubuntu therefore renders like the maintainer's WSL2+Xvfb box for these snapshots, and NO Docker image is required. Nothing was re-baselined to achieve this."
+    "\u2b50 2026-08-14: the visual tier was MEASURED on ubuntu-latest (run 31802864528). 12 of 19 passed against the WSL2-generated -linux baselines, 1 skipped, and the 6 failures were EXACTLY this manifest's visual set, reason classes included. GitHub's Ubuntu therefore renders like the maintainer's WSL2+Xvfb box for these snapshots, and NO Docker image is required. Nothing was re-baselined to achieve this.",
+    "",
+    "\u26a0\u26a0 2026-08-15, AFTER CODEX ROUND-1 FINDINGS M1 AND M2. This manifest previously",
+    "held ONLY expectedFailures, and the gate counted SKIPPED tests toward its size",
+    "floor. Measured: a report with 560 of 561 outcomes skipped exited 0, and a newly",
+    "flaky regression exited 0. A floor over IDENTITIES is not evidence of EXECUTION.",
+    "Two more baselines now exist and the floor counts executed outcomes only.",
+    "",
+    "expectedSkips \u2014 read from the real reports of run 31802864528, not typed. A skip",
+    "that is not baselined FAILS, and a baselined skip that did not occur FAILS (it",
+    "either started running, which is good news needing a manifest update, or its",
+    "identity moved).",
+    "",
+    "expectedFlaky \u2014 the eight-item watched-flake ledger from drawer",
+    "drawer_havdm_testing_127a89e2ddcdeb101452523a, resolved from prose spec:line to",
+    "real identities via `--list` on 2026-08-15; all eight resolved. ANY OTHER flaky",
+    "identity now FAILS the run. \u26a0 THE TWO FLAKES OBSERVED IN RUN 31802864528 ARE",
+    "NOT IN THIS LIST AND ARE NOT ADDED HERE \u2014 adding them would be re-baselining",
+    "without a cause and without the owner's authorisation. They will fail the gate",
+    "until adjudicated, which is the intended behaviour."
   ],
   "expectedFailures": [
     {
@@ -101,6 +120,270 @@
       "reasonClassVerified": true,
       "baselineRef": "tabs.visual:33",
       "note": "NOT a snapshot failure. expect(locator('.ant-select-dropdown:visible')).toHaveCount(0) at tests/support/dsl/tabs.ts:11 \u2014 an antd Select dropdown that never closes, so the test never reaches its snapshot. \u2b50 REASON CLASS VERIFIED 2026-08-14 by GitHub Actions run 31802864528 (job 'visual'): 19 tests, 6 unexpected failures, exact match to this manifest including reason class."
+    }
+  ],
+  "expectedSkips": [
+    {
+      "tier": "behavioural",
+      "file": "e2e/card-background.spec.ts",
+      "titlePath": [
+        "Card Background Customization - PropertiesPanel",
+        "image and blur backgrounds update preview + YAML"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should return available categories based on entities"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should return empty array when no entities match any category"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should filter entities for lights category"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should filter entities for surveillance category"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should limit entities to 6 per category"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should sort entities alphabetically by entity_id"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should generate lights dashboard with correct structure"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should generate surveillance dashboard with picture-entity cards"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should generate power dashboard with sensor cards"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should generate climate dashboard with thermostat cards"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should return null when no entities available for category"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should assign grid layout positions to cards"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should get correct entity count for category"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "all dashboard categories should have required fields"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should generate presence dashboard with person and tracker entities"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should generate covers dashboard with cover cards"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should generate security dashboard with alarm, lock, and sensor cards"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should generate rooms dashboard with switch and sensor cards"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/dashboard-generator.spec.ts",
+      "titlePath": [
+        "Dashboard Generator Service (covered by unit tests)",
+        "should generate media dashboard with media-control cards"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    },
+    {
+      "tier": "visual",
+      "file": "e2e/color-picker.spec.ts",
+      "titlePath": [
+        "Color Picker - PropertiesPanel Integration",
+        "visual regression and accessibility in scrollable PropertiesPanel (skipped: Electron focus inactive in PW)"
+      ],
+      "note": "Skip register: docs/testing/SKIPPED_TESTS_REGISTER.md. Identity read from run 31802864528."
+    }
+  ],
+  "expectedFlaky": [
+    {
+      "tier": "behavioural",
+      "file": "e2e/card-context-menu.spec.ts",
+      "titlePath": [
+        "Card context menu (UAT CANVAS-06)",
+        "choosing Delete from the context menu removes that card"
+      ],
+      "baselineRef": "e2e/card-context-menu.spec.ts:71",
+      "note": "Watched-flake ledger, drawer drawer_havdm_testing_127a89e2ddcdeb101452523a. Resolved from spec:line via --list on 2026-08-15. Tolerated as named existing debt; retiring it needs a cause and the owner authorisation."
+    },
+    {
+      "tier": "behavioural",
+      "file": "e2e/multi-entity.spec.ts",
+      "titlePath": [
+        "Multi-entity Support (Feature 3.7)",
+        "supports add, reorder, aggregate mode, and realtime aggregate updates"
+      ],
+      "baselineRef": "e2e/multi-entity.spec.ts:71",
+      "note": "Watched-flake ledger, drawer drawer_havdm_testing_127a89e2ddcdeb101452523a. Resolved from spec:line via --list on 2026-08-15. Tolerated as named existing debt; retiring it needs a cause and the owner authorisation."
+    },
+    {
+      "tier": "visual",
+      "file": "e2e/progress-ring.visual.spec.ts",
+      "titlePath": ["Progress Ring Visual Regression", "captures single and nested ring variants"],
+      "baselineRef": "e2e/progress-ring.visual.spec.ts:39",
+      "note": "Watched-flake ledger, drawer drawer_havdm_testing_127a89e2ddcdeb101452523a. Resolved from spec:line via --list on 2026-08-15. Tolerated as named existing debt; retiring it needs a cause and the owner authorisation."
+    },
+    {
+      "tier": "behavioural",
+      "file": "e2e/settings.spec.ts",
+      "titlePath": ["Settings", "should support all logging levels"],
+      "baselineRef": "e2e/settings.spec.ts:79",
+      "note": "Watched-flake ledger, drawer drawer_havdm_testing_127a89e2ddcdeb101452523a. Resolved from spec:line via --list on 2026-08-15. Tolerated as named existing debt; retiring it needs a cause and the owner authorisation."
+    },
+    {
+      "tier": "visual",
+      "file": "e2e/weather-forecast-visualization.visual.spec.ts",
+      "titlePath": [
+        "Weather Forecast Visualization Visual Regression",
+        "captures hourly and daily weather visualization variants"
+      ],
+      "baselineRef": "e2e/weather-forecast-visualization.visual.spec.ts:35",
+      "note": "Watched-flake ledger, drawer drawer_havdm_testing_127a89e2ddcdeb101452523a. Resolved from spec:line via --list on 2026-08-15. Tolerated as named existing debt; retiring it needs a cause and the owner authorisation."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/entity-browser.spec.ts",
+      "titlePath": [
+        "Entity Browser Integration with YAML Editors",
+        "should insert entity ID into Dashboard YAML editor"
+      ],
+      "baselineRef": "integration/entity-browser.spec.ts:380",
+      "note": "Watched-flake ledger, drawer drawer_havdm_testing_127a89e2ddcdeb101452523a. Resolved from spec:line via --list on 2026-08-15. Tolerated as named existing debt; retiring it needs a cause and the owner authorisation."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/entity-caching.spec.ts",
+      "titlePath": ["Entity Cache Performance", "should load cached entities quickly"],
+      "baselineRef": "integration/entity-caching.spec.ts:387",
+      "note": "Watched-flake ledger, drawer drawer_havdm_testing_127a89e2ddcdeb101452523a. Resolved from spec:line via --list on 2026-08-15. Tolerated as named existing debt; retiring it needs a cause and the owner authorisation."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/yaml-entity-insert.spec.ts",
+      "titlePath": [
+        "YAML-05 \u2014 Edit YAML dialog",
+        "CONTROL: inserts at the cursor when the user has placed one"
+      ],
+      "baselineRef": "integration/yaml-entity-insert.spec.ts:185",
+      "note": "Watched-flake ledger, drawer drawer_havdm_testing_127a89e2ddcdeb101452523a. Resolved from spec:line via --list on 2026-08-15. Tolerated as named existing debt; retiring it needs a cause and the owner authorisation."
     }
   ]
 }

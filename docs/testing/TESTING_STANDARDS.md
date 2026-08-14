@@ -868,8 +868,15 @@ public — so the expensive tiers cost wall-clock, not the maintainer's machine.
    It prints its selection to the log and emits a `::warning` when the selection
    is empty, so a vacuous pass is visible rather than indistinguishable from a
    real one — but **a green T1 is not evidence about `src/`.** Playwright also
-   documents `--only-changed` as a heuristic that can miss tests. **T2/T3 are
-   the gate; T1 is fast feedback and nothing more.**
+   documents `--only-changed` as a heuristic that can miss tests.
+   ⚠⚠ **T2/T3 ARE THE INTENDED GATE, AND ARE NOT YET AN ENFORCED ONE.** Codex
+   round-1 finding M5: tier 2 is opt-in by label and, until branch protection
+   requires the `merge + signature check` job on the PR head, nothing compels it
+   to run before a merge. Calling it "the gate" while it is skippable is the
+   claim this document was already corrected once for making. **Status: the
+   `synchronize` trigger is in place so a labelled PR re-runs tier 2 on every
+   later push; the branch-protection rule is the owner's and is NOT yet
+   applied.**
    ⓘ Open decision: whether a `src/`-touching diff should fall back to a named
    smoke set. That needs a smoke set chosen on merit.
 2. **Visual specs are tagged `@visual` and excluded from T1 and T2.** Six of the
@@ -880,10 +887,23 @@ public — so the expensive tiers cost wall-clock, not the maintainer's machine.
    needed.** The T3 visual job answered that question
    before it is ever a gate.
 3. **Green/red is decided by `tools/check-suite-signatures.cjs`, not by
-   Playwright's exit code.** Seven known failures mean a raw exit code cannot
-   express "correct". The script compares the failure SET, each failure's REASON
-   CLASS, and the report's SIZE against `tests/baseline/expected-failures.json`.
-   A run missing a third of its tests is a failure, not a pass.
+   Playwright's exit code** — in tiers 1, 2 and 3 alike. Seven known failures
+   mean a raw exit code cannot express "correct". The script compares, against
+   `tests/baseline/expected-failures.json`:
+   - the **failure set** and each failure's **reason class** (root cause first:
+     a test that timed out inside `toHaveScreenshot` is a `timeout`, not a
+     snapshot mismatch);
+   - the **skip set by identity** — a skip is not coverage, and an unbaselined
+     skip fails;
+   - the **flaky set by identity** — CI retries twice, so a regression that
+     fails twice and passes last arrives as `flaky`; only the eight ledger
+     entries are tolerated;
+   - the number of **executed** outcomes against a floor, and duplicate
+     identities.
+     ⚠ **The floor counts EXECUTED outcomes, not identities.** Counting
+     identities let a report with 560 of 561 outcomes skipped pass (Codex M1).
+     Tier 1 adds `--subset`, which forgives a baselined identity the diff never
+     selected but judges everything present in full.
 
 ### Regression Gate Matrix (MANDATORY)
 

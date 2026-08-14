@@ -45,12 +45,13 @@ const MANIFEST = path.join(ROOT, 'tests/baseline/expected-failures.json');
 // ---------------------------------------------------------------- arg parsing
 
 function parseArgs(argv) {
-  const args = { report: null, tier: null, minTests: 0 };
+  const args = { report: null, tier: null, minTests: 0, subset: false };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--report') args.report = argv[++i];
     else if (argv[i] === '--tier') args.tier = argv[++i];
     else if (argv[i] === '--manifest') args.manifest = argv[++i];
     else if (argv[i] === '--min-tests') args.minTests = Number(argv[++i]);
+    else if (argv[i] === '--subset') args.subset = true;
     else {
       console.error(`Unknown argument: ${argv[i]}`);
       return null;
@@ -88,13 +89,30 @@ const stripAnsi = (s) => String(s || '').replace(ANSI, '');
  */
 function classifyError(message) {
   const m = stripAnsi(message);
+
+  // ⚠⚠ PRECEDENCE IS ROOT CAUSE FIRST, MATCHER TOKEN SECOND. Codex round-1 finding
+  // M3: this list previously tested matcher words BEFORE timeout words, so a test
+  // that TIMED OUT while sitting inside `toHaveScreenshot` was classified
+  // `snapshot-mismatch` — i.e. a changed failure cause was masked as the expected
+  // one and the gate exited 0. Reproduced against the real visual report.
+  //
+  // ⚠⚠⚠ BUT THE OBVIOUS FIX IS WRONG. A perfectly ordinary matcher failure ALSO
+  // contains the word "Timeout": measured on the real reports, `calendar` (
+  // locator-not-visible) and `tabs.visual` (count-mismatch) both carry
+  // `Timeout: 5000ms` — the MATCHER'S OWN WAIT BUDGET — while neither carries a
+  // test-level timeout. Promoting any /timeout/ match would reclassify two
+  // manifest entries and break the gate in the opposite direction.
+  //
+  // So the root-cause timeout signature is specifically Playwright's TEST-level
+  // message, `Test timeout of <n>ms exceeded`, and nothing looser.
+  if (/electron\.launch|Process failed to launch/i.test(m)) return 'launch-failure';
+  if (/Test timeout of \d+\s*ms exceeded/i.test(m)) return 'timeout';
+
   if (/A snapshot doesn't exist at/i.test(m)) return 'snapshot-missing';
   if (/Screenshot comparison failed|toHaveScreenshot|toMatchSnapshot|snapshot/i.test(m))
     return 'snapshot-mismatch';
   if (/toBeVisible/i.test(m)) return 'locator-not-visible';
   if (/toHaveCount/i.test(m)) return 'count-mismatch';
-  if (/electron\.launch|Process failed to launch/i.test(m)) return 'launch-failure';
-  if (/Test timeout of|Timed out .* waiting|exceeded/i.test(m)) return 'timeout';
   return 'other';
 }
 
@@ -204,13 +222,28 @@ function main() {
   const outcomes = collectOutcomes(report);
   const failures = outcomes.filter((o) => o.status === 'unexpected');
   const flaky = outcomes.filter((o) => o.status === 'flaky');
+  const skipped = outcomes.filter((o) => o.status === 'skipped');
+  // ⚠ M1: a SKIPPED test is not executed coverage. The size floor below counts
+  // these and nothing else — see the guard for the measurement that forced it.
+  const executed = outcomes.filter((o) => o.status !== 'skipped');
 
-  const expected = (manifest.expectedFailures || []).filter(
-    (e) => args.tier === 'all' || e.tier === args.tier,
-  );
+  const forTier = (list) => (list || []).filter((e) => args.tier === 'all' || e.tier === args.tier);
+  const expected = forTier(manifest.expectedFailures);
+  const expectedSkips = forTier(manifest.expectedSkips);
+  const expectedFlaky = forTier(manifest.expectedFlaky);
 
-  const expectedByKey = new Map(expected.map((e) => [`${e.file} › ${e.titlePath.join(' › ')}`, e]));
+  const manifestKey = (e) => `${e.file} › ${e.titlePath.join(' › ')}`;
+  const expectedByKey = new Map(expected.map((e) => [manifestKey(e), e]));
   const actualByKey = new Map(failures.map((f) => [keyOf(f), f]));
+
+  // ⚠ SUBSET MODE (`--subset`), for tier 1. A partial run only executes the specs
+  // the diff selected, so a baselined identity that is simply NOT PRESENT is not a
+  // finding — it was never selected. Anything that IS present is still judged in
+  // full. Codex round-1 finding M4: without this, tier 1 either uses the raw exit
+  // code (and goes red on a known failure) or reports every unselected canonical
+  // as "vanished".
+  const presentKeys = new Set(outcomes.map(keyOf));
+  const wasSelected = (key) => !args.subset || presentKeys.has(key);
 
   const unexpectedNew = [];
   const reasonChanged = [];
@@ -222,22 +255,51 @@ function main() {
     else if (exp.reasonClass !== actual.reasonClass) reasonChanged.push({ key, exp, actual });
   }
   for (const [key, exp] of expectedByKey) {
-    if (!actualByKey.has(key)) vanished.push({ key, exp });
+    if (!actualByKey.has(key) && wasSelected(key)) vanished.push({ key, exp });
   }
+
+  // ⚠⚠ M1 — SKIP IDENTITIES. A skip is not coverage. Baselined skips are tolerated;
+  // an unbaselined skip fails (a test silently stopped running) and a baselined
+  // skip that did not occur fails (it started running, which is good news that
+  // still needs the manifest updated, or its identity moved).
+  const expectedSkipByKey = new Map(expectedSkips.map((e) => [manifestKey(e), e]));
+  const actualSkipByKey = new Map(skipped.map((o) => [keyOf(o), o]));
+  const newSkips = [...actualSkipByKey.keys()].filter((k) => !expectedSkipByKey.has(k));
+  const unSkipped = [...expectedSkipByKey.keys()].filter(
+    (k) => !actualSkipByKey.has(k) && wasSelected(k),
+  );
+
+  // ⚠⚠ M2 — FLAKY IDENTITIES. CI retries twice, so a genuine regression that fails
+  // twice and passes on the last attempt arrives as `flaky`. Tolerating every such
+  // result makes retries a hiding place. The eight documented ledger entries are
+  // allowlisted; anything else fails and must be adjudicated.
+  const expectedFlakyByKey = new Map(expectedFlaky.map((e) => [manifestKey(e), e]));
+  const newFlaky = flaky.filter((f) => !expectedFlakyByKey.has(keyOf(f)));
+
+  // ⚠ In `--subset` mode the count guard must compare against the expected
+  // identities that were ACTUALLY SELECTED, not the whole tier. Comparing to the
+  // full manifest would make every partial run fail on arithmetic alone — which
+  // it did, until this fixture caught it: a report that legitimately excluded the
+  // one behavioural canonical still exited 1.
+  const expectedApplicable = expected.filter((e) => wasSelected(manifestKey(e)));
 
   // ------------------------------------------------------------------ output
   console.log(`\nSuite signature check — tier: ${args.tier}`);
   console.log(`  report            : ${args.report}`);
-  console.log(`  tests in report   : ${outcomes.length}`);
-  console.log(`  unexpected failures: ${failures.length}  (manifest expects ${expected.length})`);
-  console.log(`  flaky (passed on retry): ${flaky.length}`);
+  console.log(`  tests in report   : ${outcomes.length}${args.subset ? ' (SUBSET mode)' : ''}`);
+  console.log(`  executed          : ${executed.length}   skipped: ${skipped.length}`);
+  console.log(
+    `  unexpected failures: ${failures.length}  (manifest expects ${expectedApplicable.length}` +
+      `${args.subset ? ' of the selected subset' : ''})`,
+  );
+  console.log(`  flaky: ${flaky.length}  (${expectedFlaky.length} allowlisted for this tier)`);
 
-  if (flaky.length) {
-    // Reported, never blocking: this project keeps an eight-item watched-flake
-    // ledger, and 2 CI retries exist precisely to MEASURE the pass-on-retry
-    // rate. Blocking on it would re-create the noise the ledger is managing.
-    console.log('\n⚠ FLAKY (reported, not blocking — add to the watched-flake ledger):');
-    for (const f of flaky) console.log(`    ${keyOf(f)}  [${f.attempts} attempts]`);
+  if (flaky.length - newFlaky.length > 0) {
+    console.log('\nⓘ FLAKY, allowlisted (named existing debt — still on the watched ledger):');
+    for (const f of flaky) {
+      if (expectedFlakyByKey.has(keyOf(f)))
+        console.log(`    ${keyOf(f)}  [${f.attempts} attempts]`);
+    }
   }
 
   let status = 0;
@@ -269,13 +331,38 @@ function main() {
   // ⚠ COUNT AS WELL AS SET. Independent of the duplicate guard above: if the
   // number of unexpected failures does not equal the number expected, something
   // is wrong even when every key matches.
-  if (failures.length !== expected.length) {
+  if (failures.length !== expectedApplicable.length) {
     status = 1;
     console.log(
-      `\n❌ FAILURE COUNT MISMATCH — ${failures.length} unexpected failures, manifest expects ${expected.length}.` +
+      `\n❌ FAILURE COUNT MISMATCH — ${failures.length} unexpected failures, manifest expects ${expectedApplicable.length}` +
+        `${args.subset ? ' (of the selected subset)' : ''}.` +
         '\n    The set comparison below may still look clean; a count disagreement means' +
         '\n    the report is not what it claims to be.',
     );
+  }
+
+  if (newSkips.length) {
+    status = 1;
+    console.log(`\n❌ ${newSkips.length} TEST(S) SKIPPED THAT ARE NOT BASELINED:`);
+    console.log('    A test that silently stops running looks identical to one that passes.');
+    for (const k of newSkips.slice(0, 20)) console.log(`    ${k}`);
+  }
+
+  if (unSkipped.length) {
+    status = 1;
+    console.log(`\n❌ ${unSkipped.length} BASELINED SKIP(S) DID NOT OCCUR:`);
+    console.log('    Possibly GOOD NEWS — the test may have been re-enabled. Either way the');
+    console.log('    manifest is now wrong: update tests/baseline/expected-failures.json.');
+    for (const k of unSkipped.slice(0, 20)) console.log(`    ${k}`);
+  }
+
+  if (newFlaky.length) {
+    status = 1;
+    console.log(`\n❌ ${newFlaky.length} NEWLY FLAKY IDENTITIES — not on the allowlist:`);
+    console.log('    CI retries twice, so a regression that fails twice and passes on the last');
+    console.log('    attempt arrives here rather than as a failure. Adjudicate it: fix it, or');
+    console.log("    add it to the manifest's expectedFlaky with the owner's authorisation.");
+    for (const f of newFlaky) console.log(`    ${keyOf(f)}  [${f.attempts} attempts]`);
   }
 
   // ⚠ THE TRUNCATION GUARD. A run that dies part-way — the 30-minute guillotine
@@ -283,10 +370,19 @@ function main() {
   // empty one. Its surviving tests may well contain no unexpected failures at
   // all, so a set comparison alone would call a two-thirds-complete run a pass.
   // Coverage lost is not coverage passed.
-  if (args.minTests && outcomes.length < args.minTests) {
+  //
+  // ⚠⚠ IT COUNTS `executed`, NOT `outcomes`, AND THAT DISTINCTION IS THE WHOLE
+  // GUARD. Codex round-1 finding M1: counting identities let a report in which
+  // 560 of 561 outcomes were SKIPPED satisfy a floor of 550 and exit 0 — the
+  // suite had run essentially nothing. Reproduced against the real merged report.
+  // A floor over identities measures that tests EXIST; only a floor over executed
+  // outcomes measures that they RAN. ⚠ Skips are additionally constrained by
+  // identity above, so this floor is a backstop rather than the only control.
+  if (args.minTests && executed.length < args.minTests) {
     status = 1;
     console.log(
-      `\n❌ REPORT IS SHORT — ${outcomes.length} tests, expected at least ${args.minTests}.` +
+      `\n❌ TOO FEW TESTS ACTUALLY EXECUTED — ${executed.length} executed of ${outcomes.length} identities` +
+        ` (${skipped.length} skipped); expected at least ${args.minTests} executed.` +
         '\n    A shard probably timed out or crashed before finishing. Treat as a FAILED run,' +
         '\n    not a passed one: the missing tests were never executed.',
     );

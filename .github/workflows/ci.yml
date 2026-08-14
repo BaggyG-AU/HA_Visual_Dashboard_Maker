@@ -150,7 +150,25 @@ jobs:
           Tier 2 (label the PR 'full-suite') is the gate."
           fi
           echo "::endgroup::"
+      # ⚠⚠ M4 (Codex round 1): these two steps previously used the RAW PLAYWRIGHT
+      # EXIT CODE — the very semantics this PR exists to replace. Six of the seven
+      # canonical failures are visual and excluded here, but the seventh,
+      # `e2e/calendar.spec.ts`, is behavioural: any diff selecting that spec made
+      # tier 1 red for a known, documented failure.
+      #
+      # They were also SEQUENTIAL, so an e2e failure suppressed the integration
+      # step entirely — run 31802420811 is the proof: affected e2e failed and
+      # affected integration never ran. `continue-on-error` + `if: always()` keeps
+      # both results, and the signature check below is the authority.
+      #
+      # `--subset` tells the checker this is a PARTIAL population: a baselined
+      # identity that is absent was simply not selected, and is not a finding.
+      # Anything present is judged in full. No `--min-tests`: the selection size
+      # varies by diff, so a floor would be meaningless here.
       - name: Affected e2e specs
+        continue-on-error: true
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: t1-e2e.json
         run: >-
           bash tools/test-headless.sh
           --project=electron-e2e
@@ -158,13 +176,35 @@ jobs:
           --only-changed=origin/${{ github.base_ref }}
           --pass-with-no-tests
           --workers=1
+          --reporter=json
       - name: Affected integration specs
+        continue-on-error: true
+        if: always()
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: t1-integration.json
         run: >-
           bash tools/test-headless.sh
           --project=electron-integration
           --only-changed=origin/${{ github.base_ref }}
           --pass-with-no-tests
           --workers=1
+          --reporter=json
+      # ⚠ NO continue-on-error. This is tier 1's gate.
+      - name: Check affected specs against the baseline manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          rc=0
+          for f in t1-e2e.json t1-integration.json; do
+            if [ -f "$f" ]; then
+              echo "::group::signature check — $f"
+              node tools/check-suite-signatures.cjs --report "$f" --tier behavioural --subset || rc=1
+              echo "::endgroup::"
+            else
+              echo "no report at $f (the step selected nothing, or died before writing)"
+            fi
+          done
+          exit $rc
       - name: Upload failure artifacts
         if: failure()
         uses: actions/upload-artifact@v4
