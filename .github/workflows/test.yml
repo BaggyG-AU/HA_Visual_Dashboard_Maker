@@ -232,9 +232,76 @@ jobs:
             test-results/
             !test-results/**/*.zip
           retention-days: 30
-# ⓘ AWAITING THE OWNER'S RULING, DELIBERATELY NOT IMPLEMENTED: opening a GitHub
-# issue when a nightly goes red. ai_rules.md §3.5 forbids the agent creating
-# issues without authorisation. A workflow acting under the owner's own merged
-# config is arguably a different actor, but that is the owner's call to make
-# explicitly, not the author's to assume. Until then the signal is the red run
-# and GitHub's own failure notification.
+  # ⭐ AUTHORISED BY THE OWNER 2026-08-14. `ai_rules.md` §3.5 forbids the AGENT
+  # creating GitHub issues without authorisation; the owner ruled explicitly
+  # that this workflow may. That ruling covers this job and nothing else — it is
+  # not a general licence for an agent to open issues by hand.
+  #
+  # ⚠ SCHEDULE ONLY. A manual `workflow_dispatch` or a PR run that goes red must
+  # NOT open an issue: those have a human watching them already, and issue spam
+  # is the fastest way to make this signal ignored — which is precisely how the
+  # old nightly died.
+  #
+  # ⚠ ONE ISSUE, REOPENED AND COMMENTED, NEVER ONE PER NIGHT. A nightly that
+  # stays red for a week should produce one thread with seven comments, not
+  # seven threads.
+  notify:
+    name: report a red nightly
+    needs: [merge]
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const TITLE = 'Nightly regression suite is red';
+            const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `The nightly regression suite failed.`,
+              ``,
+              `- Run: ${url}`,
+              `- Commit: \`${context.sha}\``,
+              ``,
+              `The **merge + signature check** job is the authority: it compares the`,
+              `failure set, each failure's reason class, and the report size against`,
+              '`tests/baseline/expected-failures.json`.',
+              ``,
+              `⚠ Triage on SIGNATURES, never counts, and re-baselining a snapshot needs`,
+              `a cause and the owner's authorisation.`,
+            ].join('\n');
+
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              labels: 'nightly-failure',
+              per_page: 20,
+            });
+            const found = existing.data.find((i) => i.title === TITLE);
+
+            if (!found) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: TITLE,
+                body,
+                labels: ['nightly-failure'],
+              });
+              return;
+            }
+            if (found.state === 'closed') {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: found.number,
+                state: 'open',
+              });
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: found.number,
+              body,
+            });
