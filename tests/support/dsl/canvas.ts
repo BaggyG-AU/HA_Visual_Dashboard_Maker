@@ -175,6 +175,43 @@ export class CanvasDSL {
   }
 
   /**
+   * The same rectangles, but measured from the GRID CONTAINER'S OWN ORIGIN
+   * rather than the viewport's.
+   *
+   * ⚠⚠⚠ USE THIS WHENEVER YOU COMPARE CARD GEOMETRY ACROSS TWO MOMENTS IN TIME.
+   * `getCardRects()` above returns viewport-relative boxes, so ANY movement of
+   * the chrome around the canvas — the palette, the properties panel, a
+   * scrollbar appearing, a toolbar row changing height — shifts every card
+   * equally and reads as a layout change when the layout did not change at all.
+   *
+   * ⭐ MEASURED, NOT ARGUED. `save-and-backup.spec.ts`'s FILE-05 Expected 3 was
+   * unstable on CI for exactly this reason: GitHub Actions run 31871488924 failed
+   * all three attempts with x-deltas of 75.24, 44.74 and 44.66 px — half to a
+   * full grid column — while the same test measures a delta of EXACTLY ZERO on
+   * all four axes locally, across nine runs. The cards had not moved within the
+   * grid; the grid had moved within the window. Subtracting the container origin
+   * removes that entire class of difference, and it does so without weakening
+   * anything: a card that genuinely moves WITHIN the grid still moves here.
+   *
+   * ⓘ The absolute form is still right for questions that are genuinely about
+   * screen position — `expectNoOverlappingCards` compares cards to each other in
+   * one instant, so a common origin cancels out anyway.
+   */
+  async getCardRectsRelativeToGrid(): Promise<
+    Array<{ x: number; y: number; w: number; h: number }>
+  > {
+    return await this.window.evaluate(() => {
+      const grid = document.querySelector('.react-grid-layout');
+      if (!grid) throw new Error('no .react-grid-layout container found on the page');
+      const g = grid.getBoundingClientRect();
+      return Array.from(grid.querySelectorAll(':scope > .react-grid-item')).map((n) => {
+        const r = n.getBoundingClientRect();
+        return { x: r.left - g.left, y: r.top - g.top, w: r.width, h: r.height };
+      });
+    });
+  }
+
+  /**
    * Assert no two cards overlap — UAT card FILE-03's Expected 3.
    *
    * GRID_CONFIG.margin is [10, 10], so adjacent cards are always separated by a

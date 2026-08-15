@@ -34,6 +34,7 @@ import { close, launchWithDSL } from '../support';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import * as yaml from 'js-yaml';
 
 type Ctx = Awaited<ReturnType<typeof launchWithDSL>>;
 
@@ -182,7 +183,18 @@ test.describe('FILE-05: Save writes, clears the dirty marker and leaves a backup
       await ctx.canvas.expectCardCount(2);
       await makeDirty(ctx, 3);
 
-      const before = await ctx.canvas.getCardRects();
+      // ⚠⚠⚠ RELATIVE TO THE GRID, NOT TO THE VIEWPORT — and that is the whole
+      // repair of this leg. The absolute form was unstable on CI: run
+      // 31871488924 failed all three attempts with x-deltas of 75.24, 44.74 and
+      // 44.66 px, roughly half to a full grid column, while the identical test
+      // measures EXACTLY ZERO on all four axes locally across nine runs. Five
+      // hypotheses for the CI delta were refuted by measurement (a
+      // mid-transition sample, CPU starvation, window geometry, available width
+      // / scrollbars, and a settling race), which is the point: the cards were
+      // not moving within the grid, the grid was moving within the window, and
+      // no amount of settling or tolerance fixes a question asked about the
+      // wrong origin. See tests/support/dsl/canvas.ts for the measurements.
+      const before = await ctx.canvas.getCardRectsRelativeToGrid();
       await ctx.dashboard.toolbarSave.click();
       await expect(ctx.dashboard.dirtyIndicator).toBeHidden();
 
@@ -190,15 +202,44 @@ test.describe('FILE-05: Save writes, clears the dirty marker and leaves a backup
       // bytes just written is the automatable equivalent of the native
       // File > Open Dashboard... dialog.
       const written = fs.readFileSync(target, 'utf8');
+
+      // ⭐ THE DATA HALF, ASSERTED DIRECTLY RATHER THAN INFERRED. The docblock of
+      // the old leg worried that "a serializer that dropped geometry" would slip
+      // through a count-only check, and answered it by comparing pixels. Pixels
+      // are a PROXY for that; the file either carries each card's grid geometry
+      // or it does not, and that is exact integers on disk. Assert it outright,
+      // and keep the rendered comparison below for what it is uniquely good at —
+      // proving the geometry is not merely stored but honoured on reload.
+      const parsed = yaml.load(written) as {
+        views?: Array<{ cards?: Array<Record<string, unknown>> }>;
+      };
+      const savedCards = parsed.views?.[0]?.cards ?? [];
+      expect(savedCards, 'the save must write all three cards').toHaveLength(3);
+
+      // ⚠ MEASURED, NOT ASSUMED — the first draft of this assertion demanded a
+      // layout on EVERY card and was simply wrong about the format. Only the card
+      // the user placed carries one: the two seeded from DASHBOARD_YAML have no
+      // `_havdm_layout` key at all, because nothing ever positioned them
+      // explicitly. So the assertion is scoped to the card whose NEW POSITION is
+      // what Expected 3 is actually about.
+      expect(
+        savedCards[savedCards.length - 1]._havdm_layout,
+        'the placed card lost its grid geometry in the save',
+      ).toEqual({
+        x: expect.any(Number),
+        y: expect.any(Number),
+        w: expect.any(Number),
+        h: expect.any(Number),
+      });
+
       await loadFileBacked(ctx, written, target);
       await ctx.canvas.expectCardCount(3);
 
       // ⭐ The layout must SURVIVE the round-trip. Comparing rectangles rather
       // than just the card count is the difference between "the file has three
       // cards" and "the file has the layout the user saw" — the latter is what
-      // Expected 3 asks, and a serializer that dropped geometry would pass the
-      // former.
-      const after = await ctx.canvas.getCardRects();
+      // Expected 3 asks.
+      const after = await ctx.canvas.getCardRectsRelativeToGrid();
       expect(after).toHaveLength(before.length);
       after.forEach((rect, i) => {
         expect(Math.abs(rect.x - before[i].x)).toBeLessThanOrEqual(2);
