@@ -183,18 +183,33 @@ test.describe('FILE-05: Save writes, clears the dirty marker and leaves a backup
       await ctx.canvas.expectCardCount(2);
       await makeDirty(ctx, 3);
 
-      // ⚠⚠⚠ RELATIVE TO THE GRID, NOT TO THE VIEWPORT — and that is the whole
-      // repair of this leg. The absolute form was unstable on CI: run
-      // 31871488924 failed all three attempts with x-deltas of 75.24, 44.74 and
-      // 44.66 px, roughly half to a full grid column, while the identical test
-      // measures EXACTLY ZERO on all four axes locally across nine runs. Five
-      // hypotheses for the CI delta were refuted by measurement (a
-      // mid-transition sample, CPU starvation, window geometry, available width
-      // / scrollbars, and a settling race), which is the point: the cards were
-      // not moving within the grid, the grid was moving within the window, and
-      // no amount of settling or tolerance fixes a question asked about the
-      // wrong origin. See tests/support/dsl/canvas.ts for the measurements.
-      const before = await ctx.canvas.getCardRectsRelativeToGrid();
+      // ⚠⚠⚠ SETTLED, AND RELATIVE TO THE GRID RATHER THAN THE VIEWPORT. Those are
+      // TWO repairs to this leg, for two different defects, and only the second
+      // one was understood when it was made:
+      //
+      //   • RELATIVE cancels a movement of the grid WITHIN THE WINDOW. Measured
+      //     locally, the toolbar loses its dirty asterisk between the two samples
+      //     and the whole canvas rises by 8 px — an origin shift that the old
+      //     viewport-relative form reported as a layout change on every card.
+      //   • SETTLED closes the race that actually produced the CI failures.
+      //     `expectCardCount(3)` resolves when the third card EXISTS, and
+      //     react-grid-layout then reflows the others around it over
+      //     `transition: transform 0.2s`. Amplify that to 3 s and the sample
+      //     below catches the second card with its final transform already
+      //     applied but its measured box still 416 px away in x and 448 px in y.
+      //     On this machine the animation is over before the sample lands, which
+      //     is why nine local runs read exactly zero; on a GitHub runner it is
+      //     not, and the residue is whatever was left of the flight. Run
+      //     31876211967 failed by 2.317108154296875 px at head f52ccf13, where
+      //     the comparison was ALREADY relative — so an origin shift cannot
+      //     explain that one, and it is the run that proved relative coordinates
+      //     alone were not enough.
+      //
+      // ⚠ The earlier record listed "a settling race" among the REFUTED
+      // hypotheses. That refutation sampled twice in a row with no amplifier, so
+      // both readings were already settled and it could not have failed.
+      // See tests/support/dsl/canvas.ts for the full measurement.
+      const before = await ctx.canvas.getCardRectsRelativeToGridSettled();
       await ctx.dashboard.toolbarSave.click();
       await expect(ctx.dashboard.dirtyIndicator).toBeHidden();
 
@@ -239,7 +254,14 @@ test.describe('FILE-05: Save writes, clears the dirty marker and leaves a backup
       // than just the card count is the difference between "the file has three
       // cards" and "the file has the layout the user saw" — the latter is what
       // Expected 3 asks.
-      const after = await ctx.canvas.getCardRectsRelativeToGrid();
+      // ⓘ Settled here too, though the reload half is measurably NOT the racing
+      // one: amplified to a 3 s transition it still reports an exact zero. Whether
+      // a reload can ever animate is a JUDGEMENT about react-grid-layout's
+      // reconciliation, and settling an already-static grid costs a few frames
+      // and removes the judgement — the same reasoning that applied
+      // `hoverWhenSettled` to all four hovers in the Class B repair rather than
+      // only to the one that had been seen to flake.
+      const after = await ctx.canvas.getCardRectsRelativeToGridSettled();
       expect(after).toHaveLength(before.length);
       after.forEach((rect, i) => {
         expect(Math.abs(rect.x - before[i].x)).toBeLessThanOrEqual(2);

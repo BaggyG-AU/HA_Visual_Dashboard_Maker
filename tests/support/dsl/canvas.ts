@@ -212,6 +212,91 @@ export class CanvasDSL {
   }
 
   /**
+   * The same relative rectangles, but only once the grid has STOPPED MOVING.
+   *
+   * ⚠⚠⚠ USE THIS, NOT THE BARE READ ABOVE, WHENEVER THE SAMPLE IS ONE HALF OF A
+   * COMPARISON ACROSS TWO MOMENTS. A card count is not a settled layout:
+   * `expectCardCount(n)` resolves the instant the nth card EXISTS, and
+   * react-grid-layout then reflows the cards around it over
+   * `transition: transform 0.2s` (its own stylesheet). A sample taken in that
+   * window records a card in FLIGHT.
+   *
+   * ⭐⭐⭐ MEASURED, NOT ARGUED, AND IT CORRECTS AN EARLIER REFUTATION. The Class D
+   * investigation recorded "a settling race" as REFUTED, because sampling twice
+   * in a row locally gave a delta of zero. That experiment could not fail: on a
+   * fast machine the 0.2 s animation is already over before the first sample
+   * arrives. Amplifying the transition to 3 s and sampling exactly where
+   * `save-and-backup.spec.ts` samples shows the race outright — the second card's
+   * inline transform already reads its FINAL `translate(10px, 650px)` while its
+   * measured box is still at `x = 426.49, y = 202.01`, settling to `x = 10,
+   * y = 650`. That is a delta of 416 px in x and 448 px in y: a window that
+   * comfortably contains every CI failure this leg has produced. The reload half
+   * does NOT animate — amplified to 3 s it still gives an exact zero — so the
+   * race is entirely on the first sample.
+   *
+   * ⚠ WHAT THIS DOES AND DOES NOT ATTRIBUTE. Run 31876211967's 2.317108154296875
+   * px failure is at head `f52ccf13`, where the comparison was ALREADY relative,
+   * so an origin shift cannot explain it and this race is the only mechanism
+   * measured that can. The three earlier failures (75.24 / 44.74 / 44.66 px, run
+   * 31871488924) were taken with the ABSOLUTE comparison, where an origin shift
+   * and this race are indistinguishable in the surviving artifacts; they are not
+   * claimed for either.
+   *
+   * ⓘ It settles on WHATEVER the geometry turns out to be, over three
+   * consecutive equal readings; it never polls for a value the caller wants, and
+   * it THROWS rather than returning a best effort if the layout never stops
+   * moving, so a permanently animating canvas cannot read as a clean pass.
+   */
+  async getCardRectsRelativeToGridSettled(
+    options: { samples?: number; timeoutMs?: number; intervalMs?: number } = {},
+  ): Promise<Array<{ x: number; y: number; w: number; h: number }>> {
+    const { samples = 3, timeoutMs = 5000, intervalMs = 32 } = options;
+    return await this.window.evaluate(
+      async ({ samples: need, timeoutMs: budget, intervalMs: gap }) => {
+        const read = () => {
+          const grid = document.querySelector('.react-grid-layout');
+          if (!grid) throw new Error('no .react-grid-layout container found on the page');
+          const g = grid.getBoundingClientRect();
+          return Array.from(grid.querySelectorAll(':scope > .react-grid-item')).map((n) => {
+            const r = n.getBoundingClientRect();
+            return { x: r.left - g.left, y: r.top - g.top, w: r.width, h: r.height };
+          });
+        };
+        // Rounded, so sub-pixel jitter on a fractional device pixel ratio cannot
+        // stop the loop converging. The RAW reading is what gets returned.
+        const key = (rects: ReturnType<typeof read>) =>
+          JSON.stringify(
+            rects.map((r) => [Math.round(r.x), Math.round(r.y), Math.round(r.w), Math.round(r.h)]),
+          );
+
+        const started = performance.now();
+        let last = read();
+        let lastKey = key(last);
+        let streak = 1;
+
+        while (performance.now() - started < budget) {
+          await new Promise((resolve) => setTimeout(resolve, gap));
+          const next = read();
+          const nextKey = key(next);
+          if (nextKey === lastKey) {
+            streak += 1;
+            if (streak >= need) return next;
+          } else {
+            streak = 1;
+          }
+          last = next;
+          lastKey = nextKey;
+        }
+        throw new Error(
+          `card geometry never held still for ${need} consecutive samples within ` +
+            `${budget}ms — last reading ${lastKey}`,
+        );
+      },
+      { samples, timeoutMs, intervalMs },
+    );
+  }
+
+  /**
    * Assert no two cards overlap — UAT card FILE-03's Expected 3.
    *
    * GRID_CONFIG.margin is [10, 10], so adjacent cards are always separated by a
