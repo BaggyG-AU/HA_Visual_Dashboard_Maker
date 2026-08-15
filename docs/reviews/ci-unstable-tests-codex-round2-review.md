@@ -107,7 +107,7 @@ Two more current-head claims in the same surface need correction:
   moving canvas. M1 demonstrates the false-settle route in the actual helper.
 - Lines 224–226 say `632587e` changes only
   `card-geometry-discriminators.spec.ts`. `git diff --name-status
-  9932eef..632587e` enumerates three paths: that file,
+9932eef..632587e` enumerates three paths: that file,
   `tests/e2e/save-and-backup.spec.ts`, and
   `tests/support/dsl/canvas.ts`. The latter two changes are comment-only, so the
   acceptance inference remains valid, but the universal “only” is literally
@@ -195,10 +195,10 @@ M1, but it cannot make a stable geometry difference satisfy those assertions.
 The unmodified current-head file passed 4/4 with one worker and retries
 disabled. The two requested source mutations were run in a detached worktree:
 
-| Wrong implementation | Control 1 | Control 2 | Control 3 | Control 4 |
-| --- | --- | --- | --- | --- |
-| bare relative helper returns viewport x/y | **FAIL**, 64 px | pass | pass | **FAIL**, 344 px |
-| bare helper subtracts each card's own origin | pass | **FAIL**, 0 vs 57 px | pass | **FAIL**, red leg became 0 px |
+| Wrong implementation                         | Control 1       | Control 2            | Control 3 | Control 4                     |
+| -------------------------------------------- | --------------- | -------------------- | --------- | ----------------------------- |
+| bare relative helper returns viewport x/y    | **FAIL**, 64 px | pass                 | pass      | **FAIL**, 344 px              |
+| bare helper subtracts each card's own origin | pass            | **FAIL**, 0 vs 57 px | pass      | **FAIL**, red leg became 0 px |
 
 Control 4's additional failures are collateral and truthful: it deliberately
 compares bare samples with the independently implemented settled sample, so
@@ -264,18 +264,18 @@ and control-3 mutation must remain unchanged.
 passed. These are identity results from `merged-results.json`, not aggregate
 workflow conclusions.
 
-| Run | Full-run head | Bubble A | Gauge A | Theme B | YAML C | Save D |
-| --- | --- | --- | --- | --- | --- | --- |
-| `31870375328` | `e23244a4` | pass `0` | pass `0` | pass `0` | pass `0` | pass `0` |
-| `31871488924` | `e23244a4` | pass `0` | pass `0` | pass `0` | pass `0` | **FAIL `0,1,2`** |
-| `31872660877` | `e23244a4` | pass `0` | pass `0` | pass `0` | pass `0` | pass `0` |
-| `31875022180` | `f52ccf13` | pass `0` | pass `0` | pass `0` | pass `0` | pass `0` |
-| `31876211967` | `f52ccf13` | pass `0` | pass `0` | pass `0` | pass `0` | **FLAKY `0`, pass `1`** |
-| `31877420011` | `a1e628ef` | pass `0` | pass `0` | pass `0` | pass `0` | **FLAKY `0`, pass `1`** |
-| `31878624582` | `9932eef0` | pass `0` | pass `0` | pass `0` | pass `0` | pass `0` |
-| `31880748615` | `9932eef0` | pass `0` | pass `0` | pass `0` | pass `0` | pass `0` |
-| `31881906972` | `9932eef0` | pass `0` | pass `0` | pass `0` | pass `0` | pass `0` |
-| `31883429764` | `632587e2` | pass `0` | pass `0` | pass `0` | pass `0` | pass `0` |
+| Run           | Full-run head | Bubble A | Gauge A  | Theme B  | YAML C   | Save D                  |
+| ------------- | ------------- | -------- | -------- | -------- | -------- | ----------------------- |
+| `31870375328` | `e23244a4`    | pass `0` | pass `0` | pass `0` | pass `0` | pass `0`                |
+| `31871488924` | `e23244a4`    | pass `0` | pass `0` | pass `0` | pass `0` | **FAIL `0,1,2`**        |
+| `31872660877` | `e23244a4`    | pass `0` | pass `0` | pass `0` | pass `0` | pass `0`                |
+| `31875022180` | `f52ccf13`    | pass `0` | pass `0` | pass `0` | pass `0` | pass `0`                |
+| `31876211967` | `f52ccf13`    | pass `0` | pass `0` | pass `0` | pass `0` | **FLAKY `0`, pass `1`** |
+| `31877420011` | `a1e628ef`    | pass `0` | pass `0` | pass `0` | pass `0` | **FLAKY `0`, pass `1`** |
+| `31878624582` | `9932eef0`    | pass `0` | pass `0` | pass `0` | pass `0` | pass `0`                |
+| `31880748615` | `9932eef0`    | pass `0` | pass `0` | pass `0` | pass `0` | pass `0`                |
+| `31881906972` | `9932eef0`    | pass `0` | pass `0` | pass `0` | pass `0` | pass `0`                |
+| `31883429764` | `632587e2`    | pass `0` | pass `0` | pass `0` | pass `0` | pass `0`                |
 
 The settle implementation is carried by `9932eef`; all three acceptance rows
 therefore address the right commit. `a1e628e` changes only the round-one review
