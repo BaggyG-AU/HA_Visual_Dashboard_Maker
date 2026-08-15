@@ -12,7 +12,7 @@ cards:
     content: "## Lights"
 `;
 
-test.describe('Accordion Visual Regression', () => {
+test.describe('Accordion Visual Regression', { tag: '@visual' }, () => {
   test('captures collapsed and expanded states', async ({ page }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();

@@ -12,7 +12,7 @@ show_markers: true
 show_value: true
 `;
 
-test.describe('Advanced Slider Visual Regression', () => {
+test.describe('Advanced Slider Visual Regression', { tag: '@visual' }, () => {
   test('captures orientation and marker variants', async ({ page }) => {
     void page;
     const ctx = await launchWithDSL();

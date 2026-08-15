@@ -6,7 +6,7 @@ entity: light.living_room
 name: "Living Room"
 `;
 
-test.describe('Spacing Visual Regression', () => {
+test.describe('Spacing Visual Regression', { tag: '@visual' }, () => {
   test('captures spacing presets and per-side configuration', async ({ page }, testInfo) => {
     // Electron launch + card setup + three screenshot assertions can exceed 60s on CI/WSL2.
     test.setTimeout(120_000);

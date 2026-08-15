@@ -795,12 +795,27 @@ test('Animations respect prefers-reduced-motion', async () => {
 
 ### Test Coverage Requirements
 
-| Code Type              | Coverage Target    | Enforcement              |
-| ---------------------- | ------------------ | ------------------------ |
-| **Services/Utilities** | 95%+               | CI blocks merge if below |
-| **Components**         | 90%+               | CI blocks merge if below |
-| **Features**           | 90%+               | CI blocks merge if below |
-| **Integration/E2E**    | All critical paths | Manual review required   |
+⚠⚠ **THE ENFORCEMENT COLUMN PREVIOUSLY READ "CI blocks merge if below" ON THE
+FIRST THREE ROWS. THAT WAS FALSE: NOTHING IN THIS REPOSITORY MEASURES COVERAGE
+AT ALL.** There is no `coverage` script in `package.json`, no coverage step in
+either workflow, none in `tools/checks`, and no coverage threshold in the vitest
+config — `npm run test:unit` is a bare `vitest run`. Corrected 2026-08-14, found
+by the population sweep behind the CI-claims correction below; it is the same
+defect class, in the same document.
+
+**These are TARGETS, not gates.** Nothing rejects a merge on coverage today, and
+this table must not be read as though something does.
+
+| Code Type              | Coverage Target    | Actually enforced by                   |
+| ---------------------- | ------------------ | -------------------------------------- |
+| **Services/Utilities** | 95%+               | nothing automated — reviewer judgement |
+| **Components**         | 90%+               | nothing automated — reviewer judgement |
+| **Features**           | 90%+               | nothing automated — reviewer judgement |
+| **Integration/E2E**    | All critical paths | Manual review required                 |
+
+To make any of the first three rows true, a coverage run and a threshold would
+have to be added to `.github/workflows/ci.yml` — that is a separate change with
+its own review, not a documentation edit.
 
 ---
 
@@ -820,11 +835,75 @@ A feature is NOT complete until:
 
 ### CI/CD Integration
 
-All tests run automatically on:
+⚠⚠ **THIS SECTION PREVIOUSLY CLAIMED "All tests run automatically on: Every PR
+commit / Before merge to main / Nightly builds (full regression suite)". ALL
+THREE WERE FALSE**, and had been since 2026-01-09. CI ran no e2e at all, and the
+nightly workflow was cancelled by its own 30-minute timeout on 160 consecutive
+runs while reporting success, because `continue-on-error: true` meant it could
+never go red. Corrected 2026-08-14; root cause and evidence in MemPalace drawer
+`drawer_havdm_investigations_e211fdaa76dbefda16f1542a`.
 
-- Every PR commit
-- Before merge to main
-- Nightly builds (full regression suite)
+**What actually runs, and where.** The regime is four tiers. Tiers 1–3 are on
+GitHub-hosted runners, which are free and unmetered because this repository is
+public — so the expensive tiers cost wall-clock, not the maintainer's machine.
+
+| Tier   | Trigger                                              | Where                        | What                                                                     |
+| ------ | ---------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------ |
+| **T0** | before pushing                                       | local                        | `./tools/checks` — lint, format, typecheck, unit                         |
+| **T1** | every PR push                                        | `.github/workflows/ci.yml`   | T0's contents + build, **plus** `--only-changed` behavioural specs       |
+| **T2** | PR labelled `full-suite`, or marked ready for review | `.github/workflows/test.yml` | full behavioural e2e + integration, sharded 4×, then the signature check |
+| **T3** | nightly, 18:00 UTC on `main`                         | `.github/workflows/test.yml` | T2 **plus** the un-sharded visual job                                    |
+
+**Three rules that make the tiers mean something:**
+
+1. ⚠⚠⚠ **T1 RUNS NOTHING FOR A `src/`-ONLY CHANGE, AND GOES GREEN.** This is
+   measured, not theoretical: on 2026-08-14 an isolated one-line edit to
+   `src/components/BaseCard.tsx` selected `Total: 0 tests in 0 files` in **both**
+   Playwright projects. `--only-changed` walks the **import graph of test
+   files**, and the e2e/integration specs launch the **packaged Electron app**
+   rather than importing `src/` — only four test files import `src/` at all
+   (`integration/service-layer`, `integration/error-scenarios`,
+   `integration/dashboard-generator`, `support/dsl/yamlEditor`).
+   **So for the commonest kind of change, T1's spec job certifies NOTHING.**
+   It prints its selection to the log and emits a `::warning` when the selection
+   is empty, so a vacuous pass is visible rather than indistinguishable from a
+   real one — but **a green T1 is not evidence about `src/`.** Playwright also
+   documents `--only-changed` as a heuristic that can miss tests.
+   ⚠⚠ **T2/T3 ARE THE INTENDED GATE, AND ARE NOT YET AN ENFORCED ONE.** Codex
+   round-1 finding M5: tier 2 is opt-in by label and, until branch protection
+   requires the `merge + signature check` job on the PR head, nothing compels it
+   to run before a merge. Calling it "the gate" while it is skippable is the
+   claim this document was already corrected once for making. **Status: the
+   `synchronize` trigger is in place so a labelled PR re-runs tier 2 on every
+   later push; the branch-protection rule is the owner's and is NOT yet
+   applied.**
+   ⓘ Open decision: whether a `src/`-touching diff should fall back to a named
+   smoke set. That needs a smoke set chosen on merit.
+2. **Visual specs are tagged `@visual` and excluded from T1 and T2.** Six of the
+   seven canonical e2e failures are visual. ⭐ **MEASURED 2026-08-14 (run
+   31802864528): GitHub's `ubuntu-latest` DOES reproduce the WSL2-generated
+   `-linux` baselines — 12 of 19 visual tests passed and the 6 failures were
+   exactly the manifest's set, reason classes included. No Docker image is
+   needed.** The T3 visual job answered that question
+   before it is ever a gate.
+3. **Green/red is decided by `tools/check-suite-signatures.cjs`, not by
+   Playwright's exit code** — in tiers 1, 2 and 3 alike. Seven known failures
+   mean a raw exit code cannot express "correct". The script compares, against
+   `tests/baseline/expected-failures.json`:
+   - the **failure set** and each failure's **reason class** (root cause first:
+     a test that timed out inside `toHaveScreenshot` is a `timeout`, not a
+     snapshot mismatch);
+   - the **skip set by identity** — a skip is not coverage, and an unbaselined
+     skip fails;
+   - the **flaky set by identity** — CI retries twice, so a regression that
+     fails twice and passes last arrives as `flaky`; only the eight ledger
+     entries are tolerated;
+   - the number of **executed** outcomes against a floor, and duplicate
+     identities.
+     ⚠ **The floor counts EXECUTED outcomes, not identities.** Counting
+     identities let a report with 560 of 561 outcomes skipped pass (Codex M1).
+     Tier 1 adds `--subset`, which forgives a baselined identity the diff never
+     selected but judges everything present in full.
 
 ### Regression Gate Matrix (MANDATORY)
 
@@ -835,7 +914,7 @@ If the user asks for a gate by name (`fast gate`, `medium gate`, `slow gate`), r
 | --------------- | --------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Fast Gate**   | PR-speed confidence on changed behavior | Every feature/fix commit before handoff                                  | `npm run lint`<br>`npm run test:unit`<br>`npm run test:e2e -- <targeted-specs-or-folder> --project=electron-e2e --workers=1 --trace=retain-on-failure` (targeted only)<br>`npm run test:integration -- <targeted-specs-or-folder> --project=electron-integration --workers=1 --trace=retain-on-failure` (only if impacted) |
 | **Medium Gate** | Pre-merge/domain confidence             | Before merge to main, or when blast radius crosses feature boundary      | `./tools/checks`<br>`npm run test:e2e -- <affected-domain-globs> --project=electron-e2e --workers=1 --trace=retain-on-failure`<br>`npm run test:integration -- <affected-domain-globs> --project=electron-integration --workers=1 --trace=retain-on-failure`                                                               |
-| **Slow Gate**   | Full regression confidence              | Nightly, release candidate, phase completion, or high-risk shared change | `./tools/checks`<br>`npm test -- --workers=1 --trace=retain-on-failure`                                                                                                                                                                                                                                                    |
+| **Slow Gate**   | Full regression confidence              | Nightly, release candidate, phase completion, or high-risk shared change | **PREFER CI, NOT YOUR MACHINE:** label the PR `full-suite`, or `gh workflow run test.yml` — that is tier 2/3, sharded 4× on free runners, and it runs the signature check. Locally, only when CI cannot answer the question: `./tools/checks`<br>`npm test -- --workers=1 --trace=retain-on-failure`                       |
 
 #### Trigger Rules
 
@@ -904,20 +983,28 @@ When asked:
 - “Run **medium gate**” → execute Medium Gate commands.
 - “Run **slow gate**” or “Run **full regression**” → execute Slow Gate commands.
 
-**CI Pipeline**:
-
-1. Lint (ESLint + Prettier)
-2. Unit tests (Jest + Vitest)
-3. E2E tests (Playwright, headed mode for debugging on failure)
-4. Visual regression tests (Playwright screenshots)
-5. Performance tests (flagged if benchmarks not met)
-6. Accessibility tests (axe-core + manual keyboard tests)
+**CI Pipeline** — see the tier table under _CI/CD Integration_ above, which is
+the single authoritative description. ⚠⚠ **THIS LIST PREVIOUSLY NAMED SIX STEPS
+INCLUDING PERFORMANCE AND ACCESSIBILITY TESTS. CI HAS NEVER RUN EITHER**, and it
+described E2E as running in "headed mode", which no workflow has ever done. It
+was aspiration written in the present tense — the same defect class as R7-N2 on
+PR #142. Corrected 2026-08-14; do not restate the pipeline here, because a
+description in two places is one that will disagree with itself.
 
 **Failure Policy**:
 
-- Any test failure blocks merge
-- Performance failures require manual review (may proceed with justification)
-- Visual regression failures require baseline update approval
+- Any **unexpected** test failure blocks merge. "Unexpected" is decided by
+  `tools/check-suite-signatures.cjs` against
+  `tests/baseline/expected-failures.json`, not by a raw exit code: this suite has
+  seven recorded, unfixed failures, and a run containing exactly those seven is
+  correct.
+- A run that returns **fewer tests than its floor** is a failure, never a pass.
+  Coverage lost to a timeout is not coverage passed.
+- Flaky tests (passed on retry) are **reported, not blocking**, and belong on the
+  watched-flake ledger in the suite-baseline drawer.
+- **Visual regression failures require baseline update approval** — unchanged,
+  and reinforced: re-baselining needs a cause and the owner's authorisation, and
+  no CI change is ever a licence to re-snapshot.
 
 ---
 

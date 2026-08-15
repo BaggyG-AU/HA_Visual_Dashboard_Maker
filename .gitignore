@@ -47,6 +47,13 @@ coverage/
 test-results/
 playwright-report/
 playwright/.cache/
+# Sharded-CI artifacts (.github/workflows/test.yml). Produced under CI, but a
+# local run with CI=1 emits them too — playwright.config.ts selects the `blob`
+# reporter whenever process.env.CI is set.
+blob-report/
+all-blob-reports/
+merged-results.json
+visual-results.json
 tests/screenshots/
 *.trace.zip
 
@@ -109,8 +116,32 @@ release/
 # Local planning artifacts
 havdm.kanban
 
-# Local prompt scratch (tool scripts under tools/ ARE version-controlled —
-# ignoring tools/ silently dropped new scripts like check-e2e-guardrails.sh)
+# ⚠⚠ LOCAL PROMPT SCRATCH — IGNORED IN FULL, AND DELIBERATELY SO.
+#
+# THIS REPOSITORY IS PUBLIC (`gh repo view --json isPrivate` -> false). Prompts
+# and review commissions are working correspondence: they quote measurements,
+# internal reasoning, environment detail and whatever the author happened to
+# paste in. Keeping them tracked would create a publication surface that has to
+# be vetted file by file, forever, and the owner ruled on 2026-08-15 that the
+# complexity is not worth it. NOTHING under prompts/ is version-controlled.
+#
+# ⚠ An earlier attempt (`816bbb0`) carved out `!prompts/codex/*-round[0-9]*.md`
+# so that review commissions would travel with their branch. It was reverted the
+# same day, and the three ways it went wrong are worth keeping:
+#   1. It un-ignored 30 historical commissions from already-merged PRs, and
+#      `prettier --check .` — which honours .gitignore from Prettier 3 — then
+#      failed on 28 unformatted files. The gate went REAL_EXIT=1 (2/4 steps) and
+#      the `ci` check went red on the PR head. Measured, not predicted.
+#   2. It still MISSED round-1 commissions not named `-round<N>` (five files,
+#      e.g. `f5-implementation-review.md`) — the exact silent-untracking trap it
+#      was written to close.
+#   3. Un-ignoring a path does not vet it; it only publishes it.
+#
+# ⚠ Do not re-add a negation here. If a commission must travel with a branch,
+# quote the relevant part into the PR body, which is reviewed before it is
+# published. Tool scripts under tools/ ARE version-controlled — ignoring tools/
+# once silently dropped new scripts like check-e2e-guardrails.sh — but that
+# lesson is about tools/, not about prompts/.
 prompts/
 
 # MemPalace per-project files (issue #185)

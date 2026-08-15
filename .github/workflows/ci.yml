@@ -6,6 +6,14 @@ on:
   push:
     branches: [main]
 
+# PR #142 stacked TWELVE CI runs on one branch, each doing the full install +
+# build, because every push started a run and nothing cancelled the previous
+# one. Only the newest commit's result can gate a merge, so the older runs were
+# pure waste.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci:
     name: ci
@@ -20,6 +28,8 @@ jobs:
       # merge-blocker M2 of docs/reviews/self-pass-gate-adversarial-review-codex.md.
       # The detector now fails closed instead, which makes this line the
       # difference between a green CI run and a red one.
+      #
+      # The affected-specs job below ALSO depends on it, for `--only-changed`.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -49,3 +59,158 @@ jobs:
         run: npm run test:unit
       - name: Build
         run: npm run package
+
+  # ---------------------------------------------------------------- TIER 1 ---
+  # The specs the diff actually reaches, on every PR. Fast feedback, NOT a gate
+  # for merge: `--only-changed` analyses the import graph and is documented by
+  # Playwright as a HEURISTIC THAT CAN MISS TESTS. The full behavioural suite
+  # (tier 2, .github/workflows/test.yml) is the safety net behind it.
+  #
+  # ⚠ VISUAL SPECS ARE EXCLUDED HERE ON PURPOSE. Six of the seven canonical e2e
+  # failures are visual, and whether this project's WSL2-generated `-linux`
+  # baselines even reproduce on a GitHub runner is UNMEASURED. Letting them into
+  # a per-push job would make tier 1 permanently red, which is exactly how the
+  # old nightly became something everybody ignored.
+  affected-specs:
+    name: affected specs (tier 1)
+    # On a push to `main`, `origin/main` IS the commit under test, so
+    # `--only-changed` would select nothing. Tier 3 covers `main`.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      # ⚠⚠ CORRECTED 2026-08-14, AFTER CI RUN 31802420811 DISPROVED THE FIRST
+      # VERSION OF THIS COMMENT. It asserted that Electron tests "never use a
+      # downloaded browser" and dropped the Chromium download entirely. Four of
+      # the nineteen affected tests then failed with
+      # `browserType.launch: Executable doesn't exist at …chromium_headless_shell…`.
+      #
+      # CAUSE: those specs destructure Playwright's built-in `page` fixture in
+      # the test signature — `async ({ page }, testInfo) => {` — and then
+      # immediately `void page;` and use launchWithDSL() instead. The parameter
+      # is vestigial, but Playwright still INSTANTIATES the fixture, and
+      # instantiating it launches a real Chromium. So the download is required
+      # until those signatures are cleaned up, which is a test change and not
+      # this PR's business.
+      #
+      # Splitting install-deps from the browser download is still worth doing:
+      # `install-deps` measured 28s on ubuntu-latest here. ⚠ The old combined
+      # `install --with-deps chromium` measured 3m31s on WINDOWS-latest, which
+      # is NOT a like-for-like comparison and is not quoted as one.
+      - name: Install Playwright system dependencies
+        run: npx playwright install-deps
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+      # tools/test-headless.sh requires xvfb-run and exits 127 without it.
+      - name: Install Xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Build application
+        run: npm run package
+      # ⚠⚠⚠ MEASURED LIMITATION, STATED HERE BECAUSE THE NUMBER ALONE LIES.
+      # `--only-changed` walks the IMPORT GRAPH OF TEST FILES. The e2e and
+      # integration specs launch the PACKAGED ELECTRON APP; they do not import
+      # `src/`. Measured 2026-08-14 on this branch: an isolated one-line edit to
+      # `src/components/BaseCard.tsx` selects `Total: 0 tests in 0 files` in BOTH
+      # projects. Only four test files import `src/` directly
+      # (integration/service-layer, integration/error-scenarios,
+      # integration/dashboard-generator, support/dsl/yamlEditor).
+      #
+      # SO: FOR A `src/`-ONLY CHANGE — the commonest kind — THIS JOB RUNS NOTHING
+      # AND GOES GREEN. That is a real gap, not a subtlety, and it is the same
+      # shape as PR #140's merge-blocker M2 ("CI reported success having
+      # certified nothing"). It is mitigated ONLY by tier 2/3 being the actual
+      # gate. The step below prints the selection so a vacuous pass is VISIBLE in
+      # the log rather than indistinguishable from a real one.
+      #
+      # ⓘ OPEN DECISION FOR THE OWNER: whether a `src/`-touching diff should fall
+      # back to a named smoke set here. That needs a smoke set chosen on merit,
+      # which is not this PR's business.
+      - name: Report what tier 1 selected (a vacuous pass must be visible)
+        run: |
+          set -o pipefail
+          echo "::group::tier-1 selection"
+          e2e=$(npx playwright test --project=electron-e2e --grep-invert @visual \
+                --only-changed=origin/${{ github.base_ref }} --pass-with-no-tests --list 2>&1 | tail -1)
+          int=$(npx playwright test --project=electron-integration \
+                --only-changed=origin/${{ github.base_ref }} --pass-with-no-tests --list 2>&1 | tail -1)
+          echo "e2e selection        : $e2e"
+          echo "integration selection: $int"
+          if [ "${e2e#*: 0 tests}" != "$e2e" ] && [ "${int#*: 0 tests}" != "$int" ]; then
+            echo "::warning title=Tier 1 ran no specs::--only-changed selected nothing. \
+          This is EXPECTED for a src/-only change and means tier 1 certified nothing. \
+          Tier 2 (label the PR 'full-suite') is the gate."
+          fi
+          echo "::endgroup::"
+      # ⚠⚠ M4 (Codex round 1): these two steps previously used the RAW PLAYWRIGHT
+      # EXIT CODE — the very semantics this PR exists to replace. Six of the seven
+      # canonical failures are visual and excluded here, but the seventh,
+      # `e2e/calendar.spec.ts`, is behavioural: any diff selecting that spec made
+      # tier 1 red for a known, documented failure.
+      #
+      # They were also SEQUENTIAL, so an e2e failure suppressed the integration
+      # step entirely — run 31802420811 is the proof: affected e2e failed and
+      # affected integration never ran. `continue-on-error` + `if: always()` keeps
+      # both results, and the signature check below is the authority.
+      #
+      # `--subset` tells the checker this is a PARTIAL population: a baselined
+      # identity that is absent was simply not selected, and is not a finding.
+      # Anything present is judged in full. No `--min-tests`: the selection size
+      # varies by diff, so a floor would be meaningless here.
+      - name: Affected e2e specs
+        continue-on-error: true
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: t1-e2e.json
+        run: >-
+          bash tools/test-headless.sh
+          --project=electron-e2e
+          --grep-invert @visual
+          --only-changed=origin/${{ github.base_ref }}
+          --pass-with-no-tests
+          --workers=1
+          --reporter=json
+      - name: Affected integration specs
+        continue-on-error: true
+        if: always()
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: t1-integration.json
+        run: >-
+          bash tools/test-headless.sh
+          --project=electron-integration
+          --only-changed=origin/${{ github.base_ref }}
+          --pass-with-no-tests
+          --workers=1
+          --reporter=json
+      # ⚠ NO continue-on-error. This is tier 1's gate.
+      - name: Check affected specs against the baseline manifest
+        if: always()
+        run: |
+          set -euo pipefail
+          rc=0
+          for f in t1-e2e.json t1-integration.json; do
+            if [ -f "$f" ]; then
+              echo "::group::signature check — $f"
+              node tools/check-suite-signatures.cjs --report "$f" --tier behavioural --subset || rc=1
+              echo "::endgroup::"
+            else
+              echo "no report at $f (the step selected nothing, or died before writing)"
+            fi
+          done
+          exit $rc
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: affected-specs-artifacts-${{ github.run_number }}
+          path: |
+            test-results/
+            !test-results/**/*.zip
+          retention-days: 7

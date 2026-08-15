@@ -31,7 +31,7 @@ show_current: true
 show_forecast: true
 `;
 
-test.describe('Weather Forecast Visualization Visual Regression', () => {
+test.describe('Weather Forecast Visualization Visual Regression', { tag: '@visual' }, () => {
   test('captures hourly and daily weather visualization variants', async ({ page }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();

@@ -16,7 +16,7 @@ popup:
       content: "## Room Info"
 `;
 
-test.describe('Popup Visual Regression', () => {
+test.describe('Popup Visual Regression', { tag: '@visual' }, () => {
   test('captures popup open states and sizes', async ({ page }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();

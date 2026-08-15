@@ -45,7 +45,7 @@ events:
     description: Lights and media ambience set
 `;
 
-test.describe('Timeline Visual Regression', () => {
+test.describe('Timeline Visual Regression', { tag: '@visual' }, () => {
   test('captures vertical grouped and horizontal ungrouped variants', async ({ page }) => {
     void page;
     const ctx = await launchWithDSL();

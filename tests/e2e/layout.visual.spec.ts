@@ -33,7 +33,7 @@ cards:
     entity: sensor.pressure
 `;
 
-test.describe('Layout Visual Regression', () => {
+test.describe('Layout Visual Regression', { tag: '@visual' }, () => {
   test('captures vertical stack gap presets and alignment variants', async ({ page }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();

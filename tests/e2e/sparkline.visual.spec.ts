@@ -15,7 +15,7 @@ show:
   state: true
 `;
 
-test.describe('Sparkline Visual Regression', () => {
+test.describe('Sparkline Visual Regression', { tag: '@visual' }, () => {
   test('captures line and area compact sparkline snapshots', async ({ page }) => {
     void page;
     const ctx = await launchWithDSL();

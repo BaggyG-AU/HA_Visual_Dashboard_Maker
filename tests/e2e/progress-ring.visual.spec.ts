@@ -35,7 +35,7 @@ rings:
           position: 100
 `;
 
-test.describe('Progress Ring Visual Regression', () => {
+test.describe('Progress Ring Visual Regression', { tag: '@visual' }, () => {
   test('captures single and nested ring variants', async ({ page }) => {
     void page;
     const ctx = await launchWithDSL();

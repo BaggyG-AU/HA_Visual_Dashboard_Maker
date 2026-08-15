@@ -22,7 +22,7 @@ apex_config:
     height: 280
 `;
 
-test.describe('ApexCharts Visual Regression', () => {
+test.describe('ApexCharts Visual Regression', { tag: '@visual' }, () => {
   test('captures line, area, and bar preview snapshots', async ({ page }) => {
     void page;
     const ctx = await launchWithDSL();

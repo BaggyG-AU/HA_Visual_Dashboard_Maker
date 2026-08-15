@@ -22,7 +22,7 @@ cards:
     content: "Slide Three"
 `;
 
-test.describe('Carousel Visual Regression', () => {
+test.describe('Carousel Visual Regression', { tag: '@visual' }, () => {
   test('captures slide and pagination snapshots', async ({ page }, testInfo) => {
     void page;
     const ctx = await launchWithDSL();
