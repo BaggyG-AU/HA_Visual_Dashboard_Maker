@@ -136,7 +136,10 @@ test.describe('Tabs Card', () => {
       await tabs.setTabPosition('left');
       await properties.switchTab('YAML');
 
-      const yamlText = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce. ⓘ The LAST edit (tab position) is
+      // deliberately NOT serialised — see the absence assertions below — so the
+      // anchor is the last edit that HAS a serialised trace.
+      const yamlText = await yamlEditor.waitForEditorContent('defaultTabIndex: 2');
       expect(yamlText).toContain('type: custom:tabbed-card');
       expect(yamlText).toContain('defaultTabIndex: 2');
       expect(yamlText).toContain('tabs:');

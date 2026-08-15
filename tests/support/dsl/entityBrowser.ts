@@ -294,8 +294,20 @@ export class EntityBrowserDSL {
     const firstRow = rows.first();
     const entityId = (await firstRow.getAttribute('data-row-key')) || null;
 
-    const radio = firstRow.locator('input[type="radio"]');
-    await radio.check({ force: true });
+    // ⚠⚠ NOT `radio.check({ force: true })`, which is what this line used to be
+    // and what flaked on CI (`locator.check: Clicking the checkbox did not
+    // change its state`, GitHub Actions run 31857246311). `EntityBrowser`'s
+    // `rowSelection` is a CONTROLLED antd radio — `selectedRowKeys` is derived
+    // from React state (src/components/EntityBrowser.tsx:595-601) — so the
+    // input's `checked` property only becomes true after React commits.
+    // `check()` clicks and verifies `checked` in the same breath, so on a loaded
+    // runner it reads the DOM one tick too early and throws.
+    //
+    // Click the `.ant-radio` wrapper and let the POLLING assertion below be the
+    // verification instead. That is exactly what `selectEntity()` above already
+    // does, and that method has never appeared on the flake ledger.
+    const radio = firstRow.locator('.ant-radio');
+    await radio.click();
     await expect(firstRow.locator('.ant-radio-checked')).toBeVisible();
 
     return entityId;

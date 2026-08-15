@@ -83,7 +83,8 @@ test.describe('Accordion Card', () => {
       await accordion.setTitle('Kitchen Controls');
       await properties.switchTab('YAML');
 
-      const yamlText = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the only edit.
+      const yamlText = await yamlEditor.waitForEditorContent('title: Kitchen Controls');
       expect(yamlText).toContain('type: custom:expander-card');
       expect(yamlText).toContain('title: Kitchen Controls');
       expect(yamlText).toContain('expanded-icon: mdi:chevron-up');

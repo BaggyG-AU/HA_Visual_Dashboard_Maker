@@ -84,7 +84,9 @@ test.describe('Timeline Card', () => {
       await expect(window.getByTestId('timeline-selected-timestamp')).toContainText('Selected:');
 
       await properties.switchTab('YAML');
-      const yaml = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the LAST form edit
+      // (truncateLength); the scrubber move after it changes no config key.
+      const yaml = await yamlEditor.waitForEditorContent('truncate_length: 40');
 
       expect(yaml).toContain('type: logbook');
       expect(yaml).toContain('orientation: horizontal');

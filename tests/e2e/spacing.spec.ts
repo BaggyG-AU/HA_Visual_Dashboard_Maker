@@ -139,7 +139,12 @@ test.describe('Card Spacing Controls', () => {
       await spacing.setPaddingSide('left', 16);
 
       await properties.switchTab('YAML');
-      const yamlText = await yamlEditor.getEditorContent();
+      // ⚠ The YAML pane is serialised on a 250 ms debounce (PropertiesPanel
+      // YAML_SYNC_DEBOUNCE_MS), so a single sample taken straight after the last
+      // form edit can still hold the PRE-EDIT document. Anchor on the LAST edit —
+      // each flush serialises the whole form, so its arrival proves every earlier
+      // edit landed too.
+      const yamlText = await yamlEditor.waitForEditorContent('left: 16');
 
       expect(yamlText).toContain('card_margin: relaxed');
       expect(yamlText).toContain('card_padding:');

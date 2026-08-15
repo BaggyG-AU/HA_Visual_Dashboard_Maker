@@ -87,7 +87,8 @@ test.describe('Progress Ring', () => {
       });
 
       await properties.switchTab('YAML');
-      const yaml = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the LAST edit.
+      const yaml = await yamlEditor.waitForEditorContent('label_precision: 0');
 
       expect(yaml).toContain('type: custom:havdm-progress-ring');
       expect(yaml).toContain('start_angle: 135');

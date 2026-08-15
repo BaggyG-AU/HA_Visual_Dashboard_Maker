@@ -16,7 +16,7 @@
  * would therefore render NO badge and prove nothing.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 import { launchWithDSL, close } from '../support';
 import { mockHAWebSocket } from '../helpers/mockHelpers';
 import { REAL_HA_THEMES } from '../fixtures/realHaThemes';
@@ -63,6 +63,69 @@ async function connectWithRealThemes(ctx: Awaited<ReturnType<typeof launchWithDS
     (window as any).__testThemeApi?.setConnected(true);
     (window as any).__testThemeApi?.applyThemes(themes);
   }, realThemePayload);
+}
+
+/** How many consecutive identical samples make a box "settled". */
+const SETTLE_SAMPLES = 3;
+
+/**
+ * Hover an element only once its box has STOPPED MOVING.
+ *
+ * ⚠⚠⚠ WHY, AND IT IS MEASURED RATHER THAN ARGUED. The INACTIVE-OPTION leg below
+ * hovers a badge that lives inside the OPEN theme dropdown, and that dropdown is
+ * an rc-virtual-list: it scrolls the requested row into view and recycles rows as
+ * it goes. `expect(badge).toBeVisible()` succeeds the instant the node has a
+ * non-empty box — including while that box is still travelling — so a hover
+ * issued straight afterwards aims at a coordinate the badge has already left,
+ * and no tooltip ever opens. The failure screenshot from GitHub Actions run
+ * 31802864528 shows exactly that: "Mushroom Square Shadow" at one position with a
+ * clipped ghost row "…uare ⓘ no preview colours" below it, mid-reflow, and no
+ * tooltip anywhere on screen.
+ *
+ * ⚠ This is the same lesson `tests/e2e/sections-canvas.spec.ts:754`
+ * (`settledPointOnSelector`) paid a whole review round for on the palette drag:
+ * A SINGLE HIT-TEST IS A MOMENTARY GEOMETRIC OBSERVATION, NOT A PRECONDITION.
+ * The two helpers should be consolidated into `tests/support`; that is tracked as
+ * a follow-up rather than done here, so this stability fix does not also refactor
+ * a working gesture.
+ *
+ * ⚠ POLL FOR STABILITY, NOT FOR THE ANSWER YOU WANT. The settle criterion is the
+ * gesture's own precondition — this element's box has held still — and says
+ * nothing about whether a tooltip then opens. That remains the caller's
+ * assertion, so a genuinely broken tooltip still fails.
+ *
+ * ⓘ Applied to EVERY hover in this file, not only the one that flaked. Whether
+ * the other three targets sit in containers that have finished reflowing is a
+ * JUDGEMENT, and settling an already-static box costs ~300 ms and removes the
+ * judgement entirely.
+ */
+async function hoverWhenSettled(locator: Locator, label: string): Promise<void> {
+  let streak = 0;
+  let lastKey: string | null = null;
+
+  await expect
+    .poll(
+      async () => {
+        const box = await locator.boundingBox().catch(() => null);
+        if (!box) {
+          streak = 0;
+          lastKey = null;
+          return false;
+        }
+        const key = [box.x, box.y, box.width, box.height].map((n) => Math.round(n)).join(',');
+        streak = key === lastKey ? streak + 1 : 1;
+        lastKey = key;
+        return streak >= SETTLE_SAMPLES;
+      },
+      {
+        intervals: [100, 100, 100, 100, 200, 300, 500, 1000],
+        timeout: 15000,
+        message: `${label}: the box must hold still for ${SETTLE_SAMPLES} consecutive samples before it is hovered`,
+      },
+    )
+    .toBe(true);
+
+  await locator.hover();
 }
 
 /** What currently holds DOM focus, in one round trip. */
@@ -550,7 +613,7 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
 
       const badge = ctx.window.getByTestId('theme-selector').getByTestId('theme-no-effect-badge');
       await expect(badge).toBeVisible({ timeout: 5000 });
-      await badge.hover();
+      await hoverWhenSettled(badge, 'theme-selector badge');
 
       // ⚠ `.ant-tooltip-container` is the class antd 6.1.4 actually renders text
       // into (measured, see the wording leg), and `visible=true` filters out any
@@ -980,7 +1043,7 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
 
       const badge = ctx.window.getByTestId('theme-selector').getByTestId('theme-no-effect-badge');
       await expect(badge).toBeVisible({ timeout: 5000 });
-      await badge.hover();
+      await hoverWhenSettled(badge, 'theme-selector badge');
 
       // ⚠ antd 6.1.4 renders tooltip text into `.ant-tooltip-container`, NOT
       // `.ant-tooltip-inner` — measured, because the first version of this leg
@@ -1071,7 +1134,7 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
       await expect(optionBadge, 'the inactive option row must carry the badge').toBeVisible({
         timeout: 5000,
       });
-      await optionBadge.hover();
+      await hoverWhenSettled(optionBadge, 'inactive option-row badge');
 
       const tooltipSaying = (text: string) =>
         ctx.window.locator('.ant-tooltip-container', { hasText: text });
@@ -1188,7 +1251,7 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
         badge,
         'the staged-but-unapplied value must carry the badge — that is the whole hazard',
       ).toBeVisible({ timeout: 5000 });
-      await badge.hover();
+      await hoverWhenSettled(badge, 'staged-value badge');
 
       const tooltipSaying = (text: string) =>
         ctx.window.locator('.ant-tooltip-container', { hasText: text });

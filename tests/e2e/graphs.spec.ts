@@ -71,7 +71,11 @@ test.describe('Native Graphs', () => {
       await graphs.verifyGraphRendered();
 
       await properties.switchTab('YAML');
-      const yaml = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the last edit that
+      // CHANGES something. `zoomPan` is already true in BASE_YAML, so its toggle
+      // is a no-op and `zoom_pan: true` cannot tell the pre-edit document from
+      // the post-edit one.
+      const yaml = await yamlEditor.waitForEditorContent('refresh_interval: 1m');
       expect(yaml).toContain('type: custom:native-graph-card');
       expect(yaml).toContain('chart_type: area');
       expect(yaml).toContain('time_range: 7d');
