@@ -46,12 +46,18 @@ const MANIFEST = path.join(ROOT, 'tests/baseline/expected-failures.json');
 
 function parseArgs(argv) {
   const args = { report: null, tier: null, minTests: 0, subset: false };
+  // ⚠⚠ Tracked SEPARATELY from the value, because "absent" and "present but
+  // unusable" must both be rejected, and `minTests: 0` cannot tell them apart.
+  let sawMinTests = false;
+  let rawMinTests;
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--report') args.report = argv[++i];
     else if (argv[i] === '--tier') args.tier = argv[++i];
     else if (argv[i] === '--manifest') args.manifest = argv[++i];
-    else if (argv[i] === '--min-tests') args.minTests = Number(argv[++i]);
-    else if (argv[i] === '--subset') args.subset = true;
+    else if (argv[i] === '--min-tests') {
+      sawMinTests = true;
+      rawMinTests = argv[++i];
+    } else if (argv[i] === '--subset') args.subset = true;
     else {
       console.error(`Unknown argument: ${argv[i]}`);
       return null;
@@ -59,12 +65,58 @@ function parseArgs(argv) {
   }
   if (!args.report || !args.tier) {
     console.error(
-      'Usage: check-suite-signatures.cjs --report <json> --tier behavioural|visual|all [--min-tests N]',
+      'Usage: check-suite-signatures.cjs --report <json> --tier behavioural|visual|all' +
+        ' (--min-tests N | --subset)',
     );
     return null;
   }
   if (!['behavioural', 'visual', 'all'].includes(args.tier)) {
     console.error(`--tier must be behavioural, visual or all (got: ${args.tier})`);
+    return null;
+  }
+
+  // ⚠⚠⚠ THE FLOOR IS MANDATORY ON A FULL RUN, AND A BAD VALUE IS A HARD ERROR.
+  //
+  // Measured 2026-08-15, attacking this script's own accepting side before
+  // commissioning round 2. The floor guard below is written
+  // `if (args.minTests && executed.length < args.minTests)`. `Number(undefined)`
+  // is `NaN` and `Number('')` is `0` — both falsy — so an ABSENT, EMPTY or
+  // NON-NUMERIC `--min-tests` did not weaken the guard, it DELETED it, silently
+  // and with no diagnostic. A report reduced to 4 executed outcomes of 541 —
+  // keeping only the baselined failures and the baselined skips, so no other
+  // guard has anything to say — EXITED 0.
+  //
+  // That is exactly the defect Codex round-1 finding M1 forced this floor into
+  // existence to close, reintroduced through the argument parser instead of the
+  // report. And it is reachable by ordinary means rather than malice: the
+  // workflow passes `--min-tests ${{ env.BEHAVIOURAL_MIN_TESTS }}` as the LAST
+  // argument, so renaming, deleting or typo-ing that env var renders an empty
+  // string, the shell drops the empty token, and the flag silently takes no
+  // value. A mechanised check's INPUT must be mandatory and lifecycle-bound;
+  // "the caller always passes it correctly" is an assumption, not a control.
+  //
+  // `--subset` is the one legitimate exemption: a partial run executes only what
+  // the diff selected, so no fixed floor is meaningful. Tier 1 in ci.yml relies
+  // on that and passes no `--min-tests`.
+  if (sawMinTests) {
+    const n = Number(rawMinTests);
+    if (!Number.isInteger(n) || n < 0) {
+      console.error(
+        `❌ --min-tests must be a non-negative integer (got: ${JSON.stringify(rawMinTests)}).` +
+          '\n    Refusing to run: an unusable floor silently disables the truncation guard,' +
+          '\n    which is the one control that notices a run that executed almost nothing.',
+      );
+      return null;
+    }
+    args.minTests = n;
+  }
+  if (!args.subset && (!sawMinTests || args.minTests < 1)) {
+    console.error(
+      '❌ --min-tests is REQUIRED (and must be >= 1) unless --subset is given.' +
+        '\n    Without it the truncation guard does not run at all, and a report containing' +
+        '\n    only the baselined failures and skips would exit 0 however much was lost.' +
+        '\n    Measured: 4 executed outcomes of 541 passed cleanly before this check existed.',
+    );
     return null;
   }
   return args;

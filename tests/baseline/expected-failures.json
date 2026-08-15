@@ -33,13 +33,27 @@
     "either started running, which is good news needing a manifest update, or its",
     "identity moved).",
     "",
-    "expectedFlaky \u2014 the eight-item watched-flake ledger from drawer",
-    "drawer_havdm_testing_127a89e2ddcdeb101452523a, resolved from prose spec:line to",
-    "real identities via `--list` on 2026-08-15; all eight resolved. ANY OTHER flaky",
-    "identity now FAILS the run. \u26a0 THE TWO FLAKES OBSERVED IN RUN 31802864528 ARE",
-    "NOT IN THIS LIST AND ARE NOT ADDED HERE \u2014 adding them would be re-baselining",
-    "without a cause and without the owner's authorisation. They will fail the gate",
-    "until adjudicated, which is the intended behaviour."
+    "expectedFlaky \u2014 the watched-flake ledger from drawer",
+    "drawer_havdm_testing_127a89e2ddcdeb101452523a. It holds TEN entries; ANY OTHER",
+    "flaky identity FAILS the run. The FIRST EIGHT are the original ledger, resolved",
+    "from prose spec:line to real identities via `--list` on 2026-08-15 (all eight",
+    "resolved, so the ledger's line numbers were still accurate). Entries NINE and TEN",
+    "were added the same day under the owner's ruling below. \u26a0 Do not read \"eight\"",
+    "anywhere as the current size \u2014 that was the count before 2026-08-15.",
+    "",
+    "\u26a0\u26a0 2026-08-15, THE OWNER'S RULING. Round 1 left five observations",
+    "deliberately unbaselined, because re-baselining needs a cause AND the owner's",
+    "authorisation and only the first was present. THE OWNER GAVE THAT",
+    "AUTHORISATION ON 2026-08-15, so the ledger is now TEN, not eight, and the",
+    "behavioural tier expects FOUR failures, not one. Every one of the five entries",
+    "carries its provenance in its own `note`, and every one is UNDIAGNOSED \u2014 an",
+    "allowlist entry records that a thing is TOLERATED, never that it is UNDERSTOOD.",
+    "A tracked diagnosis follow-up was opened for the three failures at the same",
+    "time; baselining them was explicitly NOT a substitute for diagnosing them.",
+    "",
+    "\u26a0 NOTHING HERE IS SELF-SERVICE. These five were added because the owner said",
+    "so on a named date, and the next agent needs the same authorisation for the",
+    "next entry. Retiring one needs a cause and the owner's authorisation too."
   ],
   "expectedFailures": [
     {
@@ -120,6 +134,42 @@
       "reasonClassVerified": true,
       "baselineRef": "tabs.visual:33",
       "note": "NOT a snapshot failure. expect(locator('.ant-select-dropdown:visible')).toHaveCount(0) at tests/support/dsl/tabs.ts:11 \u2014 an antd Select dropdown that never closes, so the test never reaches its snapshot. \u2b50 REASON CLASS VERIFIED 2026-08-14 by GitHub Actions run 31802864528 (job 'visual'): 19 tests, 6 unexpected failures, exact match to this manifest including reason class."
+    },
+    {
+      "tier": "behavioural",
+      "file": "e2e/bubble-card.spec.ts",
+      "titlePath": [
+        "Bubble Card pop-up hash",
+        "adds the hash field when switching to pop-up and drops it when switching away"
+      ],
+      "reasonClass": "other",
+      "reasonClassVerified": true,
+      "baselineRef": "bubble-card:pop-up hash",
+      "note": "CI-ONLY FAILURE, BASELINED 2026-08-15 ON THE OWNER'S EXPLICIT AUTHORISATION. Observed in GitHub Actions run 31802864528 (3 attempts, project electron-e2e); `Error: expect(received).toMatch(expected)`. \u26a0 NOT CAUSED BY PR #143: `git diff 143f8c9...HEAD -- src` is EMPTY and this spec file is BYTE-UNCHANGED over the same range (both re-measured 2026-08-15). \u26a0 NOT R7-N1's IMPOSTOR: that open finding is about expectReachableByTab matching a repeated data-testid, and the CI failure received `testid: null`, so the same-testid false positive did not manufacture it \u2014 and this spec does not use that helper at all. \u26a0 GREEN ON INDEPENDENT LOCAL REPEATS: the reviewer ran the three hash cases 6/6 at --workers=1. CAUSE UNDIAGNOSED, presumed environment/order sensitivity on the GitHub runner. \u2b50 REASON CLASS `other` WAS READ FROM THE CHECKER, NOT TYPED: `node tools/check-suite-signatures.cjs --report <merged-report-170>/merged-results.json --tier behavioural --min-tests 541` printed `reason class: other` for this identity. A tracked diagnosis follow-up is open; baselining is NOT a diagnosis."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/theme-no-effect-badge.spec.ts",
+      "titlePath": [
+        "F3 \u2014 the \"no preview colours\" badge renders",
+        "the non-compact collapsed badge is keyboard-reachable too"
+      ],
+      "reasonClass": "other",
+      "reasonClassVerified": true,
+      "baselineRef": "theme-no-effect-badge:non-compact collapsed",
+      "note": "CI-ONLY FAILURE, BASELINED 2026-08-15 ON THE OWNER'S EXPLICIT AUTHORISATION. Observed in GitHub Actions run 31802864528 (3 attempts, project electron-integration); `theme-settings-select: Shift+Tab out of the combobox must land on the badge`. \u26a0 NOT CAUSED BY PR #143: `git diff 143f8c9...HEAD -- src` is EMPTY and this spec file is BYTE-UNCHANGED over the same range (both re-measured 2026-08-15). \u26a0 NOT R7-N1's IMPOSTOR: the badge helper received `testid: null` in this CI failure, so the same-data-testid false positive did not manufacture it; the helper really starts at the named combobox and sends Shift+Tab (tests/integration/theme-no-effect-badge.spec.ts:128-153). \u26a0 GREEN ON INDEPENDENT LOCAL REPEATS: the reviewer ran the two badge cases 4/4 at --workers=1 with --repeat-each=2. CAUSE UNDIAGNOSED, presumed environment/order sensitivity on the GitHub runner. \u2b50 REASON CLASS `other` WAS READ FROM THE CHECKER, NOT TYPED. A tracked diagnosis follow-up is open; baselining is NOT a diagnosis."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/theme-no-effect-badge.spec.ts",
+      "titlePath": [
+        "F3 \u2014 the \"no preview colours\" badge renders",
+        "the saved-theme and per-view override badges are keyboard-reachable too"
+      ],
+      "reasonClass": "other",
+      "reasonClassVerified": true,
+      "baselineRef": "theme-no-effect-badge:saved-theme + per-view override",
+      "note": "CI-ONLY FAILURE, BASELINED 2026-08-15 ON THE OWNER'S EXPLICIT AUTHORISATION. Observed in GitHub Actions run 31802864528 (3 attempts, project electron-integration); `theme-manager-saved-select: Shift+Tab out of the combobox must land on the badge`. \u26a0 NOT CAUSED BY PR #143: `git diff 143f8c9...HEAD -- src` is EMPTY and this spec file is BYTE-UNCHANGED over the same range (both re-measured 2026-08-15). \u26a0 NOT R7-N1's IMPOSTOR: the badge helper received `testid: null` in this CI failure, so the same-data-testid false positive did not manufacture it. \u26a0 GREEN ON INDEPENDENT LOCAL REPEATS: the reviewer ran the two badge cases 4/4 at --workers=1 with --repeat-each=2. CAUSE UNDIAGNOSED, presumed environment/order sensitivity on the GitHub runner. \u2b50 REASON CLASS `other` WAS READ FROM THE CHECKER, NOT TYPED. A tracked diagnosis follow-up is open; baselining is NOT a diagnosis."
     }
   ],
   "expectedSkips": [
@@ -384,6 +434,26 @@
       ],
       "baselineRef": "integration/yaml-entity-insert.spec.ts:185",
       "note": "Watched-flake ledger, drawer drawer_havdm_testing_127a89e2ddcdeb101452523a. Resolved from spec:line via --list on 2026-08-15. Tolerated as named existing debt; retiring it needs a cause and the owner authorisation."
+    },
+    {
+      "tier": "behavioural",
+      "file": "e2e/gauge-card-pro.spec.ts",
+      "titlePath": [
+        "Gauge Alignment",
+        "preserves built-in gauge workflow with enhanced form controls"
+      ],
+      "baselineRef": "gauge-card-pro:Gauge Alignment",
+      "note": "LEDGER ENTRY 9, ADDED 2026-08-15 ON THE OWNER'S EXPLICIT AUTHORISATION — this is a re-baseline and it is authorised only because the owner said so on that date. OBSERVED ONCE, in GitHub Actions run 31802864528 (status flaky, 2 attempts, project electron-e2e): it failed once and passed on retry. UNDIAGNOSED — nobody has established why it is unstable, and this entry records only that it is TOLERATED, not that it is UNDERSTOOD. One observation is not a pattern and one clean pass would not be a retirement; retiring it needs a cause and the owner's authorisation. Ledger home: drawer drawer_havdm_testing_127a89e2ddcdeb101452523a."
+    },
+    {
+      "tier": "behavioural",
+      "file": "integration/theme-no-effect-badge.spec.ts",
+      "titlePath": [
+        "F3 — the \"no preview colours\" badge renders",
+        "the tooltip claims nothing about the screen, so it holds beside an INACTIVE option"
+      ],
+      "baselineRef": "theme-no-effect-badge:tooltip holds beside INACTIVE",
+      "note": "LEDGER ENTRY 10, ADDED 2026-08-15 ON THE OWNER'S EXPLICIT AUTHORISATION — this is a re-baseline and it is authorised only because the owner said so on that date. OBSERVED ONCE, in GitHub Actions run 31802864528 (status flaky, 2 attempts, project electron-integration): it failed once and passed on retry. UNDIAGNOSED — nobody has established why it is unstable, and this entry records only that it is TOLERATED, not that it is UNDERSTOOD. ⓘ Same spec FILE as two of the three newly baselined behavioural failures, but a DIFFERENT test identity and a different assertion; do not infer a shared cause from the shared file. Retiring it needs a cause and the owner's authorisation. Ledger home: drawer drawer_havdm_testing_127a89e2ddcdeb101452523a."
     }
   ]
 }
