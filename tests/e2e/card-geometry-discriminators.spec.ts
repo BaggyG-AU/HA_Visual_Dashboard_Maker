@@ -82,6 +82,17 @@ const GRID_SHIFT_Y = 48;
 const CARD_MOVE_X = 57;
 const CARD_MOVE_Y = 31;
 
+/**
+ * The CREEP distance for control 5 — small on purpose.
+ *
+ * ⭐ Ten pixels over a four-second transition is 0.08 px per 32 ms sample. That
+ * is the shape that defeats a rounded stability check, and it is deliberately
+ * NOT the shape of the other controls: a big fast move proves nothing about
+ * rounding. It is still five times the ±2 px the guarded comparison allows, so
+ * a slipped settle fails loudly rather than marginally.
+ */
+const CREEP_PX = 10;
+
 /** Sub-pixel slack for a comparison of two `getBoundingClientRect()` readings. */
 const EPSILON = 0.5;
 
@@ -462,6 +473,65 @@ test.describe('Class D controls: what the grid-relative card comparison can and 
       expect(
         worst(settled, truth),
         'the settled sample must match the geometry the grid came to rest at',
+      ).toBeLessThanOrEqual(2);
+    } finally {
+      await close(ctx);
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  test('CONTROL: a SMALL travel over a LONG transition cannot slip through the settle', async () => {
+    const ctx = await launchWithDSL();
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'havdm-geom-creep-'));
+    const target = path.join(tmpDir, 'dash.yaml');
+    const MOVED = 1;
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadFileBacked(ctx, DASHBOARD_YAML, target);
+      await ctx.canvas.expectCardCount(2);
+      await makeDirty(ctx, 3);
+
+      const before = await ctx.canvas.getCardRectsRelativeToGridSettled();
+
+      // ⭐⭐⭐ THE CONSTRUCTION THAT BROKE THE FIRST VERSION OF THE GUARD, KEPT SO
+      // IT CANNOT COME BACK. Control 4 above moves a card far and fast, which no
+      // rounding hole can survive. This one is the opposite and is the case that
+      // actually bites: CREEP. Ten pixels over four seconds is 0.08 px per 32 ms
+      // sample, so an integer-rounded stability check sees three identical
+      // readings while the card is still travelling. Measured against the
+      // pre-repair helper, it returned after 75 ms with 9.87 px still to go —
+      // five times the ±2 px the guarded comparison allows.
+      await ctx.window.evaluate(
+        ([i, dx]) => {
+          const item = document.querySelectorAll<HTMLElement>(
+            '.react-grid-layout > .react-grid-item',
+          )[i];
+          if (!item) throw new Error(`no .react-grid-item at index ${i}`);
+          item.style.transition = 'transform 4s linear';
+          void item.offsetWidth;
+          item.style.transform = `${item.style.transform} translate(${dx}px, 0px)`;
+        },
+        [MOVED, CREEP_PX] as const,
+      );
+
+      const settled = await ctx.canvas.getCardRectsRelativeToGridSettled({ timeoutMs: 20000 });
+
+      // ⭐ LIVENESS: the creep must really be in flight, or this control is a
+      // dead instrument dressed as a guard.
+      const unsettled = settled; // captured after the guard, compared to truth below
+      await ctx.window.waitForTimeout(5000);
+      const truth = await ctx.canvas.getCardRectsRelativeToGrid();
+
+      expect(
+        truth[MOVED].x - before[MOVED].x,
+        'the creep mutation did not move the card — the instrument is dead',
+      ).toBeCloseTo(CREEP_PX, 1);
+
+      // ⭐⭐ THE GUARD. The settled read must already be at the destination, not
+      // somewhere along the way. Against the pre-repair helper this is 9.87 px.
+      expect(
+        Math.abs(unsettled[MOVED].x - truth[MOVED].x),
+        'the settle returned while the card was still creeping',
       ).toBeLessThanOrEqual(2);
     } finally {
       await close(ctx);

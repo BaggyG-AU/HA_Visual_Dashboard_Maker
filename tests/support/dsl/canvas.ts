@@ -260,12 +260,33 @@ export class CanvasDSL {
    * does — three equal readings of a box that has not yet begun to travel. The
    * deterministic form of that is a transition DELAY, so the helper was run
    * against `transition: transform 2s linear 1s`: a full second stationary at
-   * the stale position, then two seconds of travel. Measured, a single
-   * unguarded read was 640 px wrong and this helper returned the settled
-   * geometry EXACTLY (delta 0 on all four axes), with `getAnimations()` empty at
-   * the moment it returned. The hole was not reproduced, so no animation-state
-   * guard was added — a mechanism whose need cannot be demonstrated should not
-   * ship. ⓘ That is ONE hostile construction, not a proof of impossibility.
+   * the stale position, then two seconds of travel. That attack FAILED to break
+   * it, and on that basis no animation-state guard was added.
+   *
+   * ⚠⚠⚠ THE ATTACK WAS BADLY DESIGNED, AND THE INDEPENDENT REVIEWER'S SECOND
+   * CONSTRUCTION BROKE IT ON THE FIRST TRY (Codex round 2, finding M1,
+   * `docs/reviews/ci-unstable-tests-codex-round2-review.md`). The author's
+   * version moved a card 640 px, which is ~10 px per 32 ms sample — far too fast
+   * for a rounding hole to show. **The defeating construction is the opposite: a
+   * SMALL travel over a LONG transition.** Ten pixels under
+   * `transition: transform 4s linear` is 0.08 px per sample, so three
+   * consecutive readings shared one integer bucket while the box was genuinely
+   * moving. Reproduced on this checkout: the helper returned after **75 ms with
+   * 9.87 px still to travel**, and `getAnimations({subtree: true})` reported
+   * `{playState: 'running', transitionProperty: 'transform'}` at that exact
+   * moment. 9.87 px is five times the ±2 px the comparison allows.
+   *
+   * ⭐ SO THE GUARD IS NOW BOTH HALVES, AND THEY CLOSE DIFFERENT ROUTES.
+   * Comparing to a HUNDREDTH of a pixel rather than a whole one removes the
+   * rounding bucket; asking the browser for running layout transitions removes
+   * the inference altogether, because stability sampling can only ever guess at
+   * motion while the compositor knows. Either alone would have missed something.
+   *
+   * ⓘ RESIDUAL, STATED RATHER THAN HIDDEN: the animation check covers CSS
+   * TRANSITIONS on transform/width/height/left/top. A keyframe animation or a
+   * requestAnimationFrame loop that moved a card in sub-hundredth-pixel steps
+   * would still be invisible to it. react-grid-layout uses transitions, so that
+   * is not reachable here today.
    */
   async getCardRectsRelativeToGridSettled(
     options: { samples?: number; timeoutMs?: number; intervalMs?: number } = {},
@@ -282,12 +303,43 @@ export class CanvasDSL {
             return { x: r.left - g.left, y: r.top - g.top, w: r.width, h: r.height };
           });
         };
-        // Rounded, so sub-pixel jitter on a fractional device pixel ratio cannot
-        // stop the loop converging. The RAW reading is what gets returned.
+        // ⚠⚠⚠ TWO HUNDREDTHS OF A PIXEL, NOT A WHOLE ONE. Rounding to integers
+        // is what made this helper returnable mid-flight: a small travel over a
+        // long transition moves less than half a pixel per sample, so three
+        // consecutive readings share an integer bucket while the box is still
+        // going. The RAW reading is still what gets returned.
         const key = (rects: ReturnType<typeof read>) =>
           JSON.stringify(
-            rects.map((r) => [Math.round(r.x), Math.round(r.y), Math.round(r.w), Math.round(r.h)]),
+            rects.map((r) => [
+              Math.round(r.x * 100),
+              Math.round(r.y * 100),
+              Math.round(r.w * 100),
+              Math.round(r.h * 100),
+            ]),
           );
+
+        // ⚠⚠⚠ AND ASK THE BROWSER DIRECTLY, BECAUSE SAMPLING ALONE CANNOT KNOW.
+        // Stability is an inference about motion; a running transition is a FACT
+        // the compositor will state if asked. Restricted to transitions on
+        // LAYOUT properties on purpose: a decorative animation elsewhere in the
+        // canvas (a pulse, a spinner) must not hold this open forever.
+        const LAYOUT_PROPS = new Set(['transform', 'width', 'height', 'left', 'top']);
+        const stillMoving = () => {
+          const grid = document.querySelector('.react-grid-layout');
+          if (!grid) return false;
+          return grid.getAnimations({ subtree: true }).some((a) => {
+            // ⚠ `pending` is a SEPARATE BOOLEAN on Animation, not a playState
+            // value — a transition that has been created but has not started
+            // ticking reports `playState: 'idle'` with `pending: true`, so
+            // testing playState alone would miss the moment just before travel
+            // begins. (The typechecker caught this: AnimationPlayState has no
+            // 'pending' member.)
+            const anim = a as Animation & { pending?: boolean; transitionProperty?: string };
+            if (anim.playState !== 'running' && anim.pending !== true) return false;
+            const prop = anim.transitionProperty;
+            return typeof prop === 'string' && LAYOUT_PROPS.has(prop);
+          });
+        };
 
         const started = performance.now();
         let last = read();
@@ -298,7 +350,7 @@ export class CanvasDSL {
           await new Promise((resolve) => setTimeout(resolve, gap));
           const next = read();
           const nextKey = key(next);
-          if (nextKey === lastKey) {
+          if (nextKey === lastKey && !stillMoving()) {
             streak += 1;
             if (streak >= need) return next;
           } else {
