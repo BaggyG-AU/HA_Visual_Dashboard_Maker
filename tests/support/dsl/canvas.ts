@@ -246,6 +246,26 @@ export class CanvasDSL {
    * consecutive equal readings; it never polls for a value the caller wants, and
    * it THROWS rather than returning a best effort if the layout never stops
    * moving, so a permanently animating canvas cannot read as a clean pass.
+   *
+   * ⓘ THE 5 s BUDGET IS SIZED, NOT GUESSED. react-grid-layout's transition is
+   * 200 ms (`node_modules/react-grid-layout/css/styles.css:6`), and three
+   * samples 32 ms apart add ~96 ms, so a normal settle completes inside ~300 ms
+   * and the default leaves roughly a 16x margin. The budget is deliberately a
+   * THROW rather than a longer wait: a canvas that cannot hold still for 96 ms
+   * within 5 s is a defect worth surfacing, not one worth waiting out.
+   *
+   * ⚠⚠ ONE ATTACK ON THIS HELPER WAS BUILT AND FAILED TO BREAK IT, WHICH IS
+   * WORTH RECORDING BECAUSE THE HYPOTHESIS WAS PLAUSIBLE. A stability-only
+   * settle should, in principle, return early if it starts BEFORE the movement
+   * does — three equal readings of a box that has not yet begun to travel. The
+   * deterministic form of that is a transition DELAY, so the helper was run
+   * against `transition: transform 2s linear 1s`: a full second stationary at
+   * the stale position, then two seconds of travel. Measured, a single
+   * unguarded read was 640 px wrong and this helper returned the settled
+   * geometry EXACTLY (delta 0 on all four axes), with `getAnimations()` empty at
+   * the moment it returned. The hole was not reproduced, so no animation-state
+   * guard was added — a mechanism whose need cannot be demonstrated should not
+   * ship. ⓘ That is ONE hostile construction, not a proof of impossibility.
    */
   async getCardRectsRelativeToGridSettled(
     options: { samples?: number; timeoutMs?: number; intervalMs?: number } = {},

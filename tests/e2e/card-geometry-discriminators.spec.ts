@@ -98,11 +98,34 @@ const loadFileBacked = async (ctx: Ctx, contents: string, filePath: string) => {
   );
 };
 
-/** Add one palette card, exactly as the Save fixture's `makeDirty` does. */
+/**
+ * Add one palette card, exactly as the Save fixture's `makeDirty` does — and
+ * then WAIT FOR THE GRID TO STOP MOVING.
+ *
+ * ⚠⚠⚠ THE SETTLE IS NOT OPTIONAL AND ITS ABSENCE WAS MEASURED, NOT IMAGINED.
+ * `expectCardCount` returns when the nth card EXISTS; react-grid-layout then
+ * reflows the others around it over `transition: transform 0.2s`. The first
+ * version of this file omitted the settle, so controls 1 and 2 took their
+ * baselines mid-flight. They passed on the maintainer's machine and in GitHub
+ * Actions runs 31878624582 and 31880748615, then failed ALL THREE ATTEMPTS in
+ * run 31881906972: control 1 saw `card[1] relative x` move by -21.20 px between
+ * two samples that should have been identical, and control 2's liveness check
+ * read -60.41 px against an expected +57 px, because the card's own unfinished
+ * travel outran the mutation.
+ *
+ * ⭐⭐⭐ THE LESSON IS THE FILE'S OWN SUBJECT, TURNED ON ITSELF: these controls
+ * exist to defend a settle guard, and they were written sampling the way the
+ * defect does. A control that does not use the medicine it is prescribing is
+ * not a control. It is another instance of the bug.
+ *
+ * ⓘ Control 4 deliberately does NOT come through here — it needs the race in
+ * order to observe it, so it inlines the palette add.
+ */
 const makeDirty = async (ctx: Ctx, expectedCount: number) => {
   await ctx.palette.expandCategory('Controls');
   await ctx.palette.addCard('button');
   await ctx.canvas.expectCardCount(expectedCount);
+  await ctx.canvas.getCardRectsRelativeToGridSettled();
 };
 
 /** The grid container's own viewport rectangle — the origin the helper subtracts. */
@@ -405,8 +428,25 @@ test.describe('Class D controls: what the grid-relative card comparison can and 
       await ctx.window.waitForTimeout(4000);
       const truth = await ctx.canvas.getCardRectsRelativeToGrid();
 
+      // ⚠⚠ ALL FOUR AXES, BECAUSE ALL FOUR ANIMATE. react-grid-layout's own
+      // stylesheet declares `transition-property: transform, width, height`
+      // (`node_modules/react-grid-layout/css/styles.css:14`), so a reflow moves
+      // a card AND resizes it. An earlier draft of this control compared only x
+      // and y — narrower than the guard it defends, which asserts all four at
+      // `save-and-backup.spec.ts:266-271`, and blind in a dimension that really
+      // does move. Count the axes the guard NAMES against the axes the control
+      // MEASURES.
       const worst = (a: typeof truth, b: typeof truth) =>
-        Math.max(...a.map((r, i) => Math.max(Math.abs(r.x - b[i].x), Math.abs(r.y - b[i].y))));
+        Math.max(
+          ...a.map((r, i) =>
+            Math.max(
+              Math.abs(r.x - b[i].x),
+              Math.abs(r.y - b[i].y),
+              Math.abs(r.w - b[i].w),
+              Math.abs(r.h - b[i].h),
+            ),
+          ),
+        );
 
       // ⭐⭐ THE RED HALF. The unguarded read disagrees with the settled geometry
       // by far more than the ±2 px the comparison allows. This is the assertion

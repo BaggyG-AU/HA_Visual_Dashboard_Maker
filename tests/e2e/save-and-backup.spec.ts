@@ -255,7 +255,8 @@ test.describe('FILE-05: Save writes, clears the dirty marker and leaves a backup
       // cards" and "the file has the layout the user saw" — the latter is what
       // Expected 3 asks.
       // ⓘ Settled here too, though the reload half is measurably NOT the racing
-      // one: amplified to a 3 s transition it still reports an exact zero. Whether
+      // one: amplified to a 3 s transition it reported an exact zero — ONE
+      // observation, not a proof that a reload can never animate. Whether
       // a reload can ever animate is a JUDGEMENT about react-grid-layout's
       // reconciliation, and settling an already-static grid costs a few frames
       // and removes the judgement — the same reasoning that applied
