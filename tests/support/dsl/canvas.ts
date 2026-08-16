@@ -282,11 +282,42 @@ export class CanvasDSL {
    * the inference altogether, because stability sampling can only ever guess at
    * motion while the compositor knows. Either alone would have missed something.
    *
-   * ⓘ RESIDUAL, STATED RATHER THAN HIDDEN: the animation check covers CSS
-   * TRANSITIONS on transform/width/height/left/top. A keyframe animation or a
-   * requestAnimationFrame loop that moved a card in sub-hundredth-pixel steps
-   * would still be invisible to it. react-grid-layout uses transitions, so that
-   * is not reachable here today.
+   * ⓘ RESIDUAL, STATED RATHER THAN HIDDEN — AND THE FIRST VERSION OF THIS
+   * PARAGRAPH UNDERSTATED IT. The animation half is an ALLOWLIST: it counts an
+   * animation as motion only if it is a CSS TRANSITION *and* its
+   * `transitionProperty` is one of the five names in `LAYOUT_PROPS`. Anything
+   * else that moves a card in sub-hundredth-pixel steps is invisible to it, and
+   * that is a wider class than "keyframes and requestAnimationFrame":
+   *
+   *   - a CSS KEYFRAME animation (`transitionProperty` is undefined on a
+   *     CSSAnimation, so the allowlist never matches);
+   *   - a `requestAnimationFrame` loop (no Animation object exists at all);
+   *   - ⚠ a CSS TRANSITION ON ANY OTHER BOX-MOVING PROPERTY — `margin`,
+   *     `padding`, `inset`/`right`/`bottom`, `border-width`, or the standalone
+   *     `translate` property, which is distinct from `transform`.
+   *
+   * ⚠⚠ THAT THIRD BULLET WAS MEASURED, NOT REASONED. Running this helper's own
+   * extracted source against headless Chromium, a 10 px creep over 200 s under
+   * `transition: margin-left` returned in 65.6 ms with the full 10 px still to
+   * travel, and standalone `transition: translate` did the same in 66.7 ms —
+   * while the round-2 construction (`transition: transform 4s`) is correctly
+   * held for 4.5 s. Both defeating cases are CSS transitions, so the earlier
+   * wording — which named only keyframes and rAF — described a narrower hole
+   * than the code actually has.
+   *
+   * ⭐ WHY IT IS STILL NOT REACHABLE HERE, STATED AS THE ENUMERATION IT IS
+   * RATHER THAN AS "react-grid-layout uses transitions". Exactly two stylesheets
+   * can transition a measured `:scope > .react-grid-item`'s box, and every
+   * property either one names is inside `LAYOUT_PROPS`:
+   * `node_modules/react-grid-layout/css/styles.css:6,14` (`left, top, width,
+   * height` and, under `.cssTransforms`, `transform, width, height`) and
+   * `src/components/GridCanvas.css:49-52` (`left, top, width, height`).
+   * ⓘ `BaseCard.tsx:246` sets its own transition to 0 ms under `isTestEnv()`,
+   * so the card's decorative opacity/transform transition does not exist here.
+   * ⚠⚠ THAT IS A PROPERTY OF TODAY'S DEPENDENCY AND TODAY'S STYLESHEET, NOT AN
+   * ENFORCED INVARIANT. Nothing fails if a future stylesheet transitions a
+   * card's margin. A caller of this SHARED helper on some other surface is
+   * outside that enumeration and inherits the hole.
    */
   async getCardRectsRelativeToGridSettled(
     options: { samples?: number; timeoutMs?: number; intervalMs?: number } = {},
