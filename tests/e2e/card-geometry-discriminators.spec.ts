@@ -93,6 +93,19 @@ const CARD_MOVE_Y = 31;
  */
 const CREEP_PX = 10;
 
+/**
+ * Controls 6 and 7 — which card each mutates, and how much growth proves the
+ * scale mutation was live.
+ *
+ * ⭐ A `scale` of 1.1 on a card roughly 288 px wide adds ~28 px, an order of
+ * magnitude above the ±2 px the guarded comparison allows, so neither leg can
+ * pass or fail on rounding. The floor below is deliberately far under that: it
+ * exists to catch a DEAD mutation, not to re-assert the exact scale factor.
+ */
+const SCALED_CARD = 1;
+const DECORATED_CARD = 1;
+const SCALE_MIN_GROWTH_PX = 5;
+
 /** Sub-pixel slack for a comparison of two `getBoundingClientRect()` readings. */
 const EPSILON = 0.5;
 
@@ -533,6 +546,200 @@ test.describe('Class D controls: what the grid-relative card comparison can and 
         Math.abs(unsettled[MOVED].x - truth[MOVED].x),
         'the settle returned while the card was still creeping',
       ).toBeLessThanOrEqual(2);
+    } finally {
+      await close(ctx);
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * ⭐⭐⭐ CONTROLS 6 AND 7 DEFEND THE SAME REPAIR FROM OPPOSITE SIDES, AND
+   * NEITHER CAN DETECT THE OTHER'S DEFECT.
+   *
+   * Codex round 3 finding M1 (`docs/reviews/ci-unstable-tests-codex-round3-review.md`)
+   * measured that the settle helper's animation gate was keyed to the WRONG
+   * POPULATION: it filtered a five-name property allowlist over
+   * `getAnimations({subtree: true})`, while the helper only ever returns
+   * rectangles for DIRECT `.react-grid-item` children. A gate whose animation
+   * population differs from its geometry population fails BOTH ways:
+   *
+   *   - it IGNORES real motion of a measured box whose property is not on the
+   *     list (control 6 — standalone `scale`);
+   *   - it BLOCKS on motion that cannot change any measured box, because the
+   *     property IS on the list (control 7 — a decorative descendant).
+   *
+   * ⚠⚠ An assertion of early return cannot detect a false timeout and a timeout
+   * assertion cannot detect a false settle, so these are two tests and not one.
+   * Both were red against the pre-repair helper in this checkout.
+   */
+
+  test('CONTROL: a standalone SCALE on a measured card cannot slip through the settle', async () => {
+    const ctx = await launchWithDSL();
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'havdm-geom-scale-'));
+    const target = path.join(tmpDir, 'dash.yaml');
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadFileBacked(ctx, DASHBOARD_YAML, target);
+      await ctx.canvas.expectCardCount(2);
+      await makeDirty(ctx, 3);
+
+      const before = await ctx.canvas.getCardRectsRelativeToGridSettled();
+
+      // ⭐ `scale` IS A STANDALONE ANIMATABLE PROPERTY, DISTINCT FROM `transform`,
+      // and it changes the rendered WIDTH and HEIGHT of the box — which is
+      // exactly what `Expected 3` compares.
+      //
+      // ⚠⚠⚠ THE DURATION IS THE WHOLE CONTROL, AND TWO DRAFTS GOT IT WRONG IN
+      // THE SAME WAY — THE MAGNITUDE, NOT THE MECHANISM.
+      //   `scale 3s`    ~0.3 px per 32 ms sample, THIRTY times the hundredth-
+      //                 pixel bucket. The OLD gate's geometry check caught it
+      //                 unaided, so the control passed against the broken helper.
+      //   `scale 200s`  ~0.0046 px per sample = 0.46 hundredths. Still crosses
+      //                 buckets often enough that three consecutive equal reads
+      //                 are rare, so the old helper threw and the control passed
+      //                 against the broken helper AGAIN. ⚠ The reviewer's own
+      //                 harness DID break at 200 s because its synthetic item was
+      //                 100 px wide; this card is ~288 px, so the same scale
+      //                 factor drifts three times faster. A construction is not
+      //                 portable between fixtures just because the mechanism is.
+      //   `scale 2000s` ~0.00046 px per sample = 0.046 hundredths. Three
+      //                 consecutive reads share a bucket, the old gate sees
+      //                 stillness, and `scale` was never on its property
+      //                 allowlist — so it returns mid-flight. THIS is the red leg.
+      //
+      // A transition that slow can never legitimately settle, so **the property
+      // asserted here is that the helper THROWS rather than returning a best
+      // effort**, which is its stated contract. Returning any rectangle is the
+      // defect.
+      const live = await ctx.window.evaluate((i) => {
+        const item = document.querySelectorAll<HTMLElement>(
+          '.react-grid-layout > .react-grid-item',
+        )[i];
+        if (!item) throw new Error(`no .react-grid-item at index ${i}`);
+        item.style.scale = '1';
+        void item.offsetWidth;
+        item.style.transition = 'scale 2000s linear';
+        item.style.scale = '1.1';
+        const running = item
+          .getAnimations()
+          .some((a) => (a as Animation & { transitionProperty?: string }).transitionProperty);
+        return { running, transition: getComputedStyle(item).transitionDuration };
+      }, SCALED_CARD);
+      expect(live.running, 'the scale transition never started — the instrument is dead').toBe(
+        true,
+      );
+      expect(live.transition, 'the scale amplifier did not take effect').toBe('2000s');
+
+      // ⭐⭐ THE GUARD. Against the pre-repair helper this RETURNED after ~165 ms
+      // with ~10 px of width still to travel, because `scale` was not one of the
+      // five names on the old property allowlist. The repaired gate asks whether
+      // any animation TARGETS a measured card instead, so it correctly refuses.
+      let returned: Array<{ x: number; y: number; w: number; h: number }> | null = null;
+      let threw: string | null = null;
+      try {
+        returned = await ctx.canvas.getCardRectsRelativeToGridSettled({ timeoutMs: 3000 });
+      } catch (e) {
+        threw = e instanceof Error ? e.message : String(e);
+      }
+      expect(
+        threw ?? `RETURNED ${JSON.stringify(returned?.[SCALED_CARD])}`,
+        'the settle returned a rectangle while the card was still scaling',
+      ).toMatch(/never held still/);
+
+      // ⭐ LIVENESS, AFTER THE FACT: force the scale to its endpoint and confirm
+      // the mutation really was geometric. A dead mutation would make the throw
+      // above happen for some other reason, or not at all.
+      const truth = await ctx.window.evaluate((i) => {
+        const item = document.querySelectorAll<HTMLElement>(
+          '.react-grid-layout > .react-grid-item',
+        )[i];
+        item.style.transition = 'none';
+        item.style.scale = '1.1';
+        void item.offsetWidth;
+        const grid = document.querySelector('.react-grid-layout')!;
+        const g = grid.getBoundingClientRect();
+        const r = item.getBoundingClientRect();
+        return { x: r.left - g.left, y: r.top - g.top, w: r.width, h: r.height };
+      }, SCALED_CARD);
+      expect(
+        truth.w - before[SCALED_CARD].w,
+        'the scale mutation did not widen the card — the instrument is dead',
+      ).toBeGreaterThan(SCALE_MIN_GROWTH_PX);
+    } finally {
+      await close(ctx);
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  test('CONTROL: a decorative DESCENDANT animation must not block a settled card', async () => {
+    const ctx = await launchWithDSL();
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'havdm-geom-descendant-'));
+    const target = path.join(tmpDir, 'dash.yaml');
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadFileBacked(ctx, DASHBOARD_YAML, target);
+      await ctx.canvas.expectCardCount(2);
+      await makeDirty(ctx, 3);
+
+      const before = await ctx.canvas.getCardRectsRelativeToGridSettled();
+
+      // A long transition on a child that CANNOT change its parent's box: the
+      // grid item is absolutely positioned and sized by react-grid-layout, so a
+      // translated descendant moves nothing this helper measures.
+      const live = await ctx.window.evaluate((i) => {
+        const item = document.querySelectorAll<HTMLElement>(
+          '.react-grid-layout > .react-grid-item',
+        )[i];
+        if (!item) throw new Error(`no .react-grid-item at index ${i}`);
+        const dot = document.createElement('div');
+        dot.setAttribute('data-testid', 'havdm-decorative-probe');
+        dot.style.cssText =
+          'position:absolute;left:2px;top:2px;width:6px;height:6px;background:#900;pointer-events:none;';
+        item.appendChild(dot);
+        void dot.offsetWidth;
+        dot.style.transition = 'transform 200s linear';
+        dot.style.transform = 'translate(500px, 0px)';
+        return dot
+          .getAnimations()
+          .map((a) => (a as Animation & { transitionProperty?: string }).transitionProperty);
+      }, DECORATED_CARD);
+
+      // ⭐ LIVENESS, AND IT IS THE WHOLE CONTROL. If the descendant transition
+      // never started, the settle would return quickly for the ordinary reason
+      // and this test would pass while proving nothing at all.
+      expect(live, 'the descendant transition never started — the instrument is dead').toContain(
+        'transform',
+      );
+
+      // ⭐⭐ THE GUARD. Against the pre-repair helper this THREW after the full
+      // 5 s budget, because `transform` was on the property allowlist and the
+      // descendant was inside the swept subtree — while every measured axis was
+      // bit-identical throughout.
+      const settled = await ctx.canvas.getCardRectsRelativeToGridSettled();
+
+      expect(settled).toHaveLength(before.length);
+      settled.forEach((rect, i) => {
+        expect(
+          Math.abs(rect.x - before[i].x),
+          'a decorative descendant must not change a measured rectangle',
+        ).toBeLessThanOrEqual(EPSILON);
+        expect(Math.abs(rect.y - before[i].y)).toBeLessThanOrEqual(EPSILON);
+        expect(Math.abs(rect.w - before[i].w)).toBeLessThanOrEqual(EPSILON);
+        expect(Math.abs(rect.h - before[i].h)).toBeLessThanOrEqual(EPSILON);
+      });
+
+      // The descendant must STILL be animating at this point, or the settle
+      // could have simply outlasted it.
+      const stillRunning = await ctx.window.evaluate(() =>
+        document
+          .querySelectorAll('[data-testid="havdm-decorative-probe"]')[0]
+          .getAnimations()
+          .some((a) => a.playState === 'running'),
+      );
+      expect(
+        stillRunning,
+        'the descendant animation finished before the settle returned — the control proved nothing',
+      ).toBe(true);
     } finally {
       await close(ctx);
       fs.rmSync(tmpDir, { recursive: true, force: true });

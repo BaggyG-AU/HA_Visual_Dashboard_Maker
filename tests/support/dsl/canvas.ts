@@ -365,14 +365,62 @@ export class CanvasDSL {
           );
 
         // ⚠⚠⚠ AND ASK THE BROWSER DIRECTLY, BECAUSE SAMPLING ALONE CANNOT KNOW.
-        // Stability is an inference about motion; a running transition is a FACT
-        // the compositor will state if asked. Restricted to transitions on
-        // LAYOUT properties on purpose: a decorative animation elsewhere in the
-        // canvas (a pulse, a spinner) must not hold this open forever.
-        const LAYOUT_PROPS = new Set(['transform', 'width', 'height', 'left', 'top']);
+        // Stability is an inference about motion; a running animation is a FACT
+        // the compositor will state if asked.
+        //
+        // ⚠⚠⚠ THE POPULATION IS THE ELEMENTS THIS HELPER MEASURES, NOT THE WHOLE
+        // SUBTREE. The first version of this gate filtered a five-name property
+        // allowlist over `getAnimations({subtree: true})`, which is a DIFFERENT
+        // population from the boxes `read()` returns — and a gate keyed to the
+        // wrong population fails in BOTH directions at once. Measured on this
+        // checkout (Codex round 3, finding M1, independently reproduced by the
+        // author before repair):
+        //
+        //   FALSE SETTLE   a direct grid item under `transition: scale 200s`
+        //                  returned after 165 ms with 9.99 px of WIDTH still to
+        //                  travel, because `scale` is a standalone property and
+        //                  was not one of the five admitted names.
+        //   FALSE TIMEOUT  a DECORATIVE DESCENDANT under `transition: transform
+        //                  200s` threw at 5,042 ms while the measured item's box
+        //                  stayed bit-identical, because `transform` WAS admitted
+        //                  and the descendant was in the swept subtree.
+        //
+        // So: select the effect TARGETS first, then ask which animation facts are
+        // authoritative. Only animations targeting the grid container or one of
+        // its DIRECT `.react-grid-item` children can move a box this helper
+        // returns. `{subtree: true}` is still required to SEE them — they are
+        // descendants of the grid — but the target test is what makes the
+        // population right.
+        const NON_GEOMETRIC = new Set([
+          'opacity',
+          'color',
+          'background',
+          'background-color',
+          'background-image',
+          'background-position',
+          'box-shadow',
+          'text-shadow',
+          'border-color',
+          'outline-color',
+          'outline',
+          'visibility',
+          'fill',
+          'stroke',
+          'filter',
+          'backdrop-filter',
+          'cursor',
+          'z-index',
+          'caret-color',
+          'accent-color',
+        ]);
+        const kebab = (s: string) => s.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase());
         const stillMoving = () => {
           const grid = document.querySelector('.react-grid-layout');
           if (!grid) return false;
+          const measured = new Set<Element>([
+            grid,
+            ...Array.from(grid.querySelectorAll(':scope > .react-grid-item')),
+          ]);
           return grid.getAnimations({ subtree: true }).some((a) => {
             // ⚠ `pending` is a SEPARATE BOOLEAN on Animation, not a playState
             // value — a transition that has been created but has not started
@@ -382,8 +430,38 @@ export class CanvasDSL {
             // 'pending' member.)
             const anim = a as Animation & { pending?: boolean; transitionProperty?: string };
             if (anim.playState !== 'running' && anim.pending !== true) return false;
-            const prop = anim.transitionProperty;
-            return typeof prop === 'string' && LAYOUT_PROPS.has(prop);
+
+            const effect = anim.effect as KeyframeEffect | null;
+            const target = effect && effect.target;
+            if (!target || !measured.has(target)) return false;
+
+            // ⭐ WHICH PROPERTIES IS IT ANIMATING? A CSSTransition names exactly
+            // one in `transitionProperty`. Anything else — a CSS keyframe
+            // animation, or `Element.animate()` — is read from the keyframes
+            // themselves, which is what closes the keyframe half of the old
+            // residual for the elements that actually matter.
+            let props: string[] = [];
+            if (typeof anim.transitionProperty === 'string' && anim.transitionProperty) {
+              props = [anim.transitionProperty];
+            } else if (effect && typeof effect.getKeyframes === 'function') {
+              const seen = new Set<string>();
+              for (const frame of effect.getKeyframes()) {
+                for (const k of Object.keys(frame)) {
+                  if (k !== 'offset' && k !== 'easing' && k !== 'composite') seen.add(kebab(k));
+                }
+              }
+              props = Array.from(seen);
+            }
+
+            // ⚠⚠ DENY-LIST, NOT ALLOW-LIST, AND THE DIRECTION MATTERS. There is
+            // no API that says "will this animation change the border box", so an
+            // ALLOW-list of geometric properties fails open on the one nobody
+            // thought of — which is exactly the defect above. An unknown property
+            // is therefore treated as POSSIBLY GEOMETRIC and we keep waiting.
+            // The cost of being wrong is a bounded wait inside the budget; the
+            // cost of the opposite error is a silently wrong measurement.
+            if (props.length === 0) return true;
+            return props.some((p) => !NON_GEOMETRIC.has(p));
           });
         };
 
