@@ -435,6 +435,22 @@ export class CanvasDSL {
             const target = effect && effect.target;
             if (!target || !measured.has(target)) return false;
 
+            // ⚠⚠⚠ A PSEUDO-ELEMENT IS A CHILD BOX, NOT THE MEASURED BOX — AND
+            // `KeyframeEffect.target` DOES NOT DISTINGUISH THEM. An animation on
+            // `.react-grid-item::before` reports the GRID ITEM as its target and
+            // names the pseudo-element separately, so the target test above
+            // admits it. react-grid-layout sets each item's width, height and
+            // transform inline, so a `::before` or `::after` cannot change the
+            // rectangle `read()` returns — it renders inside it, exactly like the
+            // descendants excluded above.
+            // ⭐ MEASURED, and it is a defect this repair introduced rather than
+            // one it inherited: a decorative `::before` opacity keyframe held the
+            // helper open for its whole budget while the card's box never moved.
+            // That is precisely the false-timeout class Codex round-3 M1 named,
+            // reappearing one layer down — which is why the fix has its own
+            // control rather than only this comment.
+            if (effect && effect.pseudoElement) return false;
+
             // ⭐ WHICH PROPERTIES IS IT ANIMATING? A CSSTransition names exactly
             // one in `transitionProperty`. Anything else — a CSS keyframe
             // animation, or `Element.animate()` — is read from the keyframes

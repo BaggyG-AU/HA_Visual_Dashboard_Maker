@@ -745,4 +745,84 @@ test.describe('Class D controls: what the grid-relative card comparison can and 
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });
+
+  test('CONTROL: a decorative ::before animation on a card must not block the settle', async () => {
+    const ctx = await launchWithDSL();
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'havdm-geom-pseudo-'));
+    const target = path.join(tmpDir, 'dash.yaml');
+    try {
+      await ctx.appDSL.waitUntilReady();
+      await loadFileBacked(ctx, DASHBOARD_YAML, target);
+      await ctx.canvas.expectCardCount(2);
+      await makeDirty(ctx, 3);
+
+      const before = await ctx.canvas.getCardRectsRelativeToGridSettled();
+
+      // ⚠⚠⚠ THIS CONTROL DEFENDS A DEFECT THE ROUND-3 REPAIR ITSELF INTRODUCED,
+      // found by the author's own round-4 self-check before the commission was
+      // sent. Aligning the gate to "animations TARGETING a measured card" was
+      // right, but `KeyframeEffect.target` reports the ORIGINATING ELEMENT for a
+      // pseudo-element — so `.react-grid-item::before` presents as the grid item
+      // and was admitted. A pseudo-element renders INSIDE the box, exactly like
+      // the descendants the same repair excludes, and react-grid-layout sets each
+      // item's width/height/transform inline, so it cannot move the measured
+      // rectangle. Measured against the pre-fix gate: a decorative `::before`
+      // opacity keyframe held the helper open for its entire budget while the
+      // card's box never moved — the round-3 false-timeout class, one layer down.
+      const live = await ctx.window.evaluate(() => {
+        const style = document.createElement('style');
+        style.textContent =
+          '@keyframes havdm-probe-pulse { from { opacity: 1; } to { opacity: 0.2; } }\n' +
+          '.react-grid-layout > .react-grid-item::before { content: ""; position: absolute; ' +
+          'left: 1px; top: 1px; width: 4px; height: 4px; background: #00f; ' +
+          'animation: havdm-probe-pulse 200s linear; }';
+        document.head.appendChild(style);
+        const grid = document.querySelector('.react-grid-layout')!;
+        void (grid as HTMLElement).offsetWidth;
+        return grid.getAnimations({ subtree: true }).map((a) => {
+          const e = a.effect as KeyframeEffect | null;
+          return { pseudo: (e && e.pseudoElement) || null, state: a.playState };
+        });
+      });
+
+      // ⭐ LIVENESS, AND IT IS THE WHOLE CONTROL. If the ::before animation never
+      // started, the settle would return promptly for the ordinary reason and
+      // this test would pass while proving nothing.
+      expect(
+        live.some((a) => a.pseudo === '::before' && a.state === 'running'),
+        'the ::before animation never started — the instrument is dead',
+      ).toBe(true);
+
+      // ⭐⭐ THE GUARD. Against the pre-fix gate this THREW after the full budget
+      // with every measured axis bit-identical.
+      const settled = await ctx.canvas.getCardRectsRelativeToGridSettled();
+      expect(settled).toHaveLength(before.length);
+      settled.forEach((rect, i) => {
+        expect(
+          Math.abs(rect.x - before[i].x),
+          'a decorative ::before must not change a measured rectangle',
+        ).toBeLessThanOrEqual(EPSILON);
+        expect(Math.abs(rect.y - before[i].y)).toBeLessThanOrEqual(EPSILON);
+        expect(Math.abs(rect.w - before[i].w)).toBeLessThanOrEqual(EPSILON);
+        expect(Math.abs(rect.h - before[i].h)).toBeLessThanOrEqual(EPSILON);
+      });
+
+      const stillRunning = await ctx.window.evaluate(() =>
+        document
+          .querySelector('.react-grid-layout')!
+          .getAnimations({ subtree: true })
+          .some((a) => {
+            const e = a.effect as KeyframeEffect | null;
+            return !!(e && e.pseudoElement) && a.playState === 'running';
+          }),
+      );
+      expect(
+        stillRunning,
+        'the ::before animation finished before the settle returned — the control proved nothing',
+      ).toBe(true);
+    } finally {
+      await close(ctx);
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
 });
