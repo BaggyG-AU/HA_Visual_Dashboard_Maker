@@ -305,19 +305,34 @@ export class CanvasDSL {
    * wording — which named only keyframes and rAF — described a narrower hole
    * than the code actually has.
    *
-   * ⭐ WHY IT IS STILL NOT REACHABLE HERE, STATED AS THE ENUMERATION IT IS
-   * RATHER THAN AS "react-grid-layout uses transitions". Exactly two stylesheets
-   * can transition a measured `:scope > .react-grid-item`'s box, and every
-   * property either one names is inside `LAYOUT_PROPS`:
-   * `node_modules/react-grid-layout/css/styles.css:6,14` (`left, top, width,
-   * height` and, under `.cssTransforms`, `transform, width, height`) and
-   * `src/components/GridCanvas.css:49-52` (`left, top, width, height`).
-   * ⓘ `BaseCard.tsx:246` sets its own transition to 0 ms under `isTestEnv()`,
-   * so the card's decorative opacity/transform transition does not exist here.
-   * ⚠⚠ THAT IS A PROPERTY OF TODAY'S DEPENDENCY AND TODAY'S STYLESHEET, NOT AN
-   * ENFORCED INVARIANT. Nothing fails if a future stylesheet transitions a
-   * card's margin. A caller of this SHARED helper on some other surface is
-   * outside that enumeration and inherits the hole.
+   * ⭐ WHY IT IS STILL NOT REACHABLE HERE — MEASURED ON THE RUNNING APP, NOT
+   * ENUMERATED FROM STYLESHEETS. An earlier draft of this paragraph claimed
+   * "exactly two stylesheets can transition a measured card's box". That was an
+   * UNVERIFIED UNIVERSAL: it was derived from a text grep of `src/` plus
+   * react-grid-layout's stylesheet, and it never enumerated antd v6's
+   * runtime-injected CSS-in-JS, which no grep of the repository can see.
+   * The decisive instrument is the COMPUTED style on the real elements, which is
+   * indifferent to where the rule came from. Probed in a live Electron window
+   * with two cards on the canvas:
+   *
+   *   measured `:scope > .react-grid-item`  ->  `transform, width, height` @ 0.2s
+   *   the `.react-grid-layout` container    ->  `height` @ 0.2s
+   *
+   * Every one of those is inside `LAYOUT_PROPS`, so nothing that can move a
+   * MEASURED box is invisible to the gate today.
+   *
+   * ⚠ THE SAME PROBE FOUND `transition-property: all` ON DESCENDANTS INSIDE THE
+   * GRID ITEMS (two at 0.2s, two at 0.3s). Those cannot move a measured box —
+   * react-grid-layout sets each item's own width/height, so a child cannot
+   * resize it — but `all` DOES cover `transform`, and `getAnimations({subtree:
+   * true})` sees descendants. So a descendant mid-transition on a layout
+   * property can hold this helper open for up to its duration. That is
+   * conservative rather than wrong, and it is bounded well inside the 5 s budget.
+   *
+   * ⚠⚠ ALL OF THAT IS A MEASUREMENT OF TODAY'S APP, NOT AN ENFORCED INVARIANT.
+   * Nothing fails if a future stylesheet transitions a card's margin, and a
+   * caller of this SHARED helper on some other surface is outside the probe
+   * entirely and inherits the hole.
    */
   async getCardRectsRelativeToGridSettled(
     options: { samples?: number; timeoutMs?: number; intervalMs?: number } = {},
