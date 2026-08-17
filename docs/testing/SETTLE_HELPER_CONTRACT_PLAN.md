@@ -1,110 +1,98 @@
 # Remediation plan — the settle helper's contract (PR #144, Codex round 4)
 
-**Author:** BaggyG-AU with Claude Opus 5, 2026-08-17
+**Author:** BaggyG-AU with Claude Opus 5, revision 2 of 2026-08-17
 
-**Reviewer:** OpenAI Codex — plan review commissioned BEFORE any code is written,
-per the owner's spec-before-code ruling of 2026-08-16
+**Reviewer:** OpenAI Codex — revision 1 reviewed BEFORE any code was written
+(`docs/reviews/ci-unstable-tests-codex-round4-plan-review.md`, CHANGES-REQUIRED
+with Option A accepted as the direction); **revision 2 awaits re-review, still
+before any code**
 
-**Owner gate:** the owner chooses between Options A, B and C in §1.5; this
-document decides nothing on its own and no code has been written for it.
+**Owner gate:** the owner chose **full amended Option A** and chose to **actually
+fix the `clip-path` false timeout** on 2026-08-17, after reading the plan review
+rather than before it. Those two choices are settled and are recorded in
+`drawer_havdm_decisions_80a72d6fe0911490ef07a555`. What is NOT settled is the
+`clip-path` repair design in §2.3(f), which is this revision's principal subject.
+
+## Revision history
+
+| Rev | What changed                                                                                                                                                                                                                                                                                                                                 |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | First plan. CHANGES-REQUIRED: four merge-blocking plan defects (M1–M4).                                                                                                                                                                                                                                                                      |
+| 2   | Owner chose full amended Option A + repair `clip-path`. Part 1 rewritten so it no longer promises anything Part 2 does not do; `visibility` disclosed to the owner; the helper is renamed; the ancestor-control magnitude corrected from the wrong axis; controls raised from 2 to 5; `KNOWN-OPEN:` pins added; claim-surface sweep widened. |
 
 ---
 
 # PART 1 — FOR THE OWNER
 
-This part is written to be judged without reading any code. It is one page.
-Part 2 exists so the reviewer can attack the detail.
+⚠ **Revision 1 of this section was not honest and the plan reviewer caught it.**
+It told you I would "fix the two plain bugs" while the technical half quietly
+redefined one of them as acceptable-by-design, and it never mentioned the
+`visibility` problem to you at all. Both are corrected below. You decided to fix
+that bug for real, so the technical plan now contains a repair rather than a
+re-description.
 
 ## 1.1 What the thing is
 
-One test helper, `getCardRectsRelativeToGridSettled`, in
-`tests/support/dsl/canvas.ts`. Its job is small: **wait until the cards on the
-canvas have stopped moving, then measure where they are.** It exists because the
-canvas animates card positions over 0.2 seconds, and a test that measures during
-that window records a card mid-flight and fails for no real reason. That was the
-"Class D" flake this whole pull request set out to fix.
+One test helper in `tests/support/dsl/canvas.ts`. Its job: **wait until the cards
+on the canvas have stopped moving, then measure where they are.** The canvas
+animates card positions over 0.2 seconds, and a test that measures during that
+window records a card mid-flight and fails for no real reason — the "Class D"
+flake this pull request exists to fix. Two test files use it. It is not product
+code and no user ever runs it.
 
-It is used by exactly two test files. It is not product code and no user ever
-runs it.
+## 1.2 The five problems, and exactly what happens to each
 
-## 1.2 What round 4 found
+| #   | Problem                                                                                                                                                                                                            | What you get                                                                                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| 1   | A mistake reading animation data makes **every** keyframe animation look like it is moving a card, even a pure fade                                                                                                | **FIXED**                                                                                                     |
+| 2   | `visibility` is wrongly listed as harmless; in some layouts it does change a box's size                                                                                                                            | **FIXED** — I did not tell you about this one in revision 1                                                   |
+| 3   | A cosmetic effect the helper does not recognise (`clip-path` crops what you see without moving anything) makes it wait, then fail                                                                                  | **FIXED — your decision.** Revision 1 was going to declare this acceptable instead                            |
+| 4   | If something _containing_ the canvas is being resized, the helper cannot see it and declares the cards stopped while they are still growing — I measured **10 px** of unfinished movement against a 2 px tolerance | **MADE TO FAIL LOUDLY** rather than return a wrong number. Not silently correct — loudly refused              |
+| 5   | Motion driven frame-by-frame by JavaScript creates nothing the helper can ask about                                                                                                                                | **CANNOT BE FIXED.** Declared as a boundary, and pinned by a test that records the current behaviour honestly |
 
-Five problems. They are not equally serious, and the difference matters:
+**Plus, at the reviewer's insistence: the helper gets renamed.** Today it is called
+`...Settled` and its instructions say "stopped moving" and "use this whenever". If
+I narrow what it actually promises but leave that name, the next person reads the
+name and not my paragraph. The reviewer called this "the intent-decay route this
+review was commissioned to prevent". So the name will say what it really does —
+wait for _this canvas's own_ card reflow.
 
-**Two are plain bugs that make good tests fail.** I reproduced both on my own
-instrument, built separately from the reviewer's.
+## 1.3 The honest cost, corrected
 
-1. A mistake in how the helper reads animation data means **every** keyframe
-   animation looks like it is moving a card — even one that is only fading
-   something in. Effect: the helper waits, gives up, and fails a test that should
-   have passed.
-2. A purely cosmetic effect (`clip-path`, which crops what you see without moving
-   anything) has the same effect for a different reason.
+**I under-quoted you in revision 1.** I said "one code change, two guard tests, one
+CI cycle". That was the cost of my first draft, not of the amended plan. The real
+shape:
 
-**Two are promises the helper cannot keep.**
+- **Four separate changes** inside one test-support file
+- **A rename** touching that file and both test files that call it
+- **Five guard tests**, not two — the reviewer showed my two could be passed by an
+  implementation that ignores keyframes entirely
+- **Two more tests** that pin what stays broken, so nobody mistakes it for fixed
+- **A documentation sweep** across four surfaces including the pull request body
+- **One CI acceptance cycle** — three full runs, ~27 minutes each
 
-3. If something _containing_ the canvas is being resized, the helper cannot see
-   it at all — the browser simply does not report it — and it will declare the
-   cards "stopped" while they are still growing. I measured **10 pixels** of
-   unfinished movement, against a test tolerance of 2 pixels.
-4. Motion driven frame-by-frame by JavaScript (rather than by the browser's own
-   animation system) creates nothing the helper can ask about. **This one cannot
-   be fixed by looking harder.** No amount of code makes it observable.
+You chose this with that cost stated, over three cheaper options and over stopping
+and moving to product work.
 
-**One is out-of-date writing.** The helper's own documentation, and the pull
-request description, still describe how the code worked two commits ago. I
-verified this decisively: the documentation names a list called `LAYOUT_PROPS`
-that **no longer exists anywhere in the codebase**.
+## 1.4 What could still go wrong
 
-## 1.3 The pattern worth your attention
+- **The `clip-path` repair is the risky part.** The obvious fix — adding names to a
+  list — is _forbidden_, because writing that list from memory is exactly how the
+  bug was born, and the opposite approach fails silently on whatever nobody thought
+  of. My proposed approach (§2.3(f)) is genuinely new and **has not been reviewed
+  yet.** That is the one thing I want attacked before I write it.
+- **The loud-failure change could itself cause failures.** The reviewer tested this
+  for me: it launched the app and sampled animations 30 times at each critical
+  moment — 15 to 17 antd animations running, and **none** on a container of the
+  canvas. So the risk looks small. That was one run, and it says so.
+- **Seven new tests is new code on a branch where three of my own earlier guard
+  tests turned out to be flaky.** Each must be proven to fail against the broken
+  code first, in the real app, before I believe any of them.
 
-Rounds 1, 2, 3 and 4 all came back "changes required". Rounds 3 and 4 each found
-a defect _introduced by the previous round's fix_. And findings 3 and 4 above are
-the same underlying thing as several earlier ones:
+## 1.5 What I will not do
 
-> **The helper's documentation promises to detect _any_ motion. The code can only
-> detect _some_ motion. Every round finds another example of the gap.**
-
-Patching examples one at a time has not converged in four rounds. I do not think
-a fifth would be different, because the list of ways a browser can move a box is
-open-ended and one of them (finding 4) is provably unobservable.
-
-## 1.4 What I recommend, and what it costs
-
-**Narrow the promise to what the helper can actually deliver, and fix the two
-plain bugs.** Concretely: say plainly in the documentation that it certifies the
-canvas's _own_ card-reflow animation and nothing else; make it **fail loudly**
-rather than silently when it detects a situation it cannot judge (that closes
-finding 3 honestly); fix the two bugs; and correct the stale writing.
-
-- **Cost:** one code change to one test file, two new guard tests, and rewritten
-  documentation. One CI acceptance cycle (~27 minutes × 3 runs).
-- **What could go wrong:** the narrowed helper will occasionally refuse to
-  certify and fail loudly where today it would quietly return a wrong number. I
-  think a loud failure is strictly better than a silent wrong measurement, but it
-  is a real change in behaviour and it could surface as a new flake. The two new
-  guard tests are themselves new code on a branch where three of the author's own
-  earlier guard tests turned out to be flaky — so they must each be proven to
-  fail against the broken code first, in the real app, not a synthetic page.
-- **What it does NOT do:** finding 4 stays open forever. Under this option that
-  is a _declared boundary_ instead of a hidden hole.
-
-## 1.5 Your three options
-
-|       | Option                                                     | What you get                                                                        | What it costs                                                                                                                                                                                  |
-| ----- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **A** | **Narrow the promise + fix the two bugs** ⭐ recommended   | Every hole is either closed or explicitly declared. The round count stops climbing. | One code change, two guards, one CI cycle. Finding 4 permanently out of scope.                                                                                                                 |
-| **B** | Chase full generality — try to detect every kind of motion | Broader coverage of hostile cases                                                   | High, and **it cannot fully succeed** — finding 4 is unobservable. Likely more review rounds on a test helper, against your standing direction that testing work is crowding out product work. |
-| **C** | Fix only the two plain bugs, leave the promise as written  | Cheapest                                                                            | The documentation stays untrue, and findings 3 and 4 stay as silent holes a future test author walks into.                                                                                     |
-
-⚠ **One thing I want to be honest about.** Every hostile case the reviewer built
-is, as far as I can measure, **not reachable in today's app** — nothing scales the
-canvas's container, nothing uses `clip-path`, and the canvas animates through the
-browser's animation system rather than frame-by-frame JavaScript. So this is
-about the helper being _trustworthy for the next person who uses it_, not about a
-bug users can hit today. If you would rather spend the time on product work and
-accept Option C, that is a defensible call and I will say so plainly in the pull
-request rather than dressing it up.
+Widen the 2 px tolerance, re-baseline anything, touch the expected-failures
+manifest, touch product code, or change what the actual Class D test asserts.
 
 ---
 
@@ -112,115 +100,168 @@ request rather than dressing it up.
 
 ## 2.1 Verification status of each round-4 finding
 
-Every finding was checked against the source before anything was proposed. **A
-finding is a hypothesis**; the column that matters is how it was checked.
+**A finding is a hypothesis**; the column that matters is how it was checked.
 
-| Finding                                      | Verified how                                                                                                                                                                                                                                                                                   | Status                                                                             |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| **M1** ancestor animation invisible          | Code reading + my own harness: ancestor `scale 200s` outside the grid, `grid.getAnimations({subtree:true})` returned **0** animations, helper returned at **66.2 ms**, residual after forcing the endpoint **x 1.999 / y 2.9985 / w 9.995 / h 7.996 px** — three axes over the ±2 px assertion | **CONFIRMED**                                                                      |
-| **M2a** `visibility` wrongly deny-listed     | Code reading: `'visibility'` is at `tests/support/dsl/canvas.ts:406`. CSS Display 3 gives `collapse` layout effects in table/flex formatting contexts                                                                                                                                          | **CONFIRMED as a contract defect; NOT reachable in the current div-based RGL DOM** |
-| **M2b** `clip-path` omission → false timeout | My harness: `transition: clip-path 200s` on the measured item, box bit-identical, helper **threw at 524.1 ms** on a 500 ms budget                                                                                                                                                              | **CONFIRMED**                                                                      |
-| **M3** `computedOffset`                      | Code reading: the exclusion at `:466` is exactly `offset`/`easing`/`composite`; `computedOffset` is a **mandatory** member of `BaseComputedKeyframe` in Web Animations 1. My harness: deny-listed `opacity` keyframe on the measured item **threw at 527.9 ms** with the box bit-identical     | **CONFIRMED — the most clearly wrong of the five**                                 |
-| **M4** rAF residual                          | Code reading is decisive: `getAnimations()` is the gate's sole motion authority and a rAF loop creates no `Animation`. ⚠ **I did not independently re-measure this**; the 71 ms / 10 px figure is the reviewer's                                                                               | **CONFIRMED by construction; reviewer-measured only**                              |
-| **M5** claim surface                         | `grep -rn LAYOUT_PROPS tests/ src/` returns **only two hits, both in the docblock** (`:288`, `:321`) — the identifier exists nowhere in code                                                                                                                                                   | **CONFIRMED decisively**                                                           |
+| Finding                                  | Verified how                                                                                                                                                                                                                                                                                                                                                                                                           | Status                                                                                                                          |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **M1** ancestor animation invisible      | Code reading + own harness: ancestor `scale 200s`, `grid.getAnimations({subtree:true})` returned **0**, helper returned at **66.2 ms**, residual `x 1.999 / y 2.9985 / w 9.995 / h 7.996 px`                                                                                                                                                                                                                           | **CONFIRMED**                                                                                                                   |
+| **M2a** `visibility` wrongly deny-listed | Code reading: `'visibility'` at `tests/support/dsl/canvas.ts:406`. CSS Display 3 gives `collapse` layout effects in table/flex contexts                                                                                                                                                                                                                                                                                | **CONFIRMED as a contract defect; not reachable in today's div DOM, and the helper asserts neither tag nor formatting context** |
+| **M2b** `clip-path` false timeout        | Own harness: `transition: clip-path 200s`, box bit-identical, helper **threw at 524.1 ms** on a 500 ms budget                                                                                                                                                                                                                                                                                                          | **CONFIRMED**                                                                                                                   |
+| **M3** `computedOffset`                  | Code reading decisive: exclusion at `:466` is exactly `offset`/`easing`/`composite`; `computedOffset` is mandatory in `BaseComputedKeyframe`. Own harness: deny-listed `opacity` keyframe **threw at 527.9 ms**, box bit-identical. ⭐ Reviewer runtime-confirmed Chromium 143 returns exactly `offset,easing,composite,computedOffset` + the property, so the four-member exclusion is complete **as observed today** | **CONFIRMED**                                                                                                                   |
+| **M4** rAF residual                      | Code reading decisive: `getAnimations()` is the sole motion authority; a rAF loop creates no `Animation`. ⚠ **I did not re-measure it**; 71 ms / 10 px is the reviewer's                                                                                                                                                                                                                                               | **CONFIRMED by construction**                                                                                                   |
+| **M5** claim surface                     | `grep -rn LAYOUT_PROPS tests/ src/` → two hits, **both in the docblock**; the identifier exists nowhere in code                                                                                                                                                                                                                                                                                                        | **CONFIRMED decisively**                                                                                                        |
 
-⭐ Two findings were reached independently before the review was read: M5's
-artifact half (the `icon-color` / `card-background` misattribution) and the
-per-attempt run data behind it. Two separate measurements agree.
+## 2.2 What the plan review established, not to be re-derived
 
-## 2.2 The harness
+- **Option A accepted as the direction.** Option B buys an unachievable promise;
+  Option C retains one.
+- **Attack 3 discharged the measurement I had recorded as owed.** 30 samples over
+  544 ms after the third card appeared and 30 over 489 ms after save/reload; up to
+  15 then 17 concurrent antd effects; **zero effect targets were ancestors of the
+  grid** (message/tooltip effects sit on portal descendants or sibling branches, so
+  `target.contains(grid)` was false). n=1, declared.
+- **Attack 2 confirmed the shadow-tree partial closure** I had self-reported, and
+  cleared `documentElement`, `body`, ordinary wrappers, pending-after-`play()`,
+  null targets, `content-visibility: hidden`, and iframe scaling. Chromium 143 only.
+- ⭐ **My ancestor-control magnitude was wrong and the reviewer measured the right
+  one.** I sized it off the ~288 px card **width** (28.8 px). The cruellest axis is
+  the third card's relative **`y = 650`**, giving a **65 px** endpoint delta.
+  Measured against the bundled current helper: **200 s did not return inside a
+  700 ms budget; 500 s → 172 ms; 1,000 s → 140 ms; 2,000 s → 74 ms with ~65 px
+  outstanding.** `2000s` is the candidate. Per-sample drift at 2,000 s is
+  0.00104 px, and 0.00208 px across the two intervals needed for a three-reading
+  streak — under the hundredth-pixel half-bucket.
 
-`extract.cjs` pulls the page-side algorithm out of `canvas.ts` **by brace
-matching, never retyped**, gated on six required substrings (`NON_GEOMETRIC`,
-`stillMoving`, `getAnimations`, `pseudoElement`, `getKeyframes`, `Math.round`) so
-a refactor kills the extraction instead of silently testing nothing. `esbuild`
-bundles it (4,365 bytes) and it runs in real headless Chromium.
+## 2.3 Proposed changes — full amended Option A
 
-**It is bidirectional and carries a liveness control in each direction**, because
-a uniformly-blocking or uniformly-returning instrument reads as a clean result:
-
-```text
-L-RETURN  no animation at all         want RETURN  got RETURN  65.8 ms   ✅
-L-BLOCK   item transform 4s           want BLOCK   got BLOCK  523.8 ms   ✅  (round-2 case)
-M3        opacity keyframe on item    want RETURN  got BLOCK  527.9 ms   ⚠ defect
-M2b       clip-path on item           want RETURN  got BLOCK  524.1 ms   ⚠ defect
-M1        ancestor scale              want BLOCK   got RETURN  66.2 ms   ⚠ defect
-```
-
-## 2.3 Proposed changes — Option A
-
-⚠ **No code has been written. This is the proposal for review.**
+⚠ **No code has been written.**
 
 **(a) M3 — derive the metadata exclusion from the canonical schema.** Exclude
-exactly the four `BaseComputedKeyframe` members — `offset`, `computedOffset`,
-`easing`, `composite` — rather than a hand-written three. Unknown and custom
-properties must continue to fail closed (keep waiting).
+exactly the four `BaseComputedKeyframe` members `offset`, `computedOffset`,
+`easing`, `composite`. Unknown and custom properties keep failing closed.
 
-**(b) M2a — remove `'visibility'` from `NON_GEOMETRIC`.** It becomes
-possibly-geometric, i.e. conservative. Nothing in the app transitions
-`visibility`, so this cannot cause a live wait today.
+**(b) M2a — remove `'visibility'` from the non-geometric set.** It becomes
+possibly-geometric, i.e. conservative.
 
 **(c) M1 — fail closed on what the helper cannot judge.** Query
-`document.getAnimations()` (whole document, not the grid subtree), and if any
-running effect targets an **ancestor** of the grid container, **throw** with a
-message naming the element — rather than returning a number it cannot stand
-behind. This is the honest closure: the helper does not need to model how an
-ancestor transform propagates into a `DOMRect`; it only needs to refuse.
+`document.getAnimations()` and **throw**, naming the element, if any
+running-or-pending effect targets an **ancestor** of the grid container. Preserve
+the existing running-or-pending test at `tests/support/dsl/canvas.ts:424-432`.
 
-⭐ **FEASIBILITY MEASURED BEFORE PROPOSING IT, and the measurement also found the
-limit of the proposal.** Running the plan's own §2.5 question 1 against real
-headless Chromium before this document was handed to the reviewer:
+⭐ **Feasibility measured before proposing it, and the measurement also found its
+limit:**
 
 ```text
 ancestor `scale 200s` on a wrapper outside the grid
-  grid.getAnimations({subtree: true})          ->  0   (this is M1)
-  document.getAnimations()                      ->  1
-  identifiable as an ancestor via t.contains(grid) ->  1   (DIV#wrap)
+  grid.getAnimations({subtree: true})               ->  0   (this is M1)
+  document.getAnimations()                           ->  1
+  identifiable as ancestor via t.contains(grid)      ->  1   (DIV#wrap)
 running transition INSIDE a shadow root
-  document.getAnimations() count                ->  UNCHANGED at 1
+  document.getAnimations() count                     ->  UNCHANGED at 1
 ```
 
-**So (c) closes the ordinary-DOM ancestor route — measured, not argued — and it
-does NOT close a shadow-tree ancestor route, because `document.getAnimations()`
-does not see inside a shadow root.** ⚠ **(c) IS THEREFORE A PARTIAL CLOSURE AND
-MUST NOT BE DOCUMENTED AS A COMPLETE ONE** — that would be exactly the
-narrower-check-reads-as-wider-clearance defect. The residual is declared: an
-animating ancestor that lives inside a shadow tree stays invisible. HAVDM's canvas
-path has no shadow DOM (React + antd render into the light DOM), so the residual
-is unreachable today — but nothing enforces that, and saying so is the point of
-declaring it.
+**So (c) closes the ordinary-DOM ancestor route and does NOT close a shadow-tree
+ancestor route.** ⚠ **(c) IS A PARTIAL CLOSURE AND MUST NOT BE DOCUMENTED AS A
+COMPLETE ONE.** The reviewer independently reproduced the shadow case with a
+`<slot>` and confirmed `contains()` does not identify the shadow wrapper as the
+light-DOM grid's ancestor. Pinned by a `KNOWN-OPEN:` test in (h).
 
-**(d) M4 + M2b — narrow and state the contract.** Rewrite the docblock to say
-what is certified (react-grid-layout's own `transform`/`width`/`height`
-transitions on the measured elements, plus a fail-closed refusal on ancestor
-animation) and what is explicitly **not** (rAF creep; any property the browser
-does not report). Delete the `LAYOUT_PROPS` prose entirely. Keep the deny-list's
-conservative direction and document that an unlisted paint-only property causes a
-bounded wait **by design**.
+**(d) THE RENAME — making the narrowing binding rather than advisory.** Rename
+`getCardRectsRelativeToGridSettled` to a mechanism-specific name —
+**`getCardRectsAfterRglReflow`** — and update its two consumer test files
+(`tests/e2e/save-and-backup.spec.ts:212,265` and the ten call sites in
+`tests/e2e/card-geometry-discriminators.spec.ts`). State the light-DOM and RGL
+preconditions **at that API**, not only in prose. The bare
+`getCardRectsRelativeToGrid` keeps its name; only the settling variant is renamed.
 
-**(e) M5 — correct the claim surface.** Docblock rewritten from `f78af0d`; PR body
-Class D mechanism/residual paragraphs rewritten; the "needs fresh
-commit-addressed runs" bullet marked superseded; and the two misattributed
-identities corrected to `e2e/icon-color.spec.ts` and `e2e/card-background.spec.ts`
-with "not baselined" rather than "baselined consistent failure". The disposition
-language weakens from "would fire at every run" to "did not recur in five further
-runs, and `f78af0d` has no call path to either spec".
+**(e) M4 + the contract text.** Rewrite the docblock to say what is certified —
+react-grid-layout's own `transform`/`width`/`height` transitions on the measured
+elements, plus a fail-closed refusal on ordinary-DOM ancestor animation — and what
+is explicitly not: rAF creep, and shadow-tree ancestor motion. Delete the
+`LAYOUT_PROPS` prose entirely.
 
-**(f) Two new controls, each red-legged in the REAL app fixture first.**
+**(f) ⭐⭐⭐ M2b — THE `clip-path` REPAIR. THIS IS THE ONE GENUINELY NEW DESIGN AND
+THE CRUX OF THIS REVISION.**
 
-- **Control 9 — ancestor false settle.** Animate an ancestor of `.react-grid-layout`
-  with a long `scale`; the helper must throw. ⚠ Rule 13: the magnitude must be
-  re-derived at the real ~288 px card, not carried over from the 100 px synthetic
-  page. Must be proven red against `f78af0d` (where it returns early).
-- **Control 10 — deny-listed keyframe false timeout.** A long `opacity` keyframe
-  via `Element.animate()` on a measured card; the helper must return promptly and
-  the animation must still be running at return. Must be proven red against
-  `f78af0d` (where it throws).
+The owner chose repair over declaration. Two routes are closed to me by round 4's
+own must-not-change clauses: **I may not extend a hand-written property list from
+memory** (that is how the defect was born), and **I may not invert to a geometric
+allowlist** (that is the round-3 defect, failing open on the unconsidered
+property). So the repair must be principled rather than enumerative.
 
-⚠ **No control is proposed for M2a or M4.** M2a needs a table/flex formatting
-context the app does not have, and M4 is unobservable by construction — a control
-for either would assert the _current_ behaviour, so if the owner wants them
-pinned, the honest form is a `KNOWN-OPEN:` test that asserts what is true today.
+**Proposal — three tiers over the already-correct measured-target population:**
+
+| Tier | Condition                                       | Behaviour                                                                                                                                                   |
+| ---- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | any animated property is **known-geometric**    | **BLOCK** immediately (as today)                                                                                                                            |
+| 2    | every animated property is **known paint-only** | **RETURN** immediately (as today)                                                                                                                           |
+| 3    | any property is **UNKNOWN to both sets**        | require a **materially longer stability streak** — proposal: 10 consecutive equal hundredth-pixel readings instead of 3 — then **RETURN** rather than throw |
+
+Tier 3 is the repair: `clip-path` is unknown, its geometry is genuinely stable, so
+the extended streak is satisfied and the helper returns instead of exhausting its
+budget. It is not an allowlist, because an unknown property still costs a longer
+wait and still blocks while geometry is actually changing.
+
+⚠ **Its residual, stated: an unknown property creeping below sampling resolution
+for longer than the extended window still slips through.** That is the same class
+as the rAF residual and is bounded by the same argument — sampling has a
+resolution and facts do not. **I am not confident this is the right design and it
+is question 1 in §2.5.** A named alternative I rejected, and want challenged: probe
+each unknown property on a throwaway element and measure whether its border box
+changes — that asks the layout engine, which is the authority, but it mutates the
+DOM from inside a read-only helper and the transition's endpoint values are not
+reliably recoverable.
+
+**(g) THE FIVE CONTROLS, each red-legged in the REAL app fixture before I believe
+it.** Round-4 rule 11 and rule 13 apply: count guards named against mutations
+made, and re-derive every magnitude in the fixture actually run.
+
+| #   | Control                                                                                                                                                                                      | Must be RED against                                                         |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 9   | ancestor `scale 2000s` outside the grid → helper must **throw** promptly; live-before, and a red **return with ~65 px endpoint residual** against `f78af0d`                                  | `f78af0d` (returns at 74 ms)                                                |
+| 10  | deny-listed `opacity` keyframe on a measured item → must **return**, with a **numeric upper bound materially below the 5 s budget**, unchanged axes, and animation live **before and after** | `f78af0d` (throws)                                                          |
+| 11  | ⭐ **geometric WAAPI keyframe on a measured item → must BLOCK while live.** The half revision 1 omitted                                                                                      | an isolated "ignore all keyframes" mutant **and** the old M3 implementation |
+| 12  | `visibility: collapse` in a selector-compatible table/flex context → ordinary red/green regression control, since (b) repairs it                                                             | `f78af0d` (returns)                                                         |
+| 13  | `clip-path` unknown-property route → must **return** inside the tier-3 window with all four axes unchanged                                                                                   | the tier-3 repair removed                                                   |
+
+⚠ **Control 10's "promptly" needs a number, not an adverb** — the reviewer noted a
+4.9 s return would satisfy "returned while still running" while failing the
+bounded-latency property the guard exists to assert.
+
+**(h) TWO `KNOWN-OPEN:` PINS** — executable, asserting what remains **true** after
+Option A, never the wished-for behaviour. `clip-path` is no longer a residual once
+(f) lands, so revision 1's third pin is dropped.
+
+1. `KNOWN-OPEN:` a slotted light-DOM grid under an animated shadow-tree wrapper is
+   returned while the shadow animation is live, and a forced endpoint exceeds the
+   caller's tolerance.
+2. `KNOWN-OPEN:` an rAF creep returns while the loop is live, with a material
+   endpoint residual.
+
+**(i) M5 + M4 — the claim surface, widened.** Four current surfaces, classified by
+role (_text that teaches a reader what this helper certifies_), not by token:
+
+1. the helper docblock — `tests/support/dsl/canvas.ts:214-335`;
+2. ⭐ **`tests/e2e/card-geometry-discriminators.spec.ts:1-14` and `:125-153`** —
+   says "STOPPED MOVING" and "WAIT FOR THE GRID TO STOP MOVING". **Revision 1
+   missed this entirely**;
+3. the live PR #144 body — still describes the superseded allowlist at lines
+   136–189 and still calls `f78af0d` the head at lines 273–280 (the head is now
+   `24f27bb`), plus the two misattributed identities corrected to
+   `e2e/icon-color.spec.ts` and `e2e/card-background.spec.ts` with **not
+   baselined**, and the disposition weakened from "would fire at every run" to "did
+   not recur in five further runs, and `f78af0d` has no call path to either spec";
+4. this plan.
+
+`tests/e2e/save-and-backup.spec.ts:186-212,253-265` already attributes its need to
+RGL reflow and is **not** stale. Historical reviews and commit messages are
+evidence records and **must not be rewritten**.
+
+⚠ **Semantic truth here is not mechanically decidable, so the deliverable is a
+LABELLED HAND TRACE of those four surfaces** — not a script that approximates one.
+Then run **`bash tools/check-pr-evidence.sh 144` against the UPDATED live body**
+and resolve or justify every candidate, using its SHA section only for the SHA
+property it can decide.
 
 ## 2.4 Must NOT change
 
@@ -228,47 +269,41 @@ The ±2 px tolerance at `tests/e2e/save-and-backup.spec.ts:267-271`; the exact
 `_havdm_layout` assertion; the grid-relative arithmetic; Classes A–C; `src/`;
 `tests/baseline/expected-failures.json`; the four accepted geometry-population
 non-conversions; the measured-target exclusions for ordinary descendants and
-pseudo-elements. **The deny-list must not become a geometric allow-list — that is
-the round-3 defect.** Nothing is to be re-baselined and no identity allowlisted.
+pseudo-elements; the running-or-pending test. **No pivot to Option B. No geometric
+allowlist over the subtree. No relabelling M2b "fixed" by moving it out of
+contract — the owner chose a repair.** Nothing re-baselined, no identity
+allowlisted, no `KNOWN-OPEN:` pin converted into an expected failure or a manifest
+row. Do not raise sample count, interval or timeout to hide rAF.
 
 ## 2.5 Questions I want the plan reviewer to attack
 
-1. **Is (c) fail-closed BEYOND the two routes I already measured?** I ran this
-   question myself before sending (see §2.3(c)): the ordinary-DOM ancestor route is
-   closed and the **shadow-tree route is NOT**, both measured. ⚠ **What I did not
-   test, and want you to attack:** an ancestor in a different document (an
-   iframe — not reachable in this Electron app, but is that enforced?); an
-   animation on `document.documentElement` or `body` itself, where "ancestor of the
-   grid" and "the document" blur; an effect whose target is null; an animation
-   created but not yet ticking, where `document.getAnimations()` may not list it
-   yet; and `content-visibility` or a skipped subtree suppressing the query. **Any
-   further route makes (c) a thinner closure than §2.3(c) now claims.**
-2. **Does (c) introduce a false-timeout class of its own?** Any benign ancestor
-   animation — an antd drawer or modal transition, a route change — would now
-   throw. Is that reachable in the app during either sample point in
-   `save-and-backup.spec.ts`? If yes, (c) trades a rare silent error for a common
-   loud one, which is worse.
-3. **Is the four-member `BaseComputedKeyframe` exclusion in (a) complete** against
-   what Chromium actually returns, or does it too need to come from a runtime
-   probe rather than a specification reading?
-4. **Is narrowing the contract legitimate here at all**, or is it the
-   "shrink the claim until it is true" move dressed up — given the helper's two
-   callers and that `save-and-backup.spec.ts` genuinely needs a cross-moment
-   comparison?
-5. **Control 9's magnitude.** What ancestor `scale` duration discriminates at a
-   ~288 px card _and_ stays under the hundredth-pixel rounding guard's
-   resolution? Rule 13 says my synthetic figure will not port.
+1. ⭐⭐⭐ **Is the three-tier design in (f) sound, or is it a third way of being
+   wrong?** Specifically: is "unknown property + longer stability streak → return"
+   defensible, or does it just move the round-2 rounding-hole defect behind a bigger
+   number? Is 10 samples derived or arbitrary — and what SHOULD derive it? Is my
+   rejection of the layout-probe alternative correct?
+2. **Does tier 3 reintroduce a false settle for a property that IS geometric but
+   unknown** — e.g. a future CSS property, or a custom property driving `translate`
+   through `@property`? That would be M1's class returning through a new door.
+3. **Is the rename in (d) sufficient to make the narrowing binding**, or does the
+   precondition also need a runtime assertion (light DOM, div-based RGL) so a
+   future caller cannot silently enter M2a's or the shadow route?
+4. **Control 11's mutant.** Is "an isolated ignore-all-keyframes mutant" the right
+   wrong-implementation to red-leg against, and does control 11 need to assert
+   _throw_ or merely _did not return early_?
+5. **Are five controls plus two pins the right budget**, or does any proposal in
+   §2.3 still have no discriminator? Count guards named against mutations made.
 
 ## 2.6 Evidence boundary
 
-- Every measurement above is against the mechanically extracted helper in
-  standalone headless Chromium, **not** the live Electron app. It proves the
-  algorithm's return/timeout behaviour, not the natural frequency of these routes.
-- M4 was not independently re-measured by me.
-- Proposal (c)'s feasibility AND its shadow-tree limit were both measured in
-  standalone Chromium before this plan was sent, and both are recorded in
-  §2.3(c). The other routes named in §2.5 question 1 are **UNVERIFIED** — not
-  "accepted", not "unlikely": I did not run them.
-- No CI cycle has been spent on this plan, and no code has been written.
+- Every measurement of mine is against the mechanically extracted helper in
+  standalone headless Chromium, **not** the live Electron app. The reviewer's
+  attack-3 and duration measurements used the real app fixture; its Electron probe
+  reused the existing `.vite/build/main.js` without a rebuild, which it declares.
+- **M4 was not independently re-measured by me.**
+- Proposal (c)'s feasibility and its shadow-tree limit were both measured. The
+  remaining routes in revision 1's question 1 were attacked by the reviewer and
+  found clear **in Chromium 143 only**.
+- **No CI cycle has been spent, and no code has been written.**
 - Local greens on this machine are not stability evidence: every local Class D
   measurement on this box reads exactly zero.
