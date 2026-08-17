@@ -167,6 +167,29 @@ message naming the element — rather than returning a number it cannot stand
 behind. This is the honest closure: the helper does not need to model how an
 ancestor transform propagates into a `DOMRect`; it only needs to refuse.
 
+⭐ **FEASIBILITY MEASURED BEFORE PROPOSING IT, and the measurement also found the
+limit of the proposal.** Running the plan's own §2.5 question 1 against real
+headless Chromium before this document was handed to the reviewer:
+
+```text
+ancestor `scale 200s` on a wrapper outside the grid
+  grid.getAnimations({subtree: true})          ->  0   (this is M1)
+  document.getAnimations()                      ->  1
+  identifiable as an ancestor via t.contains(grid) ->  1   (DIV#wrap)
+running transition INSIDE a shadow root
+  document.getAnimations() count                ->  UNCHANGED at 1
+```
+
+**So (c) closes the ordinary-DOM ancestor route — measured, not argued — and it
+does NOT close a shadow-tree ancestor route, because `document.getAnimations()`
+does not see inside a shadow root.** ⚠ **(c) IS THEREFORE A PARTIAL CLOSURE AND
+MUST NOT BE DOCUMENTED AS A COMPLETE ONE** — that would be exactly the
+narrower-check-reads-as-wider-clearance defect. The residual is declared: an
+animating ancestor that lives inside a shadow tree stays invisible. HAVDM's canvas
+path has no shadow DOM (React + antd render into the light DOM), so the residual
+is unreachable today — but nothing enforces that, and saying so is the point of
+declaring it.
+
 **(d) M4 + M2b — narrow and state the contract.** Rewrite the docblock to say
 what is certified (react-grid-layout's own `transform`/`width`/`height`
 transitions on the measured elements, plus a fail-closed refusal on ancestor
@@ -210,11 +233,16 @@ the round-3 defect.** Nothing is to be re-baselined and no identity allowlisted.
 
 ## 2.5 Questions I want the plan reviewer to attack
 
-1. **Is (c) actually fail-closed?** `document.getAnimations()` covers the whole
-   document — but is an effect on an ancestor of the grid always _reachable_ from
-   it, and can an ancestor animation be running while `document.getAnimations()`
-   omits it (e.g. inside a shadow root, or an ancestor in a different document
-   such as an iframe)? If so (c) is a partial closure being sold as a complete one.
+1. **Is (c) fail-closed BEYOND the two routes I already measured?** I ran this
+   question myself before sending (see §2.3(c)): the ordinary-DOM ancestor route is
+   closed and the **shadow-tree route is NOT**, both measured. ⚠ **What I did not
+   test, and want you to attack:** an ancestor in a different document (an
+   iframe — not reachable in this Electron app, but is that enforced?); an
+   animation on `document.documentElement` or `body` itself, where "ancestor of the
+   grid" and "the document" blur; an effect whose target is null; an animation
+   created but not yet ticking, where `document.getAnimations()` may not list it
+   yet; and `content-visibility` or a skipped subtree suppressing the query. **Any
+   further route makes (c) a thinner closure than §2.3(c) now claims.**
 2. **Does (c) introduce a false-timeout class of its own?** Any benign ancestor
    animation — an antd drawer or modal transition, a route change — would now
    throw. Is that reachable in the app during either sample point in
@@ -237,6 +265,10 @@ the round-3 defect.** Nothing is to be re-baselined and no identity allowlisted.
   standalone headless Chromium, **not** the live Electron app. It proves the
   algorithm's return/timeout behaviour, not the natural frequency of these routes.
 - M4 was not independently re-measured by me.
+- Proposal (c)'s feasibility AND its shadow-tree limit were both measured in
+  standalone Chromium before this plan was sent, and both are recorded in
+  §2.3(c). The other routes named in §2.5 question 1 are **UNVERIFIED** — not
+  "accepted", not "unlikely": I did not run them.
 - No CI cycle has been spent on this plan, and no code has been written.
 - Local greens on this machine are not stability evidence: every local Class D
   measurement on this box reads exactly zero.
