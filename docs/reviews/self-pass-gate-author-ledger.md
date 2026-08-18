@@ -45,7 +45,7 @@ still valid and the gate green. What remains is one declaration with one claim:
 state when the gate ran.** It says nothing about `src/`, tests, tools, this
 ledger's own evidence, or HEAD.
 
-governed fingerprint: `ef69d12ccd44`
+governed fingerprint: `8b4eb5d26986`
 
 ## Rows
 
@@ -342,3 +342,37 @@ watches. Run for this change: `npx prettier --check CLAUDE.md` (clean); the
 `ci` workflow (lint/format/typecheck/unit) on the pull request;
 `tests/unit/author-ledger.spec.ts` locally after regeneration — 9 passed,
 0 failed. Docs-only branch: no e2e or integration run is owed.
+
+## Addendum — 2026-08-18, branch `feature/governance-codification-d1-d18`
+
+This branch's first commit (`d2b5c71`) lands the eight 2026-08-18
+strategy-session artifacts. One of them is governed:
+`docs/governance/PROMPTMI_WORKFLOW_SPEC_ASSESSMENT_2026-08.md` becomes
+tracked, which is why the fingerprint moved and why the gate's freshness and
+certificate legs fired — exactly as designed. The other seven files are
+`docs/reviews/` and `docs/strategy/` content, outside the governed set. The
+certificate above is regenerated for this tree. The commissioned rows above
+are the PR #140/#141 record and are untouched: nothing in the gate's
+mechanism changed on this branch, only governed documents the mechanism
+watches. Run for this change: `npx vitest run tests/unit/author-ledger.spec.ts`
+after regeneration — 9 passed, 0 failed. Docs-only commit: no e2e or
+integration run is owed.
+
+The branch's codification commit (`21fcc41`, PR-3: the 2026-08-18 strategy
+decisions transcribed into the governance set) then changed five further
+governed artifacts — `docs/governance/OPERATING_AGREEMENT.md`,
+`docs/governance/PROMPTMI_GOVERNANCE_REVIEW_2026-08.md`, `ai_rules.md`,
+`docs/templates/FEATURE_SPEC.md`, `docs/templates/ADVERSARIAL_REVIEW.md` —
+so the fingerprint moved again and the certificate above is regenerated a
+second time, for the codification tree. ⓘ Row `C39` and the commission's
+class-(d) quotation remain the **PR #139-era text by design**, unedited per
+the immutable-review-record discipline. `C39` is labelled in place ("as
+ratified by PR #139"); the commission's quotation carried **no** such label —
+review finding F1 (`docs/reviews/governance-codification-d1-d18-codex-review.md`)
+caught this addendum claiming otherwise, and under the owner's option-(a)
+ruling of 2026-08-19 a dated supersession banner now sits beside that
+quotation (`docs/reviews/self-pass-gate-codex-commission.md`), the quoted
+rule text itself untouched. Run for this change:
+`npx vitest run tests/unit/author-ledger.spec.ts` after regeneration —
+9 passed, 0 failed. Docs-only branch throughout: no e2e or integration run
+is owed.

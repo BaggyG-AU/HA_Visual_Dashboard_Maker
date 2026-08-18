@@ -140,6 +140,14 @@ When modifying any shared DSL method in `tests/support/dsl/**`, the AI MUST:
 
 Never merge shared DSL changes without regression proof.
 
+**How the full-suite leg is satisfied (owner-ruled 2026-08-18, STRAT-D12 —
+`docs/governance/OPERATING_AGREEMENT.md` §4):** the >5-specs full-suite leg is
+satisfied by the **required remote GitHub Actions full run**, consuming the
+blast-radius declaration of `docs/governance/OPERATING_AGREEMENT.md` §3.4 as
+the consumer inventory; the owner merges only
+after that run completes and triages green. Local full runs are never
+required.
+
 ---
 
 # 4b) Shared DSL Change Contract (MANDATORY)
