@@ -63,7 +63,8 @@ test.describe('Gauge Alignment', () => {
       await gaugePro.setSegment(0, { from: 5, label: 'Low Band' });
 
       await properties.switchTab('YAML');
-      const yaml = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the LAST edit.
+      const yaml = await yamlEditor.waitForEditorContent('label: Low Band');
       expect(yaml).toContain('type: custom:gauge-card-pro');
       expect(yaml).toContain('min: 5');
       expect(yaml).toContain('max: 95');
@@ -97,7 +98,12 @@ test.describe('Gauge Alignment', () => {
       await gaugePro.verifyBuiltInGaugeRendered();
 
       await properties.switchTab('YAML');
-      const yaml = await yamlEditor.getEditorContent();
+      // ⚠⚠ THE CI FLAKE THIS COMMENT EXISTS FOR. The YAML pane is serialised on a
+      // 250 ms debounce that RESTARTS on every form change, so all four edits
+      // above coalesce into ONE flush — and a single sample taken before it fired
+      // returned the untouched seed (`min: 0 max: 100 unit: '%' needle: true`) in
+      // GitHub Actions run 31802864528. Anchor on the LAST edit.
+      const yaml = await yamlEditor.waitForEditorContent('needle: false');
       expect(yaml).toContain('type: gauge');
       expect(yaml).toMatch(/min:\s*'?10'?/);
       expect(yaml).toMatch(/max:\s*'?90'?/);

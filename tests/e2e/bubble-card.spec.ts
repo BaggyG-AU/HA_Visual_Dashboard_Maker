@@ -60,7 +60,8 @@ test.describe('Bubble Card pop-up hash', () => {
       await hashInput.blur();
 
       await properties.switchTab('YAML');
-      const yaml = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the LAST edit.
+      const yaml = await yamlEditor.waitForEditorContent(/hash:\s*['"]?#kitchen['"]?/);
       expect(yaml).toContain('card_type: pop-up');
       expect(yaml).toMatch(/hash:\s*['"]?#kitchen['"]?/);
     } finally {
@@ -115,7 +116,14 @@ test.describe('Bubble Card pop-up hash', () => {
       await hashInput.blur();
 
       await properties.switchTab('YAML');
-      expect(await yamlEditor.getEditorContent()).toMatch(/hash:\s*['"]?#living_room['"]?/);
+      // ⚠⚠ THE CI FLAKE THIS COMMENT EXISTS FOR. The YAML pane is serialised on a
+      // 250 ms debounce, so a single sample taken straight after the hash was
+      // typed showed the document as it stood BEFORE it — `card_type: pop-up`
+      // present (its own flush had already run) and `hash` absent. That is the
+      // exact received string in GitHub Actions run 31802864528.
+      expect(await yamlEditor.waitForEditorContent(/hash:\s*['"]?#living_room['"]?/)).toMatch(
+        /hash:\s*['"]?#living_room['"]?/,
+      );
 
       // switch back to button -> hash is dropped from the config
       await properties.switchTab('Form');
@@ -123,7 +131,11 @@ test.describe('Bubble Card pop-up hash', () => {
       await expect(window.getByTestId('bubble-hash-input')).toHaveCount(0);
 
       await properties.switchTab('YAML');
-      expect(await yamlEditor.getEditorContent()).not.toContain('hash:');
+      // ⚠⚠ AN ABSENCE CANNOT BE WAITED FOR DIRECTLY — "not there yet" and "gone"
+      // are the same reading. Wait for the LAST edit's POSITIVE trace
+      // (`card_type: button`), which is written by the same flush that drops the
+      // hash, and only then assert the absence.
+      expect(await yamlEditor.waitForEditorContent('card_type: button')).not.toContain('hash:');
     } finally {
       await close(ctx);
     }

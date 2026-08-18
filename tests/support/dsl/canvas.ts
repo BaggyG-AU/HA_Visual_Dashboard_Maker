@@ -175,6 +175,340 @@ export class CanvasDSL {
   }
 
   /**
+   * The same rectangles, but measured from the GRID CONTAINER'S OWN ORIGIN
+   * rather than the viewport's.
+   *
+   * ⚠⚠⚠ USE THIS WHENEVER YOU COMPARE CARD GEOMETRY ACROSS TWO MOMENTS IN TIME.
+   * `getCardRects()` above returns viewport-relative boxes, so ANY movement of
+   * the chrome around the canvas — the palette, the properties panel, a
+   * scrollbar appearing, a toolbar row changing height — shifts every card
+   * equally and reads as a layout change when the layout did not change at all.
+   *
+   * ⭐ MEASURED, NOT ARGUED. `save-and-backup.spec.ts`'s FILE-05 Expected 3 was
+   * unstable on CI for exactly this reason: GitHub Actions run 31871488924 failed
+   * all three attempts with x-deltas of 75.24, 44.74 and 44.66 px — half to a
+   * full grid column — while the same test measures a delta of EXACTLY ZERO on
+   * all four axes locally, across nine runs. The cards had not moved within the
+   * grid; the grid had moved within the window. Subtracting the container origin
+   * removes that entire class of difference, and it does so without weakening
+   * anything: a card that genuinely moves WITHIN the grid still moves here.
+   *
+   * ⓘ The absolute form is still right for questions that are genuinely about
+   * screen position — `expectNoOverlappingCards` compares cards to each other in
+   * one instant, so a common origin cancels out anyway.
+   */
+  async getCardRectsRelativeToGrid(): Promise<
+    Array<{ x: number; y: number; w: number; h: number }>
+  > {
+    return await this.window.evaluate(() => {
+      const grid = document.querySelector('.react-grid-layout');
+      if (!grid) throw new Error('no .react-grid-layout container found on the page');
+      const g = grid.getBoundingClientRect();
+      return Array.from(grid.querySelectorAll(':scope > .react-grid-item')).map((n) => {
+        const r = n.getBoundingClientRect();
+        return { x: r.left - g.left, y: r.top - g.top, w: r.width, h: r.height };
+      });
+    });
+  }
+
+  /**
+   * The same relative rectangles, but only once the grid has STOPPED MOVING.
+   *
+   * ⚠⚠⚠ USE THIS, NOT THE BARE READ ABOVE, WHENEVER THE SAMPLE IS ONE HALF OF A
+   * COMPARISON ACROSS TWO MOMENTS. A card count is not a settled layout:
+   * `expectCardCount(n)` resolves the instant the nth card EXISTS, and
+   * react-grid-layout then reflows the cards around it over
+   * `transition: transform 0.2s` (its own stylesheet). A sample taken in that
+   * window records a card in FLIGHT.
+   *
+   * ⭐⭐⭐ MEASURED, NOT ARGUED, AND IT CORRECTS AN EARLIER REFUTATION. The Class D
+   * investigation recorded "a settling race" as REFUTED, because sampling twice
+   * in a row locally gave a delta of zero. That experiment could not fail: on a
+   * fast machine the 0.2 s animation is already over before the first sample
+   * arrives. Amplifying the transition to 3 s and sampling exactly where
+   * `save-and-backup.spec.ts` samples shows the race outright — the second card's
+   * inline transform already reads its FINAL `translate(10px, 650px)` while its
+   * measured box is still at `x = 426.49, y = 202.01`, settling to `x = 10,
+   * y = 650`. That is a delta of 416 px in x and 448 px in y: a window that
+   * comfortably contains every CI failure this leg has produced. The reload half
+   * does NOT animate — amplified to 3 s it still gives an exact zero — so the
+   * race is entirely on the first sample.
+   *
+   * ⚠ WHAT THIS DOES AND DOES NOT ATTRIBUTE. Run 31876211967's 2.317108154296875
+   * px failure is at head `f52ccf13`, where the comparison was ALREADY relative,
+   * so an origin shift cannot explain it and this race is the only mechanism
+   * measured that can. The three earlier failures (75.24 / 44.74 / 44.66 px, run
+   * 31871488924) were taken with the ABSOLUTE comparison, where an origin shift
+   * and this race are indistinguishable in the surviving artifacts; they are not
+   * claimed for either.
+   *
+   * ⓘ It settles on WHATEVER the geometry turns out to be, over three
+   * consecutive equal readings; it never polls for a value the caller wants, and
+   * it THROWS rather than returning a best effort if the layout never stops
+   * moving, so a permanently animating canvas cannot read as a clean pass.
+   *
+   * ⓘ THE 5 s BUDGET IS SIZED, NOT GUESSED. react-grid-layout's transition is
+   * 200 ms (`node_modules/react-grid-layout/css/styles.css:6`), and three
+   * samples 32 ms apart add ~96 ms, so a normal settle completes inside ~300 ms
+   * and the default leaves roughly a 16x margin. The budget is deliberately a
+   * THROW rather than a longer wait: a canvas that cannot hold still for 96 ms
+   * within 5 s is a defect worth surfacing, not one worth waiting out.
+   *
+   * ⚠⚠ ONE ATTACK ON THIS HELPER WAS BUILT AND FAILED TO BREAK IT, WHICH IS
+   * WORTH RECORDING BECAUSE THE HYPOTHESIS WAS PLAUSIBLE. A stability-only
+   * settle should, in principle, return early if it starts BEFORE the movement
+   * does — three equal readings of a box that has not yet begun to travel. The
+   * deterministic form of that is a transition DELAY, so the helper was run
+   * against `transition: transform 2s linear 1s`: a full second stationary at
+   * the stale position, then two seconds of travel. That attack FAILED to break
+   * it, and on that basis no animation-state guard was added.
+   *
+   * ⚠⚠⚠ THE ATTACK WAS BADLY DESIGNED, AND THE INDEPENDENT REVIEWER'S SECOND
+   * CONSTRUCTION BROKE IT ON THE FIRST TRY (Codex round 2, finding M1,
+   * `docs/reviews/ci-unstable-tests-codex-round2-review.md`). The author's
+   * version moved a card 640 px, which is ~10 px per 32 ms sample — far too fast
+   * for a rounding hole to show. **The defeating construction is the opposite: a
+   * SMALL travel over a LONG transition.** Ten pixels under
+   * `transition: transform 4s linear` is 0.08 px per sample, so three
+   * consecutive readings shared one integer bucket while the box was genuinely
+   * moving. Reproduced on this checkout: the helper returned after **75 ms with
+   * 9.87 px still to travel**, and `getAnimations({subtree: true})` reported
+   * `{playState: 'running', transitionProperty: 'transform'}` at that exact
+   * moment. 9.87 px is five times the ±2 px the comparison allows.
+   *
+   * ⭐ SO THE GUARD IS NOW BOTH HALVES, AND THEY CLOSE DIFFERENT ROUTES.
+   * Comparing to a HUNDREDTH of a pixel rather than a whole one removes the
+   * rounding bucket; asking the browser for running layout transitions removes
+   * the inference altogether, because stability sampling can only ever guess at
+   * motion while the compositor knows. Either alone would have missed something.
+   *
+   * ⓘ RESIDUAL, STATED RATHER THAN HIDDEN — AND THE FIRST VERSION OF THIS
+   * PARAGRAPH UNDERSTATED IT. The animation half is an ALLOWLIST: it counts an
+   * animation as motion only if it is a CSS TRANSITION *and* its
+   * `transitionProperty` is one of the five names in `LAYOUT_PROPS`. Anything
+   * else that moves a card in sub-hundredth-pixel steps is invisible to it, and
+   * that is a wider class than "keyframes and requestAnimationFrame":
+   *
+   *   - a CSS KEYFRAME animation (`transitionProperty` is undefined on a
+   *     CSSAnimation, so the allowlist never matches);
+   *   - a `requestAnimationFrame` loop (no Animation object exists at all);
+   *   - ⚠ a CSS TRANSITION ON ANY OTHER BOX-MOVING PROPERTY — `margin`,
+   *     `padding`, `inset`/`right`/`bottom`, `border-width`, or the standalone
+   *     `translate` property, which is distinct from `transform`.
+   *
+   * ⚠⚠ THAT THIRD BULLET WAS MEASURED, NOT REASONED. Running this helper's own
+   * extracted source against headless Chromium, a 10 px creep over 200 s under
+   * `transition: margin-left` returned in 65.6 ms with the full 10 px still to
+   * travel, and standalone `transition: translate` did the same in 66.7 ms —
+   * while the round-2 construction (`transition: transform 4s`) is correctly
+   * held for 4.5 s. Both defeating cases are CSS transitions, so the earlier
+   * wording — which named only keyframes and rAF — described a narrower hole
+   * than the code actually has.
+   *
+   * ⭐ WHY IT IS STILL NOT REACHABLE HERE — MEASURED ON THE RUNNING APP, NOT
+   * ENUMERATED FROM STYLESHEETS. An earlier draft of this paragraph claimed
+   * "exactly two stylesheets can transition a measured card's box". That was an
+   * UNVERIFIED UNIVERSAL: it was derived from a text grep of `src/` plus
+   * react-grid-layout's stylesheet, and it never enumerated antd v6's
+   * runtime-injected CSS-in-JS, which no grep of the repository can see.
+   * The decisive instrument is the COMPUTED style on the real elements, which is
+   * indifferent to where the rule came from. Probed in a live Electron window
+   * with two cards on the canvas:
+   *
+   *   measured `:scope > .react-grid-item`  ->  `transform, width, height` @ 0.2s
+   *   the `.react-grid-layout` container    ->  `height` @ 0.2s
+   *
+   * Every one of those is inside `LAYOUT_PROPS`, so nothing that can move a
+   * MEASURED box is invisible to the gate today.
+   *
+   * ⚠ THE SAME PROBE FOUND `transition-property: all` ON DESCENDANTS INSIDE THE
+   * GRID ITEMS (two at 0.2s, two at 0.3s). Those cannot move a measured box —
+   * react-grid-layout sets each item's own width/height, so a child cannot
+   * resize it — but `all` DOES cover `transform`, and `getAnimations({subtree:
+   * true})` sees descendants. So a descendant mid-transition on a layout
+   * property can hold this helper open for up to its duration. That is
+   * conservative rather than wrong, and it is bounded well inside the 5 s budget.
+   *
+   * ⚠⚠ ALL OF THAT IS A MEASUREMENT OF TODAY'S APP, NOT AN ENFORCED INVARIANT.
+   * Nothing fails if a future stylesheet transitions a card's margin, and a
+   * caller of this SHARED helper on some other surface is outside the probe
+   * entirely and inherits the hole.
+   */
+  async getCardRectsRelativeToGridSettled(
+    options: { samples?: number; timeoutMs?: number; intervalMs?: number } = {},
+  ): Promise<Array<{ x: number; y: number; w: number; h: number }>> {
+    const { samples = 3, timeoutMs = 5000, intervalMs = 32 } = options;
+    return await this.window.evaluate(
+      async ({ samples: need, timeoutMs: budget, intervalMs: gap }) => {
+        const read = () => {
+          const grid = document.querySelector('.react-grid-layout');
+          if (!grid) throw new Error('no .react-grid-layout container found on the page');
+          const g = grid.getBoundingClientRect();
+          return Array.from(grid.querySelectorAll(':scope > .react-grid-item')).map((n) => {
+            const r = n.getBoundingClientRect();
+            return { x: r.left - g.left, y: r.top - g.top, w: r.width, h: r.height };
+          });
+        };
+        // ⚠⚠⚠ TWO HUNDREDTHS OF A PIXEL, NOT A WHOLE ONE. Rounding to integers
+        // is what made this helper returnable mid-flight: a small travel over a
+        // long transition moves less than half a pixel per sample, so three
+        // consecutive readings share an integer bucket while the box is still
+        // going. The RAW reading is still what gets returned.
+        const key = (rects: ReturnType<typeof read>) =>
+          JSON.stringify(
+            rects.map((r) => [
+              Math.round(r.x * 100),
+              Math.round(r.y * 100),
+              Math.round(r.w * 100),
+              Math.round(r.h * 100),
+            ]),
+          );
+
+        // ⚠⚠⚠ AND ASK THE BROWSER DIRECTLY, BECAUSE SAMPLING ALONE CANNOT KNOW.
+        // Stability is an inference about motion; a running animation is a FACT
+        // the compositor will state if asked.
+        //
+        // ⚠⚠⚠ THE POPULATION IS THE ELEMENTS THIS HELPER MEASURES, NOT THE WHOLE
+        // SUBTREE. The first version of this gate filtered a five-name property
+        // allowlist over `getAnimations({subtree: true})`, which is a DIFFERENT
+        // population from the boxes `read()` returns — and a gate keyed to the
+        // wrong population fails in BOTH directions at once. Measured on this
+        // checkout (Codex round 3, finding M1, independently reproduced by the
+        // author before repair):
+        //
+        //   FALSE SETTLE   a direct grid item under `transition: scale 200s`
+        //                  returned after 165 ms with 9.99 px of WIDTH still to
+        //                  travel, because `scale` is a standalone property and
+        //                  was not one of the five admitted names.
+        //   FALSE TIMEOUT  a DECORATIVE DESCENDANT under `transition: transform
+        //                  200s` threw at 5,042 ms while the measured item's box
+        //                  stayed bit-identical, because `transform` WAS admitted
+        //                  and the descendant was in the swept subtree.
+        //
+        // So: select the effect TARGETS first, then ask which animation facts are
+        // authoritative. Only animations targeting the grid container or one of
+        // its DIRECT `.react-grid-item` children can move a box this helper
+        // returns. `{subtree: true}` is still required to SEE them — they are
+        // descendants of the grid — but the target test is what makes the
+        // population right.
+        const NON_GEOMETRIC = new Set([
+          'opacity',
+          'color',
+          'background',
+          'background-color',
+          'background-image',
+          'background-position',
+          'box-shadow',
+          'text-shadow',
+          'border-color',
+          'outline-color',
+          'outline',
+          'visibility',
+          'fill',
+          'stroke',
+          'filter',
+          'backdrop-filter',
+          'cursor',
+          'z-index',
+          'caret-color',
+          'accent-color',
+        ]);
+        const kebab = (s: string) => s.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase());
+        const stillMoving = () => {
+          const grid = document.querySelector('.react-grid-layout');
+          if (!grid) return false;
+          const measured = new Set<Element>([
+            grid,
+            ...Array.from(grid.querySelectorAll(':scope > .react-grid-item')),
+          ]);
+          return grid.getAnimations({ subtree: true }).some((a) => {
+            // ⚠ `pending` is a SEPARATE BOOLEAN on Animation, not a playState
+            // value — a transition that has been created but has not started
+            // ticking reports `playState: 'idle'` with `pending: true`, so
+            // testing playState alone would miss the moment just before travel
+            // begins. (The typechecker caught this: AnimationPlayState has no
+            // 'pending' member.)
+            const anim = a as Animation & { pending?: boolean; transitionProperty?: string };
+            if (anim.playState !== 'running' && anim.pending !== true) return false;
+
+            const effect = anim.effect as KeyframeEffect | null;
+            const target = effect && effect.target;
+            if (!target || !measured.has(target)) return false;
+
+            // ⚠⚠⚠ A PSEUDO-ELEMENT IS A CHILD BOX, NOT THE MEASURED BOX — AND
+            // `KeyframeEffect.target` DOES NOT DISTINGUISH THEM. An animation on
+            // `.react-grid-item::before` reports the GRID ITEM as its target and
+            // names the pseudo-element separately, so the target test above
+            // admits it. react-grid-layout sets each item's width, height and
+            // transform inline, so a `::before` or `::after` cannot change the
+            // rectangle `read()` returns — it renders inside it, exactly like the
+            // descendants excluded above.
+            // ⭐ MEASURED, and it is a defect this repair introduced rather than
+            // one it inherited: a decorative `::before` opacity keyframe held the
+            // helper open for its whole budget while the card's box never moved.
+            // That is precisely the false-timeout class Codex round-3 M1 named,
+            // reappearing one layer down — which is why the fix has its own
+            // control rather than only this comment.
+            if (effect && effect.pseudoElement) return false;
+
+            // ⭐ WHICH PROPERTIES IS IT ANIMATING? A CSSTransition names exactly
+            // one in `transitionProperty`. Anything else — a CSS keyframe
+            // animation, or `Element.animate()` — is read from the keyframes
+            // themselves, which is what closes the keyframe half of the old
+            // residual for the elements that actually matter.
+            let props: string[] = [];
+            if (typeof anim.transitionProperty === 'string' && anim.transitionProperty) {
+              props = [anim.transitionProperty];
+            } else if (effect && typeof effect.getKeyframes === 'function') {
+              const seen = new Set<string>();
+              for (const frame of effect.getKeyframes()) {
+                for (const k of Object.keys(frame)) {
+                  if (k !== 'offset' && k !== 'easing' && k !== 'composite') seen.add(kebab(k));
+                }
+              }
+              props = Array.from(seen);
+            }
+
+            // ⚠⚠ DENY-LIST, NOT ALLOW-LIST, AND THE DIRECTION MATTERS. There is
+            // no API that says "will this animation change the border box", so an
+            // ALLOW-list of geometric properties fails open on the one nobody
+            // thought of — which is exactly the defect above. An unknown property
+            // is therefore treated as POSSIBLY GEOMETRIC and we keep waiting.
+            // The cost of being wrong is a bounded wait inside the budget; the
+            // cost of the opposite error is a silently wrong measurement.
+            if (props.length === 0) return true;
+            return props.some((p) => !NON_GEOMETRIC.has(p));
+          });
+        };
+
+        const started = performance.now();
+        let last = read();
+        let lastKey = key(last);
+        let streak = 1;
+
+        while (performance.now() - started < budget) {
+          await new Promise((resolve) => setTimeout(resolve, gap));
+          const next = read();
+          const nextKey = key(next);
+          if (nextKey === lastKey && !stillMoving()) {
+            streak += 1;
+            if (streak >= need) return next;
+          } else {
+            streak = 1;
+          }
+          last = next;
+          lastKey = nextKey;
+        }
+        throw new Error(
+          `card geometry never held still for ${need} consecutive samples within ` +
+            `${budget}ms — last reading ${lastKey}`,
+        );
+      },
+      { samples, timeoutMs, intervalMs },
+    );
+  }
+
+  /**
    * Assert no two cards overlap — UAT card FILE-03's Expected 3.
    *
    * GRID_CONFIG.margin is [10, 10], so adjacent cards are always separated by a

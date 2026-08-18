@@ -61,7 +61,9 @@ test.describe('ApexCharts Advanced Integration', () => {
       await apexCharts.verifyApexRendered();
 
       await properties.switchTab('YAML');
-      const yaml = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the LAST edit, the
+      // first series' colour.
+      const yaml = await yamlEditor.waitForEditorContent(/4fa3ff/);
       expect(yaml).toContain('type: custom:apexcharts-card');
       expect(yaml).toContain('graph_span: 7d');
       expect(yaml).toContain('update_interval: 1m');

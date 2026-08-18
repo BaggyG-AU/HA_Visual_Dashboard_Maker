@@ -80,7 +80,8 @@ test.describe('Weather Forecast Visualization', () => {
       });
 
       await properties.switchTab('YAML');
-      const yaml = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the LAST edit (locale).
+      const yaml = await yamlEditor.waitForEditorContent('locale: en-GB');
 
       expect(yaml).toContain('type: weather-forecast');
       expect(yaml).toContain('days: 5');

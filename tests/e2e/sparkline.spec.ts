@@ -69,7 +69,11 @@ test.describe('Sparkline Mini-graphs', () => {
       await sparkline.verifyRendered();
 
       await properties.switchTab('YAML');
-      const yaml = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the last edit that
+      // CHANGES something. `showMinMax`/`showCurrent` are already true in
+      // BASE_YAML, so their switches are no-ops and neither `extrema: true` nor
+      // `state: true` can tell the pre-edit document from the post-edit one.
+      const yaml = await yamlEditor.waitForEditorContent('line_width: 3');
 
       expect(yaml).toContain('type: custom:mini-graph-card');
       expect(yaml).toContain('hours_to_show: 168');

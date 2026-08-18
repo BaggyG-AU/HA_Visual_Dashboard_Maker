@@ -135,7 +135,8 @@ test.describe('Carousel (Swiper)', () => {
       await carousel.expectPaginationType('fraction', 0);
 
       await properties.switchTab('YAML');
-      const yamlText = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the only edit.
+      const yamlText = await yamlEditor.waitForEditorContent('type: fraction');
       expect(yamlText).toContain('custom:swipe-card');
       expect(yamlText).toContain('type: fraction');
       expect(yamlText).toContain('parameters:');

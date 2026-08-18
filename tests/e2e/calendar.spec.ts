@@ -91,7 +91,9 @@ test.describe('Calendar View Card', () => {
       );
 
       await properties.switchTab('YAML');
-      const yaml = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the LAST form edit
+      // (showAgenda); the date navigation after it changes no config key.
+      const yaml = await yamlEditor.waitForEditorContent('show_agenda: false');
 
       expect(yaml).toContain('type: calendar');
       expect(yaml).toContain('view: month');

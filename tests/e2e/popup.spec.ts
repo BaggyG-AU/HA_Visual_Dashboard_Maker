@@ -128,7 +128,10 @@ test.describe('Popup Card', () => {
       await popup.setPopupSize('fullscreen');
       await popup.setCloseOnBackdrop(false);
       await properties.switchTab('YAML');
-      const yamlText = await yamlEditor.getEditorContent('properties');
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the LAST edit.
+      const yamlText = await yamlEditor.waitForEditorContent('close_on_backdrop: false', {
+        scopeHint: 'properties',
+      });
       expect(yamlText).toContain('type: custom:popup-card');
       expect(yamlText).toContain('size: fullscreen');
       expect(yamlText).toContain('close_on_backdrop: false');

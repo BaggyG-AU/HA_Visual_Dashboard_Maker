@@ -71,7 +71,11 @@ test.describe('Advanced Slider', () => {
       });
 
       await properties.switchTab('YAML');
-      const yaml = await yamlEditor.getEditorContent();
+      // ⚠ 250 ms YAML serialisation debounce — anchor on the last edit that
+      // CHANGES something. `hapticEnabled` is already true in BASE_YAML, so its
+      // switch is a no-op and `enabled: true` cannot tell the pre-edit document
+      // from the post-edit one.
+      const yaml = await yamlEditor.waitForEditorContent('commit_on_release: true');
       expect(yaml).toContain('type: custom:slider-button-card');
       expect(yaml).toContain('orientation: vertical');
       expect(yaml).toContain('min: 10');

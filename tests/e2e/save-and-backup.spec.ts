@@ -34,6 +34,7 @@ import { close, launchWithDSL } from '../support';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import * as yaml from 'js-yaml';
 
 type Ctx = Awaited<ReturnType<typeof launchWithDSL>>;
 
@@ -182,7 +183,33 @@ test.describe('FILE-05: Save writes, clears the dirty marker and leaves a backup
       await ctx.canvas.expectCardCount(2);
       await makeDirty(ctx, 3);
 
-      const before = await ctx.canvas.getCardRects();
+      // ⚠⚠⚠ SETTLED, AND RELATIVE TO THE GRID RATHER THAN THE VIEWPORT. Those are
+      // TWO repairs to this leg, for two different defects, and only the second
+      // one was understood when it was made:
+      //
+      //   • RELATIVE cancels a movement of the grid WITHIN THE WINDOW. Measured
+      //     locally, the toolbar loses its dirty asterisk between the two samples
+      //     and the whole canvas rises by 8 px — an origin shift that the old
+      //     viewport-relative form reported as a layout change on every card.
+      //   • SETTLED closes the race that actually produced the CI failures.
+      //     `expectCardCount(3)` resolves when the third card EXISTS, and
+      //     react-grid-layout then reflows the others around it over
+      //     `transition: transform 0.2s`. Amplify that to 3 s and the sample
+      //     below catches the second card with its final transform already
+      //     applied but its measured box still 416 px away in x and 448 px in y.
+      //     On this machine the animation is over before the sample lands, which
+      //     is why nine local runs read exactly zero; on a GitHub runner it is
+      //     not, and the residue is whatever was left of the flight. Run
+      //     31876211967 failed by 2.317108154296875 px at head f52ccf13, where
+      //     the comparison was ALREADY relative — so an origin shift cannot
+      //     explain that one, and it is the run that proved relative coordinates
+      //     alone were not enough.
+      //
+      // ⚠ The earlier record listed "a settling race" among the REFUTED
+      // hypotheses. That refutation sampled twice in a row with no amplifier, so
+      // both readings were already settled and it could not have failed.
+      // See tests/support/dsl/canvas.ts for the full measurement.
+      const before = await ctx.canvas.getCardRectsRelativeToGridSettled();
       await ctx.dashboard.toolbarSave.click();
       await expect(ctx.dashboard.dirtyIndicator).toBeHidden();
 
@@ -190,15 +217,52 @@ test.describe('FILE-05: Save writes, clears the dirty marker and leaves a backup
       // bytes just written is the automatable equivalent of the native
       // File > Open Dashboard... dialog.
       const written = fs.readFileSync(target, 'utf8');
+
+      // ⭐ THE DATA HALF, ASSERTED DIRECTLY RATHER THAN INFERRED. The docblock of
+      // the old leg worried that "a serializer that dropped geometry" would slip
+      // through a count-only check, and answered it by comparing pixels. Pixels
+      // are a PROXY for that; the file either carries each card's grid geometry
+      // or it does not, and that is exact integers on disk. Assert it outright,
+      // and keep the rendered comparison below for what it is uniquely good at —
+      // proving the geometry is not merely stored but honoured on reload.
+      const parsed = yaml.load(written) as {
+        views?: Array<{ cards?: Array<Record<string, unknown>> }>;
+      };
+      const savedCards = parsed.views?.[0]?.cards ?? [];
+      expect(savedCards, 'the save must write all three cards').toHaveLength(3);
+
+      // ⚠ MEASURED, NOT ASSUMED — the first draft of this assertion demanded a
+      // layout on EVERY card and was simply wrong about the format. Only the card
+      // the user placed carries one: the two seeded from DASHBOARD_YAML have no
+      // `_havdm_layout` key at all, because nothing ever positioned them
+      // explicitly. So the assertion is scoped to the card whose NEW POSITION is
+      // what Expected 3 is actually about.
+      expect(
+        savedCards[savedCards.length - 1]._havdm_layout,
+        'the placed card lost its grid geometry in the save',
+      ).toEqual({
+        x: expect.any(Number),
+        y: expect.any(Number),
+        w: expect.any(Number),
+        h: expect.any(Number),
+      });
+
       await loadFileBacked(ctx, written, target);
       await ctx.canvas.expectCardCount(3);
 
       // ⭐ The layout must SURVIVE the round-trip. Comparing rectangles rather
       // than just the card count is the difference between "the file has three
       // cards" and "the file has the layout the user saw" — the latter is what
-      // Expected 3 asks, and a serializer that dropped geometry would pass the
-      // former.
-      const after = await ctx.canvas.getCardRects();
+      // Expected 3 asks.
+      // ⓘ Settled here too, though the reload half is measurably NOT the racing
+      // one: amplified to a 3 s transition it reported an exact zero — ONE
+      // observation, not a proof that a reload can never animate. Whether
+      // a reload can ever animate is a JUDGEMENT about react-grid-layout's
+      // reconciliation, and settling an already-static grid costs a few frames
+      // and removes the judgement — the same reasoning that applied
+      // `hoverWhenSettled` to all four hovers in the Class B repair rather than
+      // only to the one that had been seen to flake.
+      const after = await ctx.canvas.getCardRectsRelativeToGridSettled();
       expect(after).toHaveLength(before.length);
       after.forEach((rect, i) => {
         expect(Math.abs(rect.x - before[i].x)).toBeLessThanOrEqual(2);
