@@ -20,6 +20,14 @@ nothing on its own.
 **Commissioned by:** owner · **Scope:** \<commit range / branch / documents
 under review\>
 
+**The owner's profile (standing line — STRAT-D15 / strategy correction C6):**
+the owner gate is held by a **non-developer** — write for the reader who
+actually rules. Anything routed to the owner uses the **Owner Decision
+Brief**: what this protects in product terms / what is going wrong plainly /
+is the product affected Yes-No-Unknown with honest evidence status / options
+with costs / recommendation and why / what happens if you do nothing. Never
+require the owner to classify a diff or apply developer instinct.
+
 **Reviewer write-restrictions (acknowledged):** no `[STATE]` drawer update;
 no UAT card marked or re-scored; no `src/` change; no merge; `<HA_HOST>`
 read-only. Proposed changes go in this document, nowhere else.
@@ -33,6 +41,23 @@ the PR body, and the write-enabled author files them with
 general PR-body fallback, and it is carried in `ai_rules.md` §11 itself as
 well as `docs/governance/OPERATING_AGREEMENT.md` §2. ⚠ Never kill a process to
 free the lease and never set `MEMPALACE_MCP_ALLOW_PEER_WRITER`.
+
+**Execution rules — EVERYTHING HEADLESS.** Quoted verbatim from the
+standing-rules record (`drawer_havdm_governance_b282610792b253fee5c09b40`);
+the item numbering is that record's own:
+
+> 1\. ⚠⚠ **EVERYTHING HEADLESS:** `bash tools/test-headless.sh <spec…>
+--project=electron-e2e|electron-integration --workers=1`. MULTIPLE SPECS IN
+> ONE INVOCATION WORK. 2. **INTEGRATION IS A SEPARATE PROJECT — run
+> SEQUENTIALLY.** 3. **DO NOT RUN THE UNIT SUITE WHILE AN ELECTRON SUITE IS
+> LIVE.** 4. **TO SEE THE APP: `npm run start:wsl`.** 6. **LIVE HA:
+> `HAVDM_LIVE=1 npx playwright test --project=live-ha`.**
+
+A suite you cannot run headless is declared **UNRUN** — it is never launched
+headed; `xvfb-run -a` is the fallback where the helper script does not fit.
+This section exists because this template measurably carried zero
+headless/xvfb mentions (strategy claim L6, MEASURED 2026-08-18) after a
+review's suite run had put an app window on the owner's desktop.
 
 ## 0. Working practice this review is held to
 
@@ -105,6 +130,27 @@ Every load-bearing claim in this review, tagged:
   valuable input a cross-checker gets.
 
 ## 4. Findings (ranked, most severe first)
+
+**Severity contract (STRAT-D18, owner-ruled 2026-08-18 — binding for any
+document whose function is to evaluate another artifact, however
+commissioned):** every finding is tagged **SEV 1–4**.
+
+- **SEV 1 — blocks the affected decision/artifact only.** The target as
+  recorded is internally contradictory, contradicts a binding ruling it does
+  not explicitly supersede, rests on a demonstrably false factual claim, or
+  is unexecutable as written — **and** the finding must carry the three-part
+  proof: (1) the decision or claim broken, (2) the violated fact or text at
+  `path:line`, (3) why no recorded mitigation covers it. Missing any part →
+  at most SEV 2.
+- **SEV 2 — does not block.** Rests on an unverified or overstated claim, or
+  an unmitigated risk. Each goes to the owner as an Owner Decision Brief.
+- **SEV 3/4 — recorded, no round-trip.**
+- **The authority boundary:** owner judgment calls are not reviewable defects
+  above SEV 4 — attack the facts a choice rests on, never the authority to
+  make it. Contested classifications go to the owner as briefs.
+- The severity model governs what **blocks**, never what may be **reported**:
+  report full signal, tagged. This template's machinery applies in full, and
+  commissions may add requirements, never subtract (strategy D10).
 
 Per finding: **evidence** (`path:line`), **problem**, **concrete fix**, and
 **what must NOT change** (the guard rails around the fix). Separate PIVOTS
