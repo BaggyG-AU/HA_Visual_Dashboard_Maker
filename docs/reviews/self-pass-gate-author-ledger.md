@@ -365,10 +365,14 @@ governed artifacts — `docs/governance/OPERATING_AGREEMENT.md`,
 `docs/templates/FEATURE_SPEC.md`, `docs/templates/ADVERSARIAL_REVIEW.md` —
 so the fingerprint moved again and the certificate above is regenerated a
 second time, for the codification tree. ⓘ Row `C39` and the commission's
-class-(d) quotation remain the **PR #139-era text by design**: each is
-labelled as quoting what PR #139 ratified, which stays historically true
-after this branch's STRAT-D7 amendment to §3.4; neither is edited, per the
-immutable-review-record discipline. Run for this change:
+class-(d) quotation remain the **PR #139-era text by design**, unedited per
+the immutable-review-record discipline. `C39` is labelled in place ("as
+ratified by PR #139"); the commission's quotation carried **no** such label —
+review finding F1 (`docs/reviews/governance-codification-d1-d18-codex-review.md`)
+caught this addendum claiming otherwise, and under the owner's option-(a)
+ruling of 2026-08-19 a dated supersession banner now sits beside that
+quotation (`docs/reviews/self-pass-gate-codex-commission.md`), the quoted
+rule text itself untouched. Run for this change:
 `npx vitest run tests/unit/author-ledger.spec.ts` after regeneration —
 9 passed, 0 failed. Docs-only branch throughout: no e2e or integration run
 is owed.

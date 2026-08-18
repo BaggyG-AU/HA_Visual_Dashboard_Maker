@@ -421,6 +421,12 @@ longer exist; they are replaced rather than kept as history.
 - `docs/governance/OPERATING_AGREEMENT.md` §3 — governed classes, and class
   (d): one full independent review before merge, no automatic follow-up round,
   and the OWNER decides whether a post-review change warrants re-review.
+  ⚠ **Historical label (added 2026-08-19, PR #148 finding F1):** the class-(d)
+  wording in the bullet above is the PR #139-era rule this commission was
+  written against. It was superseded by STRAT-D7's universal scoped repair
+  follow-up — current lifecycle: `docs/governance/OPERATING_AGREEMENT.md`
+  §3.4. The quotation itself is kept unedited as this commission's historical
+  record.
 - `docs/testing/TESTING_STANDARDS.md` — the evidence-surfaces section merged in
   PR #138, and the DEFINITION OF DONE list.
 
