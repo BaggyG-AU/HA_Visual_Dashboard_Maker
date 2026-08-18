@@ -45,7 +45,7 @@ still valid and the gate green. What remains is one declaration with one claim:
 state when the gate ran.** It says nothing about `src/`, tests, tools, this
 ledger's own evidence, or HEAD.
 
-governed fingerprint: `763a4a5efd7d`
+governed fingerprint: `ef69d12ccd44`
 
 ## Rows
 
@@ -327,3 +327,18 @@ and none is claimed. The reviewer reported the same for round 3's own run.
 - **E2E, integration, UAT, packaging and live Home Assistant were not run.** No
   `src/` path changed, so none is owed; they remain UNVERIFIED since PR #128,
   which is a statement about the suites, not about this branch.
+
+## Addendum — 2026-08-18, branch `feature/spec-before-code-claude-md`
+
+This branch changes exactly one governed artifact: `CLAUDE.md` (+12 lines —
+the owner's 2026-08-16 spec-before-code ruling inserted verbatim per
+`drawer_havdm_decisions_bc47e8270caa139d3ee11646` and strategy decisions
+D6/D16, binding per the BINDING-CLEAR independent re-check of 2026-08-18).
+The gate fired exactly as designed — the freshness and certificate legs — and
+the certificate above is regenerated for this tree. The commissioned checks
+C01–C47 are the PR #140/#141 record and are untouched: nothing in the gate's
+mechanism changed on this branch, only a governed document the mechanism
+watches. Run for this change: `npx prettier --check CLAUDE.md` (clean); the
+`ci` workflow (lint/format/typecheck/unit) on the pull request;
+`tests/unit/author-ledger.spec.ts` locally after regeneration — 9 passed,
+0 failed. Docs-only branch: no e2e or integration run is owed.
