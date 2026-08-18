@@ -45,7 +45,7 @@ still valid and the gate green. What remains is one declaration with one claim:
 state when the gate ran.** It says nothing about `src/`, tests, tools, this
 ledger's own evidence, or HEAD.
 
-governed fingerprint: `ef69d12ccd44`
+governed fingerprint: `5b1cbdb72b86`
 
 ## Rows
 
@@ -342,3 +342,18 @@ watches. Run for this change: `npx prettier --check CLAUDE.md` (clean); the
 `ci` workflow (lint/format/typecheck/unit) on the pull request;
 `tests/unit/author-ledger.spec.ts` locally after regeneration — 9 passed,
 0 failed. Docs-only branch: no e2e or integration run is owed.
+
+## Addendum — 2026-08-18, branch `feature/governance-codification-d1-d18`
+
+This branch's first commit (`d2b5c71`) lands the eight 2026-08-18
+strategy-session artifacts. One of them is governed:
+`docs/governance/PROMPTMI_WORKFLOW_SPEC_ASSESSMENT_2026-08.md` becomes
+tracked, which is why the fingerprint moved and why the gate's freshness and
+certificate legs fired — exactly as designed. The other seven files are
+`docs/reviews/` and `docs/strategy/` content, outside the governed set. The
+certificate above is regenerated for this tree. The commissioned rows above
+are the PR #140/#141 record and are untouched: nothing in the gate's
+mechanism changed on this branch, only governed documents the mechanism
+watches. Run for this change: `npx vitest run tests/unit/author-ledger.spec.ts`
+after regeneration — 9 passed, 0 failed. Docs-only commit: no e2e or
+integration run is owed.
