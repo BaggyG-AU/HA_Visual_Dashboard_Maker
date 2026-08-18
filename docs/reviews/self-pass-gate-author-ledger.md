@@ -45,7 +45,7 @@ still valid and the gate green. What remains is one declaration with one claim:
 state when the gate ran.** It says nothing about `src/`, tests, tools, this
 ledger's own evidence, or HEAD.
 
-governed fingerprint: `5b1cbdb72b86`
+governed fingerprint: `8b4eb5d26986`
 
 ## Rows
 
@@ -357,3 +357,18 @@ mechanism changed on this branch, only governed documents the mechanism
 watches. Run for this change: `npx vitest run tests/unit/author-ledger.spec.ts`
 after regeneration — 9 passed, 0 failed. Docs-only commit: no e2e or
 integration run is owed.
+
+The branch's codification commit (`21fcc41`, PR-3: the 2026-08-18 strategy
+decisions transcribed into the governance set) then changed five further
+governed artifacts — `docs/governance/OPERATING_AGREEMENT.md`,
+`docs/governance/PROMPTMI_GOVERNANCE_REVIEW_2026-08.md`, `ai_rules.md`,
+`docs/templates/FEATURE_SPEC.md`, `docs/templates/ADVERSARIAL_REVIEW.md` —
+so the fingerprint moved again and the certificate above is regenerated a
+second time, for the codification tree. ⓘ Row `C39` and the commission's
+class-(d) quotation remain the **PR #139-era text by design**: each is
+labelled as quoting what PR #139 ratified, which stays historically true
+after this branch's STRAT-D7 amendment to §3.4; neither is edited, per the
+immutable-review-record discipline. Run for this change:
+`npx vitest run tests/unit/author-ledger.spec.ts` after regeneration —
+9 passed, 0 failed. Docs-only branch throughout: no e2e or integration run
+is owed.
