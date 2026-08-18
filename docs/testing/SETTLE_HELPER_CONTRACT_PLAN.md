@@ -251,8 +251,12 @@ produces a worklist, not a verdict.
 
 - The two in-scope bugs are the most independently corroborated findings on this
   branch: each verified by code reading, by my own harness, and by the reviewer.
-- §2.3 corrects every evidence error the reviewer found in revision 3.
-- **No CI cycle has been spent and no implementation code has been written.**
+- §2.3 addresses the evidence errors the reviewer found in revision 3. ⚠ The
+  earlier claim that it corrects **every** such error was audited false (QA
+  audit claim 20): Control 12's required fields remain owed — see §2.2 above.
+- No implementation code has been written. ⚠ The earlier claim that no CI
+  cycle had been spent was audited false (QA audit finding F1): every
+  documentation push after `f78af0d` triggered a CI + Regression Suites pair.
 - Local greens are not stability evidence: every local Class D measurement on this
   box reads exactly zero.
 - The probe spec behind the real-app measurements was deleted; those numbers are
