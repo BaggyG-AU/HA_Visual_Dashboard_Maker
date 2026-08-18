@@ -29,9 +29,14 @@ or a follow-up. That decision is the subject of this revision.
 ## 1.1 What you decided and why
 
 You narrowed this to **the two bugs that are mechanically certain and measured in
-the real app**, after I showed you that every change set I have implemented on this
-branch has introduced a defect — four instances now, the most recent being a
-regression in my own plan document.
+the real app**, after I showed you a record of defects I had introduced.
+⚠ **CORRECTED 2026-08-18 (QA audit finding F6): I wrote that EVERY change set I
+implemented introduced a defect. That universal is false and the audit refused it.**
+What is supportable is **four defect-producing change sets** — `9932eef` (controls
+that raced reflow), `fae0904` (wrong animation population), `8b8dae9` (pseudo-element
+animations admitted), and `b3dc2e5` (this plan's lost proposal (i)). Other commits on
+the branch have no identified introduced defect. **The scope decision never needed
+the stronger premise, and I should not have used it.**
 
 **In scope:** the two real bugs, one guard test for each, and the documentation
 corrections — including telling the truth about everything left open.
@@ -76,9 +81,15 @@ document in the repository.
 
 Three changes, all mechanical rather than intentions:
 
-- **A dropped-commitment check** runs on every revision of this document from now
-  on, and its output is recorded below. It is proven to catch the regression it was
-  built for and to stay quiet against an unchanged file.
+- **A dropped-commitment check.** ⚠⚠ **CORRECTED 2026-08-18 after the QA audit
+  (finding F5): an earlier version of this line said the check "runs on every
+  revision from now on". THAT WAS FALSE.** A repository sweep found no script,
+  workflow, hook or manifest implementing it. What actually happened is ONE manual
+  episode: a shell script in a session scratchpad, **not committed**, proven to
+  catch the regression it was built for and quiet against an unchanged file, which
+  did catch a control renumbering in this very revision. **Intent in a plan cannot
+  execute itself.** Promoting it to `tools/` is a post-merge candidate for the
+  owner; until then this is a habit, not a guarantee.
 - **Every guard test carries the same required fields**, so a missing number is
   visible rather than hidden behind an adjective.
 - **Any new mechanism is attacked against the counterexample already in the
@@ -110,11 +121,27 @@ proposed and the reviewer replaced with a better construction.
 | 10  | deny-listed `opacity` keyframe via `Element.animate()` on a measured card | **must RETURN**; explicit budget `timeoutMs: 5000` (default); assert return **within 1000 ms**; all four axes unchanged; animation asserted **live before AND after**; **red against `f78af0d`**, which throws |
 | 12  | live `visibility` transition on a measured card in the real RGL fixture   | **must BLOCK**; explicit shortened budget `timeoutMs: 1500`; assert **throw** and wall **< 2500 ms**; assert the transition is **live before**; **red against `f78af0d`**, which returns                       |
 
-⚠ **Control 10 is the member that rejects the old `computedOffset` code.** A
-geometric-keyframe control is NOT included, because it cannot be red against that
-code — the old bug blocks _every_ keyframe, and blocking is what such a control
-wants, so the broken code would pass it. That correction is carried from the
-revision-2 review and must not be undone.
+⚠⚠ **CONTROL 11 IS RESTORED, 2026-08-18 — DROPPING IT WAS MY ERROR (QA audit
+finding F2 / claim 18).** I reasoned that a geometric-keyframe control cannot be red
+against the old `computedOffset` code — which is TRUE, because that bug blocks
+_every_ keyframe — and wrongly concluded it therefore had no purpose. **Its purpose
+is rejecting a DIFFERENT wrong implementation: one that ignores every keyframe,
+which would pass Control 10 and still falsely settle during real geometric keyframe
+motion.** The revision-2 review said exactly this — _"The pair … proves the two
+directions"_ and _"Do not delete the geometric-keyframe direction"_ — and I deleted
+it anyway.
+
+| #   | Control                                                            | Required fields                                                                                                                                                                                                                                                                       |
+| --- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 11  | **geometric WAAPI keyframe** on a measured card (e.g. `translate`) | **must BLOCK**; explicit shortened budget; assert **throw** with the expected error identity; animation live **before AND after**; forced geometric endpoint asserted; **red against an "ignore all keyframes" mutant** — NOT against `f78af0d`, which passes it for the wrong reason |
+
+⚠ **Control 12 is still under-specified** and the audit was right to say so: it needs
+the exact animation duration (long enough that it cannot end inside the 1500 ms
+budget and turn the required throw into a return), the expected timeout error
+identity, live-**after**, unchanged-axes/endpoint evidence, and cleanup. **Those
+fields are owed before implementation.**
+
+⚠ **Control 10 remains the member that rejects the old `computedOffset` code.**
 
 **(d) ⭐ RESTORED — THE FOUR-SURFACE CLAIM REPAIR (revision 2's proposal (i),
 silently lost in revision 3).** Classified by role — _text that teaches a reader
