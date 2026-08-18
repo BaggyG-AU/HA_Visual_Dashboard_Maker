@@ -9,6 +9,18 @@ Visual Dashboard Maker — Electron + React + TypeScript desktop app).
 - Governance framework: [`docs/governance/`](docs/governance/).
 - MemPalace operational detail: [`docs/governance/MEMPALACE_PROTOCOL.md`](docs/governance/MEMPALACE_PROTOCOL.md).
 
+## ⚠⚠ SPEC BEFORE CODE — owner's ruling, 2026-08-16, IN FORCE
+
+**Before making any change of consequence, write the plan first.** For any change to **shared machinery** many tests or components depend on, anything whose subject is **timing**, or any **product behaviour** — write a plan document (context and background, the desired outcome, the details of every proposed change) in enough detail for **Codex to review it independently and harshly**. Codex reviews the plan **BEFORE any code is written**. Every inconsistency it raises goes to the **owner** with **options and a recommendation**, each justified, in a form a **non-developer** can judge.
+
+**Not required** for typos, comments, or one-line mechanical edits.
+
+⚠ **THE TRIPWIRE:** if you propose a change to shared machinery, timing or product behaviour and the owner has not seen a plan document for it, you have broken this.
+
+⭐ **MANDATORY COMPANION.** A plan review catches wrong _thinking_; it cannot catch wrong _doing_ — roughly half of PR #144's cost was a wrong number or a check that silently measured nothing. For any guard whose subject is timing, build a small runnable harness that attacks the **real** code **BIDIRECTIONALLY** before spending a CI cycle: a probe that only asks "does it return too early" cannot see "does it block when it should not".
+
+ⓘ Adopted as a **TRIAL**, deliberately not yet in [`docs/governance/OPERATING_AGREEMENT.md`](docs/governance/OPERATING_AGREEMENT.md), because this project's own rule is not to codify a mechanism that has not survived a real run. **Rollback trigger:** three consecutive plan reviews returning nothing the owner acts on → change reviewer vendor, or drop it. Full ruling and the 8.8-hour measurement behind it: `drawer_havdm_decisions_bc47e8270caa139d3ee11646`.
+
 ---
 
 ## MemPalace — Session Cadence
