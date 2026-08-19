@@ -83,7 +83,18 @@ Open PRs           : #<n> <title> (<draft/ready>) …  (or "none")
 Open issues        : #<n> <title> …
 Blockers / waits   : <owner decisions pending, review rounds in flight, …>
 ⚠ Source disagreements: <stale [STATE] / board drift / doc-vs-live> (or "none")
+Recommended next   : B<n> <item> — <one-line why>
+                     B<n> <item> — <one-line why>   (2–3 options, ranked)
 ```
+
+**Recommended next** comes from the board's live backlog: rank the top two or
+three selectable items — by their stable B-number title prefixes — on
+unblocked-ness and standing risk, each with a one-line reason (an
+owner-presence item that retires a measured risk outranks a large reviewed
+slice; an item whose prerequisite is still open is not recommended). The
+selection stays the owner's: a B-number choice authorizes starting that
+item's **first step only** — plan sign-off before implementation and the
+seat/review gates still apply per item.
 
 ## Guardrails
 
