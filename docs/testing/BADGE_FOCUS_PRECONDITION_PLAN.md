@@ -4,13 +4,18 @@ Author: Claude Opus 5 (1M context)
 Reviewer: OpenAI Codex (GPT-5.6 Sol)
 Owner gate: micah / BaggyG-AU
 
-**Status: PLAN ONLY, REVISION 2. No code has been written.** Revision 2 answers
-the independent review at `docs/reviews/badge-focus-precondition-plan-codex-review.md`
-(verdict SEV-1-BLOCKED, commit `a81fb78`) and the owner's adjudication of
-BF-P1/BF-P2/BF-P3 on 2026-08-25. The per-finding disposition table is §9. This document exists to be
-reviewed before it is. Its subject is timing and it changes a helper three
-tests depend on, so it falls inside the SPEC-BEFORE-CODE ruling in `CLAUDE.md`
-(owner's ruling 2026-08-16, in force).
+**Status: PLAN ONLY, REVISION 3. No code has been written.** Revision 2
+answered the independent review at
+`docs/reviews/badge-focus-precondition-plan-codex-review.md` (verdict
+SEV-1-BLOCKED, commit `a81fb78`) and the owner's adjudication of
+BF-P1/BF-P2/BF-P3 on 2026-08-25. **Revision 3 is what the author's own
+pre-handover run of the scoped follow-up commission caught in revision 2** —
+six items, one of them a required element of the BF-P2 repair that revision 2
+had dropped. That run and its results are §10; the per-finding disposition
+table is §9. This document exists to be reviewed before it is implemented. Its
+subject is timing and it changes a helper three tests depend on, so it falls
+inside the SPEC-BEFORE-CODE ruling in `CLAUDE.md` (owner's ruling 2026-08-16,
+in force).
 
 ---
 
@@ -158,6 +163,28 @@ So `aria-expanded="false"` is **the cause**, and the hidden class is a later
 proxy for it that also couples the assertion to animation duration and to
 every other Select on the page. The original proposal would have failed when an
 unrelated Select was open — a precondition belonging to another component.
+⚠ That last sentence is a **claim about the rejected alternative, and revision 3
+puts it under test** rather than leaving it asserted: it is case 4 of §6a.
+
+⚠⚠ **THE STEP REVISION 2 LEFT OUT — WHY THE GUARD IS SUFFICIENT FOR THE OBSERVED
+FAILURE, NOT MERELY RELATED TO IT.** The natural attack is that the screenshots
+show the popup _visually_ present, which is equally consistent with `open`
+already `false` and the leave animation still running. In that state
+`aria-expanded` would **already** read `"false"`, the guard would wait for
+nothing, and the fix would fix nothing. The failure payload rules that reading
+out. Focus was retained on the combobox `<input>`
+(`{"testid":null,"tag":"INPUT","cls":"ant-select-input"}`), so the `Shift+Tab`
+was **prevented**; the only thing that prevents it is the option list's key
+handler — `case KeyCode.TAB:` … `if (open) { event.preventDefault(); }`
+(`node_modules/@rc-component/select/es/OptionList.js:201-216`; `KeyCode.TAB` is
+9 with or without Shift) — and that handler is reached only through the
+`mergedOpen` gate at `BaseSelect/index.js:257-263`. So `mergedOpen` was **true**
+at traversal, and `aria-expanded` is rendered from that same value. **The
+attribute the guard waits on is the attribute that was wrong.**
+ⓘ Tagged **INFERRED**: this is deduced from the failure payload plus the locked
+source, not observed as an attribute read on the runner. Leg A of the local
+probe corroborates it by producing the identical payload with the popup held
+open.
 
 **4.2 — EXACT IDENTITY (BF-P1, owner chose to fix it now).** The helper takes
 the caller's already-scoped badge locator and asserts on the node, not on a
@@ -171,9 +198,21 @@ async function expectReachableByTab(
 ): Promise<void> {
 ```
 
-Both destination assertions become `await expect(badge, …).toBeFocused()`.
-The middle assertion — that the badge has a real preceding focus target — keeps
-its negative form but is expressed against the same scoped node.
+**Three assertions change, not two.** Both destination assertions become
+`await expect(badge, …).toBeFocused()`, and the middle assertion — that the
+badge has a real preceding focus target — keeps its negative form expressed
+against the same scoped node: `await expect(badge, …).not.toBeFocused()`.
+
+⚠ **What becomes of `activeElement` (`:132-140`), stated because revision 2 was
+silent on it.** It stops deciding anything and survives as a **diagnostics-only**
+reader: the third assertion's message names the control it tabbed forward from
+(`${predecessor.testid ?? predecessor.text}`), and that message is worth
+keeping. So the predecessor capture at `:205` stays, its value feeds that
+message and nothing else, and **no assertion anywhere in the helper compares a
+projection of `document.activeElement` again** — which is the property BF-P1
+actually requires. ⚠ Reviewer, attack this: retaining a diagnostic-only reader
+is a judgement, not a necessity, and if you would rather see `activeElement`
+deleted outright, say so.
 
 ⚠ **Why caller-supplied rather than derived from `selectTestId`, and this is
 measured rather than assumed.** Three call sites scope the badge by the
@@ -181,11 +220,16 @@ Select's own test id, but the fourth does not: `theme-selector` is a `<Space>`
 **wrapper** around `theme-select`
 (`src/components/ThemeSelector.tsx:62,77`), and that caller scopes its badge by
 the wrapper (`:332`). Deriving the badge inside the helper would therefore rest
-on an unverified DOM-containment assumption at one of the four hosts. Every
-caller already holds a correctly scoped locator (`:332`, `:439`, `:571`,
-`:577`), so passing it in is both cheaper and stricter — and it is what R7-N1
-prescribed in as many words: "pass the scoped badge locator into the helper,
-assert `toBeFocused()`".
+on an unverified DOM-containment assumption at one of the four hosts.
+Caller-supplied avoids it entirely, and it is what R7-N1 prescribed in as many
+words: "pass the scoped badge locator into the helper, assert `toBeFocused()`".
+
+⚠ **CORRECTED IN REVISION 3 — "every caller already holds a correctly scoped
+locator" was an overstatement, and it understated the diff.** Two of the four
+hold one in a variable: `:332` (`const badge = …`) and `:439`
+(`const tagBadge = …`). The other two **construct the locator inline inside
+`await expect(…)` and discard it** — `:571` and `:577` — so those two callers
+need a **new local** as well as a new argument. §9's radius says so.
 
 ⭐ **This closes R7-N1**, an open finding on `main` since PR #142 and recorded
 as open in the live `[STATE]` record. The badge's test id is deliberately
@@ -208,9 +252,11 @@ established by review and neither is implicated.
   and the Select hosts are untouched, including the repeated test id, which is
   deliberate and is now handled on the test side.
 
-⚠ **REVISION 2 CHANGES THE CALL SITES, WHICH REVISION 1 DID NOT.** The four
-callers each gain one argument. That is a direct consequence of the owner's
-BF-P1 decision and is reflected in §5.
+⚠ **REVISION 2 CHANGED THE CALL SITES, WHICH REVISION 1 DID NOT.** All four
+callers gain one argument, and **two of them also gain a new local** (`:571` and
+`:577` build their badge locator inline inside `await expect(…)` and discard it
+— see §4.2). That is a direct consequence of the owner's BF-P1 decision and is
+enumerated in §9's radius.
 
 ## 5. Blast radius
 
@@ -266,19 +312,83 @@ runnable bidirectional harness against the real code first. **Revised per BF-P2:
 revision 1 specified only two settled endpoints, which could show the guard
 FIRES but never that it WAITS.** The middle case is the defect being repaired.
 
-**6a — the state guard, three cases, against the real Select.**
+**6a — the state guard, FOUR cases, against the real Select.** Revision 2 had
+three. The fourth is a **required element of the BF-P2 repair that revision 2
+dropped**: the review's required repair reads "include an unrelated-open-popup
+case **if the owner selects the scoped guard**", and the owner selected the
+scoped guard (BF-P3, option A). §10 records how that omission was caught.
 
-| #   | Case                                                                   | Old / guard-removed helper                              | Repaired helper                                     |
-| --- | ---------------------------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------------- |
-| 1   | Popup held OPEN                                                        | fails late at the destination assertion, `testid: null` | **fails on the precondition, with its own message** |
-| 2   | Popup closing on a CONTROLLED DELAY, set just under the guard deadline | **fails** — traverses too early                         | **waits, then passes**                              |
-| 3   | Popup already CLOSED                                                   | passes                                                  | passes, and adds no measurable stall                |
+| #   | Case                                                                | Old / guard-removed helper                              | Repaired helper                                                           |
+| --- | ------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------- |
+| 1   | Owning popup held OPEN                                              | fails late at the destination assertion, `testid: null` | **fails on the precondition, with its own message**                       |
+| 2   | Owning popup closing on a CONTROLLED DELAY, just under the deadline | **fails** — traverses too early                         | **waits, then passes**                                                    |
+| 3   | Owning popup already CLOSED                                         | passes                                                  | passes, and adds no measurable stall                                      |
+| 4   | Owning popup CLOSED, an **unrelated** Select's popup OPEN           | n/a — this case tests the guard's SCOPE, not its timing | **proceeds and passes**; the rejected document-global guard **must fail** |
 
-Case 2 is the one that discriminates, and it must be run **both** ways — with
-the guard removed and with it present — recording both outcomes before any CI
-cycle. The delay is chosen near the guard's own boundary rather than at an
-extreme: a never-close case only proves the timeout, and the defeating case for
-a timing guard sits just under its resolution, not far outside it.
+**Case 2 is the timing discriminator** and must be run **both** ways — guard
+removed and guard present — with both outcomes recorded before any CI cycle.
+The delay sits near the guard's own boundary rather than at an extreme: a
+never-close case only proves the timeout, and the defeating case for a timing
+guard sits just under its resolution, not far outside it.
+
+**Case 4 is the scope discriminator**, and it is what turns §4.1's rejection of
+the document-global wait from an assertion into a measurement. It is
+constructible without contrivance: `ThemeSettingsDialog.tsx` carries
+`theme-settings-select` (`:376`), `theme-manager-saved-select` (`:480`) and
+`theme-manager-view-override` (`:531`), and the last two are already proved
+co-present by the existing test at `:569-579`, which uses both in one flow
+without reopening anything. So: at the `theme-manager-saved-select` host, open
+`theme-manager-view-override`'s popup, confirm the **owning** combobox reads
+`aria-expanded="false"`, and run both guards. ⚠ If the two popups turn out not
+to be simultaneously open in practice, say so and record the case as UNRUN with
+the reason — do not quietly drop it.
+
+**⭐ The mechanism for case 2, specified rather than deferred.** Revision 2 named
+this as an open question in §8 and left it there; declaring a hole is not
+filling it, and §6 is binding on how the fix is proved. The construction is
+**page-side and touches no `src/` file**: open the owning Select so `open` is
+true, then schedule its close entirely inside the page before entering the
+helper —
+
+```ts
+const DELAY_MS = 4000; // just under the guard's 5000 ms deadline
+await ctx.window.evaluate((delayMs) => {
+  const input = document.querySelector<HTMLInputElement>(
+    '[data-testid="theme-manager-saved-select"] input',
+  );
+  window.setTimeout(() => {
+    input?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }),
+    );
+  }, delayMs);
+}, DELAY_MS);
+```
+
+With the guard removed the helper focuses and presses `Shift+Tab` at t≈0, while
+`open` is still true, and **fails** with the `testid: null` signature. With the
+guard present the helper is polling `aria-expanded`, sees it flip at
+t≈`DELAY_MS`, and **continues and passes**.
+
+⚠ **Why this does not change what is being measured.** Escape drives antd's own
+close path — it sets `open` false through the same state an option click does —
+and it leaves focus on the combobox, which is exactly the state the three real
+tests are in when they enter the helper. It patches nothing, stubs no timer, and
+does not touch key routing: `mergedOpen` gates the option list's key handler
+either way. It is scheduled **page-side** rather than as an unawaited Playwright
+`keyboard.press`, so it cannot interleave with the helper's own key presses in
+the guard-removed leg. ⚠⚠ **What it does NOT reproduce is the ORIGIN of the open
+state on CI** — §2 is deliberately silent on that, and this harness is silent
+too. It reproduces the **state transition** the guard is asked to survive, which
+is what BF-P2 asked for and no more.
+
+ⓘ **Fallback, with its cost stated.** If the synthetic `keydown` does not close
+the popup (React attaches its listener at the root container, so a bubbling
+native event should reach it — **INFERRED, not yet run**), the fallback is an
+unawaited `ctx.window.keyboard.press('Escape')` fired from a test-side timer.
+That is acceptable only for the guard-present leg, where the helper sends no
+keys while it polls; in the guard-removed leg it could interleave with the
+helper's `Shift+Tab`, so that leg would have to be re-derived. Prefer the
+page-side form.
 
 **6b — exact identity, the adversarial control (new in revision 2).** Reproduce
 the recorded R7-N1 mutation against the repaired helper: remove the intended
@@ -300,18 +410,34 @@ caveat applies to reading that evidence.
 
 ## 7. Sequencing, and what needs the owner
 
-1. This plan is reviewed independently (the owner pastes the commission — the
-   no-agent-spawned-Codex ruling stands).
-2. Every inconsistency it raises goes to the owner with options and a
-   recommendation, in a form a non-developer can judge.
-3. Only then is the code written, on this branch.
-4. Retiring the two manifest rows needs the owner's explicit authorisation and
+1. ✅ **Done.** Revision 1 was reviewed independently — verdict SEV-1-BLOCKED
+   (`a81fb78`); the owner adjudicated BF-P1/BF-P2/BF-P3 on 2026-08-25 and
+   revision 2 landed as `014ac1c`.
+2. ⬅ **WE ARE HERE.** Revision 3 goes back to the **same reviewer** as a
+   **scoped follow-up** under STRAT-D7 / `OPERATING_AGREEMENT.md` §3.4: scope is
+   the repair diff `90760cd..014ac1c` **plus revision 3** and the declared
+   radius, disposing BF-P1 to BF-P4 as RESOLVED or REGRESSED — **not** a fresh
+   full review. The owner pastes the commission at
+   `docs/reviews/badge-focus-precondition-plan-codex-followup-commission.md`;
+   the no-agent-spawned-Codex ruling stands. Its output lands as a committed
+   document on this branch,
+   `docs/reviews/badge-focus-precondition-plan-codex-followup-review.md` —
+   never as a chat reply.
+3. Anything the follow-up raises at SEV 1 or SEV 2 goes to the owner as an
+   **Owner Decision Brief** in STRAT-D15's six fields. The owner gate is held by
+   a non-developer and is never asked to classify a diff.
+4. **Only if the follow-up ACCEPTS** is code written, on this branch, with §6's
+   four cases and three controls recorded **before** a CI cycle is spent. If it
+   returns CHANGES-REQUIRED or SEV-1-BLOCKED, the plan is revised again and **no
+   code is written**.
+5. Retiring the two manifest rows needs the owner's explicit authorisation and
    CI evidence. **Baselining is not diagnosis, and neither is un-baselining.**
 
 ## 8. The weakest claims in this plan, for the reviewer to attack
 
-Revision 2. Two claims from revision 1 are **withdrawn** as the review required;
-the rest are restated and three are new.
+Revision 3. Two claims from revision 1 are **withdrawn** as the review required;
+the standing weaknesses are restated, revision 2's three are kept (one of them
+now answered), and revision 3 adds four more.
 
 **WITHDRAWN — two overstatements the review caught.**
 
@@ -355,35 +481,122 @@ the rest are restated and three are new.
   a future `@rc-component/select` bump could move it. That is a cheaper failure
   than the animation coupling it replaces — it would fail loudly — but it is a
   version-pinned fact, and the plan should be re-checked at any Select upgrade.
-- **Case 2 of §6a needs a mechanism to delay the close** that does not itself
-  change what is being measured. If that mechanism is a `src/` patch it is
-  forbidden here; if it is a page-side stub it must be shown not to alter the
-  focus routing under test.
+- ~~**Case 2 of §6a needs a mechanism to delay the close.**~~ **ANSWERED in
+  revision 3**, not dropped: §6a now specifies a page-side scheduled `keydown`,
+  argues why it does not alter what is measured, and states what it does not
+  reproduce. Its own residual weakness is the first bullet below.
+
+**NEW IN REVISION 3 — attack these too.**
+
+- **The case-2 mechanism is now specified but has never been run.** §6a's
+  page-side `keydown` relies on React's root-container listener receiving a
+  bubbling native event. That is **INFERRED from how React 17+ delegates, not
+  measured here**, and if it is wrong the whole timing discriminator falls back
+  to a form with a known interleaving hazard.
+- **Case 4 assumes two popups in `ThemeSettingsDialog` can be open at once.**
+  Co-presence of the two _Selects_ is measured (the existing test at `:569-579`
+  drives both); co-presence of their two open _popups_ is not. antd does not
+  close one Select's dropdown when another opens, so this should hold —
+  **INFERRED**.
+- **§4.1's `mergedOpen`-was-true inference** is deduced from the failure payload
+  plus locked source, not from an attribute read on the runner. If it is wrong,
+  the guard is aimed at the wrong attribute and cases 1-3 would still pass while
+  CI stayed red. That is the single load-bearing inference in this plan.
+- **`activeElement` is retained as a diagnostics-only reader.** A reader that
+  gates nothing cannot re-introduce the bypass, but it is one edit away from
+  gating something again.
 
 ## 9. Disposition of the independent review
 
 Review: `docs/reviews/badge-focus-precondition-plan-codex-review.md`, verdict
 SEV-1-BLOCKED, commit `a81fb78`. Owner adjudicated 2026-08-25.
 
-| Finding                                                 | Sev | Owner decision                    | Disposition                                                                                                                              | Where         |
-| ------------------------------------------------------- | --- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| BF-P1 — same-testid exact-identity bypass survives §4.3 | 1   | Option A — fix identity now       | **RESOLVED** — helper takes a caller-supplied scoped locator and asserts `toBeFocused()`; adversarial decoy control added. Closes R7-N1. | §3, §4.2, §6b |
-| BF-P2 — no fail-against-old transition leg              | 1   | Option A — add the middle case    | **RESOLVED** — three-case harness; case 2 run with the guard removed and present, both recorded pre-CI                                   | §6a           |
-| BF-P3 — document-global CSS guard is later and broader  | 2   | Option A — scoped `aria-expanded` | **RESOLVED** — guard is now `aria-expanded="false"` on the owning combobox, justified from locked source                                 | §4.1          |
-| BF-P4 — unexecuted tail wider than `:579`               | 3   | accepted                          | **RESOLVED** — tail corrected to `:575-581`; the self-contradictory "green run may surface a third failure" wording replaced             | §5            |
-| Disagreement — "the one the reviewer prescribed"        | —   | accepted                          | **WITHDRAWN**                                                                                                                            | §8            |
-| Disagreement — "never finished closing"                 | —   | accepted                          | **NARROWED** to "open at traversal"                                                                                                      | §2, §8        |
+| Finding                                                 | Sev | Owner decision                    | Disposition                                                                                                                                                                                                                                                                          | Where         |
+| ------------------------------------------------------- | --- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| BF-P1 — same-testid exact-identity bypass survives §4.3 | 1   | Option A — fix identity now       | **RESOLVED** — helper takes a caller-supplied scoped locator and asserts `toBeFocused()`; adversarial decoy control added. Closes R7-N1.                                                                                                                                             | §3, §4.2, §6b |
+| BF-P2 — no fail-against-old transition leg              | 1   | Option A — add the middle case    | **RESOLVED IN REVISION 3.** Revision 2 was only PARTIAL: it added the middle case but dropped the unrelated-open-popup case the repair required once the owner chose the scoped guard, and named no mechanism for the middle case. §6a now has four cases and a specified mechanism. | §6a, §10      |
+| BF-P3 — document-global CSS guard is later and broader  | 2   | Option A — scoped `aria-expanded` | **RESOLVED** — guard is now `aria-expanded="false"` on the owning combobox, justified from locked source                                                                                                                                                                             | §4.1          |
+| BF-P4 — unexecuted tail wider than `:579`               | 3   | accepted                          | **RESOLVED** — tail corrected to `:575-581`; the self-contradictory "green run may surface a third failure" wording replaced                                                                                                                                                         | §5            |
+| Disagreement — "the one the reviewer prescribed"        | —   | accepted                          | **WITHDRAWN**                                                                                                                                                                                                                                                                        | §8            |
+| Disagreement — "never finished closing"                 | —   | accepted                          | **NARROWED** to "open at traversal"                                                                                                                                                                                                                                                  | §2, §8        |
 
-**Blast-radius statement for this revision.** The repair is confined to
-`tests/integration/theme-no-effect-badge.spec.ts`: one helper signature, its two
-destination assertions, its precondition, and the four call sites that supply
-the new argument. No `src/` change, no manifest change, no change to any other
-spec. The upstream reliance is the installed `@rc-component/select` rendering
-`aria-expanded` from `open`; the downstream consumers are the three calling
-tests, of which `:343` is the control that must stay green.
+**Blast-radius statement (CORRECTED IN REVISION 3 — revision 2 under-declared
+it, and under OA §3.4 a wrong or missing radius is itself a finding).** The
+repair is confined to `tests/integration/theme-no-effect-badge.spec.ts` and
+touches exactly:
+
+1. the `expectReachableByTab` signature (`:191-194`) — one new parameter;
+2. **three** assertions inside it, not two — both destinations (`:199-202`,
+   `:213-216`) **and** the middle predecessor assertion (`:206-209`);
+3. the new precondition, inserted between `:195` and `:196` — before
+   `combobox.focus()`;
+4. the four call sites (`:343`, `:447`, `:573`, `:579`), each gaining one
+   argument;
+5. **two new locals**, at `:571` and `:577`, because those two callers build
+   their badge locator inline inside `await expect(…)` and discard it.
+
+`activeElement` (`:132-140`) survives as a diagnostics-only reader and gates
+nothing (§4.2). No `src/` change, no manifest change, and no change to any other
+spec — swept with
+`rg -n "toBeFocused|activeElement|theme-no-effect-badge" tests/`, whose only
+hits outside this file belong to unrelated components (accordion, gradient
+editor, colour picker, popup, tabs); no second helper anywhere asserts that a
+`theme-no-effect-badge` received focus, so R7-N1's class is closed by this one
+file. The upstream reliance is the installed `@rc-component/select@1.5.0`
+rendering `aria-expanded` from `open`; the downstream consumers are the three
+calling tests, of which `:343` is the control that must stay green.
 
 **Nothing in the review was rejected.** Every finding was verified against the
 cited source before being accepted — the helper's assertions, the repeated test
 id in `ThemeNoEffectBadge.tsx`, the R7-N1 decoy record, and all three
 dependency claims in `@rc-component/select`, `@rc-component/trigger` and
 `@rc-component/motion`.
+
+## 10. The author's own run of the follow-up commission, before handing it over
+
+The governing rule is that **the review commission you write is the checklist
+you owe yourself, and writing it down is not running it** — run every check
+against your own artifact first, fix what it catches, then hand the commission
+over **unweakened** with the record that you ran it. Revision 2 was blocked by a
+review that found two SEV 1s partly because the previous self-check ran on one
+dimension and not on the dimension the governing rule named. So this run was
+made on **every** dimension the follow-up commission asks about, not the
+convenient ones.
+
+**What was run:** the seven questions of
+`docs/reviews/badge-focus-precondition-plan-codex-followup-commission.md`,
+against revision 2 (`014ac1c`), before that commission was handed to the owner.
+The commission was **not** softened afterwards; every question below is still in
+it, in the same words.
+
+| #      | Dimension                                 | Result on revision 2                                                                                                                                     | Fixed in revision 3 |
+| ------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| **S1** | Radius accuracy (Q5)                      | §9 declared "its two destination assertions"; §4.2 also changes the middle one. **Under-declared radius — itself a finding under OA §3.4.**              | §9                  |
+| **S2** | BF-P1 completeness (Q1)                   | Silent on what becomes of `activeElement` and the `predecessor` capture that feeds the third assertion's message. Under-specified.                       | §4.2                |
+| **S3** | Claim hygiene (Q1)                        | "Every caller already holds a correctly scoped locator" is false at `:571` and `:577`, which build it inline and discard it.                             | §4.2, §9            |
+| **S4** | BF-P2 completeness (Q2) — **the big one** | The unrelated-open-popup case, **required by the review once the owner chose the scoped guard**, was absent from §6a.                                    | §6a case 4          |
+| **S5** | BF-P2 executability (Q2)                  | §6a case 2 named no delay mechanism; §8 declared the hole instead of filling it, while §6 is binding on how the fix is proved.                           | §6a                 |
+| **S6** | BF-P3 sufficiency (Q3)                    | The chain stopped at "`aria-expanded` comes from `open`" and never closed back to the observed payload, leaving the obvious mid-leave attack unanswered. | §4.1                |
+
+**Checked and clean — recorded because silence is not a result.** BF-P4's tail
+correction (`:575-581`, `finally` at `:582-584`) verified line by line against
+the file. The R7-N1 class sweep re-run independently
+(`rg -n "toBeFocused|activeElement|theme-no-effect-badge" tests/`): no assertion
+outside this file claims a `theme-no-effect-badge` received focus, so the class
+is closed by this one file. Every element round 1 checked clean is still intact
+in revision 3 — file-local helper, test-only change, both traversal directions,
+the explicit `.focus()` starting-point reset, no retry or tolerance, the
+`6eb47d8` control retained with its limit stated, both manifest rows retained.
+No over-reach found: "this closes R7-N1" is earned, because R7-N1's own
+prescription has three parts (scoped locator, `toBeFocused()`, wait for popup
+closure) and revision 3 carries all three.
+
+**The honest part.** S4 is the same failure shape as last round: a required
+element of a decision the owner had **already made** went missing from the
+revision that was supposed to implement it. It was caught here rather than by
+the reviewer, which is the point of running the commission first — but the
+lesson is not "the self-check works", it is that **a repair must be read against
+the review's required-repair text, clause by clause, not against a summary of
+the finding.** Expect a residue of genuinely independent findings anyway: this
+run cannot substitute for the follow-up, and nothing here should be read as
+clearing a question it merely failed to break.
