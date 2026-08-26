@@ -4,7 +4,14 @@ Author: Claude Opus 5 (1M context)
 Reviewer: OpenAI Codex (GPT-5.6 Sol)
 Owner gate: micah / BaggyG-AU
 
-**Status: PLAN ONLY, REVISION 2. No code has been written.** Revision 2 answers
+**Status: PLAN ONLY, REVISION 3. No code has been written.** ⚠⚠ **Revision 3
+replaces the ownership mechanism**, because the harness ran under the owner's
+narrow tripwire exception and **falsified the one revisions 1–2 were built on**
+(§4.2); the owner re-ruled on 2026-08-27, selecting **option D**. It also answers
+the second review (`docs/reviews/spacing-helper-preset-plan-codex-followup-review.md`,
+verdict **SEV-1-BLOCKED**, commit `a8cba46`) — SP-7 by **deletion**, SP-8, SP-9
+and SP-10 by repair — and **deletes route (a) and route (b)'s mechanism
+entirely**. Disposition is **§9**. ⓘ Revision 2 answered
 the independent review at
 `docs/reviews/spacing-helper-preset-plan-codex-review.md` (verdict
 **SEV-1-BLOCKED**, commit `6694a61`), whose **six findings the author
@@ -273,82 +280,66 @@ obscured, detached or unstable target. `el.click()` inside `evaluate` never
 complains, and `force: true` explicitly disables the check. **D3 is what turns
 D1 and D2 from a loud failure into a silent wrong answer.**
 
-### 2.3 ⚠⚠ A CORRECTION TO THE RECORDED DIAGNOSIS
+### 2.3 ⚠⚠ THE ROUTES — CORRECTED TWICE, AND NOW SETTLED BY MEASUREMENT
 
-`drawer_havdm_investigations_93a44232f7b76ea15a1b4f2c` names two candidate
-routes and states: _"BOTH ROUTES PRODUCE EXACTLY THE OBSERVED END STATE, AND
-BOTH ARE REPAIRED BY THE SAME CHANGE."_ **The second half of that sentence is
-false for the narrower change the same drawer recommends** ("scope the option
-search to `getVisibleSelectDropdown()`'s own subtree"), and this plan is
-different because of it.
+`drawer_havdm_investigations_93a44232f7b76ea15a1b4f2c` names two candidate routes
+to the wrong-control click and states that **both are repaired by the same
+change** — scoping the option search to `getVisibleSelectDropdown()`'s subtree.
+**The scoping half of that is false, and the measurement in §4.2 now proves it
+rather than arguing it.**
 
-There are **three** routes, not two, and scoping alone repairs only the first.
+**THE STATE THAT MATTERS, MEASURED (§4.2, M4).** With the padding Select
+**closed** and the margin Select owning the **only** visible popup, a
+document-global `:visible` search for `/^Normal/i` returns **exactly one match —
+the MARGIN's**. In that state `.last()` _is_ the foreign popup, so **scoping the
+option search to it selects the wrong option exactly as before, and reports
+success.** Only an authority that asks _the requested Select_ what it owns turns
+that state loud. **That is why the repair is OWNERSHIP, not SCOPE.**
 
-| Route                                                                                                                                                                                                                                     | What happens                                    | Repaired by scoping the option search alone?                                                                                 |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **(a)** The margin popup is still `:visible` when the padding option search runs; both popups are open.                                                                                                                                   | Two popups; `.first()` picks the margin option. | **Yes** — if `.last()` happens to be the padding popup. That is a DOM-order coincidence, not a proof (see below).            |
-| **(b)** `openSelectDropdown` clicked the **margin** select rather than the padding one (auto-scroll moved the scrollable panel between locate and click).                                                                                 | **Only the margin popup is open.**              | **NO.** `.last()` _is_ the margin popup, so scoping the search to it clicks the margin option — the identical wrong outcome. |
-| **(c)** The click on the padding select did not leave _its_ popup open — swallowed, **or it toggled an already-open popup shut** (a Select toggles on a click of its root) — and a leftover margin popup satisfied D1's visibility check. | **Only the margin popup is open.**              | **NO** — same as (b).                                                                                                        |
+### ⚠⚠⚠ Route (a) is DELETED — it is not constructible
 
-⚠⚠⚠ **REVISION 2 — THIS PARAGRAPH PREVIOUSLY CARRIED A FALSE CONTROL-FLOW
-CLAIM, AND IT WAS THE PLAN'S REASON FOR TREATING RETRY REMOVAL AS IN-SCOPE.
-FINDING SP-2. IT IS RETRACTED AND CORRECTED HERE.**
+Revisions 1–2 carried a route (a), "both popups open". **MEASURED: two popups
+cannot be open at once.** Opening the margin Select **closed** the padding one —
+by pointer **and** by keyboard (`ArrowDown` on a focused combobox, chosen
+deliberately to avoid outside-click dismissal); padding read
+`aria-expanded="false"`, margin `"true"`, with two popup nodes in the DOM and
+exactly one displayed. **Route (a) is removed from this plan, and harness leg 1
+with it.**
 
-**WHAT REVISION 1 CLAIMED (WITHDRAWN):** that the retry loop's `catch` at
-`:43-45` swallows a displaced click's hit-target error and _delivers control to_
-the `force: true` fallback at `:49`, making the loop and the fallback "one
-thing".
+### ⚠⚠⚠ Route (b)'s MECHANISM is DELETED — twice wrong is enough
 
-**WHAT THE SOURCE ACTUALLY DOES (MEASURED, `tests/support/dsl/spacing.ts:37-49`):**
-attempt 0's throw is swallowed; attempt 1 performs **another ordinary,
-actionability-checked `select.click()`**; and if that throws, `if (attempt === 1)
-throw error` **exits the function**. **Line 49 is UNREACHABLE via a throwing
-click.** The `force: true` fallback is reached only when both normal clicks
-_resolve_ and the loop still sees no visible popup.
+The plan asserted **two different mechanisms** for how a click could reach the
+wrong Select, and **both were false**:
 
-⭐⭐ **AND THE CORRECTION STRENGTHENS THE CASE FOR OWNERSHIP RATHER THAN
-WEAKENING IT.** Route (b) does not need `force: true` at all. Playwright's
-hit-target check is evaluated **before** the event is dispatched, so it is
-inherently a time-of-check/time-of-use race: on a scrollable panel a click that
-_resolves without error_ can still be delivered to whatever occupies those
-coordinates by the time the browser dispatches it. **Route (b) is therefore MORE
-reachable than revision 1 argued, through the ordinary click path.** (MEASURED
-for the helper's control flow; **INFERRED** for the Playwright dispatch race,
-which is documented behaviour and is **not** measured here — and §6 leg 0 does
-**not** decide it either, correcting a second revision-1 overstatement.)
+1. **Revision 1** claimed the retry loop's `catch` at `:43-45` delivers a
+   displaced click to the `force: true` fallback at `:49`. **False:**
+   `if (attempt === 1) throw error` exits the function; line 49 is unreachable via
+   a throwing click (finding SP-2).
+2. **Revision 2** claimed an ordinary Playwright click can resolve after being
+   delivered to a moved target — a time-of-check/time-of-use race. **False:**
+   Playwright 1.57.0 installs a hit-target interceptor for non-force clicks
+   (`node_modules/playwright-core/lib/server/dom.js:360-380`) whose injected
+   listener computes the hit target **at event time** and, on mismatch, calls
+   `preventDefault()`, `stopPropagation()` and `stopImmediatePropagation()`; the
+   mismatch is returned (`:388-401`) and the action is **retried**. A displaced
+   ordinary click is **blocked, not delivered** (finding SP-7).
 
-⚠ **What this costs the plan:** removing the retry is **no longer justified by
-the mechanism** and became an owner choice. The owner ruled on 2026-08-27 to
-**retain a bounded retry, re-gated on ownership**, with `force: true` and the
-`evaluate` click still removed — see §4.4 and disposition SP-2 in §9.
+⭐⭐⭐ **SO ROUTE (b)'s MECHANISM IS NOW LEFT EXPLICITLY UNEXPLAINED, AND A THIRD
+GUESS IS FORBIDDEN.** This is the reviewer's own remedy, and the plan does not
+need it: **ownership is justified by the measured foreign-only state (M4) and by
+route (c), without any account of how CI reached that state.**
 
-⚠ **And `.last()` is not "the popup I just opened".** rc-trigger renders each
-popup into its own portal and does **not** remove it on close — the motion
-config at `@rc-component/trigger@3.8.1 lib/Popup/index.js:150` passes
-`removeOnLeave: false`, with `leavedClassName` set to the popup's `-hidden`
-class at `:152` — i.e. a closed popup is _hidden_, not deleted. So DOM order among popups is the order in
-which each Select was **first** opened, not the order of most recent opening.
-`.last()` therefore coincides with "the one I just opened" only when the popups
-happen to have been first opened in that order. In `applies spacing presets` they
-were — margin before padding — which is exactly why route (a) has been survivable
-and why the identity has always passed on retry. **A coincidence that holds today
-is not a mechanism.** (MEASURED for `removeOnLeave`/`leavedClassName`; the
-consequence for DOM ordering is INFERRED from it.)
+**The routes that remain, and what each needs:**
 
-**The conclusion that follows: the repair must establish OWNERSHIP, not merely
-SCOPE.** A helper that proves the popup it is about to search belongs to the
-select the caller named fails loudly on routes (b) and (c) instead of quietly
-doing the wrong thing. That is the same shape as PR #153's repair, which replaced
-a projection of `document.activeElement` with `toBeFocused()` on the caller's own
-already-scoped locator: **exact identity, not a resemblance test**
-(`drawer_havdm_investigations_e782dca064b2b8c5e7c22549`).
+| Route                                                                                                                   | What the helper SEES                           | Repaired by scope alone?                  |
+| ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ----------------------------------------- |
+| ~~(a) both popups open~~                                                                                                | **DELETED — not constructible (measured).**    | n/a                                       |
+| **(b)** the wrong Select was opened — **mechanism unexplained, deliberately**                                           | one foreign popup; the requested Select closed | **NO** — `.last()` _is_ the foreign popup |
+| **(c)** the requested Select's click did not leave _its_ popup open — swallowed, or toggling an already-open popup shut | one foreign popup; the requested Select closed | **NO** — same state                       |
 
-⚠ Discriminating _which_ of (a)/(b)/(c) actually fires on the runner is **not**
-required for the repair, and this plan does not claim to have done it. It is
-recorded as UNRESOLVED. §6 leg 5 offers a cheap opportunistic discriminator, but
-the repair is justified by covering all three, not by identifying one.
-
----
+⚠ **Which route actually fires on the runner is UNRESOLVED and this plan does not
+claim to know.** Routes (b) and (c) present the helper with the **same state**,
+and that state is what the repair addresses. §6 measures the state, not the route.
 
 ## 3. The desired outcome
 
@@ -388,180 +379,196 @@ project's own craft rule — _make the red leg NAME the bug_ — and it is what
 makes P1's version-pinned mechanism (§8) an acceptable risk rather than a
 single point of failure.
 
-### 4.2 The ownership authority — what it is, and what it is not
+### 4.2 The ownership authority — MEASURED IN THE RUNNING APP
 
-**REJECTED as the authority: `:visible` / `:not(.ant-select-dropdown-hidden)`
-counts, in any `.first()` / `.last()` form.** They answer "is a popup open",
-never "is _this select's_ popup open". `.ant-select-dropdown-hidden` is
-CSSMotion's `leavedClassName` (`@rc-component/trigger@3.8.1
-lib/Popup/index.js:152`), so it also lands only after the visual leave,
-coupling any wait to animation duration — the same reason PR #153 rejected it.
-This is the _identical_ rejection PR #153 made for the same reason, and it is
-recorded there as measured, not argued.
+⚠⚠⚠ **REVISION 3. THE MECHANISM PROPOSED IN REVISIONS 1 AND 2 IS DEAD, AND IT
+WAS KILLED BY EXECUTION, NOT BY ARGUMENT.** Revisions 1–2 proposed identifying
+the owning popup through the requested Select's `aria-controls="<id>_list"`,
+resting on `@rc-component/select@1.5.0 lib/Select.js:123` — `useId(id)`
+guarantees an id. **That row was true about EXISTENCE and silent about
+UNIQUENESS, and uniqueness was the property the design needed.**
 
-**PROPOSED as the authority: the select's own `aria-controls` link.** Read from
-the installed dependency's source, all MEASURED:
+**MEASURED in the running Electron app, 2026-08-27:** the padding Select and the
+margin Select **both** report `aria-controls="test-id_list"` — the **same** id.
+Root cause, read from source afterwards:
+`node_modules/@rc-component/util/lib/hooks/useId.js` returns the **constant
+`'test-id'`** when `process.env.NODE_ENV === 'test'`. ⚠ And because rc-trigger
+keeps closed popups in the DOM (`removeOnLeave: false`,
+`@rc-component/trigger@3.8.1 lib/Popup/index.js:150`), **both popups retain that
+node**: with one popup open, `document.querySelectorAll('[id="test-id_list"]')`
+returned **2**, and every `.ant-select-dropdown` reported `hasIdList: true`. **So
+the revision-2 `filter({ has: … })` + `toHaveCount(1)` would have failed on the
+ORDINARY path.**
 
-| Fact                                                                                                                                                 | Source                                                                                                                                                                                                                                                                                                                                                                                          |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The combobox input carries `aria-controls="${id}_list"` **only while open** — `undefined` when closed.                                               | `@rc-component/select@1.5.0 lib/SelectInput/Input.js:188`. ⓘ `aria-owns` at `:186` carries the identical value under the identical condition, so it is an equivalent fallback if `aria-controls` ever moves.                                                                                                                                                                                    |
-| Every Select has an `id`, auto-generated when not supplied.                                                                                          | `lib/Select.js:123` — `const mergedId = useId(id)`                                                                                                                                                                                                                                                                                                                                              |
-| An element with `id="${id}_list"` is rendered **inside the popup**.                                                                                  | `lib/OptionList.js:288-296`                                                                                                                                                                                                                                                                                                                                                                     |
-| That element is a **hidden 0×0** `role="listbox"` when the list is virtual.                                                                          | `lib/OptionList.js:290-296` — `style: { height: 0, width: 0, overflow: 'hidden' }`                                                                                                                                                                                                                                                                                                              |
-| The list **is** virtual for these Selects.                                                                                                           | `lib/Select.js:456` — `realVirtual = virtual !== false && popupMatchSelectWidth !== false`; `SpacingControls.tsx` sets neither prop, and `antd/lib/select/index.js:222` passes `virtual` straight through                                                                                                                                                                                       |
-| `data-testid` lands on **exactly one** node — the `.ant-select` root, which contains both the combobox input and the value node.                     | `@rc-component/select@1.5.0 lib/BaseSelect/index.js:448` spreads `restProps` into `SelectInput`; `lib/SelectInput/index.js:154` keeps unknown props in `domProps`; `:178` renders the single root `<div>` with them. The `RootComponent` branch at `:165-175` is not taken — `grep -n components node_modules/antd/lib/select/index.js` returns nothing, so antd supplies no `components.root`. |
-| The single-select value text lives at `.ant-select-content-value`, inside `.ant-select-content`, which **also** holds the placeholder and the input. | `lib/SelectInput/Content/SingleContent.js:53` and `:89`; `Content/Placeholder.js:31`                                                                                                                                                                                                                                                                                                            |
+⭐⭐⭐ **THE LESSON, AND IT IS THE MOST EXPENSIVE ONE THIS PLAN HAS PRODUCED: THE
+AUTHOR CLEARED THAT ROW AND SO DID THE INDEPENDENT REVIEWER, TWICE** — its round-1
+Q2 answered "no issue found in the seven source claims" and round 2 did not
+reopen it. **Both checked that the identifier EXISTS. Neither checked that it is
+UNIQUE. Two rounds of source review passed a defect the first minute of execution
+caught.**
 
-⚠⚠ **THE TRAP THIS CREATES, AND IT MUST NOT BE MISSED.** The id-bearing node is
-**hidden**. Any locator that asserts _visibility_ on `#${id}_list` can never
-pass, and any locator that searches for option rows _inside_ it finds the
-three-row hidden accessibility tree rather than the real option list
-(`lib/OptionList.js:296` renders only `activeIndex - 1`, `activeIndex`,
-`activeIndex + 1` there; `:307` passes `innerProps: virtual ? null : a11yProps`,
-so the visible list carries no id at all). It is usable **only** as a `:has()` /
-`filter({ has })` predicate that identifies the owning `.ant-select-dropdown`,
-never as a search root and never as a visibility target. This is the same hazard
-the project already recorded for `getByRole('option')` matching antd's hidden
-0×0 listbox, and the practice rule
-`drawer_practice_verification_691f585b61f0be0870367722` is the general form.
+### The four facts the same run established, all MEASURED
 
-⭐ **A bonus that collapses two checks into one.** Because `aria-controls` is
-`undefined` when closed and set when open, reading it non-empty is
-simultaneously the open-state proof **and** the ownership proof. There is no
-second, separate "is it open yet" wait to get wrong — the same economy PR #153
-found in `aria-expanded`.
+| #      | Fact                                                                                                                                                                                                                                       | How it was measured                                                                                                                                               |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **M1** | **`aria-expanded` is a reliable PER-SELECT open-state authority.** All comboboxes read `"false"` at rest; only the requested Select flips to `"true"` when opened; **and it flips back to `"false"` when another Select takes the popup.** | Read from every `input[role="combobox"]` in the Properties panel across three states (rest, padding open, margin open). **Sixteen** comboboxes were present.      |
+| **M2** | **The visible-popup set is a SINGLETON.** Two popup nodes existed in the DOM; exactly one was displayed.                                                                                                                                   | `getComputedStyle(d).display !== 'none'` → 1; Playwright `.ant-select-dropdown:visible` → 1; `:not(.ant-select-dropdown-hidden)` → 1.                             |
+| **M3** | **Route (a) — two popups open at once — is NOT CONSTRUCTIBLE.** Opening the margin Select **closed** the padding one, by pointer **and** by keyboard.                                                                                      | Keyboard was used deliberately (`ArrowDown` on a focused combobox) to avoid outside-click dismissal; padding still went `aria-expanded="false"`, margin `"true"`. |
+| **M4** | ⭐ **THE DEFECT REPRODUCED IN MINIATURE.** With the padding Select CLOSED and the margin Select owning the only visible popup, a document-global `:visible` search for `/^Normal/i` returned **exactly ONE match — the MARGIN's**.         | The wrong-control state, measured. **A scope-only repair would confidently select from the foreign popup and report success.**                                    |
+
+⭐⭐ **M4 IS THE PLAN'S CENTRAL CLAIM, NO LONGER ARGUED.** Ownership beats scope
+because in the real failure state there is exactly one visible popup and it
+belongs to the wrong control.
+
+### The authority, as ruled
+
+**OWNER RULED OPTION D, 2026-08-27** (see §4.3). Ownership is established by
+**two assertions on the requested Select, in this order**:
+
+- **P1 — the requested Select's OWN combobox reads `aria-expanded="true"`.**
+  Per-Select by construction (M1). **A foreign Select cannot satisfy it**: in the
+  failure state (M4) the requested Select reads `"false"` and the helper fails
+  loudly, naming the control.
+- **P2 — exactly ONE `.ant-select-dropdown` is visible**, and options are searched
+  only inside it. The singleton is **asserted, never assumed** (M2).
+
+⚠ **The inference this rests on, stated plainly so it can be attacked:** _if the
+requested Select is open, it has a visible popup; if exactly one popup is visible,
+that popup is the requested Select's._ It is sound **only because P2 is an
+assertion** — if the singleton ever breaks, the helper fails loudly rather than
+selecting silently. **That is a JUDGEMENT and §8 lists it first.**
+
+**REJECTED, and why:** the `aria-controls` id link (falsified above); any
+`:visible` / `:not(-hidden)` `.first()` / `.last()` selection, which answers "is a
+popup open" and never "is _this_ Select's popup open"; and `.ant-select-dropdown-hidden`
+as a timing authority, since it is CSSMotion's `leavedClassName`
+(`lib/Popup/index.js:152`) and lands only after the visual leave.
+
+ⓘ **Still MEASURED-from-source and NOT disturbed by any of this** (the reviewer
+cleared them in round 1 and re-cleared the surrounding area in round 2): the
+single-select value node is `.ant-select-content-value`
+(`SelectInput/Content/SingleContent.js:53`), whose parent `.ant-select-content`
+(`:89`) also holds the placeholder and the input; and `data-testid` lands on
+exactly one node, the `.ant-select` root — confirmed in the census, which read
+`paddingCount: 1`, `marginCount: 1`, tag `DIV`, class `ant-select …`.
 
 ### 4.3 ⚖ OWNER DECISION 1 — which ownership mechanism
 
+⚠⚠ **RE-PUT IN REVISION 3, BECAUSE THE MEASUREMENT REFUTED THE PREMISE THE
+FIRST RULING RESTED ON.** The owner ruled **option A** on 2026-08-27 on the
+strength of §4.2's source-measured chain; the harness then falsified that chain
+on the point the design depended on. Rather than swap the mechanism silently, the
+decision was re-put — _when the measurement refutes the premise an authorisation
+was granted on, RE-ASK rather than execute its letter._
+
 **What this protects in product terms.** Nothing in the shipped app either way.
 This decides how the test proves it is holding the right control, and therefore
-how durable the fix is against future library upgrades.
+how durable the fix is.
 
-**What is going wrong plainly.** The helper currently has no way at all to tell
-one drop-down from another. Something must give it one.
+**What is going wrong plainly.** The helper has no way to tell one drop-down from
+another. Something must give it one — and the first answer we tried turned out
+not to work, because in test mode every drop-down is labelled with the _same_
+internal name.
 
-**Is the product affected?** No, under every option. **Evidence status:** the
-DOM facts in §4.2 are MEASURED from the installed library source; whether they
-hold in the running Electron app is INFERRED and is §6's leg 0.
+**Is the product affected?** **No**, under every option. **Evidence status:** the
+falsification and the four replacement facts are **MEASURED in the running
+Electron app** (§4.2), not inferred.
 
 **The options.**
 
-**Option A — read the select's `aria-controls` (test-only).** No `src/` change.
-Uses §4.2's chain. _Cost:_ nothing beyond the test edit. _Risk:_ `aria-controls`
-is a rendered accessibility attribute, not a promised API; an
-`@rc-component/select` upgrade could move it. It would fail **loudly** if it did
-— the helper would report "no popup owned by `spacing-padding-preset` is open" —
-and P4 is a second, independent detector behind it.
+**~~Option A — the `aria-controls` id link.~~ FALSIFIED BY MEASUREMENT.** Not
+available. §4.2 records why.
 
-**Option B — give each Select a popup class (`src/` change).** Add
-`classNames={{ popup: { root: 'spacing-margin-preset-dropdown' } }}` (antd v6's
-current form; `popupClassName` is the deprecated alias — `node_modules/antd/lib/select/index.d.ts:57-58`)
-to each of the four Selects in `SpacingControls.tsx`, and locate
-`.ant-select-dropdown.<class>`. _Precedent:_ the repo already does exactly this
-— `tests/support/dsl/backgroundCustomizer.ts:44-60` maps testid → popup class and
-resolves `.ant-select-dropdown.${popupClass}`. _Cost:_ a one-line `src/` change
-per Select and a test hook living in product code. _Risk:_ lowest of the three;
-the class is ours and cannot move under us. But it makes a test-only fix into a
-`src/` change, and the four Selects are rendered from one shared function, so the
-class must be derived from `testIdPrefix` rather than hand-written four times.
+**Option D — per-Select `aria-expanded` + an asserted singleton (test-only).** No
+`src/` change. P1 reads the requested Select's own `aria-expanded`; P2 asserts
+exactly one visible popup. _Cost:_ nothing beyond the test edit. _Risk:_ it
+identifies the popup by **inference** (open + singleton ⇒ ours) rather than by
+construction — mitigated by asserting the singleton so a break is loud, never
+silent. ⓘ It reuses the authority PR #153 already proved on this codebase.
 
-**Option C — serialise: never allow two popups open at once.** Before opening
-any select, wait for the visible-dropdown count to reach zero, so `.last()` is
-unambiguous. _Cost:_ smallest diff. _Risk:_ **it repairs route (a) only.** Routes
-(b) and (c) survive untouched, and it re-installs a document-global authority of
-exactly the kind PR #153 rejected as the deciding check. It is also the option
-most likely to _look_ like it worked, because route (a) is the one the existing
-evidence best fits.
+**Option B — a popup class per Select (`src/` change).** Add
+`classNames={{ popup: { root: … } }}` to each Select in `SpacingControls.tsx`
+(antd v6's current form; `popupClassName` is the deprecated alias —
+`node_modules/antd/lib/select/index.d.ts:57-58`) and locate
+`.ant-select-dropdown.<class>`. _Precedent:_ `tests/support/dsl/backgroundCustomizer.ts:44-60`.
+_Cost:_ a one-line `src/` change per Select and a test hook in product code.
+_Risk:_ lowest — **the only option that identifies the popup by CONSTRUCTION
+rather than by inference**; the class is ours and cannot collide. The four Selects
+render from one shared function, so the class must derive from `testIdPrefix`.
 
-**Recommendation: A, alone. ⭐ OWNER RULED A, 2026-08-27, and separately ruled
-that option C's zero-count wait is REMOVED ENTIRELY (finding SP-1).** A is
-test-only, it is the only option that proves ownership without putting a hook in
-product code, and its failure mode is loud.
+**Recommendation: D.** It needs no product change, every premise behind it is
+measured rather than reasoned, and its one inference fails loudly.
 
-⚠⚠ **REVISION 1 RECOMMENDED KEEPING C's WAIT AS "SETUP ISOLATION". THAT WAS
-WRONG, AND THE INDEPENDENT REVIEW MEASURED TWO SEPARATE DEFECTS IN IT.** (i) It
-**consumed the harness's own hostile state**: `openSelectDropdown`'s first act
-was to wait for zero popups, while §6's legs 1, 2 and 5 each require a foreign
-popup to be OPEN — so the leg's state was erased, or the helper timed out before
-the guard ran, and either way the leg measured nothing. (ii) Against a
-**stable, legitimately-open unrelated Select** the count never reaches zero at
-all, so every mode and preset call would burn the full five seconds and fail
-without ever touching the requested Select — a worse case than the author's own
-attack found, and the direct answer to the crueller-attack question the
-revision-1 commission asked for. ⭐ **The setup-isolation-versus-authority
-distinction is still valid in general; this particular implementation of it was
-not.** A guard's authority must be exercised WITH foreign state present, not
-after it has been tidied away.
+**If you do nothing:** the identity keeps reddening roughly one run in four.
 
-**If you do nothing:** the identity keeps reddening about one run in four.
+⭐⭐ **OWNER RULED: D. 2026-08-27.** ⓘ Recorded with option B's advantage stated
+plainly rather than argued away — B identifies by construction, D by an asserted
+inference — so a later reader can see what was traded and why.
 
 ### 4.4 The proposed helper, in full
 
-Three private helpers are added or rewritten; the four public entry points that
-route through them (`setPreset`, `setMarginMode`, `setPaddingMode`, and through
-`setPreset` the string branches of `setCardMargin`/`setCardPadding`) change only
-in that they pass through an expected-label pattern for P4.
+Revision 3. Three private helpers are rewritten and one is added; the four public
+entry points that route through them (`setPreset`, `setMarginMode`,
+`setPaddingMode`, and through `setPreset` the string branches of
+`setCardMargin`/`setCardPadding`) change only in passing an expected-label
+pattern for P4.
 
 ```ts
-/**
- * Resolve the popup that BELONGS to `select`, proving ownership rather than
- * mere existence.
- *
- * AUTHORITY (read from @rc-component/select@1.5.0):
- *   - lib/SelectInput/Input.js:188 renders aria-controls="<id>_list" on the
- *     combobox input ONLY while the popup is open (undefined when closed), so a
- *     non-empty read is simultaneously the OPEN proof and the OWNERSHIP proof.
- *   - lib/Select.js:123 guarantees an id via useId(), so the link always exists.
- *   - lib/OptionList.js:288-296 renders an element with id="<id>_list" INSIDE
- *     the popup.
- *
- * ⚠ THAT ELEMENT IS A HIDDEN 0x0 role="listbox" (OptionList.js:290-296) and it
- * contains only the three rows around the active index. It is used here SOLELY
- * as a :has() predicate to identify the owning popup. NEVER search options
- * inside it and NEVER assert it visible.
- */
-private async resolveOwnedDropdown(
-  select: Locator,
-  opts: { timeout?: number } = {},
-): Promise<Locator> {
-  const combobox = select.locator('input[role="combobox"]');
-  await expect(combobox).toHaveCount(1);
-
-  let listId = '';
-  await expect
-    .poll(async () => (listId = (await combobox.getAttribute('aria-controls')) ?? ''), {
-      // ⚠ SP-2: the FIRST attempt gets a short budget so a genuinely missed
-      // click is retried quickly; the SECOND gets the full budget so its
-      // failure is a real, reportable failure and not a premature give-up.
-      timeout: opts.timeout ?? 5000,
-      message: 'the Select never reported an open popup it owns (aria-controls stayed unset)',
-    })
-    .not.toBe('');
-
-  const owned = this.window
-    .locator('.ant-select-dropdown')
-    .filter({ has: this.window.locator(`[id="${listId}"]`) });
-
-  await expect(owned, `expected exactly one popup owned by this Select (${listId})`)
-    .toHaveCount(1);
-  return owned;
+/** P1's primitive. True when THIS Select has its own popup open. MEASURED
+ *  reliable per-Select (§4.2 M1): sixteen comboboxes read "false" at rest, only
+ *  the requested one flips "true", and it flips BACK when another Select takes
+ *  the popup — so a foreign Select cannot satisfy it. */
+private async isOpen(select: Locator): Promise<boolean> {
+  const v = await select
+    .locator('input[role="combobox"]')
+    .getAttribute('aria-expanded')
+    .catch(() => null);
+  return v === 'true';
 }
 
 /**
- * REVISION 2 — SP-1 and SP-2.
+ * Resolve the popup belonging to `select`, proving OWNERSHIP rather than mere
+ * existence. Owner ruled option D on 2026-08-27.
  *
- * ⚠⚠ NO document-global pre-wait. Revision 1 opened with
- * waitForAllSelectDropdownsToClose() as "setup isolation"; the owner removed it
- * on 2026-08-27 after SP-1 measured two defects in it: it CONSUMED the very
- * foreign-popup state §6's legs exist to create, and against a stable,
- * legitimately-open unrelated Select the count never reaches zero, so every
- * call burned the full 5000 ms and failed without touching the requested
- * Select. P1 IS the authority, and it must be exercised WITH foreign state
- * present — that is the whole point of it.
- *
- * ⚠⚠ The retry is RETAINED and re-gated (SP-2, owner's ruling). Revision 1
- * removed it on a false premise. Each attempt now succeeds only on OWNERSHIP,
- * never on "some popup is visible", and `force: true` is gone.
+ * ⚠⚠ SP-10: ONE SHARED DEADLINE governs every wait in here. Revision 2 passed a
+ * per-attempt timeout to the first poll only and let the rest fall back to the
+ * ambient expect timeout, so the advertised "short first attempt" was not what
+ * the code bounded. `remaining()` is what makes the stated budget true.
+ */
+private async resolveOwnedDropdown(select: Locator, budgetMs: number): Promise<Locator> {
+  const started = Date.now();
+  const remaining = () => Math.max(50, budgetMs - (Date.now() - started));
+
+  // P1 — OWNERSHIP. Per-Select, and false in the measured failure state.
+  await expect
+    .poll(() => this.isOpen(select), {
+      timeout: remaining(),
+      message:
+        'this Select never reported its own popup open (aria-expanded stayed "false") — ' +
+        'if another Select owns the only visible popup, that is the wrong-control state',
+    })
+    .toBe(true);
+
+  // P2 — SCOPE, via an ASSERTED singleton. §4.2 M2 measured exactly one visible
+  // popup; asserting it means a break is loud, never a silent wrong selection.
+  const visible = this.window.locator('.ant-select-dropdown:visible');
+  await expect(
+    visible,
+    'expected exactly one visible Select popup while this Select is open; ' +
+      'more than one means the singleton premise behind P2 has broken and the ' +
+      'popup can no longer be attributed by inference',
+  ).toHaveCount(1, { timeout: remaining() });
+
+  return visible;
+}
+
+/**
+ * ⚠⚠ NO document-global pre-wait (SP-1). P1 IS the authority and must be
+ * exercised WITH foreign state present.
+ * ⚠⚠ The retry is RETAINED and ownership-gated (SP-2, owner's ruling), and it
+ * clicks only when this Select is not already open — a Select TOGGLES on
+ * mousedown (SelectInput/index.js:117 -> toggleOpen() at :138, bound at :185),
+ * so an unconditional second click would CLOSE a slow-but-correct open (RT-1).
  */
 private async openSelectDropdown(select: Locator): Promise<Locator> {
   await expect(select).toBeVisible({ timeout: 5000 });
@@ -569,32 +576,16 @@ private async openSelectDropdown(select: Locator): Promise<Locator> {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const last = attempt === 1;
     try {
-      // ⚠⚠ CLICK ONLY IF THIS SELECT DOES NOT ALREADY OWN AN OPEN POPUP.
-      // A Select TOGGLES on mousedown (SelectInput/index.js:117 ->
-      // toggleOpen() at :138, bound at :185), so an unconditional second
-      // click on an already-open Select would CLOSE it — turning a
-      // slow-but-correct first open into a hard failure, and making the
-      // retry actively worse than no retry. Found by re-tracing this loop
-      // (see the round-2 note in the plan's §10).
-      if (!(await this.ownsOpenPopup(select))) {
-        await select.click();                 // no force, ever: hit-target check stays ON
+      if (!(await this.isOpen(select))) {
+        await select.click();               // no force, ever: hit-target check stays ON
       }
-      return await this.resolveOwnedDropdown(select, { timeout: last ? 5000 : 1500 });
+      return await this.resolveOwnedDropdown(select, last ? 5000 : 1500);
     } catch (error) {
-      if (last) throw error;                  // second failure is REAL — report it
+      if (last) throw error;                // second failure is REAL — report it
     }
   }
   /* c8 ignore next */
   throw new Error('unreachable');
-}
-
-/** True when this Select currently owns an open popup. Cheap, one attribute read. */
-private async ownsOpenPopup(select: Locator): Promise<boolean> {
-  const v = await select
-    .locator('input[role="combobox"]')
-    .getAttribute('aria-controls')
-    .catch(() => null);
-  return v !== null && v !== '';
 }
 
 private async selectOptionByText(select: Locator, pattern: RegExp): Promise<void> {
@@ -603,35 +594,31 @@ private async selectOptionByText(select: Locator, pattern: RegExp): Promise<void
   const option = dropdown.locator('.ant-select-item-option').filter({ hasText: pattern });
   // ⚠ rc-select VIRTUALISES the option list, so a row scrolled out of the
   // rendered window is absent from the DOM. Requiring exactly one match turns
-  // both ambiguity AND absence into a loud failure naming the pattern, instead
-  // of a silent .first().
+  // ambiguity AND absence into a loud failure naming the pattern.
   await expect(option, `expected exactly one option matching ${pattern} in this Select's popup`)
     .toHaveCount(1);
   await expect(option).toBeVisible({ timeout: 5000 });
-  await option.click();                       // real click; actionability enforced
+  await option.click();                     // real click; actionability enforced
 
-  // ⚠ SP-1: scoped to the OWNED popup, not a document-global count. Waiting for
-  // "no popup anywhere" would fail against a legitimately-open unrelated Select
-  // for exactly the reason the pre-wait was removed.
-  //
-  // ⭐ And it settles FASTER than the wait it replaces: aria-controls is
-  // rendered straight from `open` (Input.js:188), so it clears at the React
-  // commit, NOT at the end of CSSMotion's leave. Same authority PR #153 used
-  // for aria-expanded, and the same reason it beat the popup's -hidden class.
-  await expect(select.locator('input[role="combobox"]'))
-    .not.toHaveAttribute('aria-controls', /./, { timeout: 5000 });
+  // ⚠ SP-1: SCOPED to this Select, not a document-global count — waiting for
+  // "no popup anywhere" would fail against a legitimately-open unrelated Select.
+  // ⭐ And it settles at the React commit, not at the end of the leave animation:
+  // aria-expanded is rendered from `open` (Input.js:184), the same authority and
+  // the same reasoning PR #153 used.
+  await expect
+    .poll(() => this.isOpen(select), { timeout: 5000 })
+    .toBe(false);
 }
 
-/**
- * P4 — the outcome detector. Reads the control's OWN rendered value.
- * `.ant-select-content-value` is the single-select value node
- * (SingleContent.js:53); the parent `.ant-select-content` (:89) also holds the
- * placeholder and the input, so it is the WRONG node to assert on.
- */
+/** P4 — the outcome detector. Reads the control's OWN rendered value.
+ *  `.ant-select-content-value` is the single-select value node
+ *  (SingleContent.js:53); the parent `.ant-select-content` (:89) also holds the
+ *  placeholder and the input, so it is the WRONG node to assert on. */
 private async expectSelectShows(select: Locator, expected: RegExp): Promise<void> {
   await expect(
     select.locator('.ant-select-content-value'),
-    'the Select did not end up showing the value that was selected — the click may have landed on another control',
+    'the Select did not end up showing the value that was selected — the click may ' +
+      'have landed on another control',
   ).toHaveText(expected, { timeout: 5000 });
 }
 ```
@@ -651,37 +638,28 @@ private async setPreset(
 }
 ```
 
-**What is removed — REVISION 2, and it is a shorter list than revision 1's:**
+**What is removed:**
 
-1. **The `force: true` fallback at `:49`.** It disables the hit-target check
+1. **The `force: true` fallback at `:49`** — it disables the hit-target check
    outright. Never restored.
-2. **The `evaluate((el) => el.click())` at `:59-61`.** A direct DOM click that
-   cannot complain about an obscured, detached or unstable target. Never
-   restored.
-3. **The `Escape` presses at `:46` and `:62`**, which existed to paper over an
-   unconfirmable open/close state that P1 now confirms directly.
-4. **`waitForAllSelectDropdownsToClose()` as a document-global authority**, in
-   either position — as the pre-wait revision 1 proposed, or as the trailing
-   wait the current helper has at `:63`. Both are replaced by the **scoped**
-   post-condition in `selectOptionByText`: the owning combobox's `aria-controls`
-   goes unset. ⓘ The method may remain in the class for a caller that genuinely
-   wants a page-wide quiesce; nothing in the repaired path calls it.
+2. **The `evaluate((el) => el.click())` at `:59-61`** — a DOM click that cannot
+   complain about an obscured, detached or unstable target. Never restored.
+3. **The `Escape` presses at `:46` and `:62`.** ⚠ Note RT-1: those presses were
+   papering over the toggle hazard, which is why removing them required the
+   `isOpen` guard in the loop. The guard is the replacement, not an addition.
+4. **`waitForAllSelectDropdownsToClose()` as an authority**, in either position.
+   ⓘ It may remain in the class for a caller wanting a page-wide quiesce; nothing
+   in the repaired path calls it.
 
-**What is RETAINED, against revision 1 — the bounded retry (SP-2, owner's ruling
-2026-08-27).** Revision 1 removed it, justified by a control-flow claim that
-§2.3 now retracts as false. The loop is **not** the delivery path for
-`force: true`. So its removal was never a mechanism repair, only a tolerance
-reduction, and the owner chose to keep the tolerance. ⭐ **What changes is what
-an attempt is allowed to count as success: no longer "some popup is visible",
-but OWNERSHIP.** A first click that is genuinely missed is retried once, cheaply;
-a second failure is a real failure and is reported with the helper's own message.
-**That is strictly better than revision 1 in both directions** — it keeps the
-existing tolerance and it removes both silencers.
+**What is RETAINED — the bounded retry** (SP-2, owner's ruling 2026-08-27).
+Revision 1 removed it on a false premise that §2.3 retracts. What changes is what
+an attempt may count as success: **no longer "some popup is visible", but
+OWNERSHIP.**
 
-⚠ The asymmetric budget (1500 ms then 5000 ms) is a **JUDGEMENT** and §8 lists
-it for attack: too short a first budget turns a slow-but-correct open into a
-needless second click, and the second click is the one whose failure is
-reported.
+⚠ The asymmetric budget (1500 ms then 5000 ms) is a **JUDGEMENT from no
+measurement**, and §8 lists it. Per SP-10 the numbers are now genuinely what the
+code bounds — but **whether 1500 ms is the right number is for legs 4 and 9 to
+characterise before it is frozen.**
 
 ### 4.5 Deliberately NOT proposed
 
@@ -869,111 +847,88 @@ The harness is a temporary probe under `tests/`, run headless
 afterwards, with `git status --porcelain` verified empty and `src/` verified
 byte-identical to `HEAD`.
 
-### Leg 0 — the DOM census (must run first; it can falsify §4.2)
+### Leg 0 — the DOM census — ⭐ ALREADY RUN, AND IT FALSIFIED THE FIRST DESIGN
 
-Not a pass/fail leg — a **measurement**, and the rest of the harness is
-conditional on it. Open the Properties panel with a button card selected, open
-the padding preset Select, and print:
+**STATUS: RUN 2026-08-27, headless, under the owner's narrow tripwire exception
+(`drawer_havdm_decisions_12ca9d9672d4c827f60a4fcd`). Results are §4.2's M1–M4 and
+the id-collision falsification. Both probes were deleted afterwards, with
+`git status --porcelain` empty and `src/` + `tests/` verified byte-identical to
+`HEAD`.**
 
-1. `outerHTML` of `getByTestId('spacing-padding-preset')` (truncated), and its
-   `count()` — **P1 requires this to be 1**;
-2. the `count()` of `select.locator('input[role="combobox"]')` and its
-   `aria-controls` value **while open** and **while closed**;
-3. every `.ant-select-dropdown` on the page with its `id`-bearing descendants,
-   its `class`, and whether it is `:visible`;
-4. the `count()` and `textContent` of `select.locator('.ant-select-content-value')`.
-
-⚠ **If `aria-controls` is absent or the id-bearing node is not inside the popup,
-option A is falsified and the plan must fall back to option B before anything is
-implemented.** Recording that outcome honestly is part of this leg.
+⭐⭐ **It did exactly what it was placed there to do: it decided, in about a
+minute, a question two rounds of source review had cleared wrongly.** Anything in
+§4.2 that a later change touches must be re-measured, not re-argued.
 
 ### Legs 1–9 — the guard, bidirectionally
 
-Each leg runs **twice**: once against the **current** helper (or the repaired
-helper with the ownership check removed) and once against the **repaired**
-helper. Both outcomes are recorded before any CI cycle.
+Each leg runs **twice** — once against the **current** helper (or the repaired
+helper with the ownership check removed) and once against the **repaired** helper.
+Both outcomes are recorded before any CI cycle is spent.
 
-| #     | Case                                                                                                                                                                                                                       | Current / guard-removed                                                                                                                                                | Repaired                                                                                                                                                                                                                                         |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **1** | **Route (a) — both popups open.** Force the margin preset popup to be open at the moment the padding option search runs.                                                                                                   | **wrong control set** — margin becomes `Normal (8px)`, padding stays `None (0px)`; the caller then fails with the exact CI signature `Expected "8px" / Received "0px"` | **passes** — the owned popup is the padding one and only its options are searched                                                                                                                                                                |
-| **2** | **⭐ ONLY A FOREIGN POPUP IS OPEN — the state routes (b) and (c) both produce.** The margin popup is open; the padding select's own click is neutralised page-side, so no padding popup exists. Then run the padding path. | **silently succeeds**, setting the **margin** — no error at all; the caller fails later and elsewhere                                                                  | **fails on the ownership check**, with its own message naming the select                                                                                                                                                                         |
-| **3** | **The scope-only straw man**, run against leg 2's state: the option search scoped to `getVisibleSelectDropdown()`'s subtree but with **no** ownership check — i.e. the repair the diagnosis drawer recommended.            | n/a                                                                                                                                                                    | **must ALSO silently succeed.** This is what proves §2.3's correction rather than asserting it.                                                                                                                                                  |
-| **4** | **The happy path.** Clean panel, nothing else open.                                                                                                                                                                        | passes                                                                                                                                                                 | passes, **and adds no measurable stall** — record the wall time of `openSelectDropdown` end-to-end. ⓘ With the pre-wait removed (SP-1) there is no animation coupling left on this path, so "no measurable stall" is once again the right bar    |
-| **5** | **The P4 detector alone.** Repaired helper with P1 and P2 removed but P4 present, run against **leg 2's state**.                                                                                                           | n/a                                                                                                                                                                    | **fails at `expectSelectShows`, naming the control** — proving P4 detects independently of P1 and P2                                                                                                                                             |
-| **6** | **The negative control — a known-bad input the probe must still fail on.** Point the helper at a preset label that does not exist (`/^Nonexistent/`).                                                                      | fails (no option)                                                                                                                                                      | **fails on `toHaveCount(1)`**, naming the pattern. ⚠ Record the **exact failure message AND the runner's exit code** — a failure caught inside a passing wrapper is indistinguishable from a pass, which is the whole hazard this leg exists for |
-| **7** | **⭐ NEW (SP-1) — a STABLE, legitimately-open UNRELATED Select popup.** Open an unrelated Select that stays open, then run the padding path against a clean padding control.                                               | **revision 1's pre-wait would have burned the full 5000 ms and failed** without ever touching the padding Select — the defect SP-1 named                               | **passes promptly**, because P1 asks the padding Select what it owns and is indifferent to foreign popups. Record the wall time                                                                                                                  |
-| **8** | **⭐ NEW (SP-1) — the OWNED popup mid-leave.** Enter the padding path while the padding Select's own popup is still animating shut.                                                                                        | n/a                                                                                                                                                                    | **must resolve deterministically**: `aria-controls` is unset at the React commit, before the leave animation ends, so P1 must either re-open cleanly or fail with its own message — never read a stale popup                                     |
-| **9** | **⭐ NEW (SP-2) — the retry path the false rationale had erased.** Make the FIRST normal click throw (or land without opening), the SECOND succeed.                                                                        | n/a                                                                                                                                                                    | **passes on the second attempt**, and the first attempt's short budget is visible in the wall time. This is the tolerance the owner chose to keep, so it must be shown to work                                                                   |
+⚠ **Leg 1 is DELETED.** It tested route (a), "both popups open", which §2.3
+records as **not constructible** (measured). Numbering is kept so the review trail
+stays readable.
 
-⭐⭐ **LEGS 2 AND 3 TOGETHER ARE THE DISCRIMINATOR THIS PLAN TURNS ON**, and leg
-3 is the half that does the work. Leg 2 shows the _current_ helper silently
-setting the wrong control. Leg 3 shows that the _narrower_ repair — scope without
-ownership, which is what
-`drawer_havdm_investigations_93a44232f7b76ea15a1b4f2c` recommends — **does
-exactly the same thing**. Without leg 3, "ownership beats scope" is an argument;
-with it, it is a measurement. ⚠ **If leg 3 shows the scope-only variant failing
-loudly, §2.3's correction is WRONG, this plan is heavier than it needed to be,
-and it goes back to the owner** (§7.3).
+| #     | Case                                                                                                                                                                                                 | Current / guard-removed                                                                                                    | Repaired                                                                                                                                                                                                                                                      |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~1~~ | ~~Route (a) — both popups open~~                                                                                                                                                                     | **DELETED — not constructible (measured).**                                                                                | n/a                                                                                                                                                                                                                                                           |
+| **2** | **⭐ THE FAILURE STATE — only a FOREIGN popup is open.** The margin popup is open; the padding Select's own opening is suppressed page-side; then the padding path runs.                             | **silently succeeds**, setting the **MARGIN** — no error at all; the caller fails later and elsewhere                      | **fails on P1**, naming the control: the padding Select's own `aria-expanded` is `"false"`                                                                                                                                                                    |
+| **3** | **⭐ The scope-only straw man**, run against leg 2's state: the option search scoped to the one visible popup but with **no** P1 ownership check — i.e. the repair the diagnosis drawer recommended. | n/a                                                                                                                        | **must ALSO silently succeed.** This is what proves ownership-beats-scope rather than asserting it. ⓘ §4.2 M4 already measured the same thing statically; this leg proves it through the helper.                                                              |
+| **4** | **The happy path.** Clean panel, nothing else open.                                                                                                                                                  | passes                                                                                                                     | passes, **and adds no measurable stall** — record the wall time of `openSelectDropdown` end-to-end, and treat it as **characterisation input for the 1500 ms budget** (SP-10)                                                                                 |
+| **5** | **The P4 detector alone.** Repaired helper with P1 and P2 removed but P4 present, run against **leg 2's state**. ⚠ State which opening helper the guard-removed variant uses.                        | n/a                                                                                                                        | **fails at `expectSelectShows`, naming the control** — proving P4 detects independently of P1 and P2                                                                                                                                                          |
+| **6** | **The negative control — known-bad input the probe must still fail on.** Point the helper at a preset label that does not exist (`/^Nonexistent/`).                                                  | fails (no option)                                                                                                          | **fails on `toHaveCount(1)`**, naming the pattern. ⚠ Record the **exact failure message AND the runner's exit code** — a failure caught inside a passing wrapper is indistinguishable from a pass                                                             |
+| **7** | **A STABLE, legitimately-open UNRELATED Select popup**, then run the padding path against a clean padding control.                                                                                   | a document-global pre-wait would burn its full budget and fail without touching the padding Select — the defect SP-1 named | **passes promptly**, because P1 asks the padding Select what it owns. ⚠ P2 asserts ONE visible popup, so record whether the unrelated popup closes when the padding one opens — **if both can be visible, P2's premise breaks and that is a finding, loudly** |
+| **8** | **The OWNED popup mid-leave.** Enter the padding path while the padding Select's own popup is animating shut.                                                                                        | n/a                                                                                                                        | **ONE oracle: the helper RE-OPENS and selects successfully.** See the construction below                                                                                                                                                                      |
+| **9** | **The retry path.** First gesture suppressed, second succeeds.                                                                                                                                       | n/a                                                                                                                        | **passes on the second attempt**; record the wall time, as characterisation of the budget and **not** as proof the number is right                                                                                                                            |
 
-⚠⚠ **A HONESTY LIMIT ON LEGS 2 AND 3, STATED RATHER THAN GLOSSED.** They
-reproduce the **state** that routes (b) and (c) produce — one foreign popup open,
-none owned by the requested select — **not the runner conditions that produce
-it**. Whether the real route on CI is a displaced click delivered through
-Playwright's ordinary (time-of-check/time-of-use) click path, a toggled-shut
-popup, or route (a) is **not** discriminated by this harness and is recorded
-UNRESOLVED (§2.3). ⓘ Revision 1 named the `force: true` fallback here; SP-2
-retracted that — it is not reachable by a throwing click. The repair is justified by covering
-the state, which is what the helper actually sees, and no more.
+⭐⭐ **LEGS 2 AND 3 TOGETHER ARE THE DISCRIMINATOR**, and leg 3 does the work: it
+runs the _narrower_ repair against the same state and must **also** silently
+succeed. ⚠ **If leg 3 shows the scope-only variant failing loudly, ownership-beats-scope
+is wrong, the plan is heavier than it needed to be, and it goes back to the
+owner** (§7.3).
 
-⭐ **Leg 5 is the independence check.** Without it, a green run cannot tell
-whether P4 is doing anything at all — it would be a check that cannot fail,
-which the project has already paid for twice.
+**Constructions, specified — SP-8 and SP-9.**
 
-⭐ **Leg 6 exists because a probe that cannot fail on known-bad input proves
-nothing about a pass.** An empty extraction and an erroring command both print
-nothing.
-
-**Mechanisms, specified rather than deferred.** Legs 1, 2 and 3 need contrived
-page state, and the construction must not change what is being measured:
-
-- **Leg 1** opens the margin preset Select first and suppresses its close, then
-  enters the padding path. The suppression is **page-side** — `preventDefault` on
-  the margin popup's own close path, or simply entering the padding path before
-  the margin popup's leave completes. ⚠ It must **not** stub a timer or patch
-  `src/`.
-- **Legs 2 and 3** share one construction. ⚠⚠ **REVISION 1 SPECIFIED THE WRONG
-  EVENT AND THE LEG WOULD NOT HAVE WORKED — finding SP-3.** It said a capture
-  listener stopping one **`click`**. **rc-select toggles on `mousedown`, not
-  `click`**: `node_modules/@rc-component/select/lib/SelectInput/index.js:117`
-  defines `onInternalMouseDown`, which calls `toggleOpen()` at `:138`, and the
-  root binds it as `onMouseDown` at `:185`. A `click` listener runs _after_
-  `mousedown` — the popup has already toggled, and the leg would have measured
-  the opposite of what it claimed.
-
-  **Corrected construction:** open the margin popup, then attach a page-side
-  **`mousedown` listener in the CAPTURE phase** on the padding Select's root,
-  which calls `stopPropagation()` and **removes itself in the same call**
-  (`{ capture: true, once: true }`, plus an explicit `removeEventListener` so
-  removal does not depend on `once` semantics under a stopped propagation). The
-  Playwright gesture still completes and still lands on the right element —
-  actionability is untouched, which is the point: reaching this state by passing
-  `force: true` would be assuming the conclusion.
-
-  ⚠⚠ **AND THE LEG MUST ASSERT ITS OWN PRECONDITION AFTER THE GESTURE, NOT ONLY
-  BEFORE IT.** Immediately after the click, and before judging the helper,
-  record all three: (i) the padding combobox still has **no** `aria-controls`;
-  (ii) the margin popup is **still visible**; (iii) the pointer action itself
-  **completed** rather than throwing. A pre-gesture assertion cannot prove the
-  suppression worked — that is the same mistake as revision 1's pre-wait,
-  asserting a state before the thing under test consumes it.
-  ⚠ **Prove the listener is gone before the next leg runs**, or leg 4's happy
-  path inherits it and passes for the wrong reason.
-
+- ⚠⚠ **Legs 2 and 3's suppression must last the WHOLE HELPER CALL, not one
+  event — finding SP-8.** Revision 2 specified a one-shot listener removed after
+  the first `mousedown`; the repaired helper makes **two** attempts, so attempt 1
+  found no listener, clicked normally, and **opened the requested popup** — the
+  leg could not produce its stated failure. Neither repair was wrong alone: the
+  `mousedown` fix was correct and the retry was the owner's ruling. **The defect
+  was the interaction.**
+  **Corrected:** attach a `mousedown` listener in the **capture phase** on the
+  padding Select's root for the **duration of the call**; **count every suppressed
+  event**; remove it in `finally`. Assert afterwards: the suppression count is
+  **2** (both attempts), the padding combobox still reads `aria-expanded="false"`,
+  the foreign popup is **still visible**, and **both pointer actions completed**
+  rather than throwing. ⓘ The current/scope-only variant may return after the
+  first suppressed gesture, because it accepts the foreign popup — record its
+  count as whatever it is.
+  ⚠ **OPEN QUESTION, DELIBERATELY NOT ANSWERED HERE:** Playwright's own injected
+  hit-target interceptor is a single-slot listener that also calls
+  `stopImmediatePropagation()`. **Whether a test-side capture listener interacts
+  with it is a question for the probe, recorded as a question.** Guessing is the
+  error SP-2 and SP-7 both punished.
+- ⚠⚠ **Leg 8 needs a construction and ONE oracle — finding SP-9.** Revision 2
+  supplied neither, and accepted _"re-open cleanly **or** fail with its own
+  message"_, which is two opposite results.
+  **Corrected:** widen the actual CSS leave duration test-side (a style override
+  on the popup's motion, **not** a `src/` patch and **not** a stubbed timer),
+  initiate the close, and assert **immediately before invoking the helper** that
+  the padding combobox reads `aria-expanded="false"` while its owned popup is
+  **still visible**. **The single expected contract: the helper RE-OPENS and
+  selects successfully.** Remove the style override in `finally`.
+- ⚠ **Leg 9 needs its own construction — finding SP-9.** Start clean; attach a
+  **one-shot** capture `mousedown` suppression to the padding root; record that it
+  fired **once** and removed itself; then assert the helper succeeds **only after
+  the second gesture** and that the control shows the selected value. ⚠ It must
+  **not** reuse leg 2's whole-call listener, or it becomes a duplicate of leg 2
+  instead of a test of the retry.
 - ⚠ **Leg ordering is load-bearing.** PR #153's harness recorded a repaired leg
-  passing when it should have failed, because the _previous_ leg had already
-  closed the popup. Each leg here re-establishes its own starting state and
-  **asserts that state immediately before running**, and the assertions are
-  recorded alongside the result.
+  passing when it should have failed, because a previous leg had already closed
+  the popup. Each leg re-establishes its own state and **asserts that state
+  immediately before running**; assertions are recorded beside the result. **And
+  prove every listener and style override is gone before the next leg.**
 
 **Leg 10 — the callers.** The three currently-passing spacing tests plus the YAML
 round-trip test, and `spacing.visual.spec.ts`, run headless at `--workers=1`
@@ -1020,10 +975,13 @@ criterion.
 The cost stop-rule in the header. Concretely, **two named refutations halt the
 work and send it back to the owner rather than being pushed through**:
 
-1. **§6 leg 0 falsifies §4.2** — `aria-controls` absent, or the id-bearing node
-   not inside the popup, or `data-testid` resolving to more than one element. The
-   fallback is option B (§4.3), and that is the owner's call, not a silent
-   substitution.
+1. ~~**§6 leg 0 falsifies §4.2.**~~ ⭐ **THIS ALREADY HAPPENED, AND THE RULE
+   WORKED AS WRITTEN.** Leg 0 ran on 2026-08-27 and falsified the `aria-controls`
+   mechanism; the plan did **not** silently substitute another, the decision went
+   back to the owner (§4.3), and the owner re-ruled — option D. **The standing
+   halt condition now reads: if any measured fact in §4.2 (M1–M4) is later
+   contradicted, STOP and re-put the mechanism decision rather than patching
+   around it.** Option B remains the named fallback.
 2. **§6 leg 3 shows the scope-only variant failing loudly.** Then §2.3's
    correction is wrong, ownership-over-scope is unjustified, and the honest
    options are the narrower repair or more diagnosis.
@@ -1100,7 +1058,8 @@ not have needed an independent reviewer to find.
   this plan is heavier than it needed to be. Leg 2 is what decides that, and it
   has not been run.
 - **The whole of §4.2 is read from library source, not from the running app.**
-  `aria-controls`, the hidden 0×0 listbox, `virtual` resolving true, the single
+  ⚠ **PARTLY SUPERSEDED IN REVISION 3: §4.2's M1–M4 ARE now measured in the
+  running app.** What remains source-only is the residue —
   `data-testid` node, `.ant-select-content-value` — each is cited to a file and
   line in the installed dependency, and **none has been observed in the Electron
   app**. Leg 0 exists because of this. If any one is wrong, option A is
@@ -1110,11 +1069,13 @@ not have needed an independent reviewer to find.
   reflects first-open order. `removeOnLeave` is MEASURED; the DOM-ordering
   consequence is **INFERRED**, and Playwright's `:visible` treatment of a
   `-hidden` popup has not been measured either.
-- **`filter({ has: locator(\`[id="${listId}"]\`) })`assumes the id is safe to
-interpolate into an attribute selector.**`useId` may yield React's own format,
-which contains characters (`:`or`«»`) that are legal inside a quoted attribute
-value but which nobody here has actually seen. Leg 0 prints the real value; if
-it contains a `"`, the selector must be built differently.
+- ~~**The id-interpolation safety of the ownership selector.**~~ **MOOT IN
+  REVISION 3 — the id mechanism is gone.** ⭐ And the underlying worry was aimed
+  at the wrong hazard: the question asked whether the id might contain characters
+  needing escaping. **The real defect was that the id is not unique at all**
+  (§4.2). A weak claim pointed at the wrong property is not a weak claim, it is a
+  blind spot.
+
 - ~~**The retry loop is removed, and that is a behaviour change nobody asked
   for.**~~ **SUPERSEDED IN REVISION 2: the retry is RETAINED**, re-gated on
   ownership (SP-2, owner's ruling). What replaces it as a weak claim is the
@@ -1171,8 +1132,10 @@ it contains a `"`, the selector must be built differently.
 - **Legs 2 and 3 measure a STATE, not a ROUTE, and §6 now says so.** The
   residual risk is that the real CI failure arrives by a route that produces a
   state these legs do not reproduce — for example both popups open _and_ the
-  owned one mid-leave, where `aria-controls` may already be unset while the popup
-  is still `:visible`. That specific interleaving is **not** covered by any leg
+  owned one mid-leave, where the requested Select's `aria-expanded` may already
+  read `"false"` while its popup is still `:visible`. ⓘ **Leg 8 now covers the
+  mid-leave case with one oracle**; what stays open is whether its construction
+  can reliably enter the state. That specific interleaving is **not** covered by any leg
   as written. Is it reachable, and should there be a leg for it?
 - ~~**The `stopPropagation` construction in legs 2/3 could be the wrong
   instrument.**~~ **CONFIRMED WRONG AND REPAIRED (SP-3).** It was not merely a
@@ -1184,38 +1147,43 @@ it contains a `"`, the selector must be built differently.
   `mousedown` in the capture phase, one-shot and self-removing, with three
   post-gesture assertions.
 
-**NEW IN REVISION 2 — attack these; the fix round is unreviewed new work.**
+**NEW IN REVISION 3 — attack these first; most of this section is new work no
+review has seen.**
 
-- **The scoped post-condition is new and unproven — but its timing premise is now
-  settled.** `selectOptionByText` ends by asserting the owning combobox's
-  `aria-controls` goes unset. ⭐ The "does it clear late?" worry is **answered from
-  source**: `Input.js:188` renders the attribute straight from `open`, so it
-  clears at the React commit rather than at the end of the leave animation (§10,
-  RT-2). What remains weak is that **the assertion form itself has never been
-  run** — `not.toHaveAttribute(name, /./)` passing on an absent attribute is
-  documented Playwright behaviour, not measured here.
-- ⚠ **`ownsOpenPopup` is new machinery introduced by the fix round.** It exists to
-  stop the retry toggling an already-open popup shut (§10, RT-1). It reads one
-  attribute and returns a boolean, so it **cannot fail loudly** — a false `true`
-  would silently skip the click and leave the helper waiting on a popup that was
-  never opened. Attack that: is there a state where `aria-controls` is set but the
-  popup is not usable?
-- **Leg 8 (owned popup mid-leave) may not be constructible as a stable state.**
-  It asks for the padding Select's own popup to be mid-leave when the padding
-  path is entered. `aria-controls` unsets at the React commit while the popup is
-  still visible, so the window exists — but it is short, and a leg that cannot
-  reliably enter its own state is a leg that reports whatever it happened to
-  catch.
-- **Leg 9's first-click failure has no specified mechanism yet.** "Make the first
-  normal click throw or land without opening" is an outcome, not a construction.
-  It needs the same treatment legs 2/3 just received, and it should not reuse the
-  `mousedown` suppression if that would make it a duplicate of leg 2 rather than
-  a test of the retry.
-- **Three findings were repaired by the author and none has been re-reviewed.**
-  Under STRAT-D7 the scoped follow-up is mandatory. Treat every claim in this
-  revision's repairs as unreviewed new work, including the ones that look like
-  simple deletions — SP-1's removal changed the method's contract, not just its
-  body.
+- ⚠⚠⚠ **THE WHOLE OF §4.2/§4.3/§4.4 IS UNREVIEWED.** The ownership mechanism was
+  replaced after round 2, because execution falsified the old one. **Two review
+  rounds cleared the mechanism that turned out to be wrong** — so a third
+  clearance is worth less than it looks unless it exercises the new one directly.
+- ⚠⚠ **P2's inference is the plan's softest joint, and it is a JUDGEMENT.** _If
+  the requested Select is open, and exactly one popup is visible, that popup is
+  the requested Select's._ The singleton is **measured** (§4.2 M2) and
+  **asserted**, so a break is loud — but it is still an inference where option B
+  would have had a construction. **Find a state with two visible popups.** Leg 7
+  is where it would show up.
+- **M3 (route (a) not constructible) rests on ONE observed sequence.** Opening
+  the margin Select closed the padding one by pointer and by keyboard. That is two
+  gestures in one flow, not a proof that no route ever leaves two popups open —
+  and P2 depends on it. ⚠ It is also the premise for deleting leg 1.
+- **`isOpen` cannot fail loudly.** It reads one attribute and returns a boolean, so
+  a false `true` skips the click and leaves the helper waiting on a popup that was
+  never opened. ⓘ Round 2 examined the equivalent `ownsOpenPopup` and found **no
+  path by which it silently selects the wrong control** — the downstream P2, option
+  count, real click and P4 remain loud — but that clearance was given for the
+  previous helper's shape and should be re-asked of this one.
+- **The 1500/5000 ms split is still a JUDGEMENT from no measurement.** SP-10 made
+  the numbers honest about what they bound; it did not make them right. Legs 4 and
+  9 characterise before freezing.
+- **Route (b) now has NO mechanism at all, deliberately.** The plan asserts a state
+  and declines to explain how CI reaches it. ⚠ Attack whether the repair is still
+  justified with the "how" absent — the argument is that routes (b) and (c) present
+  the helper with the **same measured state**, so the state is what needs
+  repairing.
+- **Legs 2/3's suppression may collide with Playwright's own interceptor.** Named
+  as an OPEN QUESTION in §6 rather than answered. ⚠ If it collides, legs 2, 3 and 9
+  all need a different construction.
+- **Leg 8's construction has never been run.** Widening the CSS leave test-side is
+  specified but unproven, and a leg that cannot reliably enter its own state
+  reports whatever it happened to catch.
 
 ## 9. Disposition of the independent review
 
@@ -1236,6 +1204,29 @@ is owed back to it. Each row below states what was checked.
 | **SP-4** | 2   | **RESOLVED** | §0 now says **three** decisions. §7.4 rewritten as a full six-field Owner Decision Brief with A/B/C options and costs. **Owner ruled A — fix lane.** ⓘ The reviewer's contrary reading of `OPERATING_AGREEMENT.md` §3.7 is recorded in the brief rather than resolved away, and the ruling explicitly does **not** amend §3.7.                                                                                                                                                                                                                                                                                    |
 | **SP-5** | 3   | **RESOLVED** | The "~20 further files" approximation is **deleted**; the regenerating command is now the sole token inventory, with its blind spot stated. _Verified:_ regenerated — **33 files, 30 beyond spacing/tabs/popup**. The author's figure was wrong.                                                                                                                                                                                                                                                                                                                                                                  |
 | **SP-6** | 3   | **RESOLVED** | The do-nothing sentence in §5.2 no longer predicts that the next flake **will** appear in `tabs`/`popup`; it states the risk and keeps their sightings explicitly undiagnosed. _Verified:_ plan `:732` said what the review quoted.                                                                                                                                                                                                                                                                                                                                                                               |
+
+### Round 2 — the STRAT-D7 scoped follow-up
+
+Review: `docs/reviews/spacing-helper-preset-plan-codex-followup-review.md`, commit
+`a8cba46`, reviewed head `f2b0ed5a`, verdict **SEV-1-BLOCKED**. It disposed SP-1
+and SP-3 **PARTIALLY RESOLVED**, **SP-2 REGRESSED**, SP-4/SP-5/SP-6 **RESOLVED**,
+and raised four new findings. ⭐ **All four were re-verified at source by the
+author before acceptance — as were round 1's six. Ten for ten; this reviewer has
+produced no false finding.**
+
+| ID        | SEV | Verdict                  | What changed, and where                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------- | --- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SP-7**  | 1   | **RESOLVED BY DELETION** | The revision-2 TOCTOU mechanism is **retracted**, and **no third mechanism is offered** — §2.3 now leaves route (b)'s mechanism explicitly unexplained, which is the reviewer's own remedy. _Verified:_ Playwright 1.57.0 installs the hit-target interceptor for non-force clicks (`playwright-core/lib/server/dom.js:360-380`); the injected listener computes the hit target at **event time** and on mismatch calls `preventDefault`/`stopPropagation`/`stopImmediatePropagation`; the mismatch is returned at `:388-401` and the action retried. A displaced ordinary click is **blocked, not delivered**. |
+| **SP-8**  | 1   | **RESOLVED**             | Legs 2/3's suppression now lasts the **whole helper call**, counts every suppressed `mousedown`, and is removed in `finally`, with four post-call assertions including a suppression count of **2**. ⓘ The reviewer named this the round's unpredicted case: **neither repair was wrong alone** — SP-3's event fix was right and SP-2's retry was the owner's ruling; the defect was the **interaction**, invisible in prose.                                                                                                                                                                                   |
+| **SP-9**  | 1   | **RESOLVED**             | Leg 8 gains a construction (widen the CSS leave test-side, assert the mid-leave state immediately before invoking) and **ONE oracle** — the helper re-opens and selects successfully; the "either/or" is gone. Leg 9 gains its own one-shot construction, explicitly not reusing leg 2's whole-call listener.                                                                                                                                                                                                                                                                                                   |
+| **SP-10** | 2   | **RESOLVED**             | `resolveOwnedDropdown` now takes a **single shared budget** and threads `remaining()` through **every** wait, so the advertised 1500 ms first attempt is what the code actually bounds. ⭐ Per the reviewer's brief, the **number itself is not frozen**: legs 4 and 9 characterise it first.                                                                                                                                                                                                                                                                                                                   |
+
+⚠⚠ **AND A CHANGE NO FINDING ASKED FOR, DISCLOSED RATHER THAN SLIPPED IN:
+THE OWNERSHIP MECHANISM ITSELF WAS REPLACED.** Between round 2 and this revision
+the harness ran and **falsified option A** — the `aria-controls` id is the
+constant `test-id` in test mode, shared by every Select (§4.2). The owner re-ruled
+on 2026-08-27, selecting **option D**. **§4.2, §4.3 and §4.4 are therefore new
+work that no review has seen**, and §8's first block says so.
 
 **Guard rails carried forward from the review, unchanged:** keep **P1**
 ownership, **P2** subtree scope, **P3** real clicks, **P4** read-back; the
@@ -1347,6 +1338,42 @@ at least one re-trace of every control flow and every library binding the plan's
 load-bearing claims depend on** — and that requirement goes into the round-2
 commission rather than staying a resolution.
 
+### ⭐⭐⭐ Round 2, and what EXECUTION proved that neither review could
+
+Round 2 returned SEV-1-BLOCKED with four findings, **all four defects in round
+1's repairs and none in a previously-clean area** — the reviewer explicitly
+re-cleared the DOM chain, the blast radius and P1–P4. By the project's own fix-round
+rule that is **"each fix generating the next finding"**, which needs a different
+remedy from patching again. The owner granted a **narrow exception to the
+spec-before-code tripwire for harness code only**, and the probe ran.
+
+**It falsified the design on its first leg, in about a minute.** The
+`aria-controls` id is the constant `test-id` under `NODE_ENV=test`, shared by
+every Select, and retained by closed popups — so the revision-2 resolver would
+have failed on the ordinary path.
+
+⚠⚠⚠ **THE PART WORTH KEEPING: THE AUTHOR CLEARED THAT ROW, AND SO DID THE
+INDEPENDENT REVIEWER, TWICE.** Round 1's Q2 answered "no issue found in the seven
+source claims"; round 2 did not reopen it. **Both checked that the identifier
+EXISTS. Neither asked whether it is UNIQUE — and uniqueness was the property the
+design needed.** Two rounds of careful source review, by two different agents,
+passed a defect the first minute of execution caught.
+
+⭐ **The generalisable form, offered as a `practice` candidate and NOT filed
+(candidates need the owner's approval on this project):** _a check that
+establishes an identifier EXISTS has not established that it is UNIQUE, and
+uniqueness is usually the property the design actually needs._ It is a specific
+instance of the wing's existing rule that a check is evidence only for the
+property it exercises — but the specific form is what would have caught this.
+
+⭐⭐ **And the process lesson, which the owner has now acted on:** for the
+_helper_, design-then-review-then-build is coherent. For the _harness_, it forced
+this plan to specify constructions in prose that only execution could decide, and
+**that is where both review rounds went** — SP-8 ("this construction will not
+work") and SP-9 ("these are not specified") are both questions a probe answers in
+minutes. Legs 2/3's remaining open question about Playwright's own interceptor is
+now recorded **as a question**, to be measured rather than guessed.
+
 ### ⭐⭐ The new discipline earned its keep before it was written down
 
 Applied to revision 2's own repairs, the re-trace requirement immediately found a
@@ -1364,7 +1391,12 @@ does not already own an open popup (`ownsOpenPopup`). ⓘ The original helper
 papered over this with an `Escape` between attempts; revision 2 removed those
 `Escape` presses, which is precisely how the hazard got in.
 
-**RT-2 — an open §8 worry was answerable from source and is now closed.**
+**RT-2 — an open §8 worry was answerable from source and is now closed.** ⓘ
+Recorded as history: it concerned revision 2's `aria-controls` post-condition,
+which revision 3 replaced with `aria-expanded`. **The reasoning carried over
+intact** — `aria-expanded` is likewise rendered straight from `open`
+(`Input.js:184`), so it too settles at the React commit rather than at the end of
+the leave animation.
 Revision 2's scoped post-condition asks whether `aria-controls` clears promptly or
 at the end of the leave animation. `Input.js:188` renders it straight from `open`,
 so it clears **at the React commit** — the post-condition is therefore _faster_
