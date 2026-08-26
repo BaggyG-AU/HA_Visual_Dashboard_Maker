@@ -4,7 +4,7 @@ Author: Claude Opus 5 (1M context)
 Reviewer: OpenAI Codex (GPT-5.6 Sol)
 Owner gate: micah / BaggyG-AU
 
-**Status: PLAN ONLY, REVISION 4. No code has been written.** Revision 2
+**Status: PLAN ONLY, REVISION 5. No code has been written.** Revision 2
 answered the independent review at
 `docs/reviews/badge-focus-precondition-plan-codex-review.md` (verdict
 SEV-1-BLOCKED, commit `a81fb78`) and the owner's adjudication of
@@ -15,8 +15,13 @@ had dropped. That run and its results are §10. **Revision 4 answers the STRAT-D
 scoped follow-up at
 `docs/reviews/badge-focus-precondition-plan-codex-followup-review.md` (verdict
 CHANGES-REQUIRED, commit `a18d784`), which disposed BF-P1/BF-P3/BF-P4 RESOLVED,
-BF-P2 PARTIALLY RESOLVED, and raised BF-F1 (SEV 2) and BF-F2 (SEV 3).** The
-per-finding disposition tables are §9. This document exists to be reviewed before it is implemented. Its
+BF-P2 PARTIALLY RESOLVED, and raised BF-F1 (SEV 2) and BF-F2 (SEV 3).**
+**Revision 5 repairs BF-G1 from the second scoped follow-up
+(`docs/reviews/badge-focus-precondition-plan-codex-followup2-review.md`,
+`feb0cfa`, verdict SEV-1-BLOCKED) — a contradiction in §7, which is the only
+thing now standing between this plan and implementation: that review disposed
+BF-F1, BF-F2 **and** BF-P2 all RESOLVED and ruled the technical plan ready.**
+The per-finding disposition tables are §9, §9.1 and §9.2. This document exists to be reviewed before it is implemented. Its
 subject is timing and it changes a helper three tests depend on, so it falls
 inside the SPEC-BEFORE-CODE ruling in `CLAUDE.md` (owner's ruling 2026-08-16,
 in force).
@@ -465,20 +470,32 @@ caveat applies to reading that evidence.
    BF-P4, **not** a fresh full review. Verdict **CHANGES-REQUIRED** (`a18d784`):
    BF-P1, BF-P3 and BF-P4 **RESOLVED**; BF-P2 **PARTIALLY RESOLVED**; two new
    findings, BF-F1 (SEV 2) and BF-F2 (SEV 3). **Disposition table: §9.1.**
-3. ⬅ **WE ARE HERE.** Revision 4 answers both new findings and is committed.
-   **No code has been written and none may be** — the follow-up's verdict was
-   CHANGES-REQUIRED, so the gate at step 5 has not opened.
-4. **BF-F1 is SEV 2 and needs the owner.** It goes up as an Owner Decision Brief
-   in STRAT-D15's six fields. The owner gate is held by a non-developer and is
-   never asked to classify a diff. Revision 4 implements the reviewer's
-   recommended **option A**; **option B remains open to the owner** and is a
-   small edit, not a rewrite.
-5. **Only when a follow-up returns ACCEPTS-REVISION** is code written, on this
+3. ✅ **Done — and NO OWNER DECISION IS OUTSTANDING ON THIS PLAN.** The owner
+   ruled BF-F1 **option A** on 2026-08-26 (`52b8834`). **Option B is closed.**
+   §6a's five-step isolated sequence is binding and case 4 is a required leg,
+   not an optional one. All four earlier findings took option A as well.
+4. ✅ **Done.** Revision 4 answered BF-F1 and BF-F2 and went back for the
+   **second** scoped follow-up (`feb0cfa`). It disposed **BF-F1, BF-F2 and
+   BF-P2 all RESOLVED** and ruled the technical plan **ready for
+   implementation** — then returned **SEV-1-BLOCKED** on **BF-G1**, a
+   contradiction inside this very section: step 4 still said option B was open.
+   **Disposition: §9.2.**
+5. ⬅ **WE ARE HERE.** Revision 5 repairs BF-G1 — nothing else. Under D7 it owes
+   one more same-reviewer scoped follow-up, which for a prose-only diff is
+   naturally minimal: read the diff, confirm no technical decision moved,
+   confirm the disposition table.
+6. **Only when a follow-up returns ACCEPTS-REVISION** is code written, on this
    branch, with §6's **four** cases and three controls recorded **before** a CI
-   cycle is spent. Every further revision owes another same-reviewer scoped
-   follow-up — that is universal under D7, with no exemption for a small diff.
-6. Retiring the two manifest rows needs the owner's explicit authorisation and
+   cycle is spent. Every revision owes another same-reviewer scoped follow-up —
+   universal under D7, with no exemption for a small diff.
+7. Retiring the two manifest rows needs the owner's explicit authorisation and
    CI evidence. **Baselining is not diagnosis, and neither is un-baselining.**
+
+⚠⚠ **THIS SECTION IS CURRENT-STATE AND MUST BE RE-SWEPT ON EVERY REVISION.**
+BF-G1 is what it costs not to: the owner's ruling was recorded surgically in
+§9.1 and this section was left saying the decision was still open. **When a
+ruling lands, sweep every live statement of it — not the one place you happened
+to edit.**
 
 ## 8. The weakest claims in this plan, for the reviewer to attack
 
@@ -678,6 +695,39 @@ the eventual harness, and case 4 is a required leg, not an optional one.
 consistent: BF-P1/BF-P2/BF-P3 all took option A on 2026-08-25, BF-F1 takes
 option A on 2026-08-26. In every case option A was the one that kept a control
 capable of failing.
+
+### 9.2 Disposition of the SECOND scoped follow-up (round 3)
+
+Follow-up: `docs/reviews/badge-focus-precondition-plan-codex-followup2-review.md`,
+verdict **SEV-1-BLOCKED**, commit `feb0cfa`, same reviewer.
+
+⭐ **The technical plan was ruled READY.** Every technical finding this plan has
+carried is now closed; the block is a prose contradiction the author introduced.
+
+| Finding                                       | Disposition                           | This plan's response                                                                                                                                                                                  | Where    |
+| --------------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| BF-F1 — case 4's popup-state confound         | **RESOLVED**                          | Accepted. The reviewer ran the exact five-step sequence headless: the rejected global guard failed after 5008 ms on the one unrelated popup, while the scoped guard and exact-badge traversal passed. | §6a      |
+| BF-F2 — the false sweep narration             | **RESOLVED**                          | Accepted. Shipped `rg` re-run verbatim; its full twelve-file population fits the two declared groups.                                                                                                 | §9       |
+| **BF-P2 — fail-against-old transition leg**   | **RESOLVED**                          | Accepted. Case 4 was the sole reason it stayed partial. **Nothing technical remains open in BF-P2.**                                                                                                  | §6a      |
+| **BF-G1 — §7 contradicts the settled ruling** | 1 · **ACCEPTED — verified at source** | §7 step 4 said "option B remains open to the owner" (`:474` pre-repair) while §9.1 said "Option B is closed". Repaired in revision 5.                                                                 | §7, §9.1 |
+
+**The published setup-versus-authority defence HELD.** §8 offered the reviewer
+the strongest attack the author could see — that case 4's isolation step is
+itself a document-global wait on the very selector BF-P3 rejected — and the
+reviewer tested it and ruled it sound: the global query establishes a known
+starting population, it does not decide the claim under test.
+
+⚠⚠ **BF-G1'S ROOT CAUSE, AND IT IS NOT A TYPO.** When the owner's option-A
+ruling landed, it was recorded surgically in §9.1 and **the class was never
+swept** — every other live statement of that ruling's status was left alone, and
+§7, the section a reader consults for _what needs the owner_, kept saying the
+decision was still open. That is the fix round breaking the author's own
+current-state record, and it is a finding-is-a-sample failure applied to a
+ratification edit. **The reviewer did the sweep the author should have done** and
+enumerated the class — plan status `:4-18`, case 4's premise `:333-337`, §7
+`:457-481`, §9.1 `:644-680`, §10 `:693-743` — finding **§7 step 4 the only stale
+member**. That enumeration was independently re-run before this repair and
+agreed.
 
 ## 10. The author's own run of the follow-up commission, before handing it over
 
