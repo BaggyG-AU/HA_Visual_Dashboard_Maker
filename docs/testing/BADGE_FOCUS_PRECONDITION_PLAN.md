@@ -729,6 +729,70 @@ enumerated the class — plan status `:4-18`, case 4's premise `:333-337`, §7
 member**. That enumeration was independently re-run before this repair and
 agreed.
 
+## 9.3 The §6 harness — RUN, and its results
+
+Recorded **before** any CI cycle, per the MANDATORY COMPANION clause in
+`CLAUDE.md`. A temporary probe spec attacked the real app headless
+(`--project=electron-integration --workers=1`), then was deleted with `src/`
+verified byte-identical to `HEAD` and `git status --porcelain` showing only the
+intended test change.
+
+**6a — the state guard, four cases, every one bidirectional.**
+
+| #   | State established (measured, not assumed)                                               | Old / guard-removed helper                                                                           | Repaired helper                                                                                          |
+| --- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 1   | owning `aria-expanded="true"` at entry                                                  | **FAILED** — `{"testid":null,"tag":"INPUT","cls":"ant-select-input"}` — **the CI signature exactly** | **FAILED ON THE PRECONDITION** at 2511 ms, own message                                                   |
+| 2   | open, page-side `keydown` Escape scheduled at `DELAY_MS = 4000` against a 5000 ms guard | **FAILED** — same `ant-select-input` signature; traversed too early                                  | **WAITED 4256 ms, then PASSED**                                                                          |
+| 3   | owning `aria-expanded="false"`                                                          | passed (landed on the badge `SPAN`, tooltip open)                                                    | passed; guard cost **11 ms** — no measurable stall                                                       |
+| 4   | zero-count isolation → owning `"false"`, unrelated `"true"`, **visible popups = 1**     | n/a — this case tests SCOPE                                                                          | scoped guard **17 ms, exact badge focused**; the rejected document-global guard **FAILED after 5015 ms** |
+
+⭐ **Case 2 is the discriminator and it discriminated**: 4256 ms of waiting is the
+guard doing the thing two settled endpoints could never show it doing.
+⭐ **Case 4 reproduces the reviewer's independent measurement** (they recorded the
+global guard failing at 5008 ms; this run 5015 ms) and, with the isolation in
+place, exactly **one** visible popup — so the global guard failed for solely the
+named reason.
+
+⚠⚠ **CASE 1 CAUGHT A REAL TRAP IN THE HARNESS ITSELF, AND IT IS THE ONE §4.1
+DOCUMENTS.** A first arrangement ran the old leg first and the repaired leg
+second, and the repaired leg **passed when it should have failed** — because the
+old leg's `Shift+Tab` reaches `OptionList`'s TAB branch, which calls
+`onSelectValue(…)` and **closes the Select** before `preventDefault()`. The
+repaired leg then found `aria-expanded` already `"false"` and measured nothing.
+Re-ordered so each leg gets a freshly opened popup, with the open state asserted
+immediately before each. **The temporal trap is not theoretical: it silently
+neutered a control leg on first construction.**
+
+**6b — the adversarial same-testid decoy control.** The recorded R7-N1 mutation
+reproduced: the intended badge's `tabindex` removed, a focusable same-testid
+`<button>` planted before the input.
+
+- **Old helper: FOOLED** — `ok: true`, landing on `{"tag":"BUTTON"}`. It reported
+  success while the intended badge was not focused.
+- **Repaired helper: NOT FOOLED** — `toBeFocused()` on the caller's scoped
+  locator **failed**, which is the required result.
+  **This is the measured close of R7-N1.**
+
+**6c — the `6eb47d8` old-source control.** With that commit's `src/` checked out
+(the badge had no `tabIndex`), **all three legs FAILED on the helper's own
+assertion** — `toBeFocused()` / `Received: inactive`, and `Received: null` at the
+other two hosts. The repaired probe can still fail on known-bad input, so its
+pass is a measurement rather than decoration. `src/` was then restored and
+verified byte-identical to `HEAD`.
+
+**6d — the control caller and the two repaired identities.** All three legs green
+against current source: `:347` (the `:343` control caller) 8.9 s, `:450` 11.8 s,
+`:592` **22.0 s**. ⚠ That last duration is itself evidence — the saved-theme test
+now runs the tail at `:604-610` that **96 of 96 CI attempts never reached**.
+
+**Gate:** `REAL_EXIT=0`, 4/4 steps, lint 0 errors / 145 warnings, unit 1413
+passed / 104 files.
+
+⚠ **What this does NOT establish.** These are local runs on one machine. §5's
+hidden-tail caveat stands: the newly executing `:604-610` has never run on CI,
+so a first green CI run certifies code with no CI history. The manifest rows stay
+until CI evidence exists **and** the owner authorises retirement.
+
 ## 10. The author's own run of the follow-up commission, before handing it over
 
 The governing rule is that **the review commission you write is the checklist
