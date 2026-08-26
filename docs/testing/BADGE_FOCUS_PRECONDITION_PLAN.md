@@ -792,8 +792,21 @@ the finding.**
    checked**, and the published-versus-run mismatch is the specific defect
    clause B of the governing rule exists to prevent.
 
-**The standing lesson, now evidenced three rounds running.** Expect a residue of
+**The standing lesson, now evidenced four rounds running.** Expect a residue of
 genuinely independent findings: this run cannot substitute for the follow-up,
 and nothing here should be read as clearing a question it merely failed to
 break. **A self-check that finds six things is not thereby a self-check that
 found all of them.**
+
+⚠⚠ **AND THE ROUND-3 SELF-CHECK MISSED BF-G1, WHICH WAS ALREADY ON THE BRANCH
+WHEN IT RAN.** The contradiction entered at the ratification commit `52b8834`,
+before the round-3 commission was written; the self-check that followed ran
+every question against the plan's **arguments** and never re-read its
+**current-state statements** for consistency. Two of this plan's blocking
+findings now share that shape — BF-G1, and the false file count in the round-3
+commission's own precondition block, which halted a review round before it
+started. **The remedy is a standing step, now in §7: after any ruling or status
+change, sweep every live statement of it rather than the one place you edited.**
+⭐ A self-check aimed at "are my arguments sound?" cannot see "does my document
+still agree with itself?" — those are different passes and this plan has now
+paid for the second one twice.
