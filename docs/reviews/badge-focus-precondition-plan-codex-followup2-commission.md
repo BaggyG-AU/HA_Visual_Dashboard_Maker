@@ -61,8 +61,24 @@ change, no manifest change, no merge, no `[STATE]` update, no UAT card touched.*
 - Commits over `main`: `90760cd`, `a81fb78`, `014ac1c`, `9fcc774`, `a18d784`
   (your follow-up), `97f67cb` (revision 4), `52b8834` (the option-A ruling),
   plus one commit carrying the §8 revision-4 weaknesses and this commission.
-- Clean worktree, **no commit amended**, **still plan only — no code written**,
-  branch diff vs `main` is four markdown files and nothing else.
+- Clean worktree, **no commit amended**, **still plan only — no code written**.
+- ⚠ **The branch diff vs `main` is Markdown only** — every path is under
+  `docs/`, and there is **no `src/` file, no test file and no manifest file** in
+  it. **Regenerate the list; do not match it against a number:**
+
+  ```bash
+  git diff --name-status main..HEAD
+  git diff --name-only main..HEAD | grep -vE '^docs/.*\.md$' || echo "docs-only: CONFIRMED"
+  ```
+
+  ⓘ **Do not expect a fixed file count, and this block will never state one
+  again.** An earlier version said "four markdown files" and was already false
+  when it was pasted: **the commission stating that count was itself committed
+  to the branch and became the fifth file.** The reviewer stopped on it, which
+  is the precondition block working exactly as intended. The load-bearing
+  property is the **kind** of file on this branch, not how many — the kind is
+  stable as further review documents land, a count is not.
+
 - Manifest unchanged: 9 `expectedFailures` / 10 `expectedFlaky` /
   21 `expectedSkips`; both badge rows still baselined.
 
