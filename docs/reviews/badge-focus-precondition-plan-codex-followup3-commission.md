@@ -29,8 +29,14 @@ finished and implementation can begin.
 
 ## Expected state — STOP and tell the owner if untrue
 
-- Branch `feature/badge-focus-precondition-plan`, **PR #153**, head `565eb6c`;
-  `main` = `2b9a7ca`. Opened for reading, not for merge.
+- Branch `feature/badge-focus-precondition-plan`, **PR #153**; `main` =
+  `2b9a7ca`. Opened for reading, not for merge.
+- ⚠ **This tracked record deliberately pins NO head.** The exact reviewed commit
+  is in the paste prompt, `prompts/codex/badge-focus-precondition-plan-followup3.md`,
+  which is untracked and therefore **outside the population it describes**. A
+  document committed to the branch cannot pin that branch's head from inside
+  itself — committing it moves the head. That is the structural sibling of
+  BF-G1's defect and of round 3's false file count, and this is the fix.
 - Clean worktree, **no commit amended**, **still plan only — no code written**.
 - ⚠ **The branch diff vs `main` is Markdown only** — every path under `docs/`,
   no `src/`, test or manifest file. **Regenerate; do not match a count:**
@@ -50,7 +56,7 @@ finished and implementation can begin.
 
 ## What you review
 
-**The repair diff `feb0cfa..565eb6c`**, two commits, one file
+**The repair diff from `feb0cfa` to the reviewed head**, two commits, one file
 (`docs/testing/BADGE_FOCUS_PRECONDITION_PLAN.md`):
 
 1. `9d69be0` — the BF-G1 repair: §7 steps 3–5 rewritten, a standing re-sweep
@@ -65,7 +71,7 @@ Does §7 now state the settled position — the owner ruled option A on 2026-08-
 option B is closed, no owner decision is outstanding, and the remaining gate is
 this follow-up rather than a second owner ruling? Is any live statement of that
 ruling's status still stale? Your own round-3 sweep enumerated the class — plan
-status, case 4's premise, §7, §9.1, §10 — so re-run it against `565eb6c`.
+status, case 4's premise, §7, §9.1, §10 — so re-run it against the reviewed head.
 
 **Q2 — Did the repair stay inside its scope?**
 The claim is that **nothing technical moved**: no change to §4, §5, §6 or §8, and
