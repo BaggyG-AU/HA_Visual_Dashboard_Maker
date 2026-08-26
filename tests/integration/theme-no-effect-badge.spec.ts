@@ -191,29 +191,58 @@ const activeElement = (ctx: Awaited<ReturnType<typeof launchWithDSL>>) =>
 async function expectReachableByTab(
   ctx: Awaited<ReturnType<typeof launchWithDSL>>,
   selectTestId: string,
+  badge: Locator,
 ): Promise<void> {
   const combobox = ctx.window.getByTestId(selectTestId).locator('input').first();
+
+  // ⚠⚠⚠ STATE PRECONDITION — the popup must be CLOSED before the traversal.
+  // While it is open, `mergedOpen` routes the key to the option list, whose Tab
+  // branch calls preventDefault (OptionList.js:201-216 via BaseSelect:257-263),
+  // so focus correctly stays in the combobox and this probe would measure antd's
+  // in-popup focus containment instead of the badge's tab order. `aria-expanded`
+  // is rendered straight from that same `open` (SelectInput/Input.js:175), which
+  // is why it is the authority here and the dropdown's `-hidden` class is not:
+  // that class is CSSMotion's leavedClassName and lands only after the VISUAL
+  // leave (trigger/Popup/index.js:137-150), coupling the wait to animation
+  // duration and to every other Select on the page.
+  await expect(
+    combobox,
+    `${selectTestId}: this Select's popup must be CLOSED before the traversal — ` +
+      `while it is open the option list receives the key and focus correctly ` +
+      `stays in the combobox, so the probe would measure in-popup focus ` +
+      `containment, not the badge's tab order`,
+  ).toHaveAttribute('aria-expanded', 'false', { timeout: 5000 });
+
   await combobox.focus();
 
+  // ⚠⚠ EXACT IDENTITY — assert on the caller's already-scoped node, never on a
+  // projection of `document.activeElement`. The badge's data-testid is
+  // deliberately REPEATED across its render contexts
+  // (src/components/ThemeNoEffectBadge.tsx:180,187), and the round-7 reviewer
+  // DEMONSTRATED the bypass: plant a focusable same-testid decoy, remove the
+  // intended badge's tabindex, and a testid comparison passes while the intended
+  // badge is not focused. `toBeFocused()` on the scoped locator cannot.
   await ctx.window.keyboard.press('Shift+Tab');
-  expect(
-    await activeElement(ctx),
+  await expect(
+    badge,
     `${selectTestId}: Shift+Tab out of the combobox must land on the badge — it sits immediately before it in the tab order`,
-  ).toMatchObject({ testid: 'theme-no-effect-badge' });
+  ).toBeFocused();
 
   await ctx.window.keyboard.press('Shift+Tab');
+  // Diagnostics only — this reader decides nothing; it names the control the
+  // forward Tab starts from in the message below. See plan §4.2.
   const predecessor = await activeElement(ctx);
-  expect(
-    predecessor.testid,
+  await expect(
+    badge,
     `${selectTestId}: the badge must have a real preceding focus target to Tab forward from`,
-  ).not.toBe('theme-no-effect-badge');
+  ).not.toBeFocused();
 
   await ctx.window.evaluate(() => (document.activeElement as HTMLElement)?.focus());
   await ctx.window.keyboard.press('Tab');
-  expect(
-    await activeElement(ctx),
+  await expect(
+    badge,
     `${selectTestId}: FORWARD Tab from the real preceding control (${predecessor.testid ?? predecessor.text}) must arrive on the badge`,
-  ).toMatchObject({ testid: 'theme-no-effect-badge' });
+  ).toBeFocused();
 }
 
 test.describe('F3 — the "no preview colours" badge renders', () => {
@@ -340,7 +369,7 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
       // ⚠⚠ THE ATTRIBUTE ABOVE IS NOT THE CLAIM. `tabIndex="0"` is necessary and
       // not sufficient, and round 6 (R6-M1) was largely about the difference.
       // This is the real thing: keyboard-only traversal, both directions.
-      await expectReachableByTab(ctx, 'theme-select');
+      await expectReachableByTab(ctx, 'theme-select', badge);
 
       await expect(
         ctx.window.locator('.ant-tooltip-container').locator('visible=true'),
@@ -444,7 +473,7 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
         'the non-compact Tag arm must be a tab stop as well as the icon arm',
       ).toBe('0');
 
-      await expectReachableByTab(ctx, 'theme-settings-select');
+      await expectReachableByTab(ctx, 'theme-settings-select', tagBadge);
 
       await expect(
         ctx.window.locator('.ant-tooltip-container', {
@@ -567,16 +596,18 @@ test.describe('F3 — the "no preview colours" badge renders', () => {
       await themeManager.expectActiveViewDetected();
 
       await themeManager.selectSavedTheme('saved-inert');
-      await expect(
-        ctx.window.getByTestId('theme-manager-saved-select').getByTestId('theme-no-effect-badge'),
-      ).toBeVisible({ timeout: 5000 });
-      await expectReachableByTab(ctx, 'theme-manager-saved-select');
+      const savedBadge = ctx.window
+        .getByTestId('theme-manager-saved-select')
+        .getByTestId('theme-no-effect-badge');
+      await expect(savedBadge).toBeVisible({ timeout: 5000 });
+      await expectReachableByTab(ctx, 'theme-manager-saved-select', savedBadge);
 
       await themeManager.setViewOverride('saved-inert');
-      await expect(
-        ctx.window.getByTestId('theme-manager-view-override').getByTestId('theme-no-effect-badge'),
-      ).toBeVisible({ timeout: 5000 });
-      await expectReachableByTab(ctx, 'theme-manager-view-override');
+      const overrideBadge = ctx.window
+        .getByTestId('theme-manager-view-override')
+        .getByTestId('theme-no-effect-badge');
+      await expect(overrideBadge).toBeVisible({ timeout: 5000 });
+      await expectReachableByTab(ctx, 'theme-manager-view-override', overrideBadge);
 
       await ctx.settings.close();
     } finally {
