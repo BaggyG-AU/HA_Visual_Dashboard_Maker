@@ -554,6 +554,26 @@ now answered), and revision 3 adds four more.
   gates nothing cannot re-introduce the bypass, but it is one edit away from
   gating something again.
 
+**NEW IN REVISION 4 — attack these; the fix round is unreviewed new work.**
+
+- ⚠⚠ **The strongest counter-attack on §6a case 4: the isolation step is itself
+  a document-global wait — the very authority BF-P3 rejected.** Step 2 waits for
+  `.ant-select-dropdown:not(.ant-select-dropdown-hidden)` at `toHaveCount(0)`,
+  which is the rejected guard's own selector. The defence is that **setup
+  isolation and assertion authority are different roles**: the global count is
+  being used to establish a known starting state, not to decide the claim under
+  test, and using it in setup is what makes the comparison fair to the guard it
+  is about to fail. **That distinction is a JUDGEMENT and it should be
+  attacked.** If it does not hold, case 4 needs a different isolation.
+- **The §4.1 temporal trap is unrequested new text.** No finding asked for it; it
+  was added because the follow-up's own old-leg measurement exposed a way to
+  misread the guard. It is therefore the fix round adding scope, and it should be
+  checked both for accuracy and for over-reach.
+- **The five-step isolated sequence has never been run AS WRITTEN.** The reviewer
+  ran an equivalent construction and reported it working, which is strong — and
+  it is **not** the same as this plan's exact five steps having been executed.
+  Do not read "the reviewer ran it" as "this sequence is proved".
+
 ## 9. Disposition of the independent review
 
 Review: `docs/reviews/badge-focus-precondition-plan-codex-review.md`, verdict
