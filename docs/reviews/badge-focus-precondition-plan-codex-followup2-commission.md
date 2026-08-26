@@ -58,9 +58,18 @@ change, no manifest change, no merge, no `[STATE]` update, no UAT card touched.*
 
 - Branch `feature/badge-focus-precondition-plan`, base `main` = `2b9a7ca`,
   **open as PR #153** (opened for reading, not for merge).
-- Commits over `main`: `90760cd`, `a81fb78`, `014ac1c`, `9fcc774`, `a18d784`
-  (your follow-up), `97f67cb` (revision 4), `52b8834` (the option-A ruling),
-  plus one commit carrying the §8 revision-4 weaknesses and this commission.
+- **The commits that carry review meaning**, in order and stable:
+  `90760cd` (revision 1), `a81fb78` (your round-1 review), `014ac1c`
+  (revision 2), `9fcc774` (revision 3 + the first follow-up commission),
+  `a18d784` (**your first follow-up review**), `97f67cb` (revision 4),
+  `52b8834` (the owner's option-A ruling on BF-F1). **Anything after
+  `52b8834` is commission housekeeping** — this round's commission and its own
+  corrections — and it will keep growing, so **regenerate rather than count**:
+
+  ```bash
+  git log --oneline main..HEAD
+  ```
+
 - Clean worktree, **no commit amended**, **still plan only — no code written**.
 - ⚠ **The branch diff vs `main` is Markdown only** — every path is under
   `docs/`, and there is **no `src/` file, no test file and no manifest file** in
