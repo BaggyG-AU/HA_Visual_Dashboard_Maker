@@ -4,15 +4,19 @@ Author: Claude Opus 5 (1M context)
 Reviewer: OpenAI Codex (GPT-5.6 Sol)
 Owner gate: micah / BaggyG-AU
 
-**Status: PLAN ONLY, REVISION 3. No code has been written.** Revision 2
+**Status: PLAN ONLY, REVISION 4. No code has been written.** Revision 2
 answered the independent review at
 `docs/reviews/badge-focus-precondition-plan-codex-review.md` (verdict
 SEV-1-BLOCKED, commit `a81fb78`) and the owner's adjudication of
 BF-P1/BF-P2/BF-P3 on 2026-08-25. **Revision 3 is what the author's own
 pre-handover run of the scoped follow-up commission caught in revision 2** —
 six items, one of them a required element of the BF-P2 repair that revision 2
-had dropped. That run and its results are §10; the per-finding disposition
-table is §9. This document exists to be reviewed before it is implemented. Its
+had dropped. That run and its results are §10. **Revision 4 answers the STRAT-D7
+scoped follow-up at
+`docs/reviews/badge-focus-precondition-plan-codex-followup-review.md` (verdict
+CHANGES-REQUIRED, commit `a18d784`), which disposed BF-P1/BF-P3/BF-P4 RESOLVED,
+BF-P2 PARTIALLY RESOLVED, and raised BF-F1 (SEV 2) and BF-F2 (SEV 3).** The
+per-finding disposition tables are §9. This document exists to be reviewed before it is implemented. Its
 subject is timing and it changes a helper three tests depend on, so it falls
 inside the SPEC-BEFORE-CODE ruling in `CLAUDE.md` (owner's ruling 2026-08-16,
 in force).
@@ -184,7 +188,21 @@ attribute the guard waits on is the attribute that was wrong.**
 ⓘ Tagged **INFERRED**: this is deduced from the failure payload plus the locked
 source, not observed as an attribute read on the runner. Leg A of the local
 probe corroborates it by producing the identical payload with the popup held
-open.
+open. **The follow-up review re-derived this chain independently at the locked
+versions and confirmed it, and found no route at any of the four hosts that
+begins the keydown with `mergedOpen` false and still retains the input.**
+
+⚠ **A TEMPORAL TRAP FOR WHOEVER BUILDS THE HARNESS, added in revision 4.** The
+inference is about the moment the key **arrives**, not the moment you read the
+attribute afterwards. `OptionList`'s Tab branch calls `onSelectValue(…)` — which
+closes the Select — and only **then** runs `if (open) { event.preventDefault(); }`
+(`node_modules/@rc-component/select/es/OptionList.js:201-216`). So in a failed
+traversal the Select closes inside the very handler that prevented the key, and
+`aria-expanded` already reads `"false"` by the time anyone inspects it.
+**Reading the attribute after the failure and finding `"false"` does not refute
+the guard — it is the expected aftermath.** The reviewer measured this in the
+old-helper leg and ruled that it supports the guard rather than defeating it,
+because the guard runs **before** the key is sent.
 
 **4.2 — EXACT IDENTITY (BF-P1, owner chose to fix it now).** The helper takes
 the caller's already-scoped badge locator and asserts on the node, not on a
@@ -337,11 +355,39 @@ constructible without contrivance: `ThemeSettingsDialog.tsx` carries
 `theme-settings-select` (`:376`), `theme-manager-saved-select` (`:480`) and
 `theme-manager-view-override` (`:531`), and the last two are already proved
 co-present by the existing test at `:569-579`, which uses both in one flow
-without reopening anything. So: at the `theme-manager-saved-select` host, open
-`theme-manager-view-override`'s popup, confirm the **owning** combobox reads
-`aria-expanded="false"`, and run both guards. ⚠ If the two popups turn out not
-to be simultaneously open in practice, say so and record the case as UNRUN with
-the reason — do not quietly drop it.
+without reopening anything.
+
+⚠⚠ **IT NEEDS EXACTLY ONE OPEN POPUP, AND REVISION 3 DID NOT ISOLATE IT —
+BF-F1, corrected here.** The state this case requires is the **owning popup
+closed and one unrelated popup open**. Revision 3 established only that the
+owning combobox reads `aria-expanded="false"` before opening the unrelated
+Select, and **that is not sufficient**: `aria-expanded` flips at the React
+commit, while the owning popup keeps its non-hidden class until CSSMotion's
+leave finishes (`@rc-component/trigger/es/Popup/index.js:137-150`). In that
+window the owning popup is **still a member of the document-global count**, so
+the rejected global guard fails because of the **owning** popup rather than the
+unrelated one — and the negative control passes for the wrong reason. The
+reviewer measured exactly that:
+`{"savedExpanded":"false","unrelatedExpanded":"true","visiblePopupCount":2}`.
+
+**The corrected sequence:**
+
+1. At the `theme-manager-saved-select` host, select in the owning Select.
+2. **Wait for the document-global visible-popup count to reach ZERO** —
+   `.ant-select-dropdown:not(.ant-select-dropdown-hidden)` at `toHaveCount(0)`.
+   This is the isolation revision 3 was missing, and it is the only step that
+   makes the case able to fail for solely the named reason.
+3. Only then open `theme-manager-view-override`'s popup.
+4. Record all three facts: owning `aria-expanded="false"`, unrelated
+   `aria-expanded="true"`, and **exactly one** visible popup.
+5. Run both guards from that isolated state.
+
+⭐ **This is not a speculative repair — the reviewer ran it.** From the isolated
+state the document-global guard still timed out, the scoped guard passed, and
+`Shift+Tab` focused the exact saved-theme badge. §4.1's scope claim therefore
+now has a measurement behind it, taken in the one state that can support it.
+⚠ Note the direction of the result: the global guard fails **even when it should
+not**, which is the defect BF-P3 named. That is the point of the case.
 
 **⭐ The mechanism for case 2, specified rather than deferred.** Revision 2 named
 this as an open question in §8 and left it there; declaring a hole is not
@@ -413,24 +459,25 @@ caveat applies to reading that evidence.
 1. ✅ **Done.** Revision 1 was reviewed independently — verdict SEV-1-BLOCKED
    (`a81fb78`); the owner adjudicated BF-P1/BF-P2/BF-P3 on 2026-08-25 and
    revision 2 landed as `014ac1c`.
-2. ⬅ **WE ARE HERE.** Revision 3 goes back to the **same reviewer** as a
-   **scoped follow-up** under STRAT-D7 / `OPERATING_AGREEMENT.md` §3.4: scope is
-   the repair diff `90760cd..014ac1c` **plus revision 3** and the declared
-   radius, disposing BF-P1 to BF-P4 as RESOLVED or REGRESSED — **not** a fresh
-   full review. The owner pastes the commission at
-   `docs/reviews/badge-focus-precondition-plan-codex-followup-commission.md`;
-   the no-agent-spawned-Codex ruling stands. Its output lands as a committed
-   document on this branch,
-   `docs/reviews/badge-focus-precondition-plan-codex-followup-review.md` —
-   never as a chat reply.
-3. Anything the follow-up raises at SEV 1 or SEV 2 goes to the owner as an
-   **Owner Decision Brief** in STRAT-D15's six fields. The owner gate is held by
-   a non-developer and is never asked to classify a diff.
-4. **Only if the follow-up ACCEPTS** is code written, on this branch, with §6's
-   four cases and three controls recorded **before** a CI cycle is spent. If it
-   returns CHANGES-REQUIRED or SEV-1-BLOCKED, the plan is revised again and **no
-   code is written**.
-5. Retiring the two manifest rows needs the owner's explicit authorisation and
+2. ✅ **Done.** Revision 3 (`9fcc774`) went back to the **same reviewer** as the
+   **scoped follow-up** required by STRAT-D7 / `OPERATING_AGREEMENT.md` §3.4 —
+   scope being the repair diff plus the declared radius, disposing BF-P1 to
+   BF-P4, **not** a fresh full review. Verdict **CHANGES-REQUIRED** (`a18d784`):
+   BF-P1, BF-P3 and BF-P4 **RESOLVED**; BF-P2 **PARTIALLY RESOLVED**; two new
+   findings, BF-F1 (SEV 2) and BF-F2 (SEV 3). **Disposition table: §9.1.**
+3. ⬅ **WE ARE HERE.** Revision 4 answers both new findings and is committed.
+   **No code has been written and none may be** — the follow-up's verdict was
+   CHANGES-REQUIRED, so the gate at step 5 has not opened.
+4. **BF-F1 is SEV 2 and needs the owner.** It goes up as an Owner Decision Brief
+   in STRAT-D15's six fields. The owner gate is held by a non-developer and is
+   never asked to classify a diff. Revision 4 implements the reviewer's
+   recommended **option A**; **option B remains open to the owner** and is a
+   small edit, not a rewrite.
+5. **Only when a follow-up returns ACCEPTS-REVISION** is code written, on this
+   branch, with §6's **four** cases and three controls recorded **before** a CI
+   cycle is spent. Every further revision owes another same-reviewer scoped
+   follow-up — that is universal under D7, with no exemption for a small diff.
+6. Retiring the two manifest rows needs the owner's explicit authorisation and
    CI evidence. **Baselining is not diagnosis, and neither is un-baselining.**
 
 ## 8. The weakest claims in this plan, for the reviewer to attack
@@ -493,11 +540,12 @@ now answered), and revision 3 adds four more.
   bubbling native event. That is **INFERRED from how React 17+ delegates, not
   measured here**, and if it is wrong the whole timing discriminator falls back
   to a form with a known interleaving hazard.
-- **Case 4 assumes two popups in `ThemeSettingsDialog` can be open at once.**
-  Co-presence of the two _Selects_ is measured (the existing test at `:569-579`
-  drives both); co-presence of their two open _popups_ is not. antd does not
-  close one Select's dropdown when another opens, so this should hold —
-  **INFERRED**.
+- ~~**Case 4 assumes two popups can be open at once.**~~ **WITHDRAWN in revision
+  4 — it asked the wrong question** (BF-F1). Case 4 requires the owning popup
+  **closed** and exactly **one** unrelated popup open; whether two can be open
+  simultaneously is irrelevant to it. Worse, the caveat instructed an
+  implementer to record the case UNRUN for a condition that never applies. What
+  the case actually needs is the zero-count isolation now specified in §6a.
 - **§4.1's `mergedOpen`-was-true inference** is deduced from the failure payload
   plus locked source, not from an attribute read on the runner. If it is wrong,
   the guard is aimed at the wrong attribute and cases 1-3 would still pass while
@@ -537,20 +585,73 @@ touches exactly:
 
 `activeElement` (`:132-140`) survives as a diagnostics-only reader and gates
 nothing (§4.2). No `src/` change, no manifest change, and no change to any other
-spec — swept with
-`rg -n "toBeFocused|activeElement|theme-no-effect-badge" tests/`, whose only
-hits outside this file belong to unrelated components (accordion, gradient
-editor, colour picker, popup, tabs); no second helper anywhere asserts that a
-`theme-no-effect-badge` received focus, so R7-N1's class is closed by this one
-file. The upstream reliance is the installed `@rc-component/select@1.5.0`
+spec.
+
+⚠ **THE SWEEP NARRATION IS CORRECTED IN REVISION 4 — the previous sentence was
+false (BF-F2), and how it became false matters more than the sentence itself.**
+The command this plan ships is
+`rg -n "toBeFocused|activeElement|theme-no-effect-badge" tests/`. Run verbatim,
+its hits outside this file fall into **two** groups, not one:
+
+- **Code-behaviour hits** — `toBeFocused` in unrelated component helpers
+  (accordion, gradient editor, colour picker, popup, tabs). **None of them
+  asserts that a `theme-no-effect-badge` received focus**, so R7-N1's class is
+  closed by this one file. This is the group that carries the radius claim.
+- **Raw text hits in `tests/baseline/expected-failures.json`** — `:91` (a prose
+  note), `:178-201` (the two behavioural keyboard rows this fix targets, which
+  **REMAIN baselined** until CI evidence exists and the owner authorises
+  retirement) and `:476-484` (ledger entry 10, the unrelated tooltip-stability
+  flaky row, **unchanged** and not a consumer). The manifest consumes test
+  file/title identities, never the helper signature, so none of these is an
+  implementation consumer and the radius population is unaffected.
+
+⚠⚠ **THE ROOT CAUSE IS NOT "A SENTENCE WAS WRONG".** The command published here
+and the command actually run were **different**: the sweep was run as
+`grep -rn … --include=*.ts`, which cannot see a `.json` file at all, and its
+result was reported as this command's result. That is clause B of the
+commission-is-your-own-checklist rule — **extract the check FROM THE SHIPPED
+ARTIFACT and run THAT**. A published command nobody ran is not evidence, and it
+is worse than no command because it reads as one. The upstream reliance is the installed `@rc-component/select@1.5.0`
 rendering `aria-expanded` from `open`; the downstream consumers are the three
 calling tests, of which `:343` is the control that must stay green.
 
-**Nothing in the review was rejected.** Every finding was verified against the
-cited source before being accepted — the helper's assertions, the repeated test
-id in `ThemeNoEffectBadge.tsx`, the R7-N1 decoy record, and all three
+**Nothing in round 1's review was rejected.** Every finding was verified against
+the cited source before being accepted — the helper's assertions, the repeated
+test id in `ThemeNoEffectBadge.tsx`, the R7-N1 decoy record, and all three
 dependency claims in `@rc-component/select`, `@rc-component/trigger` and
 `@rc-component/motion`.
+
+### 9.1 Disposition of the STRAT-D7 scoped follow-up (round 2)
+
+Follow-up: `docs/reviews/badge-focus-precondition-plan-codex-followup-review.md`,
+verdict **CHANGES-REQUIRED**, commit `a18d784`, same reviewer.
+
+| Finding                                                                | Sev | Reviewer's disposition | This plan's response                                                                                                    | Where   |
+| ---------------------------------------------------------------------- | --- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------- |
+| BF-P1 — exact identity                                                 | 1   | **RESOLVED**           | Accepted. Three-assertion class confirmed complete; "closes R7-N1" ruled earned.                                        | §4.2    |
+| BF-P2 — fail-against-old transition leg                                | 1   | **PARTIALLY RESOLVED** | Accepted. Cases 1–3 ruled executable and causal; case 4 was mis-specified. Completed in revision 4.                     | §6a     |
+| BF-P3 — guard scope and authority                                      | 2   | **RESOLVED**           | Accepted. Chain independently re-derived at the locked versions; no closed-start route found at any of the four hosts.  | §4.1    |
+| BF-P4 — unexecuted tail                                                | 3   | **RESOLVED**           | Accepted.                                                                                                               | §5      |
+| **BF-F1 — case 4 can fail the global guard for the wrong popup state** | 2   | NEW                    | **ACCEPTED — verified at source.** Zero-visible-popup isolation added; the wrong-question caveat withdrawn.             | §6a, §8 |
+| **BF-F2 — §9's sweep-result sentence is false**                        | 3   | NEW                    | **ACCEPTED — verified by running the shipped command verbatim.** Corrected, with the published-vs-run root cause named. | §9, §10 |
+
+**Nothing in the follow-up was rejected either.** BF-F1 was reproduced from the
+locked motion source (`aria-expanded` flips at the React commit; the non-hidden
+class persists until the leave completes), and BF-F2 by running this plan's own
+published command and finding the `expected-failures.json` hits it denies. Three
+supporting reviewer claims were also checked and hold: `Locator` is already
+imported at `tests/integration/theme-no-effect-badge.spec.ts:19`;
+`tests/baseline/expected-failures.json:476-484` is the unrelated tooltip flaky
+row; and `OptionList` does call `onSelectValue(…)` before
+`if (open) { event.preventDefault(); }`.
+
+⚠ **BF-F1 is SEV 2 and carries an Owner Decision Brief.** The reviewer
+recommended **option A** (add the isolation) over option B (drop the runtime
+scope claim and rely on source reasoning alone), because B would remove the case
+round 1 expressly required once the owner chose the scoped guard. **Revision 4
+implements option A**, which the reviewer had already executed and measured
+working. If the owner prefers B, case 4 and its §8 entry come out and §4.1's
+scope claim reverts to source reasoning — a small edit, not a rewrite.
 
 ## 10. The author's own run of the follow-up commission, before handing it over
 
@@ -569,14 +670,14 @@ against revision 2 (`014ac1c`), before that commission was handed to the owner.
 The commission was **not** softened afterwards; every question below is still in
 it, in the same words.
 
-| #      | Dimension                                 | Result on revision 2                                                                                                                                     | Fixed in revision 3 |
-| ------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| **S1** | Radius accuracy (Q5)                      | §9 declared "its two destination assertions"; §4.2 also changes the middle one. **Under-declared radius — itself a finding under OA §3.4.**              | §9                  |
-| **S2** | BF-P1 completeness (Q1)                   | Silent on what becomes of `activeElement` and the `predecessor` capture that feeds the third assertion's message. Under-specified.                       | §4.2                |
-| **S3** | Claim hygiene (Q1)                        | "Every caller already holds a correctly scoped locator" is false at `:571` and `:577`, which build it inline and discard it.                             | §4.2, §9            |
-| **S4** | BF-P2 completeness (Q2) — **the big one** | The unrelated-open-popup case, **required by the review once the owner chose the scoped guard**, was absent from §6a.                                    | §6a case 4          |
-| **S5** | BF-P2 executability (Q2)                  | §6a case 2 named no delay mechanism; §8 declared the hole instead of filling it, while §6 is binding on how the fix is proved.                           | §6a                 |
-| **S6** | BF-P3 sufficiency (Q3)                    | The chain stopped at "`aria-expanded` comes from `open`" and never closed back to the observed payload, leaving the obvious mid-leave attack unanswered. | §4.1                |
+| #      | Dimension                                 | Result on revision 2                                                                                                                                     | Fixed in revision 3                                                                                                      |
+| ------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **S1** | Radius accuracy (Q5)                      | §9 declared "its two destination assertions"; §4.2 also changes the middle one. **Under-declared radius — itself a finding under OA §3.4.**              | §9                                                                                                                       |
+| **S2** | BF-P1 completeness (Q1)                   | Silent on what becomes of `activeElement` and the `predecessor` capture that feeds the third assertion's message. Under-specified.                       | §4.2                                                                                                                     |
+| **S3** | Claim hygiene (Q1)                        | "Every caller already holds a correctly scoped locator" is false at `:571` and `:577`, which build it inline and discard it.                             | §4.2, §9                                                                                                                 |
+| **S4** | BF-P2 completeness (Q2) — **the big one** | The unrelated-open-popup case, **required by the review once the owner chose the scoped guard**, was absent from §6a.                                    | §6a case 4 — ⚠ **only PARTLY fixed in revision 3; MIS-SPECIFIED, and completed in revision 4 — see the narrowing below** |
+| **S5** | BF-P2 executability (Q2)                  | §6a case 2 named no delay mechanism; §8 declared the hole instead of filling it, while §6 is binding on how the fix is proved.                           | §6a                                                                                                                      |
+| **S6** | BF-P3 sufficiency (Q3)                    | The chain stopped at "`aria-expanded` comes from `open`" and never closed back to the observed payload, leaving the obvious mid-leave attack unanswered. | §4.1                                                                                                                     |
 
 **Checked and clean — recorded because silence is not a result.** BF-P4's tail
 correction (`:575-581`, `finally` at `:582-584`) verified line by line against
@@ -591,12 +692,32 @@ No over-reach found: "this closes R7-N1" is earned, because R7-N1's own
 prescription has three parts (scoped locator, `toBeFocused()`, wait for popup
 closure) and revision 3 carries all three.
 
-**The honest part.** S4 is the same failure shape as last round: a required
-element of a decision the owner had **already made** went missing from the
-revision that was supposed to implement it. It was caught here rather than by
-the reviewer, which is the point of running the commission first — but the
+**The honest part.** S4 is the same failure shape as the round before: a
+required element of a decision the owner had **already made** went missing from
+the revision that was supposed to implement it. It was caught here rather than
+by the reviewer, which is the point of running the commission first — but the
 lesson is not "the self-check works", it is that **a repair must be read against
 the review's required-repair text, clause by clause, not against a summary of
-the finding.** Expect a residue of genuinely independent findings anyway: this
-run cannot substitute for the follow-up, and nothing here should be read as
-clearing a question it merely failed to break.
+the finding.**
+
+⚠⚠ **AND REVISION 4 MUST NARROW TWO CLAIMS THIS SECTION MADE.**
+
+1. **S4 was not "fixed" in revision 3 — it was ADDED and then MIS-SPECIFIED.**
+   Revision 3 wrote case 4 in a form that could not prove what it claimed,
+   because it never isolated the owning popup's own visual leave, so the
+   document-global guard would have failed for the wrong popup. That is BF-F1 —
+   and it is **the third consecutive instance of one defect class in this plan:
+   a check that cannot fail for only the reason it names.** Fixed in §6a.
+2. **"Every dimension was run" overstated one of the runs.** The Q5 radius sweep
+   was run with a command **narrower than the one published** —
+   `grep -rn … --include=*.ts` against a shipped `rg … tests/` — so its clean
+   result never covered the file types the published command reaches. That is
+   BF-F2. **A dimension exercised with the wrong instrument is not a dimension
+   checked**, and the published-versus-run mismatch is the specific defect
+   clause B of the governing rule exists to prevent.
+
+**The standing lesson, now evidenced three rounds running.** Expect a residue of
+genuinely independent findings: this run cannot substitute for the follow-up,
+and nothing here should be read as clearing a question it merely failed to
+break. **A self-check that finds six things is not thereby a self-check that
+found all of them.**
