@@ -645,13 +645,19 @@ imported at `tests/integration/theme-no-effect-badge.spec.ts:19`;
 row; and `OptionList` does call `onSelectValue(…)` before
 `if (open) { event.preventDefault(); }`.
 
-⚠ **BF-F1 is SEV 2 and carries an Owner Decision Brief.** The reviewer
-recommended **option A** (add the isolation) over option B (drop the runtime
-scope claim and rely on source reasoning alone), because B would remove the case
-round 1 expressly required once the owner chose the scoped guard. **Revision 4
-implements option A**, which the reviewer had already executed and measured
-working. If the owner prefers B, case 4 and its §8 entry come out and §4.1's
-scope claim reverts to source reasoning — a small edit, not a rewrite.
+⭐⭐ **BF-F1 — OWNER RULED OPTION A ON 2026-08-26. SETTLED.** The reviewer
+recommended **option A** (add the zero-visible-popup isolation) over option B
+(drop the runtime scope claim and rely on source reasoning alone), because B
+would have removed the case round 1 expressly required once the owner chose the
+scoped guard. The owner adjudicated **A**, which is what revision 4 already
+implements and what the reviewer had itself executed and measured working.
+**Option B is closed.** §6a's five-step isolated sequence is therefore binding on
+the eventual harness, and case 4 is a required leg, not an optional one.
+
+ⓘ This is the second owner adjudication on this plan and the pattern is now
+consistent: BF-P1/BF-P2/BF-P3 all took option A on 2026-08-25, BF-F1 takes
+option A on 2026-08-26. In every case option A was the one that kept a control
+capable of failing.
 
 ## 10. The author's own run of the follow-up commission, before handing it over
 
