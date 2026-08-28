@@ -4,13 +4,29 @@ Author: Claude Opus 5 (1M context)
 Reviewer: OpenAI Codex (GPT-5.6 Sol)
 Owner gate: micah / BaggyG-AU
 
-**Status: PLAN ONLY, REVISION 4. No code has been written.** ⚠⚠⚠ **REVISION 4
+**Status: PLAN ONLY, REVISION 5. No code has been written.** ⚠⚠ **REVISION 5 IS A
+REPAIR ROUND, NOT A REDESIGN — option B stands and no owner decision was
+reopened.** It answers the fourth review
+(`docs/reviews/spacing-helper-preset-plan-codex-followup3-review.md`, verdict
+**SEV-1-BLOCKED**, commit `fac11f8`), whose **five findings the author re-verified
+at source and accepted in full — nineteen for nineteen across four rounds**.
+⚠⚠⚠ **ITS BLOCKER WAS SELF-INFLICTED AND IS THE MOST IMPORTANT THING IN THIS
+HEADER: revision 4 defined P4 and then deleted the only code that called it**
+(SP-15). §4.4 now carries the complete caller rewrite. SP-16, SP-17, SP-18 and
+SP-19 are repaired with it; disposition is **§9**. ⓘ The revision-4 header
+follows.
+
+**Revision 4.** ⚠⚠⚠ **REVISION 4
 REPLACES THE OWNERSHIP MECHANISM FOR THE SECOND TIME, AND FOR THE SECOND TIME
 EXECUTION — NOT ARGUMENT — IS WHAT KILLED THE OLD ONE.** A probe run under the
 owner's narrow tripwire exception measured that **option D's central inference is
-false for ~50 ms on every Select-to-Select transition, with BOTH of its checks
-satisfied**, so the break it promised would be loud is not a break at all (§4.2,
-M5–M7). The owner re-ruled on 2026-08-27, selecting **option B — a per-Select
+false for ~50 ms, with BOTH of its checks satisfied**, so the break it promised
+would be loud is not a break at all (§4.2, M5–M7). ⚠ **Measured population, stated
+exactly (SP-19): the ordinary margin-then-padding sequence produced that window in
+each of THREE recorded runs.** Three runs plus the scheduling source make it
+repeatable; they do not establish "every transition on every machine", and the
+plan does not need that — option B is immune to the window however often it
+occurs. The owner re-ruled on 2026-08-27, selecting **option B — a per-Select
 popup class, which identifies the popup by CONSTRUCTION instead of inferring it**.
 Revision 4 also answers the third review
 (`docs/reviews/spacing-helper-preset-plan-codex-followup2-review.md`, verdict
@@ -122,8 +138,12 @@ sound and the app turned out to behave differently, and both times only running
 the app found it. This version does not reason at all: each drop-down carries a
 label we put there ourselves, and the helper asks for that label. **Measured: the
 label lands on the drop-down, and each label matches exactly one — never the other
-control's.** The pattern is not new here either; `BackgroundCustomizer.tsx`
-already does exactly this for five of its own drop-downs.
+control's.** The pattern is not new here either — `BackgroundCustomizer.tsx`
+already labels five of its own drop-downs this way. ⚠ **Stated accurately
+(SP-18): those five labels are also used by the app's own stylesheet, so they are
+not, as revision 4 said, five examples of a label that exists purely for tests.
+They show the technique works here; they do not show this repository already
+looks after test-only labels.**
 
 **What it costs.** One test-only change, a two-line product change, one harness
 run before any CI cycle is spent, and one more independent review round. ⚠ Stated
@@ -337,10 +357,31 @@ it to `false` is delayed via MessageChannel"_
 `:70-80`), with the outside-`mousedown` close routed through
 `lib/hooks/useSelectTriggerControl.js:28-33`.
 
-⭐⭐⭐ **SO ROUTE (a) IS NOT AN EXOTIC STATE — IT IS WHAT THE ORDINARY PATH DOES
-EVERY TIME ONE SELECT IS OPENED WHILE ANOTHER IS OPEN**, which is precisely what
-`applies spacing presets` does. **Route (a) is restored to the table, and harness
-leg 1 is restored with it.**
+⭐⭐⭐ **SO ROUTE (a) IS NOT AN EXOTIC STATE — THE ORDINARY PATH PRODUCED IT IN
+EVERY RUN THAT WAS MEASURED**, opening one Select while another is open, which is
+precisely what `applies spacing presets` does. **Route (a) is restored to the
+table, and harness leg 1 is restored with it.**
+
+⚠ **SCOPE OF THAT CLAIM, CORRECTED IN REVISION 5 (SP-19).** The measured
+population is **three recorded runs of the margin-then-padding sequence**, all
+three of which entered the overlap. The installed scheduling asymmetry explains
+why it is repeatable rather than lucky. **It is NOT established that both popup
+boxes become Playwright-visible on every machine and every timing** — and §6 leg 1
+already assumes they may not, since it must treat `max < 2` as a no-result.
+⭐ **The plan does not depend on the universal.** Route (a) needs only to be
+REACHABLE to justify a helper that cannot be fooled by it, and three for three
+settles reachability. ⚠⚠ **Saying "every time" here would have been the same error
+as M3 in the opposite direction — a finite sample promoted to a universal — in the
+very revision that struck M3 for exactly that.**
+
+ⓘ **INDEPENDENT CORROBORATION, FOUND WHILE CHECKING SOMETHING ELSE (SP-18).**
+`src/index.css:26-40` hides the leave-transition remnants of the five
+`BackgroundCustomizer` Select popups, with the comment _"hide leave-transition
+remnants to prevent visible merged menus."_ **Someone hit this exact
+two-popups-visible-during-leave behaviour in this repository before, in another
+component, and patched it in CSS.** That is a second, entirely independent line of
+evidence for M5 — and a warning that the CSS fix treats the symptom while leaving
+the popups present to a DOM query.
 
 ### ⚠⚠⚠ Route (b)'s MECHANISM is DELETED — twice wrong is enough
 
@@ -545,6 +586,28 @@ antd 6.1.4 marks **deprecated** in favour of `classNames.popup.root`
 (`node_modules/antd/lib/select/index.d.ts:57-58`); the new code uses the current
 form. **Migrating the existing five is NOT in this change's scope** — see §5.2.
 
+⚠⚠ **WHAT THAT PRECEDENT DOES AND DOES NOT SHOW — CORRECTED IN REVISION 5
+(SP-18), BECAUSE REVISION 4 OVERSTATED IT.** It shows **the API shape works in
+this app**: antd renders the class onto the popup root and a DSL can resolve it.
+**It does NOT show that this repository already carries five equivalent
+_test-only_ hooks**, and revision 4 leaned on it for durability and lane
+reasoning as though it did. Two facts falsify that reading:
+
+- **All five classes have a PRODUCT purpose.** `src/index.css:26-40` selects on
+  every one of them to hide leave-transition remnants. They are product CSS
+  selectors that a DSL also happens to use — so the app itself protects them,
+  which is precisely the protection the spacing classes will NOT have.
+- **That DSL does not fail closed.** `tests/support/dsl/backgroundCustomizer.ts`
+  falls back to a document-global popup when the scoped lookup returns null —
+  `(await this.resolveScopedDropdown(testId)) ?? (await this.resolveVisibleDropdown())`
+  — and its click path uses `force: true`, which this plan bans outright. **If its
+  class went missing, it would silently degrade to exactly the document-global
+  behaviour this whole plan exists to remove.**
+
+⭐ **So the precedent argues FOR the API and AGAINST complacency**, and §8's weak
+claim about the unprotected product hook stands undiminished rather than being
+softened by it.
+
 **REJECTED, and why:** the `aria-controls` id link (falsified — shared `test-id`);
 **option D's `aria-expanded` + asserted singleton (falsified — M6)**; any
 `:visible` / `:not(-hidden)` `.first()` / `.last()` selection, which answers "is a
@@ -615,7 +678,8 @@ visible popup is the foreign one.
 out which popup it has. Both rejected mechanisms were inferences that survived
 source review and died on first execution; **B removes the class of error rather
 than this instance of it.** Its two load-bearing facts are measured (M7), and the
-repository already ships the same pattern in `BackgroundCustomizer.tsx`.
+repository already ships the same API in `BackgroundCustomizer.tsx` — though not,
+as revision 4 implied, the same test-only contract (§4.2, SP-18).
 
 **If you do nothing:** the identity keeps reddening roughly one run in four.
 
@@ -635,11 +699,13 @@ under.
 
 ### 4.4 The proposed helper, in full
 
-**Revision 4 — rewritten for option B.** The helper now locates a popup **by the
-class that popup renders**, so nothing has to be inferred. Three private helpers
-are rewritten, one is added, and the private entry points take the Select's
-**test id** rather than a bare `Locator`, because the test id is what both the
-control and its popup class are derived from.
+**Revision 4 — rewritten for option B; revision 5 restores its callers.** The
+helper locates a popup **by the class that popup renders**, so nothing has to be
+inferred. Three private helpers are rewritten, one is added, and the entry points
+take the Select's **test id** rather than a bare `Locator`, because the test id is
+what both the control and its popup class are derived from. ⚠⚠ **Revision 4 showed
+the private helpers and omitted the callers — which silently orphaned P4 (SP-15).
+The callers are below and they are part of the proposal, not an illustration.**
 
 ⭐⭐ **THE WHOLE MECHANISM IS ONE RULE: a Select's popup class is its
 `data-testid` plus `-popup`.** That is mechanical, so there is no lookup table to
@@ -709,12 +775,24 @@ private async isOpen(select: Locator): Promise<boolean> {
  */
 private async resolveOwnedDropdown(testId: string, budgetMs: number): Promise<Locator> {
   const deadline = Date.now() + budgetMs;
-  const left = () => deadline - Date.now();
-  const expired = (stage: string) => {
-    throw new Error(
-      `${testId}: the ${budgetMs} ms budget expired before ${stage}; ` +
-        'this Select never presented its own popup',
-    );
+
+  /** ⚠⚠ SP-16: read the remainder ONCE per stage and pass THAT value on.
+   *  Revision 4 called `left()` in the guard and again in the matcher options,
+   *  so a guard that saw 1 ms could hand the matcher 0 — and Playwright installs
+   *  a progress timer only `if (timeout)`
+   *  (`playwright-core/lib/server/progress.js:67-75`), so ZERO means NO DEADLINE,
+   *  not immediate expiry. That is a worse failure than the 50 ms floor SP-14
+   *  removed: the floor overran by 50 ms, this could hang to the ambient test
+   *  timeout. One read, rejected if non-positive, then reused. */
+  const budgetFor = (stage: string): number => {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+      throw new Error(
+        `${testId}: the ${budgetMs} ms budget expired before ${stage}; ` +
+          'this Select never presented its own popup',
+      );
+    }
+    return remaining;
   };
 
   const popup = this.popupFor(testId);
@@ -723,21 +801,19 @@ private async resolveOwnedDropdown(testId: string, budgetMs: number): Promise<Lo
   // carry this class. Two would mean the class was rendered more than once
   // (e.g. a third `renderSection` call), which is a product-side mistake and
   // must be loud rather than silently resolved by `.first()`.
-  if (left() <= 0) expired('the popup class could be counted');
   await expect(
     popup,
     `expected exactly one popup carrying .${testId}-popup — more than one means ` +
       'the class is rendered by more than one Select and is no longer an identity',
-  ).toHaveCount(1, { timeout: left() });
+  ).toHaveCount(1, { timeout: budgetFor('the popup class could be counted') });
 
   // ⚠ The class alone is not enough: rc-trigger KEEPS closed popups in the DOM
   // (`removeOnLeave: false`), so this node exists while the Select is shut.
   // Visibility is what distinguishes "its popup is open" from "its popup exists".
-  if (left() <= 0) expired('the popup became visible');
   await expect(
     popup,
     `${testId}'s own popup never became visible within ${budgetMs} ms`,
-  ).toBeVisible({ timeout: left() });
+  ).toBeVisible({ timeout: budgetFor('the popup became visible') });
 
   return popup;
 }
@@ -808,11 +884,84 @@ private async expectSelectShows(testId: string, expected: RegExp): Promise<void>
 }
 ```
 
+### ⚠⚠⚠ And the CALLERS — restored in revision 5, because revision 4 dropped them (SP-15)
+
+**This is the most serious defect any round has found in a repair rather than in
+the design, and it was self-inflicted.** Revision 3 showed a caller that ended
+`await this.expectSelectShows(select, pattern); // P4`. **Revision 4 replaced
+§4.4 wholesale and the caller block went with it** — so P4 was defined, listed in
+the private-surface inventory and exercised by harness leg 5, while **nothing in
+the proposed path ever called it**. The plan's central promise (§3 item 1, §4.1)
+is _prevention plus a detector_; a detector with no call site is neither.
+
+**The complete internal caller population is three methods** —
+`tests/support/dsl/spacing.ts:102-124` — and all three are rewritten. Nothing
+else in the class reaches the repaired path; the public `setCardMargin` /
+`setCardPadding` string branches route through `setPreset`.
+
+```ts
+/** ⚠ Callers no longer open the Select themselves — `selectOptionByText` owns
+ *  the whole open→locate→click→settle sequence. Calling `openSelectDropdown`
+ *  first as well is redundant under the new signature and must not be retained. */
+private async setPreset(
+  testIdPrefix: 'spacing-margin' | 'spacing-padding',
+  preset: SpacingPreset,
+): Promise<void> {
+  const testId = `${testIdPrefix}-preset`;
+  const label = preset.charAt(0).toUpperCase() + preset.slice(1);
+  const pattern = new RegExp(`^${label}`, 'i');
+  await this.selectOptionByText(testId, pattern);
+  await this.expectSelectShows(testId, pattern);          // P4
+}
+
+async setMarginMode(mode: SpacingMode): Promise<void> {
+  const pattern = mode === 'all' ? /^All Sides$/i : /^Per Side$/i;
+  await this.selectOptionByText('spacing-margin-mode', pattern);
+  await this.expectSelectShows('spacing-margin-mode', pattern);   // P4
+}
+
+async setPaddingMode(mode: SpacingMode): Promise<void> {
+  const pattern = mode === 'all' ? /^All Sides$/i : /^Per Side$/i;
+  await this.selectOptionByText('spacing-padding-mode', pattern);
+  await this.expectSelectShows('spacing-padding-mode', pattern);  // P4
+}
+```
+
+⭐ **The SAME pattern object is used to select and to read back**, so P4 cannot
+drift from what was asked for. ⚠ **P4 is what closes the one silent path option B
+still has** — a unique class attached to the _wrong_ Select would satisfy the count
+and visibility checks; the read-back would not. §6 leg 5 must therefore be run
+against **this wired path**, not against `expectSelectShows` in isolation: leg 5
+can show the method fails when called, and only the wired path shows it _is_
+called.
+
+**What is removed from the current helper** — restored here, also lost in
+revision 4's rewrite:
+
+1. **The `force: true` fallback at `:49`** — it disables the hit-target check
+   outright. Never restored.
+2. **The `evaluate((el) => el.click())` at `:59-61`** — a DOM click that cannot
+   complain about an obscured, detached or unstable target. Never restored.
+3. **The `Escape` presses at `:46` and `:62`.** ⚠ Note RT-1: those presses were
+   papering over the toggle hazard, which is why removing them required the
+   `isOpen` guard in the loop. The guard is the replacement, not an addition.
+4. **`waitForAllSelectDropdownsToClose()` as an authority**, in either position.
+   ⓘ It may remain in the class for a caller wanting a page-wide quiesce; nothing
+   in the repaired path calls it.
+
+**What is RETAINED — the bounded retry** (SP-2, owner's ruling 2026-08-27), now
+gated on `isOpen` so a second click cannot toggle a slow-but-correct open shut.
+⚠ The asymmetric budget (1500 ms then 5000 ms) is still a **JUDGEMENT from no
+measurement**; legs 4 and 9 characterise it before it is frozen.
+
 ⭐⭐ **WHAT REVISION 4 DELETED, AND WHY THAT MATTERS MORE THAN WHAT IT ADDED.**
 Gone: the `aria-controls` filter, the `:visible` document-global locator, the
 asserted singleton, and the `Math.max(50, …)` floor. **Every one of them existed
 to answer "which popup is mine?" — a question option B does not ask.** The helper
 is shorter than revision 3's and has one fewer moving part than revision 1's.
+⚠⚠ **It also deleted two things it should not have — the caller block above and
+the removal record — which is exactly the over-reach the fix-round rule warns
+about: a wholesale replacement carries away whatever else lived in the block.**
 
 ### 4.5 Deliberately NOT proposed
 
@@ -880,13 +1029,18 @@ important scope change in this revision, so it is stated here rather than left i
 
 **The whole product-side change is two added lines in one file**,
 `src/components/SpacingControls.tsx`: a `classNames={{ popup: { root: … } }}`
-prop on each of the two `Select`s inside `renderSection`. **No behaviour, no
-markup, no styling, no state, no prop the app reads.** A CSS class is added to a
-portal element; nothing in the app selects on it.
+prop on each of the two `Select`s inside `renderSection`. ⚠ **Stated precisely
+(SP-18) — revision 4 said "no markup", which is wrong, because a class attribute
+IS markup:** the popup root's `class` attribute gains one token. **No behaviour,
+no layout, no styling, no state, and no prop the app reads**; no product CSS rule
+and no product code selects on the new tokens (verified by the collision search
+below, which returns no hit anywhere under `src/`).
 
 **Who else renders these controls:** `renderSection` is called exactly twice
 (`src/components/SpacingControls.tsx:228-229`), which is what produces the four
-identically-labelled Selects this whole plan is about. Regenerate:
+identically-labelled Selects this whole plan is about. **`SpacingControls` itself
+has exactly one product consumer, `src/components/PropertiesPanel.tsx:6632`**
+(regenerate: `grep -rn "<SpacingControls" src/`). Regenerate the rest:
 
 ```
 grep -n "renderSection(" src/components/SpacingControls.tsx
@@ -1020,8 +1174,11 @@ SP-6).
   `resolveOwnedDropdown`, `popupFor` and `expectSelectShows` are all private to
   `SpacingDSL` and nothing outside the class can reach them.
 - ⚠⚠ **NEW IN REVISION 4 — `BackgroundCustomizer.tsx`'s five existing
-  `popupClassName` uses and `tests/support/dsl/backgroundCustomizer.ts`.** They
-  are the precedent this change follows and they are **deliberately NOT touched**.
+  `popupClassName` uses, `src/index.css:26-40` which selects on all five, and
+  `tests/support/dsl/backgroundCustomizer.ts`.** They are the API precedent this
+  change follows and they are **deliberately NOT touched**. ⚠ The CSS consumer was
+  missed in revision 4 and is named here because it is what makes those five
+  classes product surface rather than test-only hooks (SP-18).
   Migrating them from the deprecated `popupClassName` to `classNames.popup.root`
   is a real and separate piece of work; doing it here would be the over-reach the
   fix-round rule warns about, and it would put a second DSL's specs in this
@@ -1055,9 +1212,29 @@ declares which KIND of evidence it produces**:
 | **ONE-SIDED CHARACTERISATION**  | Records behaviour of the repaired helper only; proves nothing about the old one and is NOT acceptance evidence.        | 8, 9       |
 
 ⭐ **The harness is bidirectional because rows 1, 2, 4 and 7 run both ways and row
-6 must fail — not because every row does.** Any row promoted to acceptance
-evidence must come from the first two kinds, and §6's record states the kind
-beside every result.
+6 must fail — not because every row does.** §6's record states the kind beside
+every result.
+
+⚠⚠ **THE TABLE ABOVE COVERS THE MECHANISM LEGS 1–9 ONLY, AND REVISION 4 DID NOT
+SAY SO — finding SP-17.** It wrote the rule as though it governed every numbered
+leg while legs 0 and 10–12 sat outside it, and simultaneously called leg 12
+acceptance evidence, which its own "acceptance comes from the first two kinds"
+sentence forbade. **The population is 0–12 and it is covered here in full:**
+
+| Leg    | Category                      | What it is, and what it may be used for                                                                                                                                                                                                                         |
+| ------ | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **0**  | **CENSUS**                    | Measures DOM state; runs no helper and has no old/new sides to compare. It is where §4.2's M1–M7 come from. ⚠ Never acceptance evidence for the repair — and note it produced M3, which was **wrong**, so a census result is evidence only for what it sampled. |
+| 1–9    | see the four kinds above      | The mechanism legs. **This is the only group the four-kind table governs.**                                                                                                                                                                                     |
+| **10** | **REGRESSION**                | The existing callers and the visual spec must not change behaviour, and snapshots must not move (§5.3). A pass is a **necessary, not sufficient** condition.                                                                                                    |
+| **11** | **REPEAT / CHARACTERISATION** | `--repeat-each=5`. Already labelled not-acceptance in its own row, and that stands.                                                                                                                                                                             |
+| **12** | **GATE**                      | CI. ⚠ **Deliberately an AGGREGATE signal, and that is why the first-two-kinds rule is scoped to the mechanism legs rather than applied to it.** CI cannot be a fail-old/pass-new control — nothing runs the old helper in CI.                                   |
+
+⭐ **The narrowed rule, stated once:** _acceptance evidence **that the defect
+mechanism is repaired** comes only from legs of the FAIL-OLD/PASS-NEW or
+GUARD-REMOVAL kinds._ Legs 10–12 are release gates: they can **veto** a repair and
+cannot **establish** one. ⚠ And leg 12 keeps its own standing caveat — acceptance
+evidence is commit-addressed, and the per-attempt list is the measurement, never
+the aggregate verdict.
 
 The harness is a temporary probe under `tests/`, run headless
 (`bash tools/test-headless.sh <spec> --project=electron-e2e --workers=1`), deleted
@@ -1111,17 +1288,17 @@ measured and asks whether the helper can be handed the foreign popup.
   an opener, and under §4.4 that left no way to obtain a popup at all. Deriving it
   from SCOPE-ONLY gives it a document-global opener that demonstrably works.**
 
-| #     | Case                                                                                                                                                                            | Kind                | Variant(s) and expected result                                                                                                                                                                                                                                                                                            |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1** | ⭐⭐⭐ **THE M6 STATE — route (a).** Open the margin preset Select, then drive the padding preset path immediately, so the call lands inside the ~350 ms two-popup window (M5). | FAIL-OLD / PASS-NEW | **CURRENT: sets the MARGIN** (or flakes between the two — record which, per attempt). **REPAIRED: passes**, and P4 confirms the padding control. ⚠ Record the popup count observed during the call — if it is never 2, the leg did not enter its own state and its green means nothing.                                   |
-| **2** | **⭐ THE FOREIGN-ONLY FAILURE STATE.** The margin popup is open; the padding Select's own opening is suppressed page-side; then the padding path runs.                          | FAIL-OLD / PASS-NEW | **CURRENT: silently succeeds**, setting the MARGIN — no error at all. **REPAIRED: fails inside `resolveOwnedDropdown`**, naming the control: `.spacing-padding-preset-popup` never became visible.                                                                                                                        |
-| **3** | **⭐ The scope-only straw man**, run against leg 2's state — the repair the diagnosis drawer recommended.                                                                       | GUARD-REMOVAL       | **SCOPE-ONLY: must ALSO silently succeed.** This is what proves identity-beats-scope rather than asserting it. ⓘ §4.2 M4 already measured the same thing statically; this leg proves it through the helper.                                                                                                               |
-| **4** | **The happy path.** Clean panel, nothing else open.                                                                                                                             | FAIL-OLD / PASS-NEW | **CURRENT: passes. REPAIRED: passes, and adds no measurable stall** — record the wall time of `openSelectDropdown` end-to-end, as **characterisation input for the 1500 ms budget** (SP-10).                                                                                                                              |
-| **5** | **The P4 detector alone**, run against **leg 2's state**.                                                                                                                       | GUARD-REMOVAL       | **P4-ONLY: fails at `expectSelectShows`, naming the control** — proving P4 detects independently of P1 and P2. ⓘ The opener is SCOPE-ONLY's document-global one; see the variant list.                                                                                                                                    |
-| **6** | **The negative control — known-bad input the probe must still fail on.** Point the helper at a preset label that does not exist (`/^Nonexistent/`).                             | KNOWN-BAD           | **REPAIRED: fails on the option `toHaveCount(1)`**, naming the pattern. ⚠ Record the **exact failure message AND the runner's exit code** — a failure caught inside a passing wrapper is indistinguishable from a pass.                                                                                                   |
-| **7** | **A STABLE, legitimately-open UNRELATED Select popup**, then run the padding path against a clean padding control.                                                              | FAIL-OLD / PASS-NEW | **CURRENT: the document-global pre-wait burns its full budget and fails without touching the padding Select** — the defect SP-1 named. **REPAIRED: passes promptly**, because it asks for its own popup by class. ⓘ Revision 3 expected a two-popup state here to "break loudly"; under option B it is simply irrelevant. |
-| **8** | **The OWNED popup mid-leave.** Enter the padding path while the padding Select's own popup is animating shut.                                                                   | CHARACTERISATION    | **REPAIRED, one oracle: the helper RE-OPENS and selects successfully.** ⚠ Not acceptance evidence — it says nothing about the current helper. See the construction below.                                                                                                                                                 |
-| **9** | **The retry path.** First gesture suppressed, second succeeds.                                                                                                                  | CHARACTERISATION    | **REPAIRED: passes on the second attempt**; record the wall time as characterisation of the budget and **not** as proof the number is right.                                                                                                                                                                              |
+| #     | Case                                                                                                                                                                                                                                                                                                     | Kind                | Variant(s) and expected result                                                                                                                                                                                                                                                                                            |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1** | ⭐⭐⭐ **THE M6 STATE — route (a).** Open the margin preset Select, then drive the padding preset path immediately, so the call lands inside the ~350 ms two-popup window (M5).                                                                                                                          | FAIL-OLD / PASS-NEW | **CURRENT: sets the MARGIN** (or flakes between the two — record which, per attempt). **REPAIRED: passes**, and P4 confirms the padding control. ⚠ Record the popup count observed during the call — if it is never 2, the leg did not enter its own state and its green means nothing.                                   |
+| **2** | **⭐ THE FOREIGN-ONLY FAILURE STATE.** The margin popup is open; the padding Select's own opening is suppressed page-side; then the padding path runs.                                                                                                                                                   | FAIL-OLD / PASS-NEW | **CURRENT: silently succeeds**, setting the MARGIN — no error at all. **REPAIRED: fails inside `resolveOwnedDropdown`**, naming the control: `.spacing-padding-preset-popup` never became visible.                                                                                                                        |
+| **3** | **⭐ The scope-only straw man**, run against leg 2's state — the repair the diagnosis drawer recommended.                                                                                                                                                                                                | GUARD-REMOVAL       | **SCOPE-ONLY: must ALSO silently succeed.** This is what proves identity-beats-scope rather than asserting it. ⓘ §4.2 M4 already measured the same thing statically; this leg proves it through the helper.                                                                                                               |
+| **4** | **The happy path.** Clean panel, nothing else open.                                                                                                                                                                                                                                                      | FAIL-OLD / PASS-NEW | **CURRENT: passes. REPAIRED: passes, and adds no measurable stall** — record the wall time of `openSelectDropdown` end-to-end, as **characterisation input for the 1500 ms budget** (SP-10).                                                                                                                              |
+| **5** | **The P4 detector alone**, run against **leg 2's state**. ⚠⚠ **Run it through the WIRED CALLER (`setPreset`), not by calling `expectSelectShows` directly** — SP-15 was precisely a P4 that existed and was never called, and a leg that invokes the method itself would have passed against revision 4. | GUARD-REMOVAL       | **P4-ONLY: fails at `expectSelectShows`, naming the control** — proving P4 detects independently of P1 and P2, **and that the repaired path reaches it**. ⓘ The opener is SCOPE-ONLY's document-global one; see the variant list.                                                                                         |
+| **6** | **The negative control — known-bad input the probe must still fail on.** Point the helper at a preset label that does not exist (`/^Nonexistent/`).                                                                                                                                                      | KNOWN-BAD           | **REPAIRED: fails on the option `toHaveCount(1)`**, naming the pattern. ⚠ Record the **exact failure message AND the runner's exit code** — a failure caught inside a passing wrapper is indistinguishable from a pass.                                                                                                   |
+| **7** | **A STABLE, legitimately-open UNRELATED Select popup**, then run the padding path against a clean padding control.                                                                                                                                                                                       | FAIL-OLD / PASS-NEW | **CURRENT: the document-global pre-wait burns its full budget and fails without touching the padding Select** — the defect SP-1 named. **REPAIRED: passes promptly**, because it asks for its own popup by class. ⓘ Revision 3 expected a two-popup state here to "break loudly"; under option B it is simply irrelevant. |
+| **8** | **The OWNED popup mid-leave.** Enter the padding path while the padding Select's own popup is animating shut.                                                                                                                                                                                            | CHARACTERISATION    | **REPAIRED, one oracle: the helper RE-OPENS and selects successfully.** ⚠ Not acceptance evidence — it says nothing about the current helper. See the construction below.                                                                                                                                                 |
+| **9** | **The retry path.** First gesture suppressed, second succeeds.                                                                                                                                                                                                                                           | CHARACTERISATION    | **REPAIRED: passes on the second attempt**; record the wall time as characterisation of the budget and **not** as proof the number is right.                                                                                                                                                                              |
 
 ⭐⭐ **LEGS 2 AND 3 TOGETHER ARE THE DISCRIMINATOR**, and leg 3 does the work: it
 runs the _narrower_ repair against the same state and must **also** silently
@@ -1222,9 +1399,21 @@ criterion.
    Owner Decision Brief form, plus the two decisions already standing at §4.3 and
    §5.2.
 3. **⚠⚠ NO CODE until a review returns ACCEPTS-REVISION.** That is the tripwire.
-4. **Then implementation**, in this order: leg 0 first (it can falsify option A),
-   then the helper, then legs 1–8, then the gate
-   (`./tools/checks`, with the 4/4-steps check), then push and CI.
+4. **Then implementation**, in this order — ⚠⚠ **corrected in revision 5
+   (SP-17); revision 4 still said "leg 0 first (it can falsify option A), then
+   legs 1–8", naming a mechanism that has been dead for two revisions and omitting
+   legs 9–12 entirely:**
+   1. **The `src/` change first** — the two `classNames` lines — since every
+      option-B leg depends on the class existing.
+   2. **Leg 1 immediately after, as the first thing run.** It is the only leg that
+      observes the class on a popup **in the Electron renderer**, which is §8's
+      first weak claim and the gap that killed options A and D. ⚠ If leg 1 records
+      `max < 2` it did not enter its state and must be re-run, not recorded.
+   3. **Then the helper**, then the remaining mechanism legs **2–9**.
+   4. **Then leg 10** (callers + visual, snapshots must not move), **leg 11**
+      (`--repeat-each=5`), and the gate (`./tools/checks`, with the 4/4-steps
+      check).
+   5. **Then push and leg 12** (CI), whose result is commit-addressed.
 5. **Under STRAT-D7** (`drawer_havdm_decisions_bd49cedc80cb93cafabc0f86`), every
    post-review repair gets a same-reviewer scoped follow-up. No exemption for a
    small diff. PR #153 took four rounds under this rule; plan for more than one.
@@ -1308,7 +1497,9 @@ lines to `src/components/SpacingControls.tsx` (§5.1a).
 change does to `src/` is add a CSS class to a portal element: **no behaviour, no
 markup structure, no state, no prop the app reads, and nothing any product code
 selects on.** It is a test hook, and the repository already carries five of them
-in `BackgroundCustomizer.tsx`. **The subject of the work is unchanged — it is
+in `BackgroundCustomizer.tsx` — ⚠ which is an API precedent, not five test-only
+hooks (SP-18), so it carries less lane weight than revision 4 gave it. **The
+subject of the work is unchanged — it is
 still the shared test DSL — and that is what the lane question is about.**
 
 ⚠ **The honest counter-argument, stated rather than argued away:** "test-only" was
@@ -1331,6 +1522,17 @@ ratio is already wrong. This plan is now at:
   away** — option A after the first harness run, option D after the second;
 - **still zero lines of shipped code**, because the spec-before-code tripwire has
   held throughout.
+
+⚠⚠ **AND THE COSTS REVISION 4's VERSION OF THIS LIST LEFT OUT, added in revision 5
+because the reviewer was right that the inventory flattered the process:** five
+plan revisions of author repair time; **three owner adjudications of the same
+decision** (§4.3, ruled A then D then B); **two probe-exception cycles**; a gate
+cycle lost to round 2's unformatted review commit; **three reviewer commits found
+sitting local-only** (rounds 2 and 3, plus round 2's needing a separate formatting
+commit); and one self-inflicted blocker — SP-15 — which added an entire round on
+its own. **The honest total is larger than "four rounds, fourteen findings" makes
+it sound, and the "measure earlier" conclusion below is supported by the arc but
+does not excuse the avoidable half of this list.**
 
 ⭐ **The two sides of that number, both true.** The process is expensive, and it is
 also the only reason a mechanism that silently drives the wrong control was caught
@@ -1509,8 +1711,40 @@ JUDGEMENT from no measurement** — that one is UNCHANGED and still live; legs 4
   which is why leg 1 must record the maximum popup count and treat `max < 2` as a
   no-result rather than a pass.
 - **Legs 2/3's suppression may collide with Playwright's own interceptor.**
-  UNCHANGED from revision 3 and still an OPEN QUESTION in §6, deliberately not
-  guessed. ⚠ If it collides, legs 2, 3 and 9 all need a different construction.
+  UNCHANGED from revisions 3 and 4 and still an OPEN QUESTION in §6, deliberately
+  not guessed. ⚠ If it collides, legs 2, 3 and 9 all need a different construction.
+
+**NEW IN REVISION 5 — attack these, and note that three of revision 4's five
+weak claims survived the round unchanged.**
+
+- ⚠⚠⚠ **THE STRONGEST ATTACK ON THIS REVISION IS THAT ITS PREDECESSOR NEEDED
+  SP-15 AT ALL.** Revision 4 rewrote §4.4 wholesale and silently carried away the
+  caller block and the removal record. **The same rewrite technique produced this
+  revision's repairs.** ⚠ **Ask what ELSE the revision-4 replacement deleted that
+  nobody has missed yet.** ⭐ **The author ran the check rather than only writing
+  it down:** revision 4 replaced two blocks wholesale — §4.4 and §6's leg section —
+  and both were diffed against revision 3 (`git show a39aad3`). **§4.4: all
+  eighteen identifiers and all four structural items present. §6: all
+  twenty-three content probes present, nothing missing.** ⚠ **That is still a
+  keyed check, and the key is the author's** — it enumerates identifiers and named
+  items, so it would not see a deleted sentence that introduced no identifier and
+  no heading. **A reviewer keying differently is the remaining defence.**
+- ⚠ **P4 is now wired, and that makes it load-bearing in a way it has never been
+  tested as.** It is the ONLY thing standing between option B and a
+  correctly-formed-but-misattached class. **Leg 5 must run against the WIRED path**
+  (§4.4), and until it does, "P4 catches the drift case" is INFERRED.
+- ⚠ **The three callers are proposed but their public signatures are unchanged**,
+  and `setCardMargin` / `setCardPadding` reach `setPreset` by a string branch. **No
+  leg exercises the public entry points** — leg 10 runs the existing specs, which
+  do, but only on the happy path. Is that enough?
+- **`budgetFor` throws where revision 4 returned a floor.** A throw inside
+  `resolveOwnedDropdown` is caught by `openSelectDropdown`'s retry on the first
+  attempt, so a budget expiry now costs a **second gesture** rather than a fast
+  failure. ⚠ That is probably right — it is what the retry is for — but it was not
+  the intent behind SP-14, and nothing measures it.
+- **SP-18's correction relies on the author having read the RIGHT consumers.**
+  `src/index.css:26-40` and the DSL fallback were found; **no claim is made that
+  they are the only consumers of those five classes.**
 - **Route (b) now has NO mechanism at all, deliberately.** The plan asserts a state
   and declines to explain how CI reaches it. ⚠ Attack whether the repair is still
   justified with the "how" absent — the argument is that routes (b) and (c) present
@@ -1610,6 +1844,27 @@ rc-select's immediate-open/deferred-close asymmetry, **and the reviewer itself
 surfaced it one finding earlier as SP-13**. ⓘ Recorded not as a reviewer error but
 as this plan's third instance of one class: **a check is evidence only for the
 property it exercises**, and a static boundary cannot decide a temporal claim.
+
+### Round 4 — the STRAT-D7 scoped follow-up 3
+
+Review: `docs/reviews/spacing-helper-preset-plan-codex-followup3-review.md`, commit
+`fac11f8`, reviewed head `6f839ec64a5e39a4930a179aa2b60e02b6f130d6`, verdict
+**SEV-1-BLOCKED**. It disposed **SP-11 and SP-13 RESOLVED**, **SP-12 and SP-14
+PARTIALLY RESOLVED**, and raised five new findings. ⭐⭐ **All five were re-verified
+at source by the author before acceptance — nineteen for nineteen across four
+rounds. This reviewer has still produced no false finding.**
+
+⭐ **It also did the thing the commission asked hardest for: it attacked option B
+as its own recommendation, and the attack landed** — SP-18 corrects a precedent the
+author had leaned on and the reviewer had every incentive to let stand.
+
+| ID        | SEV | Verdict      | What changed, and where                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --------- | --- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **SP-15** | 1   | **RESOLVED** | ⚠⚠⚠ **THE AUTHOR'S OWN DEFECT, AND THE WORST KIND: a repair that deleted something load-bearing.** Revision 4 replaced §4.4 wholesale; the block it replaced contained the caller example ending `await this.expectSelectShows(select, pattern); // P4`, so P4 survived as a definition, an inventory entry and a harness leg with **no call site anywhere in the proposal**. _Verified:_ `grep -n "expectSelectShows"` over revision 4 returned the definition, the §5.3 inventory and leg 5 — no caller; and `git show a39aad3` confirms revision 3 line 637 had the call. **Fixed:** §4.4 now carries the complete rewrite of all three internal callers (`tests/support/dsl/spacing.ts:102-124`), each calling `selectOptionByText` once and then `expectSelectShows` with the SAME pattern object. The removal record the same deletion took is restored too.                                                                                                                                                                                                                   |
+| **SP-16** | 3   | **RESOLVED** | `left()` was read in the expiry guard and again in the matcher options, so a guard seeing 1 ms could hand the matcher 0. _Verified at source, and it is worse than the reviewer's SEV 3 implies:_ `playwright-core/lib/server/progress.js:67-75` installs a timer only `if (timeout)`, so **zero means NO deadline** — the replacement could hang to the ambient test timeout where the `Math.max(50, …)` floor it replaced merely overran by 50 ms. **Fixed:** `budgetFor(stage)` reads the remainder **once**, throws if non-positive, and returns that same positive value to the matcher.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| **SP-17** | 3   | **RESOLVED** | The KIND rule was written as though it governed every numbered leg while legs 0 and 10–12 sat outside it, and leg 12 was called acceptance evidence against the plan's own first-two-kinds sentence. **Fixed:** the four-kind table is explicitly scoped to mechanism legs **1–9**, a second table categorises **0 (CENSUS), 10 (REGRESSION), 11 (REPEAT), 12 (GATE)**, and the acceptance rule is narrowed to _acceptance that the defect mechanism is repaired_ — legs 10–12 can veto a repair, not establish one. The stale §7 sequence (which still said "leg 0 first (it can falsify option A) … then legs 1–8") is rewritten and now puts the `src/` change first and **leg 1 immediately after**, because leg 1 is the only leg that observes the class in the Electron renderer.                                                                                                                                                                                                                                                                                             |
+| **SP-18** | 3   | **RESOLVED** | The `BackgroundCustomizer` precedent was overstated as "five equivalent test-only hooks" and used for durability and lane weight. _Verified:_ `src/index.css:26-40` selects on **all five** to hide leave-transition remnants, so they are **product CSS surface**; and `tests/support/dsl/backgroundCustomizer.ts` does **not** fail closed — `(await this.resolveScopedDropdown(testId)) ?? (await this.resolveVisibleDropdown())` degrades to a document-global popup, and its click path uses `force: true`, which this plan bans. **Fixed** in §0, §4.2, §4.3, §5.1a, §5.3 and §7.4: it is an **API** precedent, it carries less lane weight, and §8's unprotected-hook weak claim stands undiminished. "No markup" is corrected — a class attribute is markup — and `src/components/PropertiesPanel.tsx:6632` is named as `SpacingControls`'s one product consumer. ⭐ **And the correction paid a dividend: that CSS comment — _"hide leave-transition remnants to prevent visible merged menus"_ — is independent corroboration of M5 from another component in this repo.** |
+| **SP-19** | 3   | **RESOLVED** | Two live universals ("false … on **every** Select-to-Select transition"; "what the ordinary path does **EVERY TIME**") rested on three recorded runs. **Fixed:** both now state the measured population — the margin-then-padding sequence entered the overlap in each of three runs — and say plainly that reachability is all the plan needs, since option B is immune to the window however often it occurs. ⚠⚠ **Recorded without excuse: this is the same unverified-universal error as M3, in the opposite direction, committed in the very revision that struck M3 for it.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ⚠⚠ **UNDER STRAT-D7 THIS REPAIR ROUND OWES A SAME-REVIEWER SCOPED FOLLOW-UP — no
 exemption for a small diff, and this diff is not small.** The fix round is
@@ -1839,3 +2094,59 @@ as sufficient was.
   renderer**. M7 is jsdom. §8 lists this first among revision 4's weak claims.
 - ⚠ **NOT established:** whether legs 2/3's capture listener collides with
   Playwright's interceptor. Unchanged, still an open question, still not guessed.
+
+### ⚠⚠⚠ Round 4 — the round the author lost on his own repair
+
+**Revision 4's blocker was not a reviewer finding the author disagreed with. It
+was the author deleting a line of his own plan and not noticing.** SP-15 is worth
+recording more carefully than the other eighteen findings combined, because it is
+the only one where the defect was introduced _by the act of fixing something
+else_.
+
+**The mechanics, exactly.** Revision 4 replaced §4.4 by line range — from the
+`### 4.4` heading to the `### 4.5` heading — and wrote fresh content in its place.
+That block had contained four things: the private helpers, a caller example, a
+numbered "what is removed" record, and a "what is retained" note. **The rewrite
+reproduced the first and silently dropped the other three.** P4 then existed as a
+definition, an entry in the §5.3 private-surface inventory, and a harness leg —
+three mentions, none of them a call.
+
+⭐⭐ **WHY THE AUTHOR'S OWN CHECKS DID NOT CATCH IT, WHICH IS THE USEFUL PART.**
+The revision-4 reading pass swept for _stale_ content — option D references,
+"leg 1 is deleted", ownership language — and found and fixed several. **Every one
+of those searches asks "is anything here that should not be?" Not one asks "is
+anything missing that should be?"** A deletion leaves no token to grep for. ⚠⚠
+**The rule this yields, and it is new: after replacing a block wholesale, diff the
+OLD block against the NEW one and account for every line that disappeared.** It is
+mechanical, it takes one `git show`, and it would have caught this in seconds.
+ⓘ The author ran exactly that `git show` **after** the reviewer named the defect —
+which is the same "wrote the check down and handed it over" failure this project
+has recorded before, in a new costume.
+
+⚠ **And a second, quieter lesson: three mentions are not a call.** `grep -c
+expectSelectShows` over revision 4 returned **three** hits, which reads like a
+wired detector. **A definition, an inventory row and a test leg are all mentions
+of a method that nothing invokes.** Counting references is not checking
+integration — the same substitution this project's own rule warns about, applied
+to a plan instead of to a test.
+
+### What revision 5's own run checked, and what it did NOT establish
+
+- **Ran:** `git show a39aad3` and diffed **both** blocks revision 4 replaced
+  wholesale against revision 3 — §4.4 (eighteen identifiers, four structural
+  items: all present) and §6's leg section (twenty-three content probes: all
+  present, none missing). ⚠ **Keyed on identifiers and named items, so a deleted
+  sentence carrying neither would not show up** — §8 keeps that as a live weak
+  claim rather than calling the sweep complete.
+- **Ran:** `playwright-core/lib/server/progress.js:67-75` re-read, confirming
+  `timeout: 0` installs no timer at all.
+- **Ran:** the five `bg-*-dropdown` tokens across `src/`, `tests/`, `tools/`, then
+  read `src/index.css:26-40` and the DSL's `??` fallback and `force: true` click.
+- **Ran:** `grep -rn "<SpacingControls" src/` → one consumer,
+  `PropertiesPanel.tsx:6632`.
+- ⚠ **NOT established:** that P4 actually catches the misattached-class drift
+  case. It is wired and it is INFERRED; leg 5 against the wired path decides it.
+- ⚠ **NOT established:** anything new about M7 in the Electron renderer. Unchanged
+  from revision 4, and §7's sequence now puts leg 1 first because of it.
+- ⚠ **NOT established:** the legs-2/3 interceptor question. Still open, still not
+  guessed, three revisions running.
