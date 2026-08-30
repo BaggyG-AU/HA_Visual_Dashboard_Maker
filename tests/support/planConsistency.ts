@@ -123,9 +123,6 @@ const stripComments = (s: string): string =>
 const codeBlocks = (s: string): string =>
   [...s.matchAll(/```ts\n([\s\S]*?)```/g)].map((m) => m[1]).join('\n');
 
-/** Drop quoted spans: a quoted stale figure is being CORRECTED, not asserted. */
-const stripQuoted = (line: string): string => line.replace(/["“”][^"“”]*["“”]/g, ' ');
-
 /**
  * Drop markdown emphasis markers before frame matching.
  *
@@ -136,6 +133,33 @@ const stripQuoted = (line: string): string => line.replace(/["“”][^"“”]*
  * identifiers in this corpus (`card_margin`, `expected-failures`).
  */
 const stripEmphasis = (line: string): string => line.replace(/\*/g, '');
+
+/**
+ * Blank out quoted and code spans across the WHOLE document, preserving line
+ * breaks so line numbers stay exact.
+ *
+ * A quoted or code-spanned figure is being CORRECTED or ILLUSTRATED, not
+ * asserted, so it is exempt.
+ *
+ * ⚠ MEASURED NECESSARY, twice. This replaces a per-LINE quote stripper that
+ * could not see a quotation the formatter WRAPPED ACROSS A LINE BREAK — it
+ * paired the closing quote of one phrase with the opening quote of the next and
+ * exempted the wrong span — and that did not treat a backtick code span as
+ * quoted at all. Both showed up as false positives against a document that was
+ * merely DESCRIBING the drift it had just fixed. ⚠ A noisy check gets ignored,
+ * and an ignored check is worse than none.
+ *
+ * ⓘ The old per-line helper was left in place for one iteration after this
+ * replaced it, defined and never called — the C1-ORPHAN class, inside the
+ * checker that exists to catch it. It is deleted rather than kept "just in
+ * case".
+ *
+ * ⓘ An unbalanced quote pairs with the next one and so exempts more than it
+ * should. That fails toward SILENCE, which is the pre-existing behaviour and is
+ * stated here rather than left to be discovered.
+ */
+const blankSpans = (text: string): string =>
+  text.replace(/"[^"]*"|“[^”]*”|`[^`]*`/g, (m) => m.replace(/[^\n]/g, ' '));
 
 export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFinding[] {
   const out: PlanFinding[] = [];
@@ -214,16 +238,18 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
     ['history', history],
   ] as const) {
     if (!text) continue;
-    text.split('\n').forEach((raw, i) => {
-      const line = stripEmphasis(stripQuoted(raw));
-      for (const { subject, source } of FRAMES) {
-        for (const m of line.matchAll(new RegExp(source, 'gi'))) {
-          const v = numberFrom(m[1]);
-          if (Number.isNaN(v)) continue;
-          sites.set(subject, [...(sites.get(subject) ?? []), `${file}:${i + 1} states ${v}`]);
+    blankSpans(text)
+      .split('\n')
+      .forEach((raw, i) => {
+        const line = stripEmphasis(raw);
+        for (const { subject, source } of FRAMES) {
+          for (const m of line.matchAll(new RegExp(source, 'gi'))) {
+            const v = numberFrom(m[1]);
+            if (Number.isNaN(v)) continue;
+            sites.set(subject, [...(sites.get(subject) ?? []), `${file}:${i + 1} states ${v}`]);
+          }
         }
-      }
-    });
+      });
   }
   for (const [subject, where] of [...sites.entries()].sort()) {
     if (where.length > 1) {

@@ -186,6 +186,34 @@ describe('planConsistency — C3 count drift (SP-22)', () => {
     expect(c3(g)[0].message).toContain('states 31');
   });
 
+  // ---- the QUOTED/CODE-SPAN exemption, which is what keeps it usable ----
+  it('is SILENT on a quotation the formatter WRAPPED ACROSS A LINE BREAK', () => {
+    // Measured necessary: a per-line stripper pairs the closing quote of one
+    // phrase with the opening quote of the next and exempts the wrong span, so
+    // a document DESCRIBING its own fixed drift tripped its own check.
+    const wrapped =
+      '- five review rounds complete\n' +
+      'the plan said "twenty-four\nfindings" and a stray "four findings, none false"\n' +
+      'would have agreed with it\n';
+    const f = checkPlan({ spec: `${WIRED}\n${wrapped}` });
+    expect(c3(f), JSON.stringify(c3(f), null, 2)).toEqual([]);
+  });
+
+  it('is SILENT on a figure inside a backtick code span', () => {
+    const f = checkPlan({
+      spec: `${WIRED}\n- five review rounds complete\n- it used to say \`the **fourth** review round\`\n`,
+    });
+    expect(c3(f), JSON.stringify(c3(f), null, 2)).toEqual([]);
+  });
+
+  it('still FIRES when the same figure is asserted OUTSIDE any quote', () => {
+    // The exemption must not become a blanket amnesty.
+    const f = checkPlan({
+      spec: `${WIRED}\n- five review rounds complete\n- this is the **fourth** review round\n`,
+    });
+    expect(codes(f)).toContain('C3-COUNTDRIFT');
+  });
+
   // ---- the negative population: real historical prose it must LEAVE ALONE ----
   it('is SILENT on historical prose that is not a running total', () => {
     // Lifted verbatim from the live plan and history. A frame list cannot make
