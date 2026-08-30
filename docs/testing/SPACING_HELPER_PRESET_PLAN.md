@@ -4,12 +4,46 @@ Author: Claude Opus 5 (1M context)
 Reviewer: OpenAI Codex (GPT-5.6 Sol)
 Owner gate: micah / BaggyG-AU
 
-**Status: PLAN ONLY, REVISION 6. No code has been written.** ⚠⚠⚠ **REVISION 6 IS
-THE FIRST ONE WRITTEN AGAINST A MECHANICAL CHECK, AND THAT IS THE POINT OF IT.**
-It answers the fifth review
+**Status: PLAN ONLY, REVISION 7. No code has been written.** ⚠⚠⚠ **REVISION 6
+WAS THE FIRST ONE WRITTEN AGAINST A MECHANICAL CHECK. REVISION 7 IS THE FIRST IN
+WHICH THAT CHECK ACTUALLY WORKED — AND IT WORKED BY FAILING.** It answers the
+sixth review (`docs/reviews/spacing-helper-preset-plan-codex-followup5-review.md`,
+verdict **SEV-1-BLOCKED**, commit `30d606c`), whose **two findings were
+re-verified at source and accepted in full.**
+
+**SP-25 CHANGES WHAT THIS PLAN PROMISES, AND THE OWNER HAS RULED ON IT.** When
+the requested control **and** the foreign control both already show the wanted
+value, a wrong-control click changes no value anywhere — so P4's own-value
+read-back **and** its new other-half snapshot both pass over a wrong operation.
+**That is now MEASURED in the real Electron renderer (§4.2, M9), not argued:**
+nothing moved, the popup closed normally, and both assertions passed. **The owner
+ruled option (a) on 2026-08-31 — P4's guarantee is narrowed to wrong-control
+MUTATION, and PREVENTION stays with P1**, which under option B is identity by
+construction and never depended on P4. §3 and §4.1 are corrected: this plan no
+longer claims a wrong target _cannot happen_; it claims it is **prevented by
+construction**, and that **anything which moves a value is detected**.
+
+**SP-26 is a straight repair.** The other-half assertion was loud but anonymous —
+a bare array of nullable strings with no message, naming neither the requested
+control nor the one that moved. It now polls a **keyed record** with a custom
+message naming the requested test id and both guarded ids, and **leg 5 records
+the exact failure message and exit code** the way leg 6 already does.
+
+⚠⚠⚠ **AND THE SENTENCE THAT MATTERS MOST IN THIS HEADER: SP-22 REGRESSED, AND
+THE CHECKER BUILT LAST ROUND TO PREVENT EXACTLY THAT REPORTED A CLEAN PASS OVER
+IT.** Run against revision 6, `checkPlan` returned **zero findings** while this
+plan called it "the fourth review round" and the history both stated the running
+totals and claimed it stated none. Three defects caused that green and all three
+are now fixed on the checker's own branch (PR #154) — it read only this file and
+never the history; it was anchored on two exact phrasings; and it could not parse
+a hyphenated number, so "twenty-four" was held as **4**. **Revision 7's count
+repair is verified by that repaired check: it now reports the drift, and must
+report nothing once this revision lands.** ⓘ The revision-6 header follows.
+
+**Revision 6.** It answered the fifth review
 (`docs/reviews/spacing-helper-preset-plan-codex-followup4-review.md`, verdict
 **SEV-1-BLOCKED**, commit `f1e7240`), whose **five findings were re-verified at
-source and accepted in full — twenty-four for twenty-four across five rounds.**
+source and accepted in full.**
 **SP-21 is a real design defect and the reason this round earned its keep:** P4
 read only the requested control, so a wrong-control click was invisible whenever
 the requested value was already correct — **measured (M8a) to occur on the first
@@ -17,9 +51,8 @@ action of a currently-passing test.** P4 now also asserts the other half is
 untouched, and **that repair was measured safe (M8b) before it was written down.**
 SP-20 (leg 1 scheduled before the helper it needs), SP-22, SP-23 and SP-24 were
 repaired with it. ⚠⚠ **SP-20, SP-22, SP-23 and SP-24 were all defects revision 5
-introduced — see §7.5, which now states that seventeen of the eighteen findings
-raised after round 1 were defects the previous round's repairs created, and what
-the owner ruled about it.** The per-round record has moved to
+introduced — see §7.5, which is the single home for this arc's running cost and
+records what the owner ruled about it.** The per-round record has moved to
 [`SPACING_HELPER_PRESET_PLAN_HISTORY.md`](SPACING_HELPER_PRESET_PLAN_HISTORY.md).
 ⓘ The revision-5 header follows.
 
@@ -28,7 +61,7 @@ REPAIR ROUND, NOT A REDESIGN — option B stands and no owner decision was
 reopened.** It answers the fourth review
 (`docs/reviews/spacing-helper-preset-plan-codex-followup3-review.md`, verdict
 **SEV-1-BLOCKED**, commit `fac11f8`), whose **five findings the author re-verified
-at source and accepted in full — nineteen for nineteen across four rounds**.
+at source and accepted in full**.
 ⚠⚠⚠ **ITS BLOCKER WAS SELF-INFLICTED AND IS THE MOST IMPORTANT THING IN THIS
 HEADER: revision 4 defined P4 and then deleted the only code that called it**
 (SP-15). §4.4 now carries the complete caller rewrite. SP-16, SP-17, SP-18 and
@@ -50,7 +83,7 @@ popup class, which identifies the popup by CONSTRUCTION instead of inferring it*
 Revision 4 also answers the third review
 (`docs/reviews/spacing-helper-preset-plan-codex-followup2-review.md`, verdict
 **SEV-1-BLOCKED**, commit `2819810`), whose **four findings the author re-verified
-at source and accepted in full — fourteen for fourteen across three rounds**:
+at source and accepted in full**:
 SP-11 and SP-14 by repair, SP-12 by specifying what was missing and narrowing a
 false universal, and **SP-13 by MEASURING the construction the reviewer inferred,
 which turned out to be not merely possible but the ordinary path**. Disposition is
@@ -92,9 +125,22 @@ unallowlisted test that reddens roughly one run in four, for a reason that is a
 defect in the measuring instrument, makes every other result harder to read.
 **Cheapest acceptable outcome:** `e2e/spacing.spec.ts` › `Card Spacing Controls`
 › `applies spacing presets` stops firing because the helper can no longer drive a
-control the caller did not ask for, **and a wrong target becomes a loud, named
-failure instead of a silent wrong answer**. Nothing is added to
+control the caller did not ask for — **prevention is by construction (P1), and
+any wrong-control operation that MOVES A VALUE becomes a loud, named failure
+instead of a silent wrong answer**. Nothing is added to
 `tests/baseline/expected-failures.json`.
+⚠⚠ **SP-25, AND THE WORDING ABOVE IS NARROWER THAN REVISION 6's ON PURPOSE.**
+A wrong-control click that changes **no** value — which is what happens when the
+requested and foreign controls both already show the wanted value — is **not**
+detectable by reading values back, **measured** in the real renderer (§4.2, M9).
+The owner ruled option (a) on 2026-08-31: **P4 is a detector of wrong-control
+MUTATION, and the prevention claim rests on P1 alone.** ⓘ This plan therefore no
+longer promises that a wrong target _cannot_ happen by virtue of P4; it promises
+that P1 makes it impossible by construction and that P4 catches anything which
+moves a value. The stronger claim — an oracle observing _which_ Select received
+the click — was offered to the owner and **not** taken; its cost is unknown and
+it is deliberately **not** designed here, because two mechanisms invented in
+prose on this branch have already been falsified by measurement.
 **Cost stop-rule:** if the §6 harness cannot reproduce a wrong-target click
 against the real app in either direction after one working session, work halts
 and re-asks the owner — because at that point the remedy would be unproven and
@@ -166,9 +212,11 @@ looks after test-only labels.**
 
 **What it costs.** One test-only change, a two-line product change, one harness
 run before any CI cycle is spent, and one more independent review round. ⚠ Stated
-plainly: this is the **fourth** review round on a test-only defect, and two
-approved designs have already been thrown away. §7.5 records that cost honestly
-rather than burying it.
+plainly: this defect has now cost several review rounds and **two approved designs
+that were thrown away**. **§7.5 is the single home for the running figures and
+records that cost honestly rather than burying it** — this sentence deliberately
+carries no number of its own, because the number here going stale against §7.5 is
+what SP-22 was, twice.
 
 **What happens if you do nothing.** The test keeps reddening roughly one run in
 four on its own, issue #145 stays hard to close, and the helper's ability to
@@ -452,9 +500,15 @@ never carry the requested Select's class no matter how many popups are visible.
 1. `e2e/spacing.spec.ts` › `Card Spacing Controls` › `applies spacing presets`
    stops firing, because the helper can no longer operate a control the caller
    did not name.
-2. **A wrong target becomes a loud, named failure at the DSL**, not a silent
-   wrong answer discovered five seconds later as `Expected "8px" / Received
-"0px"` on an unrelated assertion.
+2. **A wrong-control operation that MOVES A VALUE becomes a loud, named failure
+   at the DSL**, not a silent wrong answer discovered five seconds later as
+   `Expected "8px" / Received "0px"` on an unrelated assertion. ⚠⚠ **SP-25 —
+   NARROWED BY OWNER RULING, 2026-08-31.** Revision 6 said "a wrong target"
+   without qualification. **MEASURED (§4.2, M9): when the requested control and
+   the foreign control both already show the wanted value, a wrong-control click
+   changes nothing at all and both of P4's assertions pass.** Detection is
+   therefore scoped to operations that move a value; **prevention is item 1's
+   job, and item 1 is true by construction under option B.**
 3. The whole **class** is removed from `SpacingDSL`, not just the one call
    path: `setPreset`, `setMarginMode` and `setPaddingMode` all route through the
    same two private helpers (`grep -n "selectOptionByText\|openSelectDropdown"
@@ -465,11 +519,18 @@ tests/support/dsl/spacing.ts` → definitions at `:35` and `:53`, calls at
    at §4.3 on 2026-08-27. It is two added lines in
    `src/components/SpacingControls.tsx` and nothing else; §5.1a is its blast
    radius and §7.4 re-examines the lane ruling that assumed a test-only change.
-6. ⭐ **Item 1's wording is load-bearing and revision 4 is the first version that
-   earns it.** "Can no longer operate a control the caller did not name" is a
-   **prevention** claim. Under options A and D it rested on an inference, and when
-   each inference fell the plan's remaining defence was P4 — which is
-   **detection**. Option B makes item 1 true by construction (§4.1, §4.2 M7).
+6. ⭐⭐ **Item 1's wording is load-bearing, revision 4 is the first version that
+   earns it, and revision 7 is the first that needs it to stand ALONE.** "Can no
+   longer operate a control the caller did not name" is a **prevention** claim.
+   Under options A and D it rested on an inference, and when each inference fell
+   the plan's remaining defence was P4 — which is **detection**. Option B makes
+   item 1 true by construction (§4.1, §4.2 M7). ⚠⚠⚠ **SP-25 IS WHY THAT NOW
+   MATTERS MORE THAN IT DID.** Measured (M9), P4 cannot detect a wrong-control
+   operation that moves no value, so **the two claims no longer overlap the way
+   revision 6 assumed: there is a state in which detection is blind and only
+   prevention is standing.** The plan is therefore load-bearing on P1 in a way it
+   has not been before, and §8 lists that as its first weak claim rather than
+   burying it.
 
 ---
 
@@ -477,21 +538,32 @@ tests/support/dsl/spacing.ts` → definitions at `:35` and `:53`, calls at
 
 ### 4.1 The four properties the repaired helper must have
 
-| #      | Property                                                                                                                                                                                                                                                                                                                                                                                               | Kills                                                                   |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
-| **P1** | **IDENTITY, BY CONSTRUCTION.** Resolve the popup that belongs to the requested Select **by the class that popup renders** (`<data-testid>-popup`), and fail with its own message if that popup is not visible. ⚠ **Revision 4 changed this property's KIND, not just its mechanism:** it was "prove ownership from something the app reports", and is now "ask for our own label". Nothing is derived. | D1, and routes (a), (b) and (c)                                         |
-| **P2** | **SCOPE.** Search options only within that popup's subtree, and require exactly one match.                                                                                                                                                                                                                                                                                                             | D2, and any residual multi-popup state                                  |
-| **P3** | **ACTIONABILITY.** Click the option the way a user does — Playwright's own `click()`, hit-target check on. No `evaluate` click, no `force: true`.                                                                                                                                                                                                                                                      | D3                                                                      |
-| **P4** | **OUTCOME.** After selecting, read back the control's **own** rendered value and assert it.                                                                                                                                                                                                                                                                                                            | Everything that survives P1–P3, and it names the control in the failure |
+| #      | Property                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Kills                                                                                                                                     |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **P1** | **IDENTITY, BY CONSTRUCTION.** Resolve the popup that belongs to the requested Select **by the class that popup renders** (`<data-testid>-popup`), and fail with its own message if that popup is not visible. ⚠ **Revision 4 changed this property's KIND, not just its mechanism:** it was "prove ownership from something the app reports", and is now "ask for our own label". Nothing is derived.                                                                                                                                                        | D1, and routes (a), (b) and (c)                                                                                                           |
+| **P2** | **SCOPE.** Search options only within that popup's subtree, and require exactly one match.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | D2, and any residual multi-popup state                                                                                                    |
+| **P3** | **ACTIONABILITY.** Click the option the way a user does — Playwright's own `click()`, hit-target check on. No `evaluate` click, no `force: true`.                                                                                                                                                                                                                                                                                                                                                                                                             | D3                                                                                                                                        |
+| **P4** | **OUTCOME, IN TWO PARTS.** After selecting, (i) read back the requested control's **own** rendered value and assert it, **and** (ii) assert the **other half** still holds exactly the values snapshotted before the gesture. ⚠ **Both assertions name their controls** — (i) names `testId`; (ii) names `testId` and both guarded ids (SP-26). ⚠⚠ **What P4 does NOT decide (SP-25, owner ruling 2026-08-31):** an operation that moves **no** value is invisible to it, so P4 detects wrong-control **mutation** and is not evidence of operation identity. | Every wrong-control operation that MOVES A VALUE and survives P1–P3, naming the control in the failure. **Prevention is P1's, not P4's.** |
 
-⭐ **P4 is the cheapest property and the strongest.** P1–P3 are preventive and
-each rests on a claim about the DOM. P4 is a _detector_: it asks the control
-itself what it now says. If any residual route lets a wrong click through, P4
-fails immediately, at the helper, naming the control — instead of the caller's
-next assertion failing five seconds later about a computed style. This is the
-project's own craft rule — _make the red leg NAME the bug_ — and it is what
-makes P1's version-pinned mechanism (§8) an acceptable risk rather than a
-single point of failure.
+⭐ **P4 is the cheapest property, and revision 7 stops calling it the strongest.**
+P1–P3 are preventive and each rests on a claim about the DOM. P4 is a _detector_:
+it asks the controls what they now say. If a residual route lets a wrong click
+through **and that click moves a value**, P4 fails immediately, at the helper,
+naming the control — instead of the caller's next assertion failing five seconds
+later about a computed style. This is the project's own craft rule — _make the
+red leg NAME the bug_ — and it is what makes P1's version-pinned mechanism (§8)
+an acceptable risk rather than a single point of failure.
+
+⚠⚠⚠ **BUT NOT AN UNCONDITIONAL ONE, AND SP-25 IS WHERE REVISION 6 OVERSTATED IT.**
+The sentence above used to read "if ANY residual route lets a wrong click
+through". **MEASURED FALSE (§4.2, M9):** in the double-pre-satisfied state a
+wrong-control click moves nothing, both P4 assertions pass, and the popup closes
+as if the operation had succeeded. **A value-delta guard cannot decide which
+control an operation reached when that operation changes no value** — detection
+and diagnostics are distinct properties, and so are detection and identity. The
+owner ruled option (a) on 2026-08-31: **P4's guarantee is wrong-control MUTATION;
+the residual-route backstop for the no-op case is P1 alone.** ⓘ That is a real
+reduction in what this plan claims, and §8 carries it as a live weak claim.
 
 ⚠⚠⚠ **AND REVISION 4 ADDS THE LESSON THAT COST THE MOST TO LEARN: P4 IS NOT A
 SUBSTITUTE FOR P1, AND TWICE THIS PLAN CAME CLOSE TO TREATING IT AS ONE.** Under
@@ -580,10 +652,42 @@ measuring nothing.
 
 ⚠ **WHY THE GUARD IS "THE OTHER HALF" AND NOT "EVERY OTHER SELECT".** Within one
 half the two controls are **coupled** — `handlePresetChange` writes a preset token
-and the mode then re-renders as `all` (`SpacingControls.tsx:104-112`, `:131`) — so
+and the mode then re-renders as `all` (`SpacingControls.tsx:96-105`, `:128`) — so
 a same-half change is legitimate and a wider guard would fail on correct
 behaviour. **That distinction was read from source and then confirmed by M8b
-rather than assumed.**
+rather than assumed.** ⚠ **Revision 7 corrects the line numbers in the citation
+above and in §4.4's `otherHalf` comment: revisions 5 and 6 both cited `:104-112`
+and `:131`, which point at `handlePresetChange`'s closing lines and at a
+destructuring line, not at the handler and the mode derivation.** The claim was
+right and the reference was wrong — recorded rather than silently fixed, because
+"cite, don't type" is a rule this plan asks its reviewer to hold it to.
+
+### ⭐⭐⭐ M9 — the FOURTH harness run, which measured SP-25 rather than arguing it (revision 7)
+
+Run 2026-08-31 under the same narrow tripwire exception, headless, temporary and
+untracked, deleted afterwards with `git status --porcelain` empty and `src/` +
+`tests/` + `tests/baseline/expected-failures.json` verified byte-identical to
+`HEAD`. **It exists because SP-25 is a claim about what the app DOES, and this
+plan's own record is that every such claim cleared by reading alone has later
+been killed by execution — option A on the shared `test-id`, option D on M6.**
+⚠⚠ **BIDIRECTIONAL, AND THE CONTROL LEG IS THE WHOLE POINT: leg M9c must FAIL.**
+A probe that only asks "does the guard stay silent" cannot distinguish a real
+blind spot from a sampler that reads nothing.
+
+| #       | Fact                                                                                                                                                                                                                                                                                                                                                                                                                                                   | How it was measured                                                                                                                                                                                                                                                                                                          |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **M9a** | ⚠⚠ **THE PRE-SATISFIED STATE IS WIDER THAN M8a RECORDED — IT IS ALL FOUR CONTROLS, NOT ONE.** A fresh button card renders `spacing-margin-mode` and `spacing-padding-mode` both **"All Sides"**, and `spacing-margin-preset` and `spacing-padding-preset` both **"None (0px)"**. So the DOUBLE-pre-satisfied state SP-25 needs is the ordinary starting state, for modes **and** presets.                                                              | Read `.ant-select-content-value` on all four spacing Selects on reaching the Form tab. ⭐ Corroborated by construction: `DEFAULT_CARD_SPACING = 0` (`src/services/cardSpacing.ts:15`) and `SPACING_PRESET_VALUES.none = 0` (`:17-23`), via `resolveSpacingPreset` (`:181`) and `isPerSideSpacing` (`:267`), for both halves. |
+| **M9b** | ⚠⚠⚠ **SP-25 CONFIRMED IN THE ELECTRON RENDERER: A WRONG-CONTROL OPERATION IS INVISIBLE HERE.** With the foreign (padding-mode) popup the only visible one and `spacing-margin-mode` the requested control, the option matched **exactly one** element under `.ant-select-dropdown:visible` — so P2's singleton also passes — the click was delivered, **NO VALUE CHANGED ANYWHERE**, the popup **closed normally**, and **BOTH P4 ASSERTIONS PASSED.** | Snapshot of all four Selects before and after, plus visible/in-DOM popup counts at click time and after. Values identical before and after; popup count 1 → 0.                                                                                                                                                               |
+| **M9c** | ⭐⭐ **THE MIRRORING CONTROL, AND IT FAILED AS IT MUST.** With the foreign half NOT pre-satisfied — padding preset first set to "Relaxed (16px)", then a wrong-control click selecting "Normal (8px)" — **P4 FAILED** on the other-half assertion. **So the guard demonstrably fires when a value moves, and M9b's silence is a property of the STATE, not of a blind instrument.**                                                                    | Same snapshot mechanism, same run. Other-half snapshot `["All Sides","Relaxed (16px)"]` → `["All Sides","Normal (8px)"]`; own-value assertion passed, other-half assertion failed.                                                                                                                                           |
+
+⚠ **WHAT M9 DOES NOT ESTABLISH, STATED PLAINLY.** It measures the **value space**
+only. It does **not** show that no observable signal anywhere could distinguish a
+wrong-control operation — it shows that **reading values back cannot**. Whether a
+different oracle exists, and what it would cost, is **deliberately not answered
+here**: the owner was offered that option on 2026-08-31 and did not take it, and
+this plan does not invent a mechanism in prose for the third time on this branch.
+⭐ M9 also does not re-measure M8b, and the option-B class placement in the
+Electron renderer remains unrun — the class smoke step still owes that.
 
 ⭐⭐⭐ **WHY M6 IS FATAL TO OPTION D, IN ONE SENTENCE:** the requested Select's
 `aria-expanded` flips true at the React commit, **before its popup has mounted**,
@@ -889,12 +993,14 @@ private async openSelectDropdown(testId: string): Promise<Locator> {
   throw new Error('unreachable');
 }
 
-private async selectOptionByText(testId: string, pattern: RegExp): Promise<(string | null)[]> {
+private async selectOptionByText(
+  testId: string,
+  pattern: RegExp,
+): Promise<Record<string, string | null>> {
   // ⚠ SP-21: snapshot the OTHER half BEFORE the gesture, so P4 can prove it did
   // not move. Captured here rather than in the caller so no caller can forget it.
-  const siblingsBefore = await Promise.all(
-    this.otherHalf(testId).map((id) => this.readSelectValue(id)),
-  );
+  // ⚠ SP-26: KEYED BY TEST ID, not positional — see `snapshotOtherHalf`.
+  const siblingsBefore = await this.snapshotOtherHalf(testId);
 
   const dropdown = await this.openSelectDropdown(testId);
 
@@ -930,11 +1036,27 @@ private async selectOptionByText(testId: string, pattern: RegExp): Promise<(stri
  *  driving Padding moved only `spacing-padding-preset`. ⚠ It is deliberately the
  *  OTHER HALF and not "every other Select": within a half the two controls are
  *  COUPLED, because `handlePresetChange` writes a preset token that re-renders
- *  the mode as `all` (`SpacingControls.tsx:104-112`, `:131`), so a same-half
+ *  the mode as `all` (`SpacingControls.tsx:96-105`, `:128`), so a same-half
  *  change is legitimate and a guard covering it would fail on correct behaviour. */
 private otherHalf(testId: string): string[] {
   const other = testId.includes('-margin-') ? 'padding' : 'margin';
   return [`spacing-${other}-mode`, `spacing-${other}-preset`];
+}
+
+/** The other half's current values, KEYED BY TEST ID.
+ *  ⚠⚠ SP-26 — THIS IS WHY IT IS A RECORD AND NOT AN ARRAY. Revision 6 compared
+ *  a bare `(string | null)[]`, so when the guard fired its diff showed two
+ *  strings and named NEITHER control — contradicting this plan's own "loud AND
+ *  BY NAME" requirement and leg 5's oracle. A keyed record puts the test id of
+ *  the control that moved into the failure output itself.
+ *  ⭐ Defined once and used by BOTH the pre-gesture snapshot and the post-gesture
+ *  poll, so the two shapes cannot drift apart. */
+private async snapshotOtherHalf(testId: string): Promise<Record<string, string | null>> {
+  const snapshot: Record<string, string | null> = {};
+  for (const id of this.otherHalf(testId)) {
+    snapshot[id] = await this.readSelectValue(id);
+  }
+  return snapshot;
 }
 
 private async readSelectValue(testId: string): Promise<string | null> {
@@ -945,25 +1067,39 @@ private async readSelectValue(testId: string): Promise<string | null> {
     .catch(() => null);
 }
 
-/** P4 — the outcome detector. Reads the control's OWN rendered value.
+/** P4 — the outcome detector. Reads the requested control's OWN rendered value,
+ *  and asserts the OTHER half did not move.
  *  `.ant-select-content-value` is the single-select value node
  *  (SingleContent.js:53); the parent `.ant-select-content` (:89) also holds the
  *  placeholder and the input, so it is the WRONG node to assert on.
  *
  *  ⚠⚠ SP-21 — READING ONLY THE REQUESTED CONTROL IS NOT ENOUGH, AND THIS IS NOT
  *  HYPOTHETICAL. If the requested control ALREADY shows the wanted value, a click
- *  that landed on the sibling leaves it still correct and P4 passes over a
- *  wrong-control operation. **MEASURED (§4.2 M8): a fresh card renders
- *  `spacing-margin-mode` as "All Sides", so `setCardMargin(12)` →
- *  `setMarginMode('all')` asks for the value already shown — on the FIRST action
- *  of a currently-passing test (`tests/e2e/spacing.spec.ts:27`).** So P4 asserts
- *  TWO things: the requested control shows the value, AND the other half is
- *  untouched. `siblingsBefore` is captured before the gesture by
- *  `selectOptionByText`. */
+ *  that landed on the sibling leaves it still correct and the own-value read-back
+ *  passes over a wrong-control operation. **MEASURED (§4.2 M8a/M9a): a fresh card
+ *  renders ALL FOUR spacing Selects at their defaults — both modes "All Sides",
+ *  both presets "None (0px)" — so `setCardMargin(12)` → `setMarginMode('all')`
+ *  asks for the value already shown, on the FIRST action of a currently-passing
+ *  test (`tests/e2e/spacing.spec.ts:27`).** So P4 asserts TWO things.
+ *
+ *  ⚠⚠⚠ SP-25 — AND HERE IS WHAT P4 STILL CANNOT DO, MEASURED AND OWNER-RULED.
+ *  When the requested control AND the foreign control are BOTH pre-satisfied, a
+ *  wrong-control click changes NO value anywhere, so both assertions below pass
+ *  and the popup closes as though the operation succeeded. **MEASURED in the real
+ *  Electron renderer (§4.2 M9b), with a mirroring control leg (M9c) proving the
+ *  guard does fire when a value moves.** rc-select emits no `onChange` when the
+ *  selected value is unchanged (`Select.js:314-318`, "Trigger event only when
+ *  value changed"), while the option stays clickable and closes the popup
+ *  (`OptionList.js:371-374`, `:161-170`). **A VALUE-DELTA GUARD CANNOT PROVE
+ *  OPERATION IDENTITY.** Owner ruling 2026-08-31, option (a): P4 detects
+ *  wrong-control MUTATION; PREVENTION is P1's, by construction. Do not restore
+ *  the claim that P4 catches every wrong-control operation.
+ *
+ *  `siblingsBefore` is captured before the gesture by `selectOptionByText`. */
 private async expectSelectShows(
   testId: string,
   expected: RegExp,
-  siblingsBefore: (string | null)[],
+  siblingsBefore: Record<string, string | null>,
 ): Promise<void> {
   await expect(
     this.window.getByTestId(testId).locator('.ant-select-content-value'),
@@ -973,9 +1109,20 @@ private async expectSelectShows(
 
   // ⚠ SP-21: the half we did NOT ask for must be exactly as it was. This is what
   // makes a wrong-control click loud when the requested value was pre-satisfied.
-  const others = this.otherHalf(testId);
+  // ⚠⚠ SP-26: the message NAMES the requested control and both guarded controls,
+  // and the compared value is KEYED, so the diff itself says which one moved.
+  // `expect.poll` takes `{ message, timeout }` — Playwright 1.57.0,
+  // `node_modules/playwright/types/test.d.ts:8455`.
+  const guarded = Object.keys(siblingsBefore).join(', ');
   await expect
-    .poll(async () => Promise.all(others.map((id) => this.readSelectValue(id))), { timeout: 5000 })
+    .poll(() => this.snapshotOtherHalf(testId), {
+      message:
+        `${testId} was the control this call asked for, but the OTHER spacing ` +
+        `half moved while it was being operated. Guarded controls: ${guarded}. ` +
+        'Each key below is a test id — compare expected (before the gesture) ' +
+        'with received (after) to see which control changed, and to what.',
+      timeout: 5000,
+    })
     .toEqual(siblingsBefore);
 }
 ```
@@ -1267,8 +1414,11 @@ SP-6).
   round-trip test (`:119`), which is the only other caller of `setPaddingMode`.
 - **`tests/baseline/expected-failures.json`** — untouched.
 - **Upstream reliances:** none. `openSelectDropdown`, `selectOptionByText`,
-  `resolveOwnedDropdown`, `popupFor` and `expectSelectShows` are all private to
-  `SpacingDSL` and nothing outside the class can reach them.
+  `resolveOwnedDropdown`, `popupFor`, `expectSelectShows`, `otherHalf`,
+  `snapshotOtherHalf` and `readSelectValue` are all private to `SpacingDSL` and
+  nothing outside the class can reach them. ⚠ `snapshotOtherHalf` is **new in
+  revision 7** (SP-26) and is listed here rather than left to be noticed: an
+  inventory that silently omits a member is how SP-15 happened.
 - ⚠⚠ **NEW IN REVISION 4 — `BackgroundCustomizer.tsx`'s five existing
   `popupClassName` uses, `src/index.css:26-40` which selects on all five, and
   `tests/support/dsl/backgroundCustomizer.ts`.** They are the API precedent this
@@ -1300,16 +1450,24 @@ the HARNESS, not on every row of it** — what the companion clause forbids is a
 probe that can only confirm, and the guard against that is that **each leg
 declares which KIND of evidence it produces**:
 
-| Kind                            | What it proves                                                                                                         | Legs       |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------- |
-| **FAIL-OLD / PASS-NEW**         | The defect is real AND the repair removes it. Runs on both variants.                                                   | 1, 2, 4, 7 |
-| **GUARD-REMOVAL DISCRIMINATOR** | A NARROWER repair still fails, so the chosen guard is the one doing the work. Runs on a deliberately weakened variant. | 3, 5       |
-| **KNOWN-BAD CONTROL**           | The probe can still fail — proof it is not reporting green blindly.                                                    | 6          |
-| **ONE-SIDED CHARACTERISATION**  | Records behaviour of the repaired helper only; proves nothing about the old one and is NOT acceptance evidence.        | 8, 9       |
+| Kind                            | What it proves                                                                                                                                                                                   | Legs       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| **FAIL-OLD / PASS-NEW**         | The defect is real AND the repair removes it. Runs on both variants.                                                                                                                             | 1, 2, 4, 7 |
+| **GUARD-REMOVAL DISCRIMINATOR** | A NARROWER repair still fails, so the chosen guard is the one doing the work. Runs on a deliberately weakened variant.                                                                           | 3, 5       |
+| **KNOWN-BAD CONTROL**           | The probe can still fail — proof it is not reporting green blindly.                                                                                                                              | 6          |
+| **ONE-SIDED CHARACTERISATION**  | Records behaviour of the repaired helper only; proves nothing about the old one and is NOT acceptance evidence.                                                                                  | 8, 9       |
+| **KNOWN-OPEN BOUNDARY**         | ⚠ Asserts the CURRENT, passing behaviour at a limit the plan does not close, so the limit cannot be silently lost. **A pass here is NOT evidence of correctness** and never acceptance evidence. | 5b         |
 
 ⭐ **The harness is bidirectional because rows 1, 2, 4 and 7 run both ways and row
 6 must fail — not because every row does.** §6's record states the kind beside
 every result.
+
+⚠⚠ **KNOWN-OPEN BOUNDARY IS NEW IN REVISION 7 AND IT IS THE ONLY KIND THAT
+RECORDS A PASS AS A LIMIT RATHER THAN AS A RESULT.** Leg 5b asserts that the
+double-pre-satisfied wrong-control operation **passes** — which is exactly what
+SP-25 says and what M9b measured. It is here because a boundary written only in
+prose is a boundary nobody re-reads: **anyone who later closes this hole breaks
+leg 5b and must correct §3 item 2, §4.1's P4 row and §8 in the same commit.**
 
 ⚠⚠ **THE TABLE ABOVE COVERS THE MECHANISM LEGS 1–9 ONLY, AND REVISION 4 DID NOT
 SAY SO — finding SP-17.** It wrote the rule as though it governed every numbered
@@ -1317,18 +1475,21 @@ leg while legs 0 and 10–12 sat outside it, and simultaneously called leg 12
 acceptance evidence, which its own "acceptance comes from the first two kinds"
 sentence forbade. **The population is 0–12 and it is covered here in full:**
 
-| Leg    | Category                      | What it is, and what it may be used for                                                                                                                                                                                                                         |
-| ------ | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **0**  | **CENSUS**                    | Measures DOM state; runs no helper and has no old/new sides to compare. It is where §4.2's M1–M7 come from. ⚠ Never acceptance evidence for the repair — and note it produced M3, which was **wrong**, so a census result is evidence only for what it sampled. |
-| 1–9    | see the four kinds above      | The mechanism legs. **This is the only group the four-kind table governs.**                                                                                                                                                                                     |
-| **10** | **REGRESSION**                | The existing callers and the visual spec must not change behaviour, and snapshots must not move (§5.3). A pass is a **necessary, not sufficient** condition.                                                                                                    |
-| **11** | **REPEAT / CHARACTERISATION** | `--repeat-each=5`. Already labelled not-acceptance in its own row, and that stands.                                                                                                                                                                             |
-| **12** | **GATE**                      | CI. ⚠ **Deliberately an AGGREGATE signal, and that is why the first-two-kinds rule is scoped to the mechanism legs rather than applied to it.** CI cannot be a fail-old/pass-new control — nothing runs the old helper in CI.                                   |
+| Leg    | Category                      | What it is, and what it may be used for                                                                                                                                                                                                                                                                             |
+| ------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **0**  | **CENSUS**                    | Measures DOM state; runs no helper and has no old/new sides to compare. It is where §4.2's M1–M7 come from. ⚠ Never acceptance evidence for the repair — and note it produced M3, which was **wrong**, so a census result is evidence only for what it sampled.                                                     |
+| 1–9    | see the kinds above           | The mechanism legs, **including 5b**. **This is the only group that table governs.** ⚠ Revision 7 added a FIFTH kind (KNOWN-OPEN BOUNDARY) and one leg, 5b, so this row says "the kinds above" rather than "the four kinds" — SP-17 was caused by exactly this sentence going stale against the table it points at. |
+| **10** | **REGRESSION**                | The existing callers and the visual spec must not change behaviour, and snapshots must not move (§5.3). A pass is a **necessary, not sufficient** condition.                                                                                                                                                        |
+| **11** | **REPEAT / CHARACTERISATION** | `--repeat-each=5`. Already labelled not-acceptance in its own row, and that stands.                                                                                                                                                                                                                                 |
+| **12** | **GATE**                      | CI. ⚠ **Deliberately an AGGREGATE signal, and that is why the first-two-kinds rule is scoped to the mechanism legs rather than applied to it.** CI cannot be a fail-old/pass-new control — nothing runs the old helper in CI.                                                                                       |
 
 ⭐ **The narrowed rule, stated once:** _acceptance evidence **that the defect
 mechanism is repaired** comes only from legs of the FAIL-OLD/PASS-NEW or
 GUARD-REMOVAL kinds._ Legs 10–12 are release gates: they can **veto** a repair and
-cannot **establish** one. ⚠ And leg 12 keeps its own standing caveat — acceptance
+cannot **establish** one. ⚠⚠ **KNOWN-BAD CONTROL, ONE-SIDED CHARACTERISATION and
+KNOWN-OPEN BOUNDARY are all outside that rule, and 5b most sharply of all: it
+passes BY DESIGN, so reading its green as acceptance would be the exact
+substitution this plan has already paid for.** ⚠ And leg 12 keeps its own standing caveat — acceptance
 evidence is commit-addressed, and the per-attempt list is the measurement, never
 the aggregate verdict.
 
@@ -1384,17 +1545,18 @@ measured and asks whether the helper can be handed the foreign popup.
   an opener, and under §4.4 that left no way to obtain a popup at all. Deriving it
   from SCOPE-ONLY gives it a document-global opener that demonstrably works.**
 
-| #     | Case                                                                                                                                                                                                                                                                                                     | Kind                | Variant(s) and expected result                                                                                                                                                                                                                                                                                            |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1** | ⭐⭐⭐ **THE M6 STATE — route (a).** Open the margin preset Select, then drive the padding preset path immediately, so the call lands inside the ~350 ms two-popup window (M5).                                                                                                                          | FAIL-OLD / PASS-NEW | **CURRENT: sets the MARGIN** (or flakes between the two — record which, per attempt). **REPAIRED: passes**, and P4 confirms the padding control. ⚠ Record the popup count observed during the call — if it is never 2, the leg did not enter its own state and its green means nothing.                                   |
-| **2** | **⭐ THE FOREIGN-ONLY FAILURE STATE.** The margin popup is open; the padding Select's own opening is suppressed page-side; then the padding path runs.                                                                                                                                                   | FAIL-OLD / PASS-NEW | **CURRENT: silently succeeds**, setting the MARGIN — no error at all. **REPAIRED: fails inside `resolveOwnedDropdown`**, naming the control: `.spacing-padding-preset-popup` never became visible.                                                                                                                        |
-| **3** | **⭐ The scope-only straw man**, run against leg 2's state — the repair the diagnosis drawer recommended.                                                                                                                                                                                                | GUARD-REMOVAL       | **SCOPE-ONLY: must ALSO silently succeed.** This is what proves identity-beats-scope rather than asserting it. ⓘ §4.2 M4 already measured the same thing statically; this leg proves it through the helper.                                                                                                               |
-| **4** | **The happy path.** Clean panel, nothing else open.                                                                                                                                                                                                                                                      | FAIL-OLD / PASS-NEW | **CURRENT: passes. REPAIRED: passes, and adds no measurable stall** — record the wall time of `openSelectDropdown` end-to-end, as **characterisation input for the 1500 ms budget** (SP-10).                                                                                                                              |
-| **5** | **The P4 detector alone**, run against **leg 2's state**. ⚠⚠ **Run it through the WIRED CALLER (`setPreset`), not by calling `expectSelectShows` directly** — SP-15 was precisely a P4 that existed and was never called, and a leg that invokes the method itself would have passed against revision 4. | GUARD-REMOVAL       | **P4-ONLY: fails at `expectSelectShows`, naming the control** — proving P4 detects independently of P1 and P2, **and that the repaired path reaches it**. ⓘ The opener is SCOPE-ONLY's document-global one; see the variant list.                                                                                         |
-| **6** | **The negative control — known-bad input the probe must still fail on.** Point the helper at a preset label that does not exist (`/^Nonexistent/`).                                                                                                                                                      | KNOWN-BAD           | **REPAIRED: fails on the option `toHaveCount(1)`**, naming the pattern. ⚠ Record the **exact failure message AND the runner's exit code** — a failure caught inside a passing wrapper is indistinguishable from a pass.                                                                                                   |
-| **7** | **A STABLE, legitimately-open UNRELATED Select popup**, then run the padding path against a clean padding control.                                                                                                                                                                                       | FAIL-OLD / PASS-NEW | **CURRENT: the document-global pre-wait burns its full budget and fails without touching the padding Select** — the defect SP-1 named. **REPAIRED: passes promptly**, because it asks for its own popup by class. ⓘ Revision 3 expected a two-popup state here to "break loudly"; under option B it is simply irrelevant. |
-| **8** | **The OWNED popup mid-leave.** Enter the padding path while the padding Select's own popup is animating shut.                                                                                                                                                                                            | CHARACTERISATION    | **REPAIRED, one oracle: the helper RE-OPENS and selects successfully.** ⚠ Not acceptance evidence — it says nothing about the current helper. See the construction below.                                                                                                                                                 |
-| **9** | **The retry path.** First gesture suppressed, second succeeds.                                                                                                                                                                                                                                           | CHARACTERISATION    | **REPAIRED: passes on the second attempt**; record the wall time as characterisation of the budget and **not** as proof the number is right.                                                                                                                                                                              |
+| #      | Case                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Kind                | Variant(s) and expected result                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1**  | ⭐⭐⭐ **THE M6 STATE — route (a).** Open the margin preset Select, then drive the padding preset path immediately, so the call lands inside the ~350 ms two-popup window (M5).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | FAIL-OLD / PASS-NEW | **CURRENT: sets the MARGIN** (or flakes between the two — record which, per attempt). **REPAIRED: passes**, and P4 confirms the padding control. ⚠ Record the popup count observed during the call — if it is never 2, the leg did not enter its own state and its green means nothing.                                                                                                                                                                                      |
+| **2**  | **⭐ THE FOREIGN-ONLY FAILURE STATE.** The margin popup is open; the padding Select's own opening is suppressed page-side; then the padding path runs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | FAIL-OLD / PASS-NEW | **CURRENT: silently succeeds**, setting the MARGIN — no error at all. **REPAIRED: fails inside `resolveOwnedDropdown`**, naming the control: `.spacing-padding-preset-popup` never became visible.                                                                                                                                                                                                                                                                           |
+| **3**  | **⭐ The scope-only straw man**, run against leg 2's state — the repair the diagnosis drawer recommended.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | GUARD-REMOVAL       | **SCOPE-ONLY: must ALSO silently succeed.** This is what proves identity-beats-scope rather than asserting it. ⓘ §4.2 M4 already measured the same thing statically; this leg proves it through the helper.                                                                                                                                                                                                                                                                  |
+| **4**  | **The happy path.** Clean panel, nothing else open.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | FAIL-OLD / PASS-NEW | **CURRENT: passes. REPAIRED: passes, and adds no measurable stall** — record the wall time of `openSelectDropdown` end-to-end, as **characterisation input for the 1500 ms budget** (SP-10).                                                                                                                                                                                                                                                                                 |
+| **5**  | **The P4 detector alone**, run against **leg 2's state**. ⚠⚠ **Run it through the WIRED CALLER (`setPreset`), not by calling `expectSelectShows` directly** — SP-15 was precisely a P4 that existed and was never called, and a leg that invokes the method itself would have passed against revision 4. ⚠⚠⚠ **SP-26: THE LEG IS NOT SATISFIED BY A RED.** It must **record the exact failure message and the runner's exit code**, the way leg 6 already does, and the recorded message must contain the requested test id **and** the test id of the control that moved. A leg that only asserts "it failed" cannot tell a named failure from an anonymous one — which is precisely the defect SP-26 raised. | GUARD-REMOVAL       | **P4-ONLY: fails at `expectSelectShows`, and the RECORDED MESSAGE names the requested control and the moved control** — proving P4 detects independently of P1 and P2, that the repaired path reaches it, and that the diagnostic is what §3 item 2 promises. ⓘ The opener is SCOPE-ONLY's document-global one; see the variant list. ⚠ **This leg exercises the MUTATION case only.** Leg 5b below is the pre-satisfied case, and it is a KNOWN-OPEN pass, not a detection. |
+| **5b** | ⚠⚠⚠ **NEW IN REVISION 7 — THE SP-25 KNOWN-OPEN CONTROL.** Leg 2's state, but with the foreign control ALSO pre-satisfied: a fresh card, where all four spacing Selects sit at their defaults (M9a), driving `setMarginMode('all')` while the misattached class puts the click in the Padding mode popup.                                                                                                                                                                                                                                                                                                                                                                                                       | KNOWN-OPEN          | **REPAIRED: PASSES, and that is the CORRECT recorded result.** ⚠ It is recorded as the measured boundary of P4, **not** as evidence of correctness: prevention here is P1's alone. Assert what IS true — anyone who later closes this hole breaks this leg and must correct §3, §4.1 and §8 in the same commit. ⓘ MEASURED already as M9b, with M9c as its mirroring control; the leg pins it so it cannot be quietly lost.                                                  |
+| **6**  | **The negative control — known-bad input the probe must still fail on.** Point the helper at a preset label that does not exist (`/^Nonexistent/`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | KNOWN-BAD           | **REPAIRED: fails on the option `toHaveCount(1)`**, naming the pattern. ⚠ Record the **exact failure message AND the runner's exit code** — a failure caught inside a passing wrapper is indistinguishable from a pass.                                                                                                                                                                                                                                                      |
+| **7**  | **A STABLE, legitimately-open UNRELATED Select popup**, then run the padding path against a clean padding control.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | FAIL-OLD / PASS-NEW | **CURRENT: the document-global pre-wait burns its full budget and fails without touching the padding Select** — the defect SP-1 named. **REPAIRED: passes promptly**, because it asks for its own popup by class. ⓘ Revision 3 expected a two-popup state here to "break loudly"; under option B it is simply irrelevant.                                                                                                                                                    |
+| **8**  | **The OWNED popup mid-leave.** Enter the padding path while the padding Select's own popup is animating shut.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | CHARACTERISATION    | **REPAIRED, one oracle: the helper RE-OPENS and selects successfully.** ⚠ Not acceptance evidence — it says nothing about the current helper. See the construction below.                                                                                                                                                                                                                                                                                                    |
+| **9**  | **The retry path.** First gesture suppressed, second succeeds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | CHARACTERISATION    | **REPAIRED: passes on the second attempt**; record the wall time as characterisation of the budget and **not** as proof the number is right.                                                                                                                                                                                                                                                                                                                                 |
 
 ⭐⭐ **LEGS 2 AND 3 TOGETHER ARE THE DISCRIMINATOR**, and leg 3 does the work: it
 runs the _narrower_ repair against the same state and must **also** silently
@@ -1618,23 +1780,37 @@ owner may overturn it at no cost to the plan**: option C (fix lane now, clarify
 The owner has recorded more than once that this project's testing-to-product
 ratio is already wrong. This plan is now at:
 
-⚠⚠ **THE COUNTS BELOW WENT STALE IN REVISION 5 AND THE REVIEWER CAUGHT IT
-(SP-22): §7.5 still led with "four rounds, fourteen findings" while the header and
-the disposition record said nineteen across four.** That is one fact in two
-places — the defect this project has already paid five review rounds for — and it
-is why the split in §9 moved the per-round record out of this document. **These
-figures are now stated ONCE, here, and the review history file states none.**
+⚠⚠⚠ **SP-22 HAS NOW GONE WRONG TWICE, AND THE SECOND TIME IS THE INSTRUCTIVE
+ONE.** In revision 5 this section led with "four rounds, fourteen findings" while
+the header said nineteen across four. Revision 6 answered that by moving the
+per-round record into
+[`SPACING_HELPER_PRESET_PLAN_HISTORY.md`](SPACING_HELPER_PRESET_PLAN_HISTORY.md)
+and declaring that the figures were stated once here and that the history stated
+none — **and the history's own second paragraph stated them anyway, three lines
+from its top.** ⚠⚠ **A FILE BOUNDARY IS NOT A CONSISTENCY MECHANISM.** Putting
+the record in another file did not stop it contradicting the specification; it
+only spread one fact across two files.
+⭐⭐ **What is different in revision 7 is not a promise — it is a CHECK.** The
+consistency checker's C3 now reads **both** files, is keyed on **site count**
+rather than value disagreement, and reports every site by `file:line`. Run against
+revision 6 it named eight round sites and two finding sites; it must report
+**none** against this revision, and that is a mechanical fact rather than an
+assurance. ⚠ Its own three defects — it read only this file, it was anchored on
+two exact phrasings, and it parsed "twenty-four" as **4** — are recorded in the
+history and were fixed on PR #154 before this repair was trusted.
 
-- **five independent review rounds complete and a sixth owed**, on a defect in
+- **six independent review rounds complete and a seventh owed**, on a defect in
   **one flaky test**;
-- **twenty-four findings, none false**;
+- **twenty-six findings, none false**;
 - **three ownership mechanisms**, of which **two were approved and then thrown
   away** — option A after the first harness run, option D after the second;
-- ⚠⚠⚠ **seventeen of the eighteen findings raised after round 1 were defects
+- ⚠⚠⚠ **nineteen of the twenty findings raised after round 1 were defects
   introduced by the PREVIOUS round's own repairs.** That is the number that
-  matters and revision 5 did not state it at all. **This is not a review process
-  converging on a hard problem; for four rounds it was the author generating the
-  next round's work.**
+  matters. **This is not a review process converging on a hard problem; for five
+  rounds it was the author generating the next round's work.**
+- ⚠⚠ **and the count above INCLUDES round 6, whose two findings were both defects
+  in revision 6's own repair of SP-21** — the fourth consecutive round in which
+  the majority of findings were self-inflicted;
 - **still zero lines of shipped code**, because the spec-before-code tripwire has
   held throughout.
 
@@ -1684,6 +1860,28 @@ it was re-offered when option D fell and **declined again**. The repair proceeds
 
 Attack these by name. A finding against any of them is within reach and should
 not have needed an independent reviewer to find.
+
+- ⚠⚠⚠ **NEW IN REVISION 7 AND THE PLAN'S LOAD-BEARING WEAK POINT: P1 NOW STANDS
+  ALONE IN THE DOUBLE-PRE-SATISFIED STATE.** SP-25 is measured (M9b) and the
+  owner has narrowed P4 to wrong-control **mutation** (option (a), 2026-08-31).
+  The consequence is that in the one state where the requested and foreign
+  controls both already show the wanted value — **which M9a measures to be the
+  ordinary starting state of a fresh card** — there is **no detector at all**,
+  and the whole promise rests on P1's class-by-construction identity. ⭐ **The
+  sharpest attack on this plan is therefore against P1, not against P4:** if a
+  foreign popup can ever carry the requested control's class, nothing downstream
+  will notice. M7 measured class placement and uniqueness in **jsdom only**, and
+  the class has **never been observed in the Electron renderer** — the class
+  smoke step exists to close exactly that, and it has not been run. ⚠ Leg 5b
+  pins the known-open boundary so it cannot be quietly lost.
+- ⚠⚠ **AND THE HONEST FORM OF THE SAME POINT: THIS PLAN NO LONGER PROVES WHICH
+  CONTROL AN OPERATION REACHED.** It proves which control ends up with which
+  value. **Detection, diagnostics and operation identity are three different
+  properties**, and revision 6 conflated the first with the third. Whether an
+  oracle for identity is constructible at acceptable cost is **open and
+  deliberately unanswered** — the owner declined it on 2026-08-31 and no
+  mechanism is invented here, because the two invented in prose on this branch
+  were both falsified by execution.
 
 - ~~**The strongest counter-attack: `openSelectDropdown` opens with a
   document-global wait, the authority §4.2 rejects.**~~ **RESOLVED IN REVISION 2

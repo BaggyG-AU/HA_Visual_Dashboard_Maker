@@ -3,19 +3,31 @@
 Companion to [`SPACING_HELPER_PRESET_PLAN.md`](SPACING_HELPER_PRESET_PLAN.md).
 **This file is the RECORD. It specifies nothing.**
 
-⚠⚠ **WHY THIS FILE EXISTS, MEASURED.** Across five review rounds the plan
-produced 24 findings, and **17 of the 18 raised after round 1 were defects
-introduced by the previous round's own repairs.** Over the same period the plan
-grew from 1,094 to 2,152 lines around a specification of roughly 120. The
-per-round disposition tables and self-check records below are where the
-count-drift and stale-reference defects lived (SP-5, SP-22), because they restate
-facts the specification also states. **Separating them means an edit to the record
-can no longer contradict the specification**, which is the defect class this split
-exists to remove — not a tidying exercise.
+⚠⚠ **WHY THIS FILE EXISTS, MEASURED.** The great majority of the findings raised
+after round 1 were defects introduced by the previous round's own repairs, against
+a specification of roughly 120 lines. **The running figures are stated ONCE, in
+§7.5 of [`SPACING_HELPER_PRESET_PLAN.md`](SPACING_HELPER_PRESET_PLAN.md), and this
+paragraph deliberately carries none of them.** The per-round disposition tables and
+self-check records below are where the count-drift and stale-reference defects
+lived (SP-5, SP-22 twice), because they restate facts the specification also
+states.
+
+⚠⚠⚠ **AND THE CLAIM THIS PARAGRAPH USED TO MAKE WAS FALSE WHEN IT WAS WRITTEN.**
+Revision 6 said here that separating the record means an edit to it "can no longer
+contradict the specification" — and then stated the live totals in this very
+paragraph while the SP-22 row below claimed this file stated none. **A FILE
+BOUNDARY IS NOT A CONSISTENCY MECHANISM.** The split was worth doing, but what
+actually prevents the defect is the mechanical check (C3), not the file boundary;
+C3 reads **both** files as of PR #154 and is keyed on how many sites state a
+total, not on whether they currently agree.
 
 ⭐ **Nothing here was rewritten in the move.** The two sections were relocated
-verbatim and the move is verified by line accounting: every line of the
-pre-split plan appears in exactly one of the two files.
+verbatim and the move is verified by line accounting. ⚠ **Stated at the strength
+the reviewer allowed and no higher (round 6, G2):** every non-blank line of the
+pre-split plan is **accounted for** — the two moved blocks byte-identical, the
+live-plan deletions each a recorded revision-6 replacement. "Appears exactly once"
+is not literally decidable for repeated blank and separator lines, and revision 6
+claimed it anyway.
 
 **The specification, the blast radius, the harness and the live weakest claims
 stay in the plan.** Only the round-by-round record moved.
@@ -79,7 +91,7 @@ Review: `docs/reviews/spacing-helper-preset-plan-codex-followup2-review.md`, com
 `2819810`, reviewed head `40b255645db6e3a4e5050e8b9508441ef1a215dd`, verdict
 **SEV-1-BLOCKED**. It disposed **SP-7, SP-8 and SP-10 PARTIALLY RESOLVED**, **SP-9
 RESOLVED**, and raised four new findings. ⭐⭐ **All four were re-verified at source
-by the author before acceptance — fourteen for fourteen across three rounds. This
+by the author before acceptance; the running tally is in §7.5 of the plan. This
 reviewer has still produced no false finding.**
 
 | ID        | SEV | Verdict                                                              | What changed, and where                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -145,22 +157,111 @@ Review: `docs/reviews/spacing-helper-preset-plan-codex-followup4-review.md`, com
 PARTIALLY RESOLVED**, and raised five new findings. ⭐ It also confirmed the
 author's own deletion sweep: **all 52 revision-4 lines removed by revision 5 were
 accounted for; no silent deletion found.** All five findings were re-verified at
-source before acceptance — **twenty-four for twenty-four across five rounds.**
+source before acceptance, as every round's have been; **the running tally is
+stated once, in §7.5 of the plan.**
 
 ⚠⚠⚠ **THE ROUND'S REAL RESULT IS NOT THE FINDINGS — IT IS THAT FOUR OF THE FIVE
-WERE DEFECTS REVISION 5 ITSELF INTRODUCED**, which took the arc's tally to
-**seventeen of the eighteen findings raised after round 1**. That number, not any
-individual finding, is what produced the owner's 2026-08-31 structural ruling
-(§7.5 of the plan): move the per-round record out of the specification, and gate
-the plan with a consistency checker. **This file is half of that ruling.**
+WERE DEFECTS REVISION 5 ITSELF INTRODUCED.** The resulting self-inflicted ratio —
+stated once, in §7.5 of the plan — not any individual finding, is what produced
+the owner's 2026-08-31 structural ruling: move the per-round record out of the
+specification, and gate the plan with a consistency checker. **This file is half
+of that ruling, and round 6 then showed that this half alone was not enough.**
 
 | ID        | SEV | Verdict                                                      | What changed, and where                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | --------- | --- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **SP-20** | 1   | **RESOLVED**                                                 | ⚠⚠ **REVISION 5'S OWN DEFECT, CREATED BY ITS SP-17 REPAIR.** The implementation order put leg 1 at step 2 and "then the helper" at step 3 — but leg 1 is FAIL-OLD/PASS-NEW and its REPAIRED side is defined as "the §4.4 helper as proposed", which does not exist yet at step 2. **A contradiction three lines apart.** _Verified:_ plan sequence vs the variant definition. **Fixed:** step 2 is now a **CLASS SMOKE STEP (census kind, explicitly NOT leg 1)** that observes the popup class in the Electron renderer and needs no helper — closing §8's first weak claim where it actually belongs — and leg 1 runs first among the mechanism legs, after the helper and its callers.                                                                                                                                                                                              |
 | **SP-21** | 1   | **RESOLVED — and this is the finding that earned the round** | P4 read **only** the requested control, so if that control already showed the wanted value a wrong-control click was invisible. _Verified at source and then MEASURED (§4.2 M8a): a fresh card renders `spacing-margin-mode` as "All Sides", so `setCardMargin(12)` → `setMarginMode('all')` asks for the value already shown — **on the first action of a currently-passing test** (`tests/e2e/spacing.spec.ts:27`)._ **Fixed:** `selectOptionByText` snapshots the OTHER half before the gesture and P4 asserts both that the requested control shows the value AND that the other half is unchanged. ⭐ **The repair was MEASURED SAFE before being written (M8b)** — driving one half moved only that half's control, with a mirroring control leg — and the guard is deliberately "the other half", not "every other Select", because within a half the two controls are coupled. |
-| **SP-22** | 3   | **RESOLVED**                                                 | §7.5 still led with "four rounds, fourteen findings" while the header and the record said nineteen across four — one fact in two places. **Fixed:** the figures are stated **once**, in §7.5, corrected to five rounds and twenty-four findings, and **this history file states no counts at all**. ⓘ This finding is the clearest single argument for the split.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **SP-22** | 3   | **CLAIMED RESOLVED — LATER REGRESSED (round 6)**             | §7.5 still led with "four rounds, fourteen findings" while the header and the record disagreed — one fact in two places. **What revision 6 did:** moved the per-round record into this file and declared the figures stated once in §7.5. ⚠⚠⚠ **AND THAT REPAIR WAS ITSELF DEFECTIVE.** This file's own preamble restated the totals while its version of this row asserted that the file stated none, and the plan's owner-facing section still called it "the fourth review round". **Round 6 disposed SP-22 REGRESSED.** See the round-6 record below for the actual repair, which is mechanical rather than declarative. ⓘ This row is left as the record of what was CLAIMED; the claim is corrected here rather than deleted.                                                                                                                                                    |
 | **SP-23** | 3   | **RESOLVED**                                                 | The §8 claim that a budget expiry "now costs a second gesture" was unconditional; the retry clicks only when `isOpen` is false, so an expiry after a successful open costs no gesture. **Fixed:** stated as two branches, with the second named **UNMEASURED** rather than assumed benign.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **SP-24** | 3   | **RESOLVED**                                                 | Revision 5 called `src/index.css:26-40` "independent corroboration of M5" and said someone "hit this exact behaviour". **It records an INTENT, not an observation** — no incident, no two-visible-popup measurement, no margin-to-padding sequence. **Fixed:** restated as a second surface _consistent with_ the mechanism, with M5's runtime support explicitly limited to its three recorded runs. ⚠⚠ **The author WROTE THIS EXACT CHECK into the round-5 commission — "check whether the author has drawn more from that than it supports" — and handed it over instead of running it.** Third documented instance on this project of naming a check and not executing it.                                                                                                                                                                                                        |
+
+### Round 6 — the STRAT-D7 scoped follow-up 5
+
+Review: `docs/reviews/spacing-helper-preset-plan-codex-followup5-review.md`, commit
+`30d606c`, reviewed head `e65bb461d181ed364afa0c099a01e6891c45cb85`, verdict
+**SEV-1-BLOCKED**. It disposed **SP-20, SP-23 and SP-24 RESOLVED**, **SP-21
+PARTIALLY RESOLVED**, **SP-22 REGRESSED**, and raised two new findings. Both were
+re-verified at source before acceptance, and **SP-25 was then MEASURED in the
+running app rather than accepted on the reviewer's reading** (§4.2 M9 in the plan).
+
+⚠⚠⚠ **BOTH NEW FINDINGS ARE DEFECTS IN REVISION 6's OWN REPAIR OF SP-21, AND
+SP-22 REGRESSED — SO THIS IS THE FOURTH CONSECUTIVE ROUND IN WHICH THE MAJORITY OF
+FINDINGS WERE SELF-INFLICTED.** The owner's response was to hand the repair to a
+fresh session and to rule on two questions rather than accept another promise of
+care. Both rulings are recorded in the plan: **SP-25 option (a)** — P4's guarantee
+narrowed to wrong-control mutation — and **the reviewer may now supply design text
+as a non-binding appendix** (option B of the commissioning question), which round
+7's commission is the first to use.
+
+| ID        | SEV | Verdict                                                                                 | What changed, and where                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --------- | --- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SP-20** | 1   | **RESOLVED** (round 5 finding, confirmed by round 6)                                    | Confirmed by the reviewer against the variant definition. No revision-7 change.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **SP-21** | 1   | **PARTIALLY RESOLVED → superseded by SP-25/SP-26**                                      | The other-half snapshot closes the case where the foreign value MOVES. It does not close the double-pre-satisfied case (SP-25), and its failure was anonymous (SP-26). Both are dispositioned below; SP-21 itself is not reopened.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **SP-22** | 3   | ⚠⚠ **REGRESSED, and repaired MECHANICALLY this time**                                   | _Verified at source:_ the plan called it "the fourth review round" (`:167-170` at revision 6) while §7.5 said five complete; this file stated the totals at `:6-8` and `:148-152` while claiming at `:161` that it stated none. **Fixed:** the totals live ONCE, in §7.5 of the plan; every other site is a pointer carrying no figure. ⭐⭐ **And the repair is verified by a repaired CHECK, not by care** — see the C3 record below.                                                                                                                                                                                                                                                                                                                                                                              |
+| **SP-23** | 3   | **RESOLVED** (round 5 finding, confirmed by round 6)                                    | Confirmed. No revision-7 change.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **SP-24** | 3   | **RESOLVED** (round 5 finding, confirmed by round 6)                                    | Confirmed. No revision-7 change.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **SP-25** | 1   | ⚠⚠⚠ **RESOLVED BY OWNER RULING — the plan's promise is NARROWED, not the code changed** | When the requested AND foreign controls both already show the wanted value, a wrong-control click changes no value, so both P4 assertions pass. _Verified at source:_ rc-select leaves an already-selected option clickable (`OptionList.js:371-374`), closes the single-mode popup regardless (`:161-170`), and emits `onChange` only when the value changes (`Select.js:314-318`, "Trigger event only when value changed"). ⭐⭐⭐ _Then MEASURED (M9b) in the Electron renderer with a mirroring control leg (M9c) that failed as it must._ **Fixed:** owner ruled option (a) on 2026-08-31 — P4 detects wrong-control MUTATION, prevention is P1's by construction. §3, §4.1, the header promise and §8 are corrected; **leg 5b pins the known-open boundary so it cannot be silently closed or silently lost.** |
+| **SP-26** | 1   | **RESOLVED**                                                                            | The other-half assertion polled a bare `(string \| null)[]` with no custom message, so its failure named neither the requested control nor the one that moved. _Verified at source_ against the plan's own "loud AND BY NAME" requirement and leg 5's oracle. **Fixed:** a shared `snapshotOtherHalf` returns a **keyed record**; the poll supplies a custom message naming the requested test id and both guarded ids (`expect.poll` takes `{ message, timeout }` — Playwright 1.57.0, `node_modules/playwright/types/test.d.ts:8455`, read rather than recalled); §4.1's P4 row now states both parts; and **leg 5 must record the exact message and exit code**, as leg 6 already did.                                                                                                                            |
+
+### ⚠⚠⚠ Round 6's real lesson: the check built to prevent SP-22 certified it as clean
+
+**The consistency checker (PR #154) reported a clean pass on revision 6 while three
+contradictions were live in the two files.** That was reproduced by execution, not
+inferred: `checkPlan` run against revision 6 returned **zero findings**. Three
+defects produced that green, and each is a distinct instance of a rule this project
+already had on file.
+
+- **C3 read only the specification.** `tally(spec, …)` at both call sites, with
+  `history` never passed — so drift **across the split** was invisible, which is
+  exactly the drift the split created. ⚠ **Proved by control rather than by
+  reading: identical hostile totals FIRE when placed in the plan and are SILENT
+  when placed in the history.**
+- **C3 was anchored on two exact phrasings** — "review rounds complete" and
+  "findings, none false" — so "produced 24 findings" and "the fourth review round"
+  did not register at all. **This is "a check is evidence only for the property it
+  exercises", committed by the tool built to enforce it.**
+- ⚠⚠ **C3 could not parse a hyphenated number, and that is a FALSE ACCEPT rather
+  than a miss.** Its `\w+` capture cannot span a hyphen, so "twenty-four" parsed as
+  **4**, "twenty-six" as **6**, "twenty-one" as **1**. The plan's own "twenty-four
+  findings" was therefore held as 4 — **so a stray "four findings, none false"
+  anywhere would have AGREED with it and C3 would have certified a 24-vs-4
+  contradiction as clean.** Nobody had named this one; it was found by running the
+  pattern in isolation.
+
+**All three are fixed on the checker's own branch (PR #154), not here** — it is
+code, and putting it on this docs-only branch would break the property the reviewer
+verifies every round. C3 now reads both files, is keyed on **site count** rather
+than value disagreement (per the owner's "stated once" ruling — two sites that
+agree today are the same defect one edit early), and reports every site by
+`file:line`. ⭐⭐ **Two further bugs were found only because the frames were tested
+against the REAL corpus instead of invented strings:** markdown bold kept
+`the **fourth** review round` out of its own frame, and the patterns were
+case-sensitive, so this file's sentence-initial "Across five review rounds" went
+unread. **The frames are proved bidirectionally — they fire on all ten real drift
+sites and stay silent on eight historical statements lifted verbatim from these two
+documents** ("Option A survived two review rounds", "raised five new findings"),
+because a frame list cannot decide what a number is _about_ and the module says so
+in its own comment.
+
+### ⚠⚠ Two author-found defects in adjacent artifacts — numbered A1 and A2, NOT SP-\*
+
+Numbered separately on purpose: they are not reviewer findings, and folding them
+into the `SP-*` sequence would corrupt the running tally §7.5 states.
+
+- **A1 — the round-6 commission overstated the checker to the reviewer.**
+  `docs/reviews/spacing-helper-preset-plan-codex-followup5-commission.md:95-96` told
+  the reviewer the checker has **five** checks, naming "C5 falsified-claim-
+  resurrection". ⚠⚠ **C5 does not exist and never did** — `grep -c C5` returns 0
+  against both `tests/support/planConsistency.ts` and `tests/unit/planConsistency.spec.ts`
+  on `feature/plan-consistency-checker`, and the owner's structural ruling says four
+  checks. **The reviewer then reasoned about "C1–C5" four times, including its
+  central G3 answer** ("a defect class none of C1–C5 catches"). ⓘ Same one-fact-two-
+  places class as SP-5 and SP-22 — in the commission, which like the pull-request
+  body is an **ungated surface**. Round 7's commission states the check set by
+  quoting the module, not from memory.
+- **A2 — the C3 hyphen defect above.** Recorded here as well as in the round-6
+  narrative because it was found by the author, after the review, and the reviewer
+  explicitly could not inspect the checker at all.
 
 ## 10. The author's own run of the review commission, before handing it over
 
