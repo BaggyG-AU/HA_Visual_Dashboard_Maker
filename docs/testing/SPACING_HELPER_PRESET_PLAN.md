@@ -1413,12 +1413,26 @@ SP-6).
 - **The three passing spacing tests** (`:10`, `:34`, `:58`) and the YAML
   round-trip test (`:119`), which is the only other caller of `setPaddingMode`.
 - **`tests/baseline/expected-failures.json`** — untouched.
-- **Upstream reliances:** none. `openSelectDropdown`, `selectOptionByText`,
-  `resolveOwnedDropdown`, `popupFor`, `expectSelectShows`, `otherHalf`,
-  `snapshotOtherHalf` and `readSelectValue` are all private to `SpacingDSL` and
-  nothing outside the class can reach them. ⚠ `snapshotOtherHalf` is **new in
-  revision 7** (SP-26) and is listed here rather than left to be noticed: an
-  inventory that silently omits a member is how SP-15 happened.
+- **Upstream reliances:** none. **The proposal's private surface is TEN methods**
+  — `popupFor`, `isOpen`, `resolveOwnedDropdown`, `openSelectDropdown`,
+  `selectOptionByText`, `otherHalf`, `snapshotOtherHalf`, `readSelectValue`,
+  `expectSelectShows` and `setPreset` — all private to `SpacingDSL`, and nothing
+  outside the class can reach them. ⚠⚠ **THAT LIST IS DERIVED, NOT REMEMBERED.**
+  Regenerate it rather than trusting it:
+
+  ```bash
+  grep -nE '^\s*private( async)? [a-z]\w*\(' docs/testing/SPACING_HELPER_PRESET_PLAN.md
+  ```
+
+  ⚠⚠⚠ **REVISION 7 FIRST GOT THIS WRONG AND THE AUTHOR'S OWN READING PASS CAUGHT
+  IT.** `snapshotOtherHalf` (new for SP-26) was added to the previous eight-name
+  list **by hand**, and the list had been missing `isOpen` and `setPreset` since
+  revision 4 — so the sentence immediately warning that "an inventory that
+  silently omits a member is how SP-15 happened" sat directly above an inventory
+  omitting two. **Adding a member to a hand-maintained list is not the same
+  operation as enumerating it**, which is this plan's own §7.6 lesson applied to
+  the plan itself.
+
 - ⚠⚠ **NEW IN REVISION 4 — `BackgroundCustomizer.tsx`'s five existing
   `popupClassName` uses, `src/index.css:26-40` which selects on all five, and
   `tests/support/dsl/backgroundCustomizer.ts`.** They are the API precedent this
@@ -1886,6 +1900,25 @@ not have needed an independent reviewer to find.
   the class has **never been observed in the Electron renderer** — the class
   smoke step exists to close exactly that, and it has not been run. ⚠ Leg 5b
   pins the known-open boundary so it cannot be quietly lost.
+- ⚠⚠⚠ **NEW IN REVISION 7, FOUND BY THE AUTHOR'S OWN READING PASS AND
+  DELIBERATELY NOT REPAIRED: P4's TWO SIDES ARE ASYMMETRIC, AND THE CAPTURE SIDE
+  HAS NO STABILISATION.** `selectOptionByText` takes `siblingsBefore` with a
+  SINGLE un-retried `snapshotOtherHalf` call as its **first** statement — before
+  `openSelectDropdown`, which is the only thing that asserts anything is visible
+  (`§4.4`). `readSelectValue` swallows every error into `null`
+  (`.textContent().catch(() => null)`). The comparison side, by contrast,
+  **polls for 5000 ms**. ⚠ **So if a control's `.ant-select-content-value` is
+  momentarily absent when the snapshot is taken — panel still mounting, React not
+  yet committed — `siblingsBefore` records `null`, the poll then reads the real
+  value, and P4 fails after burning its full budget, reporting that the other
+  half MOVED when nothing moved.** ⭐ This is the interaction-between-two-correct-
+  pieces class that has produced a finding in every round (SP-8, SP-12, SP-15,
+  SP-20, SP-25): a non-retried capture, an error-swallowing reader and a retried
+  comparison are each defensible alone. **It is UNMEASURED — no spurious failure
+  has been observed, because nothing has been run — and it is named here rather
+  than repaired, because inventing a remedy in prose is what this branch has been
+  punished for three times.** It is put to the reviewer as a design-appendix
+  candidate.
 - ⚠⚠ **AND THE HONEST FORM OF THE SAME POINT: THIS PLAN NO LONGER PROVES WHICH
   CONTROL AN OPERATION REACHED.** It proves which control ends up with which
   value. **Detection, diagnostics and operation identity are three different

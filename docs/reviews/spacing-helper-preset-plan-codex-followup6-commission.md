@@ -181,10 +181,20 @@ A1.
 changes a return type. SP-25's repair changes what the document PROMISES, in four
 places. Check that none of them changed more than its finding required.
 
-**G6 — the fifth interaction, again.** Every round has produced an interaction
-between two individually correct pieces — SP-8, SP-12, SP-15, SP-20, SP-25. Look
-for the sixth. ⚠ And: **which load-bearing claim in revision 7 is about what the
-app DOES rather than what its source SAYS, and has anyone run it?**
+**G6 — the interaction, again.** Every round has produced an interaction between
+two individually correct pieces — SP-8, SP-12, SP-15, SP-20, SP-25.
+⭐⭐ **THE AUTHOR FOUND ONE THIS TIME AND DID NOT REPAIR IT — §8's new first-class
+weak claim: P4's capture side has no stabilisation while its comparison side
+polls.** `siblingsBefore` is taken by a single un-retried call as the FIRST
+statement of `selectOptionByText`, before anything asserts visibility, through a
+reader that swallows errors into `null`; the comparison then polls for 5000 ms. A
+transient `null` at capture time would make P4 fail spuriously, reporting that the
+other half moved when nothing moved. **It is UNMEASURED.** ⚠ **Judge whether that
+characterisation is right, whether it matters, and whether naming-instead-of-fixing
+was the correct call** — and if you think it should be repaired, this is a good
+place to use your design appendix. **Then look for the one the author did not
+find.** ⚠ And: **which load-bearing claim in revision 7 is about what the app DOES
+rather than what its source SAYS, and has anyone run it?**
 
 ## What the author already ran
 
@@ -210,6 +220,20 @@ how two stale `SpacingControls.tsx:104-112` citations were found and corrected.
 appeared to have vanished from a table, and the defect was in the AUTHOR'S GREP,
 which required exactly one space where prettier had re-padded the cells.** The
 instrument was wrong, not the document.
+
+⭐⭐ **A SECOND READING PASS WAS THEN RUN BEFORE THIS COMMISSION WAS SENT, AND IT
+FOUND TWO MORE THINGS — BOTH RECORDED HERE RATHER THAN QUIETLY FIXED.**
+**(i)** §5.3's private-surface inventory was **incomplete**: `snapshotOtherHalf`
+had been added to the previous eight-name list BY HAND, and the list had been
+missing `isOpen` and `setPreset` since revision 4 — so the sentence warning that
+"an inventory that silently omits a member is how SP-15 happened" sat directly
+above an inventory omitting two. It is now DERIVED, and the plan publishes the
+command that regenerates it. **Adding a member to a hand-maintained list is not
+the same operation as enumerating it.**
+**(ii)** The P4 capture/comparison asymmetry in G6 above.
+⚠ **Both were missed by the first pass, which checked the claims the author
+thought to make.** Treat §5.3 and §4.4 as areas where the author has now been
+wrong twice.
 
 ⚠⚠ **Treat that as a claim, not clearance.** The same self-check, run six times
 before, missed three blockers, then four, then four, then five, then five, then
