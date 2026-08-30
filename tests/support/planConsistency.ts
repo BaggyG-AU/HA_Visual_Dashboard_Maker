@@ -1,12 +1,17 @@
 /**
  * Consistency checks for long-lived governed plan documents.
  *
- * WHY THIS EXISTS, MEASURED. Across five independent review rounds of
- * `docs/testing/SPACING_HELPER_PRESET_PLAN.md`, 24 findings were raised and
- * **17 of the 18 raised after round 1 were defects introduced by the previous
- * round's own repairs**. The measured cause was structural: `tools/checks` gates
- * code with eslint, prettier, tsc and vitest, while the plan — the artifact
- * carrying every one of those defects — was checked by nothing but a formatter.
+ * WHY THIS EXISTS, MEASURED AS AT REVISION 6 OF
+ * `docs/testing/SPACING_HELPER_PRESET_PLAN.md` (2026-08-31) AND DELIBERATELY NOT
+ * MAINTAINED HERE: review of that plan had by then raised the great majority of
+ * its findings against defects introduced by the previous round's own repairs.
+ * ⚠ The live figures are stated ONCE, in that plan's own cost section — this
+ * comment pins a moment rather than carrying a second copy of a running total,
+ * which is the exact defect C3 below exists to catch.
+ *
+ * The measured cause was structural: `tools/checks` gates code with eslint,
+ * prettier, tsc and vitest, while the plan — the artifact carrying every one of
+ * those defects — was checked by nothing but a formatter.
  *
  * These checks are therefore keyed on the classes that ACTUALLY BIT, not on a
  * general notion of document tidiness. Each one names the finding it comes from.
@@ -35,7 +40,7 @@ export interface PlanSources {
   dsl?: string;
 }
 
-const WORDS: Record<string, number> = {
+const UNITS: Record<string, number> = {
   one: 1,
   two: 2,
   three: 3,
@@ -55,7 +60,57 @@ const WORDS: Record<string, number> = {
   seventeen: 17,
   eighteen: 18,
   nineteen: 19,
+};
+
+const TENS: Record<string, number> = {
   twenty: 20,
+  thirty: 30,
+  forty: 40,
+  fifty: 50,
+  sixty: 60,
+  seventy: 70,
+  eighty: 80,
+  ninety: 90,
+};
+
+const ORDINALS: Record<string, number> = {
+  first: 1,
+  second: 2,
+  third: 3,
+  fourth: 4,
+  fifth: 5,
+  sixth: 6,
+  seventh: 7,
+  eighth: 8,
+  ninth: 9,
+  tenth: 10,
+};
+
+/**
+ * Parse a number written as digits, a word, an ordinal, or a hyphenated
+ * compound.
+ *
+ * ⚠⚠ THE COMPOUND CASE IS WHY THIS FUNCTION EXISTS. Its predecessor was a
+ * single flat map capped at `twenty`, read through a `\w+` capture that cannot
+ * span a hyphen — so "twenty-four" parsed as **4**, "twenty-six" as **6** and
+ * "twenty-one" as **1**. That is a FALSE ACCEPT, not a miss: the plan's own
+ * "twenty-four findings" was held as 4, so a stray "four findings" anywhere
+ * would have AGREED with it and the check would have certified a 24-vs-4
+ * contradiction as clean.
+ */
+const numberFrom = (raw: string): number => {
+  const t = raw.toLowerCase();
+  if (/^\d+$/.test(t)) return Number(t);
+  if (t in UNITS) return UNITS[t];
+  if (t in TENS) return TENS[t];
+  if (t in ORDINALS) return ORDINALS[t];
+  const compound = /^([a-z]+)-([a-z]+)$/.exec(t);
+  if (compound) {
+    const tens = TENS[compound[1]];
+    const unit = UNITS[compound[2]];
+    if (tens !== undefined && unit !== undefined && unit < 10) return tens + unit;
+  }
+  return NaN;
 };
 
 /** A real method declaration — not a mention of one in prose. */
@@ -70,6 +125,17 @@ const codeBlocks = (s: string): string =>
 
 /** Drop quoted spans: a quoted stale figure is being CORRECTED, not asserted. */
 const stripQuoted = (line: string): string => line.replace(/["“”][^"“”]*["“”]/g, ' ');
+
+/**
+ * Drop markdown emphasis markers before frame matching.
+ *
+ * ⚠ MEASURED NECESSARY, not defensive: this document emphasises the very words
+ * the frames key on, and `the **fourth** review round` does not match a frame
+ * written as `the <number> review round` while the asterisks are still there.
+ * Only `*` is removed — `_` is left alone because it appears inside real
+ * identifiers in this corpus (`card_margin`, `expected-failures`).
+ */
+const stripEmphasis = (line: string): string => line.replace(/\*/g, '');
 
 export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFinding[] {
   const out: PlanFinding[] = [];
@@ -106,31 +172,66 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
     add('C2-NODISPOSITION', `SP-${n} is referenced but has no disposition row`);
   }
 
-  // ---- C3 (SP-5, SP-22): a total stated in two places drifts on the next edit.
-  const tally = (text: string, pattern: RegExp): Map<number, number[]> => {
-    const found = new Map<number, number[]>();
+  // ---- C3 (SP-5, and SP-22 TWICE): a running total must have exactly ONE home.
+  //
+  // ⚠⚠⚠ THIS CHECK REPORTED A CLEAN PASS OVER THE VERY DRIFT IT IS NAMED FOR.
+  // Measured against revision 6 of the spacing plan: `checkPlan` returned ZERO
+  // findings while the plan called it "the fourth review round" and the history
+  // both stated the running totals and claimed it stated none. Three separate
+  // defects produced that green, and all three are fixed here:
+  //   (a) it read only `spec` — `tally(spec, …)` at BOTH call sites, with
+  //       `history` never passed — so drift ACROSS the split was invisible,
+  //       which is precisely the drift the split created;
+  //   (b) it was anchored on two exact phrasings, so "produced 24 findings"
+  //       and "the fourth review round" did not register at all;
+  //   (c) its `\w+` capture could not span a hyphen — see `numberFrom`.
+  //
+  // ⚠⚠ IT IS NOW KEYED ON SITE COUNT, NOT ON VALUE DISAGREEMENT. The owner's
+  // 2026-08-31 ruling is that a running total is stated ONCE and every other
+  // mention is a pointer; two sites that happen to agree today are the SP-5 /
+  // SP-22 defect one edit before it shows. A QUOTED figure stays exempt — it is
+  // being corrected, not asserted.
+  //
+  // ⚠ THE LIMIT, STATED PLAINLY: this is an enumerated FRAME list, not a
+  // semantic judgment about what a number is "about". "Option A survived two
+  // review rounds" is a historical fact and not a running total, and no regex
+  // decides that in general. Each frame below is therefore proved in the
+  // accompanying spec against BOTH populations — the sites it must catch, and
+  // the real historical prose it must leave alone.
+  const FRAMES: ReadonlyArray<{ subject: string; source: string }> = [
+    {
+      subject: 'review-round',
+      source: '\\b([\\w-]+)\\s+(?:independent\\s+)?review\\s+rounds?\\s+complete\\b',
+    },
+    { subject: 'review-round', source: '\\bthe\\s+([\\w-]+)\\s+review\\s+round\\b' },
+    { subject: 'review-round', source: '\\bacross\\s+([\\w-]+)\\s+(?:review\\s+)?rounds?\\b' },
+    { subject: 'finding', source: '\\b([\\w-]+)\\s+findings?,?\\s+none\\s+false\\b' },
+    { subject: 'finding', source: '\\bproduced\\s+([\\w-]+)\\s+findings?\\b' },
+  ];
+  const sites = new Map<string, string[]>();
+  for (const [file, text] of [
+    ['plan', spec],
+    ['history', history],
+  ] as const) {
+    if (!text) continue;
     text.split('\n').forEach((raw, i) => {
-      for (const m of stripQuoted(raw).matchAll(pattern)) {
-        const tok = m[1].toLowerCase();
-        const v = WORDS[tok] ?? (/^\d+$/.test(tok) ? Number(tok) : NaN);
-        if (Number.isNaN(v)) continue;
-        found.set(v, [...(found.get(v) ?? []), i + 1]);
+      const line = stripEmphasis(stripQuoted(raw));
+      for (const { subject, source } of FRAMES) {
+        for (const m of line.matchAll(new RegExp(source, 'gi'))) {
+          const v = numberFrom(m[1]);
+          if (Number.isNaN(v)) continue;
+          sites.set(subject, [...(sites.get(subject) ?? []), `${file}:${i + 1} states ${v}`]);
+        }
       }
     });
-    return found;
-  };
-  const rounds = tally(spec, /\b(\w+)\s+(?:independent\s+)?review\s+rounds?\s+complete\b/g);
-  const finds = tally(spec, /\b(\w+)\s+findings?,?\s+none\s+false\b/g);
-  for (const [label, m] of [
-    ['review-round', rounds],
-    ['finding', finds],
-  ] as const) {
-    if (m.size > 1) {
-      const detail = [...m.entries()]
-        .sort((a, b) => a[0] - b[0])
-        .map(([v, ls]) => `${v} at line(s) ${ls.join(', ')}`)
-        .join('; ');
-      add('C3-COUNTDRIFT', `${label} count stated with different values: ${detail} (SP-22)`);
+  }
+  for (const [subject, where] of [...sites.entries()].sort()) {
+    if (where.length > 1) {
+      add(
+        'C3-COUNTDRIFT',
+        `the ${subject} total is asserted at ${where.length} sites; it must be ` +
+          `stated ONCE and pointed at from everywhere else — ${where.join('; ')} (SP-22)`,
+      );
     }
   }
 

@@ -9,7 +9,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { checkPlan } from '../support/planConsistency';
+import { checkPlan, type PlanFinding } from '../support/planConsistency';
 
 const codes = (f: { code: string }[]) => f.map((x) => x.code);
 
@@ -90,6 +90,8 @@ describe('planConsistency — C2 disposition coverage', () => {
 });
 
 describe('planConsistency — C3 count drift (SP-22)', () => {
+  const c3 = (f: PlanFinding[]) => f.filter((x) => x.code === 'C3-COUNTDRIFT');
+
   it('FIRES when a total is stated with two different values', () => {
     const f = checkPlan({
       spec: `${WIRED}\n- four review rounds complete\n- five review rounds complete\n`,
@@ -102,6 +104,105 @@ describe('planConsistency — C3 count drift (SP-22)', () => {
       spec: `${WIRED}\n- five review rounds complete\n- it wrongly said "four review rounds complete"\n`,
     });
     expect(codes(f)).not.toContain('C3-COUNTDRIFT');
+  });
+
+  it('FIRES when two sites AGREE — a second home drifts on the next edit', () => {
+    // The owner's 2026-08-31 ruling is ONE home per running total. Two sites
+    // that agree today are the SP-22 defect one edit before it shows.
+    const f = checkPlan({
+      spec: `${WIRED}\n- five review rounds complete\n- five review rounds complete\n`,
+    });
+    expect(codes(f)).toContain('C3-COUNTDRIFT');
+  });
+
+  // ---- (a) it read only `spec`, so drift ACROSS the split was invisible ----
+  it('READS THE HISTORY FILE: a total in the plan and a total in the history is drift', () => {
+    const f = checkPlan({
+      spec: `${WIRED}\n- five review rounds complete\n`,
+      history: 'Across four review rounds the plan produced 20 findings.\n',
+    });
+    expect(c3(f).length, JSON.stringify(f)).toBeGreaterThan(0);
+    expect(c3(f)[0].message).toContain('history:1');
+  });
+
+  it('names BOTH files in the message, so the fix is obvious', () => {
+    const f = checkPlan({
+      spec: `${WIRED}\n- five review rounds complete\n`,
+      history: '- six review rounds complete\n',
+    });
+    expect(c3(f)[0].message).toContain('plan:');
+    expect(c3(f)[0].message).toContain('history:');
+  });
+
+  // ---- (b) it was anchored on two exact phrasings ----
+  it('catches "produced N findings", which the anchored phrasing missed', () => {
+    const f = checkPlan({
+      spec: `${WIRED}\n- twenty-four findings, none false\n`,
+      history: 'the plan produced 24 findings\n',
+    });
+    expect(codes(f)).toContain('C3-COUNTDRIFT');
+  });
+
+  it('catches "the Nth review round" THROUGH MARKDOWN BOLD', () => {
+    // Measured necessary: the live plan wrote `the **fourth** review round`,
+    // and the asterisks alone kept it out of the frame.
+    const f = checkPlan({
+      spec: `${WIRED}\n- five review rounds complete\n- this is the **fourth** review round\n`,
+    });
+    expect(codes(f), JSON.stringify(f)).toContain('C3-COUNTDRIFT');
+  });
+
+  it('catches a sentence-initial "Across five review rounds"', () => {
+    // Measured necessary: the frames were case-sensitive, so the capital A in
+    // the history file's own opening sentence went unread.
+    const f = checkPlan({
+      spec: `${WIRED}\n- five review rounds complete\n`,
+      history: 'Across five review rounds the plan grew.\n',
+    });
+    expect(codes(f), JSON.stringify(f)).toContain('C3-COUNTDRIFT');
+  });
+
+  // ---- (c) hyphenated compounds were truncated to their SECOND word ----
+  it('parses hyphenated compounds instead of truncating them to a false accept', () => {
+    // `twenty-four` used to parse as 4, so a stray `four findings, none false`
+    // AGREED with it and the check certified a 24-vs-4 contradiction as clean.
+    const f = checkPlan({
+      spec: `${WIRED}\n- twenty-four findings, none false\n`,
+      history: '- four findings, none false\n',
+    });
+    const m = c3(f)[0]?.message ?? '';
+    expect(m, JSON.stringify(f)).toContain('states 24');
+    expect(m).toContain('states 4');
+  });
+
+  it('parses compounds above twenty, which the old map could not represent', () => {
+    const f = checkPlan({ spec: `${WIRED}\n- twenty-six findings, none false\n` });
+    expect(codes(f)).not.toContain('C3-COUNTDRIFT'); // one site only
+    const g = checkPlan({
+      spec: `${WIRED}\n- twenty-six findings, none false\n`,
+      history: '- thirty-one findings, none false\n',
+    });
+    expect(c3(g)[0].message).toContain('states 26');
+    expect(c3(g)[0].message).toContain('states 31');
+  });
+
+  // ---- the negative population: real historical prose it must LEAVE ALONE ----
+  it('is SILENT on historical prose that is not a running total', () => {
+    // Lifted verbatim from the live plan and history. A frame list cannot make
+    // a semantic judgment about what a number is "about", so the frames are
+    // proved against the prose they must not touch, not only against drift.
+    const historical = [
+      'Option A survived two review rounds and died in a minute.',
+      'Two rounds of source review passed a defect execution caught at once.',
+      'PARTIALLY RESOLVED**, and raised five new findings.',
+      'commit `f1e7240`), whose **five findings were re-verified at source**.',
+      'Two rounds of careful source review, by two different agents,',
+      '**The re-trace rule held for a third round and caught nothing.**',
+      'surfaced it one finding earlier as SP-13**.',
+      'wrote the winning test case into his own commission three rounds running.',
+    ].join('\n');
+    const f = checkPlan({ spec: `${WIRED}\n${historical}\n` });
+    expect(c3(f), JSON.stringify(c3(f), null, 2)).toEqual([]);
   });
 });
 
