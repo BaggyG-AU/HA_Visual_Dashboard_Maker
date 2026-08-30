@@ -1825,22 +1825,34 @@ added an entire round on its own.** **The honest total is larger than the headli
 counts make it sound, and the "measure earlier" conclusion below is supported by
 the arc but does not excuse the avoidable majority of this list.**
 
-⭐⭐ **WHAT THE OWNER RULED ON 2026-08-31, AFTER BEING SHOWN THE 17-OF-18 NUMBER.**
-Not "be more careful" — a structural change, because the measured cause was
-structural: **the plan was an ungated surface.** `tools/checks` runs eslint,
-prettier, tsc and vitest; against this document prettier checked its FORMATTING
-and nothing checked its CONTENT, so every round handed the reviewer an artifact no
-check had read. Two moves: **(1)** the per-round record moved out (§9), so an edit
-to the history can no longer contradict the specification; **(2)** a **plan
-consistency checker** gates this document the way the gate covers code — keyed on
-the classes that actually bit, and **proved to fire on known-bad input before
-being trusted**: run against revision 4 it reports `expectSelectShows is defined
-in a code block but never called` (SP-15), and against revision 5 `leg 1 is
+⭐⭐ **WHAT THE OWNER RULED ON 2026-08-31, AFTER BEING SHOWN THE SELF-INFLICTED
+RATIO AS IT STOOD AT THAT MOMENT** (the live figure is in §7.5 and this sentence
+deliberately does not restate it). Not "be more careful" — a structural change,
+because the measured cause was structural: **the plan was an ungated surface.**
+`tools/checks` runs eslint, prettier, tsc and vitest; against this document
+prettier checked its FORMATTING and nothing checked its CONTENT, so every round
+handed the reviewer an artifact no check had read. Two moves: **(1)** the per-round
+record moved out (§9); **(2)** a **plan consistency checker** gates this document
+the way the gate covers code — keyed on the classes that actually bit, and proved
+to fire on known-bad input: against revision 4 it reports `expectSelectShows is
+defined in a code block but never called` (SP-15), and against revision 5 `leg 1 is
 scheduled at step 2 but the repaired helper it needs is only built at step 3`
-(SP-20). **Both SEV-1 blockers, caught mechanically in milliseconds, by the check
-that did not exist.** ⓘ It lands as its own change off `main` — it is code, and
-putting it on this branch would break the docs-only property the reviewer verifies
-each round.
+(SP-20). ⓘ It lands as its own change off `main` — it is code, and putting it on
+this branch would break the docs-only property the reviewer verifies each round.
+
+⚠⚠⚠ **AND REVISION 6 STATED MOVE (1) AS "AN EDIT TO THE HISTORY CAN NO LONGER
+CONTRADICT THE SPECIFICATION". THAT WAS FALSE WHEN IT WAS WRITTEN, AND ROUND 6
+MEASURED IT SO.** A file boundary is not a consistency mechanism: the history's own
+preamble restated the totals while its SP-22 row claimed the file stated none.
+**Separation made the contradiction easier to SEE; only the checker makes it
+impossible to SHIP.** ⚠⚠ **And move (2) has to be stated at its true strength too:
+the checker was proved to fire on the two classes above and was then trusted on
+everything else — and it returned a CLEAN PASS on revision 6 while three
+contradictions were live.** Its three defects (it read only this file; it was
+anchored on two exact phrasings; it parsed "twenty-four" as 4) are recorded in the
+history's round-6 section and fixed on PR #154. **"Proved to fire on known-bad
+input" is evidence for the inputs it was fired on, and for nothing else** — which
+is the rule this plan already cites and the tool built to enforce it broke first.
 
 ⭐ **The two sides of that number, both true.** The process is expensive, and it is
 also the only reason a mechanism that silently drives the wrong control was caught
