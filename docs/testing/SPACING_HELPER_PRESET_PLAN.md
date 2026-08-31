@@ -7,11 +7,12 @@ Owner gate: micah / BaggyG-AU
 **Status: PLAN ONLY, REVISION 8. No code has been written.**
 
 ⚠⚠⚠ **REVISION 8 IS A DELETION, NOT AN ADDITION.** The owner ruled on 2026-08-31,
-after seven review rounds, that the document itself had become the defect source:
-**17 of 30 findings were the plan contradicting or overclaiming itself, and the
-executable specification is 144 lines inside what had grown to 2,698.** Revisions
-2–7 each added 200–450 lines to close 2–5 findings, at a measured rate of roughly
-**one new finding per 60 lines added**. This revision deletes the archaeology —
+that the document itself had become the defect source: **the majority of findings
+were the plan contradicting or overclaiming itself, against an executable
+specification of `executable_spec_lines` (§7.5) inside what had grown to nearly
+2,700 lines.** Every revision added far more prose than the findings required.
+⚠ **The figures are in §7.5's `plan-running-totals` block and are not restated
+here** (SP-30). This revision deletes the archaeology —
 route analysis, superseded option comparisons, per-round narrative, the running-cost
 essay — and keeps the specification, the acceptance criteria and the live weak
 claims. **A line that does not exist cannot contradict another line.**
@@ -41,7 +42,8 @@ lines), and the helper asks for its own tag by name. That makes hitting the wron
 control impossible **by construction**, not by inference.
 
 **What it costs.** A two-line product change, a test-helper rewrite, one harness run
-before any CI cycle, and one more review round.
+before any CI cycle. ⚠ **The plan-review track is now CLOSED under the owner's
+stop rule — see §7.5.**
 
 **What happens if you do nothing.** The test keeps reddening, issue #145 stays hard
 to close, and the helper keeps the ability to drive the wrong control silently.
@@ -299,20 +301,30 @@ private async snapshotOtherHalf(testId: string): Promise<Record<string, string>>
   const deadline = Date.now() + 5000;
   const snapshot: Record<string, string> = {};
 
-  for (const id of this.otherHalf(testId)) {
+  /** ⚠⚠ SP-32: EVERY wait inside the budget must RECEIVE it. Revision 8 read the
+   *  remainder once per id, spent it on `toBeVisible`, then called `textContent()`
+   *  with no timeout — which does not inherit the deadline and silently falls back
+   *  to this repository's 30 s `actionTimeout` (`playwright.config.ts:53`). The
+   *  "one absolute budget" the comment advertised was not what the code bounded.
+   *  `textContent` takes `{ timeout }` (`playwright-core/types/types.d.ts:14554`). */
+  const remainingFor = (id: string, stage: string): number => {
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
       throw new Error(
-        `${testId}: the 5000 ms other-half capture budget expired before ${id} could be read`,
+        `${testId}: the 5000 ms other-half capture budget expired before ${stage} for ${id}`,
       );
     }
+    return remaining;
+  };
+
+  for (const id of this.otherHalf(testId)) {
     const value = this.window.getByTestId(id).locator('.ant-select-content-value');
     await expect(
       value,
       `${id}'s value node never became visible — the other-half guard cannot be captured`,
-    ).toBeVisible({ timeout: remaining });
+    ).toBeVisible({ timeout: remainingFor(id, 'the value node became visible') });
 
-    const text = await value.textContent();
+    const text = await value.textContent({ timeout: remainingFor(id, 'the value was read') });
     if (text === null) {
       throw new Error(
         `${testId}: could not read ${id}'s value; refusing to record an ` +
@@ -522,7 +534,7 @@ M2, option D on M6. **Still zero lines of shipped code.**
 
 ⭐⭐ **The owner's 2026-08-31 ruling, which this revision executes:** the document
 was the defect source, so **delete rather than check harder**. Four detection guards
-were tried across seven rounds — more rounds, a split, a consistency checker, two
+were tried across the arc — more rounds, a split, a consistency checker, two
 reading passes — and only **executing the question** (the harness) ever worked.
 **A stop rule now applies: any SEV-1 in round 8 ends the review track.**
 
@@ -552,3 +564,68 @@ reading passes — and only **executing the question** (the harness) ever worked
 Per-round dispositions for SP-1 … SP-30 live in
 [`SPACING_HELPER_PRESET_PLAN_HISTORY.md`](SPACING_HELPER_PRESET_PLAN_HISTORY.md).
 The reviewer's own documents are `docs/reviews/spacing-helper-preset-plan-codex-*`.
+
+---
+
+## 10. ⚠⚠⚠ BINDING IMPLEMENTATION CONDITIONS (SP-31)
+
+**The plan-review track is CLOSED.** Round 8 returned SEV-1-BLOCKED and, under the
+owner's stop rule, supplied **conditional implementation clearance** instead of
+asking for revision 9. The owner accepted it on 2026-08-31.
+
+⚠⚠ **THIS SECTION IS THE REVIEWER'S OWN TEXT, COPIED VERBATIM, AND IT IS BINDING.**
+It is reproduced rather than paraphrased on measured grounds: across rounds 7 and 8,
+**every finding repaired with the reviewer's supplied text resolved (SP-27, SP-28),
+and every one where the author re-authored around it did not (SP-29 partial, SP-30
+regressed).** Do not "improve" the wording below.
+
+> - **Scope:** S1 — `SpacingDSL` only, under the case-specific fix-lane ruling.
+>   `tabs.ts`, `popup.ts`, `BackgroundCustomizer`, snapshots and the manifest do not
+>   move.
+> - **SCOPE-ONLY:** REPAIRED with `popupFor` replaced by the document-global visible
+>   popup locator and the class-identity check removed; retain P3 and wired P4.
+> - **P4-ONLY:** SCOPE-ONLY with the document-global singleton/count guard removed,
+>   leaving the working global opener, real option click and wired P4. Leg 5 invokes
+>   `setPreset`, never `expectSelectShows` directly.
+> - **Leg 1:** open Margin preset, wait for its popup, invoke Padding preset
+>   immediately with no settling wait, and continuously record simultaneous visible
+>   popup count. `max < 2` is **UNRUN/no result**, not PASS.
+> - **Legs 2/3:** attach a capture-phase `mousedown` listener to the requested
+>   Padding root for the entire helper call; count suppressed events; remove it in
+>   `finally`. For REPAIRED, prove two suppressed attempts, requested
+>   `aria-expanded="false"`, foreign popup still visible and both pointer actions
+>   completed. Establish fresh state for each variant.
+> - **Leg 5:** record the exact failure message and process exit code; the message
+>   must name requested and moved ids.
+> - **Leg 8:** widen the real popup CSS leave motion test-side, initiate close, then
+>   immediately prove requested `aria-expanded="false"` while its owned popup is
+>   visible. The sole oracle is reopen-and-select success. Remove the style in
+>   `finally`.
+> - **Leg 9:** use a separate one-shot capture suppression; prove it fired once and
+>   removed itself, then prove success only after the second gesture.
+> - **Isolation:** every leg establishes and records its own starting state, and
+>   every listener/style override is proved gone before the next leg.
+> - **Halts:** stop and return to the owner if any M1–M9 fact is contradicted, if
+>   leg 3 does not silently succeed, or if a leg never observes its required state.
+
+⭐ **Why legs 2/3 need the WHOLE-CALL listener and not a one-shot** (SP-8, already
+measured once): the repaired opener makes **two** attempts. A one-shot listener is
+consumed by attempt 0; attempt 1 then opens the requested popup, and the leg never
+reaches the foreign-only failure it claims to test. **A one-shot construction here
+produces a green that means nothing.**
+
+### The five conditions the owner accepted
+
+1. This contract is binding, and the ruled scope stays `SpacingDSL` under the fix
+   lane.
+2. **Add ONLY the two option-B class hooks first, then run the four-control Electron
+   class smoke headlessly.** Each Select's popup must carry its own
+   `.<testid>-popup` class and **no popup may carry another Select's class**.
+   ⚠⚠ **Any missing, duplicate, shared or swapped mapping HALTS the work and
+   re-puts the mechanism to the owner. It is not characterisation.**
+3. Implement the helper and all three callers, with SP-32's bounded-read repair.
+4. Run legs 1–9 under the constructions above, then the caller, visual, repeat and
+   CI gates. **A leg whose required starting state was not observed is UNRUN, never
+   PASS.**
+5. Do not change snapshots, `tests/baseline/expected-failures.json`, `tabs.ts`,
+   `popup.ts` or `BackgroundCustomizer` as part of this work.

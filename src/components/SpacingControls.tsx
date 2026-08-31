@@ -152,6 +152,7 @@ export const SpacingControls: React.FC<SpacingControlsProps> = ({ form, onProgra
             ]}
             onChange={(nextMode: SpacingMode) => handleModeChange(fieldName, nextMode)}
             data-testid={`${testIdPrefix}-mode`}
+            classNames={{ popup: { root: `${testIdPrefix}-mode-popup` } }}
           />
         </Form.Item>
 
@@ -175,6 +176,7 @@ export const SpacingControls: React.FC<SpacingControlsProps> = ({ form, onProgra
             ]}
             onChange={(nextPreset: SpacingPreset) => handlePresetChange(fieldName, nextPreset)}
             data-testid={`${testIdPrefix}-preset`}
+            classNames={{ popup: { root: `${testIdPrefix}-preset-popup` } }}
           />
         </Form.Item>
 
