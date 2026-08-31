@@ -87,6 +87,45 @@ starting state was the pre-satisfied one M9a records — all four Selects at
 | **8**  | CHARACTERISATION    | REPAIRED   | requested `aria-expanded="false"` **while** its own popup was visible and mid-leave                         | Re-opened and selected, 1587 ms. Not acceptance evidence.                                                            |
 | **9**  | CHARACTERISATION    | REPAIRED   | one-shot suppression fired **once** and removed itself                                                      | Succeeded only after the second gesture, 2063 ms. Not acceptance evidence.                                           |
 
+### 2.0 The two messages the acceptance claim rests on
+
+§10 requires the exact message only for legs 5 and 6, which are in §2.1. These two
+are quoted as well because the acceptance claim is a claim about **what the helper
+did**, and the summary row above is a paraphrase of it.
+
+**Leg 2, REPAIRED — the refusal, before any click:**
+
+```
+expected exactly one popup carrying .spacing-padding-preset-popup — more than one
+means the class is rendered by more than one Select and is no longer an identity
+
+expect(locator).toHaveCount(expected) failed
+Locator:  locator('.ant-select-dropdown.spacing-padding-preset-popup')
+Expected: 1   Received: 0
+```
+
+Recorded alongside it: two suppressed `mousedown` events and two `mouseup` events on
+the requested Select's root — **both pointer actions completed** — the requested
+Select reading `aria-expanded="false"`, the foreign popup still visible, and **zero
+option clicks anywhere**.
+
+**Leg 3, SCOPE-ONLY — the same state, the scope guard silent, the alarm firing after
+the fact:**
+
+```
+spacing-padding-preset did not end up showing the value that was selected — the
+click may have landed on another control
+
+expect(locator).toHaveText(expected) failed
+Locator: getByTestId('spacing-padding-preset').locator('.ant-select-content-value')
+Expected pattern: /^Normal/i
+Received string:  "None (0px)"
+```
+
+The document-global singleton guard raised nothing, and the option click was
+recorded landing in `spacing-margin-preset-popup`. **The failure is a report that
+the wrong thing already happened, not a refusal to do it.**
+
 ### 2.1 The two recorded failure messages and exit codes
 
 §10 requires the exact message **and** the runner's process exit code for legs 5
