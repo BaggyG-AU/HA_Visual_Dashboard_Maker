@@ -29,7 +29,23 @@ export interface PlanFinding {
   code: string;
   /** What is wrong, in the plan author's terms. */
   message: string;
+  /**
+   * ADVISORY findings are reported but never block.
+   *
+   * ⭐⭐⭐ Owner ruling 2026-09-03, after the independent review measured that
+   * C3's prose matching is simultaneously too blind and too loud. A check that
+   * cannot decide its property must not hold a gate: the DECIDABLE half of C3
+   * (exactly one marked `plan-running-totals` block) blocks, and the HEURISTIC
+   * half (prose frames) advises. ⚠ This narrows C3's claim rather than growing
+   * another regex — `if your fix for a proxy is a better proxy, you have not
+   * fixed it`.
+   */
+  advisory?: boolean;
 }
+
+/** The findings that FAIL a gate. Advisory findings are diagnostics only. */
+export const blockingFindings = (f: readonly PlanFinding[]): PlanFinding[] =>
+  f.filter((x) => !x.advisory);
 
 export interface PlanSources {
   /** The specification document. */
@@ -163,11 +179,19 @@ const blankSpans = (text: string): string =>
 
 export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFinding[] {
   const out: PlanFinding[] = [];
-  const add = (code: string, message: string) => out.push({ code, message });
+  const add = (code: string, message: string, advisory = false) =>
+    out.push(advisory ? { code, message, advisory } : { code, message });
 
-  // ---- C1 (SP-15): a method DEFINED in a code block must be CALLED somewhere.
+  // ---- C1 (SP-15): a method DEFINED in a code block must have a TEXTUAL CALLER.
   // P4 once survived as a definition, an inventory row and a harness leg with no
   // call site at all — three mentions read like a wired detector.
+  //
+  // ⚠⚠ THE CLAIM IS "ZERO TEXTUAL CALLERS", NOT "UNREACHABLE" (F6, 2026-09-03).
+  // This subtracts every `this.<name>(` occurrence, which is an INCOMING-EDGE
+  // count, not graph reachability: two private methods that only call each other
+  // have callers and are still unreachable from the live DSL. That case is
+  // pinned by a `KNOWN-OPEN:` test rather than described in prose. Deciding real
+  // reachability needs a TypeScript call graph, which this deliberately is not.
   const code = stripComments(codeBlocks(spec));
   const defined = new Set([...code.matchAll(DECL)].map((m) => m[1]));
   if (defined.size === 0) {
@@ -182,15 +206,23 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
     ...[...stripComments(dsl).matchAll(/this\.(\w+)\(/g)].map((m) => m[1]),
   ]);
   for (const name of [...defined].filter((d) => !called.has(d)).sort()) {
-    add('C1-ORPHAN', `\`${name}\` is defined in a code block but nothing calls it (SP-15)`);
+    add(
+      'C1-ORPHAN',
+      `\`${name}\` is defined in a code block and has NO TEXTUAL CALLER — no ` +
+        `\`this.${name}(\` appears in the plan's code blocks or in the live DSL (SP-15)`,
+    );
   }
 
   // ---- C2 (coverage): every finding raised must have a disposition row, in
   // either document, so the split cannot hide one.
   const both = `${spec}\n${history}`;
   const raised = new Set([...both.matchAll(/\bSP-(\d+)\b/g)].map((m) => Number(m[1])));
+  // ⚠ Emphasis is OPTIONAL (F5, 2026-09-03). The row `| SP-99 | … |` disposes
+  // SP-99 exactly as `| **SP-99** | … |` does; boldface was never part of the
+  // documented contract, and requiring it reported "no disposition row" for a
+  // perfectly valid row.
   const disposed = new Set(
-    [...both.matchAll(/\|\s*\*\*SP-(\d+)\*\*\s*\|/g)].map((m) => Number(m[1])),
+    [...both.matchAll(/\|\s*\*{0,2}_?SP-(\d+)_?\*{0,2}\s*\|/g)].map((m) => Number(m[1])),
   );
   for (const n of [...raised].filter((n) => !disposed.has(n)).sort((a, b) => a - b)) {
     add('C2-NODISPOSITION', `SP-${n} is referenced but has no disposition row`);
@@ -232,7 +264,40 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
     { subject: 'finding', source: '\\b([\\w-]+)\\s+findings?,?\\s+none\\s+false\\b' },
     { subject: 'finding', source: '\\bproduced\\s+([\\w-]+)\\s+findings?\\b' },
   ];
+  // ⭐⭐⭐ THE DECIDABLE HALF (F2, 2026-09-03) — AND THE ONLY PART OF C3 THAT
+  // BLOCKS. The plan declares §7.5's marked `plan-running-totals` block as the
+  // single home for every running total. C3 never parsed it, so "canonical block
+  // + ONE prose restatement" counted as ONE site and returned CLEAN — which is
+  // exactly the SP-30 defect C3 exists to catch, certified clean by C3 itself.
+  //
+  // ⚠⚠ ONE SITE PER SUBJECT, NEVER ONE PER KEY. The live block carries BOTH
+  // `reviewer_findings` and `findings_after_round_one`; counting per key would
+  // have made the live plan fire on the day this landed. Measured before writing.
+  const CANON_KEYS: ReadonlyArray<{ key: RegExp; subject: string }> = [
+    { key: /^\s*review_rounds_complete\s*:/m, subject: 'review-round' },
+    { key: /^\s*reviewer_findings\s*:/m, subject: 'finding' },
+    { key: /^\s*findings_after_round_one\s*:/m, subject: 'finding' },
+  ];
+  const canonBlocks = [...spec.matchAll(/^#\s*plan-running-totals\s*$([\s\S]*?)^```/gm)];
   const sites = new Map<string, string[]>();
+  if (canonBlocks.length !== 1) {
+    add(
+      'C3-NOCANONICAL',
+      `expected exactly ONE marked \`plan-running-totals\` block; found ` +
+        `${canonBlocks.length}. It is the declared home every other mention points at, ` +
+        `so without exactly one there is nothing to count against (SP-30)`,
+    );
+  } else {
+    const body = canonBlocks[0][1];
+    const seen = new Set<string>();
+    for (const { key, subject } of CANON_KEYS) {
+      if (key.test(body) && !seen.has(subject)) {
+        seen.add(subject);
+        sites.set(subject, [`plan: the canonical block declares ${subject}`]);
+      }
+    }
+  }
+
   for (const [file, text] of [
     ['plan', spec],
     ['history', history],
@@ -251,26 +316,79 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
         }
       });
   }
+  // ⚠⚠⚠ ADVISORY, NOT BLOCKING (owner ruling 2026-09-03). The frame list is an
+  // ENUMERATED heuristic and the independent review measured it failing in BOTH
+  // directions on the same counter: a second home inside quotes or written
+  // `the eleventh review round` is still missed, while ONE ordinary historical
+  // sentence ("Across two review rounds, option A was rejected") now collides
+  // with the canonical site and would have BLOCKED. Those are the same root
+  // cause — no regex decides what a number is ABOUT — so the honest fix is to
+  // narrow the claim, not to grow the list. The known misses are pinned by
+  // `KNOWN-OPEN:` tests in the spec.
   for (const [subject, where] of [...sites.entries()].sort()) {
     if (where.length > 1) {
       add(
         'C3-COUNTDRIFT',
-        `the ${subject} total is asserted at ${where.length} sites; it must be ` +
-          `stated ONCE and pointed at from everywhere else — ${where.join('; ')} (SP-22)`,
+        `ADVISORY: the ${subject} total looks asserted at ${where.length} sites; it ` +
+          `must be stated ONCE and pointed at from everywhere else — ` +
+          `${where.join('; ')} (SP-22). Heuristic: verify before acting.`,
+        true,
       );
     }
   }
 
   // ---- C4 (SP-20): a leg needing the repaired helper cannot precede it.
+  // ⚠⚠ FAILS CLOSED (F3, 2026-09-03). Every prerequisite below used to return a
+  // silent clean: a missing section, zero parsed steps, or no helper step made
+  // C4 indistinguishable from a valid sequence. `C4-UNVERIFIABLE` is a DISTINCT
+  // code on purpose — the committed `NOT leg 1` negative fixture asserts only
+  // that `C4-SEQUENCE` is absent, and a legitimate plan may schedule no leg 1.
   const seq = spec.match(/\*\*Then implementation\*\*[\s\S]*?(?=\n\d+\.\s\*\*|\n---)/);
+  if (!seq) {
+    add(
+      'C4-UNVERIFIABLE',
+      'no `**Then implementation**` section was found, so the leg/helper order ' +
+        'cannot be established. C4 must not read as clean when its input is absent (SP-20)',
+    );
+  }
   if (seq) {
     const steps = [...seq[0].matchAll(/\n\s+(\d+)\.\s+\*\*(.*?)\*\*/g)].map(
       (m) => [Number(m[1]), m[2]] as const,
     );
-    const helperAt = steps.find(([, t]) => /the helper/i.test(t))?.[0];
+    const helperSteps = steps.filter(([, t]) => /the helper/i.test(t));
+    const helperAt = helperSteps[0]?.[0];
+    const legSteps = steps.filter(
+      ([, t]) => /\bleg\s*1\b(?!\d)/i.test(t) && !/\bNOT\s+leg\s*1\b/i.test(t),
+    );
+    // ⚠ DUPLICATE anchors are ambiguous, not clean: "first match wins" silently
+    // picks one of two possible orders. ⓘ A MISSING leg 1 is deliberately NOT
+    // unverifiable — a plan may legitimately schedule none, and the committed
+    // `NOT leg 1` fixture asserts exactly that. Absence of the helper IS
+    // unverifiable, because C4's whole question is "did the helper come first".
+    if (helperSteps.length > 1 || legSteps.length > 1) {
+      add(
+        'C4-UNVERIFIABLE',
+        `the implementation order names ${helperSteps.length} helper steps and ` +
+          `${legSteps.length} leg-1 steps; with duplicates the order is ambiguous ` +
+          `and "first match wins" would silently pick one (SP-20)`,
+      );
+    }
     const legAt = steps.find(
       ([, t]) => /\bleg\s*1\b(?!\d)/i.test(t) && !/\bNOT\s+leg\s*1\b/i.test(t),
     )?.[0];
+    if (steps.length === 0) {
+      add(
+        'C4-UNVERIFIABLE',
+        'the `**Then implementation**` section parsed ZERO numbered steps — the ' +
+          'nested-list form is load-bearing and flattening it once made C4 silently dead (SP-20)',
+      );
+    } else if (helperAt === undefined) {
+      add(
+        'C4-UNVERIFIABLE',
+        'no helper step was found in the implementation order, so the ' +
+          'prerequisite C4 checks against does not exist (SP-20)',
+      );
+    }
     if (helperAt !== undefined && legAt !== undefined && legAt < helperAt) {
       add(
         'C4-SEQUENCE',

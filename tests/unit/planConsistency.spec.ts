@@ -9,7 +9,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { checkPlan, type PlanFinding } from '../support/planConsistency';
+import { blockingFindings, checkPlan, type PlanFinding } from '../support/planConsistency';
 
 const codes = (f: { code: string }[]) => f.map((x) => x.code);
 
@@ -271,12 +271,156 @@ describe('planConsistency — the real plan, when it is present on this branch',
   const HIST = 'docs/testing/SPACING_HELPER_PRESET_PLAN_HISTORY.md';
   const DSL = 'tests/support/dsl/spacing.ts';
 
-  it.skipIf(!existsSync(SPEC))('reports no finding against the live plan', () => {
+  // ⚠⚠⚠ AN ORDINARY `it`, AND THE READS ARE UNCONDITIONAL (F1, 2026-09-03).
+  // This was `it.skipIf(!existsSync(SPEC))` with `existsSync(…) ? … : ''`
+  // fallbacks, which meant DELETING OR RENAMING THE PLAN DELETED ITS OWN GATE:
+  // Vitest recorded a skip, the runner stayed green, and the gate certified
+  // nothing. A mandatory input must be lifecycle-bound to the check that
+  // requires it. Measured fail-against-old: with the plan renamed, the old spec
+  // reported `23 passed | 1 skipped` and exited 0; this one fails naming the path.
+  it('reports no BLOCKING finding against the live plan', () => {
+    for (const path of [SPEC, HIST, DSL]) {
+      if (!existsSync(path)) {
+        throw new Error(
+          `the live plan gate requires ${path}, which is missing. If this file was ` +
+            `deliberately moved or retired, update this test in the same commit — ` +
+            `do not let the gate disappear with its target.`,
+        );
+      }
+    }
     const findings = checkPlan({
       spec: readFileSync(SPEC, 'utf8'),
-      history: existsSync(HIST) ? readFileSync(HIST, 'utf8') : '',
-      dsl: existsSync(DSL) ? readFileSync(DSL, 'utf8') : '',
+      history: readFileSync(HIST, 'utf8'),
+      dsl: readFileSync(DSL, 'utf8'),
     });
-    expect(findings, JSON.stringify(findings, null, 2)).toEqual([]);
+    const blocking = blockingFindings(findings);
+    expect(blocking, JSON.stringify(findings, null, 2)).toEqual([]);
+  });
+
+  it('CONTROL: the live plan carries exactly ONE canonical totals block', () => {
+    const f = checkPlan({ spec: readFileSync(SPEC, 'utf8') });
+    expect(codes(f)).not.toContain('C3-NOCANONICAL');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Controls added 2026-09-03 answering the independent review's F1-F6. Each was
+// proved to FAIL against the pre-repair implementation (`94aee56`) before it was
+// credited; the disposition table records the per-finding evidence.
+// ---------------------------------------------------------------------------
+describe('planConsistency — fail-closed structure (review F2/F3)', () => {
+  const CANON = '\n```yaml\n# plan-running-totals\nreview_rounds_complete: 7\n```\n';
+
+  it('F2: FIRES when the canonical totals block is MISSING', () => {
+    const f = checkPlan({ spec: WIRED });
+    expect(codes(f)).toContain('C3-NOCANONICAL');
+  });
+
+  it('F2: FIRES when the canonical totals block is DUPLICATED', () => {
+    const f = checkPlan({ spec: `${WIRED}${CANON}${CANON}` });
+    expect(codes(f)).toContain('C3-NOCANONICAL');
+  });
+
+  it('F2: the canonical block counts as a SITE — block + ONE prose restatement is drift', () => {
+    const f = checkPlan({ spec: `${WIRED}${CANON}\nSeven review rounds complete.\n` });
+    expect(codes(f)).toContain('C3-COUNTDRIFT');
+  });
+
+  it('F3: FIRES when the implementation section is ABSENT', () => {
+    const f = checkPlan({ spec: `${WIRED}${CANON}` });
+    expect(codes(f)).toContain('C4-UNVERIFIABLE');
+  });
+
+  it('F3: FIRES when the section exists but no HELPER step does', () => {
+    const spec =
+      `${WIRED}${CANON}\n4. **Then implementation**, in this order:\n` +
+      '   1. **The `src/` change first**\n   2. **Leg 1 first among the mechanism legs**\n---\n';
+    expect(codes(checkPlan({ spec }))).toContain('C4-UNVERIFIABLE');
+  });
+
+  it('F3: FIRES when the helper anchor is DUPLICATED — the order is then ambiguous', () => {
+    const spec =
+      `${WIRED}${CANON}\n4. **Then implementation**, in this order:\n` +
+      '   1. **Then the helper**\n   2. **Then the helper again**\n' +
+      '   3. **Leg 1 first among the mechanism legs**\n---\n';
+    expect(codes(checkPlan({ spec }))).toContain('C4-UNVERIFIABLE');
+  });
+
+  it('F3: CONTROL — a MISSING leg 1 is deliberately NOT unverifiable', () => {
+    // A plan may legitimately schedule no leg 1; the committed `NOT leg 1`
+    // fixture depends on this. Absence of the HELPER is the unverifiable case.
+    const spec =
+      `${WIRED}${CANON}\n4. **Then implementation**, in this order:\n` +
+      '   1. **The `src/` change first**\n   2. **Then the helper**\n---\n';
+    expect(codes(checkPlan({ spec }))).not.toContain('C4-UNVERIFIABLE');
+  });
+
+  it('F3: FIRES when the nested list is FLATTENED to zero parsed steps', () => {
+    const spec =
+      `${WIRED}${CANON}\n4. **Then implementation**, in this order:\n` +
+      '- **Then the helper**\n- **Leg 1 first among the mechanism legs**\n---\n';
+    expect(codes(checkPlan({ spec }))).toContain('C4-UNVERIFIABLE');
+  });
+});
+
+describe("planConsistency — the review's SEV-3 findings (F5/F6)", () => {
+  it('F5: a disposition row disposes WITHOUT bold emphasis', () => {
+    const spec = `${WIRED}\nSP-99 was raised.\n\n| SP-99 | 1 | RESOLVED | fixed |\n`;
+    expect(codes(checkPlan({ spec }))).not.toContain('C2-NODISPOSITION');
+  });
+
+  it('F5: CONTROL — the bold form still disposes', () => {
+    const spec = `${WIRED}\nSP-98 was raised.\n\n| **SP-98** | 1 | RESOLVED | fixed |\n`;
+    expect(codes(checkPlan({ spec }))).not.toContain('C2-NODISPOSITION');
+  });
+
+  it('F5: CONTROL — a genuinely undispositioned finding still FIRES', () => {
+    expect(codes(checkPlan({ spec: `${WIRED}\nSP-97 was raised.\n` }))).toContain(
+      'C2-NODISPOSITION',
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// KNOWN-OPEN limits. These assert what the checker CURRENTLY does, honestly, so
+// that anyone who later closes a hole breaks the test and must correct the
+// claim in the same commit. They are NOT aspirations.
+// ---------------------------------------------------------------------------
+describe('planConsistency — KNOWN-OPEN limits (recorded, not fixed)', () => {
+  const CANON = '\n```yaml\n# plan-running-totals\nreview_rounds_complete: 7\n```\n';
+
+  it('KNOWN-OPEN: C1 counts textual callers, so a disconnected CYCLE reads as wired', () => {
+    // Two private methods that only call each other are unreachable from the
+    // live DSL, and C1 does not say so. Closing this needs a real call graph.
+    const spec =
+      '```ts\nprivate async a(): Promise<void> { await this.b(); }\n' +
+      'private async b(): Promise<void> { await this.a(); }\n```\n';
+    expect(codes(checkPlan({ spec }))).not.toContain('C1-ORPHAN');
+  });
+
+  it('KNOWN-OPEN: C3 cannot see a second home stated inside QUOTES', () => {
+    const f = checkPlan({
+      spec: `${WIRED}${CANON}\nCurrent status: "six review rounds complete".\n`,
+    });
+    expect(codes(f)).not.toContain('C3-COUNTDRIFT');
+  });
+
+  it('KNOWN-OPEN: C3 skips number forms `numberFrom` cannot parse', () => {
+    for (const form of ['the eleventh review round', 'the 11th review round']) {
+      const f = checkPlan({ spec: `${WIRED}${CANON}\nSee ${form}.\n` });
+      expect(codes(f), form).not.toContain('C3-COUNTDRIFT');
+    }
+  });
+
+  it('KNOWN-OPEN: C3 prose matches are ADVISORY, so a false positive cannot block', () => {
+    // Two true historical facts about different sub-arcs collide in one bucket.
+    // The finding is raised, but it must never fail a gate.
+    const f = checkPlan({
+      spec:
+        `${WIRED}${CANON}\nAcross two review rounds, option A was rejected.\n` +
+        'Across three review rounds, option B was refined.\n',
+    });
+    expect(codes(f)).toContain('C3-COUNTDRIFT');
+    expect(blockingFindings(f).map((x) => x.code)).not.toContain('C3-COUNTDRIFT');
   });
 });
