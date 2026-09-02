@@ -345,3 +345,16 @@ survived an independent review.
 block at the end of this session's response for the drawer ID actually filed.
 Kept here too per the disposition-table convention in case a future round
 needs the pointer without re-deriving it.)
+
+⚠ **Round 2's filing is OWED, not filed.** The MemPalace write was refused —
+`Peer MCP writer active; this server is read-only for mutating tools` — because
+the per-palace writer lease was held by another server, almost certainly the
+§3.4 follow-up reviewer's own, which filed
+`drawer_havdm_review_6fa17afeedaf18b83fd33c96` minutes earlier. Per ruling
+**MP-LEASE** the write was **not retried**, `MEMPALACE_MCP_ALLOW_PEER_WRITER`
+was **not set**, and **no process was killed**. The full drawer content and the
+paired diary entry are staged verbatim at
+`~/.mempalace/pending/20260903-havdm-decisions-spacing-round2-dispositions.md`
+for a write-enabled agent to file as `wing=havdm`, `room=decisions`,
+`added_by="claude-code"`. ⓘ Reads were unaffected throughout; only the write
+was refused.
