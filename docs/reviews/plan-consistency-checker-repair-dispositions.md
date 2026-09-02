@@ -63,10 +63,15 @@ tests failed against old**, and they are exactly the 9 that must:
    (9 failed | 31 passed)
 ```
 
-The six that **passed** against old are correct to pass: the two F5
+The **seven** that passed against old are correct to pass: the two F5
 sanity-controls and the `CONTROL: exactly ONE canonical block` prove the new
-controls are not vacuous in the other direction, and the three `KNOWN-OPEN:` pins
-assert **unchanged** behaviour by design.
+controls are not vacuous in the other direction; the three `KNOWN-OPEN:` pins
+assert **unchanged** behaviour by design; and `F3: CONTROL — a MISSING leg 1 is
+deliberately NOT unverifiable` pins the boundary the repair deliberately drew.
+⚠ This sentence said "six" and omitted the missing-leg control until the
+follow-up review's R3 corrected it — a count edited by hand while the
+enumeration behind it was left alone, which is the exact defect C3 exists to
+catch, committed in the document describing C3's repair.
 
 **F1 was proved separately**, because its discriminator is a missing file rather
 than an input: with `SPACING_HELPER_PRESET_PLAN.md` renamed, the **old** spec
@@ -125,3 +130,130 @@ says so to whoever hits it.
   unverifiable case, because C4's whole question is whether the helper came
   first. Both halves are pinned by controls. **This is a deliberate narrowing of
   the required correction, not an oversight — reopen it if you disagree.**
+
+---
+
+## Round 2 — 2026-09-03, answering `plan-consistency-checker-codex-followup-review.md` (SEV-1-BLOCKED, `7909c6f`)
+
+The follow-up confirmed F1, F3, F4, F5 RESOLVED and F6 ACKNOWLEDGED-SUFFICIENT,
+and **withdrew its own round-1 demand** that a missing leg-1 anchor make C4
+unverifiable — the narrowing this table proposed was upheld. It marked **F2
+REGRESSED / STILL OPEN** and raised R1 (SEV 1), R2 (SEV 2) and R3 (SEV 3).
+
+### ⚠⚠ Why round 1's repair failed, stated before the fix
+
+All three findings are **one error wearing three faces: the author verified the
+property implemented, not the property claimed.**
+
+- **R1** — the code enforced _"the marker `# plan-running-totals` occurs exactly
+  once"_; the claim was _"the canonical block exists exactly once and declares
+  its governed keys"_. Marker-cardinality is a count of **containers**; the claim
+  was about **contents**. That is the founding case study of this project's own
+  claims rule, reproduced inside the checker built to catch it.
+- **R2** — the code implemented a **filter** and the contract claimed a
+  **reporting channel**. `blockingFindings` made advisories not block; nothing
+  made them reported. The word "reported" was written in the type comment and
+  never built.
+- **R3** — the counts were edited by hand (8→9, 14→16) and the enumeration
+  explaining them was not. A count beside the list it summarises drifts on the
+  next edit.
+
+**Why round 1's controls could not have caught it.** All three F2 controls varied
+ONE axis — marker count — which is the same axis the implementation keyed on. The
+control set and the code were keyed on the same dimension, so the controls could
+only confirm the axis already thought of. The class was never stated as a
+behaviour before a key was chosen.
+
+**Why the author's own double-check also missed it.** Its hostile population was
+**inherited entirely from the round-1 review**. No new adversarial input was
+generated for code that was newly written, so no finding on the list could have
+covered a validator that did not exist when the list was made. The fix round is
+unreviewed new work, and it was checked against the previous work's findings.
+
+### Dispositions
+
+| ID     | Sev | Disposition  | What was done                                                                                                                                                                                                                                                                        |
+| ------ | --- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **R1** | 1   | **RESOLVED** | The marker regex is replaced by a **line-based fenced-block parse**: an opening fence is required, the marker must be the block's first content line, the fence must close, each governed key must appear **exactly once**, and any **unfenced** marker outside a fence invalidates. |
+| **R2** | 2   | **RESOLVED** | `reportAdvisories(findings, log = console.warn)` is a real delivery path returning how many it surfaced; the live gate calls it on every run. The control exercises the **consumer**, asserting a visible diagnostic **and** that the gate still passes.                             |
+| **R3** | 3   | **RESOLVED** | Six → seven, and the omitted `F3: CONTROL — a MISSING leg 1` is now named in the round-1 section, with a note recording why the miscount happened.                                                                                                                                   |
+
+### The method change, and the defect it found that no review contained
+
+The hostile population for R1 was generated **from the grammar itself** rather
+than from the review's finding list — 23 cases across fence forms (backtick,
+tilde, four-backtick, indented, untagged), marker position, key shape
+(commented-out, substring, outside-the-block, indented), cardinality, and
+termination.
+
+⭐⭐⭐ **That found a fail-open present in NO review: an UNFENCED SHADOW HOME.**
+With the real block intact, appending an unfenced `# plan-running-totals` plus
+all three governed keys stating `99/88/77` returned **CLEAN** — a parser that
+only _finds_ fenced blocks cannot _see_ an unfenced one. It is now detected and
+pinned by a committed control. **Final adversarial result: 23 ok, 0 FAIL.**
+
+### Fail-against-current evidence, with the non-discriminators named
+
+The repaired spec was run against the round-1 repair at `69f458c`:
+**12 failed / 45 passed (57)**. The 12 failures are the R1 grammar controls —
+empty payload, each of three governed keys missing, each of three duplicated with
+a conflicting value, the unfenced shadow home, marker-not-first-line,
+key-outside-the-block, key-commented-out, and the substring control.
+
+⚠ **Four new controls do NOT discriminate, and are not counted as if they did:**
+
+- **Two are controls meant to pass** — the well-formed block, and a prose mention
+  of the marker not being a home.
+- **Two pass against `69f458c` for the wrong reason** —
+  `unfenced (no opening fence)` and `fence never closed` already emit
+  `C3-NOCANONICAL` there, because the old regex found no match at all. They are
+  correct assertions of the new behaviour and are **not** old-vs-new
+  discriminators.
+- **The R2 control cannot be run against `69f458c` at all.** `reportAdvisories`
+  does not exist at that commit, so the spec would not compile; shimming it in
+  would supply the very function under test. Its discriminator is **structural —
+  the function's absence** — stated rather than dressed up as a passing test.
+
+### Blast-radius statement (OA §3.4)
+
+**Upstream reliances.** `tests/support/planConsistency.ts` has exactly one
+consumer in the repository — its own spec:
+`grep -rln "planConsistency" --include=*.ts . | grep -v node_modules`. It reads
+`docs/testing/SPACING_HELPER_PRESET_PLAN.md`, its `_HISTORY` companion, and
+`tests/support/dsl/spacing.ts`.
+
+**Downstream consumers.** `./tools/checks` via Vitest, and CI's `ci` job. No
+`src/`, no Electron, no e2e/integration spec, no snapshot, no baseline manifest,
+no governance text.
+
+**Measured non-regression.**
+
+- **Neither plan document was edited** —
+  `git diff --quiet 7909c6f -- docs/testing/SPACING_HELPER_PRESET_PLAN.md docs/testing/SPACING_HELPER_PRESET_PLAN_HISTORY.md`.
+- The live plan stays clean. ⚠ The marker **also appears in live prose at
+  `SPACING_HELPER_PRESET_PLAN.md:14`** inside an inline code span; the
+  stray-marker rule correctly ignores it, and a control pins that.
+- All 41 prior tests pass unchanged.
+- Unit population **1453/105 → 1470/105** (+17 controls, no new file).
+- Gate at the repair commit: `REAL_EXIT=0`, 4/4 steps, lint 0 errors / 145
+  warnings, **1470 passed / 105 files**.
+
+**A behaviour change the owner should see, not discover.** A plan that documents
+an **example** totals block now blocks, because two fenced blocks are genuinely
+ambiguous. Ordinary prose edits and new historical sentences stay clean —
+measured. If that trade is wrong, the remedy is to mark the example block with a
+different marker, not to loosen the grammar.
+
+**An asymmetry introduced deliberately.** The canonical-block rules scan only the
+**plan**, not the history. The history names the marker three times in prose. A
+future change that extends the scan to the history owes the same stray-marker
+care this round added.
+
+### What this repair does NOT establish
+
+- C3 still blocks only on the canonical block's grammar. **Prose interpretation
+  remains advisory**, and its two blind spots — a second home inside quotes, or
+  in a number form `numberFrom` cannot parse — remain pinned as `KNOWN-OPEN:`.
+- C1 still does not decide reachability.
+- The grammar was attacked with 23 constructions. That is a **tested population,
+  not a proof**; a construction nobody thought of is not excluded.

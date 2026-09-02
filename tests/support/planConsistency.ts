@@ -47,6 +47,32 @@ export interface PlanFinding {
 export const blockingFindings = (f: readonly PlanFinding[]): PlanFinding[] =>
   f.filter((x) => !x.advisory);
 
+/** The findings that are REPORTED but never fail a gate. */
+export const advisoryFindings = (f: readonly PlanFinding[]): PlanFinding[] =>
+  f.filter((x) => Boolean(x.advisory));
+
+/**
+ * Surface every advisory finding, and return how many were surfaced.
+ *
+ * ⚠⚠⚠ THIS EXISTS BECAUSE "ADVISORY" MEANT "SILENTLY DISCARDED" (review R2).
+ * The contract said advisories are "reported but never block". `blockingFindings`
+ * delivered the second half and nothing delivered the first: the only consumer
+ * filtered them out and asserted on the remainder, so an advisory reached no
+ * human at all. A NON-BLOCKING FINDING IS NOT A DELIVERED ADVISORY MERELY
+ * BECAUSE A HELPER RETURNS IT — some real consumer must surface it on a PASSING
+ * run, and a control must exercise that consumer, not the producer.
+ *
+ * `log` is injectable so the delivery path itself is testable.
+ */
+export function reportAdvisories(
+  findings: readonly PlanFinding[],
+  log: (message: string) => void = console.warn,
+): number {
+  const advisories = advisoryFindings(findings);
+  for (const a of advisories) log(`[planConsistency ADVISORY] ${a.code}: ${a.message}`);
+  return advisories.length;
+}
+
 export interface PlanSources {
   /** The specification document. */
   spec: string;
@@ -264,37 +290,124 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
     { subject: 'finding', source: '\\b([\\w-]+)\\s+findings?,?\\s+none\\s+false\\b' },
     { subject: 'finding', source: '\\bproduced\\s+([\\w-]+)\\s+findings?\\b' },
   ];
-  // ⭐⭐⭐ THE DECIDABLE HALF (F2, 2026-09-03) — AND THE ONLY PART OF C3 THAT
-  // BLOCKS. The plan declares §7.5's marked `plan-running-totals` block as the
-  // single home for every running total. C3 never parsed it, so "canonical block
-  // + ONE prose restatement" counted as ONE site and returned CLEAN — which is
-  // exactly the SP-30 defect C3 exists to catch, certified clean by C3 itself.
+  // ⭐⭐⭐ THE DECIDABLE HALF OF C3 — AND THE ONLY PART THAT BLOCKS.
   //
-  // ⚠⚠ ONE SITE PER SUBJECT, NEVER ONE PER KEY. The live block carries BOTH
-  // `reviewer_findings` and `findings_after_round_one`; counting per key would
-  // have made the live plan fire on the day this landed. Measured before writing.
-  const CANON_KEYS: ReadonlyArray<{ key: RegExp; subject: string }> = [
-    { key: /^\s*review_rounds_complete\s*:/m, subject: 'review-round' },
-    { key: /^\s*reviewer_findings\s*:/m, subject: 'finding' },
-    { key: /^\s*findings_after_round_one\s*:/m, subject: 'finding' },
+  // ⚠⚠⚠ THE CONTRACT, STATED AS A GRAMMAR BEFORE IT IS PARSED. A valid canonical
+  // home is: EXACTLY ONE FENCED CODE BLOCK in the plan whose FIRST CONTENT LINE
+  // is exactly `# plan-running-totals`, in which EACH GOVERNED KEY APPEARS
+  // EXACTLY ONCE. Everything else is invalid, and the invalid cases are
+  // enumerated as behaviours rather than discovered one at a time:
+  //   (1) no such block   (2) more than one   (3) marker present but UNFENCED
+  //   (4) fence never closed   (5) a governed key missing
+  //   (6) a governed key repeated (same OR conflicting value)
+  //   (7) the marker occurring only in PROSE or an inline code span
+  //
+  // ⚠⚠ (7) IS NOT HYPOTHETICAL: the live plan names `plan-running-totals` in an
+  // inline code span at line 14, and the history names it three times. A matcher
+  // that finds the marker anywhere counts those as homes.
+  //
+  // ⓘ THIS REPLACES A REGEX THAT VALIDATED A MARKER OCCURRENCE, NOT A BLOCK
+  // (review R1). `/^# plan-running-totals$([\s\S]*?)^```/` started at the marker
+  // line and ended at ANY later closing fence: it never required an opening
+  // fence, and it accepted an empty payload, a missing key, or a key repeated
+  // with a conflicting value. Measured: five separate corruptions of the REAL
+  // plan all returned zero blockers. A count of CONTAINERS is not a count of
+  // CONTENTS. The parse below is line-based for that reason — a fence is a
+  // state, not a pattern.
+  const GOVERNED: ReadonlyArray<{ key: string; subject: string }> = [
+    { key: 'review_rounds_complete', subject: 'review-round' },
+    { key: 'reviewer_findings', subject: 'finding' },
+    { key: 'findings_after_round_one', subject: 'finding' },
   ];
-  const canonBlocks = [...spec.matchAll(/^#\s*plan-running-totals\s*$([\s\S]*?)^```/gm)];
+  const MARKER = '# plan-running-totals';
+
+  const specLines = spec.split('\n');
+  const canonical: string[][] = [];
+  let unterminated = false;
+  // ⚠⚠ A STRAY UNFENCED MARKER IS A SHADOW HOME. Found by attacking the grammar,
+  // not by the review: with the real block intact, appending an UNFENCED
+  // `# plan-running-totals` plus all three governed keys stating 99/88/77 read
+  // CLEAN, because a parser that only FINDS fenced blocks cannot SEE an unfenced
+  // one. Any line outside a fence that is exactly the marker invalidates.
+  let strayMarkers = 0;
+  {
+    let inFence = false;
+    let fenceDelim = '';
+    let fenceWidth = 0;
+    for (const line of specLines) {
+      const f = /^\s{0,3}(`{3,}|~{3,})/.exec(line);
+      if (!inFence && f) {
+        inFence = true;
+        fenceDelim = f[1][0];
+        fenceWidth = f[1].length;
+        continue;
+      }
+      if (inFence) {
+        if (new RegExp(`^\\s{0,3}\\${fenceDelim}{${fenceWidth},}\\s*$`).test(line)) inFence = false;
+        continue;
+      }
+      if (line.trim() === MARKER) strayMarkers++;
+    }
+  }
+  for (let i = 0; i < specLines.length; i++) {
+    const open = /^\s{0,3}(`{3,}|~{3,})/.exec(specLines[i]);
+    if (!open) continue;
+    const delim = open[1][0];
+    const width = open[1].length;
+    const body: string[] = [];
+    let closed = false;
+    let j = i + 1;
+    for (; j < specLines.length; j++) {
+      const close = new RegExp(`^\\s{0,3}\\${delim}{${width},}\\s*$`).exec(specLines[j]);
+      if (close) {
+        closed = true;
+        break;
+      }
+      body.push(specLines[j]);
+    }
+    if (body.length > 0 && body[0].trim() === MARKER) {
+      canonical.push(body);
+      if (!closed) unterminated = true;
+    }
+    i = closed ? j : specLines.length;
+  }
+
   const sites = new Map<string, string[]>();
-  if (canonBlocks.length !== 1) {
+  if (strayMarkers > 0) {
     add(
       'C3-NOCANONICAL',
-      `expected exactly ONE marked \`plan-running-totals\` block; found ` +
-        `${canonBlocks.length}. It is the declared home every other mention points at, ` +
+      `found ${strayMarkers} UNFENCED \`${MARKER}\` marker(s) outside any code fence. ` +
+        `An unfenced marker with governed keys under it is a second home the fenced ` +
+        `parse cannot see (SP-30)`,
+    );
+  }
+  if (canonical.length !== 1) {
+    add(
+      'C3-NOCANONICAL',
+      `expected EXACTLY ONE fenced \`${MARKER}\` block in the plan; found ` +
+        `${canonical.length}. It is the declared home every other mention points at, ` +
         `so without exactly one there is nothing to count against (SP-30)`,
     );
+  } else if (unterminated) {
+    add('C3-NOCANONICAL', `the \`${MARKER}\` block is never closed by a fence (SP-30)`);
   } else {
-    const body = canonBlocks[0][1];
+    const body = canonical[0];
+    const bad: string[] = [];
     const seen = new Set<string>();
-    for (const { key, subject } of CANON_KEYS) {
-      if (key.test(body) && !seen.has(subject)) {
+    for (const { key, subject } of GOVERNED) {
+      const n = body.filter((l) => new RegExp(`^\\s*${key}\\s*:`).test(l)).length;
+      if (n !== 1) {
+        bad.push(`\`${key}\` appears ${n} times (expected exactly 1)`);
+      } else if (!seen.has(subject)) {
         seen.add(subject);
         sites.set(subject, [`plan: the canonical block declares ${subject}`]);
       }
+    }
+    if (bad.length > 0) {
+      add(
+        'C3-NOCANONICAL',
+        `the \`${MARKER}\` block does not satisfy its own grammar — ${bad.join('; ')} ` + `(SP-30)`,
+      );
     }
   }
 

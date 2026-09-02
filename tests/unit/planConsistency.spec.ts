@@ -9,7 +9,13 @@
  */
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { blockingFindings, checkPlan, type PlanFinding } from '../support/planConsistency';
+import {
+  advisoryFindings,
+  blockingFindings,
+  checkPlan,
+  reportAdvisories,
+  type PlanFinding,
+} from '../support/planConsistency';
 
 const codes = (f: { code: string }[]) => f.map((x) => x.code);
 
@@ -293,8 +299,30 @@ describe('planConsistency — the real plan, when it is present on this branch',
       history: readFileSync(HIST, 'utf8'),
       dsl: readFileSync(DSL, 'utf8'),
     });
+    // ⚠ The gate SURFACES advisories on a passing run (R2) and fails only on
+    // blocking findings. Reporting is part of the gate, not an afterthought.
+    reportAdvisories(findings);
     const blocking = blockingFindings(findings);
     expect(blocking, JSON.stringify(findings, null, 2)).toEqual([]);
+  });
+
+  it('R2: the gate PATH surfaces an advisory on a PASSING run', () => {
+    // Exercises the consumer, not the producer: a real advisory must reach a
+    // logger while the gate still passes. Proving the filter works is NOT
+    // proving delivery works — that was the R2 defect.
+    const spec = `${readFileSync(SPEC, 'utf8')}\nAcross two review rounds, option A was rejected.\n`;
+    const findings = checkPlan({
+      spec,
+      history: readFileSync(HIST, 'utf8'),
+      dsl: readFileSync(DSL, 'utf8'),
+    });
+    const seen: string[] = [];
+    const surfaced = reportAdvisories(findings, (m) => seen.push(m));
+    expect(advisoryFindings(findings).length).toBeGreaterThan(0);
+    expect(surfaced).toBe(advisoryFindings(findings).length);
+    expect(seen.join('\n')).toContain('ADVISORY');
+    expect(seen.join('\n')).toContain('C3-COUNTDRIFT');
+    expect(blockingFindings(findings)).toEqual([]); // and it still does not block
   });
 
   it('CONTROL: the live plan carries exactly ONE canonical totals block', () => {
@@ -360,6 +388,84 @@ describe('planConsistency — fail-closed structure (review F2/F3)', () => {
       `${WIRED}${CANON}\n4. **Then implementation**, in this order:\n` +
       '- **Then the helper**\n- **Leg 1 first among the mechanism legs**\n---\n';
     expect(codes(checkPlan({ spec }))).toContain('C4-UNVERIFIABLE');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// R1 — the canonical block's GRAMMAR, attacked as a class. The previous repair
+// validated a MARKER OCCURRENCE and called it a block: it accepted an empty
+// payload, a missing key, a key repeated with a conflicting value, and an
+// unfenced marker. These controls were generated from the grammar itself rather
+// than from the review's finding list, which is how the unfenced SHADOW HOME
+// below was found — it appears in no review.
+// ---------------------------------------------------------------------------
+describe('planConsistency — canonical block grammar (review R1)', () => {
+  const KEYS = 'review_rounds_complete: 7\nreviewer_findings: 30\nfindings_after_round_one: 24';
+  const block = (body: string) => `\n\`\`\`yaml\n# plan-running-totals\n${body}\n\`\`\`\n`;
+  const noCanon = (spec: string) => codes(checkPlan({ spec })).includes('C3-NOCANONICAL');
+
+  it('CONTROL: a well-formed block with every governed key is accepted', () => {
+    expect(noCanon(`${WIRED}${block(KEYS)}`)).toBe(false);
+  });
+
+  it('R1: FIRES on an EMPTY payload — a marker is not a block', () => {
+    expect(noCanon(`${WIRED}${block('')}`)).toBe(true);
+  });
+
+  for (const key of ['review_rounds_complete', 'reviewer_findings', 'findings_after_round_one']) {
+    it(`R1: FIRES when the governed key \`${key}\` is MISSING`, () => {
+      const body = KEYS.split('\n')
+        .filter((l) => !l.startsWith(`${key}:`))
+        .join('\n');
+      expect(noCanon(`${WIRED}${block(body)}`)).toBe(true);
+    });
+
+    it(`R1: FIRES when \`${key}\` is DUPLICATED with a conflicting value`, () => {
+      expect(noCanon(`${WIRED}${block(`${KEYS}\n${key}: 999`)}`)).toBe(true);
+    });
+  }
+
+  it('R1: FIRES when the block is UNFENCED — no opening fence', () => {
+    expect(noCanon(`${WIRED}\n# plan-running-totals\n${KEYS}\n`)).toBe(true);
+  });
+
+  it('R1: FIRES on an UNFENCED SHADOW HOME beside a valid block', () => {
+    // Found by attacking the grammar, not by the review. A parser that only
+    // FINDS fenced blocks cannot SEE a second, unfenced one stating other values.
+    const shadow = '\n# plan-running-totals\nreview_rounds_complete: 99\n';
+    expect(noCanon(`${WIRED}${block(KEYS)}${shadow}`)).toBe(true);
+  });
+
+  it('R1: FIRES when the fence is never CLOSED', () => {
+    expect(noCanon(`${WIRED}\n\`\`\`yaml\n# plan-running-totals\n${KEYS}\n`)).toBe(true);
+  });
+
+  it('R1: FIRES when the marker is not the FIRST line of the block', () => {
+    expect(
+      noCanon(`${WIRED}\n\`\`\`yaml\n# header\n# plan-running-totals\n${KEYS}\n\`\`\`\n`),
+    ).toBe(true);
+  });
+
+  it('R1: FIRES when a key sits OUTSIDE the block only', () => {
+    const body = KEYS.split('\n')
+      .filter((l) => !l.startsWith('reviewer_findings:'))
+      .join('\n');
+    expect(noCanon(`${WIRED}${block(body)}\nreviewer_findings: 30\n`)).toBe(true);
+  });
+
+  it('R1: FIRES when a governed key is COMMENTED OUT inside the block', () => {
+    expect(
+      noCanon(`${WIRED}${block(KEYS.replace('reviewer_findings:', '# reviewer_findings:'))}`),
+    ).toBe(true);
+  });
+
+  it('R1 CONTROL: a PROSE mention of the marker is not a home', () => {
+    expect(noCanon(`${WIRED}${block(KEYS)}\nSee the \`plan-running-totals\` block.\n`)).toBe(false);
+  });
+
+  it('R1 CONTROL: a key that merely CONTAINS a governed key is not that key', () => {
+    const body = KEYS.replace('reviewer_findings:', 'x_reviewer_findings:');
+    expect(noCanon(`${WIRED}${block(body)}`)).toBe(true);
   });
 });
 
