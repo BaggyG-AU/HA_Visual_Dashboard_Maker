@@ -225,6 +225,120 @@ reviewer should weigh it on that basis.
   the Round 1 diff (`86b897e`) **plus this correction round's diff**. The owner
   commissions it separately. **This round did not merge.**
 
+## Round 2 — dispositions against the §3.4 scoped follow-up — 2026-09-03
+
+Follow-up review:
+[`spacing-helper-repair-followup-sonnet-review.md`](spacing-helper-repair-followup-sonnet-review.md)
+(Claude Sonnet 5, genuinely fresh session, verdict **PARTIALLY-CONFIRMS**). It
+disposed F2 and F3 **RESOLVED**, F1 **PARTIALLY RESOLVED**, found **no
+regression** anywhere in the previously-clean population, confirmed the blast
+radius independently by hash, and raised one new SEV-3 process finding (F4).
+
+| Finding                                                            | Severity | Disposition      | Basis                                                                                                                                |
+| ------------------------------------------------------------------ | -------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| F1 — condition 2's _sequencing_ claim rests on `82c0e49`'s message | SEV 2    | **ACKNOWLEDGED** | The property half is closed and is narrowed further below; the residue is a historical process fact that **no re-run can establish** |
+| F2 — leg 1b's overstated naturalism claim                          | SEV 2    | **RESOLVED**     | Confirmed RESOLVED by the follow-up; nothing further owed                                                                            |
+| F3 — leg 4's FAIL-OLD/PASS-NEW label                               | SEV 3    | **RESOLVED**     | Confirmed RESOLVED by the follow-up; nothing further owed                                                                            |
+| F4 — the seat-conflict cure is substantiated for facts, not prose  | SEV 3    | **ACKNOWLEDGED** | No change owed on this branch (the reviewer says so itself); recorded as a process lesson and raised as a `practice`-wing candidate  |
+
+### F1 — ACKNOWLEDGED, and why the reviewer's proposed closure would not close it
+
+⭐ **This is a disagreement with the follow-up's recommended fix, stated with
+evidence, in the spirit of "a finding is a hypothesis" applied to a
+recommendation received.** The reviewer's Q1 proposes: reconstruct the
+pre-helper tree state (`git show 82c0e49^:tests/support/dsl/spacing.ts` restores
+the old helper) and re-run the four-control smoke against it. **That
+reconstruction would measure nothing.** Three measurements, each one command:
+
+1. **The "hooks-only" tree state never existed.** `git show --stat 82c0e49`
+   shows that commit added the two class hooks to
+   `src/components/SpacingControls.tsx` (+2) **and** rewrote
+   `tests/support/dsl/spacing.ts` (+235/-49) **in the same commit**. The
+   reviewer established this itself. So the proposed reconstruction assembles a
+   tree that was never in this repository's history.
+2. **The file being reconstructed cannot affect the measurement.**
+   `tests/support/dsl/spacing.ts` is test-support code, not renderer code. The
+   renderer bundle's rebuild inputs are enumerated at
+   `tests/setup/global-setup.ts:44-51` — `src/`, the three vite configs,
+   `forge.config.ts`, `package.json`, `package-lock.json`. **`tests/` is not
+   among them.** Swapping the helper cannot change a single DOM class the smoke
+   observes.
+3. **The renderer §1.2 measured IS the renderer that existed the moment the
+   hooks landed.** `git diff --name-only 82c0e49..HEAD -- src/ forge.config.ts
+vite.main.config.ts vite.preload.config.ts vite.renderer.config.ts
+package.json package-lock.json` returns **empty** — every renderer build
+   input is byte-identical across the whole range (only documentation changed).
+   `src/components/SpacingControls.tsx` is `c52db0bc…` at `82c0e49` and at HEAD.
+
+⚠ **Scope of that argument, stated exactly.** It licenses §1.2 specifically,
+whose probe drove each Select directly (`getByTestId(testId).click()`) and never
+called `SpacingDSL` at all — so it is helper-independent **by construction**, not
+merely by inference. It is **not** asserted of §1.1, whose probe was deleted
+before this round and cannot be inspected. ⓘ And points 1–3 are **INFERRED**
+(identical build inputs ⇒ identical bundle), not MEASURED: this project's own
+rule that a source-text comparison is not a runtime-behaviour proof applies to
+me here too. What makes the inference safe to rely on is that it is
+**corroborative**, not load-bearing — the property is independently MEASURED
+twice, at §1.1 and §1.2.
+
+**What therefore actually remains open.** Not "was the property true when the
+hooks landed" — that is measured, and now also transported. The residue is
+strictly: **was the check performed at that moment, before the helper was
+written?** That is a claim about what an agent did on a particular day. **No
+re-run, now or ever, can establish it** — it is unprovable by construction
+rather than merely unproven, and a reconstruction dressed as closure would be
+substitution 6 in its purest form: a narrower check (the property, again) wearing
+the wider claim's words (the process).
+
+**Disposition: ACKNOWLEDGED, not repaired.** The honest state of the record is
+that condition 2's HALT-bearing check is satisfied on its substance and
+undocumented on its timing, and that this is now disclosed in four places — the
+results document's §6 register, §1.2's own framing, the follow-up review, and
+here. ⓘ Recommended to the owner: accept it. Matches the follow-up's own Owner
+Decision Brief recommendation (a).
+
+### F4 — ACKNOWLEDGED, no change owed here, lesson recorded
+
+The reviewer's own text: "**Concrete fix:** none needed on this branch — already
+mitigated by this round's independent re-verification," and "**What must NOT
+change:** nothing on this branch." Accepted as written; no edit is made, which is
+the disposition the finding itself asks for.
+
+⭐ **The lesson is real and is recorded rather than lost.** When a repair's
+authorship is corrected because it ran under the wrong model, the correcting
+session should **rewrite the adopted prose in its own words** rather than adopt it
+verbatim — or the mandatory §3.4 follow-up should be routed to a **third** model.
+The evidence is on this very branch: a Sonnet session wrote a claim ("no shared
+**or swapped** mapping") that its own instrument could not support and did not
+catch it in its own writing; a _different_ model did. This round's Opus session
+adopted most of that prose rather than rewriting it, which is precisely the gap
+F4 names. **Raised as a `practice`-wing candidate for the owner's approval** — not
+filed unilaterally, per that wing's standing rule that practice candidates are
+owner-gated and that a rule must not be filed out of a mechanism which has not
+survived an independent review.
+
+### Scope of this round
+
+- **Changed:** this file only — this Round 2 section. **No change to
+  `docs/testing/SPACING_HELPER_HARNESS_RESULTS.md`**: §6's existing bullet ("neither
+  §1.1 nor §1.2 reproduces condition 2's literal sequencing") remains true exactly
+  as written, and the argument above is commentary belonging in the response
+  artifact, not new evidence belonging in the evidence surface. One fact, one home.
+- **Not changed:** `docs/testing/SPACING_HELPER_PRESET_PLAN.md`,
+  `src/components/SpacingControls.tsx`, `tests/support/dsl/spacing.ts` (both
+  `sha256sum`-identical to `HEAD` — `c52db0bc…` and `9756c68c…`), any snapshot,
+  `tests/baseline/expected-failures.json`, `tests/support/dsl/tabs.ts`,
+  `tests/support/dsl/popup.ts`, `BackgroundCustomizer`.
+- ⚠⚠ **No repair was made this round, so no further §3.4 follow-up is owed.**
+  §3.4 requires the author to answer every finding in a committed disposition
+  table **regardless of whether a repair is made**; it attaches a same-reviewer
+  follow-up to a **repair**, not to a disposition — otherwise the obligation
+  regresses without end. **This is the author's reading and the owner may
+  overrule it.** If the owner judges that this Round 2 section is itself a
+  repair, a further scoped follow-up is owed before merge and this round's
+  disposition of F1 and F4 should be its scope.
+- **This round did not merge.** PR #155 remains at the owner's merge gate.
+
 ## MemPalace drawer candidates
 
 (Filed directly — this session had a live write lease; see the Workflow State
