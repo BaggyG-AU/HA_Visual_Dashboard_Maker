@@ -1,4 +1,4 @@
-Author: Claude Opus 5 (repair author)
+Author: Claude Opus 5 (1M context) — ⚠ Round 1 was originally drafted under an incorrect model invocation and has since been independently re-derived; see **Round 1 attribution correction and independent ratification** below
 Reviewer: Claude Sonnet 5 (scoped follow-up owed under `docs/governance/OPERATING_AGREEMENT.md` §3.4 — see Round 1 note below; not yet run)
 Owner gate: micah/BaggyG-AU
 
@@ -9,6 +9,13 @@ committed disposition table regardless of whether a repair is made. One dated
 section per round, appended, never rewritten.
 
 ## Round 1 — 2026-09-03
+
+⚠⚠ **Read the attribution correction at the end of this file before relying on
+this section.** Round 1 was executed under an incorrect model invocation (the
+session ran as Claude Sonnet 5, not Claude Opus 5). Its content has since been
+independently re-derived and adopted by a fresh Claude Opus 5 session, with one
+over-reach corrected. The section below is left as it was written, as the record
+of what happened.
 
 Review: `docs/reviews/spacing-helper-implementation-sonnet-review.md`
 (verdict APPROVE, no SEV-1; two SEV-2 findings and one SEV-3 finding, all
@@ -112,6 +119,111 @@ addition are accurate and don't overstate/understate anything, and that
 nothing outside `SPACING_HELPER_HARNESS_RESULTS.md` was touched). **This round
 does not merge on its own repair — the owner commissions the follow-up the
 same way the original review was commissioned.**
+
+## Round 1 attribution correction and independent ratification — 2026-09-03
+
+⚠⚠ **Round 1 above was executed under an incorrect model invocation.** This
+file's first line originally read "Author: Claude Opus 5 (repair author)". **That
+was false.** The session that produced commit `86b897e` ran as **Claude Sonnet
+5** — the owner started it under the wrong model by accident. The committed
+record already contradicted the header: `86b897e`'s own message carries
+`Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>` (`git log -1
+--format=%B 86b897e`).
+
+**Why this is not a labelling nit.** Claude Sonnet 5 holds the independent
+implementation-review seat for PR #155, and is the reviewer required by
+[`docs/governance/OPERATING_AGREEMENT.md`](../governance/OPERATING_AGREEMENT.md)
+§3.4 (STRAT-D7) to perform the **mandatory** scoped follow-up on any post-review
+repair. A repair authored by Sonnet and then reviewed by Sonnet is precisely the
+conflict this project's reviewer-eligibility rule exists to prevent — the same
+rule disqualified Codex/Sol from the original implementation review because Sol
+had authored §10 of the plan, and it used **model identity** as the disqualifying
+criterion, not session freshness. By that same logic "Sonnet" (any session) is
+conflicted for reviewing a repair "Sonnet" (a different session) authored. The
+precedent on this very branch is directly on point: on 2026-09-03 a same-session
+`/model sonnet` switch was ruled **not** to confer reviewer independence and the
+owner required a genuinely fresh session instead
+(`drawer_havdm_decisions_0df96fa1cd80752be6f71430`).
+
+**This was NOT resolved by relabelling.** A genuinely fresh Claude Opus 5 session
+re-derived Round 1's work from scratch and adopts it only on the strength of its
+own measurements.
+
+### What was independently re-derived
+
+| Round 1 claim                                                          | How it was re-checked, independently                                                                                                                                                                                                                                                                                                                                                                                                                   | Outcome                       |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
+| F1's class-smoke result (4 classes × 1 node, 4 distinct nodes)         | A **new probe written from scratch** (`tests/e2e/_opus_class_smoke_probe.spec.ts`), headless, untracked, deleted after use, carrying its own positive and negative controls. ⓘ Stated exactly: Round 1's probe no longer exists and was not re-run, but §1.1's published figures had necessarily been read first (this task required reading §1.1) — so what is claimed here is independent CONSTRUCTION and an independent RUN, not blind measurement | **REPRODUCED EXACTLY**        |
+| F1's conclusion "no missing, duplicate, shared **or swapped** mapping" | Asked whether the stated instrument could decide each of the four modes named by §10 condition 2                                                                                                                                                                                                                                                                                                                                                       | **OVER-REACH — corrected**    |
+| F2's narrowed leg 1b sentence                                          | Read against `tests/e2e/spacing.spec.ts:109,112`, `git show main:tests/support/dsl/spacing.ts` (the settling wait at `:29-33`, called from `selectOptionByText` at `:63`), and the review's own §4 F2 "Concrete fix" text                                                                                                                                                                                                                              | **FAITHFUL — adopted**        |
+| F3's added leg-4 clause                                                | Read against the plan's §6 kind table (`SPACING_HELPER_PRESET_PLAN.md:463`, leg 4 listed under FAIL-OLD/PASS-NEW) and leg 4's measured results (`SPACING_HELPER_HARNESS_RESULTS.md:212-213`, PASS 2731 ms / PASS 2390 ms)                                                                                                                                                                                                                              | **FAITHFUL — adopted**        |
+| "No change to `src/` or `tests/support/dsl/spacing.ts`"                | `git diff-tree --name-only -r 86b897e` (two docs files only) and `sha256sum` of both files against `git show HEAD:`                                                                                                                                                                                                                                                                                                                                    | **CONFIRMED**                 |
+| PR #155's body does not misattribute the repair                        | Re-fetched live with `gh pr view 155 --json body`, not read from a local copy                                                                                                                                                                                                                                                                                                                                                                          | **CONFIRMED — no fix needed** |
+
+### The one thing Round 1 got wrong
+
+§10 condition 2 names **four** failure modes: "Any missing, duplicate, shared or
+swapped mapping HALTS the work." Round 1's §1.1 closed with "the union across all
+four selectors has exactly 4 members... so no two classes resolved to the same
+node (**no shared or swapped mapping**)".
+
+**Counting cannot decide a swap.** Four classes landing on four distinct nodes is
+equally true when the mapping is swapped — `spacing-margin-preset`'s Select
+rendering the popup that carries `spacing-padding-preset-popup`, and vice versa.
+Every count Round 1 published is unchanged under that swap, so the word "swapped"
+was cleared by an instrument that cannot see it. This is the failure mode the
+`practice` wing files under substitution 6 — a narrower check reported in the
+wider claim's words (`drawer_practice_verification_8cccc05dfb795cb31d2ce3a6`).
+⭐ Note that the **original** commit `82c0e49`'s message did not make this claim;
+it said "no popup carried another Select's class", which is the _shared_ check.
+The over-reach entered in Round 1's write-up, not in the implementation.
+
+**Closed, not merely narrowed.** Rather than delete the word, the swap was
+measured functionally: each Select was driven by clicking an option reachable
+**only** through `.ant-select-dropdown.<testid>-popup`, then the control that
+actually moved was read back, with per-half distinct targets so a margin↔padding
+swap could not hide. All four resolved to their own control; the other half never
+moved. Recorded as **§1.2** of
+[`docs/testing/SPACING_HELPER_HARNESS_RESULTS.md`](../testing/SPACING_HELPER_HARNESS_RESULTS.md),
+with its negative control (a nonexistent class counts 0) and its positive control
+(every target differed from the control's prior value, so no assertion could pass
+vacuously).
+
+⚠ **A trap recorded for the next agent.** The first version of this probe used the
+combobox's `aria-controls` as an identity link and reported a **false swap** on
+three of the four Selects. Cause, measured: `@rc-component/util`'s `useId` returns
+the literal string `'test-id'` when `NODE_ENV === 'test'`
+(`node_modules/@rc-component/util/es/hooks/useId.js:30`), so all four Selects emit
+`aria-controls="test-id_list"`. The first red came from the instrument, not the
+app — this project's own "treat the first red as suspect by default" rule earned
+its keep here.
+
+### Adoption
+
+With F1 re-measured, F2 and F3 re-read against their own sources, and the single
+over-reach corrected, **this session adopts Round 1's dispositions as its own**
+and takes authorship of them. ⓘ Stated plainly for the follow-up reviewer: the
+_prose_ of Round 1 and of §1.1 was physically composed by the Sonnet session; what
+a fresh Opus session has done is re-derive the underlying facts independently,
+correct what it found wrong, and accept responsibility for the result. The
+reviewer should weigh it on that basis.
+
+### Scope of this correction round
+
+- **Changed:** this file (header line, Round 1 pointer, this section) and
+  `docs/testing/SPACING_HELPER_HARNESS_RESULTS.md` (§1.1's over-reach corrected;
+  new §1.2 recording the independent re-measurement and the swap check).
+- **Not changed, verified:** `docs/testing/SPACING_HELPER_PRESET_PLAN.md` (§10
+  closed under the owner's stop rule), `src/components/SpacingControls.tsx`,
+  `tests/support/dsl/spacing.ts` (both `sha256sum`-identical to `HEAD` before and
+  after — `9756c68c…` and `c52db0bc…`), any snapshot,
+  `tests/baseline/expected-failures.json`, `tests/support/dsl/tabs.ts`,
+  `tests/support/dsl/popup.ts`, `BackgroundCustomizer`. No leg's measured result
+  was altered; leg 1b and leg 4 keep their recorded values.
+- **The §3.4 follow-up is still owed**, and is now conflict-free: **Claude Sonnet
+  5**, in a genuinely fresh session, reviewing a repair it did not author. Scope =
+  the Round 1 diff (`86b897e`) **plus this correction round's diff**. The owner
+  commissions it separately. **This round did not merge.**
 
 ## MemPalace drawer candidates
 

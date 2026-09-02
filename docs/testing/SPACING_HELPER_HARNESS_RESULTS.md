@@ -91,15 +91,105 @@ CLASS_SMOKE_RESULT {"spacing-margin-mode":1,"spacing-margin-preset":1,"spacing-p
 CLASS_SMOKE_TOTAL_DISTINCT_NODES 4
 ```
 
-Each of the four classes matched exactly one node (no missing or duplicate
-mapping), and the four per-class node sets were pairwise disjoint — the union
+Each of the four classes matched exactly one node (**no missing and no
+duplicate** mapping), and the four per-class node sets were pairwise disjoint — the union
 across all four selectors has exactly 4 members, not fewer, so no two classes
-resolved to the same node (no shared or swapped mapping). Condition 2 is
-satisfied.
+resolved to the same node (**no shared** mapping).
+
+⚠ **Counting cannot decide the fourth failure mode condition 2 names.** Four
+classes landing on four distinct nodes is equally true of a **swapped** mapping —
+`spacing-margin-preset`'s Select rendering the popup that carries
+`spacing-padding-preset-popup`, and vice versa. Every count in this subsection is
+unchanged under that swap, so the evidence here establishes **missing, duplicate
+and shared — not swapped**. Swap is decided functionally in §1.2 below. (This
+sentence originally read "no shared or swapped mapping"; the correction is
+recorded in
+[`docs/reviews/spacing-helper-preset-plan-repair-dispositions.md`](../reviews/spacing-helper-preset-plan-repair-dispositions.md).)
 
 **Verified after deletion:** `git status --porcelain` empty; `git diff HEAD --
 src/ tests/` empty; `sha256sum` of both changed files identical to
 `git show HEAD:` for each.
+
+### 1.2 Condition 2 — the swap check, and an independent re-measurement (2026-09-03)
+
+⭐ **Why this subsection exists.** §1.1 was written during the Round 1 repair, and
+that round was executed under an incorrect model invocation — the session ran as
+Claude Sonnet 5, the model that also holds the mandatory §3.4 scoped-follow-up
+review seat. A genuinely fresh Claude Opus 5 session therefore re-derived §1.1
+from scratch rather than adopting it on trust. The re-derivation **reproduced
+§1.1's counts exactly** and found **one over-reach**, corrected above: counting
+cannot decide a swap. Full record:
+[`docs/reviews/spacing-helper-preset-plan-repair-dispositions.md`](../reviews/spacing-helper-preset-plan-repair-dispositions.md).
+
+**Harness.** A second temporary, untracked spec
+(`tests/e2e/_opus_class_smoke_probe.spec.ts`, same harness exception as the legs
+above, headless via `bash tools/test-headless.sh
+tests/e2e/_opus_class_smoke_probe.spec.ts --project=electron-e2e --workers=1
+--retries=0`, deleted after use), written independently and run from the same
+pre-satisfied starting state. **Part A** repeats §1.1's counting. **Part B**
+decides the swap functionally: for each Select in turn it opens the control,
+clicks an option located **only** through `.ant-select-dropdown.<testid>-popup` —
+the class under test is the sole route to that option — and then reads back
+**which control actually moved**.
+
+**Part A — counting, independently reproduced.**
+
+```
+CLASS_SMOKE_RESULT {"spacing-margin-mode":1,"spacing-margin-preset":1,"spacing-padding-mode":1,"spacing-padding-preset":1}
+CLASS_SMOKE_TOTAL_DISTINCT_NODES 4
+CLASS_SMOKE_NEG1_BOGUS_CLASS_COUNT 0
+CLASS_SMOKE_ALL_SPACING_POPUP_NODES 4
+```
+
+Identical to §1.1's figures. `CLASS_SMOKE_NEG1_BOGUS_CLASS_COUNT` is a **negative
+control**: the same counting expression applied to a class that does not exist
+(`spacing-nonexistent-control-popup`) returns **0**, so the four 1s above are the
+instrument discriminating rather than the instrument stuck.
+
+**Part B — the swap check.** Targets differ per half, so a margin↔padding swap
+cannot hide behind a coincidentally matching value.
+
+| Select                   | before     | option clicked via its own class | after           | other half moved |
+| ------------------------ | ---------- | -------------------------------- | --------------- | ---------------- |
+| `spacing-margin-preset`  | None (0px) | Relaxed                          | Relaxed (16px)  | none             |
+| `spacing-padding-preset` | None (0px) | Spacious                         | Spacious (24px) | none             |
+| `spacing-margin-mode`    | All Sides  | Per Side                         | Per Side        | none             |
+| `spacing-padding-mode`   | All Sides  | Per Side                         | Per Side        | none             |
+
+Every click reached the control that **owns** the class it was routed through, and
+in no case did the other spacing half move. A swapped mapping would have surfaced
+twice over — the operated Select would have kept its old value, and the other half
+would have moved.
+
+⭐ **POS-1 control.** Each target differed from that control's value beforehand
+(the `before` and `after` columns differ on every row), so none of these four
+assertions could pass vacuously. This matters here specifically: P4 is a mutation
+alarm, not an identity proof, and a wrong-control click on a control **already
+holding** the target value changes nothing and passes silently
+(`tests/support/dsl/spacing.ts:192-200`).
+
+**Condition 2 is satisfied on all four of the failure modes it names** — missing,
+duplicate and shared (§1.1), and swapped (this subsection).
+
+⚠⚠ **A trap worth recording: `aria-controls` is NOT an identity link in this
+suite.** The obvious way to tie a popup to its owning Select _without_ reading the
+class under test is the open combobox's `aria-controls`, which `@rc-component/select`
+sets to `` `${id}_list` `` and renders inside the owning popup
+(`node_modules/@rc-component/select/es/SelectInput/Input.js:179`,
+`node_modules/@rc-component/select/es/OptionList.js:280`). It does not work here.
+`@rc-component/util`'s `useId` returns the **literal string `'test-id'`** whenever
+`NODE_ENV === 'test'` (`node_modules/@rc-component/util/es/hooks/useId.js:30`), so
+all four Selects emit `aria-controls="test-id_list"` and `getElementById` resolves
+to whichever popup mounted first. **MEASURED:** an earlier version of this probe
+used it and reported a **false swap** on Selects 2, 3 and 4 while passing Select 1
+— the first red came from the instrument, not the app. The functional check above
+replaced it because it reads the app's own behaviour rather than an identifier the
+test environment deliberately collapses.
+
+**Verified after deletion:** `git status --porcelain` empty; `git diff HEAD --
+src/ tests/` empty; `sha256sum tests/support/dsl/spacing.ts
+src/components/SpacingControls.tsx` identical to `git show HEAD:` for each
+(`9756c68c…` and `c52db0bc…`).
 
 ---
 
