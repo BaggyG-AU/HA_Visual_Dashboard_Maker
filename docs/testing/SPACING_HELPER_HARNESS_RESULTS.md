@@ -431,6 +431,21 @@ project has already paid for.
   own opening from the page.** That produces the foreign-only state reliably; it
   does **not** show how CI reaches it. The plan deliberately declines to explain
   that route, and this harness does not close it either.
+- ⚠⚠ **The class smoke in §1.1 and §1.2 was run at the SHIPPED head, not in
+  condition 2's literal ordering.** Condition 2 says "Add ONLY the two option-B
+  class hooks first, **then** run the four-control Electron class smoke" — i.e. a
+  check on a tree with the hooks and no helper. Both records here were taken with
+  the whole repair in place. They re-measure the **property** condition 2 protects;
+  neither reproduces the **sequencing** condition 2 specifies, and no artifact on
+  this branch does. What the original sequencing established is attested only by
+  commit `82c0e49`'s message, which is finding F1's original point.
+- ⚠ **§1.2's functional swap check is n=1**, and its four Selects were driven in a
+  fixed order (margin-preset, padding-preset, margin-mode, padding-mode) against
+  the state §1.2's own Part A left behind, not a pristine panel. Each row carries a
+  POS-1 control proving its own assertion was not vacuous, but a fixed order is
+  still the harness choosing the sequence. The property under test is a
+  render-time class binding rather than a timing behaviour, which is why one run
+  was judged sufficient — that judgement is the claim to attack.
 - ⚠⚠ **Leg 5b's misattached class is simulated.** It shows what happens _if_ a
   foreign popup carries the requested class. It is not evidence about how likely
   that is.
