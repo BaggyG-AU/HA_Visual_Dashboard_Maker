@@ -58,6 +58,49 @@ listener and style override is removed in a `finally` and **proved gone** — fo
 the suppressor by dispatching a non-bubbling synthetic `mousedown` at the same
 root and confirming the counter does not move.
 
+### 1.1 Condition 2 — the four-control class smoke (2026-09-03)
+
+§10 condition 2 requires this check to run headlessly against the real Electron
+renderer before the helper is written, and marks it HALT-bearing: "Any missing,
+duplicate, shared or swapped mapping HALTS the work... It is not
+characterisation." The repair shipped in commit `82c0e49` and this check was
+reported satisfied in that commit's message, but — per finding F1 of the
+independent implementation review
+([`docs/reviews/spacing-helper-implementation-sonnet-review.md`](../reviews/spacing-helper-implementation-sonnet-review.md))
+— had no record in this document. This section is that record, re-measured
+independently rather than copied from the commit message.
+
+**Harness.** A temporary, untracked spec
+(`tests/e2e/_class_smoke_probe.spec.ts`, same harness exception as the legs
+above, headless via `bash tools/test-headless.sh
+tests/e2e/_class_smoke_probe.spec.ts --project=electron-e2e --workers=1
+--retries=0`, deleted after use) opened each of the four spacing Selects in
+turn — `spacing-margin-mode`, `spacing-margin-preset`, `spacing-padding-mode`,
+`spacing-padding-preset` — from the same pre-satisfied starting state as the
+legs below, and for each: asserted its own `.<testid>-popup` class matched
+**exactly one** `.ant-select-dropdown` node, asserted that class was not also
+present on any other visible popup, then closed it. After all four had been
+opened once each — leaving all four popups mounted, since rc-trigger does not
+remove a closed popup from the DOM (`spacing.ts:73-74`) — it counted DOM nodes
+matching each class independently and the union of all four classes.
+
+**Result.**
+
+```
+CLASS_SMOKE_RESULT {"spacing-margin-mode":1,"spacing-margin-preset":1,"spacing-padding-mode":1,"spacing-padding-preset":1}
+CLASS_SMOKE_TOTAL_DISTINCT_NODES 4
+```
+
+Each of the four classes matched exactly one node (no missing or duplicate
+mapping), and the four per-class node sets were pairwise disjoint — the union
+across all four selectors has exactly 4 members, not fewer, so no two classes
+resolved to the same node (no shared or swapped mapping). Condition 2 is
+satisfied.
+
+**Verified after deletion:** `git status --porcelain` empty; `git diff HEAD --
+src/ tests/` empty; `sha256sum` of both changed files identical to
+`git show HEAD:` for each.
+
 ---
 
 ## 2. Results
@@ -210,15 +253,35 @@ after 14 ms, so it never sees the foreign popup.
 
 **Leg 1b is the same §10 construction with that state established rather than hoped
 for**: both popups pre-mounted in the order the real failing spec produces — the
-Margin preset driven first, exactly as `tests/e2e/spacing.spec.ts` ›
-`applies spacing presets` does — recorded as its starting state, with the popup DOM
-order published (`[spacing-margin-preset-popup, spacing-padding-preset-popup]`).
-The window opened to 1249 ms and the defect reproduced in full: CURRENT clicked the
-option in the **Margin** popup and moved the Margin preset, silently. REPAIRED, in
-the identical starting state, clicked in its own popup and left the Margin alone.
+Margin preset driven first, matching the **control order** of
+`tests/e2e/spacing.spec.ts` › `applies spacing presets` — recorded as its starting
+state, with the popup DOM order published (`[spacing-margin-preset-popup,
+spacing-padding-preset-popup]`). The window opened to 1249 ms and the defect
+reproduced in full: CURRENT clicked the option in the **Margin** popup and moved
+the Margin preset, silently. REPAIRED, in the identical starting state, clicked in
+its own popup and left the Margin alone.
+
+⚠ **The overlap itself is manufactured by omitting the settling wait
+(`waitForAllSelectDropdownsToClose`) that the real spec's own pre-repair helper
+call sequence performs between the two DSL calls** — leg 1b matches the real
+spec's control order, not its full call sequence. The independent implementation
+review (F2,
+[`docs/reviews/spacing-helper-implementation-sonnet-review.md`](../reviews/spacing-helper-implementation-sonnet-review.md))
+measured, with its own headless probe driving the literal DSL-mediated sequence
+including that wait, that the two-popup overlap did **not** occur in that one run
+(n=1; `settleMs=1491`, `maxVisiblePopups=1`). How CI's seven recorded sightings of
+`applies spacing presets` actually reach a two-popup state remains unestablished,
+as is already disclosed below for legs 2/3/5/5b for a different reason (they reach
+their state by suppression, not by timing).
 
 ⚠ **Both leg 1 results are recorded. The FAIL-OLD/PASS-NEW claim rests on leg 1b,
-leg 2 and leg 7 — not on leg 1.**
+leg 2 and leg 7 — not on leg 1 or leg 4.** Leg 4 (§2 above) is labelled
+FAIL-OLD/PASS-NEW in the plan's §6 kind table but PASSES on both CURRENT and
+REPAIRED from a clean panel — CURRENT never fails, so leg 4 never establishes
+"the defect is real"; it demonstrates the happy path is undisturbed, which is
+regression-sanity evidence, not acceptance evidence (finding F3 of the
+independent implementation review,
+[`docs/reviews/spacing-helper-implementation-sonnet-review.md`](../reviews/spacing-helper-implementation-sonnet-review.md)).
 
 ⚠ **This is a difference in construction, not a contradiction of M3.** M3 measured
 the ordinary path, where both popups are already mounted; leg 1b measured 1249 ms
