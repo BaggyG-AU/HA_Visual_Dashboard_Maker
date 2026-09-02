@@ -346,15 +346,27 @@ block at the end of this session's response for the drawer ID actually filed.
 Kept here too per the disposition-table convention in case a future round
 needs the pointer without re-deriving it.)
 
-⚠ **Round 2's filing is OWED, not filed.** The MemPalace write was refused —
+⭐ **Round 2's filing is FILED — `drawer_havdm_decisions_c08e30fcb7dee3c5c553ffc6`**
+(`havdm`/`decisions`, `added_by="claude-code"`), paired with diary entry
+`diary_havdm_20260903_041346758008_4ce57a7b430e`. **Nothing is outstanding; do
+not re-file it.**
+
+ⓘ **The MP-LEASE episode that preceded it, kept because it confirms the
+documented remedy end to end.** The first write attempt was refused —
 `Peer MCP writer active; this server is read-only for mutating tools` — because
 the per-palace writer lease was held by another server, almost certainly the
 §3.4 follow-up reviewer's own, which filed
 `drawer_havdm_review_6fa17afeedaf18b83fd33c96` minutes earlier. Per ruling
 **MP-LEASE** the write was **not retried**, `MEMPALACE_MCP_ALLOW_PEER_WRITER`
-was **not set**, and **no process was killed**. The full drawer content and the
-paired diary entry are staged verbatim at
-`~/.mempalace/pending/20260903-havdm-decisions-spacing-round2-dispositions.md`
-for a write-enabled agent to file as `wing=havdm`, `room=decisions`,
-`added_by="claude-code"`. ⓘ Reads were unaffected throughout; only the write
-was refused.
+was **not set**, and **no process was killed**; the content was staged verbatim
+to `~/.mempalace/pending/` and the owed filing recorded here so it could not be
+lost in a session transcript. **The owner then restarted VS Code, which
+restarted the MCP server and cleared the read-only latch, and the drawer was
+filed from the staged content on the next attempt** — then read back from the
+store and verified paragraph-by-paragraph against the staged text (14 of 15
+paragraphs verbatim; the two differences intended — a corrected head reference
+and an appended note on this episode). Reads were unaffected throughout; only
+the write was refused. ⭐ This confirms
+`drawer_havdm_investigations_a8c99523e9326dab76663b6a`: a server latches
+read-only on its **first refused write** and only **restarting that server**
+clears it.
