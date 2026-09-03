@@ -1,6 +1,6 @@
 # Remediation plan — C3 must parse the grammars it names (PR #154, Codex round 3)
 
-**Author:** BaggyG-AU with Claude Opus 5 (1M context), revision 1 of 2026-09-03
+**Author:** BaggyG-AU with Claude Opus 5 (1M context), revision 2 of 2026-09-03
 
 **Reviewer:** OpenAI Codex (GPT-5.6 Sol) — **this plan is reviewed BEFORE any
 code is written**, per `CLAUDE.md` "SPEC BEFORE CODE". Prior rounds on this
@@ -16,9 +16,10 @@ over narrowing to a repository-private syntax (B) or demoting C3 to advisory
 
 ## Revision history
 
-| Rev | What changed                                                                                                                                                 |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | First plan. Written after independently reproducing all ten round-3 constructions and proving the proposed mechanism 30/30 ok, 0 FAIL on a pre-code harness. |
+| Rev | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | First plan. Written after independently reproducing all ten round-3 constructions and proving the proposed mechanism 30/30 ok, 0 FAIL on a pre-code harness. **CHANGES-REQUIRED (P1–P7): three SEV-1 boundary errors in how the plan consumes the parsers, plus two evidence defects.**                                                                                                                                                                  |
+| 2   | **All seven findings reproduced and repaired.** The unterminated-fence departure is DROPPED (P1); indented `code` tokens are excluded (P2); heading text becomes a specified reader-visible projection (P3); `stringKeys` rejects alias keys (P4); the harness is COMMITTED and its transcript published (P5); §2.11's contradiction is corrected (P6); governed values must be non-negative integers (P7). Population 30 → **54 cases, 54 ok, 0 FAIL**. |
 
 ---
 
@@ -57,9 +58,10 @@ number is 14 failed / 43 passed.** See §2.6.
 
 ## 1.3 What this fixes, and what it costs
 
-**Fixes.** All ten constructions, plus three the reviews never found (a Setext
-heading shadow home, an ATX heading with a closing `#`, and a canonical block
-nested in a list item). One mechanism, not ten patches.
+**Fixes.** All ten round-3 constructions, all seven plan-review findings, plus
+three the reviews never found (a Setext heading shadow home, an ATX heading with
+a closing `#`, and a canonical block nested in a list item). One mechanism, not
+seventeen patches.
 
 **Costs, stated plainly.**
 
@@ -67,26 +69,39 @@ nested in a list item). One mechanism, not ten patches.
    but only because `monaco-editor` (a _production_ dependency) happens to pull
    it in. Relying on that is exactly the kind of accident this project does not
    ship, so it becomes an explicit devDependency pinned to the same major.
-2. **Five owner-visible behaviour changes**, listed in §1.4. Two of them are
-   the fixes you asked for; three are consequences you should agree to
-   knowingly rather than discover later.
+2. **Six owner-visible behaviour changes**, listed in §1.4 — three of them
+   introduced or revised by the plan review, and all six ruled on rather than
+   discovered later. One change revision 1 asked you to approve has been
+   **withdrawn** on measurement.
 3. **The 16 R1 controls have to be regenerated**, because they were derived
    from the line scanner's own dialect. Regenerating them is the point — see
    §1.5.
 
-## 1.4 The five behaviour changes you are approving
+## 1.4 The six behaviour changes you are approving
 
-| #   | Change                                                                                                                                                                                                                           | Why                                                                                                                                                                                                                                 |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | A legitimate reference to the marker inside an **HTML comment** stops blocking.                                                                                                                                                  | The S3 fix. A comment renders as nothing and can declare no home.                                                                                                                                                                   |
-| 2   | A **key-shaped line inside a YAML string** stops being counted as a key.                                                                                                                                                         | The S1 false-blocker fix. YAML says it is string content.                                                                                                                                                                           |
-| 3   | A canonical block **inside a block quote or list item now counts** toward "exactly one".                                                                                                                                         | The S2c fix. It is a real, rendered code block.                                                                                                                                                                                     |
-| 4   | The shadow-home rule changes from "a raw line equal to the marker" to "**a level-1 heading whose text is `plan-running-totals`**". This newly catches `# plan-running-totals #` and the Setext form, and newly exempts comments. | It is what a reader actually sees as a heading.                                                                                                                                                                                     |
-| 5   | **An unterminated fence stays an error** — deliberately stricter than CommonMark, which closes an unclosed fence at end of document.                                                                                             | An unterminated fence silently swallows the rest of the plan into code. Keeping the rule also preserves an existing committed control. ⚠ **This one is a deliberate departure from the named dialect and needs your explicit yes.** |
+| #   | Change                                                                                                                                                                                                                                      | Why                                                                                                                                                                                                                                                                                               |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | A legitimate reference to the marker inside an **HTML comment** stops blocking.                                                                                                                                                             | A comment renders as nothing and can declare no home.                                                                                                                                                                                                                                             |
+| 2   | A **key-shaped line inside a YAML string** stops being counted as a key.                                                                                                                                                                    | YAML says it is string content.                                                                                                                                                                                                                                                                   |
+| 3   | A canonical block **inside a block quote or list item now counts** toward "exactly one".                                                                                                                                                    | It is a real, rendered code block.                                                                                                                                                                                                                                                                |
+| 4   | The shadow-home rule becomes "**a level-1 heading whose READER-VISIBLE text is `plan-running-totals`**". This newly catches the bold, struck, code-spanned, linked, character-referenced and closing-`#` forms, and newly exempts comments. | ⭐ **Revised in rev 2 (P3).** All of those render identically to the prohibited heading; rev 1 compared source markup and missed every one.                                                                                                                                                       |
+| 5   | An **indented** (four-space) code block is **never** the canonical home, even with the marker as its first line.                                                                                                                            | ⭐ **New in rev 2 (P2).** The contract says _fenced_; `marked` gives both forms the same token type. An indented totals example beside the real block is now correctly ignored rather than counted or mis-rejected.                                                                               |
+| 6   | Each governed key's value must be a **finite non-negative integer**. `review_rounds_complete: bananas` now blocks.                                                                                                                          | ⭐ **New in rev 2 (P7), owner-ruled.** This is a running-**totals** block; checking the labels but not the numbers was a residual the reviewer showed had silently vanished from the list. Verified: the live values 7, 30 and 24 all pass, and the block's three ungoverned keys are unaffected. |
+
+⚠⚠ **WITHDRAWN IN REVISION 2 — the unterminated-fence departure.** Revision 1
+asked the owner to approve keeping "the fence must be closed" as a deliberate
+departure from CommonMark. **The owner ruled to drop it, on measurement.**
+Deleting the real plan's closing fence still blocks — the swallowed document
+fails the _YAML_ parse (`MULTILINE_IMPLICIT_KEY, MULTIPLE_DOCS`) — so the rule
+protected nothing that the parsers do not already protect, while requiring a
+hand-written delimiter parser `marked` does not support. §2.10 shows the four
+closer-relation constructions the reviewer raised (narrower, wrong-character,
+over-indented, wider) all decided correctly **with no delimiter logic at all**.
 
 ⚠ The owner's earlier ruling stands untouched: **a plan that documents an
 _example_ totals block still blocks**, because two blocks are genuinely
-ambiguous. Under this change that now holds inside containers too.
+ambiguous. Under this change that holds inside containers too — but **not** for
+an indented example, which change #5 now excludes by design.
 
 ## 1.5 What I am doing differently this time
 
@@ -107,12 +122,25 @@ So the rule this plan adds:
 > population from THAT grammar's specification, and let ITS reference parser —
 > not your matcher — decide the expected answer for each case.**
 
-I have already done this, **before writing any production code**. The harness
-in §2.10 has 30 cases: the 10 from the review, and 20 derived from CommonMark
-§4.3/§4.5/§5.1/§5.2/§6.1 and YAML §7.1/§7.4/§8.1/§8.2/§9.1. Each case's
-expected verdict was set by the specification, not by the prototype. **Result:
-30 ok, 0 FAIL, and the live plan stays clean.** The one case that initially
-failed was a real discovery, not a typo — it is change #5 in §1.4.
+I have done this, **before writing any production code**. The harness is
+**committed at `tools/c3-parser-harness.cjs`** — revision 1's was discarded,
+which is why its result could not be reviewed (finding P5). It now carries
+**54 cases**: the ten round-3 constructions, twenty derived from CommonMark and
+YAML in revision 1, and **twenty-four added in revision 2 from the plan
+review's own grammar-derived findings** — closer relations, leaf-block
+subtypes, inline heading roles, alias keys and value shapes. Each case names
+the specification clause that decides its verdict, and the reference parsers
+decide the grammar facts. **Result: 54 ok, 0 FAIL, live plan clean**, transcript
+in §2.10.
+
+⚠ **Revision 1 still failed the same way, one level down.** It generated from
+the two host grammars, which was the fix — but then re-introduced **one
+hand-written delimiter test** for fence closure, and compared against **one
+token field** (`heading.text`) without asking what that field contains. P1 and
+P3 are both that: a borrowed term left undefined at the last inch. The lesson
+is narrower than revision 1's and worth stating exactly: **delegating to a
+parser is not finished until every property you assert is one the parser
+actually decides.**
 
 ---
 
@@ -122,16 +150,28 @@ failed was a real discovery, not a typo — it is change #5 in §1.4.
 
 Unchanged in intent; stated in terms that map onto real parsers.
 
-> A valid canonical home is **exactly one fenced code block anywhere in the
-> plan document — at any Markdown container depth** — whose **first content
-> line is exactly `# plan-running-totals`** and whose fence is **closed**. Its
-> content must parse as a **single YAML document** whose root is a **mapping**,
-> in which each governed key — `review_rounds_complete`, `reviewer_findings`,
-> `findings_after_round_one` — appears **exactly once as a key of that root
-> mapping**. In addition, **no level-1 Markdown heading anywhere in the plan may
-> have the text `plan-running-totals`**; such a heading is a shadow home.
+> A valid canonical home is **exactly one FENCED code block anywhere in the
+> plan document — at any Markdown container depth, and excluding indented code
+> blocks** — whose **first content line is exactly `# plan-running-totals`**.
+> Its content must parse as a **single YAML document** whose root is a
+> **mapping with string keys**, in which each governed key —
+> `review_rounds_complete`, `reviewer_findings`, `findings_after_round_one` —
+> appears **exactly once as a key of that root mapping**, with a value that is
+> a **finite non-negative integer**. In addition, **no level-1 Markdown heading
+> anywhere in the plan may have the READER-VISIBLE TEXT `plan-running-totals`**,
+> as projected by §2.2a; such a heading is a shadow home.
 >
 > Violations raise `C3-NOCANONICAL`. Nothing else in C3's blocking half changes.
+
+⚠ **Three terms changed in revision 2, each because the reviewer showed the
+earlier wording was not decidable:**
+
+- **"fenced"** now excludes indented code blocks explicitly. `marked` gives both
+  the same token type (P2).
+- **"closed" is GONE.** CommonMark ends an unclosed fence at end of file, and
+  `marked` exposes no closure flag, so the old rule required a hand-written
+  delimiter parser at exactly the boundary this repair exists to remove (P1).
+- **"text"** is now a named projection, not a token field (P3).
 
 ## 2.2 The dialect, named
 
@@ -141,36 +181,69 @@ without saying whose. It is now named:
 - **Markdown: GitHub Flavored Markdown as implemented by `marked` 14.x**
   (`gfm: true`, `pedantic: false` — the shipped defaults, asserted in a test).
   GFM is the right dialect because these documents are read on GitHub.
-- **YAML: YAML 1.2 as implemented by `yaml` 2.x**, with `uniqueKeys: true`.
-- **One declared departure:** the unterminated-fence rule of §1.4 #5.
+- **YAML: YAML 1.2 as implemented by `yaml` 2.x**, with **`uniqueKeys: true`
+  AND `stringKeys: true`**. ⚠ The second option is load-bearing, not tidiness:
+  without it an **alias used as a key** — `&k review_rounds_complete: 7` then
+  `*k : 8` — raises no error, counts as one key, and lets the second value
+  silently win (`toJS()` returns `8`). Measured; finding P4.
+- **No declared departures.** Revision 1 had one and it is withdrawn (§1.4).
+  Every property C3 asserts is now one a reference parser decides.
+
+## 2.2a Reader-visible heading text — the projection, stated as a contract
+
+⚠⚠ **`heading.text` IS SOURCE MARKUP.** `# **plan-running-totals**` has a
+`text` of `**plan-running-totals**`, so rev 1's equality test missed it while a
+reader saw the prohibited heading (finding P3). Reader-visible text is
+therefore **defined**, not inherited from a token field. Walking the heading's
+parsed inline children, each role contributes:
+
+| Inline role                   | Contributes                                                    |
+| ----------------------------- | -------------------------------------------------------------- |
+| `text`                        | its text, with character references decoded (`&#x2D;` → `-`)   |
+| `escape`, `codespan`          | its literal text                                               |
+| `strong`, `em`, `del`, `link` | its children, recursively (its text if it has none)            |
+| `br`                          | a single space                                                 |
+| `image`                       | **nothing** — a reader sees a picture, not the `alt` attribute |
+| inline `html`                 | **nothing** — raw markup is not text                           |
+
+Whitespace is then collapsed and trimmed, and the result compared to
+`plan-running-totals`. The last two rows are **deliberate residuals**, pinned by
+passing `KNOWN-OPEN:` cases rather than left to be discovered (§2.7).
 
 ## 2.3 In scope — every change to `tests/support/planConsistency.ts`
 
 1. **Add two imports**: `import { marked } from 'marked';` and
    `import { parseDocument, isMap } from 'yaml';`.
-2. **Delete** the line-based fence state machine and the `strayMarkers` scan
-   (the `for (const line of specLines)` block and the `for (let i = 0; …)`
-   block), and the `^\s*${key}\s*:` key counter.
-3. **Add a token walk** over `marked.lexer(spec)` that recurses into
+2. **Delete** the line-based fence state machine, the `strayMarkers` raw-line
+   scan and the `^\s*${key}\s*:` key counter.
+3. **Add `visibleText(tokens)`** implementing §2.2a exactly — the switch over
+   inline roles, entity decoding, whitespace collapse.
+4. **Add a token walk** over `marked.lexer(spec)` that recurses into
    `blockquote.tokens` and `list.items[].tokens`, and:
-   - collects every `code` token whose first content line is exactly the
-     marker, recording whether `token.raw` ends in a closing fence;
-   - counts every `heading` token with `depth === 1` whose `text` trims to
-     `plan-running-totals`;
-   - **does not descend into `html` tokens** — that is the S3 fix — and does not
-     descend into `code` tokens.
-4. **Add YAML payload validation** for the single canonical block:
-   `parseDocument(text, { uniqueKeys: true })`; raise on `doc.errors.length > 0`
-   (covers malformed YAML, duplicate keys including the quoted spelling, and
-   multi-document payloads), then on `!isMap(doc.contents)` (covers an empty
-   payload and a sequence root), then count each governed key among
-   `doc.contents.items` **key nodes** — never lines.
-5. **Keep the site-grouping rule unchanged**: one site per _subject_, never per
+   - collects every `code` token **whose `codeBlockStyle` is not `'indented'`**
+     and whose first content line is exactly the marker;
+   - counts every `heading` token with `depth === 1` whose **`visibleText`**
+     equals `plan-running-totals`;
+   - **does not descend into `html` tokens** (the S3 fix) or `code` tokens.
+     ⚠ **No closure check of any kind.** An unclosed fence runs to end of file,
+     as CommonMark says; the swallow risk is caught by the YAML parse (§1.4).
+5. **Add YAML payload validation** for the single canonical block:
+   `parseDocument(text, { uniqueKeys: true, stringKeys: true })`; raise on
+   `doc.errors.length > 0` (malformed YAML, duplicate keys including the quoted
+   spelling, multi-document payloads, **and alias or non-string keys**), then on
+   `!isMap(doc.contents)` (empty payload, sequence root), then for each governed
+   key check it appears exactly once among `doc.contents.items` **key nodes** —
+   never lines — **and that its value is a finite non-negative integer**.
+6. **Keep the site-grouping rule unchanged**: one site per _subject_, never per
    key, established only after the payload validates.
-6. **Rewrite the block comment** so it states the contract of §2.1 and the
-   dialect of §2.2, and records why the line scanner was removed. ⚠ The existing
-   comment's claim "a fence is a state, not a pattern" is the error this repair
-   corrects and must not survive.
+7. **Rewrite the block comment** so it states §2.1's contract, §2.2's dialect
+   and §2.2a's projection, and records why the line scanner was removed. ⚠ The
+   existing comment's claim "a fence is a state, not a pattern" is the error
+   this repair corrects and must not survive. ⚠ Neither may any wording implying
+   C3 checks fence closure.
+
+⭐ **The reference implementation of items 3–5 is committed and runnable at
+`tools/c3-parser-harness.cjs`.** The repair ports it; it is not pseudocode.
 
 ## 2.4 The dependency change
 
@@ -188,6 +261,9 @@ that CI's `ci` job executes?
 1. **Regenerate the `canonical block grammar (review R1)` describe block** from
    §2.10's population. Every case in that harness becomes a committed control
    unless an existing test already covers it identically.
+   ⚠ **`CANON` must gain integer values that satisfy §2.1** — with values now
+   governed (P7), a fixture carrying a non-integer would fire for the wrong
+   reason, which is exactly the defect item 2 exists to remove.
 2. **Repair the shared `CANON` fixture.** It currently declares only
    `review_rounds_complete`, so `${WIRED}${CANON}` **already emits
    `C3-NOCANONICAL`** for missing keys — meaning every older C3 control that
@@ -199,9 +275,17 @@ that CI's `ci` job executes?
 3. **Add a dialect assertion** pinning `marked.defaults.gfm === true` and
    `pedantic === false`, so a future dependency bump that changes the dialect
    fails loudly rather than silently changing what the gate means.
-4. **Add `KNOWN-OPEN:` controls** for §2.7's residuals, per this project's rule
-   that a known limit is pinned by a test asserting current behaviour.
-5. The advisory half (`C3-COUNTDRIFT`, `reportAdvisories`) is **untouched**;
+4. **Add `KNOWN-OPEN:` controls** for **every** §2.7 residual, per this
+   project's rule that a known limit is pinned by a test asserting current
+   behaviour — specifically the image heading, the inline-HTML-wrapped heading,
+   the unclosed fence at end of file, `#plan-running-totals` with no space, and
+   the ungoverned keys' freedom from value checks.
+5. **Add the value-shape matrix** required by P7: string, negative, null,
+   sequence and float values each block, and **zero passes** — a legitimate
+   total may be 0, and a truthiness check would wrongly reject it.
+6. **Add the `stringKeys` controls** required by P4: an alias used as a key
+   blocks, and an alias used as a _value_ still passes.
+7. The advisory half (`C3-COUNTDRIFT`, `reportAdvisories`) is **untouched**;
    round 3 confirmed R2 RESOLVED and its consumer-exercising control stays as
    it is.
 
@@ -236,16 +320,35 @@ missing export is reported separately, never converted into a pass.**
 
 ## 2.7 Out of scope — declared, with the residual named
 
+⚠ Revision 1's list was **REFUTED** by the review: it claimed to name the
+parser move's residuals while silently dropping one the previous round had
+explicitly recorded (governed value types, finding P7). That one is now
+**fixed** rather than declared. The list below is rebuilt, and **every member
+is pinned by a passing `KNOWN-OPEN:` test**, so closing any hole breaks a test
+and forces the claim to be corrected in the same commit.
+
+- **An IMAGE heading contributes no visible text** — `# ![plan-running-totals](i.png)`
+  is not a shadow home. A reader sees a picture; `alt` is an accessibility
+  attribute. Deliberate (§2.2a).
+- **Inline raw HTML contributes no text.** `# plan-<b>running</b>-totals`
+  projects to `plan-running-totals` and IS caught, because the surrounding text
+  tokens carry the words; but a heading whose words live _inside_ an inline HTML
+  tag is not. Deliberate (§2.2a).
+- **An unclosed fence at end of file is a valid code block**, per CommonMark.
+  The residual is a swallowed document that happens to parse as valid YAML _and_
+  keep all three governed keys exactly once with integer values. Measured as
+  caught on the real plan; pinned as a limit rather than assumed away.
 - **The plan/history asymmetry stays.** C3's structural scan reads the plan
-  only; the history names the marker three times in prose. Round 3 accepted
-  this boundary explicitly. Extending it would need the same treatment and is
-  not in this change.
-- **The advisory half stays a heuristic**, with all its existing `KNOWN-OPEN:`
+  only; the history names the marker three times in prose.
+- **The advisory half stays a heuristic**, with its existing `KNOWN-OPEN:`
   limits (quoted second homes, unparseable number forms).
 - **`#plan-running-totals` with no space is not detected** — correctly, since
-  CommonMark makes it a paragraph, not a heading. Pinned by a control.
+  CommonMark makes it a paragraph.
 - **A shadow home written as ordinary prose or a table row is not detected.**
-  Unchanged from today; the structural half only claims headings and fences.
+  The structural half claims headings and fences only.
+- **Ungoverned keys in the canonical block are unconstrained** — `review_rounds_owed`,
+  `repair_introduced_after_round_one` and `executable_spec_lines` are not
+  value-checked. Only the three governed keys are.
 - **C1's textual-caller limit and C2/C4** are untouched.
 
 ## 2.8 Must NOT change
@@ -273,80 +376,146 @@ snapshot, no baseline manifest.
 prototype: **VALID**); unit population goes 1470 → 1470 + _n_ with no new file;
 `REAL_EXIT=0`, 4/4 steps.
 
-## 2.10 The pre-code harness — 30 ok, 0 FAIL
+## 2.10 The pre-code harness — 54 ok, 0 FAIL, COMMITTED
 
-Built and run **before this plan was written**, against a throwaway prototype of
-the exact mechanism in §2.3. Expected verdicts were set by the specification
-cited in the provenance column; `marked`/`yaml` adjudicated the Markdown/YAML
-facts. Cases marked `codex` are the review's; cases marked `CommonMark`/`YAML`
-are generated from the host grammars and appear in no review.
+⚠⚠ **REVISION 1 PUBLISHED THIS RESULT FROM A PROTOTYPE IT HAD DELETED**
+(finding P5), so the plan's strongest assurance could not be reproduced by the
+reviewer or by any later audit. The mechanism, the literal fixtures, the
+expectations and their provenance are now committed at
+**`tools/c3-parser-harness.cjs`**, runnable with `node tools/c3-parser-harness.cjs`
+(exit 0 on success). It is not a test and nothing imports it; when the repair
+lands, these cases become committed controls and the file is deleted.
 
-| Must be   | Case                                                   | Provenance                      |
-| --------- | ------------------------------------------------------ | ------------------------------- |
-| valid     | well-formed block (control)                            | control                         |
-| invalid   | governed keys only inside a `notes: \|` scalar         | codex S1                        |
-| **valid** | real keys **plus** a scalar mentioning a key           | codex S1                        |
-| invalid   | quoted duplicate `"review_rounds_complete": 999`       | codex S1                        |
-| invalid   | backtick inside the fence info string                  | codex S2                        |
-| invalid   | TAB before the opening fence                           | codex S2                        |
-| invalid   | second canonical block in a **block quote**            | codex S2                        |
-| invalid   | unfenced marker in a **block quote**                   | codex S2                        |
-| invalid   | unfenced marker in a **list item**                     | codex S2                        |
-| invalid   | marker indented four spaces as first content line      | codex S2                        |
-| **valid** | marker inside an **HTML comment**                      | codex S3                        |
-| valid     | tilde fence                                            | CommonMark §4.5                 |
-| valid     | four-backtick fence                                    | CommonMark §4.5                 |
-| valid     | untagged fence (no info string)                        | CommonMark §4.5                 |
-| valid     | fence indented three spaces (legal)                    | CommonMark §4.5                 |
-| invalid   | fence never closed                                     | **declared departure, §1.4 #5** |
-| invalid   | second canonical block inside a **list item**          | CommonMark §5.2                 |
-| invalid   | unfenced marker in a **nested** block quote            | CommonMark §5.1                 |
-| invalid   | **Setext** h1 shadow home                              | CommonMark §4.3                 |
-| **valid** | marker in an inline code span (the live plan, line 14) | CommonMark §6.1                 |
-| invalid   | empty payload                                          | grammar                         |
-| valid     | YAML **flow mapping** payload                          | YAML §7.4                       |
-| invalid   | YAML **sequence** payload (root is not a mapping)      | YAML §8.2                       |
-| invalid   | malformed YAML (`BAD_INDENT`)                          | YAML                            |
-| invalid   | governed keys nested one level deep                    | YAML §8.2                       |
-| invalid   | governed key commented out                             | YAML §8.1                       |
-| valid     | a key that merely **contains** a governed key          | YAML                            |
-| invalid   | duplicate key with the **same** value                  | YAML                            |
-| valid     | anchor/alias reuse of a governed value                 | YAML §7.1                       |
-| invalid   | multi-document payload (`MULTIPLE_DOCS`)               | YAML §9.1                       |
+Each case's expected verdict is set by the cited specification clause, not by
+the mechanism. Cases marked `codex` came from a review — they are the **floor,
+not the population**.
 
-**Result: 30 ok, 0 FAIL. Live plan: VALID (clean).**
+<!-- prettier-ignore -->
+| Must be | Case | Provenance | Mechanism said |
+| ------- | ---- | ---------- | -------------- |
+| valid | well-formed canonical block | control | clean |
+| valid | tilde fence | CommonMark 4.5 | clean |
+| valid | four-backtick fence | CommonMark 4.5 | clean |
+| valid | untagged fence (no info string) | CommonMark 4.5 | clean |
+| valid | fence indented three spaces (legal) | CommonMark 4.5 | clean |
+| invalid | backtick in the info string | CommonMark 4.5 | 1 shadow-home heading(s); found 0 canonical blocks (expected 1) |
+| invalid | TAB before the opening fence | codex S2 / CommonMark 4.5 | 1 shadow-home heading(s); found 0 canonical blocks (expected 1) |
+| invalid | closer NARROWER than opener (4 open, 3 close) | codex P1 / CommonMark 4.5 | YAML: BAD_SCALAR_START,MISSING_CHAR |
+| valid | closer WIDER than opener (3 open, 4 close) | codex P1 / CommonMark 4.5 | clean |
+| invalid | closer of the WRONG CHARACTER (backtick open, tilde close) | codex P1 / CommonMark 4.5 | YAML: MISSING_CHAR |
+| invalid | closer OVER-INDENTED four spaces | codex P1 / CommonMark 4.5 | YAML: MISSING_CHAR |
+| valid | KNOWN-OPEN: unclosed fence at END OF FILE is a valid block | CommonMark 4.5 (departure DROPPED, owner ruling) | clean |
+| invalid | unclosed fence SWALLOWS the rest of the document | CommonMark 4.5 (the swallow risk, caught by YAML) | YAML: MISSING_CHAR |
+| invalid | INDENTED code block alone is not a fenced block | codex P2 / CommonMark 4.4 | found 0 canonical blocks (expected 1) |
+| valid | INDENTED example beside a valid fence is ignored | codex P2 / CommonMark 4.4 | clean |
+| invalid | second canonical block in a BLOCK QUOTE | CommonMark 5.1 | found 2 canonical blocks (expected 1) |
+| invalid | second canonical block in a LIST ITEM | CommonMark 5.2 | found 2 canonical blocks (expected 1) |
+| invalid | unfenced marker in a BLOCK QUOTE | CommonMark 5.1 | 1 shadow-home heading(s) |
+| invalid | unfenced marker in a LIST ITEM | CommonMark 5.2 | 1 shadow-home heading(s) |
+| invalid | unfenced marker in a NESTED block quote | CommonMark 5.1 | 1 shadow-home heading(s) |
+| invalid | plain ATX shadow home | CommonMark 4.2 | 1 shadow-home heading(s) |
+| invalid | SETEXT shadow home | CommonMark 4.3 | 1 shadow-home heading(s) |
+| invalid | ATX with a closing # sequence | CommonMark 4.2 | 1 shadow-home heading(s) |
+| invalid | BOLD shadow home | codex P3 / CommonMark 6 | 1 shadow-home heading(s) |
+| invalid | CODE-SPAN shadow home | codex P3 / CommonMark 6 | 1 shadow-home heading(s) |
+| invalid | STRIKETHROUGH shadow home | codex P3 / GFM | 1 shadow-home heading(s) |
+| invalid | REFERENCE-LINK shadow home | codex P3 / CommonMark 6 | 1 shadow-home heading(s) |
+| invalid | CHARACTER-REFERENCE shadow home | codex P3 / CommonMark 6 | 1 shadow-home heading(s) |
+| invalid | formatted SETEXT shadow home | codex P3 / CommonMark 4.3 | 1 shadow-home heading(s) |
+| valid | CONTROL: a formatted heading that is NOT the marker | codex P3 | clean |
+| valid | CONTROL: level-2 heading with the marker text is not a home | CommonMark 4.2 | clean |
+| valid | CONTROL: `#plan-running-totals` with no space is not a heading | CommonMark 4.2 | clean |
+| valid | KNOWN-OPEN: an IMAGE heading contributes no visible text | CommonMark 6 (declared residual) | clean |
+| valid | CONTROL: marker in an inline code span (live plan, line 14) | CommonMark 6.1 | clean |
+| valid | CONTROL: marker inside an HTML comment | codex S3 / CommonMark 4.6 | clean |
+| invalid | empty payload | grammar | payload is not a top-level mapping |
+| valid | FLOW-MAPPING payload | YAML 7.4 | clean |
+| invalid | SEQUENCE payload (root is not a mapping) | YAML 8.2 | payload is not a top-level mapping |
+| invalid | malformed YAML payload | YAML | YAML: BAD_INDENT |
+| invalid | MULTI-DOCUMENT payload | YAML 9.1 | YAML: MULTIPLE_DOCS |
+| invalid | governed keys NESTED one level deep | YAML 8.2 | `review_rounds_complete` x0 (expected 1); `reviewer_findings` x0 (expected 1); `findings_after_round_one` x0 (expected 1) |
+| invalid | governed key COMMENTED OUT | YAML 8.1 | `review_rounds_complete` x0 (expected 1) |
+| invalid | key-shaped text inside a BLOCK SCALAR | codex S1 / YAML 8.1 | `review_rounds_complete` x0 (expected 1); `reviewer_findings` x0 (expected 1); `findings_after_round_one` x0 (expected 1) |
+| valid | CONTROL: real keys PLUS a scalar mentioning one | codex S1 / YAML 8.1 | clean |
+| invalid | QUOTED duplicate key | YAML dup | YAML: DUPLICATE_KEY |
+| invalid | duplicate key with the SAME value | YAML dup | YAML: DUPLICATE_KEY |
+| invalid | ALIAS used as a duplicate key | codex P4 / YAML 7.1 | YAML: NON_STRING_KEY |
+| valid | CONTROL: a key that merely CONTAINS a governed key | YAML | clean |
+| invalid | STRING value | codex P7 | `review_rounds_complete` is not a non-negative integer ("bananas") |
+| invalid | NEGATIVE value | codex P7 | `review_rounds_complete` is not a non-negative integer (-1) |
+| invalid | NULL value | codex P7 | `review_rounds_complete` is not a non-negative integer (null) |
+| invalid | SEQUENCE value | codex P7 | `review_rounds_complete` is not a non-negative integer (null) |
+| invalid | FLOAT value | codex P7 | `review_rounds_complete` is not a non-negative integer (7.5) |
+| valid | CONTROL: zero is a legitimate total | codex P7 | clean |
 
-⚠ Three of these are **false-blocker** controls — the document is legitimate and
-C3 must stay silent. A population of only "does it catch my bad input?" cases is
-what let the two round-3 regressions through.
+54 ok, 0 FAIL (of 54)
+
+LIVE PLAN -> VALID (clean)
+
+⭐ **What the closer-relation rows show.** The narrower closer, wrong-character
+closer and over-indented closer are all rejected — **by the YAML parse, with no
+delimiter logic anywhere in the mechanism.** That is the measurement behind
+withdrawing the unterminated-fence departure (§1.4).
+
+⚠ **Eleven of these are false-blocker controls** — legitimate documents C3 must
+stay silent on. A population of only "does it catch my bad input?" cases is what
+let revision 1's own regressions through.
 
 ## 2.11 Fail-against-`6420bb4`, planned honestly in advance
 
-Every new control must **fail** against the current head `6420bb4` before it is
-credited. The ten review constructions are expected to discriminate by
-construction (8 accept→reject, 2 reject→accept). For the 20 generated cases I
-will publish, per case, whether it discriminates — and **name every one that
-does not**, rather than counting it. The run against `6420bb4` will be reported
-**unmodified**, with any compatibility substitution named explicitly; this is
-the §2.6 lesson applied to its own repair.
+⚠ Revision 1's opening sentence here was **self-contradictory** (finding P6): it
+required every new control to fail against old code, then required naming the
+ones that do not. Corrected:
+
+- **Every control credited as PROOF OF A REPAIR must fail against `6420bb4`**
+  before it is credited.
+- **Conformance and population controls may legitimately pass against old
+  code** — a tilde fence was already accepted there. They are still committed,
+  and their per-case old-code outcome is still reported; they are simply not
+  counted as discriminators.
+- The run against `6420bb4` will be reported **unmodified**, with any
+  compatibility substitution named explicitly, and any structural failure by
+  missing export reported **separately** rather than converted into a pass.
+  This is §2.6's lesson applied to its own repair.
+
+## 2.11a Disposition of the round-3 plan review (P1–P7)
+
+All seven findings were **independently reproduced before being accepted**; the
+reviewer's cumulative record on this PR is now **20 findings, 20 valid**.
+
+| Ref | Severity | Disposition                                                                                                                                                                                                                                                |
+| --- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1  | SEV-1    | **FIXED — departure dropped**, on the owner's ruling and a measurement: deleting the real plan's closing fence still blocks via the YAML parse. All four closer-relation constructions are committed cases.                                                |
+| P2  | SEV-1    | **FIXED** — `codeBlockStyle === 'indented'` excluded; the fenced-only contract is preserved. Lone-indented and indented-beside-valid controls committed.                                                                                                   |
+| P3  | SEV-1    | **FIXED** — reader-visible projection specified in §2.2a. Bold, code-span, strikethrough, reference-link, character-reference, formatted-Setext, closing-`#`, a non-matching formatted heading and the live inline-code paragraph are all committed cases. |
+| P4  | SEV-2    | **FIXED — option A**, `stringKeys: true`. Alias-as-key now raises `NON_STRING_KEY`; the value-alias acceptance control is retained.                                                                                                                        |
+| P5  | SEV-2    | **FIXED — option A.** The harness is committed and its transcript published above.                                                                                                                                                                         |
+| P6  | SEV-3    | **FIXED** — §2.11 rewritten as above.                                                                                                                                                                                                                      |
+| P7  | SEV-2    | **FIXED — option A, owner-ruled.** Governed values must be finite non-negative integers. Live values 7/30/24 verified passing; string, negative, null, sequence and float controls committed, plus a zero-is-legitimate control.                           |
 
 ## 2.12 Questions the reviewer is asked to answer
 
-1. Is the §2.1 contract decidable as stated, or does it still borrow a term it
-   does not define?
-2. Is `marked`'s GFM lexer an acceptable authority here, given the documents are
-   read on GitHub — and does anything in the token walk of §2.3 mis-handle a
-   container form not in §2.10?
-3. Is the unterminated-fence departure (§1.4 #5) the right call, or should C3
-   follow CommonMark and drop the rule?
-4. Does the §2.10 population have a hole that a **fourth** round would find —
-   specifically, a construction generated from CommonMark or YAML that is not
-   represented and would flip a verdict?
-5. Is §2.7's residual list complete, or does the parser move create a limit not
-   named there?
+Revision 1's five questions were answered in full and are not repeated. These
+are new, and they target revision 2's own new surface:
+
+1. Does §2.2a's projection have a role whose contribution is wrong or
+   unstated — and is either declared residual (image alt, inline HTML) a
+   plausible shadow home rather than a defensible boundary?
+2. `stringKeys: true` rejected the alias key with `NON_STRING_KEY`. Does it
+   also reject anything the live block or a legitimate future block needs?
+3. With the closure rule gone, is there a swallowed-document construction that
+   parses as valid YAML **and** keeps all three governed keys exactly once with
+   non-negative integer values?
+4. Is §1.4 #5 (excluding indented blocks) the right call, or should an indented
+   totals block be a shadow home rather than invisible?
+5. Does the 54-case population still have a verdict-flipping hole — and is
+   `tools/c3-parser-harness.cjs` a faithful model of §2.3, or does it differ
+   from what the repair would actually do?
 
 ---
 
-⚠ **NO CODE HAS BEEN WRITTEN.** The prototype behind §2.10 was a throwaway in a
-scratch directory, never in the repository; `git status --porcelain` is empty
-apart from this document and its commission.
+⚠ **NO PRODUCTION CODE HAS BEEN WRITTEN.** `tests/support/planConsistency.ts`
+and `tests/unit/planConsistency.spec.ts` are untouched at `6420bb4`. The only
+files this revision adds are this plan and `tools/c3-parser-harness.cjs`, which
+is deliberately committed as reviewable evidence (finding P5) and is deleted
+when the repair lands.
