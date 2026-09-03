@@ -1,10 +1,39 @@
 # Remediation plan — C3 must parse the grammars it names (PR #154, Codex round 3)
 
+> # ⚠⚠⚠ REVISION 3 WAS NEVER INDEPENDENTLY REVIEWED — OWNER WAIVER, 2026-09-04
+>
+> **Revisions 1 and 2 of this plan were reviewed by OpenAI Codex and each
+> returned CHANGES-REQUIRED. The review of REVISION 3 was WAIVED BY THE OWNER on
+> 2026-09-04 because Codex was unavailable.** The commission had been written and
+> was ready to send; it was not sent.
+>
+> **⭐ WHAT THIS MEANS FOR ANYONE READING THIS PLAN:** revision 3 looks exactly
+> like revisions 1 and 2 and carries the same measured evidence, but **it has not
+> been attacked by anyone other than its author.** Every prior revision of this
+> plan that was reviewed came back with findings — eleven across two rounds, all
+> valid. Treat revision 3's new surface as unverified, and see §0.1 for exactly
+> where to look first.
+>
+> **⚠ WHAT IS _NOT_ WAIVED.** The **independent review of the IMPLEMENTATION
+> before merge** stands, mandatory under `docs/governance/OPERATING_AGREEMENT.md`
+> §3 class (d), and **no Opus session may hold that seat** (§3.6 — Claude Opus 5
+> co-authored every implementation commit on this branch). This waiver covers the
+> `CLAUDE.md` SPEC-BEFORE-CODE plan review of revision 3 and nothing else.
+>
+> **ⓘ THIS DOES NOT COUNT TOWARD THE SPEC-BEFORE-CODE ROLLBACK TRIGGER.** That
+> trigger is three consecutive plan reviews _returning nothing the owner acts
+> on_. A review that never ran returned nothing at all; the counter stands at
+> **zero**, because both rounds that did run produced findings the owner acted on
+> in full.
+
 **Author:** BaggyG-AU with Claude Opus 5 (1M context), revision 3 of 2026-09-03
 
-**Reviewer:** OpenAI Codex (GPT-5.6 Sol) — **this plan is reviewed BEFORE any
-code is written**, per `CLAUDE.md` "SPEC BEFORE CODE". Prior rounds on this
-branch: `docs/reviews/plan-consistency-checker-codex-review.md` (SEV-1-BLOCKED,
+**Reviewer:** OpenAI Codex (GPT-5.6 Sol) for **revisions 1 and 2 only** — both
+CHANGES-REQUIRED, eleven findings, all valid and all repaired. ⚠ **Revision 3 is
+UNREVIEWED; the owner waived it on 2026-09-04 (see the box above).** The
+`CLAUDE.md` SPEC-BEFORE-CODE rule is that a plan is reviewed BEFORE any code is
+written; that held for revisions 1 and 2 and was waived for revision 3. Prior
+rounds on this branch: `docs/reviews/plan-consistency-checker-codex-review.md` (SEV-1-BLOCKED,
 F1–F6), `…-codex-followup-review.md` (SEV-1-BLOCKED, R1–R3),
 `…-codex-followup2-review.md` (SEV-1-BLOCKED, S1–S4).
 
@@ -19,8 +48,43 @@ over narrowing to a repository-private syntax (B) or demoting C3 to advisory
 | Rev | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | First plan. Written after independently reproducing all ten round-3 constructions and proving the proposed mechanism 30/30 ok, 0 FAIL on a pre-code harness. **CHANGES-REQUIRED (P1–P7): three SEV-1 boundary errors in how the plan consumes the parsers, plus two evidence defects.**                                                                                                                                                                                                                                                                                                                                                                          |
-| 3   | **All four revision-2 findings reproduced and repaired.** The hand-written character-reference decoder is DELETED and `entities` called instead (P8) — the same partial-parser mistake as P1/P3, committed inside their own fix. An alias value is dereferenced with `Alias.resolve(doc)` and the two rows revision 2 silently dropped are restored (P9). The swallowed-document residual is pinned by an executable case (P10). The raw-HTML heading boundary is declared and pinned (P11, owner-ruled). Population 54 → **69 cases, 69 ok, 0 FAIL**. ⭐ `entities` and `marked` are now DECLARED devDependencies, because the committed harness requires them. |
 | 2   | **All seven findings reproduced and repaired.** The unterminated-fence departure is DROPPED (P1); indented `code` tokens are excluded (P2); heading text becomes a specified reader-visible projection (P3); `stringKeys` rejects alias keys (P4); the harness is COMMITTED and its transcript published (P5); §2.11's contradiction is corrected (P6); governed values must be non-negative integers (P7). Population 30 → **54 cases, 54 ok, 0 FAIL**.                                                                                                                                                                                                         |
+| 3   | **All four revision-2 findings reproduced and repaired.** The hand-written character-reference decoder is DELETED and `entities` called instead (P8) — the same partial-parser mistake as P1/P3, committed inside their own fix. An alias value is dereferenced with `Alias.resolve(doc)` and the two rows revision 2 silently dropped are restored (P9). The swallowed-document residual is pinned by an executable case (P10). The raw-HTML heading boundary is declared and pinned (P11, owner-ruled). Population 54 → **69 cases, 69 ok, 0 FAIL**. ⭐ `entities` and `marked` are now DECLARED devDependencies, because the committed harness requires them. |
+
+---
+
+## 0.1 ⚠ IF A DEFECT OR REGRESSION TURNS UP, LOOK HERE FIRST
+
+This section exists because revision 3's review was waived (see the box above).
+It is **the attack list the reviewer would have worked through**, transcribed
+here from the commission that was never sent — the commission lives in
+`prompts/`, which is **gitignored by design**, so it would otherwise leave no
+trace. Ranked by risk, highest first.
+
+⚠⚠ **THE RANKING IS NOT A GUESS. Four consecutive review rounds found their
+defect in the previous round's repair, and every one was the same shape: a
+hand-written shortcut at the seam where a delegated parser stops** — a
+`token.raw` suffix test for fence closure (P1), an equality test on
+`heading.text` (P3), and a three-regex character-reference decoder that crashed
+the check (P8). **Revision 3 added a library call at a new seam twice.** That is
+where a defect is most likely to be, and it is exactly the surface no one
+independent has looked at.
+
+| #   | Unreviewed surface                                                                                                         | Why it is risky                                                                                                                                                                         | What to try first                                                                                                                                                  |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **`decodeHTML` from `entities`** in the §2.2a projection                                                                   | Newest seam, and the third attempt at this exact property. `entities` is an HTML5 decoder; CommonMark §2.5 defers to the HTML5 named set but the boundaries are not obviously identical | Whether `escape` and `codespan` should be decoded (the plan says **no**); double-decoding (`&amp;#x2D;`); any §2.5 boundary where `entities` and CommonMark differ |
+| 2   | **`Alias.resolve(doc)`** in the value check                                                                                | New library API, adopted to fix P9, tested against only two shapes                                                                                                                      | A chain of aliases; an alias to an anchored mapping or sequence; a merge key (`<<`); an alias used before its anchor                                               |
+| 3   | **The two residuals that are NOT parser-decided** — image `alt` contributes nothing, inline raw `html` contributes nothing | These are hand-chosen boundaries inside an otherwise delegated projection — the same category as the three defects above                                                                | A heading whose words sit inside an inline HTML tag; an image whose alt text is the marker                                                                         |
+| 4   | **The harness's fidelity to §2.3**                                                                                         | It is now the plan's primary evidence. A harness that passes because it is not the mechanism is worse than no harness                                                                   | Read `tools/c3-parser-harness.cjs` against §2.3 line by line before trusting 69/69                                                                                 |
+| 5   | **The raw-HTML boundary (P11)**                                                                                            | Declared in four places; a declaration is only as good as its least complete statement                                                                                                  | Whether §1.4, §2.2a, §2.3 and §2.7 agree, and whether the `KNOWN-OPEN:` case is a faithful pin                                                                     |
+| 6   | **The re-pinned swallow residual (P10)**                                                                                   | Fixed once already for pinning nothing                                                                                                                                                  | Whether a cleaner swallow exists that also stays visible                                                                                                           |
+| 7   | **The restored rows (P9)**                                                                                                 | Restored from revision 1 by hand                                                                                                                                                        | Whether each tests what its label claims, and whether "26 additions and two removals" is accurate                                                                  |
+| 8   | **The devDependency declaration**                                                                                          | `entities` and `marked` were added to `package.json` and the lockfile **in a pre-code revision** — scope the author widened on its own judgement                                        | Ranges, placement, lockfile correctness; whether it should have waited for the repair                                                                              |
+| 9   | **Silent drops between revisions**                                                                                         | Revision 2 lost two rows this way and the loss concealed a regression                                                                                                                   | Diff revision 2's population against revision 3's and account for every row                                                                                        |
+
+⭐ **The single question that found three of the four previous defects, and is
+the cheapest thing to ask of any of the above:** _is this a property the parser
+actually decides, or one the author is deciding in the gap?_
 
 ---
 
