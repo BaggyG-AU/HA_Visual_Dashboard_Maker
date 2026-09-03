@@ -194,11 +194,21 @@ pinned by a committed control. **Final adversarial result: 23 ok, 0 FAIL.**
 
 ### Fail-against-current evidence, with the non-discriminators named
 
-The repaired spec was run against the round-1 repair at `69f458c`:
-**12 failed / 45 passed (57)**. The 12 failures are the R1 grammar controls —
-empty payload, each of three governed keys missing, each of three duplicated with
-a conflicting value, the unfenced shadow home, marker-not-first-line,
-key-outside-the-block, key-commented-out, and the substring control.
+⚠ **CORRECTED (C3 parser plan revision 3, §2.6): the total below was
+originally published as 12 failed / 45 passed and was not reproducible.**
+Measured in a disposable detached worktree at `69f458c` with the `6420bb4`
+spec copied in and nothing else changed: **14 failed / 43 passed (57)**. The
+12 failures below are the R1 grammar controls — empty payload, each of three
+governed keys missing, each of three duplicated with a conflicting value, the
+unfenced shadow home, marker-not-first-line, key-outside-the-block,
+key-commented-out, and the substring control. **The two extra failures are
+`TypeError: reportAdvisories is not a function`**, in
+`reports no BLOCKING finding against the live plan` and
+`R2: the gate PATH surfaces an advisory on a PASSING run`. The original 45
+counted those two `TypeError`s silently as passes; 12/45 is reproducible only
+after backporting the complete `advisoryFindings` + `reportAdvisories`
+implementation, which supplies the very function R2 is about — a
+compatibility substitution, not a reproduction of `69f458c` as committed.
 
 ⚠ **Four new controls do NOT discriminate, and are not counted as if they did:**
 
@@ -209,10 +219,15 @@ key-outside-the-block, key-commented-out, and the substring control.
   `C3-NOCANONICAL` there, because the old regex found no match at all. They are
   correct assertions of the new behaviour and are **not** old-vs-new
   discriminators.
-- **The R2 control cannot be run against `69f458c` at all.** `reportAdvisories`
-  does not exist at that commit, so the spec would not compile; shimming it in
-  would supply the very function under test. Its discriminator is **structural —
-  the function's absence** — stated rather than dressed up as a passing test.
+- **The R2 control cannot pass against `69f458c` as committed.** `reportAdvisories`
+  does not exist at that commit. ⚠ **CORRECTED: this was originally described
+  as "the spec would not compile", which understates the evidence.** Measured
+  under Vitest/Vite SSR: it **compiles, runs, and fails at runtime** with
+  `TypeError: reportAdvisories is not a function` — a stronger discriminator
+  than a structural claim, and the one counted in the 14/43 total above.
+  Shimming the function in would supply the very thing under test, so its
+  discriminator is the function's absence, stated rather than dressed up as a
+  passing test.
 
 ### Blast-radius statement (OA §3.4)
 

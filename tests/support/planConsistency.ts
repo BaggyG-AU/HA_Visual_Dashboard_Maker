@@ -24,6 +24,10 @@
  * asserting that the real document is clean.
  */
 
+import { marked, type Token, type Tokens } from 'marked';
+import { decodeHTML } from 'entities';
+import { parseDocument, isMap, isAlias, isScalar } from 'yaml';
+
 export interface PlanFinding {
   /** Stable code, e.g. `C1-ORPHAN`. */
   code: string;
@@ -292,122 +296,186 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
   ];
   // ⭐⭐⭐ THE DECIDABLE HALF OF C3 — AND THE ONLY PART THAT BLOCKS.
   //
-  // ⚠⚠⚠ THE CONTRACT, STATED AS A GRAMMAR BEFORE IT IS PARSED. A valid canonical
-  // home is: EXACTLY ONE FENCED CODE BLOCK in the plan whose FIRST CONTENT LINE
-  // is exactly `# plan-running-totals`, in which EACH GOVERNED KEY APPEARS
-  // EXACTLY ONCE. Everything else is invalid, and the invalid cases are
-  // enumerated as behaviours rather than discovered one at a time:
-  //   (1) no such block   (2) more than one   (3) marker present but UNFENCED
-  //   (4) fence never closed   (5) a governed key missing
-  //   (6) a governed key repeated (same OR conflicting value)
-  //   (7) the marker occurring only in PROSE or an inline code span
+  // ⚠⚠⚠ THE CONTRACT (§2.1, `docs/testing/PLAN_CONSISTENCY_C3_PARSER_PLAN.md`,
+  // revision 3). A valid canonical home is EXACTLY ONE FENCED code block —
+  // excluding INDENTED code blocks, at any Markdown container depth — whose
+  // FIRST CONTENT LINE is exactly `# plan-running-totals`. Its content must
+  // parse as a single YAML document whose root is a mapping with string keys,
+  // in which each governed key appears EXACTLY ONCE, with a value that is a
+  // finite non-negative integer. In addition, no level-1 Markdown heading
+  // anywhere in the plan may have the READER-VISIBLE TEXT `plan-running-totals`
+  // (§2.2a) — such a heading is a shadow home. Violations raise
+  // `C3-NOCANONICAL`.
   //
-  // ⚠⚠ (7) IS NOT HYPOTHETICAL: the live plan names `plan-running-totals` in an
-  // inline code span at line 14, and the history names it three times. A matcher
-  // that finds the marker anywhere counts those as homes.
+  // ⚠⚠ THE DIALECT IS NAMED (§2.2). Markdown is GitHub Flavored Markdown as
+  // implemented by `marked` 14.x (`gfm: true`, `pedantic: false` — the shipped
+  // defaults, pinned by a dialect test in the spec). YAML is YAML 1.2 as
+  // implemented by `yaml` 2.x, parsed with `uniqueKeys: true` AND
+  // `stringKeys: true` — the second option is load-bearing: without it an
+  // ALIAS used as a key raises no error, counts as one key, and lets a later
+  // value silently win.
   //
-  // ⓘ THIS REPLACES A REGEX THAT VALIDATED A MARKER OCCURRENCE, NOT A BLOCK
-  // (review R1). `/^# plan-running-totals$([\s\S]*?)^```/` started at the marker
-  // line and ended at ANY later closing fence: it never required an opening
-  // fence, and it accepted an empty payload, a missing key, or a key repeated
-  // with a conflicting value. Measured: five separate corruptions of the REAL
-  // plan all returned zero blockers. A count of CONTAINERS is not a count of
-  // CONTENTS. The parse below is line-based for that reason — a fence is a
-  // state, not a pattern.
+  // ⚠⚠⚠ THERE IS NO CLOSURE CHECK OF ANY KIND, AND NONE IS MISSING. An
+  // unclosed fence runs to end of file, exactly as CommonMark says; the risk
+  // that it silently swallows the rest of the plan into "code" is caught by
+  // the YAML parse below — a swallowed document fails to parse as one valid
+  // mapping — not by hand-parsing the fence delimiter. That hand-written
+  // delimiter test (review finding P1), an equality test on `heading.text`
+  // that missed every formatted shadow home (P3), and a three-regex
+  // character-reference decoder that threw `RangeError` and crashed the whole
+  // check (P8) were each a partial parser standing in for a property
+  // CommonMark or YAML already decides. All three are gone; nothing below
+  // hand-parses Markdown or YAML syntax.
+  //
+  // ⓘ THIS REPLACES THE LINE-BASED FENCE STATE MACHINE, THE UNFENCED-MARKER
+  // RAW-LINE SCAN AND THE `^\s*${key}\s*:` KEY COUNTER (review R1). A `code`
+  // token is not necessarily FENCED — `marked` gives four-space-indented
+  // blocks the same token type — and an unfenced `# plan-running-totals`
+  // occurrence (in prose, a block quote or a list item) is itself a level-1
+  // ATX heading once a real parser reads it, so it is caught by the SAME
+  // shadow-home walk below rather than a separate raw-line scan.
   const GOVERNED: ReadonlyArray<{ key: string; subject: string }> = [
     { key: 'review_rounds_complete', subject: 'review-round' },
     { key: 'reviewer_findings', subject: 'finding' },
     { key: 'findings_after_round_one', subject: 'finding' },
   ];
   const MARKER = '# plan-running-totals';
+  const MARKER_TEXT = 'plan-running-totals';
+  const decode = decodeHTML;
 
-  const specLines = spec.split('\n');
-  const canonical: string[][] = [];
-  let unterminated = false;
-  // ⚠⚠ A STRAY UNFENCED MARKER IS A SHADOW HOME. Found by attacking the grammar,
-  // not by the review: with the real block intact, appending an UNFENCED
-  // `# plan-running-totals` plus all three governed keys stating 99/88/77 read
-  // CLEAN, because a parser that only FINDS fenced blocks cannot SEE an unfenced
-  // one. Any line outside a fence that is exactly the marker invalidates.
-  let strayMarkers = 0;
-  {
-    let inFence = false;
-    let fenceDelim = '';
-    let fenceWidth = 0;
-    for (const line of specLines) {
-      const f = /^\s{0,3}(`{3,}|~{3,})/.exec(line);
-      if (!inFence && f) {
-        inFence = true;
-        fenceDelim = f[1][0];
-        fenceWidth = f[1].length;
+  /**
+   * READER-VISIBLE TEXT of a heading (§2.2a, review finding P3).
+   *
+   * `heading.text` is SOURCE markup, not what a reader sees: `# **x**` has a
+   * `text` of `**x**`, so an equality test against the marker misses a bold,
+   * struck, code-spanned, linked or character-referenced heading that renders
+   * IDENTICALLY to the prohibited one. Every inline role states what it
+   * contributes; `image` and inline `html` contribute nothing — deliberate
+   * residuals, pinned by `KNOWN-OPEN:` tests rather than left to be found.
+   */
+  function visibleText(tokens: Token[] | undefined): string {
+    let out = '';
+    for (const t of tokens ?? []) {
+      switch (t.type) {
+        case 'text': {
+          const kids = 'tokens' in t ? t.tokens : undefined;
+          out += kids?.length ? visibleText(kids) : decode(t.text ?? '');
+          break;
+        }
+        case 'escape':
+        case 'codespan':
+          out += t.text ?? '';
+          break;
+        case 'strong':
+        case 'em':
+        case 'del':
+        case 'link':
+          out += t.tokens?.length ? visibleText(t.tokens) : decode(t.text ?? '');
+          break;
+        case 'br':
+          out += ' ';
+          break;
+        default:
+          break;
+      }
+    }
+    return out.replace(/\s+/g, ' ').trim();
+  }
+
+  // The token walk. Recurses into block quotes and list items — a canonical
+  // block or a shadow-home heading inside either is a real, rendered Markdown
+  // construct and must count (CommonMark §5.1, §5.2). Does not descend into
+  // `code` tokens (code content is never a container) or `html` tokens — that
+  // is the owner's declared MARKDOWN-ONLY boundary (§2.1 says "level-1
+  // Markdown heading"), not a claim that raw blocks are invisible: the same
+  // bucket holds `<h1>plan-running-totals</h1>`, which renders a fully
+  // visible level-1 title, and that is a declared, pinned residual (§2.7).
+  const homes: { canonical: Tokens.Code[]; stray: string[] } = { canonical: [], stray: [] };
+  function walk(tokens: Token[] | undefined): void {
+    for (const t of tokens ?? []) {
+      if (t.type === 'code') {
+        // A `code` token is not necessarily FENCED (review finding P2) —
+        // `marked` gives four-space-indented blocks the same token type,
+        // distinguished only by `codeBlockStyle`. The contract says fenced.
+        if (t.codeBlockStyle === 'indented') continue;
+        if ((t.text ?? '').split('\n')[0] === MARKER) homes.canonical.push(t as Tokens.Code);
         continue;
       }
-      if (inFence) {
-        if (new RegExp(`^\\s{0,3}\\${fenceDelim}{${fenceWidth},}\\s*$`).test(line)) inFence = false;
-        continue;
+      if (t.type === 'html') continue;
+      if (t.type === 'heading' && t.depth === 1 && visibleText(t.tokens) === MARKER_TEXT) {
+        homes.stray.push(t.raw.trim());
       }
-      if (line.trim() === MARKER) strayMarkers++;
+      if (t.type === 'blockquote') walk(t.tokens);
+      else if (t.type === 'list') for (const item of t.items ?? []) walk(item.tokens);
     }
   }
-  for (let i = 0; i < specLines.length; i++) {
-    const open = /^\s{0,3}(`{3,}|~{3,})/.exec(specLines[i]);
-    if (!open) continue;
-    const delim = open[1][0];
-    const width = open[1].length;
-    const body: string[] = [];
-    let closed = false;
-    let j = i + 1;
-    for (; j < specLines.length; j++) {
-      const close = new RegExp(`^\\s{0,3}\\${delim}{${width},}\\s*$`).exec(specLines[j]);
-      if (close) {
-        closed = true;
-        break;
-      }
-      body.push(specLines[j]);
-    }
-    if (body.length > 0 && body[0].trim() === MARKER) {
-      canonical.push(body);
-      if (!closed) unterminated = true;
-    }
-    i = closed ? j : specLines.length;
-  }
+  walk(marked.lexer(spec));
 
   const sites = new Map<string, string[]>();
-  if (strayMarkers > 0) {
+  if (homes.stray.length > 0) {
     add(
       'C3-NOCANONICAL',
-      `found ${strayMarkers} UNFENCED \`${MARKER}\` marker(s) outside any code fence. ` +
-        `An unfenced marker with governed keys under it is a second home the fenced ` +
-        `parse cannot see (SP-30)`,
+      `found ${homes.stray.length} level-1 heading(s) outside the canonical block whose ` +
+        `READER-VISIBLE text is \`${MARKER_TEXT}\` — each is a shadow home the fenced parse ` +
+        `cannot see (SP-30)`,
     );
   }
-  if (canonical.length !== 1) {
+  if (homes.canonical.length !== 1) {
     add(
       'C3-NOCANONICAL',
       `expected EXACTLY ONE fenced \`${MARKER}\` block in the plan; found ` +
-        `${canonical.length}. It is the declared home every other mention points at, ` +
+        `${homes.canonical.length}. It is the declared home every other mention points at, ` +
         `so without exactly one there is nothing to count against (SP-30)`,
     );
-  } else if (unterminated) {
-    add('C3-NOCANONICAL', `the \`${MARKER}\` block is never closed by a fence (SP-30)`);
   } else {
-    const body = canonical[0];
-    const bad: string[] = [];
-    const seen = new Set<string>();
-    for (const { key, subject } of GOVERNED) {
-      const n = body.filter((l) => new RegExp(`^\\s*${key}\\s*:`).test(l)).length;
-      if (n !== 1) {
-        bad.push(`\`${key}\` appears ${n} times (expected exactly 1)`);
-      } else if (!seen.has(subject)) {
-        seen.add(subject);
-        sites.set(subject, [`plan: the canonical block declares ${subject}`]);
-      }
-    }
-    if (bad.length > 0) {
+    // YAML payload validation (§2.3 item 5). `raise on doc.errors.length > 0`
+    // covers malformed YAML, duplicate keys (including the quoted spelling),
+    // multi-document payloads, and — because of `stringKeys: true` — an alias
+    // or non-string key (review finding P4).
+    const yamlDoc = parseDocument(homes.canonical[0].text, {
+      uniqueKeys: true,
+      stringKeys: true,
+    });
+    if (yamlDoc.errors.length > 0) {
       add(
         'C3-NOCANONICAL',
-        `the \`${MARKER}\` block does not satisfy its own grammar — ${bad.join('; ')} ` + `(SP-30)`,
+        `the \`${MARKER}\` block's payload is not valid YAML — ` +
+          `${[...new Set(yamlDoc.errors.map((e) => e.code))].join(', ')} (SP-30)`,
       );
+    } else if (!isMap(yamlDoc.contents)) {
+      add('C3-NOCANONICAL', `the \`${MARKER}\` block's payload is not a top-level mapping (SP-30)`);
+    } else {
+      const pairs = yamlDoc.contents.items.map(
+        (p) => [isScalar(p.key) ? String(p.key.value) : String(p.key), p.value] as const,
+      );
+      const bad: string[] = [];
+      const seen = new Set<string>();
+      for (const { key, subject } of GOVERNED) {
+        const hits = pairs.filter(([k]) => k === key);
+        if (hits.length !== 1) {
+          bad.push(`\`${key}\` appears ${hits.length} times (expected exactly 1)`);
+          continue;
+        }
+        // Review finding P7: a running TOTAL must be a count. An `Alias` node
+        // has no scalar `.value` (P9) — reading it directly made every alias
+        // look like `null`, so `Alias.resolve(doc)`, the library's own
+        // dereference API, is used instead of hand-deciding anchor semantics.
+        const node = hits[0][1];
+        const resolved = isAlias(node) ? node.resolve(yamlDoc) : node;
+        const v = isScalar(resolved) ? resolved.value : undefined;
+        if (typeof v !== 'number' || !Number.isInteger(v) || v < 0) {
+          bad.push(`\`${key}\` is not a non-negative integer (${JSON.stringify(v ?? null)})`);
+        } else if (!seen.has(subject)) {
+          seen.add(subject);
+          sites.set(subject, [`plan: the canonical block declares ${subject}`]);
+        }
+      }
+      if (bad.length > 0) {
+        add(
+          'C3-NOCANONICAL',
+          `the \`${MARKER}\` block does not satisfy its own grammar — ${bad.join('; ')} (SP-30)`,
+        );
+      }
     }
   }
 

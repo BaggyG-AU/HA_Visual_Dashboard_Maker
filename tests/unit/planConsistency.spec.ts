@@ -9,6 +9,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
+import { marked } from 'marked';
 import {
   advisoryFindings,
   blockingFindings,
@@ -337,7 +338,13 @@ describe('planConsistency — the real plan, when it is present on this branch',
 // credited; the disposition table records the per-finding evidence.
 // ---------------------------------------------------------------------------
 describe('planConsistency — fail-closed structure (review F2/F3)', () => {
-  const CANON = '\n```yaml\n# plan-running-totals\nreview_rounds_complete: 7\n```\n';
+  // ⚠ MUST declare all three governed keys with valid values (P7) — a fixture
+  // named CANON that is itself missing keys fires C3-NOCANONICAL for a reason
+  // unrelated to what any test using it names (found while porting the C3
+  // parser plan revision 3, not by review).
+  const CANON =
+    '\n```yaml\n# plan-running-totals\nreview_rounds_complete: 7\nreviewer_findings: 30\n' +
+    'findings_after_round_one: 24\n```\n';
 
   it('F2: FIRES when the canonical totals block is MISSING', () => {
     const f = checkPlan({ spec: WIRED });
@@ -399,74 +406,273 @@ describe('planConsistency — fail-closed structure (review F2/F3)', () => {
 // than from the review's finding list, which is how the unfenced SHADOW HOME
 // below was found — it appears in no review.
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// R1 — the canonical block's GRAMMAR, attacked as a class, by delegating each
+// term the contract BORROWS — "fenced code block" from CommonMark, "key" from
+// YAML — to a real parser instead of hand-rolled line matching. Regenerated
+// from the pre-code harness (`docs/testing/PLAN_CONSISTENCY_C3_PARSER_PLAN.md`
+// revision 3 §2.10, `tools/c3-parser-harness.cjs`, 69 ok / 0 FAIL) rather than
+// from any review's finding list — which is how three fail-opens no review
+// had were found: an unfenced shadow home invisible to a fenced-only scan, a
+// hand-written fence-closure test that accepted two genuinely unclosed
+// fences, and a `heading.text` equality test that missed every FORMATTED
+// shadow home. Every case names the specification clause that decides its
+// expected verdict; the reference parsers (`marked` for Markdown, `yaml` for
+// YAML) decide the grammar facts. Five cases from the harness's 69 pin a
+// DECLARED RESIDUAL rather than attack the grammar and are committed instead
+// under `KNOWN-OPEN limits` below, matching this project's convention that a
+// known limit is pinned where the other known limits live.
+// ---------------------------------------------------------------------------
 describe('planConsistency — canonical block grammar (review R1)', () => {
-  const KEYS = 'review_rounds_complete: 7\nreviewer_findings: 30\nfindings_after_round_one: 24';
-  const block = (body: string) => `\n\`\`\`yaml\n# plan-running-totals\n${body}\n\`\`\`\n`;
+  const MARKER = '# plan-running-totals';
+  const MARKER_TEXT = 'plan-running-totals';
+  const KEYS = [
+    'review_rounds_complete: 7',
+    'reviewer_findings: 30',
+    'findings_after_round_one: 24',
+  ];
+  const fence = (body: readonly string[], open = '```yaml', close = '```'): string =>
+    [open, MARKER, ...body, close].join('\n');
+  const GOOD = fence(KEYS);
+  const doc = (...parts: string[]): string => `${WIRED}\n\n${parts.join('\n\n')}\n`;
   const noCanon = (spec: string) => codes(checkPlan({ spec })).includes('C3-NOCANONICAL');
 
-  it('CONTROL: a well-formed block with every governed key is accepted', () => {
-    expect(noCanon(`${WIRED}${block(KEYS)}`)).toBe(false);
+  it('PINS the dialect: marked.defaults.gfm===true, pedantic===false', () => {
+    // §2.5 item 3. A future dependency bump that changes the dialect must fail
+    // loudly here rather than silently changing what the C3 gate means.
+    expect(marked.defaults.gfm).toBe(true);
+    expect(marked.defaults.pedantic).toBe(false);
   });
 
-  it('R1: FIRES on an EMPTY payload — a marker is not a block', () => {
-    expect(noCanon(`${WIRED}${block('')}`)).toBe(true);
-  });
+  type Case = readonly [label: string, text: string, must: 'valid' | 'invalid'];
+  const CASES: Case[] = [
+    ['well-formed canonical block', doc(GOOD), 'valid'],
 
-  for (const key of ['review_rounds_complete', 'reviewer_findings', 'findings_after_round_one']) {
-    it(`R1: FIRES when the governed key \`${key}\` is MISSING`, () => {
-      const body = KEYS.split('\n')
-        .filter((l) => !l.startsWith(`${key}:`))
-        .join('\n');
-      expect(noCanon(`${WIRED}${block(body)}`)).toBe(true);
-    });
+    // --- fence forms: CommonMark §4.5 ---------------------------------------
+    ['tilde fence', doc(fence(KEYS, '~~~yaml', '~~~')), 'valid'],
+    ['four-backtick fence', doc(fence(KEYS, '````yaml', '````')), 'valid'],
+    ['untagged fence (no info string)', doc(fence(KEYS, '```', '```')), 'valid'],
+    [
+      'fence indented three spaces (legal)',
+      doc(['   ```yaml', `   ${MARKER}`, ...KEYS.map((k) => `   ${k}`), '   ```'].join('\n')),
+      'valid',
+    ],
+    ['backtick in the info string', doc(fence(KEYS, '```yaml`', '```')), 'invalid'],
+    [
+      'TAB before the opening fence',
+      doc(['\t```yaml', MARKER, ...KEYS, '\t```'].join('\n')),
+      'invalid',
+    ],
+    [
+      'closer NARROWER than opener (4 open, 3 close)',
+      doc(fence(KEYS, '````yaml', '```')),
+      'invalid',
+    ],
+    ['closer WIDER than opener (3 open, 4 close)', doc(fence(KEYS, '```yaml', '````')), 'valid'],
+    [
+      'closer of the WRONG CHARACTER (backtick open, tilde close)',
+      doc(fence(KEYS, '```yaml', '~~~')),
+      'invalid',
+    ],
+    [
+      'closer OVER-INDENTED four spaces',
+      doc(['```yaml', MARKER, ...KEYS, '    ```'].join('\n'), 'Trailing prose paragraph.'),
+      'invalid',
+    ],
+    [
+      'unclosed fence SWALLOWS the rest of the document',
+      `${WIRED}\n\n${['```yaml', MARKER, ...KEYS].join('\n')}\n\n## A later section\n\nOrdinary prose.\n`,
+      'invalid',
+    ],
 
-    it(`R1: FIRES when \`${key}\` is DUPLICATED with a conflicting value`, () => {
-      expect(noCanon(`${WIRED}${block(`${KEYS}\n${key}: 999`)}`)).toBe(true);
+    // --- leaf-block subtype: CommonMark §4.4 vs §4.5 ------------------------
+    [
+      'INDENTED code block alone is not a fenced block',
+      doc([MARKER, ...KEYS].map((l) => `    ${l}`).join('\n')),
+      'invalid',
+    ],
+    [
+      'INDENTED example beside a valid fence is ignored',
+      doc(GOOD, [MARKER, 'review_rounds_complete: 99'].map((l) => `    ${l}`).join('\n')),
+      'valid',
+    ],
+
+    // --- containers: CommonMark §5.1, §5.2 ----------------------------------
+    [
+      'second canonical block in a BLOCK QUOTE',
+      doc(GOOD, ['> ```yaml', `> ${MARKER}`, '> review_rounds_complete: 99', '> ```'].join('\n')),
+      'invalid',
+    ],
+    [
+      'second canonical block in a LIST ITEM',
+      doc(GOOD, `- item\n\n  \`\`\`yaml\n  ${MARKER}\n  review_rounds_complete: 99\n  \`\`\``),
+      'invalid',
+    ],
+    ['unfenced marker in a BLOCK QUOTE', doc(GOOD, `> ${MARKER}`), 'invalid'],
+    ['unfenced marker in a LIST ITEM', doc(GOOD, `- ${MARKER}`), 'invalid'],
+    ['unfenced marker in a NESTED block quote', doc(GOOD, `> > ${MARKER}`), 'invalid'],
+
+    // --- heading forms: CommonMark §4.2, §4.3, §6 ---------------------------
+    ['plain ATX shadow home', doc(GOOD, MARKER), 'invalid'],
+    ['SETEXT shadow home', doc(GOOD, `${MARKER_TEXT}\n${'='.repeat(19)}`), 'invalid'],
+    ['ATX with a closing # sequence', doc(GOOD, `${MARKER} #`), 'invalid'],
+    ['BOLD shadow home', doc(GOOD, `# **${MARKER_TEXT}**`), 'invalid'],
+    ['CODE-SPAN shadow home', doc(GOOD, `# \`${MARKER_TEXT}\``), 'invalid'],
+    ['STRIKETHROUGH shadow home', doc(GOOD, `# ~~${MARKER_TEXT}~~`), 'invalid'],
+    [
+      'REFERENCE-LINK shadow home',
+      doc(GOOD, `# [${MARKER_TEXT}][t]`, '[t]: https://example.invalid'),
+      'invalid',
+    ],
+    ['CHARACTER-REFERENCE shadow home', doc(GOOD, '# plan&#x2D;running-totals'), 'invalid'],
+    ['formatted SETEXT shadow home', doc(GOOD, `**${MARKER_TEXT}**\n${'='.repeat(19)}`), 'invalid'],
+    [
+      'CONTROL: a formatted heading that is NOT the marker',
+      doc(GOOD, '# **other-running-totals**'),
+      'valid',
+    ],
+    [
+      'CONTROL: level-2 heading with the marker text is not a home',
+      doc(GOOD, `## ${MARKER_TEXT}`),
+      'valid',
+    ],
+    [
+      'RESTORED (rev 1): marker indented four spaces as the first content line',
+      doc(fence(KEYS, '```yaml', '```').replace(MARKER, `    ${MARKER}`)),
+      'invalid',
+    ],
+    [
+      'CONTROL: marker in an inline code span (live plan, line 14)',
+      doc(GOOD, `The figures are in the \`${MARKER_TEXT}\` block.`),
+      'valid',
+    ],
+    [
+      'CONTROL: marker inside an HTML comment',
+      doc(GOOD, `<!--\n${MARKER}\nDocumentation, not a home.\n-->`),
+      'valid',
+    ],
+
+    // --- character references: CommonMark §2.5, decided by `entities` ------
+    ['UPPERCASE-X hex reference shadow home', doc(GOOD, '# plan&#X2D;running-totals'), 'invalid'],
+    ['DECIMAL reference shadow home', doc(GOOD, '# plan&#45;running-totals'), 'invalid'],
+    [
+      'NAMED reference `&Tab;` decodes to whitespace and collapses away',
+      doc(GOOD, '# &Tab;plan-running-totals'),
+      'invalid',
+    ],
+    [
+      'CONTROL: `&Nbsp;` is INVALID — the name inventory is case-SENSITIVE',
+      doc(GOOD, '# &Nbsp;plan-running-totals'),
+      'valid',
+    ],
+    [
+      'CONTROL: an OUT-OF-RANGE code point becomes U+FFFD, it does not throw',
+      doc(GOOD, '# unrelated&#x110000;heading'),
+      'valid',
+    ],
+    ['CONTROL: NUL becomes U+FFFD', doc(GOOD, '# unrelated&#0;heading'), 'valid'],
+    [
+      'CONTROL: a numeric reference with too many digits stays literal',
+      doc(GOOD, '# plan&#x0000002D;running-totals'),
+      'valid',
+    ],
+    [
+      'CONTROL: a nonentity name stays literal',
+      doc(GOOD, '# plan&#xnotanentity;running-totals'),
+      'valid',
+    ],
+    [
+      'CONTROL: references stay LITERAL inside a code span',
+      doc(GOOD, '# `plan&#x2D;running-totals`'),
+      'valid',
+    ],
+
+    // --- raw HTML: the owner's declared Markdown-only boundary (P11) -------
+    [
+      'CONTROL: inline HTML around the words still projects the text',
+      doc(GOOD, '# plan-<b>running</b>-totals'),
+      'invalid',
+    ],
+
+    // --- payload: YAML 1.2 ---------------------------------------------------
+    ['empty payload', doc(fence([])), 'invalid'],
+    [
+      'FLOW-MAPPING payload',
+      doc(
+        fence([
+          '{ review_rounds_complete: 7, reviewer_findings: 30, findings_after_round_one: 24 }',
+        ]),
+      ),
+      'valid',
+    ],
+    ['SEQUENCE payload (root is not a mapping)', doc(fence(KEYS.map((k) => `- ${k}`))), 'invalid'],
+    [
+      'malformed YAML payload',
+      doc(fence(['review_rounds_complete: [7', ...KEYS.slice(1)])),
+      'invalid',
+    ],
+    [
+      'MULTI-DOCUMENT payload',
+      doc(fence([...KEYS, '---', 'review_rounds_complete: 99'])),
+      'invalid',
+    ],
+    [
+      'governed keys NESTED one level deep',
+      doc(fence(['totals:', ...KEYS.map((k) => `  ${k}`)])),
+      'invalid',
+    ],
+    ['governed key COMMENTED OUT', doc(fence([`# ${KEYS[0]}`, ...KEYS.slice(1)])), 'invalid'],
+    [
+      'key-shaped text inside a BLOCK SCALAR',
+      doc(fence(['notes: |', ...KEYS.map((k) => `  ${k}`)])),
+      'invalid',
+    ],
+    [
+      'CONTROL: real keys PLUS a scalar mentioning one',
+      doc(fence([...KEYS, 'notes: |', '  review_rounds_complete: 6'])),
+      'valid',
+    ],
+    ['QUOTED duplicate key', doc(fence([...KEYS, '"review_rounds_complete": 999'])), 'invalid'],
+    ['duplicate key with the SAME value', doc(fence([...KEYS, KEYS[0]])), 'invalid'],
+    [
+      'ALIAS used as a duplicate key',
+      doc(fence([`&k ${KEYS[0]}`, '*k : 8', ...KEYS.slice(1)])),
+      'invalid',
+    ],
+    [
+      'RESTORED (rev 1): an ALIAS resolving to an integer is a valid value',
+      doc(fence(['base: &n 7', 'review_rounds_complete: *n', ...KEYS.slice(1)])),
+      'valid',
+    ],
+    [
+      'an ALIAS resolving to a STRING is not a count',
+      doc(fence(['base: &n oops', 'review_rounds_complete: *n', ...KEYS.slice(1)])),
+      'invalid',
+    ],
+    [
+      'CONTROL: a key that merely CONTAINS a governed key',
+      doc(fence([...KEYS, 'x_reviewer_findings: 1'])),
+      'valid',
+    ],
+
+    // --- values: the owner's P7 ruling ---------------------------------------
+    ['STRING value', doc(fence(['review_rounds_complete: bananas', ...KEYS.slice(1)])), 'invalid'],
+    ['NEGATIVE value', doc(fence(['review_rounds_complete: -1', ...KEYS.slice(1)])), 'invalid'],
+    ['NULL value', doc(fence(['review_rounds_complete: null', ...KEYS.slice(1)])), 'invalid'],
+    ['SEQUENCE value', doc(fence(['review_rounds_complete: [7]', ...KEYS.slice(1)])), 'invalid'],
+    ['FLOAT value', doc(fence(['review_rounds_complete: 7.5', ...KEYS.slice(1)])), 'invalid'],
+    [
+      'CONTROL: zero is a legitimate total',
+      doc(fence(['review_rounds_complete: 0', ...KEYS.slice(1)])),
+      'valid',
+    ],
+  ];
+
+  for (const [label, text, must] of CASES) {
+    it(`${must === 'invalid' ? 'FIRES' : 'is SILENT'}: ${label}`, () => {
+      expect(noCanon(text), text).toBe(must === 'invalid');
     });
   }
-
-  it('R1: FIRES when the block is UNFENCED — no opening fence', () => {
-    expect(noCanon(`${WIRED}\n# plan-running-totals\n${KEYS}\n`)).toBe(true);
-  });
-
-  it('R1: FIRES on an UNFENCED SHADOW HOME beside a valid block', () => {
-    // Found by attacking the grammar, not by the review. A parser that only
-    // FINDS fenced blocks cannot SEE a second, unfenced one stating other values.
-    const shadow = '\n# plan-running-totals\nreview_rounds_complete: 99\n';
-    expect(noCanon(`${WIRED}${block(KEYS)}${shadow}`)).toBe(true);
-  });
-
-  it('R1: FIRES when the fence is never CLOSED', () => {
-    expect(noCanon(`${WIRED}\n\`\`\`yaml\n# plan-running-totals\n${KEYS}\n`)).toBe(true);
-  });
-
-  it('R1: FIRES when the marker is not the FIRST line of the block', () => {
-    expect(
-      noCanon(`${WIRED}\n\`\`\`yaml\n# header\n# plan-running-totals\n${KEYS}\n\`\`\`\n`),
-    ).toBe(true);
-  });
-
-  it('R1: FIRES when a key sits OUTSIDE the block only', () => {
-    const body = KEYS.split('\n')
-      .filter((l) => !l.startsWith('reviewer_findings:'))
-      .join('\n');
-    expect(noCanon(`${WIRED}${block(body)}\nreviewer_findings: 30\n`)).toBe(true);
-  });
-
-  it('R1: FIRES when a governed key is COMMENTED OUT inside the block', () => {
-    expect(
-      noCanon(`${WIRED}${block(KEYS.replace('reviewer_findings:', '# reviewer_findings:'))}`),
-    ).toBe(true);
-  });
-
-  it('R1 CONTROL: a PROSE mention of the marker is not a home', () => {
-    expect(noCanon(`${WIRED}${block(KEYS)}\nSee the \`plan-running-totals\` block.\n`)).toBe(false);
-  });
-
-  it('R1 CONTROL: a key that merely CONTAINS a governed key is not that key', () => {
-    const body = KEYS.replace('reviewer_findings:', 'x_reviewer_findings:');
-    expect(noCanon(`${WIRED}${block(body)}`)).toBe(true);
-  });
 });
 
 describe("planConsistency — the review's SEV-3 findings (F5/F6)", () => {
@@ -493,7 +699,13 @@ describe("planConsistency — the review's SEV-3 findings (F5/F6)", () => {
 // claim in the same commit. They are NOT aspirations.
 // ---------------------------------------------------------------------------
 describe('planConsistency — KNOWN-OPEN limits (recorded, not fixed)', () => {
-  const CANON = '\n```yaml\n# plan-running-totals\nreview_rounds_complete: 7\n```\n';
+  // ⚠ MUST declare all three governed keys with valid values (P7) — a fixture
+  // named CANON that is itself missing keys fires C3-NOCANONICAL for a reason
+  // unrelated to what any test using it names (found while porting the C3
+  // parser plan revision 3, not by review).
+  const CANON =
+    '\n```yaml\n# plan-running-totals\nreview_rounds_complete: 7\nreviewer_findings: 30\n' +
+    'findings_after_round_one: 24\n```\n';
 
   it('KNOWN-OPEN: C1 counts textual callers, so a disconnected CYCLE reads as wired', () => {
     // Two private methods that only call each other are unreachable from the
@@ -528,5 +740,71 @@ describe('planConsistency — KNOWN-OPEN limits (recorded, not fixed)', () => {
     });
     expect(codes(f)).toContain('C3-COUNTDRIFT');
     expect(blockingFindings(f).map((x) => x.code)).not.toContain('C3-COUNTDRIFT');
+  });
+
+  // -------------------------------------------------------------------------
+  // §2.7 declared residuals of the C3 parser repair (plan revision 3), pinned
+  // by passing controls asserting CURRENT behaviour — the same discipline as
+  // the C1/C3 limits above. Ported from `tools/c3-parser-harness.cjs` (§2.5
+  // item 4), which labels each of the first four `KNOWN-OPEN:`; the no-space
+  // and ungoverned-key cases are added fresh per the same item.
+  // -------------------------------------------------------------------------
+  const c3nocanon = (spec: string) => codes(checkPlan({ spec })).includes('C3-NOCANONICAL');
+
+  it('KNOWN-OPEN: an unclosed fence at END OF FILE is a valid block', () => {
+    // The unterminated-fence departure was WITHDRAWN (§1.4, review finding
+    // P1): CommonMark ends an unclosed fence at end of file, and deleting the
+    // real plan's closing fence still blocks via the YAML parse, so the
+    // departure protected nothing the parsers do not already protect.
+    const spec =
+      `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\nreview_rounds_complete: 7\n` +
+      'reviewer_findings: 30\nfindings_after_round_one: 24';
+    expect(c3nocanon(spec)).toBe(false);
+  });
+
+  it('KNOWN-OPEN: an unclosed fence swallows later content that YAML reads as comments', () => {
+    // The real residual (review finding P10): the swallowed material happens
+    // to be valid YAML (comments), so the payload still validates.
+    const spec =
+      `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\nreview_rounds_complete: 7\n` +
+      'reviewer_findings: 30\nfindings_after_round_one: 24\n\n## Later section\n\n### Last section\n';
+    expect(c3nocanon(spec)).toBe(false);
+  });
+
+  it('KNOWN-OPEN: an IMAGE heading contributes no visible text', () => {
+    // `# ![plan-running-totals](i.png)` is not a shadow home — a reader sees a
+    // picture, not the `alt` attribute (§2.2a).
+    const f = checkPlan({
+      spec: `${WIRED}${CANON}\n# ![plan-running-totals](i.png)\n`,
+    });
+    expect(codes(f)).not.toContain('C3-NOCANONICAL');
+  });
+
+  it('KNOWN-OPEN: a raw `<h1>` renders a visible title and is NOT seen', () => {
+    // Owner-ruled (P11): the contract stays Markdown-only, as §2.1 literally
+    // says, rather than acquiring an HTML parsing boundary.
+    const f = checkPlan({
+      spec: `${WIRED}${CANON}\n<h1>plan-running-totals</h1>\n`,
+    });
+    expect(codes(f)).not.toContain('C3-NOCANONICAL');
+  });
+
+  it('KNOWN-OPEN: `#plan-running-totals` with no space is not a heading', () => {
+    // CommonMark requires a space (or the line end) after the `#` for an ATX
+    // heading; without it the line is an ordinary paragraph, correctly not a
+    // shadow home.
+    const f = checkPlan({
+      spec: `${WIRED}${CANON}\n#plan-running-totals\n`,
+    });
+    expect(codes(f)).not.toContain('C3-NOCANONICAL');
+  });
+
+  it('KNOWN-OPEN: ungoverned keys in the canonical block are unconstrained', () => {
+    // Only the three GOVERNED keys are value-checked; `review_rounds_owed`,
+    // `repair_introduced_after_round_one` and `executable_spec_lines` are not.
+    const spec =
+      `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\nreview_rounds_complete: 7\n` +
+      'reviewer_findings: 30\nfindings_after_round_one: 24\nreview_rounds_owed: bananas\n```\n';
+    expect(c3nocanon(spec)).toBe(false);
   });
 });
