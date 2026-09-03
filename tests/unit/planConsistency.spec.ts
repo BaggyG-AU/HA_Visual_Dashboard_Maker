@@ -361,6 +361,28 @@ describe('planConsistency — fail-closed structure (review F2/F3)', () => {
     expect(codes(f)).toContain('C3-COUNTDRIFT');
   });
 
+  it('P13: an INVALID payload does NOT seed a site — the blocker fires, the advisory does not', () => {
+    // Implementation review finding P13. Plan §2.3 item 6 says a site is
+    // established only after the payload validates — as a WHOLE, not
+    // key-by-key. `reviewer_findings` is malformed here; `review_rounds_complete`
+    // is not, and would (wrongly) still seed a 'review-round' site if sites were
+    // committed per-key rather than only once every key is confirmed valid.
+    const invalid =
+      '\n```yaml\n# plan-running-totals\nreview_rounds_complete: 7\nreviewer_findings: bananas\n' +
+      'findings_after_round_one: 24\n```\n';
+    const f = checkPlan({ spec: `${WIRED}${invalid}\nSeven review rounds complete.\n` });
+    expect(codes(f)).toContain('C3-NOCANONICAL');
+    expect(codes(f)).not.toContain('C3-COUNTDRIFT');
+  });
+
+  it('P13 CONTROL: a VALID payload still seeds a site and still drifts against matching prose', () => {
+    // The inverse of the control above, so the P13 fix is proven to narrow the
+    // defect rather than to have silenced the site-grouping mechanism outright.
+    const f = checkPlan({ spec: `${WIRED}${CANON}\nThirty findings, none false.\n` });
+    expect(codes(f)).not.toContain('C3-NOCANONICAL');
+    expect(codes(f)).toContain('C3-COUNTDRIFT');
+  });
+
   it('F3: FIRES when the implementation section is ABSENT', () => {
     const f = checkPlan({ spec: `${WIRED}${CANON}` });
     expect(codes(f)).toContain('C4-UNVERIFIABLE');
@@ -398,14 +420,6 @@ describe('planConsistency — fail-closed structure (review F2/F3)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// R1 — the canonical block's GRAMMAR, attacked as a class. The previous repair
-// validated a MARKER OCCURRENCE and called it a block: it accepted an empty
-// payload, a missing key, a key repeated with a conflicting value, and an
-// unfenced marker. These controls were generated from the grammar itself rather
-// than from the review's finding list, which is how the unfenced SHADOW HOME
-// below was found — it appears in no review.
-// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // R1 — the canonical block's GRAMMAR, attacked as a class, by delegating each
 // term the contract BORROWS — "fenced code block" from CommonMark, "key" from
@@ -666,6 +680,18 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
       doc(fence(['review_rounds_complete: 0', ...KEYS.slice(1)])),
       'valid',
     ],
+
+    // --- YAML dialect: §2.2 names 1.2; implementation review finding P12 ----
+    [
+      'an explicit %YAML 1.1 directive lets a sexagesimal scalar pass as a count',
+      doc(fence(['%YAML 1.1', '---', 'review_rounds_complete: 1:20', ...KEYS.slice(1)])),
+      'invalid',
+    ],
+    [
+      'CONTROL: the SAME sexagesimal scalar under an explicit %YAML 1.2 directive still blocks',
+      doc(fence(['%YAML 1.2', '---', 'review_rounds_complete: 1:20', ...KEYS.slice(1)])),
+      'invalid',
+    ],
   ];
 
   for (const [label, text, must] of CASES) {
@@ -753,9 +779,8 @@ describe('planConsistency — KNOWN-OPEN limits (recorded, not fixed)', () => {
 
   it('KNOWN-OPEN: an unclosed fence at END OF FILE is a valid block', () => {
     // The unterminated-fence departure was WITHDRAWN (§1.4, review finding
-    // P1): CommonMark ends an unclosed fence at end of file, and deleting the
-    // real plan's closing fence still blocks via the YAML parse, so the
-    // departure protected nothing the parsers do not already protect.
+    // P1): CommonMark ends an unclosed fence at end of file, and this
+    // fixture — nothing after the fence at all — is the simplest case of it.
     const spec =
       `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\nreview_rounds_complete: 7\n` +
       'reviewer_findings: 30\nfindings_after_round_one: 24';
@@ -763,12 +788,29 @@ describe('planConsistency — KNOWN-OPEN limits (recorded, not fixed)', () => {
   });
 
   it('KNOWN-OPEN: an unclosed fence swallows later content that YAML reads as comments', () => {
-    // The real residual (review finding P10): the swallowed material happens
-    // to be valid YAML (comments), so the payload still validates.
+    // ⚠ NOT a universal — implementation review finding P14 (corrected; an
+    // earlier version of this comment, and of the code comment it was copied
+    // from, overstated the claim as "the swallow risk is caught by the YAML
+    // parse" without qualification). ORDINARY swallowed prose, and deleting
+    // the LIVE plan's own closer, are caught: the swallowed material then
+    // fails to parse as valid YAML (see the disproof control below). Here the
+    // swallowed material is ITSELF valid YAML — `##`/`###` headings, which
+    // YAML reads as comments — so the payload still validates and NOTHING
+    // catches it. That is the real, narrower residual §2.7 declares.
     const spec =
       `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\nreview_rounds_complete: 7\n` +
       'reviewer_findings: 30\nfindings_after_round_one: 24\n\n## Later section\n\n### Last section\n';
     expect(c3nocanon(spec)).toBe(false);
+  });
+
+  it('DISPROOF (of a false universal, P14): ordinary swallowed PROSE is still caught', () => {
+    // The contrast that makes the residual above precise rather than a
+    // blanket "closure is unnecessary" claim: swallowed content that is NOT
+    // itself valid YAML still fails the payload parse.
+    const spec =
+      `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\nreview_rounds_complete: 7\n` +
+      'reviewer_findings: 30\nfindings_after_round_one: 24\n\nA later section.\n\nOrdinary prose.\n';
+    expect(c3nocanon(spec)).toBe(true);
   });
 
   it('KNOWN-OPEN: an IMAGE heading contributes no visible text', () => {

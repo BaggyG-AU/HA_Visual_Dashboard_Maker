@@ -179,11 +179,16 @@ seventeen patches.
 asked the owner to approve keeping "the fence must be closed" as a deliberate
 departure from CommonMark. **The owner ruled to drop it, on measurement.**
 Deleting the real plan's closing fence still blocks — the swallowed document
-fails the _YAML_ parse (`MULTILINE_IMPLICIT_KEY, MULTIPLE_DOCS`) — so the rule
-protected nothing that the parsers do not already protect, while requiring a
-hand-written delimiter parser `marked` does not support. §2.10 shows the four
-closer-relation constructions the reviewer raised (narrower, wrong-character,
-over-indented, wider) all decided correctly **with no delimiter logic at all**.
+fails the _YAML_ parse (`MULTILINE_IMPLICIT_KEY, MULTIPLE_DOCS`) — so for THAT
+measured case the rule protected nothing the parsers do not already protect,
+while requiring a hand-written delimiter parser `marked` does not support.
+§2.10 shows the four closer-relation constructions the reviewer raised
+(narrower, wrong-character, over-indented, wider) all decided correctly **with
+no delimiter logic at all**. ⚠ **This is not a claim that EVERY swallow is
+caught** (implementation review finding P14, corrected) — swallowed content
+that is itself valid YAML, such as trailing Markdown headings YAML reads as
+comments, is a real, narrower, owner-accepted residual; see §2.3 item 4 and
+§2.7.
 
 ⚠ The owner's earlier ruling stands untouched: **a plan that documents an
 _example_ totals block still blocks**, because two blocks are genuinely
@@ -338,7 +343,13 @@ parser; delete it and call one.**
      not a claim that raw blocks are invisible: the same bucket holds
      `<h1>plan-running-totals</h1>`, which renders a visible title (P11).
      ⚠ **No closure check of any kind.** An unclosed fence runs to end of file,
-     as CommonMark says; the swallow risk is caught by the YAML parse (§1.4).
+     as CommonMark says. Ordinary swallowed prose, and deleting the live plan's
+     own closer, are caught by the YAML parse (§1.4) — the swallowed material
+     then fails to parse as one valid mapping. ⚠ **That is not a universal**
+     (implementation review finding P14, corrected — this sentence previously
+     had no qualifier): swallowed material that is ITSELF valid YAML, such as
+     trailing `##`/`###` Markdown headings read as comments, stays clean. That
+     is the real, narrower residual §2.7 declares and §2.10 pins.
 5. **Add YAML payload validation** for the single canonical block:
    `parseDocument(text, { uniqueKeys: true, stringKeys: true })`; raise on
    `doc.errors.length > 0` (malformed YAML, duplicate keys including the quoted
@@ -503,7 +514,9 @@ reads the plan, its history companion, and `tests/support/dsl/spacing.ts`.
 required context on this branch). No `src/`, no Electron, no e2e/integration, no
 snapshot, no baseline manifest.
 
-**New surface.** One devDependency, used only by this test-support module.
+**New surface.** ⚠ **Corrected (implementation review finding P15 — this line
+previously said "one"): two devDependencies**, `marked` and `entities` (§1.3,
+§2.4), used only by this test-support module.
 
 **Non-regression to prove.** The live plan stays clean (measured on the
 prototype: **VALID**); unit population goes 1470 → 1470 + _n_ with no new file;
@@ -667,6 +680,31 @@ fix complexity was 2.
 | P10 | SEV-2                                   | **FIXED.** The residual is pinned by the real construction — the valid block followed by `## Later section` / `### Last section`, which YAML reads as comments and which measures **clean**. The EOF-only case and the hostile ordinary-prose case both stay as the inverse controls.                                                                                                                                             |
 | P11 | SEV-2 · Owner judgement                 | **FIXED — option B, owner-ruled 2026-09-03.** The contract stays Markdown-only. The false harness comment "raw blocks declare nothing" is corrected, the boundary is declared in §2.3 and §2.7, and a raw `<h1>` is pinned as a passing `KNOWN-OPEN:` case. No HTML parsing is introduced.                                                                                                                                        |
 
+## 2.11c Disposition of the implementation review (P12–P15)
+
+The implementation landed as commit `f1d51da` (2026-09-04), porting §2.3 into
+`tests/support/planConsistency.ts` and regenerating the R1 test population from
+§2.10. It was independently reviewed — the first independent look at ANY of
+this revision's content, since revision 3's own plan review was waived (the
+boxed warning at the top of this document) — verdict **CHANGES-REQUIRED**,
+four findings, all reproduced before being accepted; the reviewer's cumulative
+record on this branch is now **28 findings, 28 valid**.
+
+| Ref | Severity                               | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P12 | SEV-2 · `Blocks: the promised dialect` | **FIXED.** `parseDocument` was given `version: '1.2'`, which is only a FALLBACK for a document with no `%YAML` directive — an explicit directive overrides it, and under an explicit `%YAML 1.1` the sexagesimal scalar `1:20` resolves to the integer `80` and silently passed as a count. `yamlDoc.directives.yaml.version` is now checked explicitly and any value other than `'1.2'` raises `C3-NOCANONICAL`. A paired 1.1/1.2 control is committed.                                                                                                |
+| P13 | SEV-3                                  | **FIXED.** Site-grouping now collects candidate subjects into a temporary array and commits them to `sites` only after the WHOLE payload is confirmed valid (`bad.length === 0`), not per-key as each governed key is checked. A malformed-payload-plus-matching-prose control proves the blocker fires with no advisory; the inverse (valid payload, still drifts) is committed beside it.                                                                                                                                                             |
+| P14 | SEV-3                                  | **FIXED — wording only, no mechanism change.** The claim "the swallow risk is caught by the YAML parse" was an unqualified universal; both `docs/testing/PLAN_CONSISTENCY_C3_PARSER_PLAN.md` §2.3 item 4 and the matching code/test comments now state the real boundary: ordinary swallowed prose and a deleted live closer are caught, but swallowed material that is ITSELF valid YAML (trailing `##`/`###` headings read as comments) is the declared, owner-accepted residual. A `DISPROOF` control pins the caught case beside the residual case. |
+| P15 | SEV-3                                  | **FIXED.** §2.9 said "One devDependency"; corrected to name both `marked` and `entities`, consistent with §1.3 and §2.4, which always named two.                                                                                                                                                                                                                                                                                                                                                                                                        |
+
+⚠ **P13 also corrects an overclaim in the implementation's own commit message
+and code comment: "the site-grouping rule is unchanged" was inaccurate.** The
+rule itself (one site per subject, never per key, established only after the
+payload validates) was always the intent; what was inaccurate was that the
+FIRST porting pass validated "after the payload validates" per-key rather than
+for the payload as a whole. The reviewer's own judgement: the new per-value
+gate (P7) is correct and not scope drift; the ordering defect was.
+
 ## 2.12 Questions the reviewer is asked to answer
 
 Revisions 1 and 2 asked ten questions; all were answered and none is repeated.
@@ -686,8 +724,9 @@ These target revision 3's own new surface:
 
 ---
 
-⚠ **NO PRODUCTION CODE HAS BEEN WRITTEN.** `tests/support/planConsistency.ts`
-and `tests/unit/planConsistency.spec.ts` are untouched at `6420bb4`. The only
-files this revision adds are this plan and `tools/c3-parser-harness.cjs`, which
-is deliberately committed as reviewable evidence (finding P5) and is deleted
-when the repair lands.
+⚠ **STALE BELOW THIS LINE, KEPT FOR HISTORY: at the time revision 3 was
+written, no production code existed.** It now does — the repair landed as
+commit `f1d51da` (2026-09-04), independently reviewed with four findings
+(§2.11c, all fixed). `tools/c3-parser-harness.cjs` has been deleted, its cases
+now committed controls in `tests/unit/planConsistency.spec.ts`, exactly as this
+section originally said would happen.

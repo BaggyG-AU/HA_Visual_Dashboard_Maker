@@ -315,15 +315,20 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
   // ALIAS used as a key raises no error, counts as one key, and lets a later
   // value silently win.
   //
-  // ⚠⚠⚠ THERE IS NO CLOSURE CHECK OF ANY KIND, AND NONE IS MISSING. An
-  // unclosed fence runs to end of file, exactly as CommonMark says; the risk
-  // that it silently swallows the rest of the plan into "code" is caught by
-  // the YAML parse below — a swallowed document fails to parse as one valid
-  // mapping — not by hand-parsing the fence delimiter. That hand-written
-  // delimiter test (review finding P1), an equality test on `heading.text`
-  // that missed every formatted shadow home (P3), and a three-regex
-  // character-reference decoder that threw `RangeError` and crashed the whole
-  // check (P8) were each a partial parser standing in for a property
+  // ⚠⚠⚠ THERE IS NO CLOSURE CHECK OF ANY KIND, AND NONE IS MISSING FOR THE
+  // CASES THIS REPAIR TARGETS. An unclosed fence runs to end of file, exactly
+  // as CommonMark says. Ordinary swallowed prose, and deleting the live plan's
+  // own closing fence, are both caught by the YAML parse below — the swallowed
+  // material fails to parse as one valid mapping. ⚠ THAT IS NOT A UNIVERSAL
+  // (implementation review finding P14, corrected — an earlier version of this
+  // comment overstated it): swallowed content that is ITSELF valid YAML —
+  // trailing `##`/`###` Markdown headings, which YAML reads as comments — stays
+  // clean. That is the declared, owner-accepted residual (plan §2.7), pinned by
+  // a `KNOWN-OPEN:` test, not a gap this mechanism claims to close. Hand-parsing
+  // the fence delimiter to close it (review finding P1), an equality test on
+  // `heading.text` that missed every formatted shadow home (P3), and a
+  // three-regex character-reference decoder that threw `RangeError` and crashed
+  // the whole check (P8) were each a partial parser standing in for a property
   // CommonMark or YAML already decides. All three are gone; nothing below
   // hand-parses Markdown or YAML syntax.
   //
@@ -431,16 +436,32 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
     // YAML payload validation (§2.3 item 5). `raise on doc.errors.length > 0`
     // covers malformed YAML, duplicate keys (including the quoted spelling),
     // multi-document payloads, and — because of `stringKeys: true` — an alias
-    // or non-string key (review finding P4).
+    // or non-string key (review finding P4). `version: '1.2'` sets the
+    // FALLBACK for a document with no `%YAML` directive; it does NOT reject an
+    // explicit directive naming a different version (implementation review
+    // finding P12) — `yamlDoc.directives.yaml.version` is checked below for
+    // that, because the library documents that an in-document directive
+    // overrides the `version` option.
     const yamlDoc = parseDocument(homes.canonical[0].text, {
       uniqueKeys: true,
       stringKeys: true,
+      version: '1.2',
     });
     if (yamlDoc.errors.length > 0) {
       add(
         'C3-NOCANONICAL',
         `the \`${MARKER}\` block's payload is not valid YAML — ` +
           `${[...new Set(yamlDoc.errors.map((e) => e.code))].join(', ')} (SP-30)`,
+      );
+    } else if (yamlDoc.directives.yaml.version !== '1.2') {
+      // §2.2: the named dialect is YAML 1.2. Under 1.1, a sexagesimal scalar
+      // like `1:20` resolves to the integer 80 and would silently pass the
+      // value check below as a legitimate total — measured, implementation
+      // review finding P12.
+      add(
+        'C3-NOCANONICAL',
+        `the \`${MARKER}\` block declares an explicit \`%YAML ${yamlDoc.directives.yaml.version}\` ` +
+          `directive; only YAML 1.2 is the named dialect (§2.2) (SP-30)`,
       );
     } else if (!isMap(yamlDoc.contents)) {
       add('C3-NOCANONICAL', `the \`${MARKER}\` block's payload is not a top-level mapping (SP-30)`);
@@ -449,6 +470,17 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
         (p) => [isScalar(p.key) ? String(p.key.value) : String(p.key), p.value] as const,
       );
       const bad: string[] = [];
+      // ⚠⚠ SITES ARE COLLECTED HERE AND COMMITTED ONLY BELOW, AFTER THE WHOLE
+      // LOOP CONFIRMS `bad` IS EMPTY (implementation review finding P13). The
+      // site-grouping rule is "established only after the payload validates"
+      // (§2.3 item 6) — validates as a WHOLE, not key-by-key: committing a
+      // valid key's site immediately let an invalid payload (e.g. one bad
+      // value) still seed an advisory `C3-COUNTDRIFT` site claiming the block
+      // "declares" a subject it does not, alongside the correct blocking
+      // finding. Measured: a block with `reviewer_findings: bananas` plus
+      // matching prose emitted both C3-NOCANONICAL and a misleading
+      // C3-COUNTDRIFT.
+      const validSubjects: string[] = [];
       const seen = new Set<string>();
       for (const { key, subject } of GOVERNED) {
         const hits = pairs.filter(([k]) => k === key);
@@ -467,7 +499,7 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
           bad.push(`\`${key}\` is not a non-negative integer (${JSON.stringify(v ?? null)})`);
         } else if (!seen.has(subject)) {
           seen.add(subject);
-          sites.set(subject, [`plan: the canonical block declares ${subject}`]);
+          validSubjects.push(subject);
         }
       }
       if (bad.length > 0) {
@@ -475,6 +507,10 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
           'C3-NOCANONICAL',
           `the \`${MARKER}\` block does not satisfy its own grammar — ${bad.join('; ')} (SP-30)`,
         );
+      } else {
+        for (const subject of validSubjects) {
+          sites.set(subject, [`plan: the canonical block declares ${subject}`]);
+        }
       }
     }
   }
