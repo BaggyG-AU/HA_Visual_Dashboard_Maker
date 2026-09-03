@@ -37,6 +37,23 @@ rounds on this branch: `docs/reviews/plan-consistency-checker-codex-review.md` (
 F1–F6), `…-codex-followup-review.md` (SEV-1-BLOCKED, R1–R3),
 `…-codex-followup2-review.md` (SEV-1-BLOCKED, S1–S4).
 
+**Implementation seat — PER-SLICE OWNER OVERRIDE, 2026-09-04 (STRAT-D4,
+`docs/governance/OPERATING_AGREEMENT.md` §3.6):** this slice is **capability-class**
+(§3.7 names test DSLs and CI logic as shared machinery), whose default
+implementation seat is **Sol/Codex**. Codex is unavailable, so **the owner assigns
+the implementation to Claude Sonnet in a fresh session.** Recorded here because
+the seat table requires a per-slice override to be recorded in the artifact
+header.
+
+⚠⚠ **AND THE REVIEW SEAT IS NOT AFFECTED BY THAT CHOICE.** Under the Stage-8 rule
+(STRAT-D3) an implementation reviewer must have authored **none** of the spec, the
+prompt, or the implementation. **Claude Opus 5 authored all three revisions of this
+plan, every review commission, and every implementation and repair commit on this
+branch** (`69f458c`, `6420bb4`, `207aa04`, `4954dba`, `03f4fe7`), so **no Opus
+session may review this implementation, whoever writes it.** Eligible seats:
+**Fable**, **Sol/Codex** when available, or **Sonnet** if Sonnet does not write the
+code.
+
 **Owner gate:** on 2026-09-03, shown that C3's blocking half has produced a
 SEV-1 in three consecutive rounds and that all ten of round 3's constructions
 reproduce, the owner chose **Option A — parse both grammars the contract names**
