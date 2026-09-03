@@ -1,6 +1,6 @@
 # Remediation plan — C3 must parse the grammars it names (PR #154, Codex round 3)
 
-**Author:** BaggyG-AU with Claude Opus 5 (1M context), revision 2 of 2026-09-03
+**Author:** BaggyG-AU with Claude Opus 5 (1M context), revision 3 of 2026-09-03
 
 **Reviewer:** OpenAI Codex (GPT-5.6 Sol) — **this plan is reviewed BEFORE any
 code is written**, per `CLAUDE.md` "SPEC BEFORE CODE". Prior rounds on this
@@ -16,10 +16,11 @@ over narrowing to a repository-private syntax (B) or demoting C3 to advisory
 
 ## Revision history
 
-| Rev | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | First plan. Written after independently reproducing all ten round-3 constructions and proving the proposed mechanism 30/30 ok, 0 FAIL on a pre-code harness. **CHANGES-REQUIRED (P1–P7): three SEV-1 boundary errors in how the plan consumes the parsers, plus two evidence defects.**                                                                                                                                                                  |
-| 2   | **All seven findings reproduced and repaired.** The unterminated-fence departure is DROPPED (P1); indented `code` tokens are excluded (P2); heading text becomes a specified reader-visible projection (P3); `stringKeys` rejects alias keys (P4); the harness is COMMITTED and its transcript published (P5); §2.11's contradiction is corrected (P6); governed values must be non-negative integers (P7). Population 30 → **54 cases, 54 ok, 0 FAIL**. |
+| Rev | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | First plan. Written after independently reproducing all ten round-3 constructions and proving the proposed mechanism 30/30 ok, 0 FAIL on a pre-code harness. **CHANGES-REQUIRED (P1–P7): three SEV-1 boundary errors in how the plan consumes the parsers, plus two evidence defects.**                                                                                                                                                                                                                                                                                                                                                                          |
+| 3   | **All four revision-2 findings reproduced and repaired.** The hand-written character-reference decoder is DELETED and `entities` called instead (P8) — the same partial-parser mistake as P1/P3, committed inside their own fix. An alias value is dereferenced with `Alias.resolve(doc)` and the two rows revision 2 silently dropped are restored (P9). The swallowed-document residual is pinned by an executable case (P10). The raw-HTML heading boundary is declared and pinned (P11, owner-ruled). Population 54 → **69 cases, 69 ok, 0 FAIL**. ⭐ `entities` and `marked` are now DECLARED devDependencies, because the committed harness requires them. |
+| 2   | **All seven findings reproduced and repaired.** The unterminated-fence departure is DROPPED (P1); indented `code` tokens are excluded (P2); heading text becomes a specified reader-visible projection (P3); `stringKeys` rejects alias keys (P4); the harness is COMMITTED and its transcript published (P5); §2.11's contradiction is corrected (P6); governed values must be non-negative integers (P7). Population 30 → **54 cases, 54 ok, 0 FAIL**.                                                                                                                                                                                                         |
 
 ---
 
@@ -65,10 +66,15 @@ seventeen patches.
 
 **Costs, stated plainly.**
 
-1. **One new devDependency: `marked`.** It is already in the tree at 14.0.0 —
-   but only because `monaco-editor` (a _production_ dependency) happens to pull
-   it in. Relying on that is exactly the kind of accident this project does not
-   ship, so it becomes an explicit devDependency pinned to the same major.
+1. **Two new devDependencies, both already in the tree and now DECLARED:
+   `marked` (^14.0.0) and `entities` (^6.0.1).** Each was present only by
+   accident — `marked` because `monaco-editor` (a _production_ dependency) pulls
+   it in, `entities` because `jsdom` → `parse5` does. ⭐ **They are declared as
+   of revision 3 rather than when the repair lands, because the committed
+   harness requires them** — an evidence artifact depending on undeclared
+   transitives is not self-supporting. Verified deduplicated: one
+   `marked@14.0.0` and one `entities@6.0.1` after `npm install
+--package-lock-only`.
 2. **Six owner-visible behaviour changes**, listed in §1.4 — three of them
    introduced or revised by the plan review, and all six ruled on rather than
    discovered later. One change revision 1 asked you to approve has been
@@ -125,22 +131,27 @@ So the rule this plan adds:
 I have done this, **before writing any production code**. The harness is
 **committed at `tools/c3-parser-harness.cjs`** — revision 1's was discarded,
 which is why its result could not be reviewed (finding P5). It now carries
-**54 cases**: the ten round-3 constructions, twenty derived from CommonMark and
-YAML in revision 1, and **twenty-four added in revision 2 from the plan
-review's own grammar-derived findings** — closer relations, leaf-block
-subtypes, inline heading roles, alias keys and value shapes. Each case names
-the specification clause that decides its verdict, and the reference parsers
-decide the grammar facts. **Result: 54 ok, 0 FAIL, live plan clean**, transcript
-in §2.10.
+**69 cases**: the ten round-3 constructions, twenty derived from CommonMark and
+YAML in revision 1, twenty-four added in revision 2, and **fifteen added in
+revision 3** — the character-reference boundary matrix, the raw-HTML heading,
+the real swallowed-document residual, and the two rows revision 2 had dropped.
+Each case names the specification clause that decides its verdict, and the
+reference parsers decide the grammar facts. **Result: 69 ok, 0 FAIL, live plan
+clean**, transcript in §2.10.
 
-⚠ **Revision 1 still failed the same way, one level down.** It generated from
-the two host grammars, which was the fix — but then re-introduced **one
-hand-written delimiter test** for fence closure, and compared against **one
-token field** (`heading.text`) without asking what that field contains. P1 and
-P3 are both that: a borrowed term left undefined at the last inch. The lesson
-is narrower than revision 1's and worth stating exactly: **delegating to a
-parser is not finished until every property you assert is one the parser
-actually decides.**
+⚠⚠ **AND THE SAME MISTAKE HAS NOW BEEN MADE THREE TIMES, EACH TIME INSIDE THE
+FIX FOR THE LAST ONE.** Revision 1 delegated to the two host grammars — the
+right architecture — then re-introduced **one hand-written delimiter test** for
+fence closure and compared against **one token field** (`heading.text`) without
+asking what that field holds (P1, P3). Revision 2 deleted both and shipped **a
+hand-written character-reference decoder** whose four boundaries were all wrong,
+one of which **crashed the check outright** (P8).
+
+⭐ **The lesson is not "try harder at the seam" — it is that the seam is where
+this keeps happening, so the seam is where a real parser must go.** Stated as
+the rule: **delegating to a parser is not finished until every property you
+assert is one the parser actually decides — and when you find one it does not,
+add a parser that does, never a table.**
 
 ---
 
@@ -197,18 +208,34 @@ reader saw the prohibited heading (finding P3). Reader-visible text is
 therefore **defined**, not inherited from a token field. Walking the heading's
 parsed inline children, each role contributes:
 
-| Inline role                   | Contributes                                                    |
-| ----------------------------- | -------------------------------------------------------------- |
-| `text`                        | its text, with character references decoded (`&#x2D;` → `-`)   |
-| `escape`, `codespan`          | its literal text                                               |
-| `strong`, `em`, `del`, `link` | its children, recursively (its text if it has none)            |
-| `br`                          | a single space                                                 |
-| `image`                       | **nothing** — a reader sees a picture, not the `alt` attribute |
-| inline `html`                 | **nothing** — raw markup is not text                           |
+| Inline role                   | Contributes                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------ |
+| `text`                        | its text, with character references decoded **by `entities`** (`&#x2D;` → `-`) |
+| `escape`, `codespan`          | its literal text                                                               |
+| `strong`, `em`, `del`, `link` | its children, recursively (its text if it has none)                            |
+| `br`                          | a single space                                                                 |
+| `image`                       | **nothing** — a reader sees a picture, not the `alt` attribute                 |
+| inline `html`                 | **nothing** — raw markup is not text                                           |
 
 Whitespace is then collapsed and trimmed, and the result compared to
 `plan-running-totals`. The last two rows are **deliberate residuals**, pinned by
 passing `KNOWN-OPEN:` cases rather than left to be discovered (§2.7).
+
+⚠⚠⚠ **REVISION 2 DECODED CHARACTER REFERENCES WITH THREE REGEXES AND A
+SIX-NAME TABLE, AND THAT WAS THE SAME MISTAKE AS P1 AND P3 COMMITTED INSIDE
+THEIR OWN FIX** (review finding P8). All four boundaries measured wrong:
+`&#X2D;` with an uppercase `X` was not decoded — **a false accept, the marker
+hides**; `&Tab;`, a real HTML5 name, was not decoded — **another false accept**;
+`&Nbsp;`, INVALID because the name inventory is case-**sensitive**, WAS decoded
+because the table lowercased its lookup — **a false blocker**; and `&#x110000;`
+reached `String.fromCodePoint` and **threw `RangeError`, crashing the entire
+check** where CommonMark §2.5 asks for U+FFFD.
+
+⭐ **The fix is not a better table.** `decodeHTML` from `entities` — the
+standards-complete HTML5 decoder `parse5` uses — replaces it and returns `-`, a
+tab, the literal `&Nbsp;` and U+FFFD for exactly those four inputs. The rule
+this arc keeps re-learning, stated where it applies: **do not complete a partial
+parser; delete it and call one.**
 
 ## 2.3 In scope — every change to `tests/support/planConsistency.ts`
 
@@ -217,7 +244,8 @@ passing `KNOWN-OPEN:` cases rather than left to be discovered (§2.7).
 2. **Delete** the line-based fence state machine, the `strayMarkers` raw-line
    scan and the `^\s*${key}\s*:` key counter.
 3. **Add `visibleText(tokens)`** implementing §2.2a exactly — the switch over
-   inline roles, entity decoding, whitespace collapse.
+   inline roles, whitespace collapse, and **`decodeHTML` from `entities` for
+   character references. ⚠ Do not hand-write an entity table (P8).**
 4. **Add a token walk** over `marked.lexer(spec)` that recurses into
    `blockquote.tokens` and `list.items[].tokens`, and:
    - collects every `code` token **whose `codeBlockStyle` is not `'indented'`**
@@ -225,6 +253,9 @@ passing `KNOWN-OPEN:` cases rather than left to be discovered (§2.7).
    - counts every `heading` token with `depth === 1` whose **`visibleText`**
      equals `plan-running-totals`;
    - **does not descend into `html` tokens** (the S3 fix) or `code` tokens.
+     ⚠ Skipping block `html` is the owner's **declared Markdown-only boundary**,
+     not a claim that raw blocks are invisible: the same bucket holds
+     `<h1>plan-running-totals</h1>`, which renders a visible title (P11).
      ⚠ **No closure check of any kind.** An unclosed fence runs to end of file,
      as CommonMark says; the swallow risk is caught by the YAML parse (§1.4).
 5. **Add YAML payload validation** for the single canonical block:
@@ -234,6 +265,10 @@ passing `KNOWN-OPEN:` cases rather than left to be discovered (§2.7).
    `!isMap(doc.contents)` (empty payload, sequence root), then for each governed
    key check it appears exactly once among `doc.contents.items` **key nodes** —
    never lines — **and that its value is a finite non-negative integer**.
+   ⚠ **Dereference an alias value with `Alias.resolve(doc)` before testing it**
+   (P9): an `Alias` node has no scalar `.value`, so reading `pair.value.value`
+   made every alias look like `null` and rejected `base: &n 7` /
+   `review_rounds_complete: *n` — a form revision 1 promised would pass.
 6. **Keep the site-grouping rule unchanged**: one site per _subject_, never per
    key, established only after the payload validates.
 7. **Rewrite the block comment** so it states §2.1's contract, §2.2's dialect
@@ -247,10 +282,16 @@ passing `KNOWN-OPEN:` cases rather than left to be discovered (§2.7).
 
 ## 2.4 The dependency change
 
-`package.json` gains `"marked": "^14.0.0"` under **devDependencies**, matching
-the version already resolved through `monaco-editor`, so `npm ls marked` stays
-deduplicated to a single copy. `yaml` is already a direct dependency at
-`^2.9.0`; no change.
+**DONE in revision 3, not deferred to the repair.** `package.json` gains
+`"marked": "^14.0.0"` and `"entities": "^6.0.1"` under **devDependencies**,
+matching the versions already resolved through `monaco-editor` and
+`jsdom` → `parse5`. Measured after
+`npm install --package-lock-only --ignore-scripts`: **one `marked@14.0.0` and
+one `entities@6.0.1`, both deduped.** `yaml` is already a direct dependency at
+`^2.9.0`; no change. ⭐ They are declared now because
+`tools/c3-parser-harness.cjs` is committed and requires them; an evidence
+artifact resting on undeclared transitives is exactly the fragility this section
+exists to remove.
 
 ⚠ **Reviewer, attack this:** is a transitively-satisfied pin actually
 deduplicated here, and is a devDependency correct for a module under `tests/`
@@ -330,14 +371,25 @@ and forces the claim to be corrected in the same commit.
 - **An IMAGE heading contributes no visible text** — `# ![plan-running-totals](i.png)`
   is not a shadow home. A reader sees a picture; `alt` is an accessibility
   attribute. Deliberate (§2.2a).
+- ⭐ **A raw BLOCK HTML heading is NOT a shadow home** — `<h1>plan-running-totals</h1>`
+  renders a fully visible level-1 title and C3 does not see it. **Owner-ruled
+  2026-09-03 (P11): the contract stays Markdown-only**, as §2.1 literally says,
+  rather than acquiring an HTML parsing boundary. Pinned by a passing
+  `KNOWN-OPEN:` case. ⚠ The harness comment that once said raw blocks "declare
+  nothing" was false and is corrected.
 - **Inline raw HTML contributes no text.** `# plan-<b>running</b>-totals`
   projects to `plan-running-totals` and IS caught, because the surrounding text
   tokens carry the words; but a heading whose words live _inside_ an inline HTML
   tag is not. Deliberate (§2.2a).
 - **An unclosed fence at end of file is a valid code block**, per CommonMark.
   The residual is a swallowed document that happens to parse as valid YAML _and_
-  keep all three governed keys exactly once with integer values. Measured as
-  caught on the real plan; pinned as a limit rather than assumed away.
+  keep all three governed keys exactly once with integer values. ⚠ **Revision 2
+  pinned this with a fixture that had nothing after the fence, so it could not
+  swallow anything** (P10). It is now pinned by the real construction: the valid
+  block followed by `## Later section` and `### Last section`, which YAML reads
+  as comments — measured **clean**, which IS the residual. The hostile
+  ordinary-prose case stays as the inverse control, and deleting the live plan's
+  closer still blocks.
 - **The plan/history asymmetry stays.** C3's structural scan reads the plan
   only; the history names the marker three times in prose.
 - **The advisory half stays a heuristic**, with its existing `KNOWN-OPEN:`
@@ -376,15 +428,20 @@ snapshot, no baseline manifest.
 prototype: **VALID**); unit population goes 1470 → 1470 + _n_ with no new file;
 `REAL_EXIT=0`, 4/4 steps.
 
-## 2.10 The pre-code harness — 54 ok, 0 FAIL, COMMITTED
+## 2.10 The pre-code harness — 69 ok, 0 FAIL, COMMITTED
 
-⚠⚠ **REVISION 1 PUBLISHED THIS RESULT FROM A PROTOTYPE IT HAD DELETED**
+⚠⚠ **REVISION 1 PUBLISHED ITS RESULT FROM A PROTOTYPE IT HAD DELETED**
 (finding P5), so the plan's strongest assurance could not be reproduced by the
 reviewer or by any later audit. The mechanism, the literal fixtures, the
 expectations and their provenance are now committed at
 **`tools/c3-parser-harness.cjs`**, runnable with `node tools/c3-parser-harness.cjs`
 (exit 0 on success). It is not a test and nothing imports it; when the repair
 lands, these cases become committed controls and the file is deleted.
+
+⚠ **Revision 2 then silently DROPPED two revision-1 rows** — the four-space
+indented marker and the alias-valued total — so 30 → 54 was 26 additions and two
+removals, not 24 additions (finding P9). Both are restored and labelled
+`RESTORED (rev 1)`. **Revision 3 is 54 → 69: fifteen additions, zero removals.**
 
 Each case's expected verdict is set by the cited specification clause, not by
 the mechanism. Cases marked `codex` came from a review — they are the **floor,
@@ -405,6 +462,7 @@ not the population**.
 | invalid | closer of the WRONG CHARACTER (backtick open, tilde close) | codex P1 / CommonMark 4.5 | YAML: MISSING_CHAR |
 | invalid | closer OVER-INDENTED four spaces | codex P1 / CommonMark 4.5 | YAML: MISSING_CHAR |
 | valid | KNOWN-OPEN: unclosed fence at END OF FILE is a valid block | CommonMark 4.5 (departure DROPPED, owner ruling) | clean |
+| valid | KNOWN-OPEN: an unclosed fence swallows later content that YAML reads as comments | codex P10 (the residual §2.7 declares, now pinned) | clean |
 | invalid | unclosed fence SWALLOWS the rest of the document | CommonMark 4.5 (the swallow risk, caught by YAML) | YAML: MISSING_CHAR |
 | invalid | INDENTED code block alone is not a fenced block | codex P2 / CommonMark 4.4 | found 0 canonical blocks (expected 1) |
 | valid | INDENTED example beside a valid fence is ignored | codex P2 / CommonMark 4.4 | clean |
@@ -426,8 +484,20 @@ not the population**.
 | valid | CONTROL: level-2 heading with the marker text is not a home | CommonMark 4.2 | clean |
 | valid | CONTROL: `#plan-running-totals` with no space is not a heading | CommonMark 4.2 | clean |
 | valid | KNOWN-OPEN: an IMAGE heading contributes no visible text | CommonMark 6 (declared residual) | clean |
+| invalid | RESTORED (rev 1): marker indented four spaces as the first content line | rev-1 row, dropped in rev 2 (P9) | found 0 canonical blocks (expected 1) |
 | valid | CONTROL: marker in an inline code span (live plan, line 14) | CommonMark 6.1 | clean |
 | valid | CONTROL: marker inside an HTML comment | codex S3 / CommonMark 4.6 | clean |
+| invalid | UPPERCASE-X hex reference shadow home | codex P8 / CommonMark 2.5 | 1 shadow-home heading(s) |
+| invalid | DECIMAL reference shadow home | codex P8 / CommonMark 2.5 | 1 shadow-home heading(s) |
+| invalid | NAMED reference `&Tab;` decodes to whitespace and collapses away | codex P8 / CommonMark 2.5 | 1 shadow-home heading(s) |
+| valid | CONTROL: `&Nbsp;` is INVALID — the name inventory is case-SENSITIVE | codex P8 / CommonMark 2.5 | clean |
+| valid | CONTROL: an OUT-OF-RANGE code point becomes U+FFFD, it does not throw | codex P8 / CommonMark 2.5 | clean |
+| valid | CONTROL: NUL becomes U+FFFD | codex P8 / CommonMark 2.5 | clean |
+| valid | CONTROL: a numeric reference with too many digits stays literal | codex P8 / CommonMark 2.5 | clean |
+| valid | CONTROL: a nonentity name stays literal | codex P8 / CommonMark 2.5 | clean |
+| valid | CONTROL: references stay LITERAL inside a code span | codex P8 / CommonMark 6.1 | clean |
+| valid | KNOWN-OPEN: a raw `<h1>` renders a visible title and is NOT seen | codex P11 (declared residual, owner ruling) | clean |
+| invalid | CONTROL: inline HTML around the words still projects the text | codex P11 / CommonMark 6 | 1 shadow-home heading(s) |
 | invalid | empty payload | grammar | payload is not a top-level mapping |
 | valid | FLOW-MAPPING payload | YAML 7.4 | clean |
 | invalid | SEQUENCE payload (root is not a mapping) | YAML 8.2 | payload is not a top-level mapping |
@@ -440,6 +510,8 @@ not the population**.
 | invalid | QUOTED duplicate key | YAML dup | YAML: DUPLICATE_KEY |
 | invalid | duplicate key with the SAME value | YAML dup | YAML: DUPLICATE_KEY |
 | invalid | ALIAS used as a duplicate key | codex P4 / YAML 7.1 | YAML: NON_STRING_KEY |
+| valid | RESTORED (rev 1): an ALIAS resolving to an integer is a valid value | rev-1 row, dropped in rev 2 (codex P9 / YAML 7.1) | clean |
+| invalid | an ALIAS resolving to a STRING is not a count | codex P9 / YAML 7.1 | `review_rounds_complete` is not a non-negative integer ("oops") |
 | valid | CONTROL: a key that merely CONTAINS a governed key | YAML | clean |
 | invalid | STRING value | codex P7 | `review_rounds_complete` is not a non-negative integer ("bananas") |
 | invalid | NEGATIVE value | codex P7 | `review_rounds_complete` is not a non-negative integer (-1) |
@@ -448,7 +520,7 @@ not the population**.
 | invalid | FLOAT value | codex P7 | `review_rounds_complete` is not a non-negative integer (7.5) |
 | valid | CONTROL: zero is a legitimate total | codex P7 | clean |
 
-54 ok, 0 FAIL (of 54)
+69 ok, 0 FAIL (of 69)
 
 LIVE PLAN -> VALID (clean)
 
@@ -457,9 +529,11 @@ closer and over-indented closer are all rejected — **by the YAML parse, with n
 delimiter logic anywhere in the mechanism.** That is the measurement behind
 withdrawing the unterminated-fence departure (§1.4).
 
-⚠ **Eleven of these are false-blocker controls** — legitimate documents C3 must
-stay silent on. A population of only "does it catch my bad input?" cases is what
-let revision 1's own regressions through.
+⚠ **Twenty of these are false-blocker controls** — legitimate documents C3 must
+stay silent on, including seven of the nine new character-reference cases. A
+population of only "does it catch my bad input?" cases is what let revision 1's
+own regressions through, and P8's `&Nbsp;` false blocker and P9's rejected alias
+value are both cases where the mechanism was too LOUD, not too quiet.
 
 ## 2.11 Fail-against-`6420bb4`, planned honestly in advance
 
@@ -493,24 +567,41 @@ reviewer's cumulative record on this PR is now **20 findings, 20 valid**.
 | P6  | SEV-3    | **FIXED** — §2.11 rewritten as above.                                                                                                                                                                                                                      |
 | P7  | SEV-2    | **FIXED — option A, owner-ruled.** Governed values must be finite non-negative integers. Live values 7/30/24 verified passing; string, negative, null, sequence and float controls committed, plus a zero-is-legitimate control.                           |
 
+## 2.11b Disposition of the revision-2 review (P8–P11)
+
+All four were reproduced against the exact committed mechanism before being
+accepted; the reviewer's cumulative record is now **24 findings, 24 valid**.
+
+⚠⚠ **P8 IS THE SAME CLASS AS P1 AND P3, COMMITTED INSIDE THEIR OWN FIX.** The
+revision that deleted a hand-written fence-delimiter test and a token-field
+shortcut shipped a hand-written entity decoder. **Fourth consecutive round in
+which the repair contained the next finding** — though the trend is convergence
+rather than a treadmill: the SEV-1 count has run 3 → 3 → 2 → 1, and this one's
+fix complexity was 2.
+
+| Ref | Severity                                | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P8  | SEV-1 · `Blocks: C3 heading projection` | **FIXED — the decoder is DELETED**, not completed. `decodeHTML` from `entities` replaces it. Measured against the exact committed mechanism first: `&#X2D;` and `&Tab;` were false accepts, `&Nbsp;` a false blocker, and `&#x110000;` **threw `RangeError`**. Nine controls committed — uppercase-X, decimal, named, invalid-casing, out-of-range, NUL, over-long digits, nonentity, and references-stay-literal-in-a-code-span. |
+| P9  | SEV-2                                   | **FIXED — option A.** `Alias.resolve(doc)` dereferences an alias value, accepted only when the resolved node is an integer scalar. Both dropped revision-1 rows are restored and labelled `RESTORED (rev 1)`; an alias-resolving-to-a-string control is added. §2.10 now states 26 additions and two removals rather than 24 additions.                                                                                           |
+| P10 | SEV-2                                   | **FIXED.** The residual is pinned by the real construction — the valid block followed by `## Later section` / `### Last section`, which YAML reads as comments and which measures **clean**. The EOF-only case and the hostile ordinary-prose case both stay as the inverse controls.                                                                                                                                             |
+| P11 | SEV-2 · Owner judgement                 | **FIXED — option B, owner-ruled 2026-09-03.** The contract stays Markdown-only. The false harness comment "raw blocks declare nothing" is corrected, the boundary is declared in §2.3 and §2.7, and a raw `<h1>` is pinned as a passing `KNOWN-OPEN:` case. No HTML parsing is introduced.                                                                                                                                        |
+
 ## 2.12 Questions the reviewer is asked to answer
 
-Revision 1's five questions were answered in full and are not repeated. These
-are new, and they target revision 2's own new surface:
+Revisions 1 and 2 asked ten questions; all were answered and none is repeated.
+These target revision 3's own new surface:
 
-1. Does §2.2a's projection have a role whose contribution is wrong or
-   unstated — and is either declared residual (image alt, inline HTML) a
-   plausible shadow home rather than a defensible boundary?
-2. `stringKeys: true` rejected the alias key with `NON_STRING_KEY`. Does it
-   also reject anything the live block or a legitimate future block needs?
-3. With the closure rule gone, is there a swallowed-document construction that
-   parses as valid YAML **and** keeps all three governed keys exactly once with
-   non-negative integer values?
-4. Is §1.4 #5 (excluding indented blocks) the right call, or should an indented
-   totals block be a shadow home rather than invisible?
-5. Does the 54-case population still have a verdict-flipping hole — and is
-   `tools/c3-parser-harness.cjs` a faithful model of §2.3, or does it differ
-   from what the repair would actually do?
+1. Is `entities` used correctly and completely — is there a CommonMark §2.5
+   boundary it decides differently from the specification, or a place the
+   projection should not be decoding at all?
+2. Does `Alias.resolve(doc)` handle every alias shape a governed value could
+   take, including an alias to an anchored mapping or a chain of aliases?
+3. Is the raw-HTML boundary (§2.7, owner-ruled option B) stated everywhere it
+   needs to be, and is its `KNOWN-OPEN:` case a faithful pin?
+4. Is the swallowed-document residual pinned by the RIGHT construction, or is
+   there a cleaner swallow that also stays visible?
+5. Declaring `entities` and `marked` as devDependencies in a pre-code revision —
+   correct, or scope creep that should have waited for the repair?
 
 ---
 

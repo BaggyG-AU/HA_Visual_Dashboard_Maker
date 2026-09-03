@@ -26,7 +26,8 @@
  */
 const fs = require('node:fs');
 const { marked } = require('marked');
-const { parseDocument, isMap } = require('yaml');
+const { decodeHTML } = require('entities');
+const { parseDocument, isMap, isAlias, isScalar } = require('yaml');
 
 const MARKER = '# plan-running-totals';
 const MARKER_TEXT = 'plan-running-totals';
@@ -36,12 +37,22 @@ const GOVERNED = ['review_rounds_complete', 'reviewer_findings', 'findings_after
 // The proposed mechanism.
 // ---------------------------------------------------------------------------
 
-const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
-const decode = (s) =>
-  s
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, c) => String.fromCodePoint(parseInt(c, 16)))
-    .replace(/&#(\d+);/g, (_, c) => String.fromCodePoint(parseInt(c, 10)))
-    .replace(/&([a-zA-Z]+);/g, (m, n) => ENTITIES[n.toLowerCase()] ?? m);
+/**
+ * ⚠⚠⚠ THIS WAS A THIRD HAND-WRITTEN PARTIAL PARSER (review finding P8), and it
+ * was the SAME MISTAKE AS P1 AND P3 COMMITTED INSIDE THEIR OWN FIX. Three
+ * regexes and a six-name table decided CommonMark §2.5 for themselves, and all
+ * four boundaries were measured wrong: `&#X2D;` with an uppercase `X` was NOT
+ * decoded (a false accept — the marker hides); `&Tab;`, a real HTML5 name, was
+ * NOT decoded (another false accept); `&Nbsp;`, which is INVALID because the
+ * inventory is case-SENSITIVE, WAS decoded because the table lowercased its
+ * lookup (a false blocker); and `&#x110000;` reached `String.fromCodePoint` and
+ * THREW `RangeError`, crashing the whole check where CommonMark asks for U+FFFD.
+ *
+ * `entities` is the standards-complete HTML5 decoder used by `parse5`. It
+ * returns `-`, a tab, the literal `&Nbsp;` and U+FFFD for those four inputs.
+ * ⭐ THE RULE: do not complete a partial parser — delete it and call one.
+ */
+const decode = decodeHTML;
 
 /**
  * READER-VISIBLE TEXT of a heading (review finding P3, owner ruling 2026-09-03).
@@ -93,7 +104,12 @@ function walk(tokens, out) {
       if ((t.text ?? '').split('\n')[0] === MARKER) out.canonical.push(t);
       continue; // code content is never a container
     }
-    if (t.type === 'html') continue; // comments and raw blocks declare nothing
+    // ⚠ A BLOCK `html` TOKEN IS NOT ALWAYS INVISIBLE (review finding P11).
+    // The bucket that holds an HTML COMMENT also holds `<h1>plan-running-totals</h1>`,
+    // which renders as a fully visible level-1 title. Skipping it is the owner's
+    // DECLARED Markdown-only boundary (§2.1 says "level-1 Markdown heading"), not
+    // a claim that raw blocks declare nothing — pinned by a KNOWN-OPEN case.
+    if (t.type === 'html') continue;
     if (t.type === 'heading' && t.depth === 1 && visibleText(t.tokens) === MARKER_TEXT) {
       out.stray.push(t.raw.trim());
     }
@@ -132,7 +148,15 @@ function c3(spec) {
       continue;
     }
     // Review finding P7, owner ruling: a running TOTAL must be a count.
-    const v = hits[0][1]?.value;
+    // ⚠ AN ALIAS NODE HAS NO SCALAR `.value` (review finding P9). Reading
+    // `pair.value.value` made every alias look like `null`, so `base: &n 7` /
+    // `review_rounds_complete: *n` was REJECTED — a form revision 1 committed a
+    // control for, promised would pass, and then dropped from the population.
+    // `Alias.resolve(doc)` is the library's own dereference API; use it rather
+    // than deciding YAML's anchor semantics here.
+    const node = hits[0][1];
+    const resolved = isAlias(node) ? node.resolve(doc) : node;
+    const v = isScalar(resolved) ? resolved.value : undefined;
     if (!Number.isInteger(v) || v < 0) {
       bad.push(`\`${key}\` is not a non-negative integer (${JSON.stringify(v ?? null)})`);
     }
@@ -201,6 +225,12 @@ const CASES = [
     `${WIRED}\n\n${['```yaml', MARKER, ...KEYS].join('\n')}`,
     'valid',
     'CommonMark 4.5 (departure DROPPED, owner ruling)',
+  ],
+  [
+    'KNOWN-OPEN: an unclosed fence swallows later content that YAML reads as comments',
+    `${WIRED}\n\n${['```yaml', MARKER, ...KEYS].join('\n')}\n\n## Later section\n\n### Last section\n`,
+    'valid',
+    'codex P10 (the residual §2.7 declares, now pinned)',
   ],
   [
     'unclosed fence SWALLOWS the rest of the document',
@@ -305,6 +335,12 @@ const CASES = [
     'CommonMark 6 (declared residual)',
   ],
   [
+    'RESTORED (rev 1): marker indented four spaces as the first content line',
+    doc(fence(KEYS, '```yaml', '```').replace(MARKER, `    ${MARKER}`)),
+    'invalid',
+    'rev-1 row, dropped in rev 2 (P9)',
+  ],
+  [
     'CONTROL: marker in an inline code span (live plan, line 14)',
     doc(GOOD, `The figures are in the \`${MARKER_TEXT}\` block.`),
     'valid',
@@ -315,6 +351,76 @@ const CASES = [
     doc(GOOD, `<!--\n${MARKER}\nDocumentation, not a home.\n-->`),
     'valid',
     'codex S3 / CommonMark 4.6',
+  ],
+
+  // --- character references: CommonMark §2.5, decided by `entities` -------
+  [
+    'UPPERCASE-X hex reference shadow home',
+    doc(GOOD, '# plan&#X2D;running-totals'),
+    'invalid',
+    'codex P8 / CommonMark 2.5',
+  ],
+  [
+    'DECIMAL reference shadow home',
+    doc(GOOD, '# plan&#45;running-totals'),
+    'invalid',
+    'codex P8 / CommonMark 2.5',
+  ],
+  [
+    'NAMED reference `&Tab;` decodes to whitespace and collapses away',
+    doc(GOOD, '# &Tab;plan-running-totals'),
+    'invalid',
+    'codex P8 / CommonMark 2.5',
+  ],
+  [
+    'CONTROL: `&Nbsp;` is INVALID — the name inventory is case-SENSITIVE',
+    doc(GOOD, '# &Nbsp;plan-running-totals'),
+    'valid',
+    'codex P8 / CommonMark 2.5',
+  ],
+  [
+    'CONTROL: an OUT-OF-RANGE code point becomes U+FFFD, it does not throw',
+    doc(GOOD, '# unrelated&#x110000;heading'),
+    'valid',
+    'codex P8 / CommonMark 2.5',
+  ],
+  [
+    'CONTROL: NUL becomes U+FFFD',
+    doc(GOOD, '# unrelated&#0;heading'),
+    'valid',
+    'codex P8 / CommonMark 2.5',
+  ],
+  [
+    'CONTROL: a numeric reference with too many digits stays literal',
+    doc(GOOD, '# plan&#x0000002D;running-totals'),
+    'valid',
+    'codex P8 / CommonMark 2.5',
+  ],
+  [
+    'CONTROL: a nonentity name stays literal',
+    doc(GOOD, '# plan&#xnotanentity;running-totals'),
+    'valid',
+    'codex P8 / CommonMark 2.5',
+  ],
+  [
+    'CONTROL: references stay LITERAL inside a code span',
+    doc(GOOD, '# `plan&#x2D;running-totals`'),
+    'valid',
+    'codex P8 / CommonMark 6.1',
+  ],
+
+  // --- raw block HTML: the owner's declared Markdown-only boundary --------
+  [
+    'KNOWN-OPEN: a raw `<h1>` renders a visible title and is NOT seen',
+    doc(GOOD, '<h1>plan-running-totals</h1>'),
+    'valid',
+    'codex P11 (declared residual, owner ruling)',
+  ],
+  [
+    'CONTROL: inline HTML around the words still projects the text',
+    doc(GOOD, '# plan-<b>running</b>-totals'),
+    'invalid',
+    'codex P11 / CommonMark 6',
   ],
 
   // --- payload: YAML 1.2 --------------------------------------------------
@@ -381,6 +487,18 @@ const CASES = [
     doc(fence([`&k ${KEYS[0]}`, '*k : 8', ...KEYS.slice(1)])),
     'invalid',
     'codex P4 / YAML 7.1',
+  ],
+  [
+    'RESTORED (rev 1): an ALIAS resolving to an integer is a valid value',
+    doc(fence(['base: &n 7', 'review_rounds_complete: *n', ...KEYS.slice(1)])),
+    'valid',
+    'rev-1 row, dropped in rev 2 (codex P9 / YAML 7.1)',
+  ],
+  [
+    'an ALIAS resolving to a STRING is not a count',
+    doc(fence(['base: &n oops', 'review_rounds_complete: *n', ...KEYS.slice(1)])),
+    'invalid',
+    'codex P9 / YAML 7.1',
   ],
   [
     'CONTROL: a key that merely CONTAINS a governed key',
