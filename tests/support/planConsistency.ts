@@ -397,11 +397,25 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
    * which is wrong on two counts — the unit is code units, not bytes, so an
    * astral character shifts the two apart, and the upper bound EXCLUDES the
    * span's end rather than including it).
+   *
+   * ⚠⚠⚠ THE SEPARATOR AFTER `%YAML` MUST BE ASCII SPACE OR TAB — NOT
+   * ECMASCRIPT `\s` (implementation review finding P23). YAML 1.2.2 §5.5
+   * defines only U+0020 and U+0009 as structural white space, and `yaml`'s
+   * own `Directives.add()` (`node_modules/yaml/dist/doc/directives.js`)
+   * splits a directive line on `/[ \t]+/` — nothing wider. `\s` also matches
+   * NO-BREAK SPACE (U+00A0), EM SPACE (U+2003) and others, which YAML
+   * classifies as ordinary `ns-char` and therefore as part of a reserved
+   * directive NAME, not a separator: `%YAML<U+00A0>1.3` is a valid but
+   * UNKNOWN reserved directive under YAML's own grammar (the parser reports
+   * it exactly like `%FOO`), yet the old `\s` pattern matched it as `%YAML`
+   * anyway — reintroducing the false blocker P19 exists to prevent, one
+   * lexical boundary earlier. Matching `[ \t]` here mirrors the parser's own
+   * separator, not a superset of it.
    */
   function yamlDirectiveTokens(text: string): CST.Directive[] {
     const tokens: CST.Directive[] = [];
     for (const token of new YamlParser().parse(text)) {
-      if (token.type === 'directive' && /^%YAML(?:\s|$)/.test(token.source)) tokens.push(token);
+      if (token.type === 'directive' && /^%YAML(?:[ \t]|$)/.test(token.source)) tokens.push(token);
     }
     return tokens;
   }

@@ -284,11 +284,14 @@ without saying whose. It is now named:
   `*k : 8` — raises no error, counts as one key, and lets the second value
   silently win (`toJS()` returns `8`). Measured; finding P4.
 - **No declared departures, except the ONE named in §2.7** (implementation
-  review finding P21, owner-ruled 2026-09-05): `yaml@2.9.0` does not enforce
-  YAML 1.2.2 §6.8.2's rule against a repeated `%TAG` handle, and the checker
-  does not build a private `%TAG` grammar to enforce it either — see §2.7 for
-  the full boundary and why. Revision 1's departure is withdrawn (§1.4); every
-  OTHER property C3 asserts is one a reference parser decides.
+  review findings P21/P24, owner-ruled 2026-09-05, P24 broadening the P21
+  ruling the same day): `yaml@2.9.0` does not enforce YAML 1.2.2 §6.8.2's
+  `%TAG` handle/prefix grammar — not just a repeated handle, but a
+  malformed handle or a malformed prefix percent-escape too — and the
+  checker does not build a private `%TAG` grammar to enforce any of it
+  either — see §2.7 for the full boundary and why. Revision 1's departure
+  is withdrawn (§1.4); every OTHER property C3 asserts is one a reference
+  parser decides.
 
 ## 2.2a Reader-visible heading text — the projection, stated as a contract
 
@@ -356,9 +359,9 @@ parser; delete it and call one.**
      is the real, narrower residual §2.7 declares and §2.10 pins.
 5. **Add YAML payload validation** for the single canonical block:
    `parseDocument(text, { uniqueKeys: true, stringKeys: true, version: '1.2' })`.
-   ⚠ **Corrected (implementation review findings P12, P16, P19, P20 — this
-   step previously named only the pre-repair call and its four checks; every
-   addition below is load-bearing, not optional hardening).** `version:
+   ⚠ **Corrected (implementation review findings P12, P16, P19, P20, P23 —
+   this step previously named only the pre-repair call and its four checks;
+   every addition below is load-bearing, not optional hardening).** `version:
 '1.2'` is only the FALLBACK for a document with no `%YAML` directive; an
    explicit directive overrides it. **First, parse `yamlDirectives`** — the
    CST `directive` tokens (via `yaml`'s own `Parser`) whose name is `%YAML`,
@@ -367,7 +370,15 @@ t.source.length)` (implementation review finding P22: an earlier version
    of this recipe called this a "byte range" with a closed upper bound —
    wrong on both counts, since the coordinate is a JavaScript UTF-16
    code-unit offset, not a byte offset, and the span excludes its own end).
-   Then raise, in order:
+   ⚠ **The separator between `%YAML` and its parameter MUST be matched as
+   ASCII space or tab (`[ \t]`), never ECMAScript `\s`** (implementation
+   review finding P23): YAML 1.2.2 §5.5 defines only U+0020/U+0009 as
+   structural white space, and `yaml`'s own `Directives.add()` splits on
+   `/[ \t]+/`; `\s` also matches NO-BREAK SPACE (U+00A0) and other
+   characters YAML classifies as part of a reserved directive's NAME, not a
+   separator — matching them anyway reclassified a valid, must-accept
+   reserved directive as `%YAML` and reintroduced a P19-shaped false
+   blocker one lexical boundary earlier. Then raise, in order:
    - on `doc.errors.length > 0` (malformed YAML, duplicate keys including the
      quoted spelling, multi-document payloads, an alias or non-string key, and
      a directive the parser cannot parse at all such as `%YAML next`);
@@ -548,20 +559,39 @@ and forces the claim to be corrected in the same commit.
   `repair_introduced_after_round_one` and `executable_spec_lines` are not
   value-checked. Only the three governed keys are.
 - **C1's textual-caller limit and C2/C4** are untouched.
-- ⚠⚠ **A repeated `%TAG` handle is NOT enforced — the one DEPARTURE this plan
-  now names (implementation review finding P21, owner-ruled 2026-09-05).**
-  YAML 1.2.2 §6.8.2 makes repeating a `%TAG` directive for the same handle an
-  error, even when both declarations agree (its own Example 6.17). Installed
-  `yaml@2.9.0`'s `Directives.add()` (`node_modules/yaml/dist/doc/directives.js`)
-  has no redeclaration guard for `%TAG` — it unconditionally assigns
-  `this.tags[handle] = prefix` on every occurrence — so `doc.errors` and
-  `doc.warnings` stay empty and this checker, which delegates entirely to that
-  library, cannot see the violation either. **Deliberately left undetected**
-  rather than built as a private `%TAG` grammar: `%TAG` never appears in the
-  live plan, and hand-parsing directive arity/uniqueness to enforce a property
-  the chosen parser does not report would recreate exactly the hand-parser
-  class this checker exists to retire (the root `practice`-wing rule this
-  whole arc keeps re-proving). Pinned by a passing `KNOWN-OPEN:` test.
+- ⚠⚠ **`%TAG` HANDLE/PREFIX VALIDITY IS NOT ENFORCED BEYOND WHAT `yaml@2.9.0`
+  ITSELF REPORTS — THE ONE DEPARTURE THIS PLAN NAMES (implementation review
+  findings P21/P24, owner-ruled 2026-09-05; P24 BROADENED the P21 ruling the
+  same day after the same sweep found the residual as first worded covered
+  only ONE of several silent `%TAG` gaps sharing the same root cause).**
+  Installed `yaml@2.9.0`'s `Directives.add()`
+  (`node_modules/yaml/dist/doc/directives.js`) checks only that a `%TAG`
+  directive has exactly two whitespace-separated parts, then unconditionally
+  assigns `this.tags[handle] = prefix` — no redeclaration guard, no handle
+  grammar check, no prefix grammar check. Three DISTINCT YAML 1.2.2 §6.8.2
+  rules are therefore all silently unenforced by the SAME missing validation:
+  - **repeated handle** (§6.8.2, Example 6.17): the SAME handle declared
+    twice is an error even when both declarations agree — P21's original
+    finding;
+  - **malformed handle** (§6.8.2.1): a handle must be `!`, `!!`, or
+    `!word!` — a handle missing its `!` delimiters (e.g. `e`) is accepted;
+  - **malformed prefix** (§6.8.2.2): a `%` in a tag prefix must be followed
+    by exactly two hexadecimal digits — an invalid escape (e.g. `%ZZ`) is
+    accepted.
+
+  **Deliberately left undetected, broadened rather than enforced** (P24):
+  `%TAG` never appears in the live plan, and hand-parsing directive
+  handle/prefix grammar to enforce a property the chosen parser does not
+  report would recreate exactly the hand-parser class this checker exists to
+  retire (the root `practice`-wing rule this whole arc keeps re-proving).
+  ⚠ **Owner note (2026-09-05): this residual is recorded here as the durable,
+  self-enforcing boundary — a future change that starts validating any of the
+  three rules above will break one of the three `KNOWN-OPEN:` controls below
+  and force this section to be corrected in the same commit. No separate
+  backlog story card was opened for it**: SEV-3, zero live-plan impact, and
+  the `KNOWN-OPEN:` mechanism already IS the tracking record — a card would
+  duplicate it without adding anything actionable to schedule. Pinned by
+  three passing `KNOWN-OPEN:` tests, one per rule above.
 
 ## 2.8 Must NOT change
 
@@ -807,9 +837,9 @@ verdict **CHANGES-REQUIRED**, one finding, reproduced before being accepted.
 The reviewer's cumulative record on this branch is now **32 findings, 32
 valid** across nine rounds.
 
-| Ref | Severity                                               | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| --- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P19 | SEV-2 · `Blocks: the promised totals-document dialect` | **FIXED.** The P16 fix treated ANY `BAD_DIRECTIVE` warning as "unsupported `%YAML` version," but `yaml`'s own `Directives.add()` routes an unrecognised RESERVED directive (YAML 1.2.2 §6.8 — e.g. `%FOO bar`, which processors must accept with only a warning) through the exact same code. Current C3 falsely blocked a valid totals block carrying `%FOO bar`, including when paired with a perfectly valid explicit `%YAML 1.2` (ruling out `doc.directives.yaml.explicit` as a discriminator, since it is also true in that valid paired case). Fixed by `unsupportedYamlVersionWarned(text, doc.warnings)`: re-parses the block with `yaml`'s own `Parser` to recover the CST `directive` tokens the composer consumed, then for each `BAD_DIRECTIVE` warning finds the token whose byte range contains the warning's own reported position and reads THAT token's directive name — never the warning's message text, never a version-string table. Three controls added: `%FOO bar` alone (valid), an explicit `%YAML 1.2` beside `%FOO bar` (valid, the paired case that broke the `explicit` discriminator), and `%YAML 1.3` beside `%FOO bar` (still invalid, proving the fix does not reopen P16). |
+| Ref | Severity                                               | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P19 | SEV-2 · `Blocks: the promised totals-document dialect` | **FIXED.** The P16 fix treated ANY `BAD_DIRECTIVE` warning as "unsupported `%YAML` version," but `yaml`'s own `Directives.add()` routes an unrecognised RESERVED directive (YAML 1.2.2 §6.8 — e.g. `%FOO bar`, which processors must accept with only a warning) through the exact same code. Current C3 falsely blocked a valid totals block carrying `%FOO bar`, including when paired with a perfectly valid explicit `%YAML 1.2` (ruling out `doc.directives.yaml.explicit` as a discriminator, since it is also true in that valid paired case). Fixed by `unsupportedYamlVersionWarned(text, doc.warnings)`: re-parses the block with `yaml`'s own `Parser` to recover the CST `directive` tokens the composer consumed, then for each `BAD_DIRECTIVE` warning finds the token whose HALF-OPEN code-unit-offset span contains the warning's own reported position and reads THAT token's directive name — never the warning's message text, never a version-string table (wording corrected 2026-09-05, implementation review finding P25 — this row previously said "byte range," which P22 had already corrected everywhere else in this plan). Three controls added: `%FOO bar` alone (valid), an explicit `%YAML 1.2` beside `%FOO bar` (valid, the paired case that broke the `explicit` discriminator), and `%YAML 1.3` beside `%FOO bar` (still invalid, proving the fix does not reopen P16). |
 
 ⚠⚠⚠ **P19 IS THE SAME GENERAL ANTIPATTERN FAMILY AS EVERY PRIOR DEFECT ON THIS
 SEAM, BUT IT IS THE FIRST ONE IN THE OPPOSITE DIRECTION.** P1–P3, P12 and P16
@@ -859,6 +889,42 @@ fix pattern is consistent with P16/P19 even though the axis is new: read the
 SAME structured CST tokens rather than the parser's normalised final state,
 because the normalised state is exactly where a multiplicity violates its own
 invariant and no one is watching.
+
+## 2.11g Disposition of the fourth follow-up implementation review (P23–P25)
+
+The P20–P22 fix landed as commit `2142111` (2026-09-05). The fourth
+follow-up review's commission asked it to sweep the P20 multiplicity check's
+generality, the P21 `%TAG` residual's completeness, and P22's own sweep
+completeness — and found a defect one lexical boundary earlier than any prior
+round on this seam, plus a residual scoped narrower than its own root cause,
+plus one leftover stale phrase; verdict **CHANGES-REQUIRED**, three findings,
+all reproduced before being accepted. The reviewer's cumulative record on
+this branch is now **38 findings, 38 valid** across eleven rounds.
+
+| Ref | Severity | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P23 | SEV-2    | **FIXED.** `yamlDirectiveTokens` selected `%YAML` CST tokens with `/^%YAML(?:\s                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | $)/`— ECMAScript`\s`, which matches NO-BREAK SPACE (U+00A0), EM SPACE (U+2003) and other characters YAML 1.2.2 §5.5 does NOT classify as structural white space (only U+0020/U+0009 are; `yaml`'s own `Directives.add()`splits on`/[ \t]+/`). A directive like `%YAML<U+00A0>1.3`is therefore, under YAML's own grammar, an unknown RESERVED directive (the parser reports it exactly like`%FOO`) — but the old regex misclassified it as `%YAML`, reintroducing a P19-shaped false blocker one boundary earlier. This bug was introduced with the token-matching logic itself in the P19 commit (`b817a42`) and survived two subsequent review rounds before this sweep tried a non-ASCII separator. Fixed by narrowing the pattern to `/^%YAML(?:[ \t] | $)/`. Four controls added: NO-BREAK SPACE and EM SPACE reserved directives alone (both valid), a real tab-separated unsupported version (still invalid, conformance), and a real `%YAML 1.2` beside an NBSP reserved directive (valid — proves P20's cardinality check is not fooled by the same misclassification). |
+| P24 | SEV-3    | **DISPOSITIONED — residual broadened, owner-ruled 2026-09-05.** The P21 residual as first worded named only a repeated `%TAG` handle, but the SAME missing validation in `Directives.add()` (which checks only directive arity, nothing about handle or prefix grammar) also silently accepts a malformed handle (missing `!` delimiters) and a malformed prefix percent-escape — three distinct YAML 1.2.2 §6.8.2 rules sharing one root cause. Owner chose to broaden the existing residual (over building parser-token enforcement for the wider gap): §2.2 and §2.7 now name all three unenforced rules explicitly, with the same rationale as P21 (`%TAG` never appears in the live plan; hand-building enforcement would recreate the hand-parser class this checker exists to retire). Two more `KNOWN-OPEN:` controls added, one per newly named rule, alongside the original repeated-handle control — three total, each independently self-enforcing (closing any one breaks its own test). **No separate backlog story card opened**: SEV-3, zero live-plan impact, and the `KNOWN-OPEN:` mechanism already is the durable tracking record — see §2.7's owner note. |
+| P25 | SEV-3    | **FIXED.** The P22 wording sweep corrected §2.3's normative recipe and both code comments but missed the historical §2.11e disposition row (P19's own entry), which still said the mechanism finds "the token whose byte range contains" a warning's position — a present-tense claim about current behaviour, not a quoted historical phrase, so it contradicted P22's own correction two sections later. Corrected to "half-open code-unit-offset span," matching §2.3 and §2.11f. The two remaining "byte range" occurrences in this plan (§2.3's own P22 note, and §2.11f's P22 disposition row) are both explicit historical quotations of the superseded wording and were left as-is.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+
+⚠⚠⚠ **P23 IS THE FOURTH INSTANCE ON THIS SEAM, AND IT MOVES THE ATTACK SURFACE
+ONE LEVEL LOWER THAN VALUE, CHANNEL, OR CARDINALITY.** P12 asked which VALUE
+the parser settled on; P16 and P19 asked through which CHANNEL a problem with
+that value is reported; P20 asked how many TIMES the construction appeared.
+**P23 asks a question underneath all three: which CHARACTERS are actually
+part of the directive's NAME, as opposed to separating it from its
+parameter?** Every one of P12/P16/P19/P20's fixes correctly read the
+parser's own CST tokens rather than re-deciding the questions they each
+asked — but the CODE THAT SELECTS those tokens in the first place used a
+convenience classifier (JavaScript's `\s`) that does not exactly match the
+grammar being delegated to, which is the same root antipattern this whole
+arc keeps re-proving, now found at the point where a token is IDENTIFIED
+rather than where it is INTERPRETED. **The lesson generalises past this
+checker: when correlating by a recognised name (a keyword, a directive, a
+tag), the boundary that separates the name from what follows must be
+drawn from the SAME grammar the parser itself uses — never from a host
+language's own, usually broader, definition of "whitespace" or
+"separator."**
 
 ## 2.12 Questions the reviewer is asked to answer
 

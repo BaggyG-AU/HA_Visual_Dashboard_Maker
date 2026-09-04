@@ -779,6 +779,44 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
       doc(fence(['%YAML 1.2', '%YAML 1.3', '---', ...KEYS])),
       'invalid',
     ],
+
+    // --- directive-name separator: YAML 1.2.2 §5.5; implementation review P23 ---
+    [
+      // Implementation review finding P23: YAML 1.2.2 §5.5 defines only
+      // U+0020 and U+0009 as structural white space; `yaml`'s own
+      // `Directives.add()` splits a directive line on `/[ \t]+/`. A
+      // NO-BREAK SPACE (U+00A0) after `%YAML` is therefore NOT a separator —
+      // it is part of the directive's NAME, making this a valid but UNKNOWN
+      // reserved directive (the parser reports it exactly like `%FOO`), and
+      // §6.8 requires accepting it with only a warning.
+      'CONTROL: %YAML followed by NO-BREAK SPACE is a reserved directive, not %YAML (P23)',
+      doc(fence([`%YAML\u00A01.3`, '---', ...KEYS])),
+      'valid',
+    ],
+    [
+      // The same class, EM SPACE (U+2003) — also `ns-char` under YAML,
+      // also matched by ECMAScript `\s` before the P23 fix.
+      'CONTROL: %YAML followed by EM SPACE is a reserved directive, not %YAML (P23)',
+      doc(fence([`%YAML\u20031.3`, '---', ...KEYS])),
+      'valid',
+    ],
+    [
+      // CONTROL: a REAL tab separator is the parser's own alternate
+      // separator and must still reach the `%YAML` branch and block.
+      'CONTROL: %YAML followed by a real TAB still blocks as unsupported 1.3 (P23)',
+      doc(fence([`%YAML\t1.3`, '---', ...KEYS])),
+      'invalid',
+    ],
+    [
+      // The construction that would mask the regression under P20's
+      // cardinality check alone: a REAL %YAML 1.2 beside the NBSP-separated
+      // reserved directive. If the NBSP token were still misclassified as
+      // `%YAML`, `yamlDirectives.length` would read 2 and block on
+      // multiplicity instead of correctly passing.
+      'CONTROL: a real %YAML 1.2 beside an NBSP reserved directive still passes (P23)',
+      doc(fence(['%YAML 1.2', `%YAML\u00A01.3`, '---', ...KEYS])),
+      'valid',
+    ],
   ];
 
   for (const [label, text, must] of CASES) {
@@ -937,22 +975,48 @@ describe('planConsistency — KNOWN-OPEN limits (recorded, not fixed)', () => {
     expect(c3nocanon(spec)).toBe(false);
   });
 
-  it('KNOWN-OPEN: a repeated %TAG handle is not enforced (P21, owner-declared residual)', () => {
+  it('KNOWN-OPEN: a repeated %TAG handle is not enforced (P21/P24, owner-declared residual)', () => {
     // YAML 1.2.2 §6.8.2 makes repeating a `%TAG` directive for the same
     // handle an error, even when the two declarations agree. `yaml@2.9.0`'s
     // `Directives.add()` has no redeclaration guard for `%TAG` — it just
     // assigns `this.tags[handle] = prefix` on every occurrence — so this
     // checker, which delegates entirely to that library, cannot see it
-    // either. Owner-ruled 2026-09-05 (implementation review finding P21):
-    // declared as a residual rather than hand-built, matching §2.7's
-    // existing declared-residual pattern, because `%TAG` never appears in
-    // the live plan and building a private `%TAG` grammar to enforce a
-    // property the chosen parser does not report would recreate exactly the
-    // hand-parser class this checker was written to retire. The marker stays
-    // the fence's first content line, exactly like every other directive
+    // either. Owner-ruled 2026-09-05 (implementation review finding P21,
+    // broadened by P24 — see the two siblings below): declared as a
+    // residual rather than hand-built, matching §2.7's existing
+    // declared-residual pattern, because `%TAG` never appears in the live
+    // plan and building a private `%TAG` grammar to enforce a property the
+    // chosen parser does not report would recreate exactly the hand-parser
+    // class this checker was written to retire. The marker stays the
+    // fence's first content line, exactly like every other directive
     // control in this file — the `%TAG` lines follow it, before `---`.
     const spec =
       `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\n%TAG !e! !example!\n%TAG !e! !other!\n---\n` +
+      'review_rounds_complete: 7\nreviewer_findings: 30\nfindings_after_round_one: 24\n```\n';
+    expect(c3nocanon(spec)).toBe(false);
+  });
+
+  it('KNOWN-OPEN: a malformed %TAG handle is not enforced (P24, same residual as P21)', () => {
+    // Implementation review finding P24: the P21 residual as first written
+    // named only REPEATED handles, but the same missing validation in
+    // `Directives.add()` also silently accepts a handle that does not match
+    // YAML 1.2.2 §6.8.2.1's grammar (`!`, `!!`, or `!word!` — this one is
+    // missing both `!` delimiters). `this.tags[handle] = prefix` is assigned
+    // unconditionally regardless of the handle's own shape.
+    const spec =
+      `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\n%TAG e tag:example.com,2026:\n---\n` +
+      'review_rounds_complete: 7\nreviewer_findings: 30\nfindings_after_round_one: 24\n```\n';
+    expect(c3nocanon(spec)).toBe(false);
+  });
+
+  it('KNOWN-OPEN: a malformed %TAG prefix percent-escape is not enforced (P24, same residual)', () => {
+    // The same missing validation, on the prefix side: YAML 1.2.2 §6.8.2.2
+    // requires a `%` in a tag prefix to be followed by exactly two
+    // hexadecimal digits; `%ZZ` is not. `Directives.add()` does not validate
+    // the prefix's own grammar at all, only that the directive has two
+    // parts.
+    const spec =
+      `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\n%TAG !e! tag:example.com,%ZZ:\n---\n` +
       'review_rounds_complete: 7\nreviewer_findings: 30\nfindings_after_round_one: 24\n```\n';
     expect(c3nocanon(spec)).toBe(false);
   });
