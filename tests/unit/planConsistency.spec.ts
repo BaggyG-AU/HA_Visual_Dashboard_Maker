@@ -817,6 +817,61 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
       doc(fence(['%YAML 1.2', `%YAML\u00A01.3`, '---', ...KEYS])),
       'valid',
     ],
+
+    // --- reserved directive TRAILING EDGE (no parameter): implementation review P26 ---
+    [
+      // Implementation review finding P26: `yaml@2.9.0`'s composer decides a
+      // directive's NAME via `line.trim().split(/[ \t]+/)` \u2014 `trim()` runs
+      // BEFORE the split, and removes NBSP from the line's own trailing edge
+      // before the name is ever read. `%YAML` plus a trailing NBSP and
+      // NOTHING else on the line is, under YAML's own grammar, the reserved
+      // (unknown) directive `YAML<NBSP>` \u2014 but the composer's own
+      // normalisation reduces it to the bare string `%YAML` first, raising
+      // `BAD_DIRECTIVE` as an ERROR ("should contain exactly one part") for
+      // what \u00A76.8 requires accepting with only a warning. This selector
+      // still correctly excludes the token (P23's `[ \t]` boundary never
+      // matched it); the false block came from `doc.errors`, a channel this
+      // file was not yet reading.
+      'CONTROL: %YAML with a trailing NBSP and NOTHING else is a reserved directive (P26)',
+      doc(fence([`%YAML\u00A0`, '---', ...KEYS])),
+      'valid',
+    ],
+    [
+      // The same class, EM SPACE (U+2003) \u2014 also trimmed by ECMAScript
+      // `trim()`, also `ns-char` under YAML.
+      'CONTROL: %YAML with a trailing EM SPACE and NOTHING else is a reserved directive (P26)',
+      doc(fence([`%YAML\u2003`, '---', ...KEYS])),
+      'valid',
+    ],
+    [
+      // CONTROL: a real bare `%YAML` \u2014 nothing trimmable, nothing following
+      // at all \u2014 is the REAL %YAML directive with zero parts, and must still
+      // block. Proves the P26 fix does not suppress a genuinely malformed
+      // real %YAML directive, only the trim()-mangled reserved-directive
+      // case.
+      'CONTROL: a truly bare %YAML (no trailing character at all) still blocks (P26)',
+      doc(fence(['%YAML', '---', ...KEYS])),
+      'invalid',
+    ],
+    [
+      // CONTROL: a real %YAML directive with too many parts must still block
+      // \u2014 proves `blockingDirectiveErrors` only excludes the specific
+      // trim()-mangled case, not `BAD_DIRECTIVE` errors owned by a genuine
+      // `%YAML` token in general.
+      'CONTROL: %YAML 1.2 extra (too many parts) still blocks (P26)',
+      doc(fence(['%YAML 1.2 extra', '---', ...KEYS])),
+      'invalid',
+    ],
+    [
+      // The construction that would mask the regression under P20's
+      // cardinality check alone, same shape as the P23 control above but for
+      // the trailing-edge case: a REAL %YAML 1.2 beside the trailing-NBSP
+      // reserved directive. If the NBSP-trimmed token were still
+      // misclassified as `%YAML`, `yamlDirectives.length` would read 2.
+      'CONTROL: a real %YAML 1.2 beside a trailing-NBSP reserved directive still passes (P26)',
+      doc(fence(['%YAML 1.2', `%YAML\u00A0`, '---', ...KEYS])),
+      'valid',
+    ],
   ];
 
   for (const [label, text, must] of CASES) {
@@ -1017,6 +1072,33 @@ describe('planConsistency — KNOWN-OPEN limits (recorded, not fixed)', () => {
     // parts.
     const spec =
       `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\n%TAG !e! tag:example.com,%ZZ:\n---\n` +
+      'review_rounds_complete: 7\nreviewer_findings: 30\nfindings_after_round_one: 24\n```\n';
+    expect(c3nocanon(spec)).toBe(false);
+  });
+
+  it('KNOWN-OPEN: a %TAG prefix containing a raw brace is not enforced (P27, same residual)', () => {
+    // Implementation review finding P27: YAML 1.2.2 §6.8.2.2's `ns-uri-char`
+    // excludes a literal `{`/`}` everywhere in a tag prefix — unlike `,`,
+    // `[` and `]`, which `ns-uri-char` DOES permit unescaped. `Directives.add()`
+    // does not validate prefix character membership at all, so a raw brace is
+    // silently accepted alongside every other unvalidated prefix shape.
+    const spec =
+      `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\n%TAG !e! tag:example.com{2026}:\n---\n` +
+      'review_rounds_complete: 7\nreviewer_findings: 30\nfindings_after_round_one: 24\n```\n';
+    expect(c3nocanon(spec)).toBe(false);
+  });
+
+  it('KNOWN-OPEN: a %TAG global prefix starting with a flow indicator is not enforced (P27)', () => {
+    // Implementation review finding P27: a prefix that does not itself start
+    // with `!` is a GLOBAL tag prefix (YAML 1.2.2 §6.8.2.2), whose first
+    // character must be `ns-tag-char` — `ns-uri-char` minus `!` and the four
+    // flow indicators `,`/`[`/`]`/`{`/`}`. A prefix beginning with a raw
+    // comma is invalid even though the SAME character is legal `ns-uri-char`
+    // content everywhere else in the string (proven by the P21 control
+    // above, whose handle/prefix pair never puts a flow indicator first).
+    // `Directives.add()` does not validate a prefix's first character either.
+    const spec =
+      `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\n%TAG !e! ,tag:example\n---\n` +
       'review_rounds_complete: 7\nreviewer_findings: 30\nfindings_after_round_one: 24\n```\n';
     expect(c3nocanon(spec)).toBe(false);
   });

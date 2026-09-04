@@ -284,14 +284,14 @@ without saying whose. It is now named:
   `*k : 8` — raises no error, counts as one key, and lets the second value
   silently win (`toJS()` returns `8`). Measured; finding P4.
 - **No declared departures, except the ONE named in §2.7** (implementation
-  review findings P21/P24, owner-ruled 2026-09-05, P24 broadening the P21
-  ruling the same day): `yaml@2.9.0` does not enforce YAML 1.2.2 §6.8.2's
-  `%TAG` handle/prefix grammar — not just a repeated handle, but a
-  malformed handle or a malformed prefix percent-escape too — and the
-  checker does not build a private `%TAG` grammar to enforce any of it
-  either — see §2.7 for the full boundary and why. Revision 1's departure
-  is withdrawn (§1.4); every OTHER property C3 asserts is one a reference
-  parser decides.
+  review findings P21/P24/P27, owner-ruled 2026-09-05, P24 and P27 each
+  broadening the prior ruling the same day): `yaml@2.9.0` performs **no
+  `%TAG` handle or prefix grammar validation of any kind beyond exact
+  two-part arity** (YAML 1.2.2 §6.8.2) — the checker does not build a
+  private `%TAG` grammar to enforce any of it either — see §2.7 for the
+  full boundary, its representative (not exhaustive) pins, and why.
+  Revision 1's departure is withdrawn (§1.4); every OTHER property C3
+  asserts is one a reference parser decides.
 
 ## 2.2a Reader-visible heading text — the projection, stated as a contract
 
@@ -359,29 +359,50 @@ parser; delete it and call one.**
      is the real, narrower residual §2.7 declares and §2.10 pins.
 5. **Add YAML payload validation** for the single canonical block:
    `parseDocument(text, { uniqueKeys: true, stringKeys: true, version: '1.2' })`.
-   ⚠ **Corrected (implementation review findings P12, P16, P19, P20, P23 —
-   this step previously named only the pre-repair call and its four checks;
-   every addition below is load-bearing, not optional hardening).** `version:
-'1.2'` is only the FALLBACK for a document with no `%YAML` directive; an
-   explicit directive overrides it. **First, parse `yamlDirectives`** — the
-   CST `directive` tokens (via `yaml`'s own `Parser`) whose name is `%YAML`,
-   each spanning the HALF-OPEN code-unit range `[t.offset, t.offset +
-t.source.length)` (implementation review finding P22: an earlier version
-   of this recipe called this a "byte range" with a closed upper bound —
-   wrong on both counts, since the coordinate is a JavaScript UTF-16
-   code-unit offset, not a byte offset, and the span excludes its own end).
-   ⚠ **The separator between `%YAML` and its parameter MUST be matched as
-   ASCII space or tab (`[ \t]`), never ECMAScript `\s`** (implementation
-   review finding P23): YAML 1.2.2 §5.5 defines only U+0020/U+0009 as
-   structural white space, and `yaml`'s own `Directives.add()` splits on
-   `/[ \t]+/`; `\s` also matches NO-BREAK SPACE (U+00A0) and other
-   characters YAML classifies as part of a reserved directive's NAME, not a
-   separator — matching them anyway reclassified a valid, must-accept
-   reserved directive as `%YAML` and reintroduced a P19-shaped false
-   blocker one lexical boundary earlier. Then raise, in order:
-   - on `doc.errors.length > 0` (malformed YAML, duplicate keys including the
-     quoted spelling, multi-document payloads, an alias or non-string key, and
-     a directive the parser cannot parse at all such as `%YAML next`);
+   ⚠ **Corrected (implementation review findings P12, P16, P19, P20, P23,
+   P26 — this step previously named only the pre-repair call and its four
+   checks; every addition below is load-bearing, not optional hardening).**
+   `version: '1.2'` is only the FALLBACK for a document with no `%YAML`
+   directive; an explicit directive overrides it. **First, parse
+   `allDirectives`** — EVERY CST `directive` token (via `yaml`'s own
+   `Parser`), each spanning the HALF-OPEN code-unit range `[t.offset,
+t.offset + t.source.length)` (implementation review finding P22: an
+   earlier version of this recipe called this a "byte range" with a closed
+   upper bound — wrong on both counts, since the coordinate is a JavaScript
+   UTF-16 code-unit offset, not a byte offset, and the span excludes its own
+   end). **Then select `yamlDirectives`, the subset of `allDirectives` whose
+   NAME is `%YAML`.** ⚠ **The separator between `%YAML` and its parameter
+   MUST be matched as ASCII space or tab (`[ \t]`), never ECMAScript `\s`**
+   (implementation review finding P23): YAML 1.2.2 §5.5 defines only
+   U+0020/U+0009 as structural white space, and `yaml`'s own
+   `Directives.add()` splits on `/[ \t]+/`; `\s` also matches NO-BREAK SPACE
+   (U+00A0) and other characters YAML classifies as part of a reserved
+   directive's NAME, not a separator — matching them anyway reclassified a
+   valid, must-accept reserved directive as `%YAML` and reintroduced a
+   P19-shaped false blocker one lexical boundary earlier. Then raise, in
+   order:
+   - **on `blockingDirectiveErrors(allDirectives, yamlDirectives,
+doc.errors).length > 0`** (implementation review finding P26 — the SAME
+     seam, a FOURTH channel, one boundary below P23's separator fix, narrowing
+     the prior `doc.errors.length > 0` check): `yaml@2.9.0`'s composer decides
+     a directive's NAME via `line.trim().split(/[ \t]+/)` — `trim()` runs
+     BEFORE the split and removes NBSP/EM SPACE/other trimmable `ns-char`
+     characters from the line's OWN edges. A reserved directive consisting of
+     ONLY `%YAML` plus one such trailing character — nothing else on the
+     line — is reduced by the composer's own normalisation to the bare
+     string `%YAML` before its name is even read, so it raises `BAD_DIRECTIVE`
+     as an ERROR ("should contain exactly one part") for what §6.8 requires
+     accepting as an unknown reserved directive. `blockingDirectiveErrors`
+     excludes a `BAD_DIRECTIVE` error only when its OWNING token (found
+     across `allDirectives`, not only ones named `%YAML`) is itself NOT
+     selected as `%YAML` — leaving a genuinely malformed real `%YAML`
+     directive (wrong arity, an unsupported syntax shape) blocking exactly as
+     before, and every other error code untouched. This covers malformed
+     YAML, duplicate keys including the quoted spelling, multi-document
+     payloads, an alias or non-string key, and a directive the parser cannot
+     parse at all such as `%YAML next` — the same population the prior
+     `doc.errors.length > 0` check covered, minus exactly the one
+     trim()-mangled case;
    - **on `yamlDirectives.length > 1`** (implementation review finding P20):
      `yaml`'s `Directives.add()` unconditionally overwrites its stored version
      on every SUPPORTED `%YAML` directive, with no redeclaration check of its
@@ -561,37 +582,65 @@ and forces the claim to be corrected in the same commit.
 - **C1's textual-caller limit and C2/C4** are untouched.
 - ⚠⚠ **`%TAG` HANDLE/PREFIX VALIDITY IS NOT ENFORCED BEYOND WHAT `yaml@2.9.0`
   ITSELF REPORTS — THE ONE DEPARTURE THIS PLAN NAMES (implementation review
-  findings P21/P24, owner-ruled 2026-09-05; P24 BROADENED the P21 ruling the
-  same day after the same sweep found the residual as first worded covered
-  only ONE of several silent `%TAG` gaps sharing the same root cause).**
-  Installed `yaml@2.9.0`'s `Directives.add()`
-  (`node_modules/yaml/dist/doc/directives.js`) checks only that a `%TAG`
-  directive has exactly two whitespace-separated parts, then unconditionally
-  assigns `this.tags[handle] = prefix` — no redeclaration guard, no handle
-  grammar check, no prefix grammar check. Three DISTINCT YAML 1.2.2 §6.8.2
-  rules are therefore all silently unenforced by the SAME missing validation:
+  findings P21/P24/P27, owner-ruled 2026-09-05; P24 and P27 each BROADENED
+  the prior ruling the same day, both times because the residual as worded
+  named specific rule violations as if they were the complete boundary, when
+  the underlying code performs no grammar validation at all).** Installed
+  `yaml@2.9.0`'s `Directives.add()` (`node_modules/yaml/dist/doc/
+directives.js`) checks only that a `%TAG` directive has exactly two
+  whitespace-separated parts, then unconditionally assigns
+  `this.tags[handle] = prefix` — no redeclaration guard, no handle grammar
+  check, no prefix grammar check of ANY kind. **The residual is therefore
+  stated at the level of the IMPLEMENTATION BOUNDARY, not as an enumerated
+  list claimed to be complete** (implementation review finding P27: P24's
+  "three distinct rules" enumeration repeated the exact antipattern P24
+  itself was fixing — naming specific violated rules as if they were
+  exhaustive, when the missing validation covers every possible handle and
+  prefix shape). The boundary is: **any handle string and any prefix string
+  that survive an exactly-two-part whitespace split are silently accepted,
+  regardless of shape.** At least the following FIVE independently
+  reachable, specification-invalid forms are known instances of this one
+  boundary — this list is a representative sample the plan pins with a
+  passing `KNOWN-OPEN:` test each, **not a claim that no sixth form
+  exists**:
   - **repeated handle** (§6.8.2, Example 6.17): the SAME handle declared
     twice is an error even when both declarations agree — P21's original
     finding;
   - **malformed handle** (§6.8.2.1): a handle must be `!`, `!!`, or
     `!word!` — a handle missing its `!` delimiters (e.g. `e`) is accepted;
-  - **malformed prefix** (§6.8.2.2): a `%` in a tag prefix must be followed
-    by exactly two hexadecimal digits — an invalid escape (e.g. `%ZZ`) is
-    accepted.
+  - **malformed prefix percent-escape** (§6.8.2.2): a `%` in a tag prefix
+    must be followed by exactly two hexadecimal digits — an invalid escape
+    (e.g. `%ZZ`) is accepted — P24's original finding;
+  - **forbidden character in a prefix** (§6.8.2.2, `ns-uri-char`): a tag
+    prefix's characters are drawn from `ns-uri-char`, which excludes a
+    literal, unescaped `{` or `}` everywhere in the string (unlike `,`,
+    `[` and `]`, which `ns-uri-char` DOES permit unescaped) — a prefix
+    containing a raw brace (e.g. `tag:example.com{2026}:`) is accepted —
+    P27's finding;
+  - **invalid first character of a global prefix** (§6.8.2.2,
+    `ns-global-tag-prefix`): a prefix that does not itself start with `!`
+    is a GLOBAL tag prefix, whose first character must be `ns-tag-char`
+    (`ns-uri-char` minus `!` and the four flow indicators `, [ ] {` `}`) —
+    a prefix beginning with a raw comma or bracket (e.g. `,tag:example` or
+    `[tag:example`) is accepted even though that exact character is legal
+    ns-uri-char content everywhere ELSE in the same string — P27's finding.
 
-  **Deliberately left undetected, broadened rather than enforced** (P24):
-  `%TAG` never appears in the live plan, and hand-parsing directive
-  handle/prefix grammar to enforce a property the chosen parser does not
-  report would recreate exactly the hand-parser class this checker exists to
-  retire (the root `practice`-wing rule this whole arc keeps re-proving).
-  ⚠ **Owner note (2026-09-05): this residual is recorded here as the durable,
-  self-enforcing boundary — a future change that starts validating any of the
-  three rules above will break one of the three `KNOWN-OPEN:` controls below
-  and force this section to be corrected in the same commit. No separate
-  backlog story card was opened for it**: SEV-3, zero live-plan impact, and
-  the `KNOWN-OPEN:` mechanism already IS the tracking record — a card would
-  duplicate it without adding anything actionable to schedule. Pinned by
-  three passing `KNOWN-OPEN:` tests, one per rule above.
+  **Deliberately left undetected, broadened rather than enforced** (P24,
+  reaffirmed by P27): `%TAG` never appears in the live plan, and
+  hand-parsing directive handle/prefix grammar to enforce a property the
+  chosen parser does not report would recreate exactly the hand-parser
+  class this checker exists to retire (the root `practice`-wing rule this
+  whole arc keeps re-proving). ⚠ **Owner note (2026-09-05, reaffirmed after
+  P27): this residual is recorded here as the durable, self-enforcing
+  boundary — a future change that starts validating any of the five listed
+  forms above will break one of the five `KNOWN-OPEN:` controls below and
+  force this section to be corrected in the same commit; a future review
+  that finds a SIXTH independently reachable form adds a sixth pin to this
+  same list rather than reopening the enforce-vs-declare decision. No
+  separate backlog story card was opened for it**: SEV-3, zero live-plan
+  impact, and the `KNOWN-OPEN:` mechanism already IS the tracking record —
+  a card would duplicate it without adding anything actionable to
+  schedule. Pinned by five passing `KNOWN-OPEN:` tests, one per form above.
 
 ## 2.8 Must NOT change
 
@@ -901,11 +950,11 @@ plus one leftover stale phrase; verdict **CHANGES-REQUIRED**, three findings,
 all reproduced before being accepted. The reviewer's cumulative record on
 this branch is now **38 findings, 38 valid** across eleven rounds.
 
-| Ref | Severity | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P23 | SEV-2    | **FIXED.** `yamlDirectiveTokens` selected `%YAML` CST tokens with `/^%YAML(?:\s                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | $)/`— ECMAScript`\s`, which matches NO-BREAK SPACE (U+00A0), EM SPACE (U+2003) and other characters YAML 1.2.2 §5.5 does NOT classify as structural white space (only U+0020/U+0009 are; `yaml`'s own `Directives.add()`splits on`/[ \t]+/`). A directive like `%YAML<U+00A0>1.3`is therefore, under YAML's own grammar, an unknown RESERVED directive (the parser reports it exactly like`%FOO`) — but the old regex misclassified it as `%YAML`, reintroducing a P19-shaped false blocker one boundary earlier. This bug was introduced with the token-matching logic itself in the P19 commit (`b817a42`) and survived two subsequent review rounds before this sweep tried a non-ASCII separator. Fixed by narrowing the pattern to `/^%YAML(?:[ \t] | $)/`. Four controls added: NO-BREAK SPACE and EM SPACE reserved directives alone (both valid), a real tab-separated unsupported version (still invalid, conformance), and a real `%YAML 1.2` beside an NBSP reserved directive (valid — proves P20's cardinality check is not fooled by the same misclassification). |
-| P24 | SEV-3    | **DISPOSITIONED — residual broadened, owner-ruled 2026-09-05.** The P21 residual as first worded named only a repeated `%TAG` handle, but the SAME missing validation in `Directives.add()` (which checks only directive arity, nothing about handle or prefix grammar) also silently accepts a malformed handle (missing `!` delimiters) and a malformed prefix percent-escape — three distinct YAML 1.2.2 §6.8.2 rules sharing one root cause. Owner chose to broaden the existing residual (over building parser-token enforcement for the wider gap): §2.2 and §2.7 now name all three unenforced rules explicitly, with the same rationale as P21 (`%TAG` never appears in the live plan; hand-building enforcement would recreate the hand-parser class this checker exists to retire). Two more `KNOWN-OPEN:` controls added, one per newly named rule, alongside the original repeated-handle control — three total, each independently self-enforcing (closing any one breaks its own test). **No separate backlog story card opened**: SEV-3, zero live-plan impact, and the `KNOWN-OPEN:` mechanism already is the durable tracking record — see §2.7's owner note. |
-| P25 | SEV-3    | **FIXED.** The P22 wording sweep corrected §2.3's normative recipe and both code comments but missed the historical §2.11e disposition row (P19's own entry), which still said the mechanism finds "the token whose byte range contains" a warning's position — a present-tense claim about current behaviour, not a quoted historical phrase, so it contradicted P22's own correction two sections later. Corrected to "half-open code-unit-offset span," matching §2.3 and §2.11f. The two remaining "byte range" occurrences in this plan (§2.3's own P22 note, and §2.11f's P22 disposition row) are both explicit historical quotations of the superseded wording and were left as-is.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Ref | Severity | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P23 | SEV-2    | **FIXED.** `yamlDirectiveTokens` selected `%YAML` CST tokens with `/^%YAML(?:\s\|$)/` — ECMAScript `\s`, which matches NO-BREAK SPACE (U+00A0), EM SPACE (U+2003) and other characters YAML 1.2.2 §5.5 does NOT classify as structural white space (only U+0020/U+0009 are; `yaml`'s own `Directives.add()` splits on `/[ \t]+/`). A directive like `%YAML<U+00A0>1.3` is therefore, under YAML's own grammar, an unknown RESERVED directive (the parser reports it exactly like `%FOO`) — but the old regex misclassified it as `%YAML`, reintroducing a P19-shaped false blocker one boundary earlier. This bug was introduced with the token-matching logic itself in the P19 commit (`b817a42`) and survived two subsequent review rounds before this sweep tried a non-ASCII separator. Fixed by narrowing the pattern to `/^%YAML(?:[ \t]\|$)/`. Four controls added: NO-BREAK SPACE and EM SPACE reserved directives alone (both valid), a real tab-separated unsupported version (still invalid, conformance), and a real `%YAML 1.2` beside an NBSP reserved directive (valid — proves P20's cardinality check is not fooled by the same misclassification). ⚠ **Corrected (implementation review finding P28): the two regexes above were previously written with unescaped `\|` alternation pipes inside this table cell, which GFM's table grammar reads as new cell delimiters — the rendered row on GitHub truncated after `%YAML(?:\s` and dropped everything from the cause through the four controls, and the same corruption mangled the spacing around the break. Escaping each pipe as `\|` and restoring the spacing, as here, keeps the cell intact; this is the only change this row makes to its own substance.** |
+| P24 | SEV-3    | **DISPOSITIONED — residual broadened, owner-ruled 2026-09-05.** The P21 residual as first worded named only a repeated `%TAG` handle, but the SAME missing validation in `Directives.add()` (which checks only directive arity, nothing about handle or prefix grammar) also silently accepts a malformed handle (missing `!` delimiters) and a malformed prefix percent-escape — three distinct YAML 1.2.2 §6.8.2 rules sharing one root cause. Owner chose to broaden the existing residual (over building parser-token enforcement for the wider gap): §2.2 and §2.7 now name all three unenforced rules explicitly, with the same rationale as P21 (`%TAG` never appears in the live plan; hand-building enforcement would recreate the hand-parser class this checker exists to retire). Two more `KNOWN-OPEN:` controls added, one per newly named rule, alongside the original repeated-handle control — three total, each independently self-enforcing (closing any one breaks its own test). **No separate backlog story card opened**: SEV-3, zero live-plan impact, and the `KNOWN-OPEN:` mechanism already is the durable tracking record — see §2.7's owner note.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| P25 | SEV-3    | **FIXED.** The P22 wording sweep corrected §2.3's normative recipe and both code comments but missed the historical §2.11e disposition row (P19's own entry), which still said the mechanism finds "the token whose byte range contains" a warning's position — a present-tense claim about current behaviour, not a quoted historical phrase, so it contradicted P22's own correction two sections later. Corrected to "half-open code-unit-offset span," matching §2.3 and §2.11f. The two remaining "byte range" occurrences in this plan (§2.3's own P22 note, and §2.11f's P22 disposition row) are both explicit historical quotations of the superseded wording and were left as-is.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ⚠⚠⚠ **P23 IS THE FOURTH INSTANCE ON THIS SEAM, AND IT MOVES THE ATTACK SURFACE
 ONE LEVEL LOWER THAN VALUE, CHANNEL, OR CARDINALITY.** P12 asked which VALUE
@@ -925,6 +974,51 @@ tag), the boundary that separates the name from what follows must be
 drawn from the SAME grammar the parser itself uses — never from a host
 language's own, usually broader, definition of "whitespace" or
 "separator."**
+
+## 2.11h Disposition of the fifth follow-up implementation review (P26–P28)
+
+The P23–P25 fix landed as commit `cbae9e1` (2026-09-05); the fifth
+follow-up review committed as `f4574b781e6f0cd1b329a7e58a5a828a084797c5`
+found a defect one boundary below P23's own separator fix, a completeness
+gap in P24's broadened `%TAG` residual, and a Markdown table rendering
+defect in P23's own disposition row above; verdict **CHANGES-REQUIRED**,
+three findings, all reproduced before being accepted. The reviewer's
+cumulative record on this branch is now **41 findings, 41 valid** across
+twelve rounds.
+
+| Ref | Severity | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P26 | SEV-2    | **FIXED.** `yaml@2.9.0`'s composer decides a directive's NAME via `line.trim().split(/[ \t]+/)` — `trim()` runs BEFORE the split and removes NBSP, EM SPACE and other ECMAScript-trimmable characters YAML classifies as ordinary `ns-char` from the line's OWN edges. A reserved directive consisting of ONLY `%YAML` plus one such trailing character — nothing else on the line — is reduced by the composer's own normalisation to the bare string `%YAML` before its name is ever read, so the composer itself raises `BAD_DIRECTIVE` as an ERROR ("should contain exactly one part") for what YAML 1.2.2 §6.8 requires accepting as an unknown reserved directive; the prior `doc.errors.length > 0` check blocked unconditionally on any such error. P23's `[ \t]` selector already correctly excluded the token (its raw source has no `[ \t]` or end-of-string right after `%YAML`) — the false block came from a FOURTH channel, `doc.errors`, that this file was not yet reading discriminately. Fixed by splitting `yamlDirectiveTokens` into `allDirectiveTokens` (every CST directive token) and a `%YAML`-only filter, adding `directiveTokenAt` to find a diagnostic's owning token by position, and adding `blockingDirectiveErrors`, which excludes a `BAD_DIRECTIVE` error only when its owning token is not itself selected as `%YAML` — leaving a genuinely malformed real `%YAML` directive (wrong arity) blocking exactly as before, and every other error code untouched. Five controls added: trailing NBSP and trailing EM SPACE alone with nothing following (both valid), a truly bare `%YAML` with no trailing character at all (still invalid — the real directive with zero parts), `%YAML 1.2 extra` with too many parts (still invalid), and a real `%YAML 1.2` beside a trailing-NBSP reserved directive (valid — proves P20's cardinality check is not fooled). |
+| P27 | SEV-3    | **DISPOSITIONED — residual reworded and broadened, owner-ruled 2026-09-05.** P24's "three distinct rules" enumeration repeated the exact antipattern P24 itself was fixing: naming specific violated rules as if they were the complete boundary, when `Directives.add()`'s `%TAG` case performs no grammar validation of any kind beyond exact two-part arity. Two further independently reachable, specification-invalid forms were measured silently accepted by the same missing validation: a prefix containing a literal, unescaped `{` or `}` (YAML 1.2.2 §6.8.2.2's `ns-uri-char` excludes braces everywhere, unlike `,`/`[`/`]`, which it permits unescaped), and a global-shaped prefix (one not itself starting with `!`) beginning with a raw flow indicator such as `,` or `[` (a global prefix's first character must be `ns-tag-char`, which excludes flow indicators even though the SAME characters are legal `ns-uri-char` content everywhere else in the string). §2.2 and §2.7 now state the residual at the level of the implementation boundary ("no `%TAG` grammar validation beyond arity") with an explicit disclaimer that its five listed forms are a representative sample, not a claim of exhaustiveness — directly addressing why this residual has needed broadening twice. Two more `KNOWN-OPEN:` controls added, one per newly named form, alongside the original three — five total. **No separate backlog story card opened**, same reasoning as P21/P24: SEV-3, zero live-plan impact, and the `KNOWN-OPEN:` mechanism already is the durable tracking record.                                                                                                                                                                                                                                                                                                 |
+| P28 | SEV-3    | **FIXED.** §2.11g's own P23 disposition row (this table, one section up) contained two literal regexes with unescaped alternation pipes inside a Markdown table cell. GFM's table grammar reads any unescaped `\|` as a new cell delimiter — the rendered row truncated after `%YAML(?:\s` on GitHub, silently dropping the cause, the fix, and all four P23 controls from view, and the same corruption mangled surrounding spacing. Fixed by escaping both pipes as `\|` and restoring the mangled spacing; verified by lexing the corrected row with `marked` (the same GFM lexer the checker itself uses) and confirming it renders as exactly three cells with the full disposition text intact, plus a full-document sweep confirming no other table row in this plan has a column-count mismatch.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+
+⚠⚠⚠ **P26 IS THE FIFTH INSTANCE ON THIS SEAM, ONE BOUNDARY BELOW P23'S OWN
+FIX.** P23 asked which CHARACTERS separate a directive's name from its
+parameter, mid-line. **P26 asks the same question at the line's OWN EDGE:**
+does the dependency's own pre-processing (a leading/trailing `trim()`) ever
+remove a character P23's separator boundary was supposed to protect,
+BEFORE that boundary is ever tested? P23's fix was necessary but not
+sufficient — it correctly decided which TOKENS are `%YAML`, but the
+diagnostic channel this file read (`doc.errors`, unconditionally) was still
+trusting the composer's OWN name-decision, which the composer had already
+made via a broader normalisation than P23's own selector uses. The lesson
+generalises past this checker, again: when a repair narrows YOUR OWN
+lexical boundary to match a delegated grammar exactly, also check whether
+the DELEGATE'S OWN preprocessing — trimming, normalising, canonicalising —
+runs BEFORE that boundary is applied, on the delegate's side, using a
+DIFFERENT (usually broader) definition than the one just matched.
+
+⚠ **P27 and P28 are process lessons, not new code-behaviour classes.** P27
+repeats, one level further, the exact "name examples instead of the
+boundary" antipattern P24 itself fixed — the remedy generalises to: when a
+residual is broadened a second time for the same underlying gap, reword its
+FRAMING to disclaim exhaustiveness, not just add another pin. P28 shows a
+formatter-clean result (`prettier --check` passed on both `cbae9e1` and
+`f4574b781e6f0cd1b329a7e58a5a828a084797c5`, since Prettier reformats
+Markdown syntax but does not lex GFM tables for cell-count correctness) is
+not evidence a table renders correctly — the same class of check-that-
+cannot-fail this project has met before, now in a documentation artifact
+rather than a test harness.
 
 ## 2.12 Questions the reviewer is asked to answer
 

@@ -26,7 +26,15 @@
 
 import { marked, type Token, type Tokens } from 'marked';
 import { decodeHTML } from 'entities';
-import { parseDocument, isMap, isAlias, isScalar, Parser as YamlParser, type CST } from 'yaml';
+import {
+  parseDocument,
+  isMap,
+  isAlias,
+  isScalar,
+  Parser as YamlParser,
+  type CST,
+  type YAMLError,
+} from 'yaml';
 
 export interface PlanFinding {
   /** Stable code, e.g. `C1-ORPHAN`. */
@@ -388,15 +396,32 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
   }
 
   /**
-   * The CST `directive` tokens in `text` whose directive NAME is `%YAML` —
-   * parsed once via `yaml`'s own `Parser`, shared by the two checks below.
-   * Each token's span is HALF-OPEN over JavaScript UTF-16 code-unit offsets,
-   * `[t.offset, t.offset + t.source.length)` — the same coordinate system
-   * `yaml`'s own CST and composer use throughout (implementation review
-   * finding P22: an earlier version of this comment called it a "byte range,"
-   * which is wrong on two counts — the unit is code units, not bytes, so an
-   * astral character shifts the two apart, and the upper bound EXCLUDES the
-   * span's end rather than including it).
+   * Every CST `directive` token in `text` — parsed once via `yaml`'s own
+   * `Parser`, shared by every check below. Each token's span is HALF-OPEN
+   * over JavaScript UTF-16 code-unit offsets, `[t.offset, t.offset +
+   * t.source.length)` — the same coordinate system `yaml`'s own CST and
+   * composer use throughout (implementation review finding P22: an earlier
+   * version of this comment called it a "byte range," which is wrong on two
+   * counts — the unit is code units, not bytes, so an astral character
+   * shifts the two apart, and the upper bound EXCLUDES the span's end rather
+   * than including it).
+   *
+   * ⚠⚠⚠ Split out from the `%YAML`-only selector (implementation review
+   * finding P26) because `directiveTokenAt` below must be able to find the
+   * owning token of a diagnostic about a directive that is NOT `%YAML` —
+   * including one `yaml`'s own composer misclassifies as `%YAML` for a
+   * reason that has nothing to do with this file's own separator regex.
+   */
+  function allDirectiveTokens(text: string): CST.Directive[] {
+    const tokens: CST.Directive[] = [];
+    for (const token of new YamlParser().parse(text)) {
+      if (token.type === 'directive') tokens.push(token);
+    }
+    return tokens;
+  }
+
+  /**
+   * The subset of `directives` whose directive NAME is `%YAML`.
    *
    * ⚠⚠⚠ THE SEPARATOR AFTER `%YAML` MUST BE ASCII SPACE OR TAB — NOT
    * ECMASCRIPT `\s` (implementation review finding P23). YAML 1.2.2 §5.5
@@ -411,13 +436,36 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
    * anyway — reintroducing the false blocker P19 exists to prevent, one
    * lexical boundary earlier. Matching `[ \t]` here mirrors the parser's own
    * separator, not a superset of it.
+   *
+   * ⚠⚠⚠ THIS BOUNDARY IS NECESSARY BUT NOT SUFFICIENT (implementation review
+   * finding P26): it correctly excludes a token whose OWN raw source has an
+   * `ns-char` after `%YAML`, but `yaml@2.9.0`'s composer decides a
+   * directive's NAME from `line.trim().split(/[ \t]+/)` — `trim()` runs
+   * BEFORE the split, and JavaScript's `trim()` removes NBSP, EM SPACE, and
+   * several other characters YAML classifies as ordinary `ns-char` (not
+   * structural white space) from the START and END of the line. A reserved
+   * directive consisting of ONLY `%YAML` plus one trailing trimmable
+   * character — nothing else on the line — is therefore reduced by the
+   * composer's OWN normalisation to the bare string `%YAML` before its
+   * `switch (name)` ever runs, so the composer itself misclassifies it as
+   * the real `%YAML` directive with zero parts and raises `BAD_DIRECTIVE` as
+   * an ERROR ("should contain exactly one part"). This selector still
+   * correctly excludes that token (its raw `.source` does not match `[ \t]`
+   * or `$` right after `%YAML`) — the false block instead comes from
+   * `yamlDoc.errors`, via a channel this file was not yet reading;
+   * `blockingDirectiveErrors` below closes it the same way `directiveTokenAt`
+   * already closes the equivalent warning channel.
    */
-  function yamlDirectiveTokens(text: string): CST.Directive[] {
-    const tokens: CST.Directive[] = [];
-    for (const token of new YamlParser().parse(text)) {
-      if (token.type === 'directive' && /^%YAML(?:[ \t]|$)/.test(token.source)) tokens.push(token);
-    }
-    return tokens;
+  function yamlDirectiveTokens(directives: readonly CST.Directive[]): CST.Directive[] {
+    return directives.filter((t) => /^%YAML(?:[ \t]|$)/.test(t.source));
+  }
+
+  /** The directive token (if any) whose half-open span contains `pos`. */
+  function directiveTokenAt(
+    pos: number,
+    directives: readonly CST.Directive[],
+  ): CST.Directive | undefined {
+    return directives.find((t) => pos >= t.offset && pos < t.offset + t.source.length);
   }
 
   /**
@@ -430,24 +478,56 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
    * `Directives.add()` routes both cases through that one code).
    *
    * For each `BAD_DIRECTIVE` warning, finds the `%YAML` token (from
-   * `yamlDirectives`, already parsed by `yamlDirectiveTokens`) whose
-   * half-open span contains the warning's own reported position. This does
-   * not re-decide version validity (the parser already did, or there would
-   * be no warning) and does not match the warning's human-readable message
-   * or a version-string table — it asks only whether the warning falls
-   * inside a `%YAML` directive's own span, the same way `Directives.add()`
-   * itself branches on the directive name.
+   * `yamlDirectives`, already selected by `yamlDirectiveTokens`) whose
+   * half-open span contains the warning's own reported position via
+   * `directiveTokenAt`. This does not re-decide version validity (the parser
+   * already did, or there would be no warning) and does not match the
+   * warning's human-readable message or a version-string table — it asks
+   * only whether the warning falls inside a `%YAML` directive's own span,
+   * the same way `Directives.add()` itself branches on the directive name.
    */
   function unsupportedYamlVersionWarned(
     yamlDirectives: readonly CST.Directive[],
-    warnings: ReadonlyArray<{ code?: string; pos: [number, number] }>,
+    warnings: readonly YAMLError[],
   ): boolean {
-    if (!warnings.some((w) => w.code === 'BAD_DIRECTIVE')) return false;
     return warnings.some(
-      (w) =>
-        w.code === 'BAD_DIRECTIVE' &&
-        yamlDirectives.some((t) => w.pos[0] >= t.offset && w.pos[0] < t.offset + t.source.length),
+      (w) => w.code === 'BAD_DIRECTIVE' && directiveTokenAt(w.pos[0], yamlDirectives) !== undefined,
     );
+  }
+
+  /**
+   * `yamlDoc.errors`, minus any `BAD_DIRECTIVE` error that is not really
+   * about a `%YAML` directive (implementation review finding P26).
+   *
+   * A `BAD_DIRECTIVE` error's position is looked up against `allDirectives`
+   * (every directive token, not only the `%YAML`-named ones `yamlDirectives`
+   * selects) to find its OWNING token — the directive line the composer was
+   * processing when it raised the error. If that owning token is itself one
+   * `yamlDirectiveTokens` selects as `%YAML`, the error is genuinely about a
+   * malformed real `%YAML` directive (wrong arity, an unsupported syntax
+   * shape) and must keep blocking, exactly as before. If the owning token is
+   * NOT selected as `%YAML` — the token this file's own exact separator
+   * boundary correctly identified as a reserved, not-`%YAML`, directive —
+   * the error is collateral from `yaml@2.9.0`'s OWN `trim()`-before-split
+   * normalisation deciding a different, narrower name than the token's raw
+   * source actually contains, and YAML 1.2.2 §6.8 requires accepting that
+   * directive, not blocking it. A `BAD_DIRECTIVE` error with no owning token
+   * at all is left blocking (defensive: nothing in this file's own testing
+   * has produced one, and treating an unowned diagnostic as spurious would
+   * be exactly the kind of unproven inference this checker exists to avoid).
+   * Every other error code is untouched — this narrows only the one channel
+   * P26 measured, not `doc.errors.length > 0` in general.
+   */
+  function blockingDirectiveErrors(
+    allDirectives: readonly CST.Directive[],
+    yamlDirectives: readonly CST.Directive[],
+    errors: readonly YAMLError[],
+  ): YAMLError[] {
+    return errors.filter((e) => {
+      if (e.code !== 'BAD_DIRECTIVE') return true;
+      const owner = directiveTokenAt(e.pos[0], allDirectives);
+      return owner === undefined || yamlDirectives.includes(owner);
+    });
   }
 
   // The token walk. Recurses into block quotes and list items — a canonical
@@ -549,13 +629,33 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
     // Counting `yamlDirectives` — the SAME CST tokens `unsupportedYamlVersionWarned`
     // already parses — rejects the block before `directives.yaml.version` is
     // ever trusted, with no re-parsing of version text of our own.
-    const yamlDirectives = yamlDirectiveTokens(homes.canonical[0].text);
+    //
+    // ⚠⚠⚠ `doc.errors` CAN ALSO FALSELY BLOCK A RESERVED DIRECTIVE
+    // (implementation review finding P26 — the SAME seam, a FOURTH channel,
+    // one boundary below P23's separator fix): `yaml@2.9.0`'s composer
+    // decides a directive's NAME via `line.trim().split(/[ \t]+/)`, and
+    // `trim()` removes NBSP/EM SPACE/other `ns-char` trimmable characters
+    // from the line's OWN edges before the name is ever read. A reserved
+    // directive consisting of ONLY `%YAML` plus one such trailing character —
+    // nothing else on the line — is reduced by the composer's own
+    // normalisation to the bare string `%YAML`, so it raises `BAD_DIRECTIVE`
+    // as an ERROR ("should contain exactly one part") for what YAML 1.2.2
+    // §6.8 requires accepting as an unknown reserved directive.
+    // `blockingDirectiveErrors` excludes exactly that case — a `BAD_DIRECTIVE`
+    // error whose owning token (found across EVERY directive, not only ones
+    // named `%YAML`) is not itself selected as `%YAML` by this file's own
+    // exact separator boundary — while leaving every other error blocking,
+    // including a genuinely malformed real `%YAML` directive (e.g. one with
+    // too many parts, whose owning token IS `%YAML`-selected).
+    const allDirectives = allDirectiveTokens(homes.canonical[0].text);
+    const yamlDirectives = yamlDirectiveTokens(allDirectives);
     const badDirective = unsupportedYamlVersionWarned(yamlDirectives, yamlDoc.warnings);
-    if (yamlDoc.errors.length > 0) {
+    const blockingErrors = blockingDirectiveErrors(allDirectives, yamlDirectives, yamlDoc.errors);
+    if (blockingErrors.length > 0) {
       add(
         'C3-NOCANONICAL',
         `the \`${MARKER}\` block's payload is not valid YAML — ` +
-          `${[...new Set(yamlDoc.errors.map((e) => e.code))].join(', ')} (SP-30)`,
+          `${[...new Set(blockingErrors.map((e) => e.code))].join(', ')} (SP-30)`,
       );
     } else if (yamlDirectives.length > 1) {
       add(
