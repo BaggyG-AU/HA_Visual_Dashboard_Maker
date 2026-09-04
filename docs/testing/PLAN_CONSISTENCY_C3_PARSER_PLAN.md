@@ -352,19 +352,30 @@ parser; delete it and call one.**
      is the real, narrower residual §2.7 declares and §2.10 pins.
 5. **Add YAML payload validation** for the single canonical block:
    `parseDocument(text, { uniqueKeys: true, stringKeys: true, version: '1.2' })`.
-   ⚠ **Corrected (implementation review findings P12, P16 — this step
-   previously named only the pre-repair call and its four checks; both
-   additions below are load-bearing, not optional hardening).** `version:
+   ⚠ **Corrected (implementation review findings P12, P16, P19 — this step
+   previously named only the pre-repair call and its four checks; every
+   addition below is load-bearing, not optional hardening).** `version:
 '1.2'` is only the FALLBACK for a document with no `%YAML` directive; an
    explicit directive overrides it. Raise, in order:
    - on `doc.errors.length > 0` (malformed YAML, duplicate keys including the
      quoted spelling, multi-document payloads, an alias or non-string key, and
      a directive the parser cannot parse at all such as `%YAML next`);
-   - **on any `doc.warnings` entry with `code === 'BAD_DIRECTIVE'`** (P16): a
-     syntactically well-formed but UNSUPPORTED numeric version — `%YAML 1.0`,
-     `1.3`, `2.0` — is not a parse ERROR; the library reports it as a WARNING
-     and silently keeps the fallback effective version 1.2, so the next check
-     alone cannot see it;
+   - **on `unsupportedYamlVersionWarned(text, doc.warnings)`** (P16, narrowed
+     by P19): a syntactically well-formed but UNSUPPORTED numeric version —
+     `%YAML 1.0`, `1.3`, `2.0` — is not a parse ERROR; the library reports it
+     as a `BAD_DIRECTIVE` WARNING and silently keeps the fallback effective
+     version 1.2, so the next check alone cannot see it. ⚠ **`BAD_DIRECTIVE`
+     is NOT unique to an unsupported `%YAML` version** (implementation review
+     finding P19): `yaml`'s own `Directives.add()` routes any UNRECOGNISED
+     directive — a reserved directive such as `%FOO bar`, which YAML 1.2.2
+     §6.8 requires processors to accept with only a warning — through the
+     SAME code. Checking the code alone falsely blocked a valid totals block,
+     including one that also carried a perfectly valid explicit `%YAML 1.2`.
+     `unsupportedYamlVersionWarned` re-parses `text` with `yaml`'s own
+     `Parser` to recover the CST `directive` tokens, then for each
+     `BAD_DIRECTIVE` warning finds the token whose byte range contains the
+     warning's own reported position and checks THAT token's directive name —
+     never the warning's message text, and never a table of version strings;
    - **on `doc.directives.yaml.version !== '1.2'`** (P12): a fully SUPPORTED
      but non-1.2 version — `%YAML 1.1` — raises no warning at all, only a
      different EFFECTIVE version, which under 1.1 resolves a sexagesimal
@@ -749,6 +760,37 @@ than its ERROR channel can still slip through if only errors and effective
 state are read. The general form — sweep error, warning AND normalisation
 channels before claiming a dialect is enforced — is filed to the `practice`
 wing.
+
+## 2.11e Disposition of the second follow-up implementation review (P19)
+
+The P16–P18 fix landed as commit `1d68876` (2026-09-04). The second follow-up
+review re-attacked the P16 fix specifically — the commission asked it to sweep
+whether `BAD_DIRECTIVE` was a safe blocking predicate on its own, not only
+re-confirm the demonstrated `%YAML 1.0`/`1.3`/`2.0` bypass stayed closed — and
+found a defect in the OPPOSITE direction from every prior round on this seam;
+verdict **CHANGES-REQUIRED**, one finding, reproduced before being accepted.
+The reviewer's cumulative record on this branch is now **32 findings, 32
+valid** across nine rounds.
+
+| Ref | Severity                                               | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P19 | SEV-2 · `Blocks: the promised totals-document dialect` | **FIXED.** The P16 fix treated ANY `BAD_DIRECTIVE` warning as "unsupported `%YAML` version," but `yaml`'s own `Directives.add()` routes an unrecognised RESERVED directive (YAML 1.2.2 §6.8 — e.g. `%FOO bar`, which processors must accept with only a warning) through the exact same code. Current C3 falsely blocked a valid totals block carrying `%FOO bar`, including when paired with a perfectly valid explicit `%YAML 1.2` (ruling out `doc.directives.yaml.explicit` as a discriminator, since it is also true in that valid paired case). Fixed by `unsupportedYamlVersionWarned(text, doc.warnings)`: re-parses the block with `yaml`'s own `Parser` to recover the CST `directive` tokens the composer consumed, then for each `BAD_DIRECTIVE` warning finds the token whose byte range contains the warning's own reported position and reads THAT token's directive name — never the warning's message text, never a version-string table. Three controls added: `%FOO bar` alone (valid), an explicit `%YAML 1.2` beside `%FOO bar` (valid, the paired case that broke the `explicit` discriminator), and `%YAML 1.3` beside `%FOO bar` (still invalid, proving the fix does not reopen P16). |
+
+⚠⚠⚠ **P19 IS THE SAME GENERAL ANTIPATTERN FAMILY AS EVERY PRIOR DEFECT ON THIS
+SEAM, BUT IT IS THE FIRST ONE IN THE OPPOSITE DIRECTION.** P1–P3, P12 and P16
+were all UNDER-inclusive: a hand-written shortcut or an unread channel let bad
+input silently PASS. P19 is OVER-inclusive: a single parser warning CODE
+combines two contract-different meanings — "the version this document named is
+unsupported" and "this document names a directive the format itself reserves
+and requires processors to accept" — and treating the code as if it uniquely
+meant the first falsely BLOCKED valid input. The same root lesson still
+applies — a broad parser signal is not automatically a precise contract
+predicate — but the failure mode this round is the mirror image of P12/P16's,
+which is why closing P16 by simply widening the same check could not have
+found it: only re-reading the STRUCTURE the warning correlates to (which
+directive token it was actually about), not just the code it carries, does.
+Filed to the `practice` wing as a third chained rule extending the P12/P16
+pair.
 
 ## 2.12 Questions the reviewer is asked to answer
 

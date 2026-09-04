@@ -708,6 +708,35 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
       doc(fence(['%YAML 2.0', '---', ...KEYS])),
       'invalid',
     ],
+
+    // --- reserved directives: YAML 1.2.2 §6.8; implementation review P19 ---
+    [
+      // Implementation review finding P19: `yaml` reports an UNKNOWN
+      // (reserved) directive through the exact same `BAD_DIRECTIVE` warning
+      // code as an unsupported `%YAML` version. §6.8 requires processors to
+      // accept the document and only warn — this is a valid totals block, not
+      // a dialect violation, and must not block.
+      'CONTROL: a reserved %FOO directive is warned about, not blocked (P19)',
+      doc(fence(['%FOO bar', '---', ...KEYS])),
+      'valid',
+    ],
+    [
+      // The construction that broke the naive `directives.yaml.explicit`
+      // discriminator floated during the P19 review: `explicit` is true here
+      // because of the VALID %YAML 1.2 directive, even though the warning is
+      // about the unrelated %FOO. Must still not block.
+      'CONTROL: an explicit %YAML 1.2 directive beside a reserved %FOO still passes',
+      doc(fence(['%YAML 1.2', '%FOO bar', '---', ...KEYS])),
+      'valid',
+    ],
+    [
+      // A genuinely unsupported version paired with a reserved directive must
+      // still block on the version, proving the P19 fix did not narrow P16's
+      // coverage back open.
+      'a reserved %FOO directive does not mask a genuinely unsupported %YAML 1.3',
+      doc(fence(['%YAML 1.3', '%FOO bar', '---', ...KEYS])),
+      'invalid',
+    ],
   ];
 
   for (const [label, text, must] of CASES) {

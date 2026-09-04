@@ -26,7 +26,7 @@
 
 import { marked, type Token, type Tokens } from 'marked';
 import { decodeHTML } from 'entities';
-import { parseDocument, isMap, isAlias, isScalar } from 'yaml';
+import { parseDocument, isMap, isAlias, isScalar, Parser as YamlParser, type CST } from 'yaml';
 
 export interface PlanFinding {
   /** Stable code, e.g. `C1-ORPHAN`. */
@@ -387,6 +387,46 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
     return out.replace(/\s+/g, ' ').trim();
   }
 
+  /**
+   * Whether the YAML parser's `warnings` contain a `BAD_DIRECTIVE` warning
+   * specifically about an unsupported `%YAML` version (implementation review
+   * finding P16) — as opposed to a `%YAML`/`%TAG`-reserved directive such as
+   * `%FOO`, which the YAML 1.2.2 grammar (§6.8) requires processors to accept
+   * with only a warning (implementation review finding P19: the P16 fix used
+   * `BAD_DIRECTIVE` as if it meant only the former, and `yaml`'s own
+   * `Directives.add()` routes both cases through that one code).
+   *
+   * Re-parses `text` with `yaml`'s own `Parser` to recover the CST `directive`
+   * tokens the composer consumed, then — for each `BAD_DIRECTIVE` warning —
+   * finds the token whose byte range contains the warning's own reported
+   * position and reads whether THAT token's directive name is `%YAML`. This
+   * does not re-decide version validity (the parser already did, or there
+   * would be no warning) and does not match the warning's human-readable
+   * message or a version-string table — it asks only which directive the
+   * warning was about, the same way `Directives.add()` itself branches on the
+   * directive name.
+   */
+  function unsupportedYamlVersionWarned(
+    text: string,
+    warnings: ReadonlyArray<{ code?: string; pos: [number, number] }>,
+  ): boolean {
+    if (!warnings.some((w) => w.code === 'BAD_DIRECTIVE')) return false;
+    const directiveTokens: CST.Directive[] = [];
+    for (const token of new YamlParser().parse(text)) {
+      if (token.type === 'directive') directiveTokens.push(token);
+    }
+    return warnings.some(
+      (w) =>
+        w.code === 'BAD_DIRECTIVE' &&
+        directiveTokens.some(
+          (t) =>
+            /^%YAML(?:\s|$)/.test(t.source) &&
+            w.pos[0] >= t.offset &&
+            w.pos[0] <= t.offset + t.source.length,
+        ),
+    );
+  }
+
   // The token walk. Recurses into block quotes and list items — a canonical
   // block or a shadow-home heading inside either is a real, rendered Markdown
   // construct and must count (CommonMark §5.1, §5.2). Does not descend into
@@ -457,7 +497,26 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
     // a fully SUPPORTED version whose EFFECTIVE value differs, which the
     // version check below still catches; `%YAML next` is not version-shaped
     // at all and is already a parse ERROR, caught by the branch above it.
-    const badDirective = yamlDoc.warnings.some((w) => w.code === 'BAD_DIRECTIVE');
+    //
+    // ⚠⚠⚠ `BAD_DIRECTIVE` IS NOT UNIQUELY "UNSUPPORTED %YAML VERSION"
+    // (implementation review finding P19 — the P16 fix regressed the other
+    // way). YAML 1.2.2 §6.8 reserves any directive other than `%YAML`/`%TAG`
+    // for future use and requires processors to accept the document and only
+    // WARN — `yaml`'s own `Directives.add()` (`node_modules/yaml/dist/doc/
+    // directives.js`) routes an unrecognised directive name to the exact same
+    // `BAD_DIRECTIVE` code as an unsupported `%YAML` version, so treating the
+    // code alone as blocking rejects a document the named dialect requires
+    // this checker to accept (e.g. `%FOO bar`), including when it is paired
+    // with a perfectly valid explicit `%YAML 1.2`. `unsupportedYamlVersionWarned`
+    // below does not re-decide version validity or match the warning's
+    // human-readable message — it re-parses the same block with `yaml`'s own
+    // `Parser` to get the CST `directive` tokens the composer itself consumed,
+    // and asks only which token's byte range contains each warning's own
+    // reported position, then reads that token's directive NAME the same way
+    // `Directives.add()` does. A reserved directive's warning never falls
+    // inside a `%YAML` token's range, however many other directives sit
+    // beside it.
+    const badDirective = unsupportedYamlVersionWarned(homes.canonical[0].text, yamlDoc.warnings);
     if (yamlDoc.errors.length > 0) {
       add(
         'C3-NOCANONICAL',
