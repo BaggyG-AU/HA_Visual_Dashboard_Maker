@@ -737,6 +737,48 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
       doc(fence(['%YAML 1.3', '%FOO bar', '---', ...KEYS])),
       'invalid',
     ],
+
+    // --- repeated %YAML directives: YAML 1.2.2 §6.8.1; implementation review P20 ---
+    [
+      // Implementation review finding P20: `Directives.add()` unconditionally
+      // overwrites its stored version on every SUPPORTED `%YAML` directive it
+      // sees, with no redeclaration check of its own — so a later, valid
+      // `%YAML 1.2` silently ERASES an earlier, forbidden `%YAML 1.1` from
+      // `directives.yaml.version`, and neither `doc.errors` nor `doc.warnings`
+      // ever mentions it. §6.8.1 makes more than one `%YAML` directive an
+      // error regardless of whether the versions agree.
+      'a later %YAML 1.2 must not erase an earlier forbidden %YAML 1.1 (P20)',
+      doc(fence(['%YAML 1.1', '%YAML 1.2', '---', ...KEYS])),
+      'invalid',
+    ],
+    [
+      // The same class with matching versions — YAML 1.2.2 Example 6.15 is
+      // explicit that repeating even the SAME `%YAML` directive is an error.
+      'a duplicate %YAML 1.2 directive still blocks, even though both agree (P20)',
+      doc(fence(['%YAML 1.2', '%YAML 1.2', '---', ...KEYS])),
+      'invalid',
+    ],
+    [
+      // CONTROL: reverse order. Final effective version is 1.1, so the
+      // existing version check already blocks — this must not regress.
+      'CONTROL: %YAML 1.2 then %YAML 1.1 still blocks via the final version',
+      doc(fence(['%YAML 1.2', '%YAML 1.1', '---', ...KEYS])),
+      'invalid',
+    ],
+    [
+      // CONTROL: an unsupported version retains its warning regardless of a
+      // later supported declaration — the multiplicity check must not be the
+      // ONLY thing standing between this input and a false accept.
+      'CONTROL: an unsupported %YAML 1.3 then a supported %YAML 1.2 still blocks',
+      doc(fence(['%YAML 1.3', '%YAML 1.2', '---', ...KEYS])),
+      'invalid',
+    ],
+    [
+      // CONTROL: same class, unsupported version second.
+      'CONTROL: a supported %YAML 1.2 then an unsupported %YAML 1.3 still blocks',
+      doc(fence(['%YAML 1.2', '%YAML 1.3', '---', ...KEYS])),
+      'invalid',
+    ],
   ];
 
   for (const [label, text, must] of CASES) {
@@ -892,6 +934,26 @@ describe('planConsistency — KNOWN-OPEN limits (recorded, not fixed)', () => {
     const spec =
       `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\nreview_rounds_complete: 7\n` +
       'reviewer_findings: 30\nfindings_after_round_one: 24\nreview_rounds_owed: bananas\n```\n';
+    expect(c3nocanon(spec)).toBe(false);
+  });
+
+  it('KNOWN-OPEN: a repeated %TAG handle is not enforced (P21, owner-declared residual)', () => {
+    // YAML 1.2.2 §6.8.2 makes repeating a `%TAG` directive for the same
+    // handle an error, even when the two declarations agree. `yaml@2.9.0`'s
+    // `Directives.add()` has no redeclaration guard for `%TAG` — it just
+    // assigns `this.tags[handle] = prefix` on every occurrence — so this
+    // checker, which delegates entirely to that library, cannot see it
+    // either. Owner-ruled 2026-09-05 (implementation review finding P21):
+    // declared as a residual rather than hand-built, matching §2.7's
+    // existing declared-residual pattern, because `%TAG` never appears in
+    // the live plan and building a private `%TAG` grammar to enforce a
+    // property the chosen parser does not report would recreate exactly the
+    // hand-parser class this checker was written to retire. The marker stays
+    // the fence's first content line, exactly like every other directive
+    // control in this file — the `%TAG` lines follow it, before `---`.
+    const spec =
+      `${WIRED}\n\n\`\`\`yaml\n# plan-running-totals\n%TAG !e! !example!\n%TAG !e! !other!\n---\n` +
+      'review_rounds_complete: 7\nreviewer_findings: 30\nfindings_after_round_one: 24\n```\n';
     expect(c3nocanon(spec)).toBe(false);
   });
 });

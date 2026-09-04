@@ -283,8 +283,12 @@ without saying whose. It is now named:
   without it an **alias used as a key** — `&k review_rounds_complete: 7` then
   `*k : 8` — raises no error, counts as one key, and lets the second value
   silently win (`toJS()` returns `8`). Measured; finding P4.
-- **No declared departures.** Revision 1 had one and it is withdrawn (§1.4).
-  Every property C3 asserts is now one a reference parser decides.
+- **No declared departures, except the ONE named in §2.7** (implementation
+  review finding P21, owner-ruled 2026-09-05): `yaml@2.9.0` does not enforce
+  YAML 1.2.2 §6.8.2's rule against a repeated `%TAG` handle, and the checker
+  does not build a private `%TAG` grammar to enforce it either — see §2.7 for
+  the full boundary and why. Revision 1's departure is withdrawn (§1.4); every
+  OTHER property C3 asserts is one a reference parser decides.
 
 ## 2.2a Reader-visible heading text — the projection, stated as a contract
 
@@ -352,30 +356,47 @@ parser; delete it and call one.**
      is the real, narrower residual §2.7 declares and §2.10 pins.
 5. **Add YAML payload validation** for the single canonical block:
    `parseDocument(text, { uniqueKeys: true, stringKeys: true, version: '1.2' })`.
-   ⚠ **Corrected (implementation review findings P12, P16, P19 — this step
-   previously named only the pre-repair call and its four checks; every
+   ⚠ **Corrected (implementation review findings P12, P16, P19, P20 — this
+   step previously named only the pre-repair call and its four checks; every
    addition below is load-bearing, not optional hardening).** `version:
 '1.2'` is only the FALLBACK for a document with no `%YAML` directive; an
-   explicit directive overrides it. Raise, in order:
+   explicit directive overrides it. **First, parse `yamlDirectives`** — the
+   CST `directive` tokens (via `yaml`'s own `Parser`) whose name is `%YAML`,
+   each spanning the HALF-OPEN code-unit range `[t.offset, t.offset +
+t.source.length)` (implementation review finding P22: an earlier version
+   of this recipe called this a "byte range" with a closed upper bound —
+   wrong on both counts, since the coordinate is a JavaScript UTF-16
+   code-unit offset, not a byte offset, and the span excludes its own end).
+   Then raise, in order:
    - on `doc.errors.length > 0` (malformed YAML, duplicate keys including the
      quoted spelling, multi-document payloads, an alias or non-string key, and
      a directive the parser cannot parse at all such as `%YAML next`);
-   - **on `unsupportedYamlVersionWarned(text, doc.warnings)`** (P16, narrowed
-     by P19): a syntactically well-formed but UNSUPPORTED numeric version —
-     `%YAML 1.0`, `1.3`, `2.0` — is not a parse ERROR; the library reports it
-     as a `BAD_DIRECTIVE` WARNING and silently keeps the fallback effective
-     version 1.2, so the next check alone cannot see it. ⚠ **`BAD_DIRECTIVE`
-     is NOT unique to an unsupported `%YAML` version** (implementation review
-     finding P19): `yaml`'s own `Directives.add()` routes any UNRECOGNISED
-     directive — a reserved directive such as `%FOO bar`, which YAML 1.2.2
-     §6.8 requires processors to accept with only a warning — through the
-     SAME code. Checking the code alone falsely blocked a valid totals block,
-     including one that also carried a perfectly valid explicit `%YAML 1.2`.
-     `unsupportedYamlVersionWarned` re-parses `text` with `yaml`'s own
-     `Parser` to recover the CST `directive` tokens, then for each
-     `BAD_DIRECTIVE` warning finds the token whose byte range contains the
-     warning's own reported position and checks THAT token's directive name —
-     never the warning's message text, and never a table of version strings;
+   - **on `yamlDirectives.length > 1`** (implementation review finding P20):
+     `yaml`'s `Directives.add()` unconditionally overwrites its stored version
+     on every SUPPORTED `%YAML` directive, with no redeclaration check of its
+     own — an earlier, forbidden `%YAML 1.1` followed by a later, valid
+     `%YAML 1.2` raises NEITHER an error NOR a warning, and leaves
+     `directives.yaml.version` reading the innocent final value, so a check
+     that trusts only the parser's final state cannot see it. YAML 1.2.2
+     §6.8.1 makes more than one `%YAML` directive an error regardless of
+     whether the versions agree (its own Example 6.15). Counting the SAME
+     `yamlDirectives` tokens rejects the block before final state is trusted,
+     with no re-parsing of version text;
+   - **on `unsupportedYamlVersionWarned(yamlDirectives, doc.warnings)`** (P16,
+     narrowed by P19): a syntactically well-formed but UNSUPPORTED numeric
+     version — `%YAML 1.0`, `1.3`, `2.0` — is not a parse ERROR; the library
+     reports it as a `BAD_DIRECTIVE` WARNING and silently keeps the fallback
+     effective version 1.2, so the next check alone cannot see it. ⚠
+     **`BAD_DIRECTIVE` is NOT unique to an unsupported `%YAML` version**
+     (implementation review finding P19): `yaml`'s own `Directives.add()`
+     routes any UNRECOGNISED directive — a reserved directive such as
+     `%FOO bar`, which YAML 1.2.2 §6.8 requires processors to accept with
+     only a warning — through the SAME code. Checking the code alone falsely
+     blocked a valid totals block, including one that also carried a
+     perfectly valid explicit `%YAML 1.2`. `unsupportedYamlVersionWarned`
+     checks, for each `BAD_DIRECTIVE` warning, whether its reported position
+     falls inside one of `yamlDirectives`'s own spans — never the warning's
+     message text, and never a table of version strings;
    - **on `doc.directives.yaml.version !== '1.2'`** (P12): a fully SUPPORTED
      but non-1.2 version — `%YAML 1.1` — raises no warning at all, only a
      different EFFECTIVE version, which under 1.1 resolves a sexagesimal
@@ -527,6 +548,20 @@ and forces the claim to be corrected in the same commit.
   `repair_introduced_after_round_one` and `executable_spec_lines` are not
   value-checked. Only the three governed keys are.
 - **C1's textual-caller limit and C2/C4** are untouched.
+- ⚠⚠ **A repeated `%TAG` handle is NOT enforced — the one DEPARTURE this plan
+  now names (implementation review finding P21, owner-ruled 2026-09-05).**
+  YAML 1.2.2 §6.8.2 makes repeating a `%TAG` directive for the same handle an
+  error, even when both declarations agree (its own Example 6.17). Installed
+  `yaml@2.9.0`'s `Directives.add()` (`node_modules/yaml/dist/doc/directives.js`)
+  has no redeclaration guard for `%TAG` — it unconditionally assigns
+  `this.tags[handle] = prefix` on every occurrence — so `doc.errors` and
+  `doc.warnings` stay empty and this checker, which delegates entirely to that
+  library, cannot see the violation either. **Deliberately left undetected**
+  rather than built as a private `%TAG` grammar: `%TAG` never appears in the
+  live plan, and hand-parsing directive arity/uniqueness to enforce a property
+  the chosen parser does not report would recreate exactly the hand-parser
+  class this checker exists to retire (the root `practice`-wing rule this
+  whole arc keeps re-proving). Pinned by a passing `KNOWN-OPEN:` test.
 
 ## 2.8 Must NOT change
 
@@ -791,6 +826,39 @@ found it: only re-reading the STRUCTURE the warning correlates to (which
 directive token it was actually about), not just the code it carries, does.
 Filed to the `practice` wing as a third chained rule extending the P12/P16
 pair.
+
+## 2.11f Disposition of the third follow-up implementation review (P20–P22)
+
+The P19 fix landed as commit `b817a42` (2026-09-04). The third follow-up
+review's commission explicitly asked it to sweep multiple `%YAML` directives
+in one document, not only re-confirm the reserved-directive class stayed
+closed — and found a defect in a THIRD channel on the same seam, plus a
+neighbouring `%TAG` gap the same sweep exposed, plus a wording/precision
+defect in the P19 fix's own new mechanism; verdict **CHANGES-REQUIRED**,
+three findings, all reproduced before being accepted. The reviewer's
+cumulative record on this branch is now **35 findings, 35 valid** across ten
+rounds.
+
+| Ref | Severity | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P20 | SEV-2    | **FIXED.** `yaml`'s `Directives.add()` unconditionally overwrites its stored version on every SUPPORTED `%YAML` directive with no redeclaration check, so a later, valid `%YAML 1.2` silently erased an earlier, forbidden `%YAML 1.1` from `directives.yaml.version` — neither an error nor a warning was raised, and the version check trusted only the innocent final value. YAML 1.2.2 §6.8.1 makes more than one `%YAML` directive an error regardless of whether the versions agree. Fixed by counting `yamlDirectives` — the SAME CST tokens already parsed for P19's correlation — and blocking on more than one, before the final version is ever trusted. Two discriminating controls (`1.1`→`1.2`, duplicate `1.2`) plus three conformance controls (`1.2`→`1.1`; `1.3`↔`1.2` both orders), all proven against `8b0ed9f`. |
+| P21 | SEV-3    | **DISPOSITIONED — declared a residual, owner-ruled 2026-09-05.** `yaml@2.9.0`'s `Directives.add()` has no redeclaration guard for `%TAG` either (YAML 1.2.2 §6.8.2), and neither this checker nor its dependency reports a repeated handle. The owner was offered "enforce it" (a parser-token `%TAG` uniqueness check, mirroring P20's approach) against "declare it a residual" (pin current behaviour, correct the "no declared departures" claim) and chose the latter: `%TAG` never appears in the live plan, and building enforcement for a property the chosen parser does not report would recreate the hand-parser class this checker exists to retire. §2.2 and §2.7 now name the one departure explicitly; a `KNOWN-OPEN:` control pins current (silent) behaviour.                                                       |
+| P22 | SEV-3    | **FIXED.** Plan §2.3 item 5 and the checker's own comments called the P19 correlation's coordinate a "byte range" with a closed upper bound; it is a JavaScript UTF-16 code-unit offset with a HALF-OPEN span. No false attribution had occurred (every observed warning position falls strictly inside its token), so this was a documentation/precision defect, not a live false accept — but a future astral-character or boundary-adjacent construction could have exploited the mismatch. Corrected to "half-open code-unit-offset span," `[t.offset, t.offset + t.source.length)`, and the predicate's `<=` changed to `<` to match.                                                                                                                                                                                           |
+
+⚠⚠⚠ **P20 IS THE THIRD CHANNEL ON THE SAME SEAM, AND IT PROVES THE FIX-ROUND
+DISCIPLINE HAS TO ATTACK CARDINALITY, NOT JUST VALUE.** P12 asked "which
+dialect does the parser think it used" (a value question). P16 and P19 asked
+"through which channel does the parser report a problem with that value" (a
+channel question). **P20 is a different axis again: "how many times does this
+directive appear, and does the parser's own bookkeeping preserve that count or
+silently discard it?"** `Directives.add()` treats every SUPPORTED `%YAML`
+directive as a plain overwrite — by design, since a document is only supposed
+to carry one — so nothing about VALUE or CHANNEL was wrong; the parser was
+simply never asked to remember a MULTIPLICITY its own grammar forbids. The
+fix pattern is consistent with P16/P19 even though the axis is new: read the
+SAME structured CST tokens rather than the parser's normalised final state,
+because the normalised state is exactly where a multiplicity violates its own
+invariant and no one is watching.
 
 ## 2.12 Questions the reviewer is asked to answer
 
