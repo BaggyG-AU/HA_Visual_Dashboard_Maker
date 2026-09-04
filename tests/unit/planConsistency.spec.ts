@@ -692,6 +692,22 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
       doc(fence(['%YAML 1.2', '---', 'review_rounds_complete: 1:20', ...KEYS.slice(1)])),
       'invalid',
     ],
+    [
+      // Implementation review finding P16: a syntactically well-formed but
+      // UNSUPPORTED numeric version is not a parser ERROR — `yaml` reports it
+      // as a `BAD_DIRECTIVE` WARNING and keeps the fallback effective version
+      // at 1.2, so checking `directives.yaml.version !== '1.2'` alone cannot
+      // see it. A higher minor version.
+      'an unsupported %YAML 1.3 directive (a BAD_DIRECTIVE warning, not an error) still blocks',
+      doc(fence(['%YAML 1.3', '---', ...KEYS])),
+      'invalid',
+    ],
+    [
+      // The same class, an incompatible major version.
+      'an unsupported %YAML 2.0 directive (a different major version) still blocks',
+      doc(fence(['%YAML 2.0', '---', ...KEYS])),
+      'invalid',
+    ],
   ];
 
   for (const [label, text, must] of CASES) {

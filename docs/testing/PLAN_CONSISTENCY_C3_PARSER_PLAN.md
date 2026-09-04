@@ -351,18 +351,40 @@ parser; delete it and call one.**
      trailing `##`/`###` Markdown headings read as comments, stays clean. That
      is the real, narrower residual §2.7 declares and §2.10 pins.
 5. **Add YAML payload validation** for the single canonical block:
-   `parseDocument(text, { uniqueKeys: true, stringKeys: true })`; raise on
-   `doc.errors.length > 0` (malformed YAML, duplicate keys including the quoted
-   spelling, multi-document payloads, **and alias or non-string keys**), then on
-   `!isMap(doc.contents)` (empty payload, sequence root), then for each governed
-   key check it appears exactly once among `doc.contents.items` **key nodes** —
-   never lines — **and that its value is a finite non-negative integer**.
-   ⚠ **Dereference an alias value with `Alias.resolve(doc)` before testing it**
-   (P9): an `Alias` node has no scalar `.value`, so reading `pair.value.value`
-   made every alias look like `null` and rejected `base: &n 7` /
-   `review_rounds_complete: *n` — a form revision 1 promised would pass.
-6. **Keep the site-grouping rule unchanged**: one site per _subject_, never per
-   key, established only after the payload validates.
+   `parseDocument(text, { uniqueKeys: true, stringKeys: true, version: '1.2' })`.
+   ⚠ **Corrected (implementation review findings P12, P16 — this step
+   previously named only the pre-repair call and its four checks; both
+   additions below are load-bearing, not optional hardening).** `version:
+'1.2'` is only the FALLBACK for a document with no `%YAML` directive; an
+   explicit directive overrides it. Raise, in order:
+   - on `doc.errors.length > 0` (malformed YAML, duplicate keys including the
+     quoted spelling, multi-document payloads, an alias or non-string key, and
+     a directive the parser cannot parse at all such as `%YAML next`);
+   - **on any `doc.warnings` entry with `code === 'BAD_DIRECTIVE'`** (P16): a
+     syntactically well-formed but UNSUPPORTED numeric version — `%YAML 1.0`,
+     `1.3`, `2.0` — is not a parse ERROR; the library reports it as a WARNING
+     and silently keeps the fallback effective version 1.2, so the next check
+     alone cannot see it;
+   - **on `doc.directives.yaml.version !== '1.2'`** (P12): a fully SUPPORTED
+     but non-1.2 version — `%YAML 1.1` — raises no warning at all, only a
+     different EFFECTIVE version, which under 1.1 resolves a sexagesimal
+     scalar like `1:20` to the integer 80;
+   - then on `!isMap(doc.contents)` (empty payload, sequence root), then for
+     each governed key check it appears exactly once among `doc.contents.items`
+     **key nodes** — never lines — **and that its value is a finite
+     non-negative integer**.
+     ⚠ **Dereference an alias value with `Alias.resolve(doc)` before testing it**
+     (P9): an `Alias` node has no scalar `.value`, so reading `pair.value.value`
+     made every alias look like `null` and rejected `base: &n 7` /
+     `review_rounds_complete: *n` — a form revision 1 promised would pass.
+6. **Keep the site-grouping rule's INTENT unchanged**: one site per _subject_,
+   never per key, established only after the WHOLE payload validates. ⚠
+   **Corrected (implementation review finding P13): "unchanged" originally
+   described the IMPLEMENTATION too, which was inaccurate** — the first port
+   committed a key's site as soon as that key validated, not once every
+   governed key had, so one bad key could still seed a site for an unrelated
+   valid one. Collect candidate sites in a temporary set and commit them only
+   after the loop confirms no governed key failed.
 7. **Rewrite the block comment** so it states §2.1's contract, §2.2's dialect
    and §2.2a's projection, and records why the line scanner was removed. ⚠ The
    existing comment's claim "a fence is a state, not a pattern" is the error
@@ -705,6 +727,29 @@ FIRST porting pass validated "after the payload validates" per-key rather than
 for the payload as a whole. The reviewer's own judgement: the new per-value
 gate (P7) is correct and not scope drift; the ordering defect was.
 
+## 2.11d Disposition of the follow-up implementation review (P16–P18)
+
+The P12–P15 fix landed as commit `60f191e` (2026-09-04). The follow-up review
+re-attacked P12 specifically — rather than trusting the paired control — and
+found a second bypass at the SAME seam; verdict **CHANGES-REQUIRED**, three
+findings, all reproduced before being accepted. The reviewer's cumulative
+record on this branch is now **31 findings, 31 valid** across eight rounds.
+
+| Ref | Severity                               | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P16 | SEV-2 · `Blocks: the promised dialect` | **FIXED.** P12's fix checked `doc.errors` then `doc.directives.yaml.version !== '1.2'`, but a syntactically well-formed, UNSUPPORTED numeric version (`%YAML 1.0`, `1.3`, `2.0`) is not a parse ERROR — `yaml` reports it as a `BAD_DIRECTIVE` WARNING and keeps the EFFECTIVE version at the fallback `1.2`, so the version check could not see it. `doc.warnings` is now checked for `code === 'BAD_DIRECTIVE'` before the version check. Controls added for `%YAML 1.3` (higher minor) and `%YAML 2.0` (incompatible major); both proven to fail against `60f191e`. |
+| P17 | SEV-3                                  | **FIXED.** Plan §2.3 item 5 still prescribed the pre-P12/P16 `parseDocument` call and its original four checks; a maintainer following it as a recipe would recreate both bugs. Rewritten to name the complete post-P16 flow in order: parse errors, the `BAD_DIRECTIVE` warning check, the effective-version check, then the original mapping/key/value checks.                                                                                                                                                                                                       |
+| P18 | SEV-3                                  | **FIXED — wording only.** The closing note added while fixing P12–P15 said the repair meant "production code" now existed; `tests/support/planConsistency.ts` is test support, not `src/`, exactly as §2.9 has always correctly scoped it. Corrected to "the checker implementation."                                                                                                                                                                                                                                                                                  |
+
+⚠ **P16 is the SAME antipattern as P12, one channel over.** P12 found that a
+parser option naming a dialect can be only a fallback default, overridable by
+an in-document directive; P16 found that even after checking the parser's
+EFFECTIVE state, a value the parser rejected into its WARNING channel rather
+than its ERROR channel can still slip through if only errors and effective
+state are read. The general form — sweep error, warning AND normalisation
+channels before claiming a dialect is enforced — is filed to the `practice`
+wing.
+
 ## 2.12 Questions the reviewer is asked to answer
 
 Revisions 1 and 2 asked ten questions; all were answered and none is repeated.
@@ -725,8 +770,13 @@ These target revision 3's own new surface:
 ---
 
 ⚠ **STALE BELOW THIS LINE, KEPT FOR HISTORY: at the time revision 3 was
-written, no production code existed.** It now does — the repair landed as
-commit `f1d51da` (2026-09-04), independently reviewed with four findings
-(§2.11c, all fixed). `tools/c3-parser-harness.cjs` has been deleted, its cases
-now committed controls in `tests/unit/planConsistency.spec.ts`, exactly as this
-section originally said would happen.
+written, no code implementing this repair existed.** ⚠ **Corrected
+(implementation review finding P18 — the line below previously said
+"production code", which this test-support checker is not; §2.9 has always
+correctly scoped the surface to `tests/support/planConsistency.ts` and its
+spec, not `src/`).** The checker implementation now exists — the repair landed
+as commit `f1d51da` (2026-09-04), independently reviewed across two rounds
+with seven findings total (§2.11c, all fixed). `tools/c3-parser-harness.cjs`
+has been deleted, its cases now committed controls in
+`tests/unit/planConsistency.spec.ts`, exactly as this section originally said
+would happen.

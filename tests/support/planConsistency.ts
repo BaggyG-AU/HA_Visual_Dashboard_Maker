@@ -447,11 +447,28 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
       stringKeys: true,
       version: '1.2',
     });
+    // A syntactically well-formed but UNSUPPORTED numeric `%YAML` version
+    // (`1.0`, `1.3`, `2.0`, …) is not a parse ERROR — the library reports it
+    // as a `BAD_DIRECTIVE` WARNING and silently keeps the fallback effective
+    // version at `1.2`, so `directives.yaml.version` alone cannot see it
+    // (implementation review finding P16 — the same class as P12: the parser
+    // DOES decide the syntax, but the decision landed in a channel this
+    // checker was not reading). `%YAML 1.1` raises no warning at all — it is
+    // a fully SUPPORTED version whose EFFECTIVE value differs, which the
+    // version check below still catches; `%YAML next` is not version-shaped
+    // at all and is already a parse ERROR, caught by the branch above it.
+    const badDirective = yamlDoc.warnings.some((w) => w.code === 'BAD_DIRECTIVE');
     if (yamlDoc.errors.length > 0) {
       add(
         'C3-NOCANONICAL',
         `the \`${MARKER}\` block's payload is not valid YAML — ` +
           `${[...new Set(yamlDoc.errors.map((e) => e.code))].join(', ')} (SP-30)`,
+      );
+    } else if (badDirective) {
+      add(
+        'C3-NOCANONICAL',
+        `the \`${MARKER}\` block declares a \`%YAML\` directive the parser could not resolve to ` +
+          `a supported version; only YAML 1.2 is the named dialect (§2.2) (SP-30)`,
       );
     } else if (yamlDoc.directives.yaml.version !== '1.2') {
       // §2.2: the named dialect is YAML 1.2. Under 1.1, a sexagesimal scalar
