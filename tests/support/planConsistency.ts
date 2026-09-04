@@ -421,43 +421,49 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
   }
 
   /**
-   * The subset of `directives` whose directive NAME is `%YAML`.
+   * A directive token's TRUE name per YAML 1.2.2's own grammar (§6.8,
+   * `l-directive ::= "%" ns-directive-name ( s-separate-in-line
+   * ns-directive-parameter )*`): everything after `%` up to the first ASCII
+   * space or tab, or the entire remainder if there is none.
    *
-   * ⚠⚠⚠ THE SEPARATOR AFTER `%YAML` MUST BE ASCII SPACE OR TAB — NOT
-   * ECMASCRIPT `\s` (implementation review finding P23). YAML 1.2.2 §5.5
-   * defines only U+0020 and U+0009 as structural white space, and `yaml`'s
-   * own `Directives.add()` (`node_modules/yaml/dist/doc/directives.js`)
-   * splits a directive line on `/[ \t]+/` — nothing wider. `\s` also matches
-   * NO-BREAK SPACE (U+00A0), EM SPACE (U+2003) and others, which YAML
-   * classifies as ordinary `ns-char` and therefore as part of a reserved
-   * directive NAME, not a separator: `%YAML<U+00A0>1.3` is a valid but
-   * UNKNOWN reserved directive under YAML's own grammar (the parser reports
-   * it exactly like `%FOO`), yet the old `\s` pattern matched it as `%YAML`
-   * anyway — reintroducing the false blocker P19 exists to prevent, one
-   * lexical boundary earlier. Matching `[ \t]` here mirrors the parser's own
-   * separator, not a superset of it.
+   * ⚠⚠⚠ NEVER ECMAScript `\s`, and never re-derive this from `token.source`
+   * with anything OTHER than an exact `[ \t]` split (implementation review
+   * finding P23). YAML 1.2.2 §5.5 defines only U+0020 and U+0009 as
+   * structural white space, and `yaml`'s own `Directives.add()`
+   * (`node_modules/yaml/dist/doc/directives.js`) splits a directive line on
+   * `/[ \t]+/` — nothing wider. `\s` also matches NO-BREAK SPACE (U+00A0),
+   * EM SPACE (U+2003) and others, which YAML classifies as ordinary
+   * `ns-char` and therefore as part of a directive's NAME, not a separator.
    *
-   * ⚠⚠⚠ THIS BOUNDARY IS NECESSARY BUT NOT SUFFICIENT (implementation review
-   * finding P26): it correctly excludes a token whose OWN raw source has an
-   * `ns-char` after `%YAML`, but `yaml@2.9.0`'s composer decides a
-   * directive's NAME from `line.trim().split(/[ \t]+/)` — `trim()` runs
-   * BEFORE the split, and JavaScript's `trim()` removes NBSP, EM SPACE, and
-   * several other characters YAML classifies as ordinary `ns-char` (not
-   * structural white space) from the START and END of the line. A reserved
-   * directive consisting of ONLY `%YAML` plus one trailing trimmable
-   * character — nothing else on the line — is therefore reduced by the
-   * composer's OWN normalisation to the bare string `%YAML` before its
-   * `switch (name)` ever runs, so the composer itself misclassifies it as
-   * the real `%YAML` directive with zero parts and raises `BAD_DIRECTIVE` as
-   * an ERROR ("should contain exactly one part"). This selector still
-   * correctly excludes that token (its raw `.source` does not match `[ \t]`
-   * or `$` right after `%YAML`) — the false block instead comes from
-   * `yamlDoc.errors`, via a channel this file was not yet reading;
-   * `blockingDirectiveErrors` below closes it the same way `directiveTokenAt`
-   * already closes the equivalent warning channel.
+   * ⚠⚠⚠ NEITHER `token.source` NOR THE COMPOSER'S OWN NAME DECISION CAN BE
+   * TRUSTED AT THE LINE'S TRAILING EDGE (implementation review finding
+   * P26): `yaml@2.9.0`'s composer decides a directive's name from
+   * `line.trim().split(/[ \t]+/)`, and `trim()` runs BEFORE the split and
+   * removes NBSP, EM SPACE and other characters YAML classifies as ordinary
+   * `ns-char` (not structural white space) from the START and END of the
+   * line — even `yaml`'s OWN CST tokenizer drops such a character from
+   * `token.source` when it is the LAST character on the line, with nothing
+   * following. A reserved directive consisting of ONLY `%YAML` (or `%TAG`)
+   * plus one trailing trimmable character is therefore reduced, before its
+   * name is ever compared, to the bare recognised keyword — misclassifying
+   * it as a malformed REAL `%YAML`/`%TAG` directive with zero parts, and
+   * raising `BAD_DIRECTIVE` as an ERROR for what YAML 1.2.2 §6.8 requires
+   * accepting as an unknown reserved directive. This function does not
+   * defend against that on its own (it can only see what `token.source`
+   * already contains, which the tokenizer has already trimmed identically);
+   * `blockingDirectiveErrors` below is what actually closes the gap, by
+   * checking the RECOGNISED-NAME SET directly rather than trusting either
+   * the composer's decision or this file's own `%YAML`-only selector.
    */
+  function directiveName(token: CST.Directive): string {
+    const afterPercent = token.source.slice(1);
+    const separatorIndex = afterPercent.search(/[ \t]/);
+    return separatorIndex === -1 ? afterPercent : afterPercent.slice(0, separatorIndex);
+  }
+
+  /** The subset of `directives` whose directive NAME is `%YAML`. */
   function yamlDirectiveTokens(directives: readonly CST.Directive[]): CST.Directive[] {
-    return directives.filter((t) => /^%YAML(?:[ \t]|$)/.test(t.source));
+    return directives.filter((t) => directiveName(t) === 'YAML');
   }
 
   /** The directive token (if any) whose half-open span contains `pos`. */
@@ -496,37 +502,47 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
   }
 
   /**
-   * `yamlDoc.errors`, minus any `BAD_DIRECTIVE` error that is not really
-   * about a `%YAML` directive (implementation review finding P26).
+   * `yamlDoc.errors`, minus any `BAD_DIRECTIVE` error whose owning directive
+   * token's TRUE name (implementation review finding P26) is neither `YAML`
+   * nor `TAG` — the only two names YAML 1.2.2 §6.8 gives defined semantics
+   * to, and the exact two-name set `Directives.add()`'s own `switch (name)`
+   * branches on (everything else falls to its `default:` case, reserved for
+   * future use, accept-with-warning-only).
    *
    * A `BAD_DIRECTIVE` error's position is looked up against `allDirectives`
-   * (every directive token, not only the `%YAML`-named ones `yamlDirectives`
-   * selects) to find its OWNING token — the directive line the composer was
-   * processing when it raised the error. If that owning token is itself one
-   * `yamlDirectiveTokens` selects as `%YAML`, the error is genuinely about a
-   * malformed real `%YAML` directive (wrong arity, an unsupported syntax
-   * shape) and must keep blocking, exactly as before. If the owning token is
-   * NOT selected as `%YAML` — the token this file's own exact separator
-   * boundary correctly identified as a reserved, not-`%YAML`, directive —
-   * the error is collateral from `yaml@2.9.0`'s OWN `trim()`-before-split
-   * normalisation deciding a different, narrower name than the token's raw
-   * source actually contains, and YAML 1.2.2 §6.8 requires accepting that
-   * directive, not blocking it. A `BAD_DIRECTIVE` error with no owning token
-   * at all is left blocking (defensive: nothing in this file's own testing
-   * has produced one, and treating an unowned diagnostic as spurious would
-   * be exactly the kind of unproven inference this checker exists to avoid).
-   * Every other error code is untouched — this narrows only the one channel
-   * P26 measured, not `doc.errors.length > 0` in general.
+   * (every directive token, not only `%YAML`-named ones) to find its OWNING
+   * token — the directive line the composer was processing when it raised
+   * the error. ⚠⚠⚠ Checking `directiveName(owner)` against the RECOGNISED
+   * set directly — not `yamlDirectives.includes(owner)` — is load-bearing:
+   * an earlier version of this function excluded every error whose owner
+   * merely failed the `%YAML`-only test, which correctly closed P26's own
+   * `%YAML`-trailing-edge case but ALSO silently excluded a genuinely
+   * malformed REAL `%TAG` directive (e.g. `%TAG e`, wrong arity, no
+   * trimming involved at all) — a malformed instance of a RECOGNISED name is
+   * not a reserved directive and must still block. If the owning token's
+   * true name IS `YAML` or `TAG`, the error is genuinely about a malformed
+   * real directive (wrong arity, an unsupported syntax shape) and must keep
+   * blocking. If the owning token's true name is anything else, the error is
+   * collateral from `yaml@2.9.0`'s OWN trailing-edge normalisation deciding
+   * a narrower name than the token's true grammar-defined name, and YAML
+   * 1.2.2 §6.8 requires accepting that directive, not blocking it. A
+   * `BAD_DIRECTIVE` error with no owning token at all is left blocking
+   * (defensive: nothing in this file's own testing has produced one, and
+   * treating an unowned diagnostic as spurious would be exactly the kind of
+   * unproven inference this checker exists to avoid). Every other error code
+   * is untouched — this narrows only the one channel P26 measured, not
+   * `doc.errors.length > 0` in general.
    */
   function blockingDirectiveErrors(
     allDirectives: readonly CST.Directive[],
-    yamlDirectives: readonly CST.Directive[],
     errors: readonly YAMLError[],
   ): YAMLError[] {
     return errors.filter((e) => {
       if (e.code !== 'BAD_DIRECTIVE') return true;
       const owner = directiveTokenAt(e.pos[0], allDirectives);
-      return owner === undefined || yamlDirectives.includes(owner);
+      if (owner === undefined) return true;
+      const name = directiveName(owner);
+      return name === 'YAML' || name === 'TAG';
     });
   }
 
@@ -636,21 +652,22 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
     // decides a directive's NAME via `line.trim().split(/[ \t]+/)`, and
     // `trim()` removes NBSP/EM SPACE/other `ns-char` trimmable characters
     // from the line's OWN edges before the name is ever read. A reserved
-    // directive consisting of ONLY `%YAML` plus one such trailing character —
-    // nothing else on the line — is reduced by the composer's own
-    // normalisation to the bare string `%YAML`, so it raises `BAD_DIRECTIVE`
-    // as an ERROR ("should contain exactly one part") for what YAML 1.2.2
-    // §6.8 requires accepting as an unknown reserved directive.
-    // `blockingDirectiveErrors` excludes exactly that case — a `BAD_DIRECTIVE`
-    // error whose owning token (found across EVERY directive, not only ones
-    // named `%YAML`) is not itself selected as `%YAML` by this file's own
-    // exact separator boundary — while leaving every other error blocking,
-    // including a genuinely malformed real `%YAML` directive (e.g. one with
-    // too many parts, whose owning token IS `%YAML`-selected).
+    // directive consisting of ONLY `%YAML` (or `%TAG`) plus one such
+    // trailing character — nothing else on the line — is reduced by the
+    // composer's own normalisation to the bare recognised keyword, so it
+    // raises `BAD_DIRECTIVE` as an ERROR ("should contain exactly one/two
+    // part(s)") for what YAML 1.2.2 §6.8 requires accepting as an unknown
+    // reserved directive. `blockingDirectiveErrors` excludes exactly that
+    // case — a `BAD_DIRECTIVE` error whose owning token's TRUE name (found
+    // across EVERY directive, not only ones this file selects as `%YAML`)
+    // is neither `YAML` nor `TAG` — while leaving every other error
+    // blocking, including a genuinely malformed real `%YAML` or `%TAG`
+    // directive (e.g. one with the wrong number of parts, whose owning
+    // token's true name IS a recognised keyword).
     const allDirectives = allDirectiveTokens(homes.canonical[0].text);
     const yamlDirectives = yamlDirectiveTokens(allDirectives);
     const badDirective = unsupportedYamlVersionWarned(yamlDirectives, yamlDoc.warnings);
-    const blockingErrors = blockingDirectiveErrors(allDirectives, yamlDirectives, yamlDoc.errors);
+    const blockingErrors = blockingDirectiveErrors(allDirectives, yamlDoc.errors);
     if (blockingErrors.length > 0) {
       add(
         'C3-NOCANONICAL',

@@ -872,6 +872,36 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
       doc(fence(['%YAML 1.2', `%YAML\u00A0`, '---', ...KEYS])),
       'valid',
     ],
+    [
+      // \u26A0\u26A0\u26A0 Found by continued self-testing of the P26 fix BEFORE sending it
+      // to review, not by a review round: an earlier version of
+      // `blockingDirectiveErrors` excluded a `BAD_DIRECTIVE` error whenever
+      // its owning token merely failed the `%YAML`-only test \u2014 which
+      // correctly closed the P26 case above, but ALSO silently excluded a
+      // genuinely malformed REAL `%TAG` directive with the wrong number of
+      // parts (no trimming involved at all; `%TAG e` is malformed on its
+      // own terms, arity 1 instead of 2). A malformed instance of a
+      // RECOGNISED directive name (`YAML` or `TAG`, the only two names
+      // YAML 1.2.2 \u00A76.8 defines) is not a reserved directive and must still
+      // block. Fixed by checking the owning token's TRUE name against the
+      // recognised-name set directly, not against this file's `%YAML`-only
+      // selector.
+      'CONTROL: a malformed real %TAG (wrong arity, unrelated to trimming) still blocks',
+      doc(fence(['%TAG e', '---', ...KEYS])),
+      'invalid',
+    ],
+    [
+      // The %TAG-side mirror of the P26 trailing-edge case above, proving
+      // the fix for the %TAG arity gap did not reopen P26 for %TAG: `%TAG`
+      // plus a trailing NBSP and nothing else is, under YAML's own grammar,
+      // an unknown reserved directive named `TAG<NBSP>` \u2014 but `yaml`'s own
+      // tokenizer drops the trailing NBSP from the CST token's own source
+      // when nothing follows it, and the composer's `trim()` then
+      // misreads the name as the bare recognised keyword `TAG`.
+      'CONTROL: %TAG with a trailing NBSP and NOTHING else is a reserved directive',
+      doc(fence([`%TAG\u00A0`, '---', ...KEYS])),
+      'valid',
+    ],
   ];
 
   for (const [label, text, must] of CASES) {
