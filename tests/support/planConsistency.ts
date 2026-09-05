@@ -435,30 +435,96 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
    * EM SPACE (U+2003) and others, which YAML classifies as ordinary
    * `ns-char` and therefore as part of a directive's NAME, not a separator.
    *
-   * ⚠⚠⚠ NEITHER `token.source` NOR THE COMPOSER'S OWN NAME DECISION CAN BE
-   * TRUSTED AT THE LINE'S TRAILING EDGE (implementation review finding
-   * P26): `yaml@2.9.0`'s composer decides a directive's name from
-   * `line.trim().split(/[ \t]+/)`, and `trim()` runs BEFORE the split and
-   * removes NBSP, EM SPACE and other characters YAML classifies as ordinary
-   * `ns-char` (not structural white space) from the START and END of the
-   * line — even `yaml`'s OWN CST tokenizer drops such a character from
-   * `token.source` when it is the LAST character on the line, with nothing
-   * following. A reserved directive consisting of ONLY `%YAML` (or `%TAG`)
-   * plus one trailing trimmable character is therefore reduced, before its
-   * name is ever compared, to the bare recognised keyword — misclassifying
-   * it as a malformed REAL `%YAML`/`%TAG` directive with zero parts, and
-   * raising `BAD_DIRECTIVE` as an ERROR for what YAML 1.2.2 §6.8 requires
-   * accepting as an unknown reserved directive. This function does not
-   * defend against that on its own (it can only see what `token.source`
-   * already contains, which the tokenizer has already trimmed identically);
-   * `blockingDirectiveErrors` below is what actually closes the gap, by
-   * checking the RECOGNISED-NAME SET directly rather than trusting either
-   * the composer's decision or this file's own `%YAML`-only selector.
+   * ⚠⚠⚠ THE CST TOKEN PRESERVES THE TRAILING EDGE; A SEPARATE COMPOSER CALL
+   * DOES NOT (implementation review finding P26, corrected by finding P30 —
+   * an earlier version of this comment claimed the opposite, which is both
+   * false and would make this function's own fix impossible). `yaml@2.9.0`'s
+   * composer decides a directive's name from a SEPARATE line string via
+   * `line.trim().split(/[ \t]+/)` inside `Directives.add()`
+   * (`node_modules/yaml/dist/doc/directives.js`), and `trim()` runs BEFORE
+   * the split and removes NBSP, EM SPACE and other characters YAML
+   * classifies as ordinary `ns-char` (not structural white space) from that
+   * line's START and END. `token.source` itself is untouched by this —
+   * MEASURED directly via `Parser().parse()`: `%YAML<U+00A0>` tokenizes as a
+   * six-code-point CST source and `%TAG<U+00A0>` as five, the trailing NBSP
+   * present in both. This function reads `token.source`, so it recovers the
+   * full name the composer's own `trim()` has already discarded — that is
+   * exactly why it can distinguish a trim-mangled reserved directive from a
+   * genuinely malformed real one at all: if the CST token were trimmed
+   * identically, there would be no wider name left to recover. A reserved
+   * directive consisting of ONLY `%YAML` (or `%TAG`) plus one trailing
+   * trimmable character is reduced by the COMPOSER's normalisation (never
+   * the tokenizer's) to the bare recognised keyword before the composer's
+   * own name comparison, misclassifying it as a malformed REAL `%YAML`/
+   * `%TAG` directive with zero parts and raising `BAD_DIRECTIVE` as an ERROR
+   * for what YAML 1.2.2 §6.8 requires accepting as an unknown reserved
+   * directive.
+   *
+   * ⚠⚠⚠ THIS FUNCTION EXTRACTS A SUBSTRING; IT DOES NOT VALIDATE ONE
+   * (implementation review finding P29). Everything after `%` up to the
+   * first `[ \t]` is returned as-is, including a candidate that is not a
+   * legal `ns-directive-name` at all — e.g. a trailing U+000B VERTICAL TAB
+   * or U+000C FORM FEED, both ECMAScript-`trim()`-removable like NBSP/EM
+   * SPACE but NOT legal YAML `c-printable`/`ns-char`. A caller that means to
+   * treat a non-`{YAML,TAG}` result as a valid reserved directive name MUST
+   * also check `isLegalDirectiveName` below before doing so;
+   * `blockingDirectiveErrors` is what actually closes that gap.
    */
   function directiveName(token: CST.Directive): string {
     const afterPercent = token.source.slice(1);
     const separatorIndex = afterPercent.search(/[ \t]/);
     return separatorIndex === -1 ? afterPercent : afterPercent.slice(0, separatorIndex);
+  }
+
+  /**
+   * Whether every code point of `codePoint` (singular: this tests ONE
+   * scalar value) lies in YAML 1.2.2's `ns-char` production (implementation
+   * review finding P29). Fetched from the specification itself, not
+   * reconstructed from memory (the exact failure class that has bitten this
+   * seam twice already, P23 and P26):
+   *
+   *   c-printable ::= #x9 | #xA | #xD | [#x20-#x7E]            (§5.1)
+   *                 | #x85 | [#xA0-#xD7FF] | [#xE000-#xFFFD]
+   *                 | [#x10000-#x10FFFF]
+   *   b-char      ::= b-line-feed | b-carriage-return           (§5.2)
+   *               ::= #xA | #xD
+   *   c-byte-order-mark ::= #xFEFF                              (§5.2)
+   *   s-white     ::= s-space | s-tab                           (§5.5)
+   *               ::= #x20 | #x9
+   *   nb-char     ::= c-printable - b-char - c-byte-order-mark  (§5.4)
+   *   ns-char     ::= nb-char - s-white                         (§5.4)
+   *
+   * `ns-char` is therefore `c-printable` with TAB, LF, CR, SPACE and the BOM
+   * removed: `[#x21-#x7E] | #x85 | [#xA0-#xD7FF] | [#xE000-#xFFFD]` (minus
+   * `#xFEFF`) `| [#x10000-#x10FFFF]`. This is a precise range test mirroring
+   * the spec's own boundary — never an enumerated table of specific rejected
+   * characters — matching the discipline this file already uses for the
+   * `[ \t]` separator (implementation review finding P23).
+   */
+  function isNsChar(codePoint: number): boolean {
+    return (
+      (codePoint >= 0x21 && codePoint <= 0x7e) ||
+      codePoint === 0x85 ||
+      (codePoint >= 0xa0 && codePoint <= 0xd7ff) ||
+      (codePoint >= 0xe000 && codePoint <= 0xfffd && codePoint !== 0xfeff) ||
+      (codePoint >= 0x10000 && codePoint <= 0x10ffff)
+    );
+  }
+
+  /**
+   * Whether `name` is a legal `ns-directive-name` (YAML 1.2.2 §6.8:
+   * `ns-directive-name ::= ns-char+`, one or more `ns-char`).
+   *
+   * Iterates by Unicode CODE POINT (`Array.from`, which splits on the
+   * string iterator), never by UTF-16 code unit, so an astral character is
+   * tested as one scalar value and a LONE surrogate half (which cannot pair)
+   * is tested as itself — falling in the gap between `[#xA0-#xD7FF]` and
+   * `[#xE000-#xFFFD]` in `isNsChar` above, and therefore correctly rejected
+   * (implementation review finding P29's own self-check requirement: the
+   * fix must handle the full production, not just VT/FF).
+   */
+  function isLegalDirectiveName(name: string): boolean {
+    return name.length > 0 && Array.from(name).every((ch) => isNsChar(ch.codePointAt(0)!));
   }
 
   /** The subset of `directives` whose directive NAME is `%YAML`. */
@@ -507,7 +573,9 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
    * nor `TAG` — the only two names YAML 1.2.2 §6.8 gives defined semantics
    * to, and the exact two-name set `Directives.add()`'s own `switch (name)`
    * branches on (everything else falls to its `default:` case, reserved for
-   * future use, accept-with-warning-only).
+   * future use, accept-with-warning-only) — **and IS itself a legal
+   * `ns-directive-name` (implementation review finding P29)**, checked via
+   * `isLegalDirectiveName` above.
    *
    * A `BAD_DIRECTIVE` error's position is looked up against `allDirectives`
    * (every directive token, not only `%YAML`-named ones) to find its OWNING
@@ -519,13 +587,30 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
    * `%YAML`-trailing-edge case but ALSO silently excluded a genuinely
    * malformed REAL `%TAG` directive (e.g. `%TAG e`, wrong arity, no
    * trimming involved at all) — a malformed instance of a RECOGNISED name is
-   * not a reserved directive and must still block. If the owning token's
-   * true name IS `YAML` or `TAG`, the error is genuinely about a malformed
-   * real directive (wrong arity, an unsupported syntax shape) and must keep
-   * blocking. If the owning token's true name is anything else, the error is
+   * not a reserved directive and must still block.
+   *
+   * ⚠⚠⚠ RECOGNISED-SET MEMBERSHIP ALONE IS NOT SUFFICIENT (implementation
+   * review finding P29 — a THIRD layer under the same seam, found one round
+   * after the recognised-set fix above): `directiveName` extracts everything
+   * up to the first `[ \t]` WITHOUT validating it, so a candidate that is
+   * merely not `YAML`/`TAG` was previously granted "valid reserved
+   * directive, must accept" treatment on that basis alone. U+000B VERTICAL
+   * TAB and U+000C FORM FEED are ECMAScript-`trim()`-removable exactly like
+   * NBSP/EM SPACE — so they trigger the SAME composer-trim mechanism P26
+   * fixed — but are NOT legal YAML `c-printable`/`ns-char`. A directive line
+   * consisting of `%YAML` plus a trailing VT or FF is therefore genuinely
+   * invalid YAML, not a valid-but-unrecognised reserved directive, and MUST
+   * keep blocking.
+   *
+   * If the owning token's true name IS `YAML` or `TAG`, the error is
+   * genuinely about a malformed real directive (wrong arity, an unsupported
+   * syntax shape) and must keep blocking. If the owning token's true name is
+   * anything else AND that name is a legal `ns-directive-name`, the error is
    * collateral from `yaml@2.9.0`'s OWN trailing-edge normalisation deciding
    * a narrower name than the token's true grammar-defined name, and YAML
-   * 1.2.2 §6.8 requires accepting that directive, not blocking it. A
+   * 1.2.2 §6.8 requires accepting that directive, not blocking it. If the
+   * owning token's true name is neither recognised NOR grammar-valid, the
+   * directive is genuinely invalid YAML and the error keeps blocking. A
    * `BAD_DIRECTIVE` error with no owning token at all is left blocking
    * (defensive: nothing in this file's own testing has produced one, and
    * treating an unowned diagnostic as spurious would be exactly the kind of
@@ -542,7 +627,7 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
       const owner = directiveTokenAt(e.pos[0], allDirectives);
       if (owner === undefined) return true;
       const name = directiveName(owner);
-      return name === 'YAML' || name === 'TAG';
+      return name === 'YAML' || name === 'TAG' || !isLegalDirectiveName(name);
     });
   }
 

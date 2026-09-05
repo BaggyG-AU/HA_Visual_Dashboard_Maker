@@ -360,8 +360,9 @@ parser; delete it and call one.**
 5. **Add YAML payload validation** for the single canonical block:
    `parseDocument(text, { uniqueKeys: true, stringKeys: true, version: '1.2' })`.
    ⚠ **Corrected (implementation review findings P12, P16, P19, P20, P23,
-   P26 — this step previously named only the pre-repair call and its four
-   checks; every addition below is load-bearing, not optional hardening).**
+   P26, P29 — this step previously named only the pre-repair call and its
+   four checks; every addition below is load-bearing, not optional
+   hardening).**
    `version: '1.2'` is only the FALLBACK for a document with no `%YAML`
    directive; an explicit directive overrides it. **First, parse
    `allDirectives`** — EVERY CST `directive` token (via `yaml`'s own
@@ -400,9 +401,23 @@ t.offset + t.source.length)` (implementation review finding P22: an
      branches on, not merely "not `%YAML`" (an earlier version of this
      function used that narrower test, which silently also excluded a
      genuinely malformed real `%TAG` directive with the wrong arity — see
-     §2.11h's P26 disposition for the correction). This leaves a genuinely
+     §2.11h's P26 disposition for the correction) — **AND that name is
+     itself a legal `ns-directive-name` (implementation review finding
+     P29)**, checked via `isLegalDirectiveName` against YAML 1.2.2's own
+     `ns-char` production (§5.1–§5.4: `c-printable` minus `b-char` minus
+     `c-byte-order-mark` minus `s-white`), a precise character-range test
+     fetched from the specification, never an enumerated table of specific
+     rejected characters. An earlier version of this function granted "valid
+     reserved directive, must accept" treatment to ANY candidate that was
+     merely not `YAML`/`TAG`, without checking it was a legal name at all —
+     U+000B VERTICAL TAB and U+000C FORM FEED are ECMAScript-`trim()`-
+     removable exactly like NBSP/EM SPACE (triggering the SAME composer-trim
+     mechanism P26 fixed) but are NOT legal `ns-char`, so `%YAML` plus a
+     trailing VT or FF is genuinely invalid YAML that must still block — see
+     §2.11i's P29 disposition for the correction. This leaves a genuinely
      malformed real `%YAML` or `%TAG` directive (wrong arity, an unsupported
-     syntax shape) blocking exactly as before, and every other error code
+     syntax shape) blocking exactly as before, a genuinely invalid directive
+     name blocking exactly as it should, and every other error code
      untouched. This covers malformed YAML, duplicate keys including the
      quoted spelling, multi-document payloads, an alias or non-string key,
      and a directive the parser cannot parse at all such as `%YAML next` —
@@ -625,7 +640,9 @@ directives.js`) checks only that a `%TAG` directive has exactly two
   - **invalid first character of a global prefix** (§6.8.2.2,
     `ns-global-tag-prefix`): a prefix that does not itself start with `!`
     is a GLOBAL tag prefix, whose first character must be `ns-tag-char`
-    (`ns-uri-char` minus `!` and the four flow indicators `, [ ] {` `}`) —
+    (`ns-uri-char` minus `!` and the five flow indicators `, [ ] {` `}` —
+    implementation review finding P31: this line previously miscounted the
+    five-member `c-flow-indicator` production as four) —
     a prefix beginning with a raw comma or bracket (e.g. `,tag:example` or
     `[tag:example`) is accepted even though that exact character is legal
     ns-uri-char content everywhere ELSE in the same string — P27's finding.
@@ -1024,6 +1041,54 @@ Markdown syntax but does not lex GFM tables for cell-count correctness) is
 not evidence a table renders correctly — the same class of check-that-
 cannot-fail this project has met before, now in a documentation artifact
 rather than a test harness.
+
+## 2.11i Disposition of the sixth follow-up implementation review (P29–P31)
+
+The P26–P28 fix and self-correction landed as commits `b6f84e7` and `24fbc45`
+(2026-09-05); the sixth follow-up review committed as
+`345cb2cf2b695c61cd27e42e309e909b9b05fd52` found a THIRD layer under the same
+trailing-edge-normalisation seam — recognised-name-set membership alone is
+not sufficient, the candidate must also be a grammar-valid directive name —
+plus the two documentation defects named below; verdict
+**CHANGES-REQUIRED**, three findings, all reproduced before being accepted.
+The reviewer's cumulative record on this branch is now **44 findings, 44
+valid** across thirteen rounds.
+
+| Ref | Severity | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P29 | SEV-2    | **FIXED.** `blockingDirectiveErrors` suppressed a `BAD_DIRECTIVE` error whenever the extracted candidate name was not exactly `YAML` or `TAG`, but never checked that the candidate was a LEGAL YAML directive name (`ns-directive-name ::= ns-char+`, bounded by `c-printable`) before granting it "valid reserved directive, must accept" treatment. U+000B VERTICAL TAB and U+000C FORM FEED are ECMAScript-`trim()`-removable exactly like NBSP/EM SPACE (P26) but are NOT legal `c-printable`/`ns-char`, so `%YAML` plus a trailing VT or FF is genuinely invalid YAML that the fix wrongly let through — MEASURED: both constructions blocked at `cbae9e1` and passed at `24fbc45`. Fixed by adding `isNsChar(codePoint)` (a precise range test mirroring YAML 1.2.2's own `c-printable`/`b-char`/`c-byte-order-mark`/`s-white` productions, §5.1–§5.4, fetched from the specification rather than reconstructed from memory) and `isLegalDirectiveName(name)` (`ns-char+`, iterating by Unicode CODE POINT via `Array.from` so an astral character is tested as one scalar value and a lone surrogate is correctly rejected), then requiring `blockingDirectiveErrors` to keep blocking whenever the extracted name is neither `YAML`/`TAG` NOR grammar-valid. No table of specific rejected characters — the same discipline as the existing `[ \t]` separator check. **Self-check performed before sending to review** (task discipline, same spirit as the round-6 self-correction): cross-referencing ECMAScript's complete `trim()`-removable character set against YAML's `ns-char` production directly surfaced a THIRD instance of the identical defect the review itself had not named — U+FEFF ZERO WIDTH NO-BREAK SPACE/BYTE ORDER MARK, also `trim()`-removable, also explicitly excluded from `ns-char` by the `c-byte-order-mark` subtraction, MEASURED via direct `Parser().parse()` inspection to retain in the CST token while triggering the same composer `BAD_DIRECTIVE` arity error. Fixed for free by the same general mechanism (no separate code change); added as a third committed control. Three controls added: trailing VT alone, trailing FF alone, and trailing BOM/ZWNBSP alone (all invalid — must block). A further self-check swept the full production boundary named by the review's own remediation instruction — astral-plane characters, lone surrogates, and the noncharacters the review's own 65-probe sweep touched — confirming the fix correctly leaves all 63 pre-existing `yaml@2.9.0` warning-only gaps (C0/C1 controls other than VT/FF, lone surrogates, U+FFFE/U+FFFF) unaffected, since none of them is ECMAScript-`trim()`-removable and therefore none is reachable via this composer-trim mechanism at all. |
+| P30 | SEV-3    | **FIXED.** The doc comment above `directiveName` (`tests/support/planConsistency.ts`) and its `%TAG` mirror in the spec both claimed `yaml`'s own CST tokenizer drops a trailing trimmable character from `token.source` — empirically false, and already known to be false by the time it was written: the prior session's own investigation had directly verified via `Parser().parse()` that the CST token's raw source PRESERVES the trailing character, and it is `yaml`'s SEPARATE composer-level `Directives.add()` call, operating on a different line string, that trims it. Traced to a byte-content mistake in the prior session's FIRST debug script (a real ASCII space typed where NBSP was intended) that produced the wrong belief before a later, corrected script established the true mechanism the actual code was built on — the comment written during the mistaken phase was never revisited. This plan's own §2.11h account was already correct; only the two code/test comments were wrong. Both rewritten to state the CST token preserves the trailing character while the composer's separate `trim()` call is what discards it, and to remove language claiming the token "cannot be trusted" or was "already trimmed identically."                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| P31 | SEV-3    | **FIXED.** The plan (§2.7) and the test comment (`tests/unit/planConsistency.spec.ts`) both said "the four flow indicators" while listing five characters (`,` `[` `]` `{` `}`) — YAML 1.2.2's `c-flow-indicator` production has five alternatives, and the enumeration beside the word "four" was itself correct and complete. "Four" changed to "five" in both places; no behaviour or test expectation changed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+
+⚠⚠⚠ **P29 IS THE SIXTH INSTANCE ON THIS SEAM, ONE BOUNDARY BELOW P26'S OWN
+RECOGNISED-NAME-SET FIX.** P26 asked whether the composer's own trailing-edge
+`trim()` could misclassify a valid reserved directive as a malformed
+recognised one. The self-correction to P26 then asked, one layer deeper,
+whether "not `%YAML`" was too narrow a test — it should have been "not in
+the recognised set." **P29 asks the SAME question at yet another layer**:
+recognised-set membership answers "is this one of the two names YAML gives
+defined semantics to," but a candidate that is in NEITHER of two states —
+not recognised, AND not even a legal name — was still being waved through as
+if non-membership in the recognised set were sufficient evidence of
+validity. The general lesson this seam keeps re-proving, now three layers
+deep: **excluding a diagnostic because a value fails a narrow test is not
+the same as confirming the value belongs to the class the exclusion is
+supposed to protect.** Each round has narrowed a different narrow test (the
+lexical separator, P23; the recognised-name-set membership check, P26's
+self-correction; now the grammar-validity of the extracted name, P29) —
+never inferring validity from mere non-membership in the class being
+excluded.
+
+⚠ **P30 and P31 are process lessons, not new code-behaviour classes**, the
+same as P27/P28 one round earlier. P30 is the sharpest evidence yet that a
+comment can go stale MID-SESSION: understanding corrected itself between a
+mistaken first debug script and a corrected later one, the code and tests
+were built on the correct understanding, but the prose written during the
+mistaken phase was never revisited — the general remedy is to re-read every
+comment written before a mid-investigation correction, not just the ones
+touched by the correction's own diff. P31 repeats P28's class exactly: a
+prose-only miscount that no formatter or test can catch, caught only by
+counting the enumeration against the word describing it.
 
 ## 2.12 Questions the reviewer is asked to answer
 

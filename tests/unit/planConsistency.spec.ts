@@ -894,13 +894,65 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
       // The %TAG-side mirror of the P26 trailing-edge case above, proving
       // the fix for the %TAG arity gap did not reopen P26 for %TAG: `%TAG`
       // plus a trailing NBSP and nothing else is, under YAML's own grammar,
-      // an unknown reserved directive named `TAG<NBSP>` \u2014 but `yaml`'s own
-      // tokenizer drops the trailing NBSP from the CST token's own source
-      // when nothing follows it, and the composer's `trim()` then
-      // misreads the name as the bare recognised keyword `TAG`.
+      // an unknown reserved directive named `TAG<NBSP>`. The CST token's own
+      // source PRESERVES the trailing NBSP (implementation review finding
+      // P30, correcting an earlier, false claim in this comment that the
+      // tokenizer drops it) — it is the composer's SEPARATE `trim()` call,
+      // over a different line string, that misreads the name as the bare
+      // recognised keyword `TAG`.
       'CONTROL: %TAG with a trailing NBSP and NOTHING else is a reserved directive',
       doc(fence([`%TAG\u00A0`, '---', ...KEYS])),
       'valid',
+    ],
+    [
+      // Implementation review finding P29: a THIRD layer under the same
+      // seam, one round after the recognised-name-set fix above. U+000B
+      // VERTICAL TAB is ECMAScript-`trim()`-removable exactly like NBSP/EM
+      // SPACE — so it triggers the SAME composer-trim mechanism P26 fixed —
+      // but VT is NOT a legal YAML `c-printable`/`ns-char` (YAML 1.2.2
+      // §5.1/§5.4). `%YAML` plus a trailing VT alone is therefore genuinely
+      // invalid YAML, not a valid-but-unrecognised reserved directive, and
+      // must still block. An earlier version of `blockingDirectiveErrors`
+      // granted "valid reserved directive" treatment to any candidate that
+      // was merely not `YAML`/`TAG`, without checking it was a legal name at
+      // all — this construction discriminates that gap.
+      'CONTROL: %YAML with a trailing VERTICAL TAB and NOTHING else still blocks (P29)',
+      doc(fence([`%YAML\u000B`, '---', ...KEYS])),
+      'invalid',
+    ],
+    [
+      // The FORM FEED sibling of the VT case above (implementation review
+      // finding P29): also ECMAScript-`trim()`-removable, also not a legal
+      // YAML `c-printable`/`ns-char`, also genuinely invalid YAML that must
+      // still block.
+      'CONTROL: %YAML with a trailing FORM FEED and NOTHING else still blocks (P29)',
+      doc(fence([`%YAML\u000C`, '---', ...KEYS])),
+      'invalid',
+    ],
+    [
+      // ⚠⚠⚠ Found by this round's OWN self-check (task item 7's mandate to
+      // verify the fix against the FULL `ns-char` boundary, not just the two
+      // characters P29 named), not by the review: cross-referencing
+      // ECMAScript's complete `trim()`-removable set against YAML 1.2.2's
+      // `ns-char` production directly (MEASURED via `String.prototype.trim`,
+      // not assumed) surfaced a THIRD character with the exact same shape as
+      // VT/FF — one the review's own reachability sweep did not name, since
+      // its sweep covered C0/C1 controls, representative lone surrogates and
+      // U+FFFE/U+FFFF, and U+FEFF is none of those. ZERO WIDTH NO-BREAK
+      // SPACE / BYTE ORDER MARK (U+FEFF) is ECMAScript-`trim()`-removable
+      // (confirmed empirically) and is explicitly EXCLUDED from `ns-char` by
+      // YAML 1.2.2's own `c-byte-order-mark` subtraction (§5.2, §5.4) —
+      // MEASURED via direct `Parser().parse()` inspection: the CST token
+      // retains six code points including the trailing U+FEFF, while
+      // `yaml@2.9.0`'s composer still raises `BAD_DIRECTIVE` ("should
+      // contain exactly one part"), exactly like VT/FF. This construction
+      // was ALSO silently accepted before this fix (same defect, same
+      // mechanism) and is fixed for free by the same general
+      // `isLegalDirectiveName` character-range check — no separate code
+      // change was needed, only this control to prove it.
+      'CONTROL: %YAML with a trailing BYTE ORDER MARK/ZWNBSP and NOTHING else still blocks (P29, third instance found by self-check)',
+      doc(fence([`%YAML\uFEFF`, '---', ...KEYS])),
+      'invalid',
     ],
   ];
 
@@ -1121,8 +1173,10 @@ describe('planConsistency — KNOWN-OPEN limits (recorded, not fixed)', () => {
   it('KNOWN-OPEN: a %TAG global prefix starting with a flow indicator is not enforced (P27)', () => {
     // Implementation review finding P27: a prefix that does not itself start
     // with `!` is a GLOBAL tag prefix (YAML 1.2.2 §6.8.2.2), whose first
-    // character must be `ns-tag-char` — `ns-uri-char` minus `!` and the four
-    // flow indicators `,`/`[`/`]`/`{`/`}`. A prefix beginning with a raw
+    // character must be `ns-tag-char` — `ns-uri-char` minus `!` and the five
+    // flow indicators `,`/`[`/`]`/`{`/`}` (implementation review finding
+    // P31: this comment previously miscounted the five-member
+    // `c-flow-indicator` production as four). A prefix beginning with a raw
     // comma is invalid even though the SAME character is legal `ns-uri-char`
     // content everywhere else in the string (proven by the P21 control
     // above, whose handle/prefix pair never puts a flow indicator first).
