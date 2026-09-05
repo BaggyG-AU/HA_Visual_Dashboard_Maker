@@ -1,6 +1,6 @@
 # B14 — Codify the severity rulings and end the review revolving door (governance change plan)
 
-**Status:** Draft — revision 1, 2026-09-06 · awaiting the SPEC-BEFORE-CODE plan review
+**Status:** Draft — revision 2, 2026-09-06 · answers the plan review at `d6190d4` (P1–P12, every finding owner-ruled 2026-09-06 as the author recommended); awaiting the STRAT-D7 scoped follow-up
 **Author:** Claude Fable 5.1 (governance-authoring seat per `docs/governance/OPERATING_AGREEMENT.md` §3.6 STRAT-D4; owner's seat choice recorded 2026-09-06)
 **Reviewer:** OpenAI Codex (GPT-5.6 Sol) — plan review BEFORE any governance document is edited (`CLAUDE.md` SPEC-BEFORE-CODE); the same seat holds the ratification review of the edits (§3 class (b)). No Opus session may hold either seat (§3.6).
 **Owner gate:** micah/BaggyG-AU approves this plan before any governance document is edited; the owner's merge of the PR ratifies the amended text (§3(b)). This document decides nothing on its own.
@@ -20,18 +20,18 @@ Reviews on this project keep coming back "changes required" for defects that do 
 
 ## 1.2 What I verified before writing this
 
-| Fact                                                                                                                                               | How it was measured                                                                                                                                                                              |
-| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| PR #154's eight implementation rounds found 0 SEV-1, 7 SEV-2 and 13 SEV-3; seven rounds returned `CHANGES-REQUIRED`                                | `grep -E '^### P[0-9]+' docs/reviews/plan-consistency-c3-parser-implementation-review*.md`; verdict is line 5 of each file                                                                       |
-| Rulings 1–3 were already applied to all eight rounds through the commissions                                                                       | `prompts/codex/plan-consistency-c3-parser-implementation-review.md` §10 quotes all three; every review file opens with an Owner Summary Table                                                    |
-| 17 of the 20 findings were fixed inside the PR; 3 were declared residuals by owner ruling; no owner fix-or-defer ruling was recorded for any SEV-2 | `grep -E '^\| P(1[2-9]\|2[0-9]\|3[0-2]) ' docs/testing/PLAN_CONSISTENCY_C3_PARSER_PLAN.md`; `git log 016cd03..2e95904` commit bodies mention "owner" only for P21/P24/P27                        |
-| Seven repair rounds (nine fix commits) produced seven follow-ups                                                                                   | `git log --format='%h %s' 016cd03..2e95904` — nine `fix(governance)` commits in seven repair rounds, each round followed by exactly one `docs(review)` follow-up                                 |
-| The review template defines no verdict vocabulary                                                                                                  | `docs/templates/ADVERSARIAL_REVIEW.md:100-101` — "The headline conclusion in three sentences or fewer"                                                                                           |
-| The Operating Agreement's disposition table allows RESOLVED/REGRESSED only                                                                         | `docs/governance/OPERATING_AGREEMENT.md:267-268`                                                                                                                                                 |
-| All seven SEV-2s sit in one seam and every round wrote "Class swept"                                                                               | `grep -n 'Class swept' docs/reviews/plan-consistency-c3-parser-implementation-review*.md` (one per round); seam trace in §5, labelled as a hand trace                                            |
-| The live governed plan has never contained a YAML directive                                                                                        | `git log --oneline --all -S'%YAML' -- docs/testing/SPACING_HELPER_PRESET_PLAN.md docs/testing/SPACING_HELPER_PRESET_PLAN_HISTORY.md` returns nothing, and neither file contains the string today |
+| Fact                                                                                                                                               | How it was measured                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PR #154's eight implementation rounds found 0 SEV-1, 7 SEV-2 and 14 SEV-3 — 21 findings, P12–P32; seven rounds returned `CHANGES-REQUIRED`         | `grep -hoE '^### P[0-9]+ — SEV-[1-4]' docs/reviews/plan-consistency-c3-parser-implementation-review*.md \| sort -u` (21 unique headings); verdict is line 5 of each file                                                                                                                                                                                                                      |
+| Rulings 1–3 were already applied to all eight rounds through the commissions                                                                       | `prompts/codex/plan-consistency-c3-parser-implementation-review.md` §10 quotes all three; every review file opens with an Owner Summary Table                                                                                                                                                                                                                                                 |
+| 18 of the 21 findings were fixed inside the PR; 3 were declared residuals by owner ruling; no owner fix-or-defer ruling was recorded for any SEV-2 | `grep -E '^\| P(1[2-9]\|2[0-9]\|3[0-2]) ' docs/testing/PLAN_CONSISTENCY_C3_PARSER_PLAN.md`; `git log 016cd03..0cd2a05` commit bodies mention "owner" only for P21/P24/P27                                                                                                                                                                                                                     |
+| Eight repair rounds produced seven follow-ups — the eighth received none                                                                           | `git log --format='%h %s' 016cd03..0cd2a05` — nine `fix(governance)` commits in seven repair rounds, each followed by one `docs(review)` follow-up; then the P32 repair round (`141fe0d`, `0cd2a05`, two `docs(governance)` commits after the eighth review `2e95904`) with NO follow-up before merge — a STRAT-D7 miss on PR #154, recorded here and not re-opened (owner ruling 2026-09-06) |
+| The review template defines no verdict vocabulary                                                                                                  | `docs/templates/ADVERSARIAL_REVIEW.md:100-101` — "The headline conclusion in three sentences or fewer"                                                                                                                                                                                                                                                                                        |
+| The Operating Agreement's disposition table allows RESOLVED/REGRESSED only                                                                         | `docs/governance/OPERATING_AGREEMENT.md:267-268`                                                                                                                                                                                                                                                                                                                                              |
+| All seven SEV-2s sit in one seam and every round wrote "Class swept"                                                                               | `grep -n 'Class swept' docs/reviews/plan-consistency-c3-parser-implementation-review*.md` (one per round); seam trace in §5, labelled as a hand trace                                                                                                                                                                                                                                         |
+| The live governed plan has never contained a YAML directive                                                                                        | `git log --oneline --all -S'%YAML' -- docs/testing/SPACING_HELPER_PRESET_PLAN.md docs/testing/SPACING_HELPER_PRESET_PLAN_HISTORY.md` returns nothing, and neither file contains the string today                                                                                                                                                                                              |
 
-The first six rows are MEASURED; the seam classification in §5 is a hand trace and is labelled as one.
+Every row is MEASURED and was re-derived from the review files for revision 2 — revision 1 carried 13 and 20, copied from an earlier session's note rather than re-derived, and the plan review's P4 caught it. The seam classification in §5 is a hand trace and is labelled as one.
 
 ## 1.3 The nine behaviours you are approving
 
@@ -49,7 +49,7 @@ The first six rows are MEASURED; the seam classification in §5 is a hand trace 
 
 ## 1.4 What this costs you, and what happens if you do nothing
 
-**Cost.** Every SEV 2, 3 and 4 finding now arrives on your desk as a short brief you rule on by reference. On PR #154 that would have been about twenty rulings over eight rounds; under these rules the same PR is projected at two or three rounds and roughly eight rulings (§5, labelled judgement). Deferral moves work to a cleanup sweep rather than deleting it, except where you declare a seam a residual — for PR #154 the whole seam guarded inputs nobody has written, so declaring it would have removed the work.
+**Cost.** Every SEV 2 and SEV 3 finding now arrives on your desk as a short brief you rule on by reference; SEV 4 is recorded and needs no ruling. On PR #154 that would have been 21 rulings over eight rounds (nine, had the last repair round received the follow-up it was owed); under these rules the same PR is projected at two or three rounds and roughly eight rulings (§5, labelled judgement). Deferral moves work to a cleanup sweep rather than deleting it, except where you declare a seam a residual — for PR #154 the whole seam guarded inputs nobody has written, so declaring it would have removed the work.
 
 **If you do nothing.** The next multi-round arc is already predictable: the reviewer grades correctly, recommends fixing, the agent fixes, and every fix buys a round. Rulings 1–3 alone were live for all eight rounds of PR #154 and did not change that.
 
@@ -57,7 +57,7 @@ The first six rows are MEASURED; the seam classification in §5 is a hand trace 
 
 - **Every change is quoted before and after** (§3), so the reviewer attacks text, not intent.
 - **The runnable companion is a replay of real findings** (§5) with the command that regenerates its table, not a claim that the rules "would" help.
-- **Counts appear once.** The sweep count lives in §3.6 only; the PR #154 figures live in §1.2 only. Nothing restates them.
+- **Every count has one measured source.** The sweep is measured in §3.6 and the PR #154 figures in §1.2; every restatement elsewhere (owner summary, replay, acceptance criteria) is a copy of that source and is re-derived from it whenever the source changes.
 - **The protected span is named and diffable** (§3.3, §6 AC-4): the STRAT-D7 trigger text must come out byte-identical and the command that proves it is given.
 
 ---
@@ -73,6 +73,7 @@ The first six rows are MEASURED; the seam classification in §5 is a hand trace 
 - STRAT-D7 final form — the rule this plan must not touch: `drawer_havdm_decisions_bd49cedc80cb93cafabc0f86`; `OPERATING_AGREEMENT.md` §3.4 records that two attempts to narrow its trigger each became the next review's finding and that the boundary was "removed, not redrawn".
 - STRAT-D18 as originally ruled: `drawer_havdm_decisions_8464ae812b9803e14aed517a`; `docs/strategy/2026-08-18-model-roles-and-workflow-adoption.md:312-325`.
 - The story, refreshed 2026-09-06 with rulings 4–9: GitHub Issue #156.
+- The plan review of revision 1: `docs/reviews/b14-severity-rulings-codex-plan-review.md` (`d6190d4`, `BLOCKED-ON` six sections, P1–P12). The owner ruled on every finding on 2026-09-06; revision 2 answers them and the dispositions are in `docs/reviews/b14-severity-rulings-repair-dispositions.md`.
 
 ## 2.1 Finding coverage
 
@@ -129,8 +130,10 @@ No other verdict token is valid. `CHANGES-REQUIRED`, `SEV-1-BLOCKED`,
 verdict tracked whichever token the commission supplied, and seven rounds
 returned `CHANGES-REQUIRED` with no SEV 1 present. A follow-up round reports
 each prior finding's closure — RESOLVED / PARTIALLY RESOLVED / REGRESSED /
-OPEN — as disposition lines in §4; a prior finding that is REGRESSED or OPEN is
-re-graded and counts toward the verdict like any other finding. ⚠ A
+OPEN — as disposition lines in §4; every prior finding not in a terminal
+state (RESOLVED, DEFERRED, ACCEPTED-RESIDUAL) is re-graded on the behaviour
+that remains and counts toward the verdict like any other finding, so a
+PARTIALLY RESOLVED remainder is a live finding with its own grade. ⚠ A
 commission may add requirements to a review (strategy D10) but may not define,
 add or vary a verdict token or a severity grade — those belong to this
 template alone.
@@ -211,14 +214,15 @@ checkers).
   Document reading: the target as recorded is internally contradictory,
   contradicts a binding ruling it does not explicitly supersede, rests on a
   demonstrably false factual claim, or is unexecutable as written.
-  Implementation reading: the artifact's stated contract is violated on an
-  input that exists today, or on a future input the reviewer has ARGUED to be
-  plausible. **Every SEV 1 carries the four-part proof:** (1) the decision,
+  Implementation reading: the artifact's stated contract is violated under a
+  condition that exists today — an input, an execution path, a state, an
+  output, or a property of the artifact itself — or under a future condition
+  the reviewer has ARGUED to be plausible. **Every SEV 1 carries the four-part proof:** (1) the decision,
   claim or contract broken; (2) the violated fact or text at `path:line`;
-  (3) why no recorded mitigation covers it; (4) **REACHABILITY — the input
-  that reaches this defect, and whether such an input exists today.** Missing
+  (3) why no recorded mitigation covers it; (4) **REACHABILITY — the input or
+  condition that reaches this defect, and whether it exists today.** Missing
   any part → at most SEV 2. **A finding whose only demonstration is a
-  synthetic input nobody has written caps at SEV 2** — reported in full, never
+  synthetic input or condition nobody has produced caps at SEV 2** — reported in full, never
   blocking. ⚠ The safety-gate exemption must be ARGUED, not assumed: where the
   artifact's whole job is catching the not-yet-written, a synthetic
   demonstration may still carry SEV 1 only if the reviewer states why the
@@ -232,16 +236,18 @@ checkers).
   reviewer decides severity and scope; **the owner decides the merge.**
 - **SEV 2 — does not block.** Document reading: rests on an unverified or
   overstated claim, or an unmitigated risk. Implementation reading: the
-  contract is violated only on a constructible input nobody has written (the
-  reachability cap), or the claim about the code is unverified or overstated.
+  contract is violated only under a constructible condition nobody has
+  produced (the reachability cap), or the claim about the code is unverified
+  or overstated.
   Each goes to the owner as an Owner Decision Brief, and **the owner decides
   fix-now / defer / accept-residual per finding, by Ref**
   (`docs/governance/OPERATING_AGREEMENT.md` §3.4).
 - **SEV 3 — recorded; no round-trip is owed.** Documentation, comment or
   record accuracy; a stale or inconsistent statement whose correction changes
   no behaviour. The owner may still elect a fix under §3.4.
-- **SEV 4 — recorded; no round-trip is owed.** Style, wording preference, or
-  an improvement with no defect behind it.
+- **SEV 4 — recorded; no round-trip and no owner brief is owed.** Style,
+  wording preference, or an improvement with no defect behind it. The owner
+  may still elect a fix.
 - **The authority boundary:** owner judgment calls are not reviewable defects
   above SEV 4 — attack the facts a choice rests on, never the authority to
   make it. Contested classifications go to the owner as briefs.
@@ -307,10 +313,11 @@ round found a sibling.
 ```markdown
 - **The disposition table.** The author answers every finding in a committed
   disposition table — one row per finding, keyed by the review's `Ref`, in
-  exactly one of five states (SEV-CAL-2 ruling 5, owner-ruled 2026-09-06):
+  exactly one of six states (SEV-CAL-2 ruling 5, owner-ruled 2026-09-06):
   **RESOLVED** (repaired; the row carries a **blast-radius statement** —
   upstream reliances and downstream consumers, for shared-DSL work the
-  `ai_rules.md` §4b consumer inventory); **REGRESSED**; **DEFERRED →
+  `ai_rules.md` §4b consumer inventory); **PARTIALLY RESOLVED** (the
+  remainder is re-graded and stays a live finding); **REGRESSED**; **DEFERRED →
   `<board debt item>`** (strategy D11 — the item belongs to a named cleanup
   sweep and carries the Ref, the plain-English line, the severity and the
   review file path); **ACCEPTED-RESIDUAL → `<KNOWN-OPEN test, or the
@@ -321,20 +328,29 @@ documented residual where no test can pin it>`**; or **OPEN** (awaiting the
   the strategy's open sub-question 6: the reviewer's own file is never
   amended by the author, so the table cannot live there.)
 - **The owner's fix-or-defer decision (SEV-CAL-2 ruling 6).** Before
-  committing any repair for a SEV 2, SEV 3 or SEV 4 finding, the author puts
-  each such finding to the owner by Ref with the pros and cons of fix-now,
-  defer and accept-residual and a recommendation, stating whether it agrees
-  with the reviewer's recommendation and why. The owner rules and tells the
-  agent; the ruling is recorded in the row. A finding the owner has not yet
-  ruled on stays OPEN and no repair for it is committed. **DEFERRED and
-  ACCEPTED-RESIDUAL are owner decisions, not repairs: they create no follow-up
-  under STRAT-D7, whose trigger is unchanged — the only fact it consumes is
-  still whether a repair exists.** A SEV 1 leaves OPEN only as RESOLVED, or
-  by an owner ruling recorded in its row that accepts the residual with its
-  reason; it is never deferred to a sweep. Measured basis: on PR #154 every
-  SEV-2 "Fix now" was executed with no recorded owner decision, and seventeen
-  in-PR fixes produced seven follow-up rounds
-  (`drawer_havdm_investigations_6c862ee0d8b64cb14e7d5018`).
+  committing any repair undertaken for a SEV 2 or SEV 3 finding, the author
+  puts each such finding to the owner by Ref with the pros and cons of
+  fix-now, defer and accept-residual and a recommendation, stating whether it
+  agrees with the reviewer's recommendation and why. The owner rules and tells
+  the agent; the ruling is recorded in the row. A finding the owner has not
+  yet ruled on stays OPEN, and no repair undertaken SOLELY for it is
+  committed; a repair required for a SEV 1 may overlap it, in which case the
+  lower-severity Ref stays OPEN until the owner records how the incidental
+  closure is dispositioned. SEV 4 findings are recorded in the table, need no
+  brief, and the owner may elect a fix. **DEFERRED and ACCEPTED-RESIDUAL are
+  owner decisions, not repairs: the decision, its disposition row and its
+  board pointer create no follow-up under STRAT-D7, whose trigger is
+  unchanged — the only fact it consumes is still whether a repair exists. A
+  label never changes the substance of a diff: any artifact or safeguard
+  change made in response to a finding — including creating or changing a
+  `KNOWN-OPEN:` pin or rewording a governed residual — is a repair and
+  receives its follow-up.** A SEV 1 leaves OPEN only as RESOLVED, or by an
+  owner ruling recorded in its row that accepts the residual with its reason;
+  it is never deferred to a sweep. Measured basis: on PR #154 every SEV-2
+  "Fix now" was executed with no recorded owner decision; eighteen in-PR
+  fixes produced seven follow-up rounds, and the eighth repair round received
+  none (`drawer_havdm_investigations_6c862ee0d8b64cb14e7d5018`, counts
+  corrected by `docs/reviews/b14-severity-rulings-codex-plan-review.md` P4).
 ```
 
 **INSERTED after the unchanged "The scoped follow-up" bullet:**
@@ -363,10 +379,10 @@ documented residual where no test can pin it>`**; or **OPEN** (awaiting the
 
 **APPENDED rows (after STRAT-D18):**
 
-| ID        | Date       | Status   | Ruling                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Authority                                                                                                                                                                                       |
-| --------- | ---------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SEV-CAL-1 | 2026-09-03 | Standing | Severity-matrix calibration, rulings 1–3: a SEV 1 blocks the COMPONENT it names (`Blocks: <component>` line; `SEV-1-BLOCKED` withdrawn); SEV 1 needs a FOURTH proof element, REACHABILITY, with the safety-gate exemption argued not assumed (synthetic-only caps at SEV 2); every review opens with an Owner Summary Table (Ref, plain English, severity, Blocks, fix complexity 1–5, recommendation). Binding text: template §1a/§4                                                                                                                                                                                                                                              | `drawer_havdm_decisions_9585602957964a59bf9571be`; measurement `drawer_havdm_investigations_b2c3e5450e814d1a88499043`                                                                           |
-| SEV-CAL-2 | 2026-09-06 | Standing | Rulings 4–9: the verdict is DERIVED (`BLOCKED-ON: <components>` iff a fully-proved SEV 1, else `CLEAR-WITH-FINDINGS` / `CLEAR`; `CHANGES-REQUIRED`, `SEV-1-BLOCKED`, `PARTIALLY-CONFIRMS`, `APPROVE` retired as verdicts); disposition states DEFERRED → board item and ACCEPTED-RESIDUAL → KNOWN-OPEN pin, both owner decisions and neither a repair; the owner decides fix-now / defer / accept per Ref on the agent's pros/cons brief; the same-seam rule; an implementation reading of the grades beside the document reading; one finding per behaviour with severity per construction. STRAT-D7's trigger is untouched. Binding text: template §1/§1a/§4; this document §3.4 | `drawer_havdm_decisions_38993740c044247b0cf10527`; measurement `drawer_havdm_investigations_6c862ee0d8b64cb14e7d5018`; plan `docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md` |
+| ID        | Date       | Status   | Ruling                                                                                                                                                                                                                                                                                     | Authority                                                                                                                   |
+| --------- | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| SEV-CAL-1 | 2026-09-03 | Standing | Severity-matrix calibration, rulings 1–3 (component-scoped blocking with `Blocks:`, REACHABILITY as the fourth SEV 1 proof element, the Owner Summary Table) — amends STRAT-D18; binding text `docs/templates/ADVERSARIAL_REVIEW.md` §1a/§4                                                | `drawer_havdm_decisions_9585602957964a59bf9571be`                                                                           |
+| SEV-CAL-2 | 2026-09-06 | Standing | Rulings 4–9 (derived verdict, non-repair disposition states, owner fix-or-defer per Ref, same-seam rule, implementation reading, bundling) — amends STRAT-D18 and §3.4; STRAT-D7's trigger untouched; binding text `docs/templates/ADVERSARIAL_REVIEW.md` §1/§1a/§4 and this document §3.4 | `drawer_havdm_decisions_38993740c044247b0cf10527`; plan `docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md` |
 
 ### 3.5 `docs/strategy/2026-08-18-model-roles-and-workflow-adoption.md` §6 D18 — preserved, with one dated pointer
 
@@ -385,7 +401,7 @@ STRAT-D18, SEV-CAL-1, SEV-CAL-2).
 
 ### 3.6 The sweep — every document that restates the severity contract
 
-**The class, stated as a behaviour:** every tracked document that tells a reader what severity means, what blocks, or what verdict a reviewer may return. Two enumerations, keyed differently, per `drawer_practice_review_ba6eb45cbbd7c581a68b6df0`.
+**The class, stated as a behaviour:** every tracked document that tells a reader what severity means, what blocks, or what verdict a reviewer may return. ⚠ That class is **not decidable by search** (plan review P8): a wording such as "a severity-two issue never prevents its component from shipping" contains none of the tokens below. This section therefore makes two claims of different strength — Enumeration 1 is a **token inventory**, exact for its six tokens and nothing more; Enumeration 2 is the **behavioural read**, claimed only for the surfaces it names (`drawer_practice_review_ba6eb45cbbd7c581a68b6df0`).
 
 **Enumeration 1 — token union (mechanical, re-runnable):**
 
@@ -394,20 +410,20 @@ git grep -l -F -e 'three-part proof' -e 'STRAT-D18' -e 'SEV-1-BLOCKED' \
   -e 'CHANGES-REQUIRED' -e 'recorded, no round-trip' -e 'blocks the affected'
 ```
 
-| Population                                                                | Files | Disposition                                                                                                                                                                                                                                                                                                                                                                                                      |
-| ------------------------------------------------------------------------- | ----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Total tracked files matching                                              |   100 | —                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `docs/reviews/**` — historical review, commission and disposition records |    87 | **Untouched** (append-never-rewrite; the story excludes them)                                                                                                                                                                                                                                                                                                                                                    |
-| Live governed surfaces this plan edits                                    |     3 | `docs/governance/OPERATING_AGREEMENT.md`, `docs/templates/ADVERSARIAL_REVIEW.md`, `docs/strategy/2026-08-18-model-roles-and-workflow-adoption.md` (pointer only)                                                                                                                                                                                                                                                 |
-| Historical plan/spec records quoting past verdicts                        |     6 | **Untouched**: `docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md`, `docs/testing/BADGE_FOCUS_PRECONDITION_PLAN.md`, `docs/testing/PLAN_CONSISTENCY_C3_PARSER_PLAN.md`, `docs/testing/SETTLE_HELPER_CONTRACT_PLAN.md`, `docs/testing/SPACING_HELPER_PRESET_PLAN.md`, `docs/testing/SPACING_HELPER_PRESET_PLAN_HISTORY.md` — the last two are the plan-consistency checker's governed subject and MUST NOT be edited |
-| Governed historical record quoting a past verdict                         |     1 | **Untouched**: `docs/governance/PROMPTMI_GOVERNANCE_REVIEW_2026-08.md:143` quotes a promptmi review's verdict as history                                                                                                                                                                                                                                                                                         |
-| Code comments quoting past verdicts                                       |     3 | **Untouched**: `tests/support/authorLedger.ts`, `tests/unit/author-ledger.spec.ts`, `tests/unit/author-ledger-fixtures.spec.ts` (doc comments narrating PR #141)                                                                                                                                                                                                                                                 |
-| `CLAUDE.md`, `ai_rules.md`                                                |     0 | No key matches — measured, not assumed                                                                                                                                                                                                                                                                                                                                                                           |
-| This plan, new on the branch                                              |     1 | The change artifact itself; it restates the contract by definition, so the branch count is 101                                                                                                                                                                                                                                                                                                                   |
+| Population                                                                 | Files | Disposition                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------------------------------------------------------------------- | ----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Total tracked files matching on `main`                                     |   100 | —                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `docs/reviews/**` — historical review, commission and disposition records  |    87 | **Untouched** (append-never-rewrite; the story excludes them)                                                                                                                                                                                                                                                                                                                                                    |
+| Live governed surfaces this plan edits                                     |     3 | `docs/governance/OPERATING_AGREEMENT.md`, `docs/templates/ADVERSARIAL_REVIEW.md`, `docs/strategy/2026-08-18-model-roles-and-workflow-adoption.md` (pointer only)                                                                                                                                                                                                                                                 |
+| Historical plan/spec records quoting past verdicts                         |     6 | **Untouched**: `docs/features/F5_SECTIONS_PALETTE_DROP_SPEC.md`, `docs/testing/BADGE_FOCUS_PRECONDITION_PLAN.md`, `docs/testing/PLAN_CONSISTENCY_C3_PARSER_PLAN.md`, `docs/testing/SETTLE_HELPER_CONTRACT_PLAN.md`, `docs/testing/SPACING_HELPER_PRESET_PLAN.md`, `docs/testing/SPACING_HELPER_PRESET_PLAN_HISTORY.md` — the last two are the plan-consistency checker's governed subject and MUST NOT be edited |
+| Governed historical record quoting a past verdict                          |     1 | **Untouched**: `docs/governance/PROMPTMI_GOVERNANCE_REVIEW_2026-08.md:143` quotes a promptmi review's verdict as history                                                                                                                                                                                                                                                                                         |
+| Code comments quoting past verdicts                                        |     3 | **Untouched**: `tests/support/authorLedger.ts`, `tests/unit/author-ledger.spec.ts`, `tests/unit/author-ledger-fixtures.spec.ts` (doc comments narrating PR #141)                                                                                                                                                                                                                                                 |
+| `CLAUDE.md`, `ai_rules.md`                                                 |     0 | No key matches — measured, not assumed                                                                                                                                                                                                                                                                                                                                                                           |
+| This branch's own new files (the plan, its review, its disposition ledger) |     + | Change artifacts, excluded from the inventory: they restate the contract by definition                                                                                                                                                                                                                                                                                                                           |
 
-**Enumeration 2 — behavioural read of the live surfaces (hand trace, labelled):** `OPERATING_AGREEMENT.md` §1–§4 and `ADVERSARIAL_REVIEW.md` were read end to end in the authoring session. Sentences that state what blocks, what a verdict is, or what a disposition may be: OA `:267-275` (edit target §3.3), OA `:470` (edit target §3.4), template `:100-101` and `:132-150` (edit targets §3.1/§3.2). Two look-alikes deliberately left alone: OA §3.3's "PR #137's round 6 returned APPROVE" is historical narrative, and the template's cross-check section's `CONFIRMED / PARTIALLY CONFIRMED / REFUTED / UNVERIFIABLE` are per-CLAIM verdicts on the §3 ledger, not review verdicts. The reviewer is asked to repeat this read (§8 Q3).
+**Enumeration 2 — behavioural read of the live surfaces (hand trace, labelled):** `OPERATING_AGREEMENT.md` §1–§4 and `ADVERSARIAL_REVIEW.md` were read end to end in the authoring session and again, end to end, by the plan reviewer (P8 and Q3: no unedited sentence of this class found). The reviewer also read `CLAUDE.md` and `ai_rules.md` in full and raised no finding on them. No other tracked document is claimed to have been read for this class. Sentences that state what blocks, what a verdict is, or what a disposition may be: OA `:267-275` (edit target §3.3), OA `:470` (edit target §3.4), template `:100-101` and `:132-150` (edit targets §3.1/§3.2). Two look-alikes deliberately left alone: OA §3.3's "PR #137's round 6 returned APPROVE" is historical narrative, and the template's cross-check section's `CONFIRMED / PARTIALLY CONFIRMED / REFUTED / UNVERIFIABLE` are per-CLAIM verdicts on the §3 ledger, not review verdicts. The reviewer is asked to repeat this read (§8 Q3).
 
-**Gitignored `prompts/` — a separate local pass, reported here and nowhere else:** 92 of 148 files match the token union. `grep -r -i -l -E 'scaffold|TEMPLATE' prompts/` returns only dated commissions and START prompts that use the word; **no reusable commission scaffold file exists** — the strategy document's "commission scaffold" is realised as `docs/templates/ADVERSARIAL_REVIEW.md` §0 and its standing header lines (measured: PR #148 landed the STRAT-D15 owner-profile line there). Every `prompts/` hit is therefore a historical commission and stays untouched. Future commissions inherit the new vocabulary from the template.
+**Gitignored `prompts/` — a separate local pass, reported here and nowhere else:** 92 of 139 files match the token union (`find prompts -type f | wc -l`, excluding this branch's own commissions). ⚠ **Session-local, not acceptance evidence:** the tree is gitignored and mutable, so the figure cannot be reproduced from any commit; revision 1's "148" was a miscount from `ls prompts/*/ | wc -l`, which counts directory headers and blank lines (plan review P8). `grep -r -i -l -E 'scaffold|TEMPLATE' prompts/` returns only dated commissions and START prompts that use the word; **no reusable commission scaffold file exists** — the strategy document's "commission scaffold" is realised as `docs/templates/ADVERSARIAL_REVIEW.md` §0 and its standing header lines (measured: PR #148 landed the STRAT-D15 owner-profile line there). Every `prompts/` hit is therefore a historical commission and stays untouched. Future commissions inherit the new vocabulary from the template.
 
 ### 3.7 The author-ledger fingerprint
 
@@ -427,16 +443,18 @@ At the edits commit, the agent creates one **draft** board item, "Cleanup sweep 
 - **No re-grading of PR #154 or #155.** §5 is evidence, not a re-opening.
 - **`src/`, tests, tools, snapshots, baselines** — untouched; the only test-adjacent change is the ledger Markdown.
 
-## 5. The runnable companion — PR #154's twenty implementation findings replayed
+## 5. The runnable companion — PR #154's twenty-one implementation findings replayed
 
 **Regenerate the source rows:**
 
 ```bash
-for f in docs/reviews/plan-consistency-c3-parser-implementation-review*.md; do grep -E '^\| P[0-9]+ ' "$f"; done
-grep -E '^\| P(1[2-9]|2[0-9]|3[0-2]) ' docs/testing/PLAN_CONSISTENCY_C3_PARSER_PLAN.md
+# the population — one unique heading per finding; must print 21
+grep -hoE '^### P[0-9]+ — SEV-[1-4]' docs/reviews/plan-consistency-c3-parser-implementation-review*.md | sort -u | wc -l
+# the dispositions — one plan row per finding; must print 21
+grep -cE '^\| P(1[2-9]|2[0-9]|3[0-2]) ' docs/testing/PLAN_CONSISTENCY_C3_PARSER_PLAN.md
 ```
 
-(The eighth round's table has a different column layout — Ref, status, severity, plain English, recommendation — and is read accordingly.)
+(The heading key is unique per finding. Revision 1 regenerated from Owner Summary rows and emitted 34 lines, because claim-ledger rows also begin `| P<n>` — plan review P7. The eighth round's Owner Summary Table has a different column layout and is read for its recommendation only.)
 
 | Ref | Round | SEV | Seam (hand trace)                             | Reviewer recommendation                           |  Cx | Actual disposition               |
 | --- | ----: | --- | --------------------------------------------- | ------------------------------------------------- | --: | -------------------------------- |
@@ -458,7 +476,7 @@ grep -E '^\| P(1[2-9]|2[0-9]|3[0-2]) ' docs/testing/PLAN_CONSISTENCY_C3_PARSER_P
 | P27 |     6 | 3   | A (`%TAG` validity)                           | Broaden the boundary and its pins                 |   2 | RESIDUAL REWORDED — owner-ruled  |
 | P28 |     6 | 3   | C                                             | Escape the pipes or move the regex                |   1 | FIXED                            |
 | P29 |     7 | 2   | A                                             | Resolve at the parser boundary or declare the gap |   4 | FIXED                            |
-| P30 |     7 | 3   | A (comment accuracy at the boundary)          | Correct the comments                              |   1 | FIXED                            |
+| P30 |     7 | 3   | C (comment accuracy — plan review P10)        | Correct the comments                              |   1 | FIXED                            |
 | P31 |     7 | 3   | C                                             | Change "four" to "five"                           |   1 | FIXED                            |
 | P32 |     8 | 3   | C                                             | No round-trip; correct opportunistically          |   — | FIXED                            |
 
@@ -466,25 +484,25 @@ grep -E '^\| P(1[2-9]|2[0-9]|3[0-2]) ' docs/testing/PLAN_CONSISTENCY_C3_PARSER_P
 
 **Round-count scenarios — JUDGEMENT, because they assume owner decisions the rules now make available:**
 
-| Scenario                                                                                                                                                                                                       | Rounds | Owner rulings | What it shows                                                                                    |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -----: | ------------: | ------------------------------------------------------------------------------------------------ |
-| A — the owner elects **Fix now** on every finding                                                                                                                                                              |      8 |            20 | The rules force nothing: every repair still earns its STRAT-D7 follow-up, unchanged              |
-| B — the owner **defers or accepts** every non-blocking finding at round 1                                                                                                                                      |      1 |             4 | The floor: no repair, no follow-up; the four round-1 findings go to the sweep or a residual      |
-| C — the owner fixes P12 (first sight of seam A) and defers the three round-1 SEV-3s; round 2 finds P16 in seam A; the same-seam rule triggers; the owner declares seam A a residual pinned by KNOWN-OPEN tests |      2 |       about 8 | The realistic middle: the seam that cost six further rounds is closed by one decision at round 2 |
+| Scenario                                                                                                                                                                                                       | Rounds | Owner rulings | What it shows                                                                                                                                                              |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -----: | ------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A — the owner elects **Fix now** on every finding                                                                                                                                                              |      9 |            21 | The rules force nothing: every repair still earns its STRAT-D7 follow-up. Nine, not eight — the real PR's eighth repair round (P32) was owed a follow-up it never received |
+| B — the owner **defers or accepts** every non-blocking finding at round 1                                                                                                                                      |      1 |             4 | The floor: no repair, no follow-up; the four round-1 findings go to the sweep or a residual                                                                                |
+| C — the owner fixes P12 (first sight of seam A) and defers the three round-1 SEV-3s; round 2 finds P16 in seam A; the same-seam rule triggers; the owner declares seam A a residual pinned by KNOWN-OPEN tests |      2 |             8 | The realistic middle: the seam that cost six further rounds is closed by one decision at round 2                                                                           |
 
-Scenario C's "about 8" counts the four round-1 rulings, the round-2 continue / declare-residual / park brief, and the round-2 findings. The saving in B and C is real only because seam A guarded inputs the governed plan has never contained (§1.2); for a reachable seam the same decisions would ship a pinned gap, and that is the owner's call each time.
+Scenario C's eight rulings are the four round-1 findings, the three round-2 findings and the one continue / declare-residual / park choice (count confirmed by the plan reviewer, Q5). The saving in B and C is real only because seam A guarded inputs the governed plan has never contained (§1.2); for a reachable seam the same decisions would ship a pinned gap, and that is the owner's call each time.
 
 ## 6. Acceptance criteria, each with its check
 
-| AC   | Criterion                                                                                                    | Check                                                                                                                                                                                                                                  |
-| ---- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| AC-1 | Rulings 1–9 codified in the files named in §2.1, dated and traceable; STRAT-D18 amended by row, not silently | Reviewer reads §3 against the diff; `git grep -n 'SEV-CAL-' -- docs/governance docs/templates docs/strategy` lists every landing site                                                                                                  |
-| AC-2 | Every tracked restatement swept and the count reported; the `prompts/` pass reported separately              | §3.6's command reproduces 101 files on the edits commit — main's 100 plus this plan — partitioned 87 / 3 / 6 / 1 / 3 / 0 / 1 as in §3.6's table (the 3 live surfaces now match on the new tokens too; the count of FILES is unchanged) |
-| AC-3 | Retired tokens appear in no template or scaffold as a verdict a reviewer may return                          | `git grep -n -E 'SEV-1-BLOCKED\|CHANGES-REQUIRED\|PARTIALLY-CONFIRMS' -- docs/templates CLAUDE.md ai_rules.md` returns only the §1 retirement sentence                                                                                 |
-| AC-4 | The STRAT-D7 trigger text is byte-identical                                                                  | The command block below the table exits 0 with empty output for the blockquote and for each named bullet                                                                                                                               | awk '/^> \*\*\(d\) slice/,/exists\.\*\*$/') <(awk '/^> \*\*\(d\) slice/,/exists\.\*\*$/' docs/governance/OPERATING_AGREEMENT.md)` is empty; the same for the three named bullets, anchored on their bold titles |
-| AC-5 | The replay (§5) is present with its regenerating command                                                     | Reviewer re-runs the two commands and checks 21 rows                                                                                                                                                                                   |
-| AC-6 | Author-ledger regenerated; gate green                                                                        | `npx vitest run tests/unit/author-ledger.spec.ts` 9 passed; `./tools/checks` REAL_EXIT=0, 4/4 steps, unit 1559 passed / 105 files (docs-only: count unchanged)                                                                         |
-| AC-7 | Independent ratification review conducted UNDER the new vocabulary; seat rule honoured                       | The review's first line is `BLOCKED-ON:` / `CLEAR-WITH-FINDINGS` / `CLEAR`; header names GPT-5.6 Sol; author header names Claude Fable 5.1; no Opus session                                                                            |
+| AC   | Criterion                                                                                                    | Check                                                                                                                                                                                                                                                                                        |
+| ---- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AC-1 | Rulings 1–9 codified in the files named in §2.1, dated and traceable; STRAT-D18 amended by row, not silently | Reviewer reads §3 against the diff; `git grep -n 'SEV-CAL-' -- docs/governance docs/templates docs/strategy` lists every landing site                                                                                                                                                        |
+| AC-2 | Every tracked restatement swept and the count reported; the `prompts/` pass reported separately              | §3.6's token inventory on the edits commit equals `main`'s 100 (partition 87 / 3 / 6 / 1 / 3 / 0 unchanged) plus only this branch's own new files, each named; the behavioural claim is limited to the surfaces §3.6 Enumeration 2 names; the `prompts/` figure is reported as session-local |
+| AC-3 | Retired tokens appear in no template or scaffold as a verdict a reviewer may return                          | `git grep -n -E 'SEV-1-BLOCKED\|CHANGES-REQUIRED\|PARTIALLY-CONFIRMS\|\bAPPROVE\b' -- docs/templates CLAUDE.md ai_rules.md` returns only the §1 retirement sentence                                                                                                                          |
+| AC-4 | The STRAT-D7 trigger text is byte-identical                                                                  | The command block below the table exits 0 with empty output for the blockquote and for each named bullet                                                                                                                                                                                     | awk '/^> \*\*\(d\) slice/,/exists\.\*\*$/') <(awk '/^> \*\*\(d\) slice/,/exists\.\*\*$/' docs/governance/OPERATING_AGREEMENT.md)` is empty; the same for the three named bullets, anchored on their bold titles |
+| AC-5 | The replay (§5) is present with its regenerating command                                                     | Reviewer re-runs the two commands; each prints exactly 21                                                                                                                                                                                                                                    |
+| AC-6 | Author-ledger regenerated; gate green                                                                        | `npx vitest run tests/unit/author-ledger.spec.ts` 9 passed; `./tools/checks` REAL_EXIT=0, 4/4 steps, unit 1559 passed / 105 files (docs-only: count unchanged)                                                                                                                               |
+| AC-7 | Independent ratification review conducted UNDER the new vocabulary; seat rule honoured                       | The review's first line is `BLOCKED-ON:` / `CLEAR-WITH-FINDINGS` / `CLEAR`; header names GPT-5.6 Sol; author header names Claude Fable 5.1; no Opus session                                                                                                                                  |
 
 **AC-4 command** — run on the edits commit. Each span must extract a NON-ZERO number of lines (6, 4, 8 and 5 on `main`) and each `diff` must print nothing; a zero-line span is a failed check, not a pass.
 
@@ -504,13 +522,13 @@ done
 
 ## 7. Blast radius (OA §3.4)
 
-**Upstream reliances.** No code reads these documents' content: `git grep -n -E 'OPERATING_AGREEMENT|ADVERSARIAL_REVIEW' -- src tests tools .github` returns three doc comments and one fixture path constant. `tests/support/authorLedger.ts` hashes the governed tree (§3.7) without reading it. The plan-consistency checker governs `docs/testing/SPACING_HELPER_PRESET_PLAN.md` only (`tests/unit/planConsistency.spec.ts:277-279`), so nothing here can move it.
+**Upstream reliances.** No runtime or product code interprets these documents: `git grep -n -E 'OPERATING_AGREEMENT|ADVERSARIAL_REVIEW' -- src tests tools .github` returns three doc comments and one fixture path constant. `tests/support/authorLedger.ts` reads their bytes only to compute the governed fingerprint (`readFileSync` at `tests/support/authorLedger.ts:319`, §3.7) and interprets nothing. The plan-consistency checker governs `docs/testing/SPACING_HELPER_PRESET_PLAN.md` only (`tests/unit/planConsistency.spec.ts:277-279`), so nothing here can move it.
 
 **Downstream consumers.** Every future review commission (they are authored from the template) and every reviewer seat (§3.6) — the ratification review of this PR is the first live use of the vocabulary and is the acceptance test for it (AC-7). No skill under `.claude/skills/` cites §3.4 or the template (measured: `grep -rn -E '§3\.4|ADVERSARIAL_REVIEW' .claude/skills/` returns nothing); §3.4 keeps its number and heading regardless.
 
 **Measured non-regression.** Docs-only: unit count unchanged at 1559 / 105; CI tier 1 selects `0 tests in 0 files` for `.md` changes (`.github/workflows/ci.yml:118-135`); `npx prettier --write` is run on every edited file because Prettier reformats Markdown tables. `bash tools/check-pr-evidence.sh <PR>` at PR-notes time.
 
-**Accepted operational cost, stated rather than buried.** Two ledger regenerations on one branch (§3.7). Every SEV 2–4 finding on every future PR reaches the owner as a brief (§1.4).
+**Accepted operational cost, stated rather than buried.** Two ledger regenerations on one branch (§3.7). Every SEV 2 and SEV 3 finding on every future PR reaches the owner as a brief (§1.4).
 
 ## 8. Questions the reviewer is asked to answer, by number
 
@@ -523,10 +541,11 @@ done
 
 ## 9. Open questions for the owner
 
-None. The one default the agent proposed (SEV 3 defaults to DEFERRED) was declined on 2026-09-06 and is not in this plan; it is available as a later ruling if the per-finding brief becomes a burden.
+None open. P6's broadening of ruling 8 — "input" becomes "an input, an execution path, a state, an output, or a property of the artifact itself" — was put to the owner by the plan review and ruled ACCEPTED on 2026-09-06. The eighth-round STRAT-D7 miss on PR #154 (P4) was ruled RECORD ONLY, not re-opened. The one default the agent proposed (SEV 3 defaults to DEFERRED) was declined on 2026-09-06 and is not in this plan; it is available as a later ruling if the per-finding brief becomes a burden.
 
 ## 10. Revision history
 
-| Date       | Rev | Change                                                     | By               |
-| ---------- | --- | ---------------------------------------------------------- | ---------------- |
-| 2026-09-06 | 1   | First plan, for the SPEC-BEFORE-CODE review by GPT-5.6 Sol | Claude Fable 5.1 |
+| Date       | Rev | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | By               |
+| ---------- | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| 2026-09-06 | 1   | First plan, for the SPEC-BEFORE-CODE review by GPT-5.6 Sol                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Claude Fable 5.1 |
+| 2026-09-06 | 2   | Answers plan review P1–P12 (`d6190d4`), every finding owner-ruled as recommended: PARTIALLY RESOLVED accounting (P1); overlap rule for OPEN findings (P2); a label never changes a diff (P3); population corrected to 21 findings, 18 fixed, eight repair rounds with the eighth unreviewed (P4); SEV 4 out of the mandatory brief (P5); reachability broadened to a condition, owner-ruled (P6); heading-keyed replay command (P7); sweep re-labelled a token inventory, `APPROVE` added to AC-3, prompts count corrected (P8); index rows cut to pointers (P9); P30 to seam C (P10); one-measured-source wording (P11); fingerprint-read wording (P12) | Claude Fable 5.1 |

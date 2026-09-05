@@ -45,7 +45,7 @@ still valid and the gate green. What remains is one declaration with one claim:
 state when the gate ran.** It says nothing about `src/`, tests, tools, this
 ledger's own evidence, or HEAD.
 
-governed fingerprint: `08c029eaec8f`
+governed fingerprint: `8a1c77bae104`
 
 ## Rows
 
@@ -391,3 +391,12 @@ mechanism watches. Run for this change: `npx prettier --check` on the plan
 (clean); `npx vitest run tests/unit/author-ledger.spec.ts` after
 regeneration — result recorded in the commit message. Docs-only branch: no
 e2e or integration run is owed.
+
+## Addendum — 2026-09-06 (second), plan revision 2 on `feature/b14-severity-rulings-codification`
+
+Revision 2 of `docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md`
+(answering the plan review's twelve findings) changed the bytes of that
+governed artifact and nothing else in the governed set, so the certificate
+above moves `08c029eaec8f` → `8a1c77bae104`. Commissioned rows untouched. Run:
+`npx vitest run tests/unit/author-ledger.spec.ts` after regeneration — result
+recorded in the commit message. Docs-only: no e2e or integration run is owed.
