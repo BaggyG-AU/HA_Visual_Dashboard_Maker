@@ -400,3 +400,11 @@ governed artifact and nothing else in the governed set, so the certificate
 above moves `08c029eaec8f` → `8a1c77bae104`. Commissioned rows untouched. Run:
 `npx vitest run tests/unit/author-ledger.spec.ts` after regeneration — result
 recorded in the commit message. Docs-only: no e2e or integration run is owed.
+
+**Commit-message claim candidate, dispositioned (round-0 M1 leg).** The
+revision-2 commit message says scenario A is "9 rounds". That figure is the
+B14 plan §5 projection for the case where the owner elects Fix now on every
+PR #154 finding — a labelled JUDGEMENT in the plan, not a measured count on
+this branch — and it is reproduced here so the gate can see it dispositioned.
+The gate fired on this exactly as designed: the message is an input that only
+exists after a pre-commit run, so the pre-commit gate could not see it.
