@@ -48,3 +48,107 @@ docs-only branch; gate result recorded in the revision-2 commit message.
 **What this round does NOT establish.** No governance document has been
 edited. Whether P1–P12 are closed is decided by the follow-up review, not by
 this table, which is the author's claim.
+
+## Round 2 — 2026-09-06, answering `b14-severity-rulings-codex-plan-review-followup.md` (`cd1d412`, `BLOCKED-ON` three sections: P2, P3 and P6 remainders at SEV 1; P7 and P8 remainders at SEV 2; new P13 and P14 at SEV 3)
+
+**Owner rulings, 2026-09-06, by Ref.** All three SEV 1 remainders sit in the
+seams of P2, P3 and P6, so under the plan's own same-seam rule (§3.3) the
+author put a **continue / declare-residual / park** choice to the owner per
+seam — options, pros and cons, and a recommendation each — and a fix-now /
+defer / accept-residual brief for each of P7, P8, P13 and P14. The owner ruled:
+**continue** on P2, P3 and P6; **fix now** on P7, P8, P13 and P14; the two
+corrections to Issue #156's acceptance items authorised; and the plan's cost
+stop-rule **re-authorised to four rounds** under a hard cap, recorded in the
+plan header (`:9`): if the follow-up on revision 3 returns anything other than
+`CLEAR` or `CLEAR-WITH-FINDINGS`, work parks and returns to the owner; if the
+ratification review blocks, the author returns to the owner rather than
+repairing. Nine rulings, each taken on a pros-and-cons brief.
+
+**Correction to Round 1.** Round 1 said the story on Issue #156 was
+CORRECTED. That overstated it: the narrative paragraph was corrected on
+2026-09-06, but acceptance item 5 still said "twenty" (follow-up P13). Round 1
+is not rewritten; this line records the overstatement.
+
+| Ref | Sev | Disposition | What changed in plan revision 3                                                                                                                                                                                                                                                                                                                   |
+| --- | --- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P2  | 1   | RESOLVED    | §3.3 (`:339-345`): overlap is permitted **only to the extent the overlapping change is inseparable from resolving the SEV 1**; a lower-severity correction that could be left out of the SEV 1 repair is separable and waits for the owner's ruling, whatever the repair is called                                                                |
+| P3  | 1   | RESOLVED    | §3.3 (`:350-357`): a REPAIR is a change to the artifact under review, or to a safeguard for it, made to resolve or mitigate a finding; review reports and decision or evidence records that change no reviewed target and no safeguard are not repairs. §8 Q4 (`:556`) now asks whether the definition exempts anything STRAT-D7 follows up today |
+| P6  | 1   | RESOLVED    | §1.3 row 2 (`:42`) and §8 Q6 (`:558`) reworded to the owner-ruled condition vocabulary; the technical text in §3.2 was already correct and is unchanged                                                                                                                                                                                           |
+| P7  | 2   | RESOLVED    | §5 (`:460-472`): the two bare counts replaced by a set-equality block whose exit status is the check; AC-5 (`:521`) reworded; bidirectional proof below                                                                                                                                                                                           |
+| P8  | 2   | RESOLVED    | AC-2 (`:518`) cut to the decidable result and explicitly NOT claiming "every tracked restatement"; the §2.1 row (`:94`) and the §3.6 heading (`:412`) likewise; Issue #156 acceptance item 2 reworded to match (owner-authorised)                                                                                                                 |
+| P13 | 3   | RESOLVED    | Issue #156 acceptance item 5: "twenty" → "twenty-one" (owner-authorised; re-fetched body identical to the intended body apart from GitHub's trailing newline; prior body backed up in the session scratchpad and in the Issue's edit history); Round 1's overstatement recorded above                                                             |
+| P14 | 3   | RESOLVED    | §1.2 (`:31-32`, `:35`): row 7 split into a JUDGEMENT row (seam membership, hand trace) and a MEASURED row (every one of the eight review files carries "Class swept"; `grep -c` is non-zero for each — 1, 1, 1, 1, 1, 1, 3, 3)                                                                                                                    |
+
+**Author-found, not reviewer-found — recorded so nothing rides through
+unnoticed.** A1: one over-long line inside the §3.3 AFTER fence re-wrapped
+(the fence is the exact text to be pasted into the Operating Agreement).
+A2: the AC-4 row carried a fourth, orphan cell holding revision 1's awk
+command — the one that passed on zero-line spans — and it is removed
+(`:520`). Neither changes a rule sentence; the follow-up is asked to confirm.
+
+**A3 — found in the author's reading pass, outside the two authorised
+edits.** Issue #156's own statements of ruling 2 (the REACHABILITY quote and
+the synthetic-input cap) and ruling 8 (the implementation reading) still carry
+the pre-P6 wording — "the input that reaches this defect", "a synthetic input
+nobody has written", "on an input that exists today, or on an argued-plausible
+future input". The owner broadened that object on 2026-09-06 (plan review P6;
+`drawer_havdm_decisions_18da8a2c9bbad788a21abaee`), and the follow-up's P6
+class sweep covered the plan only. The story is a live surface of the same
+class, so it is put to the owner for a dated amendment note on rulings 2 and 8
+(the rulings as made are not rewritten; the note records the amendment). Until
+ruled, the story and the plan disagree on this wording, and the next follow-up
+is asked to read the live Issue rather than this ledger's account of it.
+
+**P7 — bidirectional proof of the new §5 check.** The block was extracted
+from the plan file as it stands (not retyped), its two paths substituted to
+temporary copies of the eight review files and the C3 plan, and run on the
+real data and on seven constructed defects:
+
+| Case                                                                                                 | Old revision-2 pair | Revision-3 block                                                                   |
+| ---------------------------------------------------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------- |
+| Real files                                                                                           | 21 / 21             | exit 0 — `replay population ok: 21 findings, one disposition each, sets identical` |
+| Duplicate source heading (`P12` appended to a review file)                                           | —                   | exit 1 — `FAIL: duplicate source heading(s): P12`                                  |
+| Missing source heading (`P13` removed)                                                               | —                   | exit 1 — `FAIL: Ref sets differ` + `20 unique findings, expected 21`               |
+| Duplicate disposition row (`P12` row appended)                                                       | —                   | exit 1 — `FAIL: duplicate disposition row(s): P12`                                 |
+| Missing disposition row (`P13` row removed)                                                          | —                   | exit 1 — `FAIL: Ref sets differ`                                                   |
+| Source-side offset (`P13` heading removed, `P12` heading duplicated)                                 | 20 / 21             | exit 1 — duplicate + sets differ                                                   |
+| Both sides missing `P13` (sets equal, count wrong)                                                   | —                   | exit 1 — `FAIL: 20 unique findings, expected 21`                                   |
+| **Disposition-side offset — the follow-up's construction** (`P13` row removed, `P12` row duplicated) | **21 / 21 — blind** | **exit 1 — `FAIL: duplicate disposition row(s): P12` + `Ref sets differ`**         |
+
+A harness defect was found and fixed during this proof: the first mutation
+anchored the heading at end of line and never matched (the real heading is
+`### P13 — SEV-3 — A partially valid but invalid payload…`), so the
+missing-source case first "passed"; the mutation was corrected and re-run.
+The harness itself lives in the session scratchpad and is not committed.
+
+**P2 and P3 — the wording tested by construction (hand trace, labelled).**
+Under the revision-3 text: separate files → separable, waits for the owner;
+separable same-file lines → waits; inseparable same-line wording → may
+overlap, lesser Ref stays OPEN; one correction that necessarily closes both →
+inseparable, may overlap; a chosen broad superset carrying a separable
+lower-severity part → that part waits "whatever the repair is called". The
+inseparable case is still permitted, so the rule does not block where it should
+not. For P3: owner decision, disposition row, board item, owner brief and the
+reviewer's committed review → not repairs (the chain terminates); a new or
+changed `KNOWN-OPEN:` pin, a reworded governed residual, a changed test, a
+changed target → repairs with follow-up; a change to the target by someone
+other than the author → still a repair, because the definition is bounded by
+target, not actor — no actor exemption is introduced.
+
+**Blast radius (OA §3.4).** Upstream: nothing reads the plan; the author
+ledger hashes it, so its certificate is regenerated
+(`8a1c77bae104` → `2cca75f5bde4`). Issue #156's body was edited at acceptance
+items 2 and 5 under owner authorisation, backup kept. Downstream: the seven
+findings above and the second STRAT-D7 scoped follow-up that reviews this
+revision; then, if it clears, the governance edits of plan §3 and their
+ratification review. The governance surfaces are untouched:
+`docs/governance/OPERATING_AGREEMENT.md`, `docs/templates/ADVERSARIAL_REVIEW.md`,
+`docs/strategy/2026-08-18-model-roles-and-workflow-adoption.md`, `CLAUDE.md`
+and `ai_rules.md` are byte-identical to `main`; the AC-4 spans extract 6 / 4 /
+8 / 5 lines and diff empty; AC-3 returns nothing. Non-regression: docs-only
+branch; gate result recorded in the revision-3 commit message.
+
+**What this round does NOT establish.** No governance document has been
+edited. Whether P2, P3, P6, P7, P8, P13 and P14 are closed is decided by the
+follow-up review, not by this table, which is the author's claim. The owner's
+cap applies to that follow-up.

@@ -45,7 +45,7 @@ still valid and the gate green. What remains is one declaration with one claim:
 state when the gate ran.** It says nothing about `src/`, tests, tools, this
 ledger's own evidence, or HEAD.
 
-governed fingerprint: `8a1c77bae104`
+governed fingerprint: `2cca75f5bde4`
 
 ## Rows
 
@@ -408,3 +408,21 @@ PR #154 finding — a labelled JUDGEMENT in the plan, not a measured count on
 this branch — and it is reproduced here so the gate can see it dispositioned.
 The gate fired on this exactly as designed: the message is an input that only
 exists after a pre-commit run, so the pre-commit gate could not see it.
+
+## Addendum — 2026-09-06 (third), plan revision 3 on `feature/b14-severity-rulings-codification`
+
+Revision 3 of `docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md`
+(answering the STRAT-D7 follow-up's seven findings — the P2, P3, P6, P7 and P8
+remainders and the new P13 and P14) changed the bytes of that governed artifact
+and nothing else in the governed set, so the certificate above moves
+`8a1c77bae104` → `2cca75f5bde4`. Commissioned rows untouched. Run:
+`npx vitest run tests/unit/author-ledger.spec.ts` after regeneration — result
+recorded in the commit message. Docs-only: no e2e or integration run is owed.
+
+**Commit-message claim candidate, dispositioned (round-0 M1 leg).** The
+revision-3 commit message quotes the gate result "unit 1559 passed / 105 files".
+That is the `./tools/checks` output on this tree — a docs-only branch, so the
+count is unchanged from `main` — reproduced here so the gate can see it
+dispositioned. As with the revision-2 message, the message is an input that
+exists only after a pre-commit run, so the pre-commit gate cannot see it; the
+spec is re-run on the committed tree.
