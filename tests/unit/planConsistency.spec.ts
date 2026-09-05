@@ -821,14 +821,14 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
     // --- reserved directive TRAILING EDGE (no parameter): implementation review P26 ---
     [
       // Implementation review finding P26: `yaml@2.9.0`'s composer decides a
-      // directive's NAME via `line.trim().split(/[ \t]+/)` \u2014 `trim()` runs
+      // directive's NAME via `line.trim().split(/[ \t]+/)` — `trim()` runs
       // BEFORE the split, and removes NBSP from the line's own trailing edge
       // before the name is ever read. `%YAML` plus a trailing NBSP and
       // NOTHING else on the line is, under YAML's own grammar, the reserved
-      // (unknown) directive `YAML<NBSP>` \u2014 but the composer's own
+      // (unknown) directive `YAML<NBSP>` — but the composer's own
       // normalisation reduces it to the bare string `%YAML` first, raising
       // `BAD_DIRECTIVE` as an ERROR ("should contain exactly one part") for
-      // what \u00A76.8 requires accepting with only a warning. This selector
+      // what §6.8 requires accepting with only a warning. This selector
       // still correctly excludes the token (P23's `[ \t]` boundary never
       // matched it); the false block came from `doc.errors`, a channel this
       // file was not yet reading.
@@ -837,15 +837,15 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
       'valid',
     ],
     [
-      // The same class, EM SPACE (U+2003) \u2014 also trimmed by ECMAScript
+      // The same class, EM SPACE (U+2003) — also trimmed by ECMAScript
       // `trim()`, also `ns-char` under YAML.
       'CONTROL: %YAML with a trailing EM SPACE and NOTHING else is a reserved directive (P26)',
       doc(fence([`%YAML\u2003`, '---', ...KEYS])),
       'valid',
     ],
     [
-      // CONTROL: a real bare `%YAML` \u2014 nothing trimmable, nothing following
-      // at all \u2014 is the REAL %YAML directive with zero parts, and must still
+      // CONTROL: a real bare `%YAML` — nothing trimmable, nothing following
+      // at all — is the REAL %YAML directive with zero parts, and must still
       // block. Proves the P26 fix does not suppress a genuinely malformed
       // real %YAML directive, only the trim()-mangled reserved-directive
       // case.
@@ -855,7 +855,7 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
     ],
     [
       // CONTROL: a real %YAML directive with too many parts must still block
-      // \u2014 proves `blockingDirectiveErrors` only excludes the specific
+      // — proves `blockingDirectiveErrors` only excludes the specific
       // trim()-mangled case, not `BAD_DIRECTIVE` errors owned by a genuine
       // `%YAML` token in general.
       'CONTROL: %YAML 1.2 extra (too many parts) still blocks (P26)',
@@ -873,16 +873,16 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
       'valid',
     ],
     [
-      // \u26A0\u26A0\u26A0 Found by continued self-testing of the P26 fix BEFORE sending it
+      // ⚠⚠⚠ Found by continued self-testing of the P26 fix BEFORE sending it
       // to review, not by a review round: an earlier version of
       // `blockingDirectiveErrors` excluded a `BAD_DIRECTIVE` error whenever
-      // its owning token merely failed the `%YAML`-only test \u2014 which
+      // its owning token merely failed the `%YAML`-only test — which
       // correctly closed the P26 case above, but ALSO silently excluded a
       // genuinely malformed REAL `%TAG` directive with the wrong number of
       // parts (no trimming involved at all; `%TAG e` is malformed on its
       // own terms, arity 1 instead of 2). A malformed instance of a
       // RECOGNISED directive name (`YAML` or `TAG`, the only two names
-      // YAML 1.2.2 \u00A76.8 defines) is not a reserved directive and must still
+      // YAML 1.2.2 §6.8 defines) is not a reserved directive and must still
       // block. Fixed by checking the owning token's TRUE name against the
       // recognised-name set directly, not against this file's `%YAML`-only
       // selector.
