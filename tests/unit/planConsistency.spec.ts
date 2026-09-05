@@ -910,7 +910,7 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
       // VERTICAL TAB is ECMAScript-`trim()`-removable exactly like NBSP/EM
       // SPACE — so it triggers the SAME composer-trim mechanism P26 fixed —
       // but VT is NOT a legal YAML `c-printable`/`ns-char` (YAML 1.2.2
-      // §5.1/§5.4). `%YAML` plus a trailing VT alone is therefore genuinely
+      // §5.1/§5.5). `%YAML` plus a trailing VT alone is therefore genuinely
       // invalid YAML, not a valid-but-unrecognised reserved directive, and
       // must still block. An earlier version of `blockingDirectiveErrors`
       // granted "valid reserved directive" treatment to any candidate that
@@ -941,7 +941,7 @@ describe('planConsistency — canonical block grammar (review R1)', () => {
       // U+FFFE/U+FFFF, and U+FEFF is none of those. ZERO WIDTH NO-BREAK
       // SPACE / BYTE ORDER MARK (U+FEFF) is ECMAScript-`trim()`-removable
       // (confirmed empirically) and is explicitly EXCLUDED from `ns-char` by
-      // YAML 1.2.2's own `c-byte-order-mark` subtraction (§5.2, §5.4) —
+      // YAML 1.2.2's own `c-byte-order-mark` subtraction (§5.2, §5.5) —
       // MEASURED via direct `Parser().parse()` inspection: the CST token
       // retains six code points including the trailing U+FEFF, while
       // `yaml@2.9.0`'s composer still raises `BAD_DIRECTIVE` ("should

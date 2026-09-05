@@ -486,13 +486,13 @@ export function checkPlan({ spec, history = '', dsl = '' }: PlanSources): PlanFi
    *   c-printable ::= #x9 | #xA | #xD | [#x20-#x7E]            (§5.1)
    *                 | #x85 | [#xA0-#xD7FF] | [#xE000-#xFFFD]
    *                 | [#x10000-#x10FFFF]
-   *   b-char      ::= b-line-feed | b-carriage-return           (§5.2)
+   *   b-char      ::= b-line-feed | b-carriage-return           (§5.4)
    *               ::= #xA | #xD
    *   c-byte-order-mark ::= #xFEFF                              (§5.2)
    *   s-white     ::= s-space | s-tab                           (§5.5)
    *               ::= #x20 | #x9
    *   nb-char     ::= c-printable - b-char - c-byte-order-mark  (§5.4)
-   *   ns-char     ::= nb-char - s-white                         (§5.4)
+   *   ns-char     ::= nb-char - s-white                         (§5.5)
    *
    * `ns-char` is therefore `c-printable` with TAB, LF, CR, SPACE and the BOM
    * removed: `[#x21-#x7E] | #x85 | [#xA0-#xD7FF] | [#xE000-#xFFFD]` (minus
