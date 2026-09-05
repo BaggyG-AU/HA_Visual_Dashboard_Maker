@@ -45,7 +45,7 @@ still valid and the gate green. What remains is one declaration with one claim:
 state when the gate ran.** It says nothing about `src/`, tests, tools, this
 ledger's own evidence, or HEAD.
 
-governed fingerprint: `2cca75f5bde4`
+governed fingerprint: `618ea4beca30`
 
 ## Rows
 
@@ -426,3 +426,23 @@ count is unchanged from `main` — reproduced here so the gate can see it
 dispositioned. As with the revision-2 message, the message is an input that
 exists only after a pre-commit run, so the pre-commit gate cannot see it; the
 spec is re-run on the committed tree.
+
+## Addendum — 2026-09-06 (fourth), re-certification of the committed revision-3 tree
+
+The third addendum's `2cca75f5bde4` was computed while
+`docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md` was modified
+but UNSTAGED. This certificate hashes the INDEX entry (mode + object id) as well
+as the working-tree bytes and untracked additions
+(`tests/support/authorLedger.ts:290-340`), so that value certified a mixed
+state — old index blob, new working-tree bytes — which ceased to exist at commit
+`79eb20e`; the spec failed on the certificate leg immediately after that commit
+("declares `2cca75f5bde4` but this checkout computes `618ea4beca30`"). On the
+committed tree the index entry matches the working tree and the certificate
+above now reads `618ea4beca30`. Nothing in the governed set changed between the
+two values; only the staging state did. ⚠ Lesson for every future regeneration
+on this branch: `git add` the governed files BEFORE computing the fingerprint,
+or compute it on the committed tree and land the ledger as its own commit.
+`79eb20e`'s message reported the pre-commit value and is corrected here rather
+than rewritten (precedent: `39c53d6`). Run: `npx vitest run
+tests/unit/author-ledger.spec.ts` — result recorded in the commit message.
+Docs-only: no e2e or integration run is owed.

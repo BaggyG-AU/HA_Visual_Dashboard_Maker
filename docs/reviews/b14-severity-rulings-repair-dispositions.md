@@ -152,3 +152,12 @@ branch; gate result recorded in the revision-3 commit message.
 edited. Whether P2, P3, P6, P7, P8, P13 and P14 are closed is decided by the
 follow-up review, not by this table, which is the author's claim. The owner's
 cap applies to that follow-up.
+
+**Round 2 addendum — 2026-09-06, certificate correction.** The blast-radius
+paragraph above records `8a1c77bae104` → `2cca75f5bde4`. That value was computed
+with the revision-3 plan modified but unstaged; the author-ledger certificate
+hashes the index entry as well as the working-tree bytes
+(`tests/support/authorLedger.ts:290-340`), so it certified a mixed state that
+ended at commit `79eb20e`. On the committed tree the fingerprint is
+`618ea4beca30`; the ledger's fourth addendum re-certifies it. The paragraph
+above is left as written (append, never rewrite).
