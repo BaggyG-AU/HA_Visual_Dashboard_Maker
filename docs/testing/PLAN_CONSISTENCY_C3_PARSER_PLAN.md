@@ -1,0 +1,1168 @@
+# Remediation plan — C3 must parse the grammars it names (PR #154, Codex round 3)
+
+> # ⚠⚠⚠ REVISION 3 WAS NEVER INDEPENDENTLY REVIEWED — OWNER WAIVER, 2026-09-04
+>
+> **Revisions 1 and 2 of this plan were reviewed by OpenAI Codex and each
+> returned CHANGES-REQUIRED. The review of REVISION 3 was WAIVED BY THE OWNER on
+> 2026-09-04 because Codex was unavailable.** The commission had been written and
+> was ready to send; it was not sent.
+>
+> **⭐ WHAT THIS MEANS FOR ANYONE READING THIS PLAN:** revision 3 looks exactly
+> like revisions 1 and 2 and carries the same measured evidence, but **it has not
+> been attacked by anyone other than its author.** Every prior revision of this
+> plan that was reviewed came back with findings — eleven across two rounds, all
+> valid. Treat revision 3's new surface as unverified, and see §0.1 for exactly
+> where to look first.
+>
+> **⚠ WHAT IS _NOT_ WAIVED.** The **independent review of the IMPLEMENTATION
+> before merge** stands, mandatory under `docs/governance/OPERATING_AGREEMENT.md`
+> §3 class (d), and **no Opus session may hold that seat** (§3.6 — Claude Opus 5
+> co-authored every implementation commit on this branch). This waiver covers the
+> `CLAUDE.md` SPEC-BEFORE-CODE plan review of revision 3 and nothing else.
+>
+> **ⓘ THIS DOES NOT COUNT TOWARD THE SPEC-BEFORE-CODE ROLLBACK TRIGGER.** That
+> trigger is three consecutive plan reviews _returning nothing the owner acts
+> on_. A review that never ran returned nothing at all; the counter stands at
+> **zero**, because both rounds that did run produced findings the owner acted on
+> in full.
+
+**Author:** BaggyG-AU with Claude Opus 5 (1M context), revision 3 of 2026-09-03
+
+**Reviewer:** OpenAI Codex (GPT-5.6 Sol) for **revisions 1 and 2 only** — both
+CHANGES-REQUIRED, eleven findings, all valid and all repaired. ⚠ **Revision 3 is
+UNREVIEWED; the owner waived it on 2026-09-04 (see the box above).** The
+`CLAUDE.md` SPEC-BEFORE-CODE rule is that a plan is reviewed BEFORE any code is
+written; that held for revisions 1 and 2 and was waived for revision 3. Prior
+rounds on this branch: `docs/reviews/plan-consistency-checker-codex-review.md` (SEV-1-BLOCKED,
+F1–F6), `…-codex-followup-review.md` (SEV-1-BLOCKED, R1–R3),
+`…-codex-followup2-review.md` (SEV-1-BLOCKED, S1–S4).
+
+**Implementation seat — PER-SLICE OWNER OVERRIDE, 2026-09-04 (STRAT-D4,
+`docs/governance/OPERATING_AGREEMENT.md` §3.6):** this slice is **capability-class**
+(§3.7 names test DSLs and CI logic as shared machinery), whose default
+implementation seat is **Sol/Codex**. Codex is unavailable, so **the owner assigns
+the implementation to Claude Sonnet in a fresh session.** Recorded here because
+the seat table requires a per-slice override to be recorded in the artifact
+header.
+
+⚠⚠ **AND THE REVIEW SEAT IS NOT AFFECTED BY THAT CHOICE.** Under the Stage-8 rule
+(STRAT-D3) an implementation reviewer must have authored **none** of the spec, the
+prompt, or the implementation. **Claude Opus 5 authored all three revisions of this
+plan, every review commission, and every implementation and repair commit on this
+branch** (`69f458c`, `6420bb4`, `207aa04`, `4954dba`, `03f4fe7`), so **no Opus
+session may review this implementation, whoever writes it.** Eligible seats:
+**Fable**, **Sol/Codex** when available, or **Sonnet** if Sonnet does not write the
+code.
+
+**Owner gate:** on 2026-09-03, shown that C3's blocking half has produced a
+SEV-1 in three consecutive rounds and that all ten of round 3's constructions
+reproduce, the owner chose **Option A — parse both grammars the contract names**
+over narrowing to a repository-private syntax (B) or demoting C3 to advisory
+(C).
+
+## Revision history
+
+| Rev | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | First plan. Written after independently reproducing all ten round-3 constructions and proving the proposed mechanism 30/30 ok, 0 FAIL on a pre-code harness. **CHANGES-REQUIRED (P1–P7): three SEV-1 boundary errors in how the plan consumes the parsers, plus two evidence defects.**                                                                                                                                                                                                                                                                                                                                                                          |
+| 2   | **All seven findings reproduced and repaired.** The unterminated-fence departure is DROPPED (P1); indented `code` tokens are excluded (P2); heading text becomes a specified reader-visible projection (P3); `stringKeys` rejects alias keys (P4); the harness is COMMITTED and its transcript published (P5); §2.11's contradiction is corrected (P6); governed values must be non-negative integers (P7). Population 30 → **54 cases, 54 ok, 0 FAIL**.                                                                                                                                                                                                         |
+| 3   | **All four revision-2 findings reproduced and repaired.** The hand-written character-reference decoder is DELETED and `entities` called instead (P8) — the same partial-parser mistake as P1/P3, committed inside their own fix. An alias value is dereferenced with `Alias.resolve(doc)` and the two rows revision 2 silently dropped are restored (P9). The swallowed-document residual is pinned by an executable case (P10). The raw-HTML heading boundary is declared and pinned (P11, owner-ruled). Population 54 → **69 cases, 69 ok, 0 FAIL**. ⭐ `entities` and `marked` are now DECLARED devDependencies, because the committed harness requires them. |
+
+---
+
+## 0.1 ⚠ IF A DEFECT OR REGRESSION TURNS UP, LOOK HERE FIRST
+
+This section exists because revision 3's review was waived (see the box above).
+It is **the attack list the reviewer would have worked through**, transcribed
+here from the commission that was never sent — the commission lives in
+`prompts/`, which is **gitignored by design**, so it would otherwise leave no
+trace. Ranked by risk, highest first.
+
+⚠⚠ **THE RANKING IS NOT A GUESS. Four consecutive review rounds found their
+defect in the previous round's repair, and every one was the same shape: a
+hand-written shortcut at the seam where a delegated parser stops** — a
+`token.raw` suffix test for fence closure (P1), an equality test on
+`heading.text` (P3), and a three-regex character-reference decoder that crashed
+the check (P8). **Revision 3 added a library call at a new seam twice.** That is
+where a defect is most likely to be, and it is exactly the surface no one
+independent has looked at.
+
+| #   | Unreviewed surface                                                                                                         | Why it is risky                                                                                                                                                                         | What to try first                                                                                                                                                  |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **`decodeHTML` from `entities`** in the §2.2a projection                                                                   | Newest seam, and the third attempt at this exact property. `entities` is an HTML5 decoder; CommonMark §2.5 defers to the HTML5 named set but the boundaries are not obviously identical | Whether `escape` and `codespan` should be decoded (the plan says **no**); double-decoding (`&amp;#x2D;`); any §2.5 boundary where `entities` and CommonMark differ |
+| 2   | **`Alias.resolve(doc)`** in the value check                                                                                | New library API, adopted to fix P9, tested against only two shapes                                                                                                                      | A chain of aliases; an alias to an anchored mapping or sequence; a merge key (`<<`); an alias used before its anchor                                               |
+| 3   | **The two residuals that are NOT parser-decided** — image `alt` contributes nothing, inline raw `html` contributes nothing | These are hand-chosen boundaries inside an otherwise delegated projection — the same category as the three defects above                                                                | A heading whose words sit inside an inline HTML tag; an image whose alt text is the marker                                                                         |
+| 4   | **The harness's fidelity to §2.3**                                                                                         | It is now the plan's primary evidence. A harness that passes because it is not the mechanism is worse than no harness                                                                   | Read `tools/c3-parser-harness.cjs` against §2.3 line by line before trusting 69/69                                                                                 |
+| 5   | **The raw-HTML boundary (P11)**                                                                                            | Declared in four places; a declaration is only as good as its least complete statement                                                                                                  | Whether §1.4, §2.2a, §2.3 and §2.7 agree, and whether the `KNOWN-OPEN:` case is a faithful pin                                                                     |
+| 6   | **The re-pinned swallow residual (P10)**                                                                                   | Fixed once already for pinning nothing                                                                                                                                                  | Whether a cleaner swallow exists that also stays visible                                                                                                           |
+| 7   | **The restored rows (P9)**                                                                                                 | Restored from revision 1 by hand                                                                                                                                                        | Whether each tests what its label claims, and whether "26 additions and two removals" is accurate                                                                  |
+| 8   | **The devDependency declaration**                                                                                          | `entities` and `marked` were added to `package.json` and the lockfile **in a pre-code revision** — scope the author widened on its own judgement                                        | Ranges, placement, lockfile correctness; whether it should have waited for the repair                                                                              |
+| 9   | **Silent drops between revisions**                                                                                         | Revision 2 lost two rows this way and the loss concealed a regression                                                                                                                   | Diff revision 2's population against revision 3's and account for every row                                                                                        |
+
+⭐ **The single question that found three of the four previous defects, and is
+the cheapest thing to ask of any of the above:** _is this a property the parser
+actually decides, or one the author is deciding in the gap?_
+
+---
+
+# PART 1 — FOR THE OWNER
+
+## 1.1 What went wrong, in one sentence
+
+C3's blocking contract is written in words borrowed from two other languages —
+"**fenced code block**" is a CommonMark term and "**key**" is a YAML term — and
+all three repairs implemented both with hand-rolled line matching, which cannot
+decide either.
+
+That is one defect, not ten. Every one of round 3's findings S1 and S2 is a
+consequence of it:
+
+- it **over-accepts** — a line that is not a Markdown fence read as one, and
+  key-shaped text inside a YAML string read as a key;
+- it **goes blind** — anything a Markdown container puts in front of a line
+  (`> `, `- `, a tab) makes the line unrecognisable to a raw-string matcher,
+  even though the reader sees a perfectly ordinary code block or heading.
+
+## 1.2 What I verified before writing this
+
+I did not take the review on trust. I reproduced **all ten** constructions
+against the current checker with a temporary probe, and adjudicated each one
+against the reference parsers — `marked` 14.0.0 for Markdown, `yaml` 2.9.0 for
+YAML. All ten behave exactly as the review states: **8 documents that are
+invalid are accepted, and 2 documents that are perfectly legitimate are
+blocked.** The probe was deleted; the tree is clean; the focused suite is
+57/57.
+
+I also measured the review's fourth finding, which is about evidence rather than
+code. The disposition document publishes "12 failed / 45 passed" for the
+repaired spec run against the older commit `69f458c`. **The real, unmodified
+number is 14 failed / 43 passed.** See §2.6.
+
+## 1.3 What this fixes, and what it costs
+
+**Fixes.** All ten round-3 constructions, all seven plan-review findings, plus
+three the reviews never found (a Setext heading shadow home, an ATX heading with
+a closing `#`, and a canonical block nested in a list item). One mechanism, not
+seventeen patches.
+
+**Costs, stated plainly.**
+
+1. **Two new devDependencies, both already in the tree and now DECLARED:
+   `marked` (^14.0.0) and `entities` (^6.0.1).** Each was present only by
+   accident — `marked` because `monaco-editor` (a _production_ dependency) pulls
+   it in, `entities` because `jsdom` → `parse5` does. ⭐ **They are declared as
+   of revision 3 rather than when the repair lands, because the committed
+   harness requires them** — an evidence artifact depending on undeclared
+   transitives is not self-supporting. Verified deduplicated: one
+   `marked@14.0.0` and one `entities@6.0.1` after `npm install
+--package-lock-only`.
+2. **Six owner-visible behaviour changes**, listed in §1.4 — three of them
+   introduced or revised by the plan review, and all six ruled on rather than
+   discovered later. One change revision 1 asked you to approve has been
+   **withdrawn** on measurement.
+3. **The 16 R1 controls have to be regenerated**, because they were derived
+   from the line scanner's own dialect. Regenerating them is the point — see
+   §1.5.
+
+## 1.4 The six behaviour changes you are approving
+
+| #   | Change                                                                                                                                                                                                                                      | Why                                                                                                                                                                                                                                                                                               |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | A legitimate reference to the marker inside an **HTML comment** stops blocking.                                                                                                                                                             | A comment renders as nothing and can declare no home.                                                                                                                                                                                                                                             |
+| 2   | A **key-shaped line inside a YAML string** stops being counted as a key.                                                                                                                                                                    | YAML says it is string content.                                                                                                                                                                                                                                                                   |
+| 3   | A canonical block **inside a block quote or list item now counts** toward "exactly one".                                                                                                                                                    | It is a real, rendered code block.                                                                                                                                                                                                                                                                |
+| 4   | The shadow-home rule becomes "**a level-1 heading whose READER-VISIBLE text is `plan-running-totals`**". This newly catches the bold, struck, code-spanned, linked, character-referenced and closing-`#` forms, and newly exempts comments. | ⭐ **Revised in rev 2 (P3).** All of those render identically to the prohibited heading; rev 1 compared source markup and missed every one.                                                                                                                                                       |
+| 5   | An **indented** (four-space) code block is **never** the canonical home, even with the marker as its first line.                                                                                                                            | ⭐ **New in rev 2 (P2).** The contract says _fenced_; `marked` gives both forms the same token type. An indented totals example beside the real block is now correctly ignored rather than counted or mis-rejected.                                                                               |
+| 6   | Each governed key's value must be a **finite non-negative integer**. `review_rounds_complete: bananas` now blocks.                                                                                                                          | ⭐ **New in rev 2 (P7), owner-ruled.** This is a running-**totals** block; checking the labels but not the numbers was a residual the reviewer showed had silently vanished from the list. Verified: the live values 7, 30 and 24 all pass, and the block's three ungoverned keys are unaffected. |
+
+⚠⚠ **WITHDRAWN IN REVISION 2 — the unterminated-fence departure.** Revision 1
+asked the owner to approve keeping "the fence must be closed" as a deliberate
+departure from CommonMark. **The owner ruled to drop it, on measurement.**
+Deleting the real plan's closing fence still blocks — the swallowed document
+fails the _YAML_ parse (`MULTILINE_IMPLICIT_KEY, MULTIPLE_DOCS`) — so for THAT
+measured case the rule protected nothing the parsers do not already protect,
+while requiring a hand-written delimiter parser `marked` does not support.
+§2.10 shows the four closer-relation constructions the reviewer raised
+(narrower, wrong-character, over-indented, wider) all decided correctly **with
+no delimiter logic at all**. ⚠ **This is not a claim that EVERY swallow is
+caught** (implementation review finding P14, corrected) — swallowed content
+that is itself valid YAML, such as trailing Markdown headings YAML reads as
+comments, is a real, narrower, owner-accepted residual; see §2.3 item 4 and
+§2.7.
+
+⚠ The owner's earlier ruling stands untouched: **a plan that documents an
+_example_ totals block still blocks**, because two blocks are genuinely
+ambiguous. Under this change that holds inside containers too — but **not** for
+an indented example, which change #5 now excludes by design.
+
+## 1.5 What I am doing differently this time
+
+Three rounds have failed the same way, and round 3 failed it in a form worth
+naming precisely, because it looked like compliance.
+
+The standing rule from this branch is _generate the hostile population from the
+grammar itself, never from the review's finding list_. Round 3 obeyed the
+letter: 23 constructions over fence forms, marker position, key shape,
+cardinality and termination — and that genuinely found a fail-open no review had
+(the unfenced shadow home). But **every fence form it tried was one its own
+regex already recognised.** It generated from its own dialect. It never asked
+CommonMark whether a candidate was a fence, or YAML whether a line was a key.
+
+So the rule this plan adds:
+
+> **When a contract borrows a term from a host grammar, generate the hostile
+> population from THAT grammar's specification, and let ITS reference parser —
+> not your matcher — decide the expected answer for each case.**
+
+I have done this, **before writing any production code**. The harness is
+**committed at `tools/c3-parser-harness.cjs`** — revision 1's was discarded,
+which is why its result could not be reviewed (finding P5). It now carries
+**69 cases**: the ten round-3 constructions, twenty derived from CommonMark and
+YAML in revision 1, twenty-four added in revision 2, and **fifteen added in
+revision 3** — the character-reference boundary matrix, the raw-HTML heading,
+the real swallowed-document residual, and the two rows revision 2 had dropped.
+Each case names the specification clause that decides its verdict, and the
+reference parsers decide the grammar facts. **Result: 69 ok, 0 FAIL, live plan
+clean**, transcript in §2.10.
+
+⚠⚠ **AND THE SAME MISTAKE HAS NOW BEEN MADE THREE TIMES, EACH TIME INSIDE THE
+FIX FOR THE LAST ONE.** Revision 1 delegated to the two host grammars — the
+right architecture — then re-introduced **one hand-written delimiter test** for
+fence closure and compared against **one token field** (`heading.text`) without
+asking what that field holds (P1, P3). Revision 2 deleted both and shipped **a
+hand-written character-reference decoder** whose four boundaries were all wrong,
+one of which **crashed the check outright** (P8).
+
+⭐ **The lesson is not "try harder at the seam" — it is that the seam is where
+this keeps happening, so the seam is where a real parser must go.** Stated as
+the rule: **delegating to a parser is not finished until every property you
+assert is one the parser actually decides — and when you find one it does not,
+add a parser that does, never a table.**
+
+---
+
+# PART 2 — TECHNICAL DETAIL
+
+## 2.1 The contract, restated so it can be parsed
+
+Unchanged in intent; stated in terms that map onto real parsers.
+
+> A valid canonical home is **exactly one FENCED code block anywhere in the
+> plan document — at any Markdown container depth, and excluding indented code
+> blocks** — whose **first content line is exactly `# plan-running-totals`**.
+> Its content must parse as a **single YAML document** whose root is a
+> **mapping with string keys**, in which each governed key —
+> `review_rounds_complete`, `reviewer_findings`, `findings_after_round_one` —
+> appears **exactly once as a key of that root mapping**, with a value that is
+> a **finite non-negative integer**. In addition, **no level-1 Markdown heading
+> anywhere in the plan may have the READER-VISIBLE TEXT `plan-running-totals`**,
+> as projected by §2.2a; such a heading is a shadow home.
+>
+> Violations raise `C3-NOCANONICAL`. Nothing else in C3's blocking half changes.
+
+⚠ **Three terms changed in revision 2, each because the reviewer showed the
+earlier wording was not decidable:**
+
+- **"fenced"** now excludes indented code blocks explicitly. `marked` gives both
+  the same token type (P2).
+- **"closed" is GONE.** CommonMark ends an unclosed fence at end of file, and
+  `marked` exposes no closure flag, so the old rule required a hand-written
+  delimiter parser at exactly the boundary this repair exists to remove (P1).
+- **"text"** is now a named projection, not a token field (P3).
+
+## 2.2 The dialect, named
+
+Codex's round-3 correction was that the contract said "fenced code block"
+without saying whose. It is now named:
+
+- **Markdown: GitHub Flavored Markdown as implemented by `marked` 14.x**
+  (`gfm: true`, `pedantic: false` — the shipped defaults, asserted in a test).
+  GFM is the right dialect because these documents are read on GitHub.
+- **YAML: YAML 1.2 as implemented by `yaml` 2.x**, with **`uniqueKeys: true`
+  AND `stringKeys: true`**. ⚠ The second option is load-bearing, not tidiness:
+  without it an **alias used as a key** — `&k review_rounds_complete: 7` then
+  `*k : 8` — raises no error, counts as one key, and lets the second value
+  silently win (`toJS()` returns `8`). Measured; finding P4.
+- **No declared departures, except the ONE named in §2.7** (implementation
+  review findings P21/P24/P27, owner-ruled 2026-09-05, P24 and P27 each
+  broadening the prior ruling the same day): `yaml@2.9.0` performs **no
+  `%TAG` handle or prefix grammar validation of any kind beyond exact
+  two-part arity** (YAML 1.2.2 §6.8.2) — the checker does not build a
+  private `%TAG` grammar to enforce any of it either — see §2.7 for the
+  full boundary, its representative (not exhaustive) pins, and why.
+  Revision 1's departure is withdrawn (§1.4); every OTHER property C3
+  asserts is one a reference parser decides.
+
+## 2.2a Reader-visible heading text — the projection, stated as a contract
+
+⚠⚠ **`heading.text` IS SOURCE MARKUP.** `# **plan-running-totals**` has a
+`text` of `**plan-running-totals**`, so rev 1's equality test missed it while a
+reader saw the prohibited heading (finding P3). Reader-visible text is
+therefore **defined**, not inherited from a token field. Walking the heading's
+parsed inline children, each role contributes:
+
+| Inline role                   | Contributes                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------ |
+| `text`                        | its text, with character references decoded **by `entities`** (`&#x2D;` → `-`) |
+| `escape`, `codespan`          | its literal text                                                               |
+| `strong`, `em`, `del`, `link` | its children, recursively (its text if it has none)                            |
+| `br`                          | a single space                                                                 |
+| `image`                       | **nothing** — a reader sees a picture, not the `alt` attribute                 |
+| inline `html`                 | **nothing** — raw markup is not text                                           |
+
+Whitespace is then collapsed and trimmed, and the result compared to
+`plan-running-totals`. The last two rows are **deliberate residuals**, pinned by
+passing `KNOWN-OPEN:` cases rather than left to be discovered (§2.7).
+
+⚠⚠⚠ **REVISION 2 DECODED CHARACTER REFERENCES WITH THREE REGEXES AND A
+SIX-NAME TABLE, AND THAT WAS THE SAME MISTAKE AS P1 AND P3 COMMITTED INSIDE
+THEIR OWN FIX** (review finding P8). All four boundaries measured wrong:
+`&#X2D;` with an uppercase `X` was not decoded — **a false accept, the marker
+hides**; `&Tab;`, a real HTML5 name, was not decoded — **another false accept**;
+`&Nbsp;`, INVALID because the name inventory is case-**sensitive**, WAS decoded
+because the table lowercased its lookup — **a false blocker**; and `&#x110000;`
+reached `String.fromCodePoint` and **threw `RangeError`, crashing the entire
+check** where CommonMark §2.5 asks for U+FFFD.
+
+⭐ **The fix is not a better table.** `decodeHTML` from `entities` — the
+standards-complete HTML5 decoder `parse5` uses — replaces it and returns `-`, a
+tab, the literal `&Nbsp;` and U+FFFD for exactly those four inputs. The rule
+this arc keeps re-learning, stated where it applies: **do not complete a partial
+parser; delete it and call one.**
+
+## 2.3 In scope — every change to `tests/support/planConsistency.ts`
+
+1. **Add two imports**: `import { marked } from 'marked';` and
+   `import { parseDocument, isMap } from 'yaml';`.
+2. **Delete** the line-based fence state machine, the `strayMarkers` raw-line
+   scan and the `^\s*${key}\s*:` key counter.
+3. **Add `visibleText(tokens)`** implementing §2.2a exactly — the switch over
+   inline roles, whitespace collapse, and **`decodeHTML` from `entities` for
+   character references. ⚠ Do not hand-write an entity table (P8).**
+4. **Add a token walk** over `marked.lexer(spec)` that recurses into
+   `blockquote.tokens` and `list.items[].tokens`, and:
+   - collects every `code` token **whose `codeBlockStyle` is not `'indented'`**
+     and whose first content line is exactly the marker;
+   - counts every `heading` token with `depth === 1` whose **`visibleText`**
+     equals `plan-running-totals`;
+   - **does not descend into `html` tokens** (the S3 fix) or `code` tokens.
+     ⚠ Skipping block `html` is the owner's **declared Markdown-only boundary**,
+     not a claim that raw blocks are invisible: the same bucket holds
+     `<h1>plan-running-totals</h1>`, which renders a visible title (P11).
+     ⚠ **No closure check of any kind.** An unclosed fence runs to end of file,
+     as CommonMark says. Ordinary swallowed prose, and deleting the live plan's
+     own closer, are caught by the YAML parse (§1.4) — the swallowed material
+     then fails to parse as one valid mapping. ⚠ **That is not a universal**
+     (implementation review finding P14, corrected — this sentence previously
+     had no qualifier): swallowed material that is ITSELF valid YAML, such as
+     trailing `##`/`###` Markdown headings read as comments, stays clean. That
+     is the real, narrower residual §2.7 declares and §2.10 pins.
+5. **Add YAML payload validation** for the single canonical block:
+   `parseDocument(text, { uniqueKeys: true, stringKeys: true, version: '1.2' })`.
+   ⚠ **Corrected (implementation review findings P12, P16, P19, P20, P23,
+   P26, P29 — this step previously named only the pre-repair call and its
+   four checks; every addition below is load-bearing, not optional
+   hardening).**
+   `version: '1.2'` is only the FALLBACK for a document with no `%YAML`
+   directive; an explicit directive overrides it. **First, parse
+   `allDirectives`** — EVERY CST `directive` token (via `yaml`'s own
+   `Parser`), each spanning the HALF-OPEN code-unit range `[t.offset,
+t.offset + t.source.length)` (implementation review finding P22: an
+   earlier version of this recipe called this a "byte range" with a closed
+   upper bound — wrong on both counts, since the coordinate is a JavaScript
+   UTF-16 code-unit offset, not a byte offset, and the span excludes its own
+   end). **Then select `yamlDirectives`, the subset of `allDirectives` whose
+   NAME is `%YAML`.** ⚠ **The separator between `%YAML` and its parameter
+   MUST be matched as ASCII space or tab (`[ \t]`), never ECMAScript `\s`**
+   (implementation review finding P23): YAML 1.2.2 §5.5 defines only
+   U+0020/U+0009 as structural white space, and `yaml`'s own
+   `Directives.add()` splits on `/[ \t]+/`; `\s` also matches NO-BREAK SPACE
+   (U+00A0) and other characters YAML classifies as part of a reserved
+   directive's NAME, not a separator — matching them anyway reclassified a
+   valid, must-accept reserved directive as `%YAML` and reintroduced a
+   P19-shaped false blocker one lexical boundary earlier. Then raise, in
+   order:
+   - **on `blockingDirectiveErrors(allDirectives, doc.errors).length > 0`**
+     (implementation review finding P26 — the SAME seam, a FOURTH channel,
+     one boundary below P23's separator fix, narrowing the prior
+     `doc.errors.length > 0` check): `yaml@2.9.0`'s composer decides a
+     directive's NAME via `line.trim().split(/[ \t]+/)` — `trim()` runs
+     BEFORE the split and removes NBSP/EM SPACE/other trimmable `ns-char`
+     characters from the line's OWN edges. A reserved directive consisting of
+     ONLY `%YAML` (or `%TAG`) plus one such trailing character — nothing else
+     on the line — is reduced by the composer's own normalisation to the bare
+     recognised keyword before its name is even read, so it raises
+     `BAD_DIRECTIVE` as an ERROR ("should contain exactly one/two part(s)")
+     for what §6.8 requires accepting as an unknown reserved directive.
+     `blockingDirectiveErrors` excludes a `BAD_DIRECTIVE` error only when its
+     OWNING token's TRUE name (`directiveName`, found across `allDirectives`,
+     not only ones this file selects as `%YAML`) is NEITHER `YAML` NOR `TAG`
+     — the exact two-name set `Directives.add()`'s own `switch (name)`
+     branches on, not merely "not `%YAML`" (an earlier version of this
+     function used that narrower test, which silently also excluded a
+     genuinely malformed real `%TAG` directive with the wrong arity — see
+     §2.11h's P26 disposition for the correction) — **AND that name is
+     itself a legal `ns-directive-name` (implementation review finding
+     P29)**, checked via `isLegalDirectiveName` against YAML 1.2.2's own
+     `ns-char` production (§§5.1, 5.2, 5.4, 5.5: `c-printable` minus `b-char` minus
+     `c-byte-order-mark` minus `s-white`), a precise character-range test
+     fetched from the specification, never an enumerated table of specific
+     rejected characters. An earlier version of this function granted "valid
+     reserved directive, must accept" treatment to ANY candidate that was
+     merely not `YAML`/`TAG`, without checking it was a legal name at all —
+     U+000B VERTICAL TAB and U+000C FORM FEED are ECMAScript-`trim()`-
+     removable exactly like NBSP/EM SPACE (triggering the SAME composer-trim
+     mechanism P26 fixed) but are NOT legal `ns-char`, so `%YAML` plus a
+     trailing VT or FF is genuinely invalid YAML that must still block — see
+     §2.11i's P29 disposition for the correction. This leaves a genuinely
+     malformed real `%YAML` or `%TAG` directive (wrong arity, an unsupported
+     syntax shape) blocking exactly as before, a genuinely invalid directive
+     name blocking exactly as it should, and every other error code
+     untouched. This covers malformed YAML, duplicate keys including the
+     quoted spelling, multi-document payloads, an alias or non-string key,
+     and a directive the parser cannot parse at all such as `%YAML next` —
+     the same population the prior `doc.errors.length > 0` check covered,
+     minus exactly the trim()-mangled reserved-directive case;
+   - **on `yamlDirectives.length > 1`** (implementation review finding P20):
+     `yaml`'s `Directives.add()` unconditionally overwrites its stored version
+     on every SUPPORTED `%YAML` directive, with no redeclaration check of its
+     own — an earlier, forbidden `%YAML 1.1` followed by a later, valid
+     `%YAML 1.2` raises NEITHER an error NOR a warning, and leaves
+     `directives.yaml.version` reading the innocent final value, so a check
+     that trusts only the parser's final state cannot see it. YAML 1.2.2
+     §6.8.1 makes more than one `%YAML` directive an error regardless of
+     whether the versions agree (its own Example 6.15). Counting the SAME
+     `yamlDirectives` tokens rejects the block before final state is trusted,
+     with no re-parsing of version text;
+   - **on `unsupportedYamlVersionWarned(yamlDirectives, doc.warnings)`** (P16,
+     narrowed by P19): a syntactically well-formed but UNSUPPORTED numeric
+     version — `%YAML 1.0`, `1.3`, `2.0` — is not a parse ERROR; the library
+     reports it as a `BAD_DIRECTIVE` WARNING and silently keeps the fallback
+     effective version 1.2, so the next check alone cannot see it. ⚠
+     **`BAD_DIRECTIVE` is NOT unique to an unsupported `%YAML` version**
+     (implementation review finding P19): `yaml`'s own `Directives.add()`
+     routes any UNRECOGNISED directive — a reserved directive such as
+     `%FOO bar`, which YAML 1.2.2 §6.8 requires processors to accept with
+     only a warning — through the SAME code. Checking the code alone falsely
+     blocked a valid totals block, including one that also carried a
+     perfectly valid explicit `%YAML 1.2`. `unsupportedYamlVersionWarned`
+     checks, for each `BAD_DIRECTIVE` warning, whether its reported position
+     falls inside one of `yamlDirectives`'s own spans — never the warning's
+     message text, and never a table of version strings;
+   - **on `doc.directives.yaml.version !== '1.2'`** (P12): a fully SUPPORTED
+     but non-1.2 version — `%YAML 1.1` — raises no warning at all, only a
+     different EFFECTIVE version, which under 1.1 resolves a sexagesimal
+     scalar like `1:20` to the integer 80;
+   - then on `!isMap(doc.contents)` (empty payload, sequence root), then for
+     each governed key check it appears exactly once among `doc.contents.items`
+     **key nodes** — never lines — **and that its value is a finite
+     non-negative integer**.
+     ⚠ **Dereference an alias value with `Alias.resolve(doc)` before testing it**
+     (P9): an `Alias` node has no scalar `.value`, so reading `pair.value.value`
+     made every alias look like `null` and rejected `base: &n 7` /
+     `review_rounds_complete: *n` — a form revision 1 promised would pass.
+6. **Keep the site-grouping rule's INTENT unchanged**: one site per _subject_,
+   never per key, established only after the WHOLE payload validates. ⚠
+   **Corrected (implementation review finding P13): "unchanged" originally
+   described the IMPLEMENTATION too, which was inaccurate** — the first port
+   committed a key's site as soon as that key validated, not once every
+   governed key had, so one bad key could still seed a site for an unrelated
+   valid one. Collect candidate sites in a temporary set and commit them only
+   after the loop confirms no governed key failed.
+7. **Rewrite the block comment** so it states §2.1's contract, §2.2's dialect
+   and §2.2a's projection, and records why the line scanner was removed. ⚠ The
+   existing comment's claim "a fence is a state, not a pattern" is the error
+   this repair corrects and must not survive. ⚠ Neither may any wording implying
+   C3 checks fence closure.
+
+⭐ **The reference implementation of items 3–5 is committed and runnable at
+`tools/c3-parser-harness.cjs`.** The repair ports it; it is not pseudocode.
+
+## 2.4 The dependency change
+
+**DONE in revision 3, not deferred to the repair.** `package.json` gains
+`"marked": "^14.0.0"` and `"entities": "^6.0.1"` under **devDependencies**,
+matching the versions already resolved through `monaco-editor` and
+`jsdom` → `parse5`. Measured after
+`npm install --package-lock-only --ignore-scripts`: **one `marked@14.0.0` and
+one `entities@6.0.1`, both deduped.** `yaml` is already a direct dependency at
+`^2.9.0`; no change. ⭐ They are declared now because
+`tools/c3-parser-harness.cjs` is committed and requires them; an evidence
+artifact resting on undeclared transitives is exactly the fragility this section
+exists to remove.
+
+⚠ **Reviewer, attack this:** is a transitively-satisfied pin actually
+deduplicated here, and is a devDependency correct for a module under `tests/`
+that CI's `ci` job executes?
+
+## 2.5 Test changes — `tests/unit/planConsistency.spec.ts`
+
+1. **Regenerate the `canonical block grammar (review R1)` describe block** from
+   §2.10's population. Every case in that harness becomes a committed control
+   unless an existing test already covers it identically.
+   ⚠ **`CANON` must gain integer values that satisfy §2.1** — with values now
+   governed (P7), a fixture carrying a non-integer would fire for the wrong
+   reason, which is exactly the defect item 2 exists to remove.
+2. **Repair the shared `CANON` fixture.** It currently declares only
+   `review_rounds_complete`, so `${WIRED}${CANON}` **already emits
+   `C3-NOCANONICAL`** for missing keys — meaning every older C3 control that
+   asserts `toContain('C3-NOCANONICAL')` on it passes for a reason unrelated to
+   what it names, and would keep passing if the behaviour under test were
+   deleted. `CANON` gains all three governed keys, and **each affected test is
+   then re-checked individually**, not assumed.
+   ⓘ This was found while verifying, not by the review.
+3. **Add a dialect assertion** pinning `marked.defaults.gfm === true` and
+   `pedantic === false`, so a future dependency bump that changes the dialect
+   fails loudly rather than silently changing what the gate means.
+4. **Add `KNOWN-OPEN:` controls** for **every** §2.7 residual, per this
+   project's rule that a known limit is pinned by a test asserting current
+   behaviour — specifically the image heading, the inline-HTML-wrapped heading,
+   the unclosed fence at end of file, `#plan-running-totals` with no space, and
+   the ungoverned keys' freedom from value checks.
+5. **Add the value-shape matrix** required by P7: string, negative, null,
+   sequence and float values each block, and **zero passes** — a legitimate
+   total may be 0, and a truthiness check would wrongly reject it.
+6. **Add the `stringKeys` controls** required by P4: an alias used as a key
+   blocks, and an alias used as a _value_ still passes.
+7. The advisory half (`C3-COUNTDRIFT`, `reportAdvisories`) is **untouched**;
+   round 3 confirmed R2 RESOLVED and its consumer-exercising control stays as
+   it is.
+
+## 2.6 The evidence correction (finding S4) — independent of the code
+
+`docs/reviews/plan-consistency-checker-repair-dispositions.md` says:
+
+> The repaired spec was run against the round-1 repair at `69f458c`: **12 failed
+> / 45 passed (57)**.
+
+**Measured, in a disposable detached worktree at `69f458c` with the `6420bb4`
+spec copied in and nothing else changed: 14 failed / 43 passed.** The two extra
+failures are `TypeError: reportAdvisories is not a function` in
+`reports no BLOCKING finding against the live plan` and
+`R2: the gate PATH surfaces an advisory on a PASSING run`. 45 = 43 + those two
+silently counted as passes; 12/45 is reproducible only after backporting the
+complete `advisoryFindings` + `reportAdvisories` implementation, which supplies
+the very function R2 is about.
+
+The same section also says the R2 control "cannot be run against `69f458c` at
+all… the spec would not compile." **That is also wrong, and in the direction
+that understates the evidence:** under Vitest/Vite SSR it compiles, runs, and
+fails at runtime, which is a stronger discriminator than the structural claim
+that replaced it.
+
+**Correction to make:** replace the total with 14/43, keep the correct
+"12 of 16 R1 controls discriminate" statement and the four honestly-named
+non-discriminators, and replace the "would not compile" sentence with the
+measured runtime failure. **The general rule this yields: a fail-against-old
+total must name every compatibility substitution, and a structural failure by
+missing export is reported separately, never converted into a pass.**
+
+## 2.7 Out of scope — declared, with the residual named
+
+⚠ Revision 1's list was **REFUTED** by the review: it claimed to name the
+parser move's residuals while silently dropping one the previous round had
+explicitly recorded (governed value types, finding P7). That one is now
+**fixed** rather than declared. The list below is rebuilt, and **every member
+is pinned by a passing `KNOWN-OPEN:` test**, so closing any hole breaks a test
+and forces the claim to be corrected in the same commit.
+
+- **An IMAGE heading contributes no visible text** — `# ![plan-running-totals](i.png)`
+  is not a shadow home. A reader sees a picture; `alt` is an accessibility
+  attribute. Deliberate (§2.2a).
+- ⭐ **A raw BLOCK HTML heading is NOT a shadow home** — `<h1>plan-running-totals</h1>`
+  renders a fully visible level-1 title and C3 does not see it. **Owner-ruled
+  2026-09-03 (P11): the contract stays Markdown-only**, as §2.1 literally says,
+  rather than acquiring an HTML parsing boundary. Pinned by a passing
+  `KNOWN-OPEN:` case. ⚠ The harness comment that once said raw blocks "declare
+  nothing" was false and is corrected.
+- **Inline raw HTML contributes no text.** `# plan-<b>running</b>-totals`
+  projects to `plan-running-totals` and IS caught, because the surrounding text
+  tokens carry the words; but a heading whose words live _inside_ an inline HTML
+  tag is not. Deliberate (§2.2a).
+- **An unclosed fence at end of file is a valid code block**, per CommonMark.
+  The residual is a swallowed document that happens to parse as valid YAML _and_
+  keep all three governed keys exactly once with integer values. ⚠ **Revision 2
+  pinned this with a fixture that had nothing after the fence, so it could not
+  swallow anything** (P10). It is now pinned by the real construction: the valid
+  block followed by `## Later section` and `### Last section`, which YAML reads
+  as comments — measured **clean**, which IS the residual. The hostile
+  ordinary-prose case stays as the inverse control, and deleting the live plan's
+  closer still blocks.
+- **The plan/history asymmetry stays.** C3's structural scan reads the plan
+  only; the history names the marker three times in prose.
+- **The advisory half stays a heuristic**, with its existing `KNOWN-OPEN:`
+  limits (quoted second homes, unparseable number forms).
+- **`#plan-running-totals` with no space is not detected** — correctly, since
+  CommonMark makes it a paragraph.
+- **A shadow home written as ordinary prose or a table row is not detected.**
+  The structural half claims headings and fences only.
+- **Ungoverned keys in the canonical block are unconstrained** — `review_rounds_owed`,
+  `repair_introduced_after_round_one` and `executable_spec_lines` are not
+  value-checked. Only the three governed keys are.
+- **C1's textual-caller limit and C2/C4** are untouched.
+- ⚠⚠ **`%TAG` HANDLE/PREFIX VALIDITY IS NOT ENFORCED BEYOND WHAT `yaml@2.9.0`
+  ITSELF REPORTS — THE ONE DEPARTURE THIS PLAN NAMES (implementation review
+  findings P21/P24/P27, owner-ruled 2026-09-05; P24 and P27 each BROADENED
+  the prior ruling the same day, both times because the residual as worded
+  named specific rule violations as if they were the complete boundary, when
+  the underlying code performs no grammar validation at all).** Installed
+  `yaml@2.9.0`'s `Directives.add()` (`node_modules/yaml/dist/doc/
+directives.js`) checks only that a `%TAG` directive has exactly two
+  whitespace-separated parts, then unconditionally assigns
+  `this.tags[handle] = prefix` — no redeclaration guard, no handle grammar
+  check, no prefix grammar check of ANY kind. **The residual is therefore
+  stated at the level of the IMPLEMENTATION BOUNDARY, not as an enumerated
+  list claimed to be complete** (implementation review finding P27: P24's
+  "three distinct rules" enumeration repeated the exact antipattern P24
+  itself was fixing — naming specific violated rules as if they were
+  exhaustive, when the missing validation covers every possible handle and
+  prefix shape). The boundary is: **any handle string and any prefix string
+  that survive an exactly-two-part whitespace split are silently accepted,
+  regardless of shape.** At least the following FIVE independently
+  reachable, specification-invalid forms are known instances of this one
+  boundary — this list is a representative sample the plan pins with a
+  passing `KNOWN-OPEN:` test each, **not a claim that no sixth form
+  exists**:
+  - **repeated handle** (§6.8.2, Example 6.17): the SAME handle declared
+    twice is an error even when both declarations agree — P21's original
+    finding;
+  - **malformed handle** (§6.8.2.1): a handle must be `!`, `!!`, or
+    `!word!` — a handle missing its `!` delimiters (e.g. `e`) is accepted;
+  - **malformed prefix percent-escape** (§6.8.2.2): a `%` in a tag prefix
+    must be followed by exactly two hexadecimal digits — an invalid escape
+    (e.g. `%ZZ`) is accepted — P24's original finding;
+  - **forbidden character in a prefix** (§6.8.2.2, `ns-uri-char`): a tag
+    prefix's characters are drawn from `ns-uri-char`, which excludes a
+    literal, unescaped `{` or `}` everywhere in the string (unlike `,`,
+    `[` and `]`, which `ns-uri-char` DOES permit unescaped) — a prefix
+    containing a raw brace (e.g. `tag:example.com{2026}:`) is accepted —
+    P27's finding;
+  - **invalid first character of a global prefix** (§6.8.2.2,
+    `ns-global-tag-prefix`): a prefix that does not itself start with `!`
+    is a GLOBAL tag prefix, whose first character must be `ns-tag-char`
+    (`ns-uri-char` minus `!` and the five flow indicators `, [ ] {` `}` —
+    implementation review finding P31: this line previously miscounted the
+    five-member `c-flow-indicator` production as four) —
+    a prefix beginning with a raw comma or bracket (e.g. `,tag:example` or
+    `[tag:example`) is accepted even though that exact character is legal
+    ns-uri-char content everywhere ELSE in the same string — P27's finding.
+
+  **Deliberately left undetected, broadened rather than enforced** (P24,
+  reaffirmed by P27): `%TAG` never appears in the live plan, and
+  hand-parsing directive handle/prefix grammar to enforce a property the
+  chosen parser does not report would recreate exactly the hand-parser
+  class this checker exists to retire (the root `practice`-wing rule this
+  whole arc keeps re-proving). ⚠ **Owner note (2026-09-05, reaffirmed after
+  P27): this residual is recorded here as the durable, self-enforcing
+  boundary — a future change that starts validating any of the five listed
+  forms above will break one of the five `KNOWN-OPEN:` controls below and
+  force this section to be corrected in the same commit; a future review
+  that finds a SIXTH independently reachable form adds a sixth pin to this
+  same list rather than reopening the enforce-vs-declare decision. No
+  separate backlog story card was opened for it**: SEV-3, zero live-plan
+  impact, and the `KNOWN-OPEN:` mechanism already IS the tracking record —
+  a card would duplicate it without adding anything actionable to
+  schedule. Pinned by five passing `KNOWN-OPEN:` tests, one per form above.
+
+## 2.8 Must NOT change
+
+- `docs/testing/SPACING_HELPER_PRESET_PLAN.md` and its `_HISTORY.md` companion —
+  **not one character**. The gate's own subject may not be edited to make the
+  gate pass.
+- Any snapshot, or `tests/baseline/expected-failures.json`.
+- Any file under `src/`, any Electron/e2e/integration spec, any governance text.
+
+## 2.9 Blast radius (OA §3.4)
+
+**Upstream.** `tests/support/planConsistency.ts` has exactly one consumer in
+the repository — its own spec
+(`grep -rln "planConsistency" --include=*.ts . | grep -v node_modules`). It
+reads the plan, its history companion, and `tests/support/dsl/spacing.ts`.
+
+**Downstream.** `npm run test:unit` → `./tools/checks` → CI's `ci` job (the only
+required context on this branch). No `src/`, no Electron, no e2e/integration, no
+snapshot, no baseline manifest.
+
+**New surface.** ⚠ **Corrected (implementation review finding P15 — this line
+previously said "one"): two devDependencies**, `marked` and `entities` (§1.3,
+§2.4), used only by this test-support module.
+
+**Non-regression to prove.** The live plan stays clean (measured on the
+prototype: **VALID**); unit population goes 1470 → 1470 + _n_ with no new file;
+`REAL_EXIT=0`, 4/4 steps.
+
+## 2.10 The pre-code harness — 69 ok, 0 FAIL, COMMITTED
+
+⚠⚠ **REVISION 1 PUBLISHED ITS RESULT FROM A PROTOTYPE IT HAD DELETED**
+(finding P5), so the plan's strongest assurance could not be reproduced by the
+reviewer or by any later audit. The mechanism, the literal fixtures, the
+expectations and their provenance are now committed at
+**`tools/c3-parser-harness.cjs`**, runnable with `node tools/c3-parser-harness.cjs`
+(exit 0 on success). It is not a test and nothing imports it; when the repair
+lands, these cases become committed controls and the file is deleted.
+
+⚠ **Revision 2 then silently DROPPED two revision-1 rows** — the four-space
+indented marker and the alias-valued total — so 30 → 54 was 26 additions and two
+removals, not 24 additions (finding P9). Both are restored and labelled
+`RESTORED (rev 1)`. **Revision 3 is 54 → 69: fifteen additions, zero removals.**
+
+Each case's expected verdict is set by the cited specification clause, not by
+the mechanism. Cases marked `codex` came from a review — they are the **floor,
+not the population**.
+
+<!-- prettier-ignore -->
+| Must be | Case | Provenance | Mechanism said |
+| ------- | ---- | ---------- | -------------- |
+| valid | well-formed canonical block | control | clean |
+| valid | tilde fence | CommonMark 4.5 | clean |
+| valid | four-backtick fence | CommonMark 4.5 | clean |
+| valid | untagged fence (no info string) | CommonMark 4.5 | clean |
+| valid | fence indented three spaces (legal) | CommonMark 4.5 | clean |
+| invalid | backtick in the info string | CommonMark 4.5 | 1 shadow-home heading(s); found 0 canonical blocks (expected 1) |
+| invalid | TAB before the opening fence | codex S2 / CommonMark 4.5 | 1 shadow-home heading(s); found 0 canonical blocks (expected 1) |
+| invalid | closer NARROWER than opener (4 open, 3 close) | codex P1 / CommonMark 4.5 | YAML: BAD_SCALAR_START,MISSING_CHAR |
+| valid | closer WIDER than opener (3 open, 4 close) | codex P1 / CommonMark 4.5 | clean |
+| invalid | closer of the WRONG CHARACTER (backtick open, tilde close) | codex P1 / CommonMark 4.5 | YAML: MISSING_CHAR |
+| invalid | closer OVER-INDENTED four spaces | codex P1 / CommonMark 4.5 | YAML: MISSING_CHAR |
+| valid | KNOWN-OPEN: unclosed fence at END OF FILE is a valid block | CommonMark 4.5 (departure DROPPED, owner ruling) | clean |
+| valid | KNOWN-OPEN: an unclosed fence swallows later content that YAML reads as comments | codex P10 (the residual §2.7 declares, now pinned) | clean |
+| invalid | unclosed fence SWALLOWS the rest of the document | CommonMark 4.5 (the swallow risk, caught by YAML) | YAML: MISSING_CHAR |
+| invalid | INDENTED code block alone is not a fenced block | codex P2 / CommonMark 4.4 | found 0 canonical blocks (expected 1) |
+| valid | INDENTED example beside a valid fence is ignored | codex P2 / CommonMark 4.4 | clean |
+| invalid | second canonical block in a BLOCK QUOTE | CommonMark 5.1 | found 2 canonical blocks (expected 1) |
+| invalid | second canonical block in a LIST ITEM | CommonMark 5.2 | found 2 canonical blocks (expected 1) |
+| invalid | unfenced marker in a BLOCK QUOTE | CommonMark 5.1 | 1 shadow-home heading(s) |
+| invalid | unfenced marker in a LIST ITEM | CommonMark 5.2 | 1 shadow-home heading(s) |
+| invalid | unfenced marker in a NESTED block quote | CommonMark 5.1 | 1 shadow-home heading(s) |
+| invalid | plain ATX shadow home | CommonMark 4.2 | 1 shadow-home heading(s) |
+| invalid | SETEXT shadow home | CommonMark 4.3 | 1 shadow-home heading(s) |
+| invalid | ATX with a closing # sequence | CommonMark 4.2 | 1 shadow-home heading(s) |
+| invalid | BOLD shadow home | codex P3 / CommonMark 6 | 1 shadow-home heading(s) |
+| invalid | CODE-SPAN shadow home | codex P3 / CommonMark 6 | 1 shadow-home heading(s) |
+| invalid | STRIKETHROUGH shadow home | codex P3 / GFM | 1 shadow-home heading(s) |
+| invalid | REFERENCE-LINK shadow home | codex P3 / CommonMark 6 | 1 shadow-home heading(s) |
+| invalid | CHARACTER-REFERENCE shadow home | codex P3 / CommonMark 6 | 1 shadow-home heading(s) |
+| invalid | formatted SETEXT shadow home | codex P3 / CommonMark 4.3 | 1 shadow-home heading(s) |
+| valid | CONTROL: a formatted heading that is NOT the marker | codex P3 | clean |
+| valid | CONTROL: level-2 heading with the marker text is not a home | CommonMark 4.2 | clean |
+| valid | CONTROL: `#plan-running-totals` with no space is not a heading | CommonMark 4.2 | clean |
+| valid | KNOWN-OPEN: an IMAGE heading contributes no visible text | CommonMark 6 (declared residual) | clean |
+| invalid | RESTORED (rev 1): marker indented four spaces as the first content line | rev-1 row, dropped in rev 2 (P9) | found 0 canonical blocks (expected 1) |
+| valid | CONTROL: marker in an inline code span (live plan, line 14) | CommonMark 6.1 | clean |
+| valid | CONTROL: marker inside an HTML comment | codex S3 / CommonMark 4.6 | clean |
+| invalid | UPPERCASE-X hex reference shadow home | codex P8 / CommonMark 2.5 | 1 shadow-home heading(s) |
+| invalid | DECIMAL reference shadow home | codex P8 / CommonMark 2.5 | 1 shadow-home heading(s) |
+| invalid | NAMED reference `&Tab;` decodes to whitespace and collapses away | codex P8 / CommonMark 2.5 | 1 shadow-home heading(s) |
+| valid | CONTROL: `&Nbsp;` is INVALID — the name inventory is case-SENSITIVE | codex P8 / CommonMark 2.5 | clean |
+| valid | CONTROL: an OUT-OF-RANGE code point becomes U+FFFD, it does not throw | codex P8 / CommonMark 2.5 | clean |
+| valid | CONTROL: NUL becomes U+FFFD | codex P8 / CommonMark 2.5 | clean |
+| valid | CONTROL: a numeric reference with too many digits stays literal | codex P8 / CommonMark 2.5 | clean |
+| valid | CONTROL: a nonentity name stays literal | codex P8 / CommonMark 2.5 | clean |
+| valid | CONTROL: references stay LITERAL inside a code span | codex P8 / CommonMark 6.1 | clean |
+| valid | KNOWN-OPEN: a raw `<h1>` renders a visible title and is NOT seen | codex P11 (declared residual, owner ruling) | clean |
+| invalid | CONTROL: inline HTML around the words still projects the text | codex P11 / CommonMark 6 | 1 shadow-home heading(s) |
+| invalid | empty payload | grammar | payload is not a top-level mapping |
+| valid | FLOW-MAPPING payload | YAML 7.4 | clean |
+| invalid | SEQUENCE payload (root is not a mapping) | YAML 8.2 | payload is not a top-level mapping |
+| invalid | malformed YAML payload | YAML | YAML: BAD_INDENT |
+| invalid | MULTI-DOCUMENT payload | YAML 9.1 | YAML: MULTIPLE_DOCS |
+| invalid | governed keys NESTED one level deep | YAML 8.2 | `review_rounds_complete` x0 (expected 1); `reviewer_findings` x0 (expected 1); `findings_after_round_one` x0 (expected 1) |
+| invalid | governed key COMMENTED OUT | YAML 8.1 | `review_rounds_complete` x0 (expected 1) |
+| invalid | key-shaped text inside a BLOCK SCALAR | codex S1 / YAML 8.1 | `review_rounds_complete` x0 (expected 1); `reviewer_findings` x0 (expected 1); `findings_after_round_one` x0 (expected 1) |
+| valid | CONTROL: real keys PLUS a scalar mentioning one | codex S1 / YAML 8.1 | clean |
+| invalid | QUOTED duplicate key | YAML dup | YAML: DUPLICATE_KEY |
+| invalid | duplicate key with the SAME value | YAML dup | YAML: DUPLICATE_KEY |
+| invalid | ALIAS used as a duplicate key | codex P4 / YAML 7.1 | YAML: NON_STRING_KEY |
+| valid | RESTORED (rev 1): an ALIAS resolving to an integer is a valid value | rev-1 row, dropped in rev 2 (codex P9 / YAML 7.1) | clean |
+| invalid | an ALIAS resolving to a STRING is not a count | codex P9 / YAML 7.1 | `review_rounds_complete` is not a non-negative integer ("oops") |
+| valid | CONTROL: a key that merely CONTAINS a governed key | YAML | clean |
+| invalid | STRING value | codex P7 | `review_rounds_complete` is not a non-negative integer ("bananas") |
+| invalid | NEGATIVE value | codex P7 | `review_rounds_complete` is not a non-negative integer (-1) |
+| invalid | NULL value | codex P7 | `review_rounds_complete` is not a non-negative integer (null) |
+| invalid | SEQUENCE value | codex P7 | `review_rounds_complete` is not a non-negative integer (null) |
+| invalid | FLOAT value | codex P7 | `review_rounds_complete` is not a non-negative integer (7.5) |
+| valid | CONTROL: zero is a legitimate total | codex P7 | clean |
+
+69 ok, 0 FAIL (of 69)
+
+LIVE PLAN -> VALID (clean)
+
+⭐ **What the closer-relation rows show.** The narrower closer, wrong-character
+closer and over-indented closer are all rejected — **by the YAML parse, with no
+delimiter logic anywhere in the mechanism.** That is the measurement behind
+withdrawing the unterminated-fence departure (§1.4).
+
+⚠ **Twenty of these are false-blocker controls** — legitimate documents C3 must
+stay silent on, including seven of the nine new character-reference cases. A
+population of only "does it catch my bad input?" cases is what let revision 1's
+own regressions through, and P8's `&Nbsp;` false blocker and P9's rejected alias
+value are both cases where the mechanism was too LOUD, not too quiet.
+
+## 2.11 Fail-against-`6420bb4`, planned honestly in advance
+
+⚠ Revision 1's opening sentence here was **self-contradictory** (finding P6): it
+required every new control to fail against old code, then required naming the
+ones that do not. Corrected:
+
+- **Every control credited as PROOF OF A REPAIR must fail against `6420bb4`**
+  before it is credited.
+- **Conformance and population controls may legitimately pass against old
+  code** — a tilde fence was already accepted there. They are still committed,
+  and their per-case old-code outcome is still reported; they are simply not
+  counted as discriminators.
+- The run against `6420bb4` will be reported **unmodified**, with any
+  compatibility substitution named explicitly, and any structural failure by
+  missing export reported **separately** rather than converted into a pass.
+  This is §2.6's lesson applied to its own repair.
+
+## 2.11a Disposition of the round-3 plan review (P1–P7)
+
+All seven findings were **independently reproduced before being accepted**; the
+reviewer's cumulative record on this PR is now **20 findings, 20 valid**.
+
+| Ref | Severity | Disposition                                                                                                                                                                                                                                                |
+| --- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1  | SEV-1    | **FIXED — departure dropped**, on the owner's ruling and a measurement: deleting the real plan's closing fence still blocks via the YAML parse. All four closer-relation constructions are committed cases.                                                |
+| P2  | SEV-1    | **FIXED** — `codeBlockStyle === 'indented'` excluded; the fenced-only contract is preserved. Lone-indented and indented-beside-valid controls committed.                                                                                                   |
+| P3  | SEV-1    | **FIXED** — reader-visible projection specified in §2.2a. Bold, code-span, strikethrough, reference-link, character-reference, formatted-Setext, closing-`#`, a non-matching formatted heading and the live inline-code paragraph are all committed cases. |
+| P4  | SEV-2    | **FIXED — option A**, `stringKeys: true`. Alias-as-key now raises `NON_STRING_KEY`; the value-alias acceptance control is retained.                                                                                                                        |
+| P5  | SEV-2    | **FIXED — option A.** The harness is committed and its transcript published above.                                                                                                                                                                         |
+| P6  | SEV-3    | **FIXED** — §2.11 rewritten as above.                                                                                                                                                                                                                      |
+| P7  | SEV-2    | **FIXED — option A, owner-ruled.** Governed values must be finite non-negative integers. Live values 7/30/24 verified passing; string, negative, null, sequence and float controls committed, plus a zero-is-legitimate control.                           |
+
+## 2.11b Disposition of the revision-2 review (P8–P11)
+
+All four were reproduced against the exact committed mechanism before being
+accepted; the reviewer's cumulative record is now **24 findings, 24 valid**.
+
+⚠⚠ **P8 IS THE SAME CLASS AS P1 AND P3, COMMITTED INSIDE THEIR OWN FIX.** The
+revision that deleted a hand-written fence-delimiter test and a token-field
+shortcut shipped a hand-written entity decoder. **Fourth consecutive round in
+which the repair contained the next finding** — though the trend is convergence
+rather than a treadmill: the SEV-1 count has run 3 → 3 → 2 → 1, and this one's
+fix complexity was 2.
+
+| Ref | Severity                                | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P8  | SEV-1 · `Blocks: C3 heading projection` | **FIXED — the decoder is DELETED**, not completed. `decodeHTML` from `entities` replaces it. Measured against the exact committed mechanism first: `&#X2D;` and `&Tab;` were false accepts, `&Nbsp;` a false blocker, and `&#x110000;` **threw `RangeError`**. Nine controls committed — uppercase-X, decimal, named, invalid-casing, out-of-range, NUL, over-long digits, nonentity, and references-stay-literal-in-a-code-span. |
+| P9  | SEV-2                                   | **FIXED — option A.** `Alias.resolve(doc)` dereferences an alias value, accepted only when the resolved node is an integer scalar. Both dropped revision-1 rows are restored and labelled `RESTORED (rev 1)`; an alias-resolving-to-a-string control is added. §2.10 now states 26 additions and two removals rather than 24 additions.                                                                                           |
+| P10 | SEV-2                                   | **FIXED.** The residual is pinned by the real construction — the valid block followed by `## Later section` / `### Last section`, which YAML reads as comments and which measures **clean**. The EOF-only case and the hostile ordinary-prose case both stay as the inverse controls.                                                                                                                                             |
+| P11 | SEV-2 · Owner judgement                 | **FIXED — option B, owner-ruled 2026-09-03.** The contract stays Markdown-only. The false harness comment "raw blocks declare nothing" is corrected, the boundary is declared in §2.3 and §2.7, and a raw `<h1>` is pinned as a passing `KNOWN-OPEN:` case. No HTML parsing is introduced.                                                                                                                                        |
+
+## 2.11c Disposition of the implementation review (P12–P15)
+
+The implementation landed as commit `f1d51da` (2026-09-04), porting §2.3 into
+`tests/support/planConsistency.ts` and regenerating the R1 test population from
+§2.10. It was independently reviewed — the first independent look at ANY of
+this revision's content, since revision 3's own plan review was waived (the
+boxed warning at the top of this document) — verdict **CHANGES-REQUIRED**,
+four findings, all reproduced before being accepted; the reviewer's cumulative
+record on this branch is now **28 findings, 28 valid**.
+
+| Ref | Severity                               | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P12 | SEV-2 · `Blocks: the promised dialect` | **FIXED.** `parseDocument` was given `version: '1.2'`, which is only a FALLBACK for a document with no `%YAML` directive — an explicit directive overrides it, and under an explicit `%YAML 1.1` the sexagesimal scalar `1:20` resolves to the integer `80` and silently passed as a count. `yamlDoc.directives.yaml.version` is now checked explicitly and any value other than `'1.2'` raises `C3-NOCANONICAL`. A paired 1.1/1.2 control is committed.                                                                                                |
+| P13 | SEV-3                                  | **FIXED.** Site-grouping now collects candidate subjects into a temporary array and commits them to `sites` only after the WHOLE payload is confirmed valid (`bad.length === 0`), not per-key as each governed key is checked. A malformed-payload-plus-matching-prose control proves the blocker fires with no advisory; the inverse (valid payload, still drifts) is committed beside it.                                                                                                                                                             |
+| P14 | SEV-3                                  | **FIXED — wording only, no mechanism change.** The claim "the swallow risk is caught by the YAML parse" was an unqualified universal; both `docs/testing/PLAN_CONSISTENCY_C3_PARSER_PLAN.md` §2.3 item 4 and the matching code/test comments now state the real boundary: ordinary swallowed prose and a deleted live closer are caught, but swallowed material that is ITSELF valid YAML (trailing `##`/`###` headings read as comments) is the declared, owner-accepted residual. A `DISPROOF` control pins the caught case beside the residual case. |
+| P15 | SEV-3                                  | **FIXED.** §2.9 said "One devDependency"; corrected to name both `marked` and `entities`, consistent with §1.3 and §2.4, which always named two.                                                                                                                                                                                                                                                                                                                                                                                                        |
+
+⚠ **P13 also corrects an overclaim in the implementation's own commit message
+and code comment: "the site-grouping rule is unchanged" was inaccurate.** The
+rule itself (one site per subject, never per key, established only after the
+payload validates) was always the intent; what was inaccurate was that the
+FIRST porting pass validated "after the payload validates" per-key rather than
+for the payload as a whole. The reviewer's own judgement: the new per-value
+gate (P7) is correct and not scope drift; the ordering defect was.
+
+## 2.11d Disposition of the follow-up implementation review (P16–P18)
+
+The P12–P15 fix landed as commit `60f191e` (2026-09-04). The follow-up review
+re-attacked P12 specifically — rather than trusting the paired control — and
+found a second bypass at the SAME seam; verdict **CHANGES-REQUIRED**, three
+findings, all reproduced before being accepted. The reviewer's cumulative
+record on this branch is now **31 findings, 31 valid** across seven rounds.
+
+| Ref | Severity                               | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P16 | SEV-2 · `Blocks: the promised dialect` | **FIXED.** P12's fix checked `doc.errors` then `doc.directives.yaml.version !== '1.2'`, but a syntactically well-formed, UNSUPPORTED numeric version (`%YAML 1.0`, `1.3`, `2.0`) is not a parse ERROR — `yaml` reports it as a `BAD_DIRECTIVE` WARNING and keeps the EFFECTIVE version at the fallback `1.2`, so the version check could not see it. `doc.warnings` is now checked for `code === 'BAD_DIRECTIVE'` before the version check. Controls added for `%YAML 1.3` (higher minor) and `%YAML 2.0` (incompatible major); both proven to fail against `60f191e`. |
+| P17 | SEV-3                                  | **FIXED.** Plan §2.3 item 5 still prescribed the pre-P12/P16 `parseDocument` call and its original four checks; a maintainer following it as a recipe would recreate both bugs. Rewritten to name the complete post-P16 flow in order: parse errors, the `BAD_DIRECTIVE` warning check, the effective-version check, then the original mapping/key/value checks.                                                                                                                                                                                                       |
+| P18 | SEV-3                                  | **FIXED — wording only.** The closing note added while fixing P12–P15 said the repair meant "production code" now existed; `tests/support/planConsistency.ts` is test support, not `src/`, exactly as §2.9 has always correctly scoped it. Corrected to "the checker implementation."                                                                                                                                                                                                                                                                                  |
+
+⚠ **P16 is the SAME antipattern as P12, one channel over.** P12 found that a
+parser option naming a dialect can be only a fallback default, overridable by
+an in-document directive; P16 found that even after checking the parser's
+EFFECTIVE state, a value the parser rejected into its WARNING channel rather
+than its ERROR channel can still slip through if only errors and effective
+state are read. The general form — sweep error, warning AND normalisation
+channels before claiming a dialect is enforced — is filed to the `practice`
+wing.
+
+## 2.11e Disposition of the second follow-up implementation review (P19)
+
+The P16–P18 fix landed as commit `1d68876` (2026-09-04). The second follow-up
+review re-attacked the P16 fix specifically — the commission asked it to sweep
+whether `BAD_DIRECTIVE` was a safe blocking predicate on its own, not only
+re-confirm the demonstrated `%YAML 1.0`/`1.3`/`2.0` bypass stayed closed — and
+found a defect in the OPPOSITE direction from every prior round on this seam;
+verdict **CHANGES-REQUIRED**, one finding, reproduced before being accepted.
+The reviewer's cumulative record on this branch is now **32 findings, 32
+valid** across eight rounds.
+
+| Ref | Severity                                               | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P19 | SEV-2 · `Blocks: the promised totals-document dialect` | **FIXED.** The P16 fix treated ANY `BAD_DIRECTIVE` warning as "unsupported `%YAML` version," but `yaml`'s own `Directives.add()` routes an unrecognised RESERVED directive (YAML 1.2.2 §6.8 — e.g. `%FOO bar`, which processors must accept with only a warning) through the exact same code. Current C3 falsely blocked a valid totals block carrying `%FOO bar`, including when paired with a perfectly valid explicit `%YAML 1.2` (ruling out `doc.directives.yaml.explicit` as a discriminator, since it is also true in that valid paired case). Fixed by `unsupportedYamlVersionWarned(text, doc.warnings)`: re-parses the block with `yaml`'s own `Parser` to recover the CST `directive` tokens the composer consumed, then for each `BAD_DIRECTIVE` warning finds the token whose HALF-OPEN code-unit-offset span contains the warning's own reported position and reads THAT token's directive name — never the warning's message text, never a version-string table (wording corrected 2026-09-05, implementation review finding P25 — this row previously said "byte range," which P22 had already corrected everywhere else in this plan). Three controls added: `%FOO bar` alone (valid), an explicit `%YAML 1.2` beside `%FOO bar` (valid, the paired case that broke the `explicit` discriminator), and `%YAML 1.3` beside `%FOO bar` (still invalid, proving the fix does not reopen P16). |
+
+⚠⚠⚠ **P19 IS THE SAME GENERAL ANTIPATTERN FAMILY AS EVERY PRIOR DEFECT ON THIS
+SEAM, BUT IT IS THE FIRST ONE IN THE OPPOSITE DIRECTION.** P1–P3, P12 and P16
+were all UNDER-inclusive: a hand-written shortcut or an unread channel let bad
+input silently PASS. P19 is OVER-inclusive: a single parser warning CODE
+combines two contract-different meanings — "the version this document named is
+unsupported" and "this document names a directive the format itself reserves
+and requires processors to accept" — and treating the code as if it uniquely
+meant the first falsely BLOCKED valid input. The same root lesson still
+applies — a broad parser signal is not automatically a precise contract
+predicate — but the failure mode this round is the mirror image of P12/P16's,
+which is why closing P16 by simply widening the same check could not have
+found it: only re-reading the STRUCTURE the warning correlates to (which
+directive token it was actually about), not just the code it carries, does.
+Filed to the `practice` wing as a third chained rule extending the P12/P16
+pair.
+
+## 2.11f Disposition of the third follow-up implementation review (P20–P22)
+
+The P19 fix landed as commit `b817a42` (2026-09-04). The third follow-up
+review's commission explicitly asked it to sweep multiple `%YAML` directives
+in one document, not only re-confirm the reserved-directive class stayed
+closed — and found a defect in a THIRD channel on the same seam, plus a
+neighbouring `%TAG` gap the same sweep exposed, plus a wording/precision
+defect in the P19 fix's own new mechanism; verdict **CHANGES-REQUIRED**,
+three findings, all reproduced before being accepted. The reviewer's
+cumulative record on this branch is now **35 findings, 35 valid** across nine
+rounds.
+
+| Ref | Severity | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P20 | SEV-2    | **FIXED.** `yaml`'s `Directives.add()` unconditionally overwrites its stored version on every SUPPORTED `%YAML` directive with no redeclaration check, so a later, valid `%YAML 1.2` silently erased an earlier, forbidden `%YAML 1.1` from `directives.yaml.version` — neither an error nor a warning was raised, and the version check trusted only the innocent final value. YAML 1.2.2 §6.8.1 makes more than one `%YAML` directive an error regardless of whether the versions agree. Fixed by counting `yamlDirectives` — the SAME CST tokens already parsed for P19's correlation — and blocking on more than one, before the final version is ever trusted. Two discriminating controls (`1.1`→`1.2`, duplicate `1.2`) plus three conformance controls (`1.2`→`1.1`; `1.3`↔`1.2` both orders), all proven against `8b0ed9f`. |
+| P21 | SEV-3    | **DISPOSITIONED — declared a residual, owner-ruled 2026-09-05.** `yaml@2.9.0`'s `Directives.add()` has no redeclaration guard for `%TAG` either (YAML 1.2.2 §6.8.2), and neither this checker nor its dependency reports a repeated handle. The owner was offered "enforce it" (a parser-token `%TAG` uniqueness check, mirroring P20's approach) against "declare it a residual" (pin current behaviour, correct the "no declared departures" claim) and chose the latter: `%TAG` never appears in the live plan, and building enforcement for a property the chosen parser does not report would recreate the hand-parser class this checker exists to retire. §2.2 and §2.7 now name the one departure explicitly; a `KNOWN-OPEN:` control pins current (silent) behaviour.                                                       |
+| P22 | SEV-3    | **FIXED.** Plan §2.3 item 5 and the checker's own comments called the P19 correlation's coordinate a "byte range" with a closed upper bound; it is a JavaScript UTF-16 code-unit offset with a HALF-OPEN span. No false attribution had occurred (every observed warning position falls strictly inside its token), so this was a documentation/precision defect, not a live false accept — but a future astral-character or boundary-adjacent construction could have exploited the mismatch. Corrected to "half-open code-unit-offset span," `[t.offset, t.offset + t.source.length)`, and the predicate's `<=` changed to `<` to match.                                                                                                                                                                                           |
+
+⚠⚠⚠ **P20 IS THE THIRD CHANNEL ON THE SAME SEAM, AND IT PROVES THE FIX-ROUND
+DISCIPLINE HAS TO ATTACK CARDINALITY, NOT JUST VALUE.** P12 asked "which
+dialect does the parser think it used" (a value question). P16 and P19 asked
+"through which channel does the parser report a problem with that value" (a
+channel question). **P20 is a different axis again: "how many times does this
+directive appear, and does the parser's own bookkeeping preserve that count or
+silently discard it?"** `Directives.add()` treats every SUPPORTED `%YAML`
+directive as a plain overwrite — by design, since a document is only supposed
+to carry one — so nothing about VALUE or CHANNEL was wrong; the parser was
+simply never asked to remember a MULTIPLICITY its own grammar forbids. The
+fix pattern is consistent with P16/P19 even though the axis is new: read the
+SAME structured CST tokens rather than the parser's normalised final state,
+because the normalised state is exactly where a multiplicity violates its own
+invariant and no one is watching.
+
+## 2.11g Disposition of the fourth follow-up implementation review (P23–P25)
+
+The P20–P22 fix landed as commit `2142111` (2026-09-05). The fourth
+follow-up review's commission asked it to sweep the P20 multiplicity check's
+generality, the P21 `%TAG` residual's completeness, and P22's own sweep
+completeness — and found a defect one lexical boundary earlier than any prior
+round on this seam, plus a residual scoped narrower than its own root cause,
+plus one leftover stale phrase; verdict **CHANGES-REQUIRED**, three findings,
+all reproduced before being accepted. The reviewer's cumulative record on
+this branch is now **38 findings, 38 valid** across ten rounds.
+
+| Ref | Severity | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P23 | SEV-2    | **FIXED.** `yamlDirectiveTokens` selected `%YAML` CST tokens with `/^%YAML(?:\s\|$)/` — ECMAScript `\s`, which matches NO-BREAK SPACE (U+00A0), EM SPACE (U+2003) and other characters YAML 1.2.2 §5.5 does NOT classify as structural white space (only U+0020/U+0009 are; `yaml`'s own `Directives.add()` splits on `/[ \t]+/`). A directive like `%YAML<U+00A0>1.3` is therefore, under YAML's own grammar, an unknown RESERVED directive (the parser reports it exactly like `%FOO`) — but the old regex misclassified it as `%YAML`, reintroducing a P19-shaped false blocker one boundary earlier. This bug was introduced with the token-matching logic itself in the P19 commit (`b817a42`) and survived two subsequent review rounds before this sweep tried a non-ASCII separator. Fixed by narrowing the pattern to `/^%YAML(?:[ \t]\|$)/`. Four controls added: NO-BREAK SPACE and EM SPACE reserved directives alone (both valid), a real tab-separated unsupported version (still invalid, conformance), and a real `%YAML 1.2` beside an NBSP reserved directive (valid — proves P20's cardinality check is not fooled by the same misclassification). ⚠ **Corrected (implementation review finding P28): the two regexes above were previously written with unescaped `\|` alternation pipes inside this table cell, which GFM's table grammar reads as new cell delimiters — the rendered row on GitHub truncated after `%YAML(?:\s` and dropped everything from the cause through the four controls, and the same corruption mangled the spacing around the break. Escaping each pipe as `\|` and restoring the spacing, as here, keeps the cell intact; this is the only change this row makes to its own substance.** |
+| P24 | SEV-3    | **DISPOSITIONED — residual broadened, owner-ruled 2026-09-05.** The P21 residual as first worded named only a repeated `%TAG` handle, but the SAME missing validation in `Directives.add()` (which checks only directive arity, nothing about handle or prefix grammar) also silently accepts a malformed handle (missing `!` delimiters) and a malformed prefix percent-escape — three distinct YAML 1.2.2 §6.8.2 rules sharing one root cause. Owner chose to broaden the existing residual (over building parser-token enforcement for the wider gap): §2.2 and §2.7 now name all three unenforced rules explicitly, with the same rationale as P21 (`%TAG` never appears in the live plan; hand-building enforcement would recreate the hand-parser class this checker exists to retire). Two more `KNOWN-OPEN:` controls added, one per newly named rule, alongside the original repeated-handle control — three total, each independently self-enforcing (closing any one breaks its own test). **No separate backlog story card opened**: SEV-3, zero live-plan impact, and the `KNOWN-OPEN:` mechanism already is the durable tracking record — see §2.7's owner note.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| P25 | SEV-3    | **FIXED.** The P22 wording sweep corrected §2.3's normative recipe and both code comments but missed the historical §2.11e disposition row (P19's own entry), which still said the mechanism finds "the token whose byte range contains" a warning's position — a present-tense claim about current behaviour, not a quoted historical phrase, so it contradicted P22's own correction two sections later. Corrected to "half-open code-unit-offset span," matching §2.3 and §2.11f. The two remaining "byte range" occurrences in this plan (§2.3's own P22 note, and §2.11f's P22 disposition row) are both explicit historical quotations of the superseded wording and were left as-is.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+
+⚠⚠⚠ **P23 IS THE FOURTH INSTANCE ON THIS SEAM, AND IT MOVES THE ATTACK SURFACE
+ONE LEVEL LOWER THAN VALUE, CHANNEL, OR CARDINALITY.** P12 asked which VALUE
+the parser settled on; P16 and P19 asked through which CHANNEL a problem with
+that value is reported; P20 asked how many TIMES the construction appeared.
+**P23 asks a question underneath all three: which CHARACTERS are actually
+part of the directive's NAME, as opposed to separating it from its
+parameter?** Every one of P12/P16/P19/P20's fixes correctly read the
+parser's own CST tokens rather than re-deciding the questions they each
+asked — but the CODE THAT SELECTS those tokens in the first place used a
+convenience classifier (JavaScript's `\s`) that does not exactly match the
+grammar being delegated to, which is the same root antipattern this whole
+arc keeps re-proving, now found at the point where a token is IDENTIFIED
+rather than where it is INTERPRETED. **The lesson generalises past this
+checker: when correlating by a recognised name (a keyword, a directive, a
+tag), the boundary that separates the name from what follows must be
+drawn from the SAME grammar the parser itself uses — never from a host
+language's own, usually broader, definition of "whitespace" or
+"separator."**
+
+## 2.11h Disposition of the fifth follow-up implementation review (P26–P28)
+
+The P23–P25 fix landed as commit `cbae9e1` (2026-09-05); the fifth
+follow-up review committed as `f4574b781e6f0cd1b329a7e58a5a828a084797c5`
+found a defect one boundary below P23's own separator fix, a completeness
+gap in P24's broadened `%TAG` residual, and a Markdown table rendering
+defect in P23's own disposition row above; verdict **CHANGES-REQUIRED**,
+three findings, all reproduced before being accepted. The reviewer's
+cumulative record on this branch is now **41 findings, 41 valid** across
+eleven rounds.
+
+| Ref | Severity | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P26 | SEV-2    | **FIXED.** `yaml@2.9.0`'s composer decides a directive's NAME via `line.trim().split(/[ \t]+/)` — `trim()` runs BEFORE the split and removes NBSP, EM SPACE and other ECMAScript-trimmable characters YAML classifies as ordinary `ns-char` from the line's OWN edges. A reserved directive consisting of ONLY `%YAML` plus one such trailing character — nothing else on the line — is reduced by the composer's own normalisation to the bare string `%YAML` before its name is ever read, so the composer itself raises `BAD_DIRECTIVE` as an ERROR ("should contain exactly one part") for what YAML 1.2.2 §6.8 requires accepting as an unknown reserved directive; the prior `doc.errors.length > 0` check blocked unconditionally on any such error. P23's `[ \t]` selector already correctly excluded the token (its raw source has no `[ \t]` or end-of-string right after `%YAML`) — the false block came from a FOURTH channel, `doc.errors`, that this file was not yet reading discriminately. Fixed by splitting `yamlDirectiveTokens` into `allDirectiveTokens` (every CST directive token) and a `%YAML`-only filter, adding `directiveTokenAt` to find a diagnostic's owning token by position, and adding `directiveName` and `blockingDirectiveErrors`, which excludes a `BAD_DIRECTIVE` error only when its owning token's TRUE name (everything after `%` up to the first ASCII space/tab, or the whole remainder) is neither `YAML` nor `TAG` — the exact two-name set `Directives.add()`'s own `switch (name)` branches on — leaving a genuinely malformed real `%YAML` or `%TAG` directive (wrong arity) blocking exactly as before, and every other error code untouched. Five controls added: trailing NBSP and trailing EM SPACE alone with nothing following (both valid), a truly bare `%YAML` with no trailing character at all (still invalid — the real directive with zero parts), `%YAML 1.2 extra` with too many parts (still invalid), and a real `%YAML 1.2` beside a trailing-NBSP reserved directive (valid — proves P20's cardinality check is not fooled). ⚠⚠⚠ **Self-corrected before review (found by continued adversarial self-testing of this same fix, not by a review round):** the first version of `blockingDirectiveErrors` excluded an error whenever its owning token merely failed the `%YAML`-only test, which correctly closed the case above but ALSO silently excluded a genuinely malformed REAL `%TAG` directive with the wrong number of parts (`%TAG e`, arity 1, no trimming involved at all) — a malformed instance of a RECOGNISED name is not a reserved directive and must still block. Corrected to check the owning token's TRUE name against the recognised set directly. Two more controls added — a malformed real `%TAG` (still invalid) and a `%TAG` with a trailing NBSP and nothing else (valid, the `%TAG`-side mirror of the original case) — and the correction proven to discriminate: exactly 1 of the 2 new controls fails against the pre-correction commit, the other passes unchanged on both. |
+| P27 | SEV-3    | **DISPOSITIONED — residual reworded and broadened, owner-ruled 2026-09-05.** P24's "three distinct rules" enumeration repeated the exact antipattern P24 itself was fixing: naming specific violated rules as if they were the complete boundary, when `Directives.add()`'s `%TAG` case performs no grammar validation of any kind beyond exact two-part arity. Two further independently reachable, specification-invalid forms were measured silently accepted by the same missing validation: a prefix containing a literal, unescaped `{` or `}` (YAML 1.2.2 §6.8.2.2's `ns-uri-char` excludes braces everywhere, unlike `,`/`[`/`]`, which it permits unescaped), and a global-shaped prefix (one not itself starting with `!`) beginning with a raw flow indicator such as `,` or `[` (a global prefix's first character must be `ns-tag-char`, which excludes flow indicators even though the SAME characters are legal `ns-uri-char` content everywhere else in the string). §2.2 and §2.7 now state the residual at the level of the implementation boundary ("no `%TAG` grammar validation beyond arity") with an explicit disclaimer that its five listed forms are a representative sample, not a claim of exhaustiveness — directly addressing why this residual has needed broadening twice. Two more `KNOWN-OPEN:` controls added, one per newly named form, alongside the original three — five total. **No separate backlog story card opened**, same reasoning as P21/P24: SEV-3, zero live-plan impact, and the `KNOWN-OPEN:` mechanism already is the durable tracking record.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| P28 | SEV-3    | **FIXED.** §2.11g's own P23 disposition row (this table, one section up) contained two literal regexes with unescaped alternation pipes inside a Markdown table cell. GFM's table grammar reads any unescaped `\|` as a new cell delimiter — the rendered row truncated after `%YAML(?:\s` on GitHub, silently dropping the cause, the fix, and all four P23 controls from view, and the same corruption mangled surrounding spacing. Fixed by escaping both pipes as `\|` and restoring the mangled spacing; verified by lexing the corrected row with `marked` (the same GFM lexer the checker itself uses) and confirming it renders as exactly three cells with the full disposition text intact, plus a full-document sweep confirming no other table row in this plan has a column-count mismatch.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+
+⚠⚠⚠ **P26 IS THE FIFTH INSTANCE ON THIS SEAM, ONE BOUNDARY BELOW P23'S OWN
+FIX.** P23 asked which CHARACTERS separate a directive's name from its
+parameter, mid-line. **P26 asks the same question at the line's OWN EDGE:**
+does the dependency's own pre-processing (a leading/trailing `trim()`) ever
+remove a character P23's separator boundary was supposed to protect,
+BEFORE that boundary is ever tested? P23's fix was necessary but not
+sufficient — it correctly decided which TOKENS are `%YAML`, but the
+diagnostic channel this file read (`doc.errors`, unconditionally) was still
+trusting the composer's OWN name-decision, which the composer had already
+made via a broader normalisation than P23's own selector uses. The lesson
+generalises past this checker, again: when a repair narrows YOUR OWN
+lexical boundary to match a delegated grammar exactly, also check whether
+the DELEGATE'S OWN preprocessing — trimming, normalising, canonicalising —
+runs BEFORE that boundary is applied, on the delegate's side, using a
+DIFFERENT (usually broader) definition than the one just matched.
+
+⚠ **P27 and P28 are process lessons, not new code-behaviour classes.** P27
+repeats, one level further, the exact "name examples instead of the
+boundary" antipattern P24 itself fixed — the remedy generalises to: when a
+residual is broadened a second time for the same underlying gap, reword its
+FRAMING to disclaim exhaustiveness, not just add another pin. P28 shows a
+formatter-clean result (`prettier --check` passed on both `cbae9e1` and
+`f4574b781e6f0cd1b329a7e58a5a828a084797c5`, since Prettier reformats
+Markdown syntax but does not lex GFM tables for cell-count correctness) is
+not evidence a table renders correctly — the same class of check-that-
+cannot-fail this project has met before, now in a documentation artifact
+rather than a test harness.
+
+## 2.11i Disposition of the sixth follow-up implementation review (P29–P31)
+
+The P26–P28 fix and self-correction landed as commits `b6f84e7` and `24fbc45`
+(2026-09-05); the sixth follow-up review committed as
+`345cb2cf2b695c61cd27e42e309e909b9b05fd52` found a THIRD layer under the same
+trailing-edge-normalisation seam — recognised-name-set membership alone is
+not sufficient, the candidate must also be a grammar-valid directive name —
+plus the two documentation defects named below; verdict
+**CHANGES-REQUIRED**, three findings, all reproduced before being accepted.
+The reviewer's cumulative record on this branch is now **44 findings, 44
+valid** across twelve rounds.
+
+| Ref | Severity | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P29 | SEV-2    | **FIXED.** `blockingDirectiveErrors` suppressed a `BAD_DIRECTIVE` error whenever the extracted candidate name was not exactly `YAML` or `TAG`, but never checked that the candidate was a LEGAL YAML directive name (`ns-directive-name ::= ns-char+`, bounded by `c-printable`) before granting it "valid reserved directive, must accept" treatment. U+000B VERTICAL TAB and U+000C FORM FEED are ECMAScript-`trim()`-removable exactly like NBSP/EM SPACE (P26) but are NOT legal `c-printable`/`ns-char`, so `%YAML` plus a trailing VT or FF is genuinely invalid YAML that the fix wrongly let through — MEASURED: both constructions blocked at `cbae9e1` and passed at `24fbc45`. Fixed by adding `isNsChar(codePoint)` (a precise range test mirroring YAML 1.2.2's own `c-printable`/`b-char`/`c-byte-order-mark`/`s-white` productions, §§5.1, 5.2, 5.4, 5.5, fetched from the specification rather than reconstructed from memory) and `isLegalDirectiveName(name)` (`ns-char+`, iterating by Unicode CODE POINT via `Array.from` so an astral character is tested as one scalar value and a lone surrogate is correctly rejected), then requiring `blockingDirectiveErrors` to keep blocking whenever the extracted name is neither `YAML`/`TAG` NOR grammar-valid. No table of specific rejected characters — the same discipline as the existing `[ \t]` separator check. **Self-check performed before sending to review** (task discipline, same spirit as the round-6 self-correction): cross-referencing ECMAScript's complete `trim()`-removable character set against YAML's `ns-char` production directly surfaced a THIRD instance of the identical defect the review itself had not named — U+FEFF ZERO WIDTH NO-BREAK SPACE/BYTE ORDER MARK, also `trim()`-removable, also explicitly excluded from `ns-char` by the `c-byte-order-mark` subtraction, MEASURED via direct `Parser().parse()` inspection to retain in the CST token while triggering the same composer `BAD_DIRECTIVE` arity error. Fixed for free by the same general mechanism (no separate code change); added as a third committed control. Three controls added: trailing VT alone, trailing FF alone, and trailing BOM/ZWNBSP alone (all invalid — must block). A further self-check swept the full production boundary named by the review's own remediation instruction — astral-plane characters, lone surrogates, and the noncharacters the review's own 65-probe sweep touched — confirming the fix correctly leaves all 63 pre-existing `yaml@2.9.0` warning-only gaps (C0/C1 controls other than VT/FF, lone surrogates, U+FFFE/U+FFFF) unaffected, since none of them is ECMAScript-`trim()`-removable and therefore none is reachable via this composer-trim mechanism at all. |
+| P30 | SEV-3    | **FIXED.** The doc comment above `directiveName` (`tests/support/planConsistency.ts`) and its `%TAG` mirror in the spec both claimed `yaml`'s own CST tokenizer drops a trailing trimmable character from `token.source` — empirically false, and already known to be false by the time it was written: the prior session's own investigation had directly verified via `Parser().parse()` that the CST token's raw source PRESERVES the trailing character, and it is `yaml`'s SEPARATE composer-level `Directives.add()` call, operating on a different line string, that trims it. Traced to a byte-content mistake in the prior session's FIRST debug script (a real ASCII space typed where NBSP was intended) that produced the wrong belief before a later, corrected script established the true mechanism the actual code was built on — the comment written during the mistaken phase was never revisited. This plan's own §2.11h account was already correct; only the two code/test comments were wrong. Both rewritten to state the CST token preserves the trailing character while the composer's separate `trim()` call is what discards it, and to remove language claiming the token "cannot be trusted" or was "already trimmed identically."                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| P31 | SEV-3    | **FIXED.** The plan (§2.7) and the test comment (`tests/unit/planConsistency.spec.ts`) both said "the four flow indicators" while listing five characters (`,` `[` `]` `{` `}`) — YAML 1.2.2's `c-flow-indicator` production has five alternatives, and the enumeration beside the word "four" was itself correct and complete. "Four" changed to "five" in both places; no behaviour or test expectation changed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+
+⚠⚠⚠ **P29 IS THE SIXTH INSTANCE ON THIS SEAM, ONE BOUNDARY BELOW P26'S OWN
+RECOGNISED-NAME-SET FIX.** P26 asked whether the composer's own trailing-edge
+`trim()` could misclassify a valid reserved directive as a malformed
+recognised one. The self-correction to P26 then asked, one layer deeper,
+whether "not `%YAML`" was too narrow a test — it should have been "not in
+the recognised set." **P29 asks the SAME question at yet another layer**:
+recognised-set membership answers "is this one of the two names YAML gives
+defined semantics to," but a candidate that is in NEITHER of two states —
+not recognised, AND not even a legal name — was still being waved through as
+if non-membership in the recognised set were sufficient evidence of
+validity. The general lesson this seam keeps re-proving, now three layers
+deep: **excluding a diagnostic because a value fails a narrow test is not
+the same as confirming the value belongs to the class the exclusion is
+supposed to protect.** Each round has narrowed a different narrow test (the
+lexical separator, P23; the recognised-name-set membership check, P26's
+self-correction; now the grammar-validity of the extracted name, P29) —
+never inferring validity from mere non-membership in the class being
+excluded.
+
+⚠ **P30 and P31 are process lessons, not new code-behaviour classes**, the
+same as P27/P28 one round earlier. P30 is the sharpest evidence yet that a
+comment can go stale MID-SESSION: understanding corrected itself between a
+mistaken first debug script and a corrected later one, the code and tests
+were built on the correct understanding, but the prose written during the
+mistaken phase was never revisited — the general remedy is to re-read every
+comment written before a mid-investigation correction, not just the ones
+touched by the correction's own diff. P31 repeats P28's class exactly: a
+prose-only miscount that no formatter or test can catch, caught only by
+counting the enumeration against the word describing it.
+
+## 2.11j Disposition of the seventh follow-up implementation review (P32)
+
+The P29–P31 fix landed as commits `b03cd944e10eb48e5512a1be306f87ec861d60ce`
+and `8ea929a9fddcf7a8f9cda04f811577d8fb4a6dd7` (2026-09-06), treated by the
+reviewer as a single repair unit; the seventh follow-up review committed as
+`2e959046b1115a106e5cda25f9195788407fd835` returned **PARTIALLY-CONFIRMS** —
+the first non-blocking verdict on this branch. It found P29–P31 RESOLVED, no
+defect in the `isNsChar`/`isLegalDirectiveName` mechanism, the multi-directive
+error-ownership interaction or the accepting side, and it independently
+reproduced both historical worktree splits (`cbae9e1` 4 failed / 142 passed,
+`24fbc45` 3 failed / 143 passed). One new finding, SEV-3, reproduced before
+being accepted, and dispositioned by the reviewer itself as requiring no
+repair round-trip under STRAT-D18.
+
+| Ref | Severity | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P32 | SEV-3    | **FIXED**, and the class the review declared swept turned out not to be. The review named three wrong YAML 1.2.2 section locators — `b-char` cited as §5.2 in the `isNsChar` doc comment (it is §5.4), and the plan's two "§5.1–§5.4" range claims, which omit §5.5 where `s-white` is defined. It also stated that "the ... `ns-char` ... individual references elsewhere are accurate." ⚠⚠⚠ **THEY WERE NOT.** `ns-char` is defined under §5.5, not §5.4, and the same mislabel recurred in THREE further places the reviewer's own sweep did not reach: the identical doc-comment line in `tests/support/planConsistency.ts`, and two mirror citations in the P29 test-comment prose in `tests/unit/planConsistency.spec.ts`. Verified against the raw specification by THREE independent methods before any edit — two differently-worded fetches asking which named productions sit under each numbered subsection, and a direct `curl` of the spec HTML followed by a structural check of each production's `<div id="rule-…">` anchor position against each `<h2 id="5X-…">` heading anchor. All three agree: `b-char` §5.4, `nb-char` §5.4, `s-white` §5.5, `ns-char` §5.5. All six wrong citations corrected in `141fe0d4896fc8620f38ce0c358e533ecb57faa8` — `b-char` §5.2→§5.4, `ns-char` §5.4→§5.5 in all four places, and both plan ranges broadened from "§5.1–§5.4" to the explicit list "§§5.1, 5.2, 5.4, 5.5" rather than a continuous span that would wrongly include §5.3. Comment- and prose-only, verified by `git diff` (every changed `.ts` line begins with `*` or `//`); zero test-expectation change, 146/146 unchanged. |
+
+⚠⚠ **THIS SECTION DELIBERATELY STATES NO CUMULATIVE ROUND OR FINDING COUNT,
+AND THE SIX PRIOR COUNTS WERE CORRECTED IN THE SAME PASS.** Every section from
+§2.11d onward asserted "the reviewer's cumulative record … across N rounds,"
+and from §2.11d the round word was one too high; each later section
+incremented the bad value, so a single miscount propagated across six
+statements. The finding totals (20, 24, 28, 31, 32, 35, 38, 41, 44) were
+correct throughout — only the round words drifted. The measured count is
+THIRTEEN rounds: **three** on the original checker, **two** on this plan, and
+**eight** on the implementation, taken from the reviewer's own self-numbering
+in the review titles ("Independent implementation review" through "Seventh
+follow-up implementation review"), not from a file count. ⚠ **This is
+`C3-COUNTDRIFT` in the flesh, in the plan for the checker that exists to catch
+it** — a running total asserted at nine sites, drifting from one bad
+increment. It survived because `C3-COUNTDRIFT` is ADVISORY and because the
+checker governs `docs/testing/SPACING_HELPER_PRESET_PLAN.md`, not its own
+plan. The remedy is the one this plan already prescribes for everyone else:
+**state a running total once, or not at all.** This section states it not at
+all.
+
+⚠ **P32 is a documentation/auditability defect, not a mechanism defect** — the
+copied production bodies and the implemented ranges were correct throughout,
+and no classification or runtime behaviour changed. Its lesson is the one the
+review's own miss demonstrates better than the finding does: **a production
+body and its section anchor are SEPARATE claims, and correct range arithmetic
+does not validate the locator attached to it.** The corollary, earned twice on
+this branch, is that a reviewer's clearance is a hypothesis too — "the class
+was swept" is a claim to re-test, not a result to inherit.
+
+## 2.12 Questions the reviewer is asked to answer
+
+Revisions 1 and 2 asked ten questions; all were answered and none is repeated.
+These target revision 3's own new surface:
+
+1. Is `entities` used correctly and completely — is there a CommonMark §2.5
+   boundary it decides differently from the specification, or a place the
+   projection should not be decoding at all?
+2. Does `Alias.resolve(doc)` handle every alias shape a governed value could
+   take, including an alias to an anchored mapping or a chain of aliases?
+3. Is the raw-HTML boundary (§2.7, owner-ruled option B) stated everywhere it
+   needs to be, and is its `KNOWN-OPEN:` case a faithful pin?
+4. Is the swallowed-document residual pinned by the RIGHT construction, or is
+   there a cleaner swallow that also stays visible?
+5. Declaring `entities` and `marked` as devDependencies in a pre-code revision —
+   correct, or scope creep that should have waited for the repair?
+
+---
+
+⚠ **STALE BELOW THIS LINE, KEPT FOR HISTORY: at the time revision 3 was
+written, no code implementing this repair existed.** ⚠ **Corrected
+(implementation review finding P18 — the line below previously said
+"production code", which this test-support checker is not; §2.9 has always
+correctly scoped the surface to `tests/support/planConsistency.ts` and its
+spec, not `src/`).** The checker implementation now exists — the repair landed
+as commit `f1d51da` (2026-09-04), independently reviewed across two rounds
+with seven findings total (§2.11c, all fixed). `tools/c3-parser-harness.cjs`
+has been deleted, its cases now committed controls in
+`tests/unit/planConsistency.spec.ts`, exactly as this section originally said
+would happen.
