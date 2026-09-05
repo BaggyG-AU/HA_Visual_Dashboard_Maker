@@ -45,7 +45,7 @@ still valid and the gate green. What remains is one declaration with one claim:
 state when the gate ran.** It says nothing about `src/`, tests, tools, this
 ledger's own evidence, or HEAD.
 
-governed fingerprint: `8b4eb5d26986`
+governed fingerprint: `08c029eaec8f`
 
 ## Rows
 
@@ -376,3 +376,18 @@ rule text itself untouched. Run for this change:
 `npx vitest run tests/unit/author-ledger.spec.ts` after regeneration —
 9 passed, 0 failed. Docs-only branch throughout: no e2e or integration run
 is owed.
+
+## Addendum — 2026-09-06, branch `feature/b14-severity-rulings-codification`
+
+This commit adds exactly one governed artifact:
+`docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md`, the
+SPEC-BEFORE-CODE plan for board story B14 (Issue #156). No governed document
+is edited yet — the plan is reviewed before any governance text moves. The
+gate fired exactly as designed (the freshness and certificate legs) and the
+certificate above is regenerated for this tree: `8b4eb5d26986` → `08c029eaec8f`.
+The commissioned rows are the PR #140/#141 record and are untouched: nothing
+in the gate's mechanism changed on this branch, only a governed document the
+mechanism watches. Run for this change: `npx prettier --check` on the plan
+(clean); `npx vitest run tests/unit/author-ledger.spec.ts` after
+regeneration — result recorded in the commit message. Docs-only branch: no
+e2e or integration run is owed.
