@@ -321,3 +321,39 @@ prompt under `prompts/` is edited; the ratification commission is a new file.
 
 **What this round does NOT establish.** The edits are unratified until the
 independent review returns and the owner merges. Nothing is pushed.
+
+## Round 5 — 2026-09-07, answering `b14-severity-rulings-codex-ratification-review.md` (`59251f1`, `CLEAR-WITH-FINDINGS`: P18–P22 at SEV 3, P20 at SEV 4, no SEV 1)
+
+**The first review conducted under the new vocabulary.** Sol derived the
+verdict, opened with the Owner Summary Table, graded every finding without a
+retired token, confirmed all eleven edit units equal the plan's AFTER text, the
+four protected STRAT-D7 spans identical, and no surviving old rule in either
+live surface. The author verified all six findings against the cited source;
+all six hold, and two (P21, P22) are the author's own Round 4 errors. Per OA
+§3.4 ruling 6 the author put each finding to the owner by Ref with options,
+pros and cons and a recommendation; the owner ruled "as recommended" on
+2026-09-07 and authorised the two Issue #156 edits and the push.
+
+| Ref | Sev | Disposition                            | Owner ruling and record                                                                                                                                                                                                                                                                                                             |
+| --- | --- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P18 | 3   | ACCEPTED-RESIDUAL → this row           | The plan's AC-3 Check cell (`:511`) under-describes its output; the criterion holds. Accepted as recorded here and in Round 4 (A4); the plan is a change artifact and is not edited after the terminal cap.                                                                                                                         |
+| P19 | 3   | ACCEPTED-RESIDUAL → this row           | The plan's Status line (`:3`) still reads "awaiting the last scoped follow-up"; the follow-up returned `CLEAR` at `b462579`. Accepted as recorded (A5); the commit history and Round 4 carry the closed track.                                                                                                                      |
+| P20 | 4   | Recorded; no fix elected               | OA §3.4 (`:277`) lazy-continuation line as the plan quotes it; renders correctly. SEV 4: no brief owed; the owner elected no fix.                                                                                                                                                                                                   |
+| P21 | 3   | ACCEPTED-RESIDUAL → this row           | ⚠ Correction of Round 4's AC-6 bullet (`:277-279`): the THREE EDITED files were staged before the fingerprint was read; TWO of them (`docs/templates/**`, `docs/governance/**`) are in the ledger's governed set (`tests/support/authorLedger.ts:68`); the strategy document is not and does not move the certificate.              |
+| P22 | 3   | RESOLVED (hosted record; not a repair) | Issue #156's "Where the edits land" bullet placed the Owner Summary Table in template §4; it landed in §1a. Bullet corrected 2026-09-07 with a dated note. Round 4's clearance of the Issue (`:316-318`) was wrong on this bullet and is corrected here. No reviewed target or safeguard changed, so no STRAT-D7 follow-up is owed. |
+| P23 | 3   | RESOLVED (hosted record; not a repair) | Issue #156 retitled 2026-09-07 to "B14 [HIGH]: Codify severity rulings 1–9 — end the review revolving door without weakening severity". Prior title and body are in the Issue's edit history and in the session scratchpad.                                                                                                         |
+
+**Deferrals: none.** This round is the first live use of the DEFERRED state
+and it is not used: every finding is either a record nobody should revisit or a
+one-sentence hosted correction. The cleanup-sweep draft item stays empty; using
+it here would file work that should never be done.
+
+**Blast radius (OA §3.4).** This round changes this ledger and two hosted
+fields of Issue #156. No governed file changes; the fingerprint stays
+`4fad7a426996`. Nothing here is a repair under §3.4's definition (a change to
+the artifact under review or a safeguard for it), so no scoped follow-up is
+owed; the owner's merge is the next gate.
+
+**What this round does NOT establish.** The amendments are ratified by the
+owner's merge, not by this record. The pause on new governance mechanisms is
+still an open ruling.
