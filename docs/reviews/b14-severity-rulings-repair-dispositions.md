@@ -174,3 +174,49 @@ changed against the pre-edit backup (two notes, each preceded by a blank line),
 and both original sentences are still present. The story and the plan now
 agree on the reachability object; the second follow-up is asked to read the
 live Issue.
+
+## Round 3 — 2026-09-07, answering `b14-severity-rulings-codex-plan-review-followup2.md` (`304aeca`, `BLOCKED-ON` two sections: P6 remainder and new P15 at SEV 1; new P16 and P17 at SEV 3)
+
+**Verdict under the cap, and the owner's ruling.** The cap set on 2026-09-06
+parked B14 on this verdict. Before ruling, the owner asked whether the process
+had become too detailed; the author's assessment was that eleven of the
+seventeen findings across the three rounds targeted the plan's own scaffolding
+(counts, projections, inventories, evidence labels) rather than the nine rules,
+and that each such surface drifts as the branch grows. The owner agreed and
+ruled on 2026-09-07: **one final revision that removes scaffolding rather than
+adding to it; one more scoped follow-up under a terminal cap; if that follow-up
+is anything other than `CLEAR` or `CLEAR-WITH-FINDINGS`, B14 is parked and
+rescoped — the edits for rulings 1–6 land directly under a single ratification
+review with no further plan track — and there is no further re-authorisation.**
+The owner also accepted the author's classification of the four findings: none
+is a revision-3 regression; P6 and P17 were on lines revision 3 touched or had
+the data for and should have been caught then; P15 and P16 pre-date revision 3
+and were missed in two rounds. Codex accepted A3, A1, A2 and the ledger
+re-certification, and closed P2, P3, P7, P8, P13 and P14.
+
+| Ref | Sev | Disposition | What changed in plan revision 4                                                                                                                                                                                                              |
+| --- | --- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P6  | 1   | RESOLVED    | §1.3 row 2 (`:42`): a made-up condition never blocks an ordinary component; only a safety gate may block on a future edit, and only after the reviewer argues why it is plausible — the two limits the technical rule (§3.2) already carried |
+| P15 | 1   | RESOLVED    | §5 (`:503`): the scenario table and every owner-rulings count REMOVED; what remains is the measured floor (one round) and ceiling (nine rounds) with no numeric projection of rulings; §1.4 (`:53`) no longer states any ruling count        |
+| P16 | 3   | RESOLVED    | §3.7 (`:440`) and §7 (`:541`): the fixed "twice" replaced by the rule — one regeneration per governed commit, the count read from the ledger's addenda — plus the stage-before-certifying instruction                                        |
+| P17 | 3   | RESOLVED    | §3.6 (`:432`): the static branch-files list replaced by the command that regenerates it (`comm -13` of Enumeration 1 on `main` against the branch); AC-2's "each named" is satisfied from that output in the edits-commit record             |
+
+Also: §8 Q5 (`:549`) no longer refers to a scenario; the header (`:9`) records
+the second and last re-authorisation with the rescope route; §9 (`:554`) and
+§10 (`:563`) carry pointers here rather than narrative.
+
+**The revision shrank, measured:** 56104 → 55953 (-151 padding-free characters; 570 → 563 lines). Every sentence that stated a
+scenario, an owner-rulings count or a regeneration count was swept out
+(`grep -n -E 'scenario [ABC]|Scenario [ABC]|\| *Owner rulings|21 rulings|roughly eight|\btwice\b|two ledger|Two ledger'` returns nothing; the phrase "owner rulings" itself survives twice, in the SEV-CAL amendment sentence and in §5's statement that no projection of owner rulings is made); the audit-trail text added
+for the ruling was cut to pointers so that this ledger is its one home.
+
+**Blast radius (OA §3.4).** Upstream: nothing reads the plan; the author ledger
+hashes it — the fingerprint was computed with the plan STAGED this time and the
+ledger's fifth addendum records the move. Downstream: the four findings above
+and the third, final scoped follow-up. Governance surfaces untouched and
+byte-identical to `main`; AC-3 empty; AC-4 four spans identical, non-zero.
+
+**What this round does NOT establish.** No governance document has been
+edited. Whether P6, P15, P16 and P17 are closed is decided by the follow-up;
+under the owner's terminal cap, anything other than a clear verdict parks and
+rescopes B14.

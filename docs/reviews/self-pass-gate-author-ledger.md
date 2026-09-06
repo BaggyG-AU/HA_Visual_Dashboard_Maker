@@ -45,7 +45,7 @@ still valid and the gate green. What remains is one declaration with one claim:
 state when the gate ran.** It says nothing about `src/`, tests, tools, this
 ledger's own evidence, or HEAD.
 
-governed fingerprint: `618ea4beca30`
+governed fingerprint: `1419f4da57f6`
 
 ## Rows
 
@@ -446,3 +446,16 @@ or compute it on the committed tree and land the ledger as its own commit.
 than rewritten (precedent: `39c53d6`). Run: `npx vitest run
 tests/unit/author-ledger.spec.ts` — result recorded in the commit message.
 Docs-only: no e2e or integration run is owed.
+
+## Addendum — 2026-09-07 (fifth), plan revision 4 on `feature/b14-severity-rulings-codification`
+
+Revision 4 of `docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md`
+(answering the second follow-up's P6 remainder, P15, P16 and P17 by removing
+the plan's own scaffolding) changed the bytes of that governed artifact and
+nothing else in the governed set, so the certificate above moves
+`618ea4beca30` → `1419f4da57f6`. This time the plan was STAGED before the
+fingerprint was read, per the fourth addendum's lesson, so the value is the
+committed tree's. Commissioned rows untouched. Run:
+`npx vitest run tests/unit/author-ledger.spec.ts` after regeneration — result
+recorded in the commit message and re-run after the commit. Docs-only: no e2e
+or integration run is owed.
