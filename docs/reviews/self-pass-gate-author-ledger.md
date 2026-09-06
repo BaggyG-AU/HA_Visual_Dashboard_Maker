@@ -45,7 +45,7 @@ still valid and the gate green. What remains is one declaration with one claim:
 state when the gate ran.** It says nothing about `src/`, tests, tools, this
 ledger's own evidence, or HEAD.
 
-governed fingerprint: `1419f4da57f6`
+governed fingerprint: `4fad7a426996`
 
 ## Rows
 
@@ -456,6 +456,24 @@ nothing else in the governed set, so the certificate above moves
 `618ea4beca30` → `1419f4da57f6`. This time the plan was STAGED before the
 fingerprint was read, per the fourth addendum's lesson, so the value is the
 committed tree's. Commissioned rows untouched. Run:
+`npx vitest run tests/unit/author-ledger.spec.ts` after regeneration — result
+recorded in the commit message and re-run after the commit. Docs-only: no e2e
+or integration run is owed.
+
+## Addendum — 2026-09-07 (sixth), the B14 governance edits on `feature/b14-severity-rulings-codification`
+
+The edits commit lands plan §3 of
+`docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md` on the
+governed surfaces: `docs/templates/ADVERSARIAL_REVIEW.md` §1 (derived verdict),
+new §1a (Owner Summary Table) and §4 (severity contract, same-seam paragraph);
+`docs/governance/OPERATING_AGREEMENT.md` §3.4 (six disposition states, the
+owner's fix-or-defer bullet, the same-seam bullet) and §4 (STRAT-D18 row
+amended, SEV-CAL-1 and SEV-CAL-2 rows appended). The strategy document's
+pointer paragraph is outside the governed set (`docs/strategy/`) and does not
+move the certificate. The three files were STAGED before the fingerprint was
+read (fourth addendum's lesson), so the certificate above moves
+`1419f4da57f6` → `4fad7a426996` and is the committed tree's value. The plan
+itself is unchanged in this commit. Commissioned rows untouched. Run:
 `npx vitest run tests/unit/author-ledger.spec.ts` after regeneration — result
 recorded in the commit message and re-run after the commit. Docs-only: no e2e
 or integration run is owed.

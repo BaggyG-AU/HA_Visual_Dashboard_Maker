@@ -220,3 +220,95 @@ byte-identical to `main`; AC-3 empty; AC-4 four spans identical, non-zero.
 edited. Whether P6, P15, P16 and P17 are closed is decided by the follow-up;
 under the owner's terminal cap, anything other than a clear verdict parks and
 rescopes B14.
+
+## Round 4 — 2026-09-07, answering `b14-severity-rulings-codex-plan-review-followup3.md` (`b462579`, `CLEAR`, no finding, no P18)
+
+**Verdict, and what it permits.** Sol's third and final follow-up returned
+`CLEAR`: P6, P15, P16 and P17 RESOLVED, no regression in P1–P5 or P7–P14, no
+new finding, no drawer candidate. Under the owner's terminal cap of 2026-09-07
+that closes the plan track; the owner then instructed the author to execute
+the CLEAR branch of the START prompt (2026-09-07), and the governance edits
+below are made exactly as plan §3 quotes them. No finding is put to the owner
+in this round because there is none. Sol's one disagreement with the
+commission — that at `1e816c4` the `comm -13` output was the plan plus two
+review files, not three, because the second follow-up contains none of the
+six tokens — is verified and agreed; it is a commission timing error, not a
+plan finding, and the plan's §3.6 already names no count.
+
+| Ref | Sev | Disposition | Note                                                                  |
+| --- | --- | ----------- | --------------------------------------------------------------------- |
+| —   | —   | —           | No finding in this round; no owner ruling owed; no repair undertaken. |
+
+**The edits commit — the record plan §3.6 and §6 ask for.**
+
+- **AC-1.** `git grep -n 'SEV-CAL-' -- docs/governance docs/templates docs/strategy`
+  lists landing sites in the template (§1, §1a, §4 twice, the same-seam
+  paragraph), the Operating Agreement (§3.4 three bullets; §4 rows STRAT-D18,
+  SEV-CAL-1, SEV-CAL-2) and the strategy pointer, plus the plan's own quotations.
+- **AC-2.** Enumeration 1 on `main` returns 100 files; on the edits tree 104.
+  `comm -23` (in `main`, not on the branch) is empty, so the 87 / 3 / 6 / 1 / 3 / 0
+  partition is unchanged. `comm -13` names exactly this branch's own files:
+  `docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md`,
+  `docs/reviews/b14-severity-rulings-codex-plan-review.md`,
+  `docs/reviews/b14-severity-rulings-codex-plan-review-followup.md`,
+  `docs/reviews/b14-severity-rulings-codex-plan-review-followup3.md`. The
+  `prompts/` pass is session-local and is not re-reported here.
+- **AC-3.** The retired-token grep over `docs/templates`, `CLAUDE.md` and
+  `ai_rules.md` returns the template's §1 retirement sentence (three lines)
+  and one further line in §4: "The whole-PR token `SEV-1-BLOCKED` is
+  withdrawn." Both sentences retire tokens; neither offers one as a verdict a
+  reviewer may return, so the criterion holds. ⚠ The plan's AC-3 Check cell
+  says the grep "returns only the §1 retirement sentence" and under-describes
+  its own output, because the §3.2 AFTER text the plan itself quotes names the
+  token. Author-found A4, below.
+- **AC-4.** The four protected spans extract 6, 4, 8 and 5 lines and each
+  `diff` against `main` prints nothing — identical.
+- **AC-5.** The §5 block prints `replay population ok: 21 findings, one
+disposition each, sets identical` and exits 0.
+- **AC-6.** The author ledger is regenerated with the three governed files
+  STAGED first: `1419f4da57f6` → `4fad7a426996`, sixth addendum. The gate
+  result is in the commit message and is re-run after the commit.
+- **AC-7.** Owed by the ratification review, commissioned under the new
+  vocabulary; its first line must be `BLOCKED-ON:` / `CLEAR-WITH-FINDINGS` /
+  `CLEAR`.
+- **Prettier** rewrote only the Operating Agreement (the §4 table re-padded
+  because the STRAT-D18 cell grew); the template and the strategy document
+  were already formatted.
+- **The cleanup-sweep board item** (plan §3.8) is created as a DRAFT on board
+  `HAVDM`, Status Todo, Kind process, empty, trigger unnamed. No Issue created.
+
+**Author-found residues, put to the owner rather than fixed (ruling 6; the
+first live use of the mechanism this PR creates).**
+
+- **A4 (SEV 3 by the implementation reading — record accuracy).** The plan's
+  AC-3 Check cell (`:511`) says "returns only the §1 retirement sentence"; the
+  grep also returns §4's withdrawal sentence, which the plan's own §3.2 AFTER
+  text supplies. Fix now would mean editing the plan after the terminal cap
+  closed the plan track. Recommendation: **accept as recorded here** — the
+  criterion holds, the plan is a change artifact, and this round is its
+  record.
+- **A5 (SEV 3 — record accuracy).** The plan's Status line (`:3`) still reads
+  "awaiting the last scoped follow-up". Same reasoning; recommendation:
+  **accept as recorded here**, or one-line fix if the owner prefers the plan
+  header to read as closed.
+- **A6 (SEV 4 — formatting).** In OA §3.4 the disposition-table bullet
+  carries one continuation line without the two-space list indent, exactly as
+  the plan's §3.3 AFTER text quotes it; Markdown reads it as a lazy
+  continuation of the same paragraph and Prettier left it. Recommendation:
+  **accept as-is**; the owner may elect a fix in the ratification round.
+
+**Blast radius (OA §3.4).** Upstream: nothing runtime reads these documents
+(plan §7); the author ledger hashes two of the three and its fingerprint moved.
+Downstream: every future review commission and the ratification review of this
+commit — the first live use of the vocabulary. The strategy document is
+outside the governed set. STRAT-D7's trigger is byte-identical (AC-4).
+`docs/testing/SPACING_HELPER_PRESET_PLAN.md` and its `_HISTORY.md` are untouched.
+
+**The external-member question.** Issue #156's "Where the edits land" and
+acceptance items match what landed; its rulings 2 and 8 carry the A3 amendment
+notes and name the template §4 as binding "once ratified", which remains true
+until the merge. The live `[STATE]` drawer is bumped in the same session. No
+prompt under `prompts/` is edited; the ratification commission is a new file.
+
+**What this round does NOT establish.** The edits are unratified until the
+independent review returns and the owner merges. Nothing is pushed.
