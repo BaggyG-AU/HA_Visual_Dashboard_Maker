@@ -252,7 +252,16 @@ plan finding, and the plan's §3.6 already names no count.
   `docs/reviews/b14-severity-rulings-codex-plan-review.md`,
   `docs/reviews/b14-severity-rulings-codex-plan-review-followup.md`,
   `docs/reviews/b14-severity-rulings-codex-plan-review-followup3.md`. The
-  `prompts/` pass is session-local and is not re-reported here.
+  `prompts/` pass is session-local and is not re-reported here. ⚠ **Correction
+  after commit `1324f24`:** on the committed tree Enumeration 1 returns 105, not
+  104, and `comm -13` names a fifth file — this ledger itself — because the
+  AC-3 note above names a retired token and this Round joined the set at the
+  moment it was committed. The four files above plus this ledger are the
+  branch-only set; `comm -23` is still empty. That is the timing error Sol
+  named in the commission, repeated by the author: a count read before the
+  record that carries it is written is stale by construction. The commit
+  message's "104 here" is corrected by this note rather than rewritten
+  (precedent: `39c53d6`, `7d3969f`).
 - **AC-3.** The retired-token grep over `docs/templates`, `CLAUDE.md` and
   `ai_rules.md` returns the template's §1 retirement sentence (three lines)
   and one further line in §4: "The whole-PR token `SEV-1-BLOCKED` is
