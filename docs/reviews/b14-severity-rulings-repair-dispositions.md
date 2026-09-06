@@ -161,3 +161,16 @@ hashes the index entry as well as the working-tree bytes
 ended at commit `79eb20e`. On the committed tree the fingerprint is
 `618ea4beca30`; the ledger's fourth addendum re-certifies it. The paragraph
 above is left as written (append, never rewrite).
+
+**A3 — owner ruling, 2026-09-06.** The owner authorised the recommended
+dated amendment note on Issue #156's rulings 2 and 8 ("Go with your
+recommendation for A3"). Applied the same day from a fresh backup: one note
+inserted before the Ruling 3 heading and one before the Ruling 9 heading, each
+naming the owner's P6 ruling (`drawer_havdm_decisions_18da8a2c9bbad788a21abaee`)
+and reading the superseded "input" wording as the ruled "input or condition"
+wording; the rulings as made are preserved above each note. Verified by
+re-fetch: the live body is identical to the intended body, exactly four lines
+changed against the pre-edit backup (two notes, each preceded by a blank line),
+and both original sentences are still present. The story and the plan now
+agree on the reachability object; the second follow-up is asked to read the
+live Issue.
