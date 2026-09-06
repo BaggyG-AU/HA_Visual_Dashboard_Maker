@@ -100,7 +100,63 @@ Keep this section in sync when the wing's reviewer-facing rules change.
 
 ## 1. Verdict first
 
-The headline conclusion in three sentences or fewer, before any evidence.
+One verdict line, then the headline conclusion in three sentences or fewer,
+before any evidence.
+
+**The verdict is DERIVED from §4's severities, never chosen (owner ruling
+SEV-CAL-2, 2026-09-06).** Exactly one of:
+
+- `BLOCKED-ON: <component>[, <component>…]` — if and only if at least one
+  finding is SEV 1 carrying its full four-part proof. List every `Blocks:`
+  scope a SEV 1 names, and nothing wider. The owner decides the merge.
+- `CLEAR-WITH-FINDINGS` — no SEV 1; one or more SEV 2–4 findings, reported in
+  full below.
+- `CLEAR` — no finding at any severity. A legitimate result (§0 rule 5).
+
+No other verdict token is valid. `CHANGES-REQUIRED`, `SEV-1-BLOCKED`,
+`PARTIALLY-CONFIRMS` and `APPROVE` are retired as verdicts: on PR #154 the
+verdict tracked whichever token the commission supplied, and seven rounds
+returned `CHANGES-REQUIRED` with no SEV 1 present. A follow-up round reports
+each prior finding's closure — RESOLVED / PARTIALLY RESOLVED / REGRESSED /
+OPEN — as disposition lines in §4; every prior finding not in a terminal
+state (RESOLVED, DEFERRED, ACCEPTED-RESIDUAL) is re-graded on the behaviour
+that remains and counts toward the verdict like any other finding, so a
+PARTIALLY RESOLVED remainder is a live finding with its own grade. ⚠ A
+commission may add requirements to a review (strategy D10) but may not define,
+add or vary a verdict token or a severity grade — those belong to this
+template alone.
+
+## 1a. Owner Summary Table
+
+**Before any technical detail (owner ruling SEV-CAL-1, 2026-09-03).** The
+owner is a non-developer who arbitrates every finding personally; a review
+that can only be actioned by reading code has not been delivered. One row per
+finding:
+
+| Ref | What is wrong, in plain English | Severity | Blocks | Fix complexity (1–5) | Recommendation |
+| --- | ------------------------------- | -------- | ------ | -------------------- | -------------- |
+|     |                                 |          |        |                      |                |
+
+- **Ref** — `P1`, `P2`, `P3`… in finding order, stable for the life of the
+  review and never reused, because the owner replies by reference ("P1
+  accept, P3 defer"). A follow-up round continues the sequence; it never
+  restarts it.
+- **Plain English** — judgeable by someone who has never read the code. No
+  identifiers, no line numbers, no domain or grammar jargon in this column;
+  those belong in §4.
+- **Blocks** — the `Blocks:` scope for a SEV 1; `None` otherwise.
+- **Fix complexity** — 1 = a wording change or one-line edit; 3 = a contained
+  change plus its tests; 5 = a redesign, a new dependency, or a blast radius
+  beyond the module. Justified in one clause in §4.
+- **Recommendation** — one of **Fix now / Fix later / Accept as-is / Owner
+  judgement needed**; for the last, say what the choice is between. ⚠ This
+  column is INPUT to the owner's decision under
+  `docs/governance/OPERATING_AGREEMENT.md` §3.4 (SEV-CAL-2 ruling 6), never
+  the decision itself.
+
+Anything routed to the owner beyond this table — a contested classification,
+a residual to declare, a stop-or-continue choice — uses the Owner Decision
+Brief (STRAT-D15) named in the header, immediately after this table.
 
 ## 2. Confidence and method
 
@@ -131,26 +187,65 @@ Every load-bearing claim in this review, tagged:
 
 ## 4. Findings (ranked, most severe first)
 
-**Severity contract (STRAT-D18, owner-ruled 2026-08-18 — binding for any
+**Severity contract (STRAT-D18, owner-ruled 2026-08-18, as amended by
+SEV-CAL-1 on 2026-09-03 and SEV-CAL-2 on 2026-09-06 — binding for any
 document whose function is to evaluate another artifact, however
-commissioned):** every finding is tagged **SEV 1–4**.
+commissioned):** every finding is tagged **SEV 1–4**. SEV 1 and SEV 2 each carry
+two readings with identical blocking semantics: the DOCUMENT reading (STRAT-D18's
+original, for specs, plans, strategy and governance text) and the
+IMPLEMENTATION reading (SEV-CAL-2 ruling 8, for code, tests, tooling and
+checkers).
 
-- **SEV 1 — blocks the affected decision/artifact only.** The target as
-  recorded is internally contradictory, contradicts a binding ruling it does
-  not explicitly supersede, rests on a demonstrably false factual claim, or
-  is unexecutable as written — **and** the finding must carry the three-part
-  proof: (1) the decision or claim broken, (2) the violated fact or text at
-  `path:line`, (3) why no recorded mitigation covers it. Missing any part →
-  at most SEV 2.
-- **SEV 2 — does not block.** Rests on an unverified or overstated claim, or
-  an unmitigated risk. Each goes to the owner as an Owner Decision Brief.
-- **SEV 3/4 — recorded, no round-trip.**
+- **SEV 1 — blocks the affected COMPONENT only, never the pull request.**
+  Document reading: the target as recorded is internally contradictory,
+  contradicts a binding ruling it does not explicitly supersede, rests on a
+  demonstrably false factual claim, or is unexecutable as written.
+  Implementation reading: the artifact's stated contract is violated under a
+  condition that exists today — an input, an execution path, a state, an
+  output, or a property of the artifact itself — or under a future condition
+  the reviewer has ARGUED to be plausible. **Every SEV 1 carries the four-part proof:** (1) the decision,
+  claim or contract broken; (2) the violated fact or text at `path:line`;
+  (3) why no recorded mitigation covers it; (4) **REACHABILITY — the input or
+  condition that reaches this defect, and whether it exists today.** Missing
+  any part → at most SEV 2. **A finding whose only demonstration is a
+  synthetic input or condition nobody has produced caps at SEV 2** — reported in full, never
+  blocking. ⚠ The safety-gate exemption must be ARGUED, not assumed: where the
+  artifact's whole job is catching the not-yet-written, a synthetic
+  demonstration may still carry SEV 1 only if the reviewer states why the
+  construction is a PLAUSIBLE future edit rather than merely a constructible
+  one; an unargued exemption grades SEV 2. Calibration: "someone adds a second
+  totals block" is plausible; "someone puts a tab before the fence" is not.
+  **Every SEV 1 states `Blocks: <component>`** on its own line — the narrowest
+  thing that cannot ship as recorded (`Blocks: C3 blocking half`, never
+  `Blocks: PR #154`); a whole-change block must justify why the narrower scope
+  is insufficient. The whole-PR token `SEV-1-BLOCKED` is withdrawn. The
+  reviewer decides severity and scope; **the owner decides the merge.**
+- **SEV 2 — does not block.** Document reading: rests on an unverified or
+  overstated claim, or an unmitigated risk. Implementation reading: the
+  contract is violated only under a constructible condition nobody has
+  produced (the reachability cap), or the claim about the code is unverified
+  or overstated.
+  Each goes to the owner as an Owner Decision Brief, and **the owner decides
+  fix-now / defer / accept-residual per finding, by Ref**
+  (`docs/governance/OPERATING_AGREEMENT.md` §3.4).
+- **SEV 3 — recorded; no round-trip is owed.** Documentation, comment or
+  record accuracy; a stale or inconsistent statement whose correction changes
+  no behaviour. The owner may still elect a fix under §3.4.
+- **SEV 4 — recorded; no round-trip and no owner brief is owed.** Style,
+  wording preference, or an improvement with no defect behind it. The owner
+  may still elect a fix.
 - **The authority boundary:** owner judgment calls are not reviewable defects
   above SEV 4 — attack the facts a choice rests on, never the authority to
   make it. Contested classifications go to the owner as briefs.
+- **Bundling (SEV-CAL-2 ruling 9):** one finding per behaviour. Where several
+  constructions are bundled under one finding, state the severity per
+  construction; the finding's headline severity is the highest that carries
+  its own four-part proof.
 - The severity model governs what **blocks**, never what may be **reported**:
   report full signal, tagged. This template's machinery applies in full, and
-  commissions may add requirements, never subtract (strategy D10).
+  commissions may add requirements, never subtract (strategy D10) — but a
+  commission may not define, add or vary a verdict token (§1) or a severity
+  grade.
 
 Per finding: **evidence** (`path:line`), **problem**, **concrete fix**, and
 **what must NOT change** (the guard rails around the fix). Separate PIVOTS
@@ -161,6 +256,14 @@ whether every member was checked (§0 rule 1). "Class: all 23 test legs —
 swept, 3 affected" closes the class; "class not swept" tells the author to
 sweep it before fixing. This is what stops the next round re-reporting the
 same defect one instance later.
+
+⚠ **The same-seam rule (SEV-CAL-2 ruling 7).** If a finding in a scoped
+follow-up sits in the same seam as the finding whose repair you are
+reviewing, state the seam as a BEHAVIOUR, sweep every member of it — or
+declare it unsweepable and say why — before reporting. One more instance is
+not a report. Measured basis: PR #154's seven SEV-2s were one seam; every
+round wrote "Class swept" with the class drawn one layer wide, and the next
+round found a sibling.
 
 ## 5. Directions
 

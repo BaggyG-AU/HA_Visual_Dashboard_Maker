@@ -324,6 +324,13 @@ commissioned review per D18.
   severity model governs what blocks, **not what may be reported**: the
   reviewer reports full signal, tagged; D10's machinery still applies.
 
+⚠ **Pointer, 2026-09-06 — not an amendment of this record.** D18's severity
+contract was amended by owner rulings SEV-CAL-1 (2026-09-03) and SEV-CAL-2
+(2026-09-06). The text above is preserved as the record of what was ruled on
+2026-08-18; the binding text now lives in `docs/templates/ADVERSARIAL_REVIEW.md`
+§1/§1a/§4 and `docs/governance/OPERATING_AGREEMENT.md` §3.4 and §4 (rows
+STRAT-D18, SEV-CAL-1, SEV-CAL-2).
+
 **Arbitration-point accounting** — every one of the fourteen points of
 `docs/reviews/promptmi-workflow-spec-assessment-codex-review.md` §5, dispositioned:
 

@@ -45,7 +45,7 @@ still valid and the gate green. What remains is one declaration with one claim:
 state when the gate ran.** It says nothing about `src/`, tests, tools, this
 ledger's own evidence, or HEAD.
 
-governed fingerprint: `8b4eb5d26986`
+governed fingerprint: `4fad7a426996`
 
 ## Rows
 
@@ -376,3 +376,104 @@ rule text itself untouched. Run for this change:
 `npx vitest run tests/unit/author-ledger.spec.ts` after regeneration —
 9 passed, 0 failed. Docs-only branch throughout: no e2e or integration run
 is owed.
+
+## Addendum — 2026-09-06, branch `feature/b14-severity-rulings-codification`
+
+This commit adds exactly one governed artifact:
+`docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md`, the
+SPEC-BEFORE-CODE plan for board story B14 (Issue #156). No governed document
+is edited yet — the plan is reviewed before any governance text moves. The
+gate fired exactly as designed (the freshness and certificate legs) and the
+certificate above is regenerated for this tree: `8b4eb5d26986` → `08c029eaec8f`.
+The commissioned rows are the PR #140/#141 record and are untouched: nothing
+in the gate's mechanism changed on this branch, only a governed document the
+mechanism watches. Run for this change: `npx prettier --check` on the plan
+(clean); `npx vitest run tests/unit/author-ledger.spec.ts` after
+regeneration — result recorded in the commit message. Docs-only branch: no
+e2e or integration run is owed.
+
+## Addendum — 2026-09-06 (second), plan revision 2 on `feature/b14-severity-rulings-codification`
+
+Revision 2 of `docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md`
+(answering the plan review's twelve findings) changed the bytes of that
+governed artifact and nothing else in the governed set, so the certificate
+above moves `08c029eaec8f` → `8a1c77bae104`. Commissioned rows untouched. Run:
+`npx vitest run tests/unit/author-ledger.spec.ts` after regeneration — result
+recorded in the commit message. Docs-only: no e2e or integration run is owed.
+
+**Commit-message claim candidate, dispositioned (round-0 M1 leg).** The
+revision-2 commit message says scenario A is "9 rounds". That figure is the
+B14 plan §5 projection for the case where the owner elects Fix now on every
+PR #154 finding — a labelled JUDGEMENT in the plan, not a measured count on
+this branch — and it is reproduced here so the gate can see it dispositioned.
+The gate fired on this exactly as designed: the message is an input that only
+exists after a pre-commit run, so the pre-commit gate could not see it.
+
+## Addendum — 2026-09-06 (third), plan revision 3 on `feature/b14-severity-rulings-codification`
+
+Revision 3 of `docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md`
+(answering the STRAT-D7 follow-up's seven findings — the P2, P3, P6, P7 and P8
+remainders and the new P13 and P14) changed the bytes of that governed artifact
+and nothing else in the governed set, so the certificate above moves
+`8a1c77bae104` → `2cca75f5bde4`. Commissioned rows untouched. Run:
+`npx vitest run tests/unit/author-ledger.spec.ts` after regeneration — result
+recorded in the commit message. Docs-only: no e2e or integration run is owed.
+
+**Commit-message claim candidate, dispositioned (round-0 M1 leg).** The
+revision-3 commit message quotes the gate result "unit 1559 passed / 105 files".
+That is the `./tools/checks` output on this tree — a docs-only branch, so the
+count is unchanged from `main` — reproduced here so the gate can see it
+dispositioned. As with the revision-2 message, the message is an input that
+exists only after a pre-commit run, so the pre-commit gate cannot see it; the
+spec is re-run on the committed tree.
+
+## Addendum — 2026-09-06 (fourth), re-certification of the committed revision-3 tree
+
+The third addendum's `2cca75f5bde4` was computed while
+`docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md` was modified
+but UNSTAGED. This certificate hashes the INDEX entry (mode + object id) as well
+as the working-tree bytes and untracked additions
+(`tests/support/authorLedger.ts:290-340`), so that value certified a mixed
+state — old index blob, new working-tree bytes — which ceased to exist at commit
+`79eb20e`; the spec failed on the certificate leg immediately after that commit
+("declares `2cca75f5bde4` but this checkout computes `618ea4beca30`"). On the
+committed tree the index entry matches the working tree and the certificate
+above now reads `618ea4beca30`. Nothing in the governed set changed between the
+two values; only the staging state did. ⚠ Lesson for every future regeneration
+on this branch: `git add` the governed files BEFORE computing the fingerprint,
+or compute it on the committed tree and land the ledger as its own commit.
+`79eb20e`'s message reported the pre-commit value and is corrected here rather
+than rewritten (precedent: `39c53d6`). Run: `npx vitest run
+tests/unit/author-ledger.spec.ts` — result recorded in the commit message.
+Docs-only: no e2e or integration run is owed.
+
+## Addendum — 2026-09-07 (fifth), plan revision 4 on `feature/b14-severity-rulings-codification`
+
+Revision 4 of `docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md`
+(answering the second follow-up's P6 remainder, P15, P16 and P17 by removing
+the plan's own scaffolding) changed the bytes of that governed artifact and
+nothing else in the governed set, so the certificate above moves
+`618ea4beca30` → `1419f4da57f6`. This time the plan was STAGED before the
+fingerprint was read, per the fourth addendum's lesson, so the value is the
+committed tree's. Commissioned rows untouched. Run:
+`npx vitest run tests/unit/author-ledger.spec.ts` after regeneration — result
+recorded in the commit message and re-run after the commit. Docs-only: no e2e
+or integration run is owed.
+
+## Addendum — 2026-09-07 (sixth), the B14 governance edits on `feature/b14-severity-rulings-codification`
+
+The edits commit lands plan §3 of
+`docs/governance/B14_SEVERITY_RULINGS_CODIFICATION_PLAN_2026-09.md` on the
+governed surfaces: `docs/templates/ADVERSARIAL_REVIEW.md` §1 (derived verdict),
+new §1a (Owner Summary Table) and §4 (severity contract, same-seam paragraph);
+`docs/governance/OPERATING_AGREEMENT.md` §3.4 (six disposition states, the
+owner's fix-or-defer bullet, the same-seam bullet) and §4 (STRAT-D18 row
+amended, SEV-CAL-1 and SEV-CAL-2 rows appended). The strategy document's
+pointer paragraph is outside the governed set (`docs/strategy/`) and does not
+move the certificate. The three files were STAGED before the fingerprint was
+read (fourth addendum's lesson), so the certificate above moves
+`1419f4da57f6` → `4fad7a426996` and is the committed tree's value. The plan
+itself is unchanged in this commit. Commissioned rows untouched. Run:
+`npx vitest run tests/unit/author-ledger.spec.ts` after regeneration — result
+recorded in the commit message and re-run after the commit. Docs-only: no e2e
+or integration run is owed.
