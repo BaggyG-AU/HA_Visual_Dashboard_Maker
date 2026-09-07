@@ -317,3 +317,88 @@ the four universals and the superseded wording named above.
 Astra's scoped follow-up on `29a43c6` (findings from P9), not by this table.
 The population statement is now honest about its method; it is still not a
 proof of completeness, and §2 says so.
+
+## Round 3 — 2026-09-08, answering `b7-product-backlog-codex-review-followup.md` (`244020a`, `BLOCKED-ON: S04.1`; P2 PARTIALLY RESOLVED at SEV 1, P1/P3/P4 at SEV 2, P8 at SEV 3; P5–P7 RESOLVED; no new Ref allocated) — verification, the owner's rulings, and the rev 2 repair (`224ec8a`)
+
+**Verification first, as hypotheses.** Every remainder was reproduced at its
+source on 2026-09-08 before the owner was briefed:
+
+- **P2 — HOLDS, MEASURED, and it is the author's error.** `src/components/PropertiesPanel.tsx:6645`
+  opens the guard with `{![` — a NEGATED membership test — and `:6715` closes it
+  with `].includes(card.type) && (`; the list between them (`:6646–6714`)
+  contains all seven palette types and none of the four core types. So the
+  "not yet implemented" notice (`:6718`) renders for `tile`, `heading`,
+  `entity` and `statistics-graph` and NOT for the seven. Round 1's A2 and Round
+  2's P2 row said the reverse: the author read the list and the `.includes`
+  without reading the operator in front of it. **Correction to Round 1 (A2) and
+  Round 2 (P2 row):** both are wrong on this point and are not rewritten; this
+  line records it. The S01.3 remainder also HOLDS, MEASURED: `viewsLayout.ts:271`
+  (`convertViewToLayoutCard`) and `:287` (`setViewType`) delete
+  `_havdm_scaffold`; only the two sections helpers keep it. "Every conversion"
+  was an unverified universal.
+- **P1 — HOLDS, MEASURED / JUDGEMENT.** `PROJECT_REFRESH_PLAN_2026-07.md:186`:
+  "WS1 — Engineering-discipline uplift (promptmi port)" — not a successor to the
+  January component-update plan; the "superseded" framing of the exclusions had
+  no record behind it; `grep -rl fidelity src/` returns four paths, two of them
+  comments about the remediation plan (`canvasKeyStripper.ts:2`,
+  `yamlConversionService.ts:176`), not "theme files only"; and
+  `RELEASE_NOTES_v0.7.4-beta.5.md:49` / `:92` records `align_content`
+  "intentionally deferred beyond Feature 4.5 MVP" with no home or exclusion in
+  rev 1 (`grep -rn align_content src/` returns nothing).
+- **P3 — HOLDS, MEASURED.** `RENDER_FIDELITY_PLAN.md:236` says only "Tighten
+  `shell:openExternal`"; rev 1's S06.4 chose a policy. Rev 1's E20 row carried
+  no boundary and no trust decision, both of which the isolation ruling
+  (`drawer_havdm_decisions_0f9619ea3f92e3bcf04a531f`) makes explicit.
+- **P4 — HOLDS, MEASURED.** `RENDER_FIDELITY_PLAN.md:228–231`: Phase C is "a
+  **prerequisite**" for D and E; Phase C is C1 and C2, mapped by rev 1 itself to
+  S06.1 and S06.4; rev 1 named S06.1 alone.
+- **P8 — HOLDS, MEASURED.** Rev 1 E20 size cell "Spike small; feature not
+  estimated" against §7's "two not estimated" and §8's no-estimate line; the
+  source (`:239`) says time-boxed, no size.
+- **P5, P6, P7 — RESOLVED by the reviewer;** the author's re-read of the
+  cited closures found nothing to reopen.
+- **Gate at `244020a` re-run by the author:** REAL_EXIT=0, 4/4 steps, lint 0
+  errors / 145 warnings, unit 1559 passed / 105 files — matches the review's §2.
+
+**Owner rulings, 2026-09-08, by Ref** (multiple-choice brief, the
+recommendation first; every answer "as recommended"): **P2** both corrections
+approved; **P1** fix now, `align_content` homed as a named candidate under E12;
+**P3 and P4** fix all three now; **P8** fix now, "Not estimated". DEFERRED: none.
+ACCEPTED-RESIDUAL: none. Record: the `[DECISION]` drawer filed this session
+(ID in the session message and `[STATE]`).
+
+The repair is ONE content commit, `224ec8a` (rev 2; 92 insertions, 79
+deletions by `git diff --stat 244020a 224ec8a`). Line numbers are rev 2's,
+read back by `grep -n` after the commit.
+
+| Ref | Sev | Disposition | What changed in rev 2                                                                                                                                                                                                                                                                                                                                                                                             |
+| --- | --- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1  | 2   | RESOLVED    | "Reviewed and not carried" (`:120`) reframed as the owner's present choice with each source's own status and no supersession claim; the WS1 successor claim withdrawn; the generator and YAML-editor entries now quote their sources' own deferrals; S-P (`:107`) states the true grep result and marks delivery UNVERIFIED; new S-U (`:112`) homes `align_content` under E12 (named-candidates paragraph `:293`) |
+| P2  | 1   | RESOLVED    | S04.1 (`:217`): the four core cards get the generic fallback AND the notice; none of the seven palette cards is shown it; the source cell names the negated guard at `:6645` and records that rev 1 stated the reverse. S01.3 (`:176`): scoped to the two sections helpers and the masonry no-op; the two marker-clearing paths named as not the defect                                                           |
+| P3  | 2   | RESOLVED    | S06.4 (`:247`): "tightened", with the restriction labelled the author's candidate for the brief. E20 (`:291`): reaches no file bridge and no IPC; third-party card code never runs in the main app; HAVDM's renderers stay the never-connected fallback; rendering only on the owner's explicit trust decision                                                                                                    |
+| P4  | 2   | RESOLVED    | E20 (`:291`) and §5 item 7 (`:330`): prerequisite is the whole of Phase C — S06.1 AND S06.4 — plus the trust decision; source cell now cites Phases C–E                                                                                                                                                                                                                                                           |
+| P8  | 3   | RESOLVED    | E20 size cell "Not estimated"; §7 Q1's "two not estimated" and §8's no-estimate line are now true of the table                                                                                                                                                                                                                                                                                                    |
+| P5  | —   | RESOLVED    | Closed by the follow-up; unchanged in rev 2                                                                                                                                                                                                                                                                                                                                                                       |
+| P6  | —   | RESOLVED    | Closed by the follow-up; unchanged in rev 2                                                                                                                                                                                                                                                                                                                                                                       |
+| P7  | —   | RESOLVED    | Closed by the follow-up; unchanged in rev 2                                                                                                                                                                                                                                                                                                                                                                       |
+
+**Blast radius (OA §3.4).** Unchanged in kind from Round 2 and re-stated
+without the universal the follow-up flagged: no consumer of the document's path
+was found in `src/`, `tests/`, `tools/`, `.github/` or `package.json`
+(`grep -rl "product-backlog-seeding"` over those trees returns nothing — a
+bounded search, not a proof); the document is outside the author ledger's
+governed set (`tests/support/authorLedger.ts:68`). Downstream: the §6 seeding
+(still twenty epics, E19/E20 last); Issue #159's "E01 / S01.1" (both IDs
+unchanged; S-U and no other ID added, none removed or renamed); `[STATE]` item
+11 (bumped this session); Astra's second scoped follow-up. Non-regression:
+docs-only; `./tools/checks` at `224ec8a` REAL_EXIT=0, 4/4 steps, lint 0
+errors / 145 warnings, unit 1559 passed / 105 files.
+
+**Reviewer's drawer candidate** filed under MP-LEASE with `added_by="codex"`:
+`drawer_havdm_investigations_b4c27652e9e3de7e4185cdac` (read back from the tool
+result).
+
+**What this round does NOT establish.** Whether the five remainders are closed
+is decided by Astra's second scoped follow-up on `224ec8a`, not by this table.
+The population statement remains honest about its method and is still not a
+completeness proof.
