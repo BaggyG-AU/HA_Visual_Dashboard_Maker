@@ -263,3 +263,57 @@ MEASURED.
 close is decided by the owner's rulings (Round 2) and then by Astra's scoped
 follow-up on the repair diff, not by this table, which is the author's
 verification claim.
+
+## Round 2 — 2026-09-08, the owner's rulings and the rev 1 repair (`29a43c6`)
+
+**Owner rulings, 2026-09-08, by Ref.** Every finding was put to the owner on a
+multiple-choice brief with the author's recommendation first, and the owner
+chose the recommendation on every question ("as recommended"): **P1 and P2
+approved as proposed** (the alternative "no new epics" was offered and not
+chosen); **P3, P4, P6, P7, P8 fix now**; **P5** — Q1 stands as ruled 2026-09-07,
+its presentation ruled as bottom-of-order Todo items with no new board status,
+and **Q2 ruled: the canvas-fidelity contract stays parked inside E03 with its
+trigger named**; **Q3 (new) ruled: the 2026-02 popup / Bubble Card alignment
+intent is not carried, superseded by the vision**. DEFERRED: none.
+ACCEPTED-RESIDUAL: none. The cleanup-sweep item stays empty. Record:
+`drawer_havdm_decisions_ad4c3da54687bd3904c17865`.
+
+The repair is ONE content commit, `29a43c6`, on
+`docs/strategy/2026-09-07-product-backlog-seeding.md` (rev 1; 205 insertions,
+115 deletions by `git diff --stat 9f64e4e 29a43c6`). Line numbers below are rev
+1's, read back by `grep -n` after the commit.
+
+| Ref | Sev | Disposition | What changed in rev 1                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --- | --- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1  | 1   | RESOLVED    | §2 intro (`:76`) states how the population was enumerated (the two commands, the hand-read boundary, what was not swept); sources S-K…S-T added (`:102–110`) each with an evidenced home; "Reviewed and not carried" list (`:118`); new epics E19 (`:281`) and E20 (`:282`) at the bottom; new stories S01.4–S01.7, S05.4, S06.4; named E09/E18 candidates; §0's "every place" and "nothing here is my invention" removed; §8 no longer implies a complete universe |
+| P2  | 1   | RESOLVED    | S04.1 (`:208`) restated per type from the 2026-09-08 measurement, naming the four core cards' generic fallback, six partial forms, one guidance-only branch, and the panel's own "not yet implemented" notice; its source cell dates the code-map claim as false when written; S-E row corrected to match                                                                                                                                                           |
+| P3  | 2   | RESOLVED    | S01.1 (`:165`) quotes the F9a ruling's ONE object for BOTH flags; S01.2 restores R3's "(or the user explicitly opts in)"; S03.3 (`:197`) returns to R7's "template marking" and leaves the remedy to B6; S02.1 (`:181`) offers Paste and labels further entries as candidates; S04.5's outcome labelled the author's (A3)                                                                                                                                           |
+| P4  | 2   | RESOLVED    | §3 redefines "Depends on" as a ruling or code fact only; S01.3 (`:167`) and S05.1 cells emptied with the preference moved to §5; S06.3 (`:237`) cites `UAT_STRATEGY.md` §3.1's prerequisites; §5 item 1 (`:295`) states the ruled first three product PRs S01.1 → S02.1 → S02.2 and calls E09←E01 a reason, not a dependency; §5 item 3 scopes B6 to S03.1–S03.3 with S03.4 parked                                                                                  |
+| P5  | 2   | RESOLVED    | §7 Q1 marked RULED with corrected cons (the table's own sizes; the refresh plan as a frozen reference) and the presentation ruling; Q2 marked RULED with the strategy §8 trigger written out and grouping separated from scheduling; Q3 added and marked RULED (`:376`); S03.4 row carries the trigger                                                                                                                                                              |
+| P6  | 2   | RESOLVED    | §10 step 3 (`:413`): seeding freezes the document (C1, §6 step 5); the merge lands the frozen record. §0 and §6 already said seeding; no other freeze statement remains (`grep -n freez`)                                                                                                                                                                                                                                                                           |
+| P7  | 2   | RESOLVED    | S06.2 (`:236`): a signed Windows build under the owner's credentials and policy, the formal 1.0 distribution gate; alert behaviour "measured after signing, not promised"; E06's outcome unchanged                                                                                                                                                                                                                                                                  |
+| P8  | 3   | RESOLVED    | S-E row: ten entries with the two non-product entries excluded explicitly; S-G row and §5 exclusions: slice C partially withdrawn, G split; S-D row: the live-HA write question answered by amendment-04; Q1 con: three Large / five Medium / one Small each / one Ongoing / two not estimated                                                                                                                                                                      |
+
+**Blast radius (OA §3.4).** Upstream: nothing reads the strategy document
+programmatically — it is outside the author ledger's governed set
+(`tests/support/authorLedger.ts` covers `docs/governance/**`, `docs/templates/**`,
+`ai_rules.md`, `CLAUDE.md`), so no fingerprint moves. Downstream consumers of
+its content: (1) the board seeding in §6 — now twenty epics, E19/E20 last, no new
+status; (2) Issue #159's corrected Process paragraph, which names "E01 / S01.1"
+— both IDs unchanged by rev 1 (D8: no ID recycled; the new IDs are appended);
+(3) `[STATE]` item 11, bumped in the same session; (4) Astra's scoped
+follow-up, which reviews this diff and this radius. Non-regression: docs-only
+branch; `./tools/checks` at `29a43c6` REAL_EXIT=0, 4/4 steps, lint 0 errors /
+145 warnings, unit 1559 passed / 105 files. No `src/`, `tests/`, governance or
+board change.
+
+**Author-found in the reading pass, recorded so the follow-up sees them.** A5:
+the §8 line "It does not estimate effort beyond the refresh plan's own sizes
+for E09–E18" is still true (E19/E20 carry "not estimated") and was left as is.
+A6: rev 1 grew the document from 325 to 415 lines; nothing was removed except
+the four universals and the superseded wording named above.
+
+**What this round does NOT establish.** Whether P1–P8 are closed is decided by
+Astra's scoped follow-up on `29a43c6` (findings from P9), not by this table.
+The population statement is now honest about its method; it is still not a
+proof of completeness, and §2 says so.
