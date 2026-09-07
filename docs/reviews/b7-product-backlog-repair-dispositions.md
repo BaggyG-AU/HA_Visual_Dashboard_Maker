@@ -402,3 +402,55 @@ result).
 is decided by Astra's second scoped follow-up on `224ec8a`, not by this table.
 The population statement remains honest about its method and is still not a
 completeness proof.
+
+## Round 4 — 2026-09-08, answering `b7-product-backlog-codex-review-followup2.md` (`b3541c3`, `CLEAR-WITH-FINDINGS`; P2–P8 RESOLVED; P1 PARTIALLY RESOLVED at SEV 3 with three record-wording constructions; no new Ref) — verification, the owner's rulings, and the rev 3 repair (`4224b03`)
+
+**Verification first, as hypotheses.** All three constructions HOLD, MEASURED:
+(1) `src/services/yamlConversionService.ts:176` reads "WARNED about here so the
+fidelity loss is honest" — it does not name the remediation plan; only
+`src/services/canvasKeyStripper.ts:2–4` does. Rev 2's S-P said "two comments
+naming the remediation plan". (2) `docs/features/ENTITY_TYPE_DASHBOARD_GENERATOR.md:180–186`
+lists five items under **Planned** and `:188–193` four under **Deferred**; rev
+2's entry said "the rest stay deferred". (3) Rev 2's "no later document is its
+successor" is a global absence a source search cannot decide. **Gate at
+`b3541c3` re-run by the author:** REAL_EXIT=0, 4/4 steps, lint 0 errors / 145
+warnings, unit 1559 passed / 105 files — matches the review's §2.
+
+**Owner rulings, 2026-09-08, by Ref** (multiple-choice brief, recommendation
+first): **P1 — fix now**, accepting that the repair receives one more scoped
+follow-up (the alternative, accept-residual and seed with the three
+inaccuracies recorded, was offered and not chosen). **And a second ruling:
+approval of the reviewed document for seeding is GIVEN NOW, CONDITIONAL on the
+third scoped follow-up returning `CLEAR` or `CLEAR-WITH-FINDINGS` with nothing
+above SEV 3;** anything above SEV 3 returns to the owner before any item is
+created. DEFERRED: none. ACCEPTED-RESIDUAL: none.
+
+The repair is ONE content commit, `4224b03` (rev 3; 30 insertions, 28
+deletions by `git diff --stat b3541c3 4224b03`, of which three are the wording
+units, one the header, one the revision log). Line numbers are rev 3's, read
+back by `grep -n` after the commit.
+
+| Ref                                                                                                                         | Sev | Disposition | What changed in rev 3                                                                                                                                                                                           |
+| --------------------------------------------------------------------------------------------------------------------------- | --- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1                                                                                                                          | 3   | RESOLVED    | S-P (`:110`) lists the four `fidelity` paths and says what each is; the generator entry (`:133`) keeps its source's own Planned / Deferred split and states the present-choice exclusion; the WS1 clause (`:128 |
+| 416`) claims only that no successor was established in the reviewed sources. Header (`:6`) records the conditional approval |
+| P2–P8                                                                                                                       | —   | RESOLVED    | Closed by the second follow-up; unchanged in rev 3                                                                                                                                                              |
+
+**Blast radius (OA §3.4).** Three wording units in §2 plus the header and the
+revision log; no ID, row, epic, story, order, dependency or ruling changed
+(`git diff b3541c3 4224b03` touches S-P, one exclusion sentence, one exclusion
+clause, the Status line and §9). Same consumers as Round 3: the §6 seeding
+(unchanged content to seed), Issue #159's "E01 / S01.1" (unchanged),
+`[STATE]` item 11 (bumped this session), and the third scoped follow-up.
+Outside the author ledger's governed set. Non-regression: docs-only;
+`./tools/checks` at `4224b03` REAL_EXIT=0, 4/4 steps, lint 0 errors / 145
+warnings, unit 1559 passed / 105 files.
+
+**Reviewer's drawer candidate** filed under MP-LEASE with `added_by="codex"`:
+`drawer_havdm_investigations_3fd6c409d8df37c8bc55af7a` (read back from the tool
+result).
+
+**What this round does NOT establish.** Closure of P1 is decided by the third
+scoped follow-up on `4224b03`. Seeding is authorised by the owner's conditional
+approval above only once that follow-up meets its condition; until then no
+board item is created.
