@@ -277,9 +277,17 @@ Two measurements that bear on that decision:
 - `installedFolders` is populated **generically**
   (`capabilityResolver.ts:56-60`): every `/hacsfiles/<folder>/` segment found in
   the resource list is added, whether or not the folder appears in
-  `RESOURCE_ELEMENT_MAP`. So an installed layout-card's folder is already in
-  every captured profile, and a layout-card fact is derivable from data HAVDM
-  **already persists** — no re-capture, no profile migration. ⚠ But there is no
+  `RESOURCE_ELEMENT_MAP`. ⚠ **But only for resources served from
+  `/hacsfiles/`.** `resourceFolderFromUrl` (`capabilityResolver.ts:35-42`)
+  returns `''` for anything else — its own docblock at `:32-33` names `/local/…`
+  and absolute URLs, and `tests/unit/capabilityResolver.spec.ts:75-78` pins it.
+  So the honest claim is narrower than "every captured profile": **a layout-card
+  installed through HACS is already represented in a captured profile and a
+  layout-card fact is derivable from data HAVDM already persists — no
+  re-capture, no profile migration — while one installed as a manual `/local/`
+  resource leaves no folder and would not be detectable this way.** How much
+  that limit matters is unmeasured: this brief did not survey how HAVDM users
+  install layout-card. ⚠ There is also no
   layout-card constant to derive it with: `grep -n "layout" src/services/capability/resourceElementMap.ts`
   returns nothing. Naming the folder, and evidencing that name, is the spec's
   work, not an assumption it may inherit from this brief.
@@ -309,13 +317,18 @@ state with `defaultCapabilityProfile()` and `:62-64` fills it from disk in an
 async mount effect, so there is a window at boot in which the context holds the
 permissive default rather than the persisted profile.
 
-### F7 — The never-connected signal exists today, but only in the palette
+### F7 — The never-connected signal exists today, in the UI but not in the export
 
-`src/services/capability/cardAvailability.ts:41` —
+`src/services/capability/cardAvailability.ts:40` —
 `if (profile.haVersion === null) return 'available'; // never connected → permissive`
-inside `resolveCardState`, the **palette** resolver (priority order documented
-at `:19-27`). The export path reads no profile at all (F3), so it has no
-equivalent.
+inside `resolveCardState` (priority order documented at `:19-27`).
+
+`resolveCardState` has **two** consumers, both UI
+(`grep -rn "resolveCardState" src --include=*.ts --include=*.tsx`):
+`src/components/CardPalette.tsx:269` (the palette) and
+`src/components/BaseCard.tsx:302` (placed-card marking, added by F4/#129). The
+**export path reads no profile at all** (F3), so it has no equivalent — that is
+the gap F9a closes, and it is a gap in the export, not in the resolver.
 
 ### F8 — `haVersion === null` is not a perfect proxy for "never connected"
 
@@ -444,15 +457,28 @@ in the same checkout":
 Two properties of these legs, from the project's testing record, that the spec
 should carry into its own test design:
 
-- Each leg must be shown **RED against today's code first**, in the same
-  checkout, before the fix makes it green. A leg that is green before the
-  change proves nothing about the change
-  (`drawer_havdm_testing_cd71883212b81299c3bbef76`).
-- Leg 2 and leg 3 are **control legs**, not repetitions: leg 3 in particular
-  pins R1, and F6 shows exactly how a plausible implementation turns it red.
-  The F4 (#129) precedent is that "nothing is marked while disconnected" is
+- **Leg 1 is the red leg, and it is the only one of the three that can be.**
+  It must be shown **RED against today's code, in the same checkout**, before
+  the fix makes it green (`drawer_havdm_testing_cd71883212b81299c3bbef76`).
+- ⚠ **Legs 2 and 3 are CONTROL legs and are expected to PASS on today's code.
+  Do not try to make them fail.** They pin behaviour that must survive the
+  change: leg 2 that present-card-mod styling stays untouched, leg 3 that a
+  never-connected user stays permissive (R1). Today both already hold, for the
+  reason F3 gives — every production path resolves `cardModAvailable` to `true`,
+  so nothing is stripped and nothing is warned about. Manufacturing a red for
+  either would mean breaking working behaviour.
+- The governing rule is qualified and says exactly this:
+  `docs/governance/OPERATING_AGREEMENT.md:66-73` — "a new test is proven by
+  seeing it fail on base **where a valid red leg exists**. The controlling test
+  is whether a valid red leg exists". Where none exists, the spec "must say so
+  explicitly and name the alternative evidence". For legs 2 and 3 the
+  alternative evidence is a **passing baseline recorded before the change and
+  re-run after it**, showing the outcome did not move.
+- The F4 (#129) precedent is that "nothing is marked while disconnected" is
   correct behaviour, not a defect
-  (`drawer_havdm_testing_ad358a7d31912bba2419205d`).
+  (`drawer_havdm_testing_ad358a7d31912bba2419205d`). F6 shows how a plausible
+  wrong implementation would turn leg 3 red — which is what makes it worth
+  pinning, not evidence that it should be red now.
 
 ⚠ These are the owner's named legs, not an acceptance-criteria matrix. Building
 the matrix — and deciding whether each byte-producing call site in F4 needs its
@@ -470,6 +496,14 @@ brief, option A, adopt both header fields, push the branch. On §9.1 the owner
 named a specific model — GPT-6 Astra — inside the same §3.6 Sol/Codex seat the
 recommendation already pointed at; §9.1 records the author's error in having
 offered it as a different vendor.
+
+⚠ **Scope of the "options as they were put" claim, corrected 2026-09-09 (review
+finding P5).** It holds for the **three** decisions that have subsections below
+— §9.1, §9.2, §9.3. The **fourth**, the decision to push the branch, is
+recorded here as an outcome only; its options were not preserved and are not
+reconstructed. Its authoritative record is ruling 4 of
+`drawer_havdm_decisions_cf0c188aaf75f2cd622faadc` (push yes; no PR opened; the
+owner opens and merges PRs).
 
 ### 9.1 Should this brief be independently reviewed before Sonnet specs from it?
 
@@ -564,15 +598,27 @@ propose them.
   from the captured profile at every export path that sends bytes to Home
   Assistant or to a file, the existing warning is shown when card-mod is
   absent, and a never-connected user is unaffected._ That is the whole of the
-  truthfulness failure in §1. Anything beyond it — the layout-card field per
-  §9.2 option A, the boot-window handling in D-6, site 4's word/byte
-  consistency in D-5 — is worth doing but is not what makes the story
-  acceptable. The alternative, narrower reading — "the file export path only"
+  truthfulness failure in §1.
+
+  ⚠⚠ **CORRECTION, 2026-09-09 (review finding P2 — the paragraph above is the
+  proposal AS PUT on 2026-09-08 and is preserved unedited; this note is the
+  controlling reading).** That paragraph went on to call three things "worth
+  doing but not what makes the story acceptable", and for two of them that is
+  now wrong: **the layout-card fact is REQUIRED by the owner's option A ruling
+  (§2, §6 D-2), not optional**, and **the warning shown before a deploy must
+  agree with what was actually stripped** — F4 measured that `App.tsx:2580`
+  produces those words independently of the content producers, so updating the
+  content paths alone would leave a user told "Nothing had to be adjusted"
+  over content that was adjusted. That is the same truthfulness failure §1
+  describes, not an extra. Only the **boot-window handling (D-6)** remains a
+  genuinely open spec decision outside the acceptance bar. ⚠ The spec chooses
+  HOW to keep words and bytes consistent; it may not choose to skip it. The alternative, narrower reading — "the file export path only"
   — would leave deploy and live preview lying. ⓘ No usage data exists on which
   path users prefer; what the record does say is that `App.tsx:2568-2574`
   documents the deploy-from-live-preview path as the one a user reaches by
   downloading a dashboard from Home Assistant and editing it, and that this
   path had previously lost the adjustment summary altogether.
+
 - **Cost stop-rule — PROPOSED:** _if the spec, its review, or the
   implementation reaches a point where making this work requires changing how
   the export services are constructed — a new provider, a module-level global,
@@ -619,12 +665,12 @@ fields into spec review, and Codex will — correctly — raise it as a finding.
 
 ## 11. Verification of this document
 
-| What                         | Result                                                                                                                                                                                                      |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Base                         | `main` = `691c8d1` (Merge PR #161), tree clean at branch creation                                                                                                                                           |
-| Gate on the base             | `./tools/checks` → `REAL_EXIT=0`, 4/4 steps, eslint **0 errors / 145 warnings**, 1559 unit tests passed across 105 files                                                                                    |
-| Gate on this branch          | Re-run after `prettier --write` on the tree containing this file: `REAL_EXIT=0`, 4/4 steps, **0 errors / 145 warnings**, 1559 passed / 105 files — unchanged from the base, as a docs-only branch should be |
-| Owner rulings                | The four §9 rulings were made on 2026-09-08 AFTER commit `0bfeb6c` and applied in a second commit; §9 keeps the options as they were put, not only the outcomes                                             |
-| Every §4 fact                | Measured on `691c8d1` on 2026-09-08 with the command printed beside it                                                                                                                                      |
-| Every drawer ID and board ID | Read back from a tool result, never typed from memory                                                                                                                                                       |
-| Not established here         | No runtime behaviour was executed. §F3 and §F4 are **hand traces** over source, labelled as such; they are not evidence that any test currently exercises these paths                                       |
+| What                         | Result                                                                                                                                                                                                                                                                      |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Base                         | `main` = `691c8d1` (Merge PR #161), tree clean at branch creation                                                                                                                                                                                                           |
+| Gate on the base             | `./tools/checks` → `REAL_EXIT=0`, 4/4 steps, eslint **0 errors / 145 warnings**, 1559 unit tests passed across 105 files                                                                                                                                                    |
+| Gate on this branch          | Re-run after `prettier --write` on the tree containing this file: `REAL_EXIT=0`, 4/4 steps, **0 errors / 145 warnings**, 1559 passed / 105 files — unchanged from the base, as a docs-only branch should be                                                                 |
+| Owner rulings                | The four §9 rulings were made on 2026-09-08 AFTER commit `0bfeb6c` and applied in a second commit. §9 keeps the options as they were put for the **three** decisions with subsections (§9.1–§9.3); the fourth (push) is recorded as an outcome only — see the §9 scope note |
+| Every §4 fact                | Measured on `691c8d1` on 2026-09-08 with the command printed beside it                                                                                                                                                                                                      |
+| Every drawer ID and board ID | Read back from a tool result, never typed from memory                                                                                                                                                                                                                       |
+| Not established here         | No runtime behaviour was executed. §F3 and §F4 are **hand traces** over source, labelled as such; they are not evidence that any test currently exercises these paths                                                                                                       |
