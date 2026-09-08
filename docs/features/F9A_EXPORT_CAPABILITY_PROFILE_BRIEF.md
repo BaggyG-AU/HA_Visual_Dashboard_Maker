@@ -8,11 +8,14 @@ table before authoring; the owner's choice of this seat for this brief on
 2026-09-08 is recorded in the live `[STATE]` drawer
 `drawer_havdm_state_a15b0af78e0814cfd19cf627` item 11 and in the
 `claude-code`/`havdm` diary entry of 2026-09-08.
-**Reviewer:** **GPT-6 Astra** — the owner's per-slice override, chosen
-2026-09-08 and recorded here as `docs/governance/OPERATING_AGREEMENT.md` §3
-Mechanics requires. The §3.6 default seat for plan and spec review is
-Sol/Codex; the owner chose Astra, which reviewed the B7 backlog over four
-rounds. Ruling recorded at §9.1.
+**Reviewer:** **OpenAI Codex / GPT-6 Astra** — the
+`docs/governance/OPERATING_AGREEMENT.md` §3.6 **default** seat for plan and
+spec review (the Sol/Codex row). **Not a per-slice override**, so there is none
+to record: Astra signs its own committed reviews "OpenAI Codex / GPT-6 Astra"
+(`docs/reviews/b7-product-backlog-codex-review.md:3`) and its four B7 reviews
+are named `*-codex-review.md`. Named to the exact model as §3.1 requires — the
+§3.6 watch attributes escaped defects to seat + model. Chosen by the owner
+2026-09-08; ruling and correction at §9.1.
 **Owner gate:** the owner locks this brief before spec authoring begins
 (`docs/governance/OPERATING_AGREEMENT.md` §1, §3).
 **Branch:** `feature/f9a-brief` · **Created:** 2026-09-08 · **Base:** `main` =
@@ -462,16 +465,26 @@ own leg — is the spec's job.
 ⭐ All four decisions this brief put to the owner were ruled on 2026-09-08, by
 multiple choice with a recommendation on each. Each subsection keeps the
 options as they were put — the record of what was offered, not only what was
-chosen. The owner took the recommended course on all three: review the brief,
-option A, adopt both header fields. On §9.1 the owner chose a different
-reviewer — Astra — from the one the recommended option named.
+chosen. The owner took the recommended course on **all four**: review the
+brief, option A, adopt both header fields, push the branch. On §9.1 the owner
+named a specific model — GPT-6 Astra — inside the same §3.6 Sol/Codex seat the
+recommendation already pointed at; §9.1 records the author's error in having
+offered it as a different vendor.
 
 ### 9.1 Should this brief be independently reviewed before Sonnet specs from it?
 
-⭐ **RULED 2026-09-08: YES — reviewed by GPT-6 Astra**, not by the §3.6 default
-(Sol/Codex). A per-slice reviewer override, recorded in this brief's header as
-`OPERATING_AGREEMENT.md` §3 Mechanics requires. The author recommended review
-but named Codex; the owner took the review and chose the vendor.
+⭐ **RULED 2026-09-08: YES — reviewed by OpenAI Codex / GPT-6 Astra.**
+
+⚠ **Correction, made the same session and before the review was commissioned.**
+This was first recorded here and in the header as a _per-slice override_ of the
+§3.6 Sol/Codex seat. That was wrong, and the error was the author's: it offered
+Astra to the owner as "a different vendor". Astra is not a different vendor —
+it identifies itself as "OpenAI Codex / GPT-6 Astra"
+(`docs/reviews/b7-product-backlog-codex-review.md:3`) and its four B7 review
+files are named `*-codex-review.md`. **Astra therefore sits INSIDE the §3.6
+default seat: there is no override, and nothing to record as one.** The owner
+took the recommended course — review the brief — and named the specific model
+within that seat.
 
 **What was put to the owner — pros:** it catches a wrong fact here, where it costs one
 round, rather than after it has been built into a spec and a review of that
