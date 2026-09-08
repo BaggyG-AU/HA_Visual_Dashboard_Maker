@@ -1,6 +1,6 @@
 # F9a — The export honours the captured capability profile (Brief)
 
-**Status:** Draft — awaiting owner lock
+**Status:** Draft — the owner's four rulings of 2026-09-08 are applied (§9); awaiting the Astra review, then owner lock
 **Author:** Claude Opus 5 (1M context) — routine-upstream seat
 (`docs/governance/OPERATING_AGREEMENT.md` §3.6, STRAT-D4: "Routine upstream;
 default capability-class implementation review"). Seat confirmed against that
@@ -8,8 +8,11 @@ table before authoring; the owner's choice of this seat for this brief on
 2026-09-08 is recorded in the live `[STATE]` drawer
 `drawer_havdm_state_a15b0af78e0814cfd19cf627` item 11 and in the
 `claude-code`/`havdm` diary entry of 2026-09-08.
-**Reviewer:** to be chosen by the owner — see §9.1 (whether this brief is
-independently reviewed before Sonnet specs from it is the owner's call).
+**Reviewer:** **GPT-6 Astra** — the owner's per-slice override, chosen
+2026-09-08 and recorded here as `docs/governance/OPERATING_AGREEMENT.md` §3
+Mechanics requires. The §3.6 default seat for plan and spec review is
+Sol/Codex; the owner chose Astra, which reviewed the B7 backlog over four
+rounds. Ruling recorded at §9.1.
 **Owner gate:** the owner locks this brief before spec authoring begins
 (`docs/governance/OPERATING_AGREEMENT.md` §1, §3).
 **Branch:** `feature/f9a-brief` · **Created:** 2026-09-08 · **Base:** `main` =
@@ -23,9 +26,15 @@ independently reviewed before Sonnet specs from it is the owner's call).
 **Parent objective:** board epic **E01 — "the export tells the truth about what
 Home Assistant will render"** (`PVTI_lAHOBFbZhs4BgtcWzg53c5g`; story **S01.1** =
 GitHub Issue #159).
-**Cheapest acceptable outcome:** PROPOSED — owner to confirm at lock; the
-options and the recommendation are in §9.2.
-**Cost stop-rule:** PROPOSED — owner to confirm at lock; §9.3.
+**Cheapest acceptable outcome:** the card-mod decision is read from the
+captured profile at every export path that sends bytes to Home Assistant or to
+a file, the existing warning is shown when card-mod is absent, and a
+never-connected user is unaffected. (Owner-adopted 2026-09-08, §9.3.)
+**Cost stop-rule:** if the spec, its review, or the implementation reaches a
+point where making this work requires changing how the export services are
+constructed — a new provider, a module-level global, or threading a parameter
+through code that is not on the five call sites' path — work halts and
+re-asks. (Owner-adopted 2026-09-08, §9.3.)
 
 ---
 
@@ -111,8 +120,9 @@ frozen document):
 consumer in today's code (§4, F2). The layout-card half's consumer — the rule
 that decides whether a `custom:grid-layout` view may be emitted at all — is
 R3, and R3 is F9b. So "the layout-card flag is honoured the same way" cannot
-mean the same thing for both halves inside F9a. What that phrase obliges F9a
-to deliver is a scope question for the owner: §9.2.
+mean the same thing for both halves inside F9a. **The owner ruled this on
+2026-09-08 (§9.2, option A): F9a's one capability object CARRIES a layout-card
+fact and nothing consumes it until F9b.**
 
 ---
 
@@ -375,9 +385,12 @@ justifies.
 
 - **D-1 — the seam.** How the capability object reaches the React-free export
   services from a React-bound profile (F10), at all five call sites (F4).
-- **D-2 — the layout-card field.** Whether F9a adds a layout-card fact to the
-  capability object, and where its value comes from (F5) — bounded by the
-  owner's answer to §9.2.
+- **D-2 — the layout-card field.** ⚠ **Narrowed by the owner's 2026-09-08
+  ruling (§9.2, option A): F9a DOES add a layout-card fact to the one
+  capability object, and nothing reads it until F9b.** What remains the spec's
+  is where that fact's value comes from — F5 measured that the underlying
+  folder data is already persisted but that no layout-card folder constant
+  exists, so naming it and evidencing that name is the spec's work.
 - **D-3 — the never-connected signal.** Which field, or combination, the export
   treats as "we have never looked" (F6, F7, F8).
 - **D-4 — the shape of the object crossing the seam.** Whether the export
@@ -444,11 +457,23 @@ own leg — is the spec's job.
 
 ---
 
-## 9. What needs the owner before the brief is locked
+## 9. The owner's rulings, 2026-09-08
+
+⭐ All four decisions this brief put to the owner were ruled on 2026-09-08, by
+multiple choice with a recommendation on each. Each subsection keeps the
+options as they were put — the record of what was offered, not only what was
+chosen. The owner took the recommended course on all three: review the brief,
+option A, adopt both header fields. On §9.1 the owner chose a different
+reviewer — Astra — from the one the recommended option named.
 
 ### 9.1 Should this brief be independently reviewed before Sonnet specs from it?
 
-The owner's call. **Pros:** it catches a wrong fact here, where it costs one
+⭐ **RULED 2026-09-08: YES — reviewed by GPT-6 Astra**, not by the §3.6 default
+(Sol/Codex). A per-slice reviewer override, recorded in this brief's header as
+`OPERATING_AGREEMENT.md` §3 Mechanics requires. The author recommended review
+but named Codex; the owner took the review and chose the vendor.
+
+**What was put to the owner — pros:** it catches a wrong fact here, where it costs one
 round, rather than after it has been built into a spec and a review of that
 spec — and §4 is where this slice's risk is concentrated (the F6 trap and the
 F4 call-site distinction are both new to this brief and neither appears in
@@ -491,6 +516,9 @@ the export.
 | **A — Carry the fact, don't consume it.** F9a's one object carries a layout-card fact; nothing reads it until F9b          | Smallest. One extra field, derived from data already stored (F5); no new capture      | No user-visible layout-card change in F9a; the field is unconsumed code until F9b lands                                |
 | **B — Card-mod only.** F9a threads the object with the card-mod fact alone; F9b adds the layout-card fact when it needs it | Smallest of all                                                                       | Departs from the approved S01.1 wording and from item 9's "one object for both" — needs the owner to say so explicitly |
 | **C — Carry and consume it.** F9a also makes a layout-card decision visible to the user                                    | Largest. Deciding _what_ to do when layout-card is absent **is** R3 — F9b's substance | Nothing — but it re-merges the split the owner made on 2026-09-07                                                      |
+
+⭐ **RULED 2026-09-08: OPTION A — carry the layout-card fact, do not consume
+it.** As recommended.
 
 **Recommendation: A.** It honours item 9's "ONE capability object for BOTH"
 literally, keeps the F9a/F9b split intact, and the cost is genuinely small
@@ -540,6 +568,10 @@ propose them.
   become large in (D-1), and the spec-before-code ruling exists because a
   previous slice did exactly that (`drawer_havdm_decisions_bc47e8270caa139d3ee11646`).
 
+⭐ **RULED 2026-09-08: BOTH ADOPTED AS PROPOSED.** As recommended. They are
+now in this brief's header, not proposals — the spec inherits them as written
+and is held to them.
+
 **Recommendation:** adopt both as written; they are deliberately conservative
 and the spec can be held to them.
 
@@ -579,6 +611,7 @@ fields into spec review, and Codex will — correctly — raise it as a finding.
 | Base                         | `main` = `691c8d1` (Merge PR #161), tree clean at branch creation                                                                                                                                           |
 | Gate on the base             | `./tools/checks` → `REAL_EXIT=0`, 4/4 steps, eslint **0 errors / 145 warnings**, 1559 unit tests passed across 105 files                                                                                    |
 | Gate on this branch          | Re-run after `prettier --write` on the tree containing this file: `REAL_EXIT=0`, 4/4 steps, **0 errors / 145 warnings**, 1559 passed / 105 files — unchanged from the base, as a docs-only branch should be |
+| Owner rulings                | The four §9 rulings were made on 2026-09-08 AFTER commit `0bfeb6c` and applied in a second commit; §9 keeps the options as they were put, not only the outcomes                                             |
 | Every §4 fact                | Measured on `691c8d1` on 2026-09-08 with the command printed beside it                                                                                                                                      |
 | Every drawer ID and board ID | Read back from a tool result, never typed from memory                                                                                                                                                       |
 | Not established here         | No runtime behaviour was executed. §F3 and §F4 are **hand traces** over source, labelled as such; they are not evidence that any test currently exercises these paths                                       |
