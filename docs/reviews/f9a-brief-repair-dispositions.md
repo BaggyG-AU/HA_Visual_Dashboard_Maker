@@ -590,3 +590,73 @@ that command reads — the same class as P10 and P14.
   to fire before its fix and not after; that is evidence for those four claims
   and for nothing wider.
 - **Nothing here establishes that F9a works.** The feature is unimplemented.
+
+---
+
+## Round 7 — 2026-09-10
+
+Follow-up: `docs/reviews/f9a-brief-codex-review-followup6.md` (`67099d1`),
+verdict **CLEAR-WITH-FINDINGS**. **P10, P11, P13 and P14 RESOLVED.** **P12
+PARTIALLY RESOLVED (SEV 3).** Three new findings, **P15, P16 and P17, each
+SEV 3**. No SEV 1 or SEV 2. ⭐ **The reviewer states the brief is READY TO LOCK
+and does not judge another full round on it likely to pay for itself.**
+
+### ⭐ The owner's ruling — DEFERRED, on a stated test
+
+The owner ruled a **test** rather than a per-Ref disposition: _if a finding does
+not impact the deliverable's function — i.e. does not create a defect the spec
+would inherit — record it and move on; otherwise fix it._
+
+**The test was applied and all four fail to reach the spec.** The deciding
+question is what the spec is written from: brief §0 says it is _"the locked input
+a Sonnet session writes the F9a spec from"_. This dispositions file is review
+history and is not a spec input.
+
+| Ref | Offending construction                            | Occurrences in the brief |
+| --- | ------------------------------------------------- | ------------------------ |
+| P12 | "no repair diff ever touched" / "none introduced" | **0**                    |
+| P15 | "No range expression is used in this section"     | **0**                    |
+| P16 | "every clearance ... measured before/after"       | **0**                    |
+| P17 | S2's timing and "no other artifact cites those"   | **0**                    |
+
+⭐ **Each finding names its own downstream consumer, and none is the spec
+author** — P12: "the owner evaluating why the chain accumulated findings"; P15:
+"the reader relying on its self-check"; P16: "the reviewer and owner assessing
+the claimed self-review proof"; P17: "the owner assessing newly introduced
+versus inherited defects". All four are **retrospective readers**.
+
+**Disposition: DEFERRED** on all four, to the loop retrospective the owner has
+scheduled for after the brief is approved, against the cleanup-sweep board item
+`PVTI_lAHOBFbZhs4BgtcWzg5r2gQ`. ⚠ **DEFERRED is an owner decision, not a repair**
+(`OPERATING_AGREEMENT.md:297-300`), so **no round 8 is owed** and the findings
+remain open obligations rather than closed ones.
+
+### What each finding says, recorded without repair
+
+| Ref | The defect, as the reviewer states it                                                                                                                                                                                                                                                                                                                               |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P12 | "No repair introduced any of them" conflates _a repair did not write the sentence_ with _a repair did not introduce the discrepancy_ — for P7 a repair **did** introduce the falsity by re-measuring F5/F7. And "no repair diff ever touched" the P8 passages lacks its historical cutoff: true through `de0736c`, but `35fcf5a` repairs them                       |
+| P15 | Round 6's self-check says "No range expression is used in this section" while the section uses `P10–P14`, `rounds 2–4`, `rounds 1–4` and `P11–P14` in active prose. ⓘ The reviewer found **no incorrect membership** in those ranges — the defect is the claim that none exists                                                                                     |
+| P16 | The blanket "every clearance is a measured before/after state change" over-claims for two of the four: S3/S4's detectors do change 2→1 and 1→0, but **S1's** row-grouping returns the same result on both heads (it establishes the correct count, not that a record was corrected) and **S2's** greps read the brief while the withdrawal changed the dispositions |
+| P17 | S2's account says this session's repair added the strings that falsified the old counts, but 30/12 is already at `35fcf5a` and the brief returns 33/13 at all four heads — **the discrepancy predates both reviewed repairs**. Its radius also says "no other artifact cites those figures" while `f9a-brief-codex-review-followup5.md:105` cites both pairs        |
+
+### ⚠ The reviewer's disagreement with the author's root-cause claim
+
+Round 6 and the addendum assert the round-5 self-check "swept the artifact being
+repaired and never swept the record being written". **The reviewer does not
+accept that as established:** _"A reported check that missed an error and a check
+never performed are different explanations; either could be relevant to cost, and
+the retained output alone does not choose between them."_
+
+⚠ **That objection is upheld here.** The author asserted a mechanism rather than
+evidencing it — the same class as the findings themselves. **The diagnosis is
+recorded as UNPROVEN**, and is deferred to the loop retrospective along with
+P12/P15/P16/P17. The reviewer notes its lock recommendation does not rest on it.
+
+### What this round did NOT establish
+
+- **The brief is unchanged by this round.** No repair was made; nothing in
+  `docs/features/F9A_EXPORT_CAPABILITY_PROFILE_BRIEF.md` was edited.
+- **Deferral is not correction.** All four findings stand in the record as
+  stated, with this disposition beside them.
+- **Nothing here establishes that F9a works.** The feature is unimplemented.
