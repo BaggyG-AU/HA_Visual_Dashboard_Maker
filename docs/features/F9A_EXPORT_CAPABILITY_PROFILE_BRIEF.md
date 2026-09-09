@@ -277,17 +277,30 @@ Two measurements that bear on that decision:
 - `installedFolders` is populated **generically**
   (`capabilityResolver.ts:56-60`): every `/hacsfiles/<folder>/` segment found in
   the resource list is added, whether or not the folder appears in
-  `RESOURCE_ELEMENT_MAP`. ⚠ **But only for resources served from
-  `/hacsfiles/`.** `resourceFolderFromUrl` (`capabilityResolver.ts:35-42`)
-  returns `''` for anything else — its own docblock at `:32-33` names `/local/…`
-  and absolute URLs, and `tests/unit/capabilityResolver.spec.ts:75-78` pins it.
-  So the honest claim is narrower than "every captured profile": **a layout-card
-  installed through HACS is already represented in a captured profile and a
-  layout-card fact is derivable from data HAVDM already persists — no
-  re-capture, no profile migration — while one installed as a manual `/local/`
-  resource leaves no folder and would not be detectable this way.** How much
-  that limit matters is unmeasured: this brief did not survey how HAVDM users
-  install layout-card. ⚠ There is also no
+  `RESOURCE_ELEMENT_MAP`. ⚠⚠ **But the condition is narrower than either
+  "every captured profile" or "installed through HACS", and both of those
+  earlier statements were wrong.** What `resourceFolderFromUrl`
+  (`capabilityResolver.ts:35-42`) actually decides is **lexical**: it returns
+  the segment after the first `/hacsfiles/` occurrence in the URL string, and
+  `''` when the marker is absent. Two consequences, both measured on this
+  checkout rather than read from the docblock:
+  - **Installation through HACS is NOT sufficient.** HACS repository metadata
+    populates only `versions` (`capabilityResolver.ts:68-72`) and never
+    `installedFolders`. A profile can carry a HACS version for a folder and
+    still have no folder entry.
+  - **"Absolute URLs are excluded" is FALSE.** `https://…/hacsfiles/<f>/x.js`
+    yields `<f>`, and so does a marker inside a query string. ⚠ The docblock at
+    `:32-33` says "`/local/…`, absolute URLs" and the implementation disagrees
+    with it; `tests/unit/capabilityResolver.spec.ts:75-78` pins only a `/local/`
+    URL and one absolute URL **without** the marker. **A docblock is not
+    evidence of behaviour — this brief cited one as if it were, and that is how
+    the wrong claim survived a repair round.**
+
+  ⭐ **The measured claim, and the only one the spec may inherit: a layout-card
+  fact is derivable, with no re-capture and no profile migration, for an
+  instance whose captured resource list contained a URL bearing the
+  `/hacsfiles/` marker.** Whether real installations satisfy that is
+  **unmeasured** — this brief surveyed no user's instance. ⚠ There is also no
   layout-card constant to derive it with: `grep -n "layout" src/services/capability/resourceElementMap.ts`
   returns nothing. Naming the folder, and evidencing that name, is the spec's
   work, not an assumption it may inherit from this brief.
@@ -404,9 +417,12 @@ justifies.
 - **D-2 — the layout-card field.** ⚠ **Narrowed by the owner's 2026-09-08
   ruling (§9.2, option A): F9a DOES add a layout-card fact to the one
   capability object, and nothing reads it until F9b.** What remains the spec's
-  is where that fact's value comes from — F5 measured that the underlying
-  folder data is already persisted but that no layout-card folder constant
-  exists, so naming it and evidencing that name is the spec's work.
+  is where that fact's value comes from. ⚠ **F5 as corrected 2026-09-09:** the
+  folder data is already persisted **only for a captured resource URL bearing
+  the `/hacsfiles/` marker** — not for every install, and not from HACS
+  metadata alone — and no layout-card folder constant exists. Naming the
+  folder, evidencing that name, and deciding what the export should do when the
+  capture cannot answer are all the spec's work.
 - **D-3 — the never-connected signal.** Which field, or combination, the export
   treats as "we have never looked" (F6, F7, F8).
 - **D-4 — the shape of the object crossing the seam.** Whether the export
@@ -491,19 +507,34 @@ own leg — is the spec's job.
 ⭐ All four decisions this brief put to the owner were ruled on 2026-09-08, by
 multiple choice with a recommendation on each. Each subsection keeps the
 options as they were put — the record of what was offered, not only what was
-chosen. The owner took the recommended course on **all four**: review the
-brief, option A, adopt both header fields, push the branch. On §9.1 the owner
+chosen — see the scope note below for exactly how much of each was preserved.
+The owner took the recommended course on **all four**: review the brief, option
+A, adopt both header fields, push the branch. On §9.1 the owner
 named a specific model — GPT-6 Astra — inside the same §3.6 Sol/Codex seat the
 recommendation already pointed at; §9.1 records the author's error in having
 offered it as a different vendor.
 
-⚠ **Scope of the "options as they were put" claim, corrected 2026-09-09 (review
-finding P5).** It holds for the **three** decisions that have subsections below
-— §9.1, §9.2, §9.3. The **fourth**, the decision to push the branch, is
-recorded here as an outcome only; its options were not preserved and are not
-reconstructed. Its authoritative record is ruling 4 of
-`drawer_havdm_decisions_cf0c188aaf75f2cd622faadc` (push yes; no PR opened; the
-owner opens and merges PRs).
+⚠⚠ **Scope of the "options as they were put" claim — corrected twice, and this
+is the version the sources actually support (review finding P5, rounds 1 and
+2).** The first correction narrowed the claim from four decisions to three; a
+follow-up review showed three was still too many. Measured against what is on
+the page:
+
+- **§9.2 reproduces its alternatives in full** — options A, B and C, with costs
+  and what each leaves undone. This is the only subsection that does.
+- **§9.1 and §9.3 preserve the REASONING as put** — the pros, the cons, the
+  proposal text and the recommendation — **but not the enumerated
+  alternatives.** §9.1 does not list the reviewer choices offered; §9.3's
+  "Options and the proposal" holds the two proposals, not the three
+  alternatives the owner chose between.
+- **The push decision (the fourth) is an outcome only.** Its authoritative
+  record is ruling 4 of `drawer_havdm_decisions_cf0c188aaf75f2cd622faadc`
+  (push yes; no PR opened; the owner opens and merges PRs).
+
+⚠ **No alternative has been reconstructed anywhere in §9.** The original
+multiple-choice instrument is not preserved in any committed artifact or
+drawer — the reviewer said the same of its own search — so the missing options
+are recorded as missing rather than invented.
 
 ### 9.1 Should this brief be independently reviewed before Sonnet specs from it?
 
@@ -558,11 +589,11 @@ the export.
 
 **Options.**
 
-| Option                                                                                                                     | What it costs                                                                         | What it leaves undone                                                                                                  |
-| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **A — Carry the fact, don't consume it.** F9a's one object carries a layout-card fact; nothing reads it until F9b          | Smallest. One extra field, derived from data already stored (F5); no new capture      | No user-visible layout-card change in F9a; the field is unconsumed code until F9b lands                                |
-| **B — Card-mod only.** F9a threads the object with the card-mod fact alone; F9b adds the layout-card fact when it needs it | Smallest of all                                                                       | Departs from the approved S01.1 wording and from item 9's "one object for both" — needs the owner to say so explicitly |
-| **C — Carry and consume it.** F9a also makes a layout-card decision visible to the user                                    | Largest. Deciding _what_ to do when layout-card is absent **is** R3 — F9b's substance | Nothing — but it re-merges the split the owner made on 2026-09-07                                                      |
+| Option                                                                                                                     | What it costs                                                                                                                                                                                                      | What it leaves undone                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| **A — Carry the fact, don't consume it.** F9a's one object carries a layout-card fact; nothing reads it until F9b          | Smallest. One extra field, derived from data already stored (F5); no new capture. ⚠ **Qualified 2026-09-09:** that derivation holds only where the capture caught a `/hacsfiles/`-marked URL — see F5 as corrected | No user-visible layout-card change in F9a; the field is unconsumed code until F9b lands                                |
+| **B — Card-mod only.** F9a threads the object with the card-mod fact alone; F9b adds the layout-card fact when it needs it | Smallest of all                                                                                                                                                                                                    | Departs from the approved S01.1 wording and from item 9's "one object for both" — needs the owner to say so explicitly |
+| **C — Carry and consume it.** F9a also makes a layout-card decision visible to the user                                    | Largest. Deciding _what_ to do when layout-card is absent **is** R3 — F9b's substance                                                                                                                              | Nothing — but it re-merges the split the owner made on 2026-09-07                                                      |
 
 ⭐ **RULED 2026-09-08: OPTION A — carry the layout-card fact, do not consume
 it.** As recommended.
@@ -598,26 +629,31 @@ propose them.
   from the captured profile at every export path that sends bytes to Home
   Assistant or to a file, the existing warning is shown when card-mod is
   absent, and a never-connected user is unaffected._ That is the whole of the
-  truthfulness failure in §1.
-
-  ⚠⚠ **CORRECTION, 2026-09-09 (review finding P2 — the paragraph above is the
-  proposal AS PUT on 2026-09-08 and is preserved unedited; this note is the
-  controlling reading).** That paragraph went on to call three things "worth
-  doing but not what makes the story acceptable", and for two of them that is
-  now wrong: **the layout-card fact is REQUIRED by the owner's option A ruling
-  (§2, §6 D-2), not optional**, and **the warning shown before a deploy must
-  agree with what was actually stripped** — F4 measured that `App.tsx:2580`
-  produces those words independently of the content producers, so updating the
-  content paths alone would leave a user told "Nothing had to be adjusted"
-  over content that was adjusted. That is the same truthfulness failure §1
-  describes, not an extra. Only the **boot-window handling (D-6)** remains a
-  genuinely open spec decision outside the acceptance bar. ⚠ The spec chooses
-  HOW to keep words and bytes consistent; it may not choose to skip it. The alternative, narrower reading — "the file export path only"
+  truthfulness failure in §1. Anything beyond it — the layout-card field per
+  §9.2 option A, the boot-window handling in D-6, site 4's word/byte
+  consistency in D-5 — is worth doing but is not what makes the story
+  acceptable. The alternative, narrower reading — "the file export path only"
   — would leave deploy and live preview lying. ⓘ No usage data exists on which
   path users prefer; what the record does say is that `App.tsx:2568-2574`
   documents the deploy-from-live-preview path as the one a user reaches by
   downloading a dashboard from Home Assistant and editing it, and that this
   path had previously lost the adjustment summary altogether.
+
+  ⚠⚠ **CORRECTION, 2026-09-09 (review findings P2 and P5). The bullet above is
+  the proposal EXACTLY AS PUT on 2026-09-08, restored verbatim from commit
+  `0bfeb6c` after an earlier repair shortened it while claiming it was
+  unedited. This note sits OUTSIDE it and is the controlling reading.**
+  Of the three things that bullet calls "worth doing but not what makes the
+  story acceptable", two are now wrong: **the layout-card fact is REQUIRED by
+  the owner's option A ruling (§2, §6 D-2), not optional**, and **the warning
+  shown before a deploy must agree with what was actually stripped** — F4
+  measured that `App.tsx:2580` produces those words independently of the
+  content producers, so updating the content paths alone would leave a user
+  told "Nothing had to be adjusted" over content that was adjusted. That is
+  the same truthfulness failure §1 describes, not an extra. Only the
+  **boot-window handling (D-6)** remains a genuinely open spec decision
+  outside the acceptance bar. ⚠ The spec chooses HOW to keep words and bytes
+  consistent; it may not choose to skip it.
 
 - **Cost stop-rule — PROPOSED:** _if the spec, its review, or the
   implementation reaches a point where making this work requires changing how
@@ -665,12 +701,12 @@ fields into spec review, and Codex will — correctly — raise it as a finding.
 
 ## 11. Verification of this document
 
-| What                         | Result                                                                                                                                                                                                                                                                      |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Base                         | `main` = `691c8d1` (Merge PR #161), tree clean at branch creation                                                                                                                                                                                                           |
-| Gate on the base             | `./tools/checks` → `REAL_EXIT=0`, 4/4 steps, eslint **0 errors / 145 warnings**, 1559 unit tests passed across 105 files                                                                                                                                                    |
-| Gate on this branch          | Re-run after `prettier --write` on the tree containing this file: `REAL_EXIT=0`, 4/4 steps, **0 errors / 145 warnings**, 1559 passed / 105 files — unchanged from the base, as a docs-only branch should be                                                                 |
-| Owner rulings                | The four §9 rulings were made on 2026-09-08 AFTER commit `0bfeb6c` and applied in a second commit. §9 keeps the options as they were put for the **three** decisions with subsections (§9.1–§9.3); the fourth (push) is recorded as an outcome only — see the §9 scope note |
-| Every §4 fact                | Measured on `691c8d1` on 2026-09-08 with the command printed beside it                                                                                                                                                                                                      |
-| Every drawer ID and board ID | Read back from a tool result, never typed from memory                                                                                                                                                                                                                       |
-| Not established here         | No runtime behaviour was executed. §F3 and §F4 are **hand traces** over source, labelled as such; they are not evidence that any test currently exercises these paths                                                                                                       |
+| What                         | Result                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Base                         | `main` = `691c8d1` (Merge PR #161), tree clean at branch creation                                                                                                                                                                                                                                                                                    |
+| Gate on the base             | `./tools/checks` → `REAL_EXIT=0`, 4/4 steps, eslint **0 errors / 145 warnings**, 1559 unit tests passed across 105 files                                                                                                                                                                                                                             |
+| Gate on this branch          | Re-run after `prettier --write` on the tree containing this file: `REAL_EXIT=0`, 4/4 steps, **0 errors / 145 warnings**, 1559 passed / 105 files — unchanged from the base, as a docs-only branch should be                                                                                                                                          |
+| Owner rulings                | The four §9 rulings were made on 2026-09-08 AFTER commit `0bfeb6c` and applied in a second commit. ⚠ §9 preserves **enumerated alternatives for §9.2 only**; §9.1 and §9.3 keep the reasoning as put but not the alternatives, and push is an outcome only. No alternative is reconstructed. See the §9 scope note — corrected twice, rounds 1 and 2 |
+| Every §4 fact                | Measured on `691c8d1` on 2026-09-08 with the command printed beside it                                                                                                                                                                                                                                                                               |
+| Every drawer ID and board ID | Read back from a tool result, never typed from memory                                                                                                                                                                                                                                                                                                |
+| Not established here         | No runtime behaviour was executed. §F3 and §F4 are **hand traces** over source, labelled as such; they are not evidence that any test currently exercises these paths                                                                                                                                                                                |
