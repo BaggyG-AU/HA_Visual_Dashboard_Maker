@@ -247,3 +247,44 @@ A repair exists, so **STRAT-D7 owes round 5**. Its highest-value target is
 **this section's own blast-radius table** — the author has now produced two
 incomplete sweeps in four rounds, so a claimed-complete sweep from this author
 is precisely the claim most worth attacking.
+
+### ⚠ Round 4 addendum — the author's self-check, before hand-off
+
+The owner asked whether the author had self-checked the round-4 repair against
+the criteria written into the round-5 commission. **The answer was no**, and
+running that check found **two further class members in a row the sweep table
+above marks `✅ Checked`.**
+
+**§11's verification table was itself falsified by the repairs:**
+
+- **"Every §4 fact — measured on `691c8d1` on 2026-09-08"** is false. F5 and F7
+  carry facts re-measured on **2026-09-09** across rounds 2–4 (HACS metadata
+  filling only `versions`; absolute-URL and query-string retention; the
+  docblock/implementation disagreement; `cardAvailability.ts:40` and its two
+  consumers).
+- **"No runtime behaviour was executed"** is false. The author executed a Node
+  probe against the real capability modules on 2026-09-09 to verify the
+  reviewer's findings.
+
+Both rows are corrected in the brief with dated in-row notes stating what they
+originally said. The sweep table above is **left as written** — it is the record
+of the sweep as performed, and its `✅` on §11 is part of what this addendum
+discloses.
+
+⭐⭐⭐ **Why the sweep missed them, and it is a different error from round 3's.**
+Round 3's failure was an under-enumerated class. This one is a **scope mismatch
+between check and claim**: the sweep asked "does §11 _mention_ F5, cost or
+derivability?" — it does not — when the question that mattered was "are §11's
+own claims still _true_ after the repairs?" That is the practice rule **a check
+is evidence only for the property it actually exercises**
+(`drawer_practice_verification_8cccc05dfb795cb31d2ce3a6`), applied to the
+author's own verification section.
+
+⭐⭐ **The generalisable form: a verification section is not exempt from the
+sweep it describes.** A document's own "what we checked / what we did not
+establish" table makes claims about the document, so it ages with every repair
+to that document — and it is the section least likely to be re-read, because it
+reads as metadata rather than content.
+
+⚠ These corrections are a **repair**, so they fall inside round 5's scope along
+with everything else in Round 4.
