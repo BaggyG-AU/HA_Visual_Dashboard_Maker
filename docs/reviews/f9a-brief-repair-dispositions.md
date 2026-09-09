@@ -176,3 +176,74 @@ reviewer noted it "does not grant an exemption" if the owner elects a repair.
 This one should be cheap: the repair is a **deletion plus an explicit statement
 of ignorance**, which is easier to verify than any wording. If that round is
 clean, the chain ends and the brief is ready for the owner to lock.
+
+---
+
+## Round 4 — 2026-09-09
+
+Follow-up: `docs/reviews/f9a-brief-codex-review-followup3.md` (`c81b34b`),
+verdict **CLEAR-WITH-FINDINGS**. The capability claim is confirmed withdrawn and
+the deletion confirmed to have preserved the measured facts. **No SEV 1 or
+SEV 2 remains.** One finding: **P3, PARTIALLY RESOLVED, SEV 3** — record-only.
+
+### ⚠ Was this a regression? No. It is a class sweep the author got wrong.
+
+The owner asked directly. Measured:
+
+- **`brief:615-618`, the §9.2 recommendation paragraph, is BYTE-IDENTICAL to
+  `0bfeb6c`** and appears in **no** repair diff. It still justifies option A
+  with "the cost is genuinely small because F5 measured that the underlying data
+  is already persisted" — the withdrawn claim, verbatim, in text no round ever
+  touched. **Missed, three rounds running.**
+- **The A-vs-B cost contradiction predates every repair.** `0bfeb6c` already
+  labelled A "Smallest" and B "Smallest of all". The round-3 qualification added
+  "A remains the smallest of the three options", which restated the collision
+  more assertively but did not create it.
+
+⭐⭐⭐ **The root cause is a false completeness claim in this file.** Round 3's
+row said the withdrawal was "carried through to **§6 D-2** and the **§9.2 option
+A cost cell**". The class was _every passage resting on the deleted claim_. It
+had **four** members. The fourth sits ten lines below one that was fixed. This
+is the practice rule "a finding is a sample, not the population" applied to the
+author's own sweep — and it is the **second** incomplete sweep in this chain
+(round 2's P3 also missed the cost dependants the commission had explicitly
+asked the author to check).
+
+### The full blast-radius sweep the owner asked for
+
+Enumerated mechanically, then hand-checked. Commands:
+`grep -n "already stored\|already persist\|no new capture\|no re-capture\|profile migration\|derivab\|genuinely small\|cheap"`,
+`grep -n "Smallest\|Largest\|saves almost nothing"`, `grep -n "(F5)\|F5 measured"`.
+
+| Member                                                     | Verdict                                                                                                                 |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `brief` F5 (the claim itself)                              | ✅ Deleted in round 3                                                                                                   |
+| `brief` §6 D-2                                             | ✅ Corrected in round 3                                                                                                 |
+| `brief` §9.2 option A cost cell                            | ⚠ Corrected again this round — its round-3 qualification asserted "smallest of the three", which collides with B's cell |
+| `brief` §9.2 recommendation paragraph                      | ⚠ **The miss.** Dated note added outside it this round                                                                  |
+| `brief` §9.2 options table, A vs B labels                  | ⚠ Inconsistent **as put**; disclosed in the note, **not** corrected — it is the record of what the owner was shown      |
+| `brief` §11 verification table                             | ✅ Checked — carries no F5, cost or derivability claim                                                                  |
+| `brief` §9.3 "cheapest acceptable outcome"                 | ✅ Checked — that is the STRAT-D6 header field, a different subject                                                     |
+| `[STATE]` item 11                                          | ✅ Checked — carries the option A ruling, no cost claim                                                                 |
+| `drawer_havdm_decisions_cf0c188aaf75f2cd622faadc` ruling 2 | ⚠ Carries "A is still the smallest of the three options" — **superseded**, see below                                    |
+| Astra's three review drawers                               | ✅ Out of scope — records of what the reviewer said, not the author's to amend                                          |
+
+| Ref | Severity | Owner ruling                                                                                                                                                                                                         | Disposition  | Repair                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Blast radius — reliances, not edits                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P3  | SEV 3    | **Add the dated note, and complete a full blast-radius assessment** — ⚠ reviewer recommended accept-as-residual; author recommended the note; owner ruled for the note **and additionally directed the sweep above** | **RESOLVED** | A dated correction note is added **outside** the historical recommendation paragraph and options table — both preserved unedited, the pattern this document already uses for §9.3, and the reason the paragraph was not simply rewritten. It states (1) the cost premise is **withdrawn**, the ruling unaffected, and the absolute cost now **unmeasured** and the spec's to establish; (2) the options table was **internally inconsistent as put** (A "Smallest" vs B "Smallest of all"), disclosed because the owner chose A partly on cost; and (3) why this surfaced only in round 4. Separately, the round-3 qualification's own "smallest of the three" assertion is **withdrawn** — that text was the author's, not historical, so it is corrected rather than annotated. | **Upstream reliances:** commit `0bfeb6c` (sole source of the historical paragraph and the original A/B/C cells); the round-3 deletion `0a771ab`, which is what withdrew the premise; the owner's option A ruling, which is **not** disturbed. **Downstream consumers:** Sonnet reading §9.2 as the cost rationale, and `drawer_havdm_decisions_cf0c188aaf75f2cd622faadc` ruling 2, which repeats the "smallest of the three" assertion. ⚠ **That drawer is NOT edited again.** It was corrected in place twice already and now carries its own instruction that further change must come by supersession; the correction is therefore filed in the round-4 review drawer, which supersedes that sentence. **Not changed:** option A, the F9a/F9b split, the adopted header fields, the accurate-warning obligation, or any historical text. |
+
+### What this round did NOT establish
+
+- Still docs-only: `git diff --name-only main..HEAD | grep -cv '^docs/'` = 0.
+- **The absolute cost of option A is now explicitly unmeasured** — this round
+  removed a wrong estimate; it did not produce a right one. That is the spec's.
+- The sweep above is a **hand-checked enumeration** over a mechanically
+  produced candidate list. It is not proof that no fifth member exists, and the
+  round-3 row's failure is exactly why that distinction is now stated.
+
+### Follow-up owed
+
+A repair exists, so **STRAT-D7 owes round 5**. Its highest-value target is
+**this section's own blast-radius table** — the author has now produced two
+incomplete sweeps in four rounds, so a claimed-complete sweep from this author
+is precisely the claim most worth attacking.

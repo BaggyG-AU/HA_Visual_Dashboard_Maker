@@ -602,11 +602,11 @@ the export.
 
 **Options.**
 
-| Option                                                                                                                     | What it costs                                                                                                                                                                                                                                                                                                                                                                              | What it leaves undone                                                                                                  |
-| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| **A — Carry the fact, don't consume it.** F9a's one object carries a layout-card fact; nothing reads it until F9b          | Smallest. One extra field, derived from data already stored (F5); no new capture. ⚠⚠ **Withdrawn 2026-09-09:** the "derived from data already stored" half of this cost argument rested on a derivability claim this brief has now DELETED as unproven (F5). A remains the smallest of the three options — B and C are unchanged — but **how cheap it is in absolute terms is UNMEASURED** | No user-visible layout-card change in F9a; the field is unconsumed code until F9b lands                                |
-| **B — Card-mod only.** F9a threads the object with the card-mod fact alone; F9b adds the layout-card fact when it needs it | Smallest of all                                                                                                                                                                                                                                                                                                                                                                            | Departs from the approved S01.1 wording and from item 9's "one object for both" — needs the owner to say so explicitly |
-| **C — Carry and consume it.** F9a also makes a layout-card decision visible to the user                                    | Largest. Deciding _what_ to do when layout-card is absent **is** R3 — F9b's substance                                                                                                                                                                                                                                                                                                      | Nothing — but it re-merges the split the owner made on 2026-09-07                                                      |
+| Option                                                                                                                     | What it costs                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | What it leaves undone                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| **A — Carry the fact, don't consume it.** F9a's one object carries a layout-card fact; nothing reads it until F9b          | Smallest. One extra field, derived from data already stored (F5); no new capture. ⚠⚠ **Withdrawn 2026-09-09:** the "derived from data already stored" half of this cost argument rested on a derivability claim this brief has now DELETED as unproven (F5), so **how cheap A is in absolute terms is UNMEASURED**. ⚠ This qualification originally added "A remains the smallest of the three options"; that was withdrawn in round 4 because it contradicts B's own cell below, which reads "Smallest of all" — see the correction note under the recommendation | No user-visible layout-card change in F9a; the field is unconsumed code until F9b lands                                |
+| **B — Card-mod only.** F9a threads the object with the card-mod fact alone; F9b adds the layout-card fact when it needs it | Smallest of all                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Departs from the approved S01.1 wording and from item 9's "one object for both" — needs the owner to say so explicitly |
+| **C — Carry and consume it.** F9a also makes a layout-card decision visible to the user                                    | Largest. Deciding _what_ to do when layout-card is absent **is** R3 — F9b's substance                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Nothing — but it re-merges the split the owner made on 2026-09-07                                                      |
 
 ⭐ **RULED 2026-09-08: OPTION A — carry the layout-card fact, do not consume
 it.** As recommended.
@@ -616,6 +616,33 @@ literally, keeps the F9a/F9b split intact, and the cost is genuinely small
 because F5 measured that the underlying data is already persisted. B saves
 almost nothing and requires overriding an approved story line. C undoes the
 split.
+
+⚠⚠ **CORRECTION, 2026-09-09 (review round 4, finding P3). The paragraph above
+and the options table above it are the recommendation and options EXACTLY AS
+PUT on 2026-09-08 and are preserved unedited; this note sits outside them and
+is the controlling reading.** Two things in them no longer hold:
+
+1. **Its cost premise is WITHDRAWN.** "The cost is genuinely small because F5
+   measured that the underlying data is already persisted" rests on the
+   derivability claim this brief has since **deleted as unproven** (F5). ⚠ **The
+   ruling stands and is unaffected — the owner chose A, and A is still the only
+   option that honours item 9 while keeping the F9a/F9b split. What is
+   withdrawn is the CONFIDENCE that A is cheap in absolute terms. That is now
+   UNMEASURED**, and the spec must establish the real cost of deriving the
+   layout-card value rather than inheriting an estimate from here.
+2. **The options table was internally inconsistent when it was put**, and this
+   is disclosed rather than corrected because it is the record of what the
+   owner was shown: it labels **A "Smallest"** and **B "Smallest of all"**.
+   Those cannot both be true, and the owner chose A partly on cost. ⓘ It does
+   not change the ruling — B was rejected for departing from the approved S01.1
+   wording and item 9, not on cost — but the owner was shown a cost comparison
+   that contradicted itself, and that is worth saying plainly.
+
+ⓘ **Why this was found in round 4 and not earlier:** the author's round-3
+repair claimed to have carried the withdrawal through "§6 D-2 and the §9.2
+option A cost cell". The class was every passage resting on the deleted claim,
+and it had **four** members, not three. The fourth is the paragraph immediately
+above this note.
 
 **If you do nothing.** Sonnet has to choose between A, B and C while writing
 the spec, and whichever it picks, the choice arrives at your sign-off gate
