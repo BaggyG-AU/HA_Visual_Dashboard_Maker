@@ -416,3 +416,100 @@ the only exits are a **zero-finding round** or an owner **ACCEPTED-RESIDUAL** �
 which is a decision, not a repair, and so creates no follow-up. This round aimed
 at the first by fixing the three real defects completely and adding nothing the
 reviewer did not raise.
+
+---
+
+## Round 6 — 2026-09-10
+
+Follow-up: `docs/reviews/f9a-brief-codex-review-followup5.md` (`23c91c7`),
+verdict **CLEAR-WITH-FINDINGS**. **P7, P8 and P9 are RESOLVED** — the round-5
+repairs stand, including the two P8 members the hand-off had dropped. Five new
+findings, **P10–P14, each SEV 3**, each record-accuracy. No SEV 1 or SEV 2.
+
+⚠ **All five are defects in the author's own Round 5 prose**, verified one by one
+against source before disposition. This section states each correction; the
+Round 5 text above is **not edited** — this file is append-only, and the
+corrections below control.
+
+### ⚠ The diagnosis, which matters more than the five fixes
+
+Each finding is an instance of a class this very round was repairing. P10, P11
+and P14 are counts or ranges that disagree with their own lists — the P9 class.
+P13 is an unverified universal — the P7 class and the rule at
+`drawer_practice_claims_1fcfbf72537d81a3cdb9bc69`. P12 is an attribution taken
+from a summary instead of from the review it summarised — in the same document
+whose own §"sibling sweep" note says **"RE-READ THE REVIEW, NEVER A SUMMARY OF
+IT."**
+
+⭐⭐⭐ **Root cause: the round-5 self-check swept the artifact being REPAIRED and
+never swept the record being WRITTEN.** This chain's lesson (e) — a verification
+section is not exempt from the sweep it describes — was applied to the brief's
+§11 and not to the disposition section making claims about §11. **It is the same
+scope mismatch one level up: the author proofread the old surface and shipped
+the new one unchecked.** A self-check whose scope is "what I edited" cannot see
+defects in "what I wrote about what I edited".
+
+### Dispositions
+
+| Ref | Severity | Owner ruling                                                                                                       | Disposition  | Correction                                                                                                                                                                                                                                                                                                                                                                                                                                            | Blast radius — reliances, not edits                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P10 | SEV 3    | **Delete the summary, keep the command** — the reviewer's own alternative remedy, chosen over correcting the range | **RESOLVED** | §11's line "`F1`–`F4` and `F6`–`F10` are byte-identical" is **deleted**, not reworded: that range contains `F7`, which the same sentence said differs. A dated note in its place records what stood there and why it went. The fenced command's output is now the sole account of which subsections moved. ⚠ **This removes the class, not the instance** — a hand-written summary of a command's output is a second source of truth about it         | **Upstream reliances:** the two pinned blobs `0bfeb6c` and `de0736c`; the command, still present and unchanged. **Downstream consumers:** §0 and §4, which both promise "§11 names which" — checked, and §11 still names `F5` and `F7` in the table row, the statement the reviewer's own class sweep cleared as agreeing with the output. **Not changed:** the pinned heads, the F4 edit disclosure, any code fact, or the owner rulings |
+| P11 | SEV 3    | **Fix now**                                                                                                        | **RESOLVED** | The Round 5 heading reads "found **a fourth** brief member". **There is no fourth.** P8 has **three** brief members; the hand-off named one, so the sweep found **two** it had dropped. The heading's "fourth" was a collision with the separate count of incomplete-sweep episodes, which is a different quantity and is not corrected here                                                                                                          | **Upstream reliances:** the three repaired F4 locations, unchanged. **Downstream consumers:** a reader judging whether the round-5 sweep was complete. **Not changed:** the three repaired passages, the five call sites, or any prior round's bytes                                                                                                                                                                                      |
+| P12 | SEV 3    | **Fix now**                                                                                                        | **RESOLVED** | Round 5 says the round-5 findings were "**all in the author's own repairs**". **False, and measurably so for each of the three** — see the provenance table below. No repair introduced any of them                                                                                                                                                                                                                                                   | **Upstream reliances:** commit `0bfeb6c`; `docs/reviews/f9a-brief-codex-review-followup4.md:102`, which already said P8 was "an older record miss, not a regression". **Downstream consumers:** the owner judging why this review chain has cost six rounds — the corrected account makes it _cheaper_ to justify, not dearer. **Not changed:** P7/P8/P9's validity, closure, or the owner's fix ruling                                   |
+| P13 | SEV 3    | **Fix now**                                                                                                        | **RESOLVED** | Round 5 says "the **only** exits are a zero-finding round or an owner ACCEPTED-RESIDUAL". **`docs/governance/OPERATING_AGREEMENT.md:297-300` names DEFERRED alongside ACCEPTED-RESIDUAL** as an owner decision creating no follow-up. The corrected statement: **a repair owes a follow-up; an owner decision — ACCEPTED-RESIDUAL or DEFERRED — does not.** ⚠ An unverified universal, written into the round repairing unverified universals         | **Upstream reliances:** `OPERATING_AGREEMENT.md:297-300`, read this round rather than recalled. **Downstream consumers:** the owner choosing what to do with a finding — the omission removed a real option from a decision put to the owner. **Not changed:** the mandatory follow-up on an actual repair, the owner gate, or any rule text; no new mechanism is proposed                                                                |
+| P14 | SEV 3    | **Fix now**                                                                                                        | **RESOLVED** | Round 5 says "the **two** subsequent full-gate runs were green". **There were four full-gate runs: one red, then three green** — logs retained in the session scratchpad. Corrected account: the gate **reached green on the second run**; the two later greens were **re-runs after further edits**, because a gate result pins to the tree it ran on and each edit invalidated the previous pin. The red is the known watched unit flake, unchanged | **Upstream reliances:** the four retained `checks-*.log` files, re-read this round. **Downstream consumers:** the pause retrospective's cost accounting, and anyone assessing the `DeployDialog` flake. **Not changed:** tests, timeouts, the baseline, the allowlist, or the green result itself                                                                                                                                         |
+
+### P12 — the provenance of P7, P8 and P9, measured
+
+Round 5's "all in the author's own repairs" is wrong for **all three**, and each
+is wrong in a different way. Commands: `git show 0bfeb6c:<brief> | grep -n …`.
+
+| Finding | Where it actually came from                                                                                                                                                                                               |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P7**  | **Original text** — both passages are in `0bfeb6c` at `:51` and `:136`. They were **TRUE when written** and were **falsified by rounds 2–4**, which re-measured F5 and F7. Repair-caused falsity, not repair-written text |
+| **P8**  | **Original text, wrong when written** — all three F4 passages are in `0bfeb6c`, and **no repair diff ever touched them**. A miss that survived five rounds, as the round-5 review itself said                             |
+| **P9**  | **Neither** — it was a `[STATE]` drawer heading that outgrew its own list through record maintenance. It is not in the brief at all (`grep -c "THREE LESSONS"` on `0bfeb6c` returns 0)                                    |
+
+⚠ **The corrected sentence:** none of P7, P8 or P9 was introduced by a repair.
+One was made false by repairs, one was always false, one was a record heading
+that went stale. ⓘ This **weakens** the "repairs generate defects" narrative for
+round 5 — and P10–P14 then supply the real instance of it, since all five _were_
+written by the round-5 repair.
+
+### The author's self-check on THIS section, run before commit
+
+Scoped to the text of Round 6 itself, which is what round 5 failed to do.
+
+| Class checked                                   | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Every count in this section vs its own list** | "five new findings" → P10–P14 = 5 rows. "three brief members" → the three F4 locations. "four full-gate runs: one red, then three green" → four `checks-*.log` files, re-read. "all three" in the provenance table → 3 rows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **Every universal**                             | "all five are defects in the author's own Round 5 prose" — enumerated, each verified against source. "no repair introduced any of them" — backed by the provenance table. ⚠ **This cell first claimed "no 'only' is written anywhere in this section". The sweep falsified it and the claim was deleted — the P13 class, caught in the act, in the row asserting the check had been run.** What was actually done: every `only` / `all` / `every` / `none` / `no` token in this section was enumerated mechanically and classified — `append-only` and `docs-only` are compounds; one quotes Round 5's defective "only exits"; one is a verified scope limit ("covers P7, P8 and P9 only", and the table has exactly those three rows); the remainder are the claims checked in the rows above |
+| **Every attribution to what a reviewer said**   | Read from the review file, not from a summary of it: P8-is-older cites `followup5`'s own pointer to `followup4.md:102`; the P10 remedy is the reviewer's stated alternative, quoted from its bounded remedy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **Every range**                                 | No range expression is used in this section. The P10 defect was a range that swallowed an excluded member; ranges are avoided here rather than re-checked                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Did this correction contradict Round 5?**     | It is designed to — that is what a correction is. Round 5 is **not edited**; append-only holds and the corrections above control                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+
+### What this round did NOT establish
+
+- **Gate on this round's finished tree:** `./tools/checks` → REAL_EXIT=0, 4/4
+  steps, 0 errors / 145 warnings, 1559 passed / 105 files — **green on the first
+  attempt, and every full-gate run on this round's tree returned REAL_EXIT=0. No
+  red on this round.** ⓘ Stated without a run count deliberately: each further
+  edit invalidates the gate's pin and forces another run, so a count here would
+  go stale on the edit that wrote it — the P10 lesson, applied to this very
+  sentence. P14 above is a finding about inaccurate gate accounting; this round
+  owes the precision it asked of round 5.
+- **Still docs-only.** No `src/`, test, governance, Issue or board change.
+- **This section corrects Round 5's claims; it does not re-verify Round 5's
+  repairs.** P7/P8/P9's closure rests on the round-6 review, not on this text.
+- **Nothing here establishes that F9a works.** The feature is unimplemented.
+- **The provenance table covers P7, P8 and P9 only.** It makes no claim about
+  the origin of findings from rounds 1–4.
+
+### Follow-up owed
+
+**P10 is a brief edit, so STRAT-D7 owes round 7.** P11–P14 are record
+corrections and trigger none (`OPERATING_AGREEMENT.md` §3.4).
+
+⭐ Round 7's highest-value target is **this section**, on the plain evidence that
+the last two rounds each found defects in the author's newest prose rather than
+in the artifact.

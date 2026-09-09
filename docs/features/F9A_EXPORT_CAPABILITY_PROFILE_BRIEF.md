@@ -775,4 +775,10 @@ done
 diff -qr /tmp/0bfeb6c /tmp/de0736c
 ```
 
-Output: `F5` and `F7` differ; `F1`–`F4` and `F6`–`F10` are byte-identical.
+⚠ **Its output is the account — deliberately not restated here (finding P10,
+2026-09-10).** The restatement that stood here said "`F1`–`F4` and `F6`–`F10`
+are byte-identical", a range that contains `F7` while the same sentence said
+`F7` differs. A hand-written summary of a command's output is a second source
+of truth about that output; the remedy is to delete the summary, not to correct
+its wording (`drawer_practice_claims_1fcfbf72537d81a3cdb9bc69`). Which sections
+moved is stated once, in the row above.
