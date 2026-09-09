@@ -288,3 +288,131 @@ reads as metadata rather than content.
 
 ⚠ These corrections are a **repair**, so they fall inside round 5's scope along
 with everything else in Round 4.
+
+---
+
+## Round 5 — 2026-09-10
+
+Follow-up: `docs/reviews/f9a-brief-codex-review-followup4.md` (`de0736c`),
+verdict **CLEAR-WITH-FINDINGS**. **P3 RESOLVED**; P1, P2, P4, P5 and P6 closures
+retained. Three new findings — **P7, P8 and P9, each SEV 3**, each
+record-accuracy. **No SEV 1 or SEV 2 anywhere.** The reviewer recorded that the
+brief is ready to lock and **recommended accepting all three as residuals**.
+
+### The owner's ruling, and why it differs from the reviewer's recommendation
+
+⭐ **RULED 2026-09-09: FIX ALL THREE.** The reviewer recommended accept-as-residual
+and lock; the author **first recommended the same and then reversed**, and the
+owner ruled fix-now.
+
+The reversal is on the record because it matters. The owner asked point-blank
+whether accept-and-lock was being recommended because it was correct or because
+the author wanted the review loop to stop. **Partly the latter.** Re-examined on
+the merits, P8 is not cosmetic: the wrong sentence is the ⭐-starred one titled
+"The distinction the spec needs" — the line a spec author carries forward — and
+it contradicts its own table two rows above. P7 leaves the brief asserting two
+provenance universals its own §11 has already withdrawn. Both are cheap to fix
+and both mislead the next reader. The owner agreed and ruled fix-now.
+
+⚠ This is the **third** time in five rounds the owner has ruled against the
+reviewer's recommendation on the author's argument while accepting the
+reviewer's finding in full. The pattern is the intended one: the reviewer finds
+and grades, the author argues, the owner decides.
+
+### ⚠ The sibling sweep found a fourth brief member the hand-off had dropped
+
+The hand-off prompt written at the end of the previous session
+(`prompts/opus/START_F9A_P789_FIXES.md`, gitignored) recorded P8 as **"1 in the
+brief + 2 records"** and named a single anchor, `grep "Sites 1, 2, 3 and 5 decide
+what Home"`. **The review it was summarising names two ranges** —
+`docs/reviews/f9a-brief-codex-review-followup4.md`, P8: _"The same shorthand
+appears in brief:235–238's table framing and :246–247"_. The table framing is a
+**second and third** member: the lead-in sentence "following what it hands to
+Home Assistant" and the table's own column header "What reaches Home Assistant",
+both of which the table's own rows 2 and 4 contradict.
+
+⭐⭐⭐ **This is the fourth incomplete sweep in five rounds, and the first one
+that was incomplete before the session that acted on it began.** The class was
+not under-enumerated by this round's author — it was under-enumerated by the
+hand-off, which compressed a two-range finding into one anchor and marked the
+enumeration "already done and verified". **A hand-off that pre-digests a finding
+inherits the reviewer's authority without the reviewer's evidence. Re-read the
+review, not the summary of it.**
+
+### Dispositions
+
+| Ref | Severity | Owner ruling                                            | Disposition  | Repair                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Blast radius — reliances, not edits                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --- | -------- | ------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P7  | SEV 3    | **Fix now** — ⚠ reviewer recommended accept-as-residual | **RESOLVED** | **Two members, both in the brief, both the author's own prose, so both corrected directly.** §0 (`path:line` references "re-measured … on 2026-09-08") and the §4 preamble ("Every fact below was measured … on 2026-09-08") now carry the same qualification §11 already carried. ⚠ **Neither repeats the F5/F7 list** — each points at §11 as the single home, because a second copy of an enumeration drifts at the next repair (`drawer_practice_review_41e379f2e616eba581924b07`). §11's row is extended with the **deciding command**, published as a fenced block below the table and pinned to two immutable heads (`0bfeb6c`, `de0736c`); it reports F5 and F7 differ and nothing else. The command was **executed verbatim as published**    | **Upstream reliances:** §11's existing dated correction (the source of the F5/F7 enumeration — re-measured this round, not inherited); commits `0bfeb6c` and `de0736c` as immutable comparison points; `main` = `691c8d1`, unchanged. **Downstream consumers:** Sonnet entering §4 through either introduction; any later round re-measuring a §4 fact, which must extend §11's row and needs no edit to §0 or §4 now that neither carries a copy. **Not changed:** any §4 measurement, the base commit, §11's original correction text, or the execution limits in "Not established here"                                                                                                                                                                                                                             |
+| P8  | SEV 3    | **Fix now** — ⚠ reviewer recommended accept-as-residual | **RESOLVED** | **Three members in the brief, not one** (see the sweep note above), all in F4, all the author's own prose: the table lead-in now reads "following **where its output actually goes**"; the column header now reads "**What the call produces, and where it goes**"; and the ⭐ summary now states the measured split — **sites 1, 3 and 5 hand the content to Home Assistant, site 2 writes it to a file on disk where Home Assistant is not involved at all, and site 4 produces no content**. The load-bearing point of the original sentence — site 4 decides only what the user is _told_ — is preserved verbatim. **Record members:** `[STATE]` was already corrected in v222; the decision drawer is corrected **by supersession**, not in place | **Upstream reliances:** F4's own five-row table, whose rows 2 and 4 already carried the correct answer and were **not** edited; the five-caller trace independently re-run by the reviewer; the F4 population re-confirmed on 2026-09-10 (seven files match the names; the five sites are unmoved). **Downstream consumers:** the spec author reading the ⭐ summary as the F4 takeaway; §6 D-5 and §8's "byte-producing" wording (checked — neutral and accurate, all four content sites do produce bytes); the header's and §9.3's "to Home Assistant **or to a file**" (checked — already correct, and the summary now agrees with them). **Not changed:** the five-call-site population, the content/warning distinction, D-4's different sense of "receives", the §9.3 P2 correction note, or any historical text |
+| P9  | SEV 3    | **Fix now** — ⚠ reviewer recommended accept-as-residual | **RESOLVED** | **One member, a record.** `[STATE]` (`drawer_havdm_state_a15b0af78e0814cfd19cf627`) read "THE THREE LESSONS" over four labelled members; **already corrected in v222 on 2026-09-09** — it now reads FIVE and lists (a) through (e). **Confirmed by re-reading the live drawer this round, not assumed from the hand-off.** Nothing further owed                                                                                                                                                                                                                                                                                                                                                                                                        | **Upstream reliances:** the live `[STATE]` drawer as fetched by ID this round. **Downstream consumers:** the next agent reading item 11. **Not changed:** the lessons themselves, the owner rulings, or any historical count of review rounds or failed claim wordings                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+
+⚠ **Only P7 and P8 are repairs to the reviewed target.** P9 and the two
+propagated copies of P8 are **record** corrections; under
+`docs/governance/OPERATING_AGREEMENT.md` §3.4 a record that changes no reviewed
+target and no safeguard triggers no follow-up. **Round 6 is owed by P7 and P8
+alone**, and both were made in one pass so they cost one round, not two.
+
+⚠⚠ `drawer_havdm_decisions_cf0c188aaf75f2cd622faadc` code-fact (a) — "sites 1,
+2, 3 and 5 decide what HA RECEIVES" — is **NOT edited**. That drawer has been
+corrected in place twice and now carries its own instruction that further change
+comes by supersession. The correction is filed in the **round-5 review drawer**,
+exactly as `drawer_havdm_review_87ecc867259c0577d931dd3f` did for the previous
+sentence.
+
+### The author's self-check, run BEFORE hand-off this time
+
+Round 4's addendum exists because the previous round shipped without running the
+criteria it had written into the reviewer's commission. Those criteria were run
+against this round's own work **before** anything was committed. **Results in
+full, including the ones that found nothing.**
+
+| #   | Check                                                                            | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **P7 sibling sweep**, two independent locators                                   | Locator A: every date string in the brief (`grep -n "2026-09-0[0-9]\|September"`, 30 hits). Locator B, deliberately avoiding dates: every provenance verb (`grep -n "measured\|re-measur"`, 12 hits). **Both return the same two members**, §0 and the §4 preamble. Ruling, adoption, correction and file-name dates are not provenance claims. **No third member.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| 2   | **P8 sibling sweep**, two independent locators                                   | Locator A, HA vocabulary: `grep -n "reaches Home\|hands to Home\|receives\|sends bytes\|to Home Assistant"`. Locator B, deliberately avoiding it: `grep -n "five call site\|Sites 1\|byte-producing\|content producer"`. **Three members, all in F4.** The header (`:33`), §9.3 (`:676`) and D-4 (`:449`) are correct as written and were not touched. ⚠ **Locator A alone would have found all three; the hand-off's single anchor found one**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 3   | **P9 / count sweep**                                                             | **No issue found.** Every "N things" claim in the brief and the dispositions compared against its actual list. Verified in code: F1 "exactly five lines" → 5; F5 "seven fields" → 7; F7 "two consumers" → 2 (`CardPalette.tsx`, `BaseCard.tsx`); F10 "the three" → 3. Verified by row count: Round 4's blast-radius table really does have **ten** data rows, counting data rows only — **not** a defect                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 4   | **§11's own claims re-checked after the repair**                                 | Row-by-row. "Every §4 fact" — updated by this round. "Gate on this branch" — **falsified by the repair until re-run**, so the gate was re-run on the finished tree (below). "Every drawer ID … read back from a tool result" — the repair adds exactly one ID, `drawer_practice_review_41e379f2e616eba581924b07`, fetched by ID before it was written. "Not established here" — F4 is **still labelled a hand trace**; unaffected                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 5   | **Did the repair introduce a new contradiction?** ⚠ **Yes — twice, both caught** | (a) The first draft of §11's note claimed "F1–**F4** … identical", which this round's own F4 edit falsified on the next commit. Fixed by pinning the comparison to `0bfeb6c`/`de0736c` and disclosing the F4 edit explicitly. (b) The first draft repeated the F5/F7 list in §0 and §4 **beside** §11's copy — three copies of one enumeration, which drifts at the next repair. Fixed by deleting both copies and pointing at §11                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 6   | **Published command executed verbatim**                                          | The fenced block was extracted from the finished file and run as written: output `F5 … differ`, `F7 … differ`, nothing else — matching the prose. A second, independent instrument (a Python subsection diff) had already returned the same answer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 7   | **Gate on the finished tree**                                                    | `./tools/checks` after `npx prettier --write` on both edited files: **REAL_EXIT=0, 4/4 steps, 0 errors / 145 warnings, 1559 passed / 105 files** — identical to the base. ⚠ **Reported in full: the FIRST run was RED**, one unit test failing (`tests/unit/DeployDialog.spec.tsx` › "errors clearly when there is no config to deploy", `Test timed out in 5000ms`). **Attributed, not assumed:** that identity is the project's **known watched UNIT flake**, already recorded in `drawer_havdm_testing_127a89e2ddcdeb101452523a` with the same signature and the same 5000 ms budget, having fired twice in loaded gate runs on 2026-08-10 and passed 11/11 in isolation. It passed 11/11 in isolation here too, and the two subsequent full-gate runs were green. No test or source file reads either changed document (`grep -rn` over `tests/` and `src/` for both filenames returns nothing), so no path exists from this repair to that failure. **This is its third recorded sighting; not diagnosed, not re-baselined, not allowlisted** |
+| 8   | **Append-only**                                                                  | `git show de0736c:docs/reviews/f9a-brief-repair-dispositions.md` is **46,322 bytes** and is a **byte-exact prefix** of this file; Rounds 1–4 and the addendum are untouched                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+
+### What this round did NOT establish
+
+- **Still docs-only:** `git diff --name-only main..HEAD | grep -cv '^docs/'` = 0.
+  No `src/`, test, governance, Issue or board change; no push, no merge, no HA
+  contact.
+- **No Electron, e2e, integration or live-HA run.** A docs-only branch needs
+  none (`drawer_havdm_governance_b282610792b253fee5c09b40`, standing rules).
+- **The sweeps above are hand-checked enumerations over mechanically produced
+  candidate lists.** Two independent locators agreeing raises confidence; it is
+  not proof that no further member exists. Given that four of five rounds found
+  an incomplete sweep by this author, **that caveat is the point, not a
+  formality.**
+- **This round did not re-verify P1–P6's closures**, which rest on earlier
+  rounds' evidence, and did not audit any drawer outside the three named.
+- **Nothing here establishes that F9a works.** The feature is unimplemented;
+  these are corrections to a document.
+- **The gate needed two attempts**, for the known unit flake recorded in check 7.
+  A green gate certifies the tree it ran on; it does not retire that flake, and
+  nothing here re-baselines or allowlists it.
+
+### Follow-up owed
+
+P7 and P8 are repairs to the reviewed target, so **STRAT-D7 owes round 6**.
+
+⭐ Its highest-value target is **the P8 sweep above**, for the reason the
+previous round's follow-up note gave and this round then demonstrated: a
+claimed-complete sweep from this author is the least reliable claim in this
+chain, and this round began by finding one that was already wrong. The second
+target is **§11 and this file's own claims**, which age with every repair.
+
+⚠ **The exit condition, stated plainly.** Five rounds have run; finding
+provenance has moved from "all in the original brief" (round 1) to "all in the
+author's own repairs" (round 5), and severity from SEV 1 to SEV 3. The reviewer
+has recommended locking three times. STRAT-D7 gives every repair a follow-up, so
+the only exits are a **zero-finding round** or an owner **ACCEPTED-RESIDUAL** —
+which is a decision, not a repair, and so creates no follow-up. This round aimed
+at the first by fixing the three real defects completely and adding nothing the
+reviewer did not raise.
