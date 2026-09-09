@@ -513,3 +513,80 @@ corrections and trigger none (`OPERATING_AGREEMENT.md` §3.4).
 ⭐ Round 7's highest-value target is **this section**, on the plain evidence that
 the last two rounds each found defects in the author's newest prose rather than
 in the artifact.
+
+### ⚠ Round 6 addendum — the author's own review, 2026-09-10
+
+The owner directed a full review of this session's work, blast radius included,
+against the criteria written into the reviewer's own commissions. **It found four
+further SEV 3 record defects, S1–S4.** All four sit in text this session wrote; ⚠ S1's _figure_ was inherited from the pre-session `[STATE]` and propagated here unmeasured, which is a different fault from inventing it. Recorded
+here rather than in Round 5 or Round 6, which are append-only and stand as
+written; the corrections below control.
+
+⚠ **Each finding was detected by a command run BEFORE its fix and re-run after,
+so every clearance below is a measured state change, not an assertion.**
+
+| Ref    | Defect                                                                                                                                                                                                                                                                              | Detector, before → after                                                                                                                       |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **S1** | "**THREE TIMES** ruled against the reviewer's recommendation" is an **undercount**, and it was inherited from the pre-session `[STATE]` and propagated without measurement. Correct account below                                                                                   | rows matching `reviewer recommended (fix-later\|accept-as-residual)`, grouped by round: **5 rounds / 8 Ref-rulings**, against a claim of three |
+| **S2** | Round 5's self-check cites "**30 hits**" and "**12 hits**" for its two P7 locators. Re-running them now returns **33** and **13** — this session's own repair added date strings and `measured` verbs. The counts were true when taken and were falsified by the edit that followed | `grep -c "2026-09-0[0-9]\|September"` → **33**; `grep -c "measured\|re-measur"` → **13**                                                       |
+| **S3** | The P10 note in §11 said which sections moved is "**stated once**, in the row above". That row stated it **twice**                                                                                                                                                                  | statements matching `F5 and F7[^.—\|]*` in that row: **2 → 1**                                                                                 |
+| **S4** | The owner's "delete the summary, keep the command" ruling was applied to **one of two** restatements: the §11 row still carried "reports **F5 and F7 differ and nothing else**", a hand-written restatement of the command's output                                                 | `grep -c "reports \*\*F5 and F7 differ and nothing else\*\*"`: **1 → 0**                                                                       |
+
+⭐ **S3 and S4 were closed by one edit** — deleting the redundant restatement made
+"stated once" true. The clause is replaced by "and its output is the account",
+which points at the command instead of paraphrasing it.
+
+#### S1 — the corrected account, enumerated
+
+The reviewer's recommendation was overridden in **five of the six rounds**, on
+these Ref-rulings. **This list is the count's home, and no record now asserts a figure of its own** — `[STATE]` points here instead of carrying one. ⚠ Two places still contain the old wording, and both are historical rather than current assertions: **Round 5 above**, because this file is append-only and this addendum is how it is corrected; and **`prompts/codex/f9a-brief-review-followup5.md`**, the round-6 commission, **deliberately left unedited** as the record of what the reviewer was actually given (blast radius, below).
+
+| Round | Ref-rulings overridden | Reviewer wanted    |
+| ----- | ---------------------- | ------------------ |
+| 1     | P4, P5                 | fix-later          |
+| 2     | P6                     | fix-later          |
+| 3     | P3                     | accept-as-residual |
+| 4     | P3                     | accept-as-residual |
+| 5     | P7, P8, P9             | accept-as-residual |
+| 6     | —                      | (owner agreed)     |
+
+⚠ **Round 2's is P6, not P5** — the author's first guess before measuring was
+P5, and the enumeration corrected it. That is the whole reason the rule says
+enumerate before writing the number.
+
+#### S2 — the corrected account
+
+Round 5's locator hit counts are **withdrawn, not restated.** They were
+decoration: the load-bearing claim was that two independent locators returned the
+**same two members**, and that claim is unaffected and still holds. A count of a
+command's output written into a record is falsified by the next edit to the file
+that command reads — the same class as P10 and P14.
+
+#### Blast radius — what these corrections rely on
+
+- **S1.** _Upstream:_ the disposition rows themselves, which are append-only and
+  unedited, and were parsed rather than read by eye. _Downstream:_ `[STATE]`,
+  corrected in the same pass; and `prompts/codex/f9a-brief-review-followup5.md`
+  — the round-6 commission, which carried the wrong figure and **was already
+  consumed by the reviewer**. ⚠ That file is **deliberately not edited**: it is
+  the record of what the reviewer was actually given, and changing it after the
+  fact would falsify that record. The correction is carried here and forward into
+  the round-7 commission instead. _Not changed:_ any owner ruling, any
+  disposition, or the reviewer's findings.
+- **S2.** _Upstream:_ the two locator commands, re-run this round. _Downstream:_
+  nothing — no other artifact cites those figures. _Not changed:_ the sweep's
+  conclusion, which never depended on them.
+- **S3/S4.** _Upstream:_ the fenced command in §11, unchanged and still present
+  below the table. _Downstream:_ **§0 and §4, which both promise "§11 names
+  which"** — re-checked after the deletion: §11 still names F5 and F7 in its
+  2026-09-09 correction clause, so both promises hold. _Not changed:_ the pinned
+  heads, the F4 disclosure, any code fact, or the owner's ruling.
+
+#### What this addendum did NOT establish
+
+- **It is the author reviewing the author.** It is not an independent round and
+  does not discharge the round-7 follow-up that P10 already owes.
+- **The four detectors above test the four named defects only.** Each was shown
+  to fire before its fix and not after; that is evidence for those four claims
+  and for nothing wider.
+- **Nothing here establishes that F9a works.** The feature is unimplemented.
