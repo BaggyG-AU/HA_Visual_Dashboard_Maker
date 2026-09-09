@@ -296,14 +296,27 @@ Two measurements that bear on that decision:
     evidence of behaviour — this brief cited one as if it were, and that is how
     the wrong claim survived a repair round.**
 
-  ⭐ **The measured claim, and the only one the spec may inherit: a layout-card
-  fact is derivable, with no re-capture and no profile migration, for an
-  instance whose captured resource list contained a URL bearing the
-  `/hacsfiles/` marker.** Whether real installations satisfy that is
-  **unmeasured** — this brief surveyed no user's instance. ⚠ There is also no
-  layout-card constant to derive it with: `grep -n "layout" src/services/capability/resourceElementMap.ts`
-  returns nothing. Naming the folder, and evidencing that name, is the spec's
-  work, not an assumption it may inherit from this brief.
+  ⚠⚠⚠ **THIS BRIEF MAKES NO CLAIM ABOUT WHETHER A LAYOUT-CARD FACT IS
+  DERIVABLE FROM AN EXISTING CAPTURE. THE QUESTION IS OPEN AND IS THE SPEC'S TO
+  ANSWER WITH EVIDENCE.**
+
+  It is stated as open rather than answered because this brief tried to answer
+  it **three times and was wrong three times** — "in every captured profile",
+  then "installed through HACS", then "contained a URL bearing the
+  `/hacsfiles/` marker". Each survived a review round; the third was disproved
+  by a paired probe showing that two captures both bearing the marker produce
+  **identical profiles**, neither carrying the target, and that a bare
+  `/hacsfiles/` bears the marker while yielding no folder at all. The recurrence
+  is the reason for deleting the claim rather than attempting a fourth wording:
+  when the same defect survives successive fixes, remove what generates it.
+
+  **What the spec must establish, with evidence, and may not inherit from here:**
+  which folder name identifies layout-card; whether a given capture actually
+  carries that evidence; and what the export does when the capture cannot
+  answer. ⚠ A `/hacsfiles/` marker somewhere in a capture is **not** proof that
+  layout-card is present. There is also no layout-card constant to derive
+  anything from: `grep -n "layout" src/services/capability/resourceElementMap.ts`
+  returns nothing.
 
 ### F6 — ⚠⚠ THE TRAP: reading `cardModPresent` alone breaks the never-connected rule
 
@@ -417,12 +430,12 @@ justifies.
 - **D-2 — the layout-card field.** ⚠ **Narrowed by the owner's 2026-09-08
   ruling (§9.2, option A): F9a DOES add a layout-card fact to the one
   capability object, and nothing reads it until F9b.** What remains the spec's
-  is where that fact's value comes from. ⚠ **F5 as corrected 2026-09-09:** the
-  folder data is already persisted **only for a captured resource URL bearing
-  the `/hacsfiles/` marker** — not for every install, and not from HACS
-  metadata alone — and no layout-card folder constant exists. Naming the
-  folder, evidencing that name, and deciding what the export should do when the
-  capture cannot answer are all the spec's work.
+  is where that fact's value comes from — and ⚠⚠ **this brief deliberately
+  makes NO claim that it is derivable from an existing capture at all (F5, as
+  corrected 2026-09-09 after three wrong attempts). The question is OPEN.**
+  Naming the folder, evidencing that name, establishing whether a capture
+  carries that evidence, and deciding what the export does when it cannot
+  answer are all the spec's work.
 - **D-3 — the never-connected signal.** Which field, or combination, the export
   treats as "we have never looked" (F6, F7, F8).
 - **D-4 — the shape of the object crossing the seam.** Whether the export
@@ -589,11 +602,11 @@ the export.
 
 **Options.**
 
-| Option                                                                                                                     | What it costs                                                                                                                                                                                                      | What it leaves undone                                                                                                  |
-| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| **A — Carry the fact, don't consume it.** F9a's one object carries a layout-card fact; nothing reads it until F9b          | Smallest. One extra field, derived from data already stored (F5); no new capture. ⚠ **Qualified 2026-09-09:** that derivation holds only where the capture caught a `/hacsfiles/`-marked URL — see F5 as corrected | No user-visible layout-card change in F9a; the field is unconsumed code until F9b lands                                |
-| **B — Card-mod only.** F9a threads the object with the card-mod fact alone; F9b adds the layout-card fact when it needs it | Smallest of all                                                                                                                                                                                                    | Departs from the approved S01.1 wording and from item 9's "one object for both" — needs the owner to say so explicitly |
-| **C — Carry and consume it.** F9a also makes a layout-card decision visible to the user                                    | Largest. Deciding _what_ to do when layout-card is absent **is** R3 — F9b's substance                                                                                                                              | Nothing — but it re-merges the split the owner made on 2026-09-07                                                      |
+| Option                                                                                                                     | What it costs                                                                                                                                                                                                                                                                                                                                                                              | What it leaves undone                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| **A — Carry the fact, don't consume it.** F9a's one object carries a layout-card fact; nothing reads it until F9b          | Smallest. One extra field, derived from data already stored (F5); no new capture. ⚠⚠ **Withdrawn 2026-09-09:** the "derived from data already stored" half of this cost argument rested on a derivability claim this brief has now DELETED as unproven (F5). A remains the smallest of the three options — B and C are unchanged — but **how cheap it is in absolute terms is UNMEASURED** | No user-visible layout-card change in F9a; the field is unconsumed code until F9b lands                                |
+| **B — Card-mod only.** F9a threads the object with the card-mod fact alone; F9b adds the layout-card fact when it needs it | Smallest of all                                                                                                                                                                                                                                                                                                                                                                            | Departs from the approved S01.1 wording and from item 9's "one object for both" — needs the owner to say so explicitly |
+| **C — Carry and consume it.** F9a also makes a layout-card decision visible to the user                                    | Largest. Deciding _what_ to do when layout-card is absent **is** R3 — F9b's substance                                                                                                                                                                                                                                                                                                      | Nothing — but it re-merges the split the owner made on 2026-09-07                                                      |
 
 ⭐ **RULED 2026-09-08: OPTION A — carry the layout-card fact, do not consume
 it.** As recommended.

@@ -118,3 +118,61 @@ reviewer — scope is this round's repair diff **plus the reliances declared
 above**, including the corrected round-1 account. ⚠ The round-1 radius was
 itself found defective, so the radius in this section is the natural first thing
 for that round to attack.
+
+---
+
+## Round 3 — 2026-09-09
+
+Follow-up: `docs/reviews/f9a-brief-codex-review-followup2.md` (`fda8059`),
+verdict **CLEAR-WITH-FINDINGS**, no SEV 1. **P5 and P6 RESOLVED** — the
+reviewer verified the historical restoration byte-for-byte (975 bytes matching
+`0bfeb6c`, present exactly once, and **absent at `a27df25`**, so the check
+detects the earlier false claim), confirmed all 10,268 prior disposition bytes
+unchanged, and traced both radius accounts. **P1, P2, P4 remain resolved.**
+
+One live finding: **P3, PARTIALLY RESOLVED, SEV 2** — the third statement of the
+same claim was still insufficient.
+
+### The owner's ruling, and why it differs from the reviewer's recommendation
+
+The reviewer recommended **accepting the residual** and proceeding to the spec,
+judging another brief-only round disproportionate. The author **disagreed and
+recommended deleting the claim outright**, and the owner ruled **delete**.
+
+The reason is the recurrence, not the wording. The same sentence has now been
+written three times and been wrong three times:
+
+| Attempt | Claim                                                           | Why it was insufficient                                                                                                                                      |
+| ------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1       | "already in **every captured profile**"                         | Only `/hacsfiles/`-marked resources produce a folder at all                                                                                                  |
+| 2       | "**installed through HACS**"                                    | HACS repository metadata fills only `versions`, never `installedFolders`                                                                                     |
+| 3       | "captured resource list **contained a URL bearing the marker**" | Two captures both bearing the marker produce **identical profiles**, neither carrying the target; a bare `/hacsfiles/` bears the marker and yields no folder |
+
+Each survived a review round. The project's own practice rule
+(`drawer_practice_claims_1fcfbf72537d81a3cdb9bc69`) governs exactly this shape:
+**when the same defect recurs across successive fixes, remove the mechanism that
+generates it rather than restating it more carefully.** A fourth wording would
+have been the same instrument with a tuned parameter. ⓘ The reviewer's
+proportionality judgement was reasonable on its own terms — its "concrete fix"
+was another qualification, and it did not consider deletion.
+
+| Ref | Severity | Owner ruling                                                                                                                                  | Disposition  | Repair                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Blast radius — reliances, not edits                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P3  | SEV 2    | **Delete the claim** — ⚠ reviewer recommended accept-as-residual; author recommended deletion and disagreed on the record; owner ruled delete | **RESOLVED** | The derivability claim is **removed from the brief**, not reworded. F5 now states plainly that **this brief makes NO claim about whether a layout-card fact is derivable from an existing capture, and that the question is OPEN and the spec's to answer with evidence** — naming what the spec must establish (which folder identifies layout-card, whether a capture carries that evidence, what the export does when it cannot answer) and stating that a marker somewhere in a capture is not proof of presence. The three failed attempts are recorded in F5 as the reason for deleting rather than rewording. Carried through to **§6 D-2** and the **§9.2 option A cost cell**, whose "derived from data already stored" half is explicitly **withdrawn**: A remains the smallest of the three options, but how cheap it is in absolute terms is now **unmeasured**. The same withdrawal is made in `drawer_havdm_decisions_cf0c188aaf75f2cd622faadc` ruling 2. **Every MEASURED fact is kept** — the lexical extractor behaviour, HACS-metadata-fills-only-`versions`, absolute/query-string retention, the docblock-disagrees-with-implementation note, and the absence of a layout-card constant. | **Upstream reliances:** `capabilityResolver.ts:35-42` (extractor), `:56-60` (collection), `:68-72` (metadata → `versions` only); `capabilityProfile.ts:63-77` (builder); `tests/unit/capabilityResolver.spec.ts:75-78`; the reviewer's paired-capture probe, re-run by the author on this checkout; the owner's option A ruling. **Downstream consumers:** §6 D-2, §9.2's option A cost cell, `drawer_havdm_decisions_cf0c188aaf75f2cd622faadc` ruling 2, and the future spec's derivation of the layout-card value — which now inherits an explicitly OPEN question instead of a wrong answer. ⚠ **Not changed:** option A, one object carrying both facts, the F9a/F9b split, the adopted header fields, or the accurate-warning obligation. **No detector, migration or instance survey is added or implied.** |
+
+### What this round did NOT establish
+
+- Still docs-only: `git diff --name-only main..HEAD | grep -cv '^docs/'` = 0.
+- **Deleting a claim is not the same as answering it.** Whether a layout-card
+  fact is derivable from an existing capture remains **unknown**, and the brief
+  now says so instead of guessing. That is the point of the repair.
+- No real installation was surveyed, and no canonical layout-card folder name
+  was established — both are explicitly the spec's work.
+
+### Follow-up owed
+
+A repair exists, so **STRAT-D7 owes one further scoped follow-up**. ⓘ The
+reviewer noted it "does not grant an exemption" if the owner elects a repair.
+This one should be cheap: the repair is a **deletion plus an explicit statement
+of ignorance**, which is easier to verify than any wording. If that round is
+clean, the chain ends and the brief is ready for the owner to lock.
