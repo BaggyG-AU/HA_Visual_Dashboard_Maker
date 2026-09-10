@@ -1,6 +1,6 @@
 # Practice index: proposed history relocation
 
-**Status:** prepared and self-reviewed by Codex; Fable review pending. The owner approved preparation and joint review in the review-loop package on 2026-09-11. The live index has not been changed.
+**Status:** prepared and self-reviewed by Codex; [Fable's independent review](2026-09-11-review-loop-trial-setup-fable-review.md) is complete with no blocking finding. The owner approved the trial package on 2026-09-11. The live index has not been changed; application awaits a write-enabled session. The reviewed placement and text below are retained.
 
 ## Outcome and scope
 
@@ -45,4 +45,4 @@ The proposed index is 43,402 characters versus 66,588 before, using the temporar
 
 Codex read the moved narrative and checked the boundaries. A local comparison confirmed the original prefix and final active instruction remain verbatim, the admission instruction remains explicit, the historical body is preserved verbatim, and every original `drawer_practice_…` identifier remains in the proposed index. These checks establish text preservation; Fable's review must assess whether the relocation preserves its meaning and retrieval behavior. No live index write or product test was performed.
 
-Fable: review this bounded change and the actual bundle, especially instruction preservation, archive placement and application safety. Report material disagreements together. The owner has approved the trial; this review is not a request to reopen that decision.
+Fable has completed the independent review. The [Codex response](2026-09-11-review-loop-trial-setup-codex-response.md) retains the reviewed content and placement, and records the writer-lease refusal. The next step is application by a write-enabled session, using the steps above.
