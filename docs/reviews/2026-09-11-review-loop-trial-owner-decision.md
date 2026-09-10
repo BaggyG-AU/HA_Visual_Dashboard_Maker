@@ -1,6 +1,6 @@
 # Review-loop trial: consolidated owner decision
 
-**Status: Fable and Codex agree on the approach below; owner adoption is pending.** This consolidates the accepted terms. It does not enact a rule, change a board item or reopen the locked F9a brief.
+**Status: approved by the owner on 2026-09-11.** The approved proposal was version `b08bc41`. Its proposal-time wording is retained below; [the adoption and setup record](2026-09-11-review-loop-trial-adoption.md) carries the subsequent approval and actions. The locked F9a brief is not reopened.
 
 **Recommendation:** try the process on F9a, F6 and F10, record the results briefly, then decide whether to keep, change or stop it. The purpose is satisfactory product delivery with less rework and less owner effort. Fewer reviews alone do not establish success.
 
