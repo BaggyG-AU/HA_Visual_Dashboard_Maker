@@ -1,5 +1,58 @@
 # F9a review-loop analysis — why seven rounds, and what would stop the next one
 
+> ## ⚠ Archival publication — read this first
+>
+> **This document is a historical record, published on 2026-09-11 for the archive.
+> The owner's decision it was written to inform has since been taken, and publishing
+> it here does not reopen that decision.**
+>
+> **What was decided.** The owner approved the review-loop trial on 2026-09-11,
+> covering F9a, F6 and F10. The approved package is
+> [the consolidated owner decision](../reviews/2026-09-11-review-loop-trial-owner-decision.md)
+> (approved at version `b08bc41`); what was actually set up against it is
+> [the adoption and setup record](../reviews/2026-09-11-review-loop-trial-adoption.md).
+> Both were published in pull request #163 (merge `55e6068`). The decision drawer is
+> `drawer_havdm_decisions_e2f130d23c11e6dacf94f42d`.
+>
+> ⚠ **§8's recommended package is not the adopted package.** This is one of two
+> analyses the owner commissioned independently; the other is
+> [Codex's review-loop analysis](../reviews/2026-09-10-review-loop-analysis-codex.md),
+> written without sight of this one. The owner reconciled the two, and the exchanges
+> that followed are alongside it in `docs/reviews/`. Read §8 as this author's proposal
+> at the time, not as the outcome.
+>
+> ⚠⚠ **Several claims below were qualified or withdrawn after this document was
+> written** — in Fable's exchange-2 and exchange-3 replies and in
+> [the agreed recommendation](../reviews/2026-09-10-review-loop-agreed-recommendation.md).
+> Do not quote its figures without them:
+>
+> 1. The **"~1% miss rate"** (mechanism M4), **"mostly followed"** and **"about three
+>    new findings per follow-up round"** are **withdrawn as measurements** — lexical
+>    token counts do not measure error rates or rule compliance. The "17" counted
+>    live-finding _appearances_ (P3 three times, P12 reopened); new identifiers after
+>    round 1 are **12**.
+> 2. **Mechanism M1** is restated as "reported checks did not establish the published
+>    claims", **not** "checked by nothing" — the record does not establish that no
+>    checking occurred.
+> 3. **"A1 now as a record" over-reached.** A standing finish-by-impact default is a
+>    _mechanism_, not a record, and needs both agents' review and the owner's express
+>    adoption, including any exception to the governance pause.
+> 4. **Codex contributed to the rework too** — review 1 missed P8, and a parser repair
+>    prescription (P16→P19) was recorded as a reviewer-caused regression. Owner
+>    authorisation does not validate a remedy.
+> 5. The **"round-5 self-check never swept the record" root cause is unproven.** What
+>    is provable is that S2's figure matches no examined committed tree.
+>
+> **Unaffected by the above:** the measured record growth, the blame table, and the
+> demonstrated failed checks P14 / S2 / P15.
+>
+> The full qualification text is prepended to the MemPalace drawer
+> `drawer_havdm_investigations_baf7ce21a94ad31a194a2445`, which also carries this
+> document's original staged content verbatim.
+>
+> **The Status block below is preserved exactly as written on 2026-09-10** and
+> describes the situation at that time, not today.
+
 **Status:** Analysis for the owner's decision. Nothing in this document is adopted,
 codified or built; the governance pause of 2026-09-07
 (`drawer_havdm_decisions_89b5f20cc75d3f70a7e0491b`) is in force and this document is
