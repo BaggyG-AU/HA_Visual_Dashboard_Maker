@@ -23,6 +23,48 @@ Visual Dashboard Maker — Electron + React + TypeScript desktop app).
 
 ---
 
+## Review-loop trial (F9a / F6 / F10) — which instruction governs
+
+For the F9a, F6 and F10 stories and their assessment, the owner-adopted process
+in [`docs/reviews/2026-09-11-review-loop-trial-owner-decision.md`](docs/reviews/2026-09-11-review-loop-trial-owner-decision.md)
+(adopted 2026-09-11; `drawer_havdm_decisions_e2f130d23c11e6dacf94f42d`) governs
+wherever a skill, a shared practice rule or an older rule text says otherwise.
+Read its steps 1–6, acceptance contract and evidence clause; in brief:
+
+- **Author:** run the intended review commission against the completed
+  deliverable before handing it over; bundle justified corrections inside the
+  authorised scope, re-check what they touched, and surface a recurring defect
+  class with continue / residual / park options instead of restarting the whole
+  self-review (step 2).
+- **Reviewer:** one full first review, deriving coverage from the commission's
+  sources and the actual change before reading the author's self-checks, and
+  returning findings together (step 3).
+- **Owner decisions:** one plain-language brief, pricing fix-now at its full
+  cycle (step 4); approved repairs are bundled and verified, aiming at one full
+  review plus one repair check (step 5).
+- **Close:** against the story's Definition of Done and criteria on its board
+  item or Issue, under the acceptance contract (step 6), with one line per
+  criterion in the body of the pull request that delivers it.
+- **Test runs** after plan sign-off follow the autonomy ruling codified in
+  [`docs/governance/OPERATING_AGREEMENT.md`](docs/governance/OPERATING_AGREEMENT.md)
+  §1 ("test to green"). For these stories this explicitly overrides the older
+  stop-and-ask limits deferred on the cleanup-sweep board item: the one-run
+  "Ask before continuing" in `ai_rules.md` §5, the three-cycle stop and the
+  one-pass approval checkpoint in `docs/testing/TESTING_STANDARDS.md` §12 and
+  §12a, and their copies. `ai_rules.md` §5's reporting duties still apply.
+- **Commissions** for these stories quote the story's Definition of Done and
+  criteria, name the roles, state that this section governs where a loaded
+  skill, a shared practice rule or an older rule text differs, and ask the
+  hand-back to report the applicable facts listed under "Trial close-out" on
+  the story's board item or Issue, marking unavailable measures unknown.
+
+Required tests, independent review, repair follow-ups
+(`docs/governance/OPERATING_AGREEMENT.md` §3.4), owner dispositions and the
+governance pause's trigger are unchanged. This section ends when the owner
+decides the trial's outcome.
+
+---
+
 ## MemPalace — Session Cadence
 
 HAVDM has a persistent MemPalace memory registered over MCP (server `mempalace`,

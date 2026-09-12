@@ -45,7 +45,7 @@ still valid and the gate green. What remains is one declaration with one claim:
 state when the gate ran.** It says nothing about `src/`, tests, tools, this
 ledger's own evidence, or HEAD.
 
-governed fingerprint: `4fad7a426996`
+governed fingerprint: `f3b08f5e9aed`
 
 ## Rows
 
@@ -477,3 +477,19 @@ itself is unchanged in this commit. Commissioned rows untouched. Run:
 `npx vitest run tests/unit/author-ledger.spec.ts` after regeneration — result
 recorded in the commit message and re-run after the commit. Docs-only: no e2e
 or integration run is owed.
+
+## Addendum — 2026-09-12 (seventh), the review-loop trial pointers on `feature/trial-pointers`
+
+This commit edits one governed artifact, `CLAUDE.md`: it inserts the section
+"Review-loop trial (F9a / F6 / F10) — which instruction governs" before
+"MemPalace — Session Cadence" and removes no existing line. It also adds
+`AGENTS.md` at the repository root, which is outside the governed set and does
+not move the certificate. The change implements the owner's rulings 2 and 3 of
+2026-09-12 (`drawer_havdm_decisions_f0befc8988ca5da0c5ae1e3f`). The gate fired
+exactly as designed on the first `./tools/checks` run of the committed tree (the
+freshness and certificate legs), before this addendum existed. The certificate
+above is read from that committed tree, whose governed files were committed and
+clean, so it moves `4fad7a426996` → `f3b08f5e9aed`. Commissioned rows untouched.
+Run: `npx vitest run tests/unit/author-ledger.spec.ts` after regeneration and
+again after the commit — result recorded in the PR body. Docs-only: no e2e or
+integration run is owed.
