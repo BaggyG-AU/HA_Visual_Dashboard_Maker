@@ -110,3 +110,105 @@ blast radius above**, confirming the claimed closures, sweeping the repair
 for introduced defects, and independently verifying the radius declaration —
 a wrong or missing radius is itself a finding. Commissioned separately in
 `prompts/codex/f9a-spec-review-followup.md`.
+
+---
+
+## Round 2 — 2026-09-14
+
+Follow-up: `docs/reviews/f9a-spec-codex-followup.md` (commit `fd77973`),
+verdict **BLOCKED-ON: §9 site-4 test plan**. Closures confirmed by the
+reviewer: **P1, P3, P6, P7 RESOLVED**. Live: **P2 PARTIALLY RESOLVED (SEV 2)**,
+**P4 PARTIALLY RESOLVED (SEV 2)**, **P5 PARTIALLY RESOLVED (SEV 2)**, and two
+new findings: **P8 (SEV 1)** — the replacement site-4 test plan requires an
+impossible passing control and omits a route prerequisite — and **P9 (SEV 3)**
+— the repair's field names and reader inventory for legacy-profile
+normalization do not match the source.
+
+**Every live and new finding was independently verified against source
+before it was dispositioned.** All five were confirmed correct.
+Verification performed:
+
+- **P8:** read `App.tsx:2533-2561` directly — confirmed
+  `resolveLivePreviewDeployTarget(null)` returns `{ kind: 'unknown' }` and
+  the `if (target.kind === 'unknown')` branch exits live preview and opens
+  the ordinary DeployDialog, never reaching site 4's confirmation. Read
+  `livePreviewDeploy.ts:33-50` directly, confirming this routing logic and
+  the `null → 'unknown'` mapping. Confirmed round 1's Legs 9–10 reused Leg
+  7's "create new dashboard" setup, which yields `sourceDashboard === null`.
+  Confirmed via direct code inspection that the pre-repair
+  `handleDeployFromLivePreview` performs no `updateTempDashboard` call at
+  all between sanitizing (`:2580`) and showing the confirmation, so Leg 10's
+  claim that inspecting such a call "passes on base" cannot be evaluated,
+  let alone pass.
+- **P2 (remainder):** read `src/main.ts:641-651` directly — confirmed
+  `ha:ws:updateTempDashboard`'s handler can resolve `{ success: false, error }`
+  on failure, and the round-1 repair's D-5 steps did not specify checking
+  this result before proceeding. Read `HADashboardIframe.tsx:153-207`
+  directly — confirmed site 5 `await`s a connection check (`:161`) before
+  computing and sending its own update, and checks its own IPC result
+  (`:205-207`) — confirming a write already in flight when the user clicks
+  deploy can resolve after site 4's confirm-time rewrite, with no
+  coordination between the two in round 1's design.
+- **P4 (remainder):** read `CapabilityProfileContext.tsx:51-64` directly
+  (already read in round 1) — confirmed the context reads the persisted
+  profile once at mount and again only via an explicit `refresh()` call,
+  which `handleDisconnect` never makes. Confirmed Leg 5's export-based
+  assertion (round 1) reads the app's cached context value, not the
+  on-disk file, so a hypothetical regression that reset only the on-disk
+  file without touching the already-mounted context's cached state would
+  pass Leg 5 undetected.
+- **P5 (remainder):** read the round-1 spec text for
+  `tests/unit/useDeployReport.spec.ts` directly — confirmed it varies only
+  `cardModPresent` across its two profiles and never independently varies
+  `capturedAt`, so a hook dependency array missing `capturedAt` (but keeping
+  `cardModPresent`) would pass every case in the round-1 plan while missing
+  the default-to-captured-absent transition D-3 exists to catch.
+- **P9:** read `capabilityProfile.ts:37-38` directly — confirmed the actual
+  field name is `userOverrides`, not `overrides` as used throughout the
+  round-1 repair. Read `capabilityProfileService.ts:44,56` directly —
+  confirmed `saveProfile` and `clearProfile` only call `this.store.set(...)`
+  and never call `getProfile()`, so round 1's dispositions row and the
+  spec's D-2a text mischaracterized them as `getProfile()` callers.
+
+**Owner ruling, 2026-09-14, by decision brief covering the live and new
+Refs at once:** the owner selected **"Continue — fix P8, P2, P4, P5 now;
+accept P9's wording note"** — the option recommended first, matching
+Codex's own recommendation and the author's independent agreement stated in
+the same brief.
+
+| Ref | Severity | Owner ruling                          | Disposition  | Repair                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Blast radius                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --- | -------- | ------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P8  | SEV 1    | **Continue** (fix now)                | **RESOLVED** | Legs 9–10 are redesigned to reach site 4 via a real HA-downloaded ("known") source dashboard, using a new `establishKnownSourceDashboard(ctx)` DSL step and a new `stubDashboardBrowser(ctx)` IPC stub (both test-only additions; no `src/` change). Leg 10's two assertions are honestly separated: the existing-behaviour warning-text check is a genuine before/after control; the new-mechanism byte-preservation check is stated as evaluated only after the repair, not claimed to pass on base. New Legs 11–12 (below) cover the failure and pending-writer cases the route fix exposed as also needing evidence. | **Upstream:** none — `resolveLivePreviewDeployTarget` and the existing Dashboard Browser download path are unchanged; the fix uses them as they already exist. **Downstream:** Legs 9–12 collectively, which now share one setup helper; Codex's implementation and the next scoped follow-up, which should confirm the known-source setup actually reaches the confirmation route (not just that it compiles). |
+| P2  | SEV 2    | **Continue** (fix now)                | **RESOLVED** | D-5 gains two more steps: (0) `await pendingLayoutWriteRef.current` before doing anything else, closing the pending-writer race; (4) on a failed confirm-time write, show an error and stop before opening the confirmation dialog. New prop `onLayoutWriteSettled` on `HADashboardIframe`, new ref `pendingLayoutWriteRef` in `App`. New Leg 11 (write-failure) and Leg 12 (pending-writer ordering) prove both directly.                                                                                                                                                                                               | **Upstream:** none — reuses site 5's existing success/failure contract (`HADashboardIframe.tsx:205-207`) unchanged; no new provider/global. **Downstream:** site 4's handler body and the one new prop on `HADashboardIframe`; Codex's implementation and the next scoped follow-up, which should confirm the ref is updated on _every_ layout write, not only the first.                                       |
+| P4  | SEV 2    | **Continue** (fix now)                | **RESOLVED** | Leg 5 gains a second, independent assertion: a new DSL helper `readCapabilityProfile(userDataDir)` reads the on-disk store file directly after the real disconnect action, asserting the persisted `capturedAt`/`haVersion`/`cardModPresent` survived — independent of whatever the app's `CapabilityProfileContext` has cached in memory.                                                                                                                                                                                                                                                                               | **Upstream:** none — reads the same file `seedCapabilityProfile` already writes; no change to `capabilityProfileService.ts` or `CapabilityProfileContext.tsx`. **Downstream:** Leg 5 only; the next scoped follow-up should confirm the new read genuinely bypasses the app's cache rather than incidentally reading a value the app itself just wrote.                                                         |
+| P5  | SEV 2    | **Continue** (fix now)                | **RESOLVED** | The `useDeployReport.spec.ts` unit-test plan gains a third case, independently varying `capturedAt` (default → captured-absent) with `cardModPresent` held at `false` throughout, proving the hook would fail this case if its dependency array were missing `capturedAt` alone. AC-16 reworded to require both fields tested independently, not just named in the dependency array.                                                                                                                                                                                                                                     | **Upstream:** none — the `useDeployReport` design (D-5a) itself is unchanged; only its test plan gains a case. **Downstream:** the unit-test file table row and AC-16 only.                                                                                                                                                                                                                                     |
+| P9  | SEV 3    | **Accept as-is** (correction bundled) | **RESOLVED** | `overrides` corrected to `userOverrides` throughout the spec (D-2a, AC-15, the unit-test bullet). D-2a's claim that `saveProfile`/`clearProfile` call `getProfile()` is corrected — they are writers; `setOverride` and the `capability:*` IPC handlers are the actual readers. No behaviour changes; this is wording accuracy only, bundled into this round since the same area was already being edited for P2/P4/P5.                                                                                                                                                                                                  | **Upstream:** none. **Downstream:** none beyond the corrected passages — the normalization expression itself (already verified to preserve `userOverrides`, round 1) is unchanged.                                                                                                                                                                                                                              |
+
+### What this round did NOT establish
+
+- No `src/` or test code was written or executed. The new
+  `pendingLayoutWriteRef`/`onLayoutWriteSettled` mechanism, the
+  `establishKnownSourceDashboard`/`stubDashboardBrowser` test helpers, and
+  the on-disk `readCapabilityProfile` helper are design decisions this
+  specification now mandates — they have not themselves been built or run.
+- Whether this round's redesign of Legs 9–12 is itself free of the same
+  class of defect (an untested assumption about what a "before/after"
+  control can validly claim, or about which route a test setup actually
+  reaches) is exactly what the next scoped follow-up must independently
+  verify, not assume from this round's own account.
+- **Round count note, stated plainly for the owner:** this is the **second**
+  round of findings on the same seam (site 4's confirm-time mechanism —
+  P2 and now P8 both concern it). Per `OPERATING_AGREEMENT.md` §3.4's
+  same-seam rule, a third round finding a **new** defect in this same seam
+  — as opposed to confirming this round's closures — would be the signal to
+  bring the owner a continue/residual/park choice about the seam's design
+  as a whole, not to keep patching instance by instance. This is recorded
+  here so the trigger is explicit before it is reached, not decided after.
+
+### Follow-up owed
+
+Five repairs exist this round (P8, P2, P4, P5, P9), so **§3.4 applies again:
+a scoped follow-up by the same reviewer** (OpenAI Codex / GPT-6 Astra),
+scope = this round's repair diff **plus its declared blast radius above**,
+confirming the claimed closures, sweeping for introduced defects, and
+independently verifying the radius declaration.

@@ -103,22 +103,23 @@ are not given rows below; §10 of this document records the process
 compliance. Every criterion, ruling and brief decision that this spec's
 _content_ must satisfy is mapped here.
 
-| Finding / Ruling / Deliverable                                                                                     | Addressed in section                                                          | Issue # | Status  |
-| ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- | ------- | ------- |
-| #159 criterion 2 — absent-card-mod strips + warns; pre-deploy words agree with emitted bytes                       | §7 D-1, D-3, D-5; §8 AC-1, AC-5; §9 Legs 1, 7, 9                              | #159    | Covered |
-| #159 criterion 3 — present preserved; never-connected permissive; persisted profile authoritative after disconnect | §7 D-3; §8 AC-2, AC-3, AC-4; §9 Legs 2, 3, 4, 5, 8, 10                        | #159    | Covered |
-| #159 criterion 4 — one object for both facts; source/treatment of unknown layout-card                              | §7 D-2, D-4; §8 AC-6–AC-8                                                     | #159    | Covered |
-| #159 criterion 5 — evidence covers affected production paths and regression                                        | §9 (full)                                                                     | #159    | Covered |
-| brief R1 — never-connected permissive; persisted profile wins after disconnect                                     | §7 D-3; §8 AC-4; §9 Legs 4, 5                                                 | #159    | Covered |
-| brief item 9 — one capability object for both facts                                                                | §7 D-2, D-4; §8 AC-6                                                          | #159    | Covered |
-| brief N2 — strip-and-warn path is dead from production entry points                                                | §7 D-1; §8 AC-1, AC-9                                                         | #159    | Covered |
-| brief §9.2 option A — carry the layout-card fact, do not consume it                                                | §7 D-2; §8 AC-6–AC-8                                                          | #159    | Covered |
-| brief §9.3 controlling correction — site 4's words must agree with the bytes                                       | §7 D-5; §8 AC-5; §9 Legs 9, 10                                                | #159    | Covered |
-| brief D-6 — the boot window                                                                                        | §7 D-6; §8 AC-13; §9 Leg 6 (KNOWN-OPEN)                                       | #159    | Covered |
-| brief D-7 — coverage split (unit vs. e2e)                                                                          | §9 (full)                                                                     | #159    | Covered |
-| F10 — export services stay React-free                                                                              | §7 D-1; §8 AC-10                                                              | #159    | Covered |
-| Cost stop-rule (brief header)                                                                                      | §7 closing note                                                               | #159    | Covered |
-| Codex spec review, `docs/reviews/f9a-spec-codex-review.md`, P1–P7 (owner ruling: fix all seven now)                | §7 D-2a, D-5, D-5a; §8 AC-1, AC-2, AC-4, AC-5, AC-13, AC-15, AC-16; §9 (full) | #159    | Covered |
+| Finding / Ruling / Deliverable                                                                                                    | Addressed in section                                                          | Issue # | Status  |
+| --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------- | ------- |
+| #159 criterion 2 — absent-card-mod strips + warns; pre-deploy words agree with emitted bytes                                      | §7 D-1, D-3, D-5; §8 AC-1, AC-5; §9 Legs 1, 9, 11, 12                         | #159    | Covered |
+| #159 criterion 3 — present preserved; never-connected permissive; persisted profile authoritative after disconnect                | §7 D-3; §8 AC-2, AC-3, AC-4; §9 Legs 2, 3, 4, 5, 8, 10                        | #159    | Covered |
+| #159 criterion 4 — one object for both facts; source/treatment of unknown layout-card                                             | §7 D-2, D-4; §8 AC-6–AC-8                                                     | #159    | Covered |
+| #159 criterion 5 — evidence covers affected production paths and regression                                                       | §9 (full)                                                                     | #159    | Covered |
+| brief R1 — never-connected permissive; persisted profile wins after disconnect                                                    | §7 D-3; §8 AC-4; §9 Legs 4, 5                                                 | #159    | Covered |
+| brief item 9 — one capability object for both facts                                                                               | §7 D-2, D-4; §8 AC-6                                                          | #159    | Covered |
+| brief N2 — strip-and-warn path is dead from production entry points                                                               | §7 D-1; §8 AC-1, AC-9                                                         | #159    | Covered |
+| brief §9.2 option A — carry the layout-card fact, do not consume it                                                               | §7 D-2; §8 AC-6–AC-8                                                          | #159    | Covered |
+| brief §9.3 controlling correction — site 4's words must agree with the bytes                                                      | §7 D-5; §8 AC-5; §9 Legs 9, 10, 11, 12                                        | #159    | Covered |
+| brief D-6 — the boot window                                                                                                       | §7 D-6; §8 AC-13; §9 Leg 6 (KNOWN-OPEN)                                       | #159    | Covered |
+| brief D-7 — coverage split (unit vs. e2e)                                                                                         | §9 (full)                                                                     | #159    | Covered |
+| F10 — export services stay React-free                                                                                             | §7 D-1; §8 AC-10                                                              | #159    | Covered |
+| Cost stop-rule (brief header)                                                                                                     | §7 closing note                                                               | #159    | Covered |
+| Codex spec review, `docs/reviews/f9a-spec-codex-review.md`, P1–P7 (owner ruling: fix all seven now)                               | §7 D-2a, D-5, D-5a; §8 AC-1, AC-2, AC-4, AC-5, AC-13, AC-15, AC-16; §9 (full) | #159    | Covered |
+| Codex spec review, `docs/reviews/f9a-spec-codex-followup.md`, P2/P4/P5/P8 partial/new (owner ruling: continue; P9 accepted as-is) | §7 D-2a, D-5; §8 AC-16; §9 Legs 5, 9–12                                       | #159    | Covered |
 
 ## 4. In Scope
 
@@ -179,24 +180,24 @@ _content_ must satisfy is mapped here.
 
 ## 6. Files to Create / Modify
 
-| Path                                                | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/services/capability/resourceElementMap.ts`     | Add `LAYOUT_CARD_FOLDER = 'lovelace-layout-card'` constant and a `[LAYOUT_CARD_FOLDER]: []` entry in `RESOURCE_ELEMENT_MAP` (mirroring `CARD_MOD_FOLDER`'s own `[]` entry — presence matters, no card element), `[conventional]`-tagged per the file's own provenance convention (§7 D-2).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `src/services/capability/capabilityResolver.ts`     | Add `layoutCardPresent: boolean` to `ResolvedCapability` and derive it in `resolveCapability` as `installedFolders.has(LAYOUT_CARD_FOLDER)`, mirroring `cardModPresent` (`:79`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `src/services/capability/capabilityProfile.ts`      | Add `layoutCardPresent: boolean` to `CapabilityProfile`; set `false` in `defaultCapabilityProfile()`; carry it through in `buildCapabilityProfile`. Add the new pure helper (§7 D-1/D-3) — proposed name `toExportCapabilityOptions(profile: CapabilityProfile): { cardModAvailable: boolean }`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `src/services/capabilityProfileService.ts`          | **(P3 repair, §7 D-2a)** `getProfile()` normalizes the stored object against the default on read: `{ ...defaultCapabilityProfile(), ...this.store.get('profile', defaultCapabilityProfile()) }`, so a profile persisted before `layoutCardPresent` existed gets the field's permissive default instead of `undefined`; every already-captured field (`capturedAt`, `haVersion`, `cardModPresent`, `overrides`) is preserved verbatim.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `src/hooks/useDeployReport.ts` (new)                | **(P5 repair, §7 D-5a)** Extracts the ordinary-DeployDialog report computation into a testable hook: `useDeployReport(deployDialogVisible: boolean, config: DashboardConfig \| null, profile: CapabilityProfile)`, wrapping `useMemo(() => (deployDialogVisible && config ? yamlService.sanitizeForHAWithReport(config, toExportCapabilityOptions(profile)) : null), [deployDialogVisible, config, profile.cardModPresent, profile.capturedAt])`.                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `src/services/yamlService.ts`                       | Add an optional second parameter to `sanitizeForHAWithReport`, `sanitizeForHA`, `serializeForHA` carrying `{ cardModAvailable?: boolean }`, forwarded into the existing `exportDashboard(sanitized, { warnings, cardModAvailable })` call. No import of React.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `src/App.tsx`                                       | Import and call `useCapabilityProfile()` (currently only `useRefreshCapabilityProfile()` is imported, `:45`). Replace the inline `deployReport` `useMemo` at `:425-428` with a call to `useDeployReport(deployDialogVisible, config, profile)` (P5 repair). At `:748` `handleExportForHA` and `:2481` `handleEnterLivePreview`, pass `toExportCapabilityOptions(profile)` as the new argument. At `:2580` `handleDeployFromLivePreview` (site 4, **P2 repair, §7 D-5a**), re-derive `toExportCapabilityOptions(profile)` and re-run `sanitizeForHAWithReport(config, options)` at confirm-click time, `await window.electronAPI.haWsUpdateTempDashboard(tempDashboardPath, { ...sanitized, title })` to bring the temp dashboard current, and compute the confirmation warning from that same call's `warnings` — never from a value read or derived earlier in the session. |
-| `src/components/HADashboardIframe.tsx`              | Import and call `useCapabilityProfile()`; pass `toExportCapabilityOptions(profile)` into the `sanitizeForHA(mergedConfig)` call at `:197`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `tests/unit/capabilityResolver.spec.ts`             | Extend `RESOURCE_ELEMENT_MAP`/`resolveCapability` describe blocks for `layoutCardPresent`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `tests/unit/capabilityProfile.spec.ts`              | Extend `defaultCapabilityProfile`/`buildCapabilityProfile` fixtures for `layoutCardPresent`; add a `toExportCapabilityOptions` describe block.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `tests/unit/capabilityProfileService.spec.ts` (new) | **(P3 repair)** Proves `getProfile()` normalization: a stored profile object missing `layoutCardPresent` reads back with `layoutCardPresent: false` and every other stored field unchanged; a stored profile already carrying the field is untouched; a never-written store still returns the full default.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `tests/unit/useDeployReport.spec.ts` (new)          | **(P5 repair)** Using `@testing-library/react`'s `renderHook`, proves the hook recomputes when `profile.cardModPresent` changes with `config`/`deployDialogVisible` held constant (red on the pre-repair inline-memo dependency array, which lacks `profile`), and does not recompute on an unrelated re-render with all three inputs unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `tests/unit/yaml-service.spec.ts`                   | Extend `sanitizeForHA`/`serializeForHA`/`sanitizeForHAWithReport` describe blocks with the new second-argument legs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `tests/support/dsl/capabilityProfile.ts` (new)      | `seedCapabilityProfile(userDataDir, profile)` — writes the persisted `ha-capability-profile` store file before Electron launch (§9).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `tests/e2e/export-capability-profile.spec.ts` (new) | Legs 1–5 of §9 (site 2, `handleExportForHA`), including Leg 5 (P4 repair, an actual disconnect action). Leg 6 (KNOWN-OPEN, D-6) is unit-level, not e2e — see §9.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `tests/e2e/live-preview-deploy.spec.ts`             | **(P1 repair)** Extend `stubLivePreviewIpc` to record the `config` argument each stubbed IPC channel receives (currently discarded); add Legs 7–10 (§9) covering sites 3 and 4 using the existing offline harness. Site 5's wiring is a required review-time check (§9), not a new e2e leg — see §9's note on why.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Path                                                | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/services/capability/resourceElementMap.ts`     | Add `LAYOUT_CARD_FOLDER = 'lovelace-layout-card'` constant and a `[LAYOUT_CARD_FOLDER]: []` entry in `RESOURCE_ELEMENT_MAP` (mirroring `CARD_MOD_FOLDER`'s own `[]` entry — presence matters, no card element), `[conventional]`-tagged per the file's own provenance convention (§7 D-2).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `src/services/capability/capabilityResolver.ts`     | Add `layoutCardPresent: boolean` to `ResolvedCapability` and derive it in `resolveCapability` as `installedFolders.has(LAYOUT_CARD_FOLDER)`, mirroring `cardModPresent` (`:79`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `src/services/capability/capabilityProfile.ts`      | Add `layoutCardPresent: boolean` to `CapabilityProfile`; set `false` in `defaultCapabilityProfile()`; carry it through in `buildCapabilityProfile`. Add the new pure helper (§7 D-1/D-3) — proposed name `toExportCapabilityOptions(profile: CapabilityProfile): { cardModAvailable: boolean }`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `src/services/capabilityProfileService.ts`          | **(P3 repair, §7 D-2a)** `getProfile()` normalizes the stored object against the default on read: `{ ...defaultCapabilityProfile(), ...this.store.get('profile', defaultCapabilityProfile()) }`, so a profile persisted before `layoutCardPresent` existed gets the field's permissive default instead of `undefined`; every already-captured field (`capturedAt`, `haVersion`, `cardModPresent`, `userOverrides`) is preserved verbatim.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `src/hooks/useDeployReport.ts` (new)                | **(P5 repair, §7 D-5a)** Extracts the ordinary-DeployDialog report computation into a testable hook: `useDeployReport(deployDialogVisible: boolean, config: DashboardConfig \| null, profile: CapabilityProfile)`, wrapping `useMemo(() => (deployDialogVisible && config ? yamlService.sanitizeForHAWithReport(config, toExportCapabilityOptions(profile)) : null), [deployDialogVisible, config, profile.cardModPresent, profile.capturedAt])`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `src/services/yamlService.ts`                       | Add an optional second parameter to `sanitizeForHAWithReport`, `sanitizeForHA`, `serializeForHA` carrying `{ cardModAvailable?: boolean }`, forwarded into the existing `exportDashboard(sanitized, { warnings, cardModAvailable })` call. No import of React.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `src/App.tsx`                                       | Import and call `useCapabilityProfile()` (currently only `useRefreshCapabilityProfile()` is imported, `:45`). Replace the inline `deployReport` `useMemo` at `:425-428` with a call to `useDeployReport(deployDialogVisible, config, profile)` (P5 repair). At `:748` `handleExportForHA` and `:2481` `handleEnterLivePreview`, pass `toExportCapabilityOptions(profile)` as the new argument. Add `const pendingLayoutWriteRef = useRef<Promise<void>>(Promise.resolve())` and pass it a setter, `onLayoutWriteSettled`, into `HADashboardIframe` (**P2 round-2 repair, §7 D-5**). At `:2580` `handleDeployFromLivePreview` (site 4, **P2 repair, §7 D-5**): first `await pendingLayoutWriteRef.current`; then re-derive `toExportCapabilityOptions(profile)` and re-run `sanitizeForHAWithReport(config, options)` at confirm-click time; `await window.electronAPI.haWsUpdateTempDashboard(tempDashboardPath, { ...sanitized, title })`; on `{ success: false }` show an error and return without opening the confirm dialog; otherwise compute the confirmation warning from that same call's `warnings` — never from a value read or derived earlier in the session. |
+| `src/components/HADashboardIframe.tsx`              | Import and call `useCapabilityProfile()`; pass `toExportCapabilityOptions(profile)` into the `sanitizeForHA(mergedConfig)` call at `:197`. Add a new prop, `onLayoutWriteSettled?: (promise: Promise<void>) => void`; call it once per `handleLayoutChange` invocation (**P2 round-2 repair, §7 D-5**) with a promise resolving when that invocation's `haWsUpdateTempDashboard` call settles — its own existing success/failure handling (`:205-207`) is unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `tests/unit/capabilityResolver.spec.ts`             | Extend `RESOURCE_ELEMENT_MAP`/`resolveCapability` describe blocks for `layoutCardPresent`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `tests/unit/capabilityProfile.spec.ts`              | Extend `defaultCapabilityProfile`/`buildCapabilityProfile` fixtures for `layoutCardPresent`; add a `toExportCapabilityOptions` describe block.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `tests/unit/capabilityProfileService.spec.ts` (new) | **(P3 repair)** Proves `getProfile()` normalization: a stored profile object missing `layoutCardPresent` reads back with `layoutCardPresent: false` and every other stored field unchanged; a stored profile already carrying the field is untouched; a never-written store still returns the full default.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `tests/unit/useDeployReport.spec.ts` (new)          | **(P5 repair)** Using `@testing-library/react`'s `renderHook`, proves the hook recomputes when `profile.cardModPresent` changes AND, independently (round-2 repair), when only `profile.capturedAt` changes — each with `config`/`deployDialogVisible` held constant (red on the pre-repair inline-memo dependency array, which lacks both) — and does not recompute on an unrelated re-render with every input unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `tests/unit/yaml-service.spec.ts`                   | Extend `sanitizeForHA`/`serializeForHA`/`sanitizeForHAWithReport` describe blocks with the new second-argument legs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `tests/support/dsl/capabilityProfile.ts` (new)      | `seedCapabilityProfile(userDataDir, profile)` — writes the persisted `ha-capability-profile` store file before Electron launch (§9). `readCapabilityProfile(userDataDir)` (round-2 repair for review Ref P4) — reads that same file back and returns the parsed `profile`, independent of the app's own in-memory cache.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `tests/e2e/export-capability-profile.spec.ts` (new) | Legs 1–5 of §9 (site 2, `handleExportForHA`), including Leg 5 (P4 repair, an actual disconnect action). Leg 6 (KNOWN-OPEN, D-6) is unit-level, not e2e — see §9.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `tests/e2e/live-preview-deploy.spec.ts`             | **(P1 repair)** Extend `stubLivePreviewIpc` to record the `config` argument each stubbed IPC channel receives (currently discarded); add Legs 7–10 (§9) covering sites 3 and 4 using the existing offline harness. Site 5's wiring is a required review-time check (§9), not a new e2e leg — see §9's note on why.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 ## 7. Design / Contract
 
@@ -328,16 +329,22 @@ exact reproduction in the review's "Reproduction details".
 
 **Why the read boundary, not the write boundary.** Normalizing on **read**
 (`getProfile()`) rather than migrating the file on write means every existing
-caller — `saveProfile`, `setOverride`, `clearProfile`, and the `capability:*`
-IPC handlers in `main.ts` that call `getProfile()` — sees a complete object
-with no additional code, and a user who never captures again still gets the
-field the moment they next read it. `capturedAt`, `haVersion`,
-`cardModPresent` and any `overrides` already on disk are preserved verbatim
+_reader_ of it — `setOverride` (which calls `this.getProfile()` internally
+before applying the override) and the `capability:*` IPC handlers in
+`main.ts` — sees a complete object with no additional code, and a user who
+never captures again still gets the field the moment they next read it.
+**Correction, 2026-09-13 (repair for review Ref P9):** `saveProfile` and
+`clearProfile` are _writers_, not callers of `getProfile()` — they only ever
+call `this.store.set(...)`. The round-1 repair round's dispositions file
+listed them alongside `getProfile()`'s actual callers in error; this
+document and the dispositions file's Round 2 section correct it. This is a
+record-accuracy correction; it changes no behaviour. `capturedAt`, `haVersion`,
+`cardModPresent` and any `userOverrides` already on disk are preserved verbatim
 by the spread order (`defaultCapabilityProfile()` first, stored object
 second) — this is not a reset, it only fills what was never there.
 
 **Must not change:** do not reset a captured profile's `capturedAt`,
-`haVersion`, `cardModPresent` or `overrides` to their defaults; do not add a
+`haVersion`, `cardModPresent` or `userOverrides` to their defaults; do not add a
 migration step, a schema version field, or any new persistence mechanism —
 this is a one-line change to an existing read method.
 
@@ -426,6 +433,9 @@ the warning computation currently at `:2580`) does not read a capability
 value derived earlier in the session. At the moment the user clicks "Deploy
 to Production", it:
 
+0. **Awaits `pendingLayoutWrite`** — see "Closing the pending-writer race"
+   below — **before** doing anything else, so a layout-drag write already in
+   flight when the user clicks deploy always finishes first.
 1. Reads the **current** `profile` via `useCapabilityProfile()` and derives
    `toExportCapabilityOptions(profile)` **at that instant**.
 2. Calls `sanitizeForHAWithReport(config, options)` with that derivation,
@@ -434,7 +444,14 @@ to Production", it:
    — the same IPC channel site 5 already uses — bringing the temp dashboard
    current with whatever HAVDM knows **right now**, before showing the
    confirmation.
-4. Computes the confirmation summary (`summarizeExportWarnings`) from that
+4. **If that call resolves `{ success: false, error }`, stops here:** shows
+   `message.error` naming the failure and returns — it does **not** show the
+   confirmation dialog. Mirrors the existing failure contract already used
+   at site 3 (`handleEnterLivePreview`, `:2483`) and site 5
+   (`HADashboardIframe.tsx:205-207`). The dialog's warning is a promise about
+   what the temp dashboard now contains; showing it after a failed write
+   would repeat exactly the mismatch this decision exists to prevent.
+5. Computes the confirmation summary (`summarizeExportWarnings`) from that
    same call's `warnings`, and only then shows the confirm dialog.
 
 **Why this restores the guarantee honestly.** The words and the bytes are
@@ -449,11 +466,44 @@ in the original file table for site 4 changes accordingly (§6): site 4 now
 also performs the write step site 5 already performs, using code already
 present.
 
-**Must not change:** no new provider/global, and no parameter threaded
-through code outside site 4's own handler body; the re-send targets the
-existing `ha:ws:updateTempDashboard` channel already used by site 5, not a
-new one; the confirm dialog's existing copy/testids (`live-preview-deploy-confirm`,
-`live-preview-deploy-summary`) are unchanged.
+**Closing the pending-writer race (repair for review Ref P2, round 2,
+`docs/reviews/f9a-spec-codex-followup.md`, confirmed 2026-09-14).** Codex's
+follow-up review demonstrated a second race this decision's round-1 text did
+not address: site 5's `handleLayoutChange` (`HADashboardIframe.tsx:153-207`)
+awaits `haWsIsConnected()` (`:161`) **before** computing and sending its
+update — so a layout drag started just before the user clicks deploy can
+still be pending when step 0 above would otherwise begin, and can resolve
+**after** step 3's write, silently overwriting it with bytes derived from an
+earlier profile snapshot. Independently confirmed by reading
+`HADashboardIframe.tsx:153-207` directly: `setLayout`/`onLayoutChange` run
+synchronously, but the connection check and the write itself are both
+awaited before the IPC call fires.
+
+**Decision:** `App` tracks the most recently started layout write as a
+promise, `pendingLayoutWriteRef` (a `useRef<Promise<void>>`, initialized to
+`Promise.resolve()`). `HADashboardIframe` receives one new callback prop,
+`onLayoutWriteSettled: (promise: Promise<void>) => void`, called once per
+`handleLayoutChange` invocation with a promise that resolves when that
+specific write's `haWsUpdateTempDashboard` call settles (success or
+failure) — `App` stores it in the ref, replacing whatever was there. Step 0
+above is `await pendingLayoutWriteRef.current` — whichever write is
+currently tracked, in flight or already settled, is waited on before site 4
+reads the profile or computes anything. Once the confirmation dialog is
+open, `Modal.confirm` already blocks further canvas interaction, so no
+_new_ layout write can start during the window this decision governs — the
+race is specifically about a write that started **before** the click, which
+step 0 now closes.
+
+**Must not change:** no new provider/global; the only new prop is
+`onLayoutWriteSettled` on `HADashboardIframe`, ordinary callback threading
+between the two components already on this decision's path; no
+serialization queue, request cache, or write-locking mechanism beyond the
+one tracked promise; the re-send targets the existing
+`ha:ws:updateTempDashboard` channel already used by site 5, not a new one;
+the confirm dialog's existing copy/testids (`live-preview-deploy-confirm`,
+`live-preview-deploy-summary`) are unchanged; site 5's own existing
+success/failure handling (`:205-207`) is untouched — `onLayoutWriteSettled`
+observes that write, it does not change what site 5 does with the result.
 
 **Original text, superseded above:** ~~`handleDeployFromLivePreview` calls
 `toExportCapabilityOptions(profile)` with the same `profile` value obtained
@@ -658,17 +708,18 @@ stop-rule is not tripped by the original design or by this round's repairs.
     returns `layoutCardPresent: false` for a stored profile persisted before
     this slice (missing the field entirely), while every other field already
     on that stored object (`capturedAt`, `haVersion`, `cardModPresent`,
-    `overrides`) is returned unchanged from what was stored — proven by
+    `userOverrides`) is returned unchanged from what was stored — proven by
     `tests/unit/capabilityProfileService.spec.ts` against a fixture written
     without the field, not merely inferred from the default-merge code path.
 16. **(Repair for review Ref P5.)** `useDeployReport(deployDialogVisible,
-config, profile)` recomputes its returned report when
-    `profile.cardModPresent` or `profile.capturedAt` changes while
-    `deployDialogVisible` and `config` are held constant, and does not
-    recompute when all three of `deployDialogVisible`, `config` and those two
-    profile fields are unchanged across a re-render — proven with
-    `renderHook` in `tests/unit/useDeployReport.spec.ts`, not by inspection
-    of the dependency array alone.
+config, profile)` recomputes its returned report when `profile.cardModPresent`
+    changes **and**, independently — tested as its own case, not inferred
+    from the first (round-2 repair, review Ref P5) — when only
+    `profile.capturedAt` changes, in both cases with `deployDialogVisible`
+    and `config` held constant; it does not recompute when all four inputs
+    are unchanged across a re-render — proven with `renderHook` in
+    `tests/unit/useDeployReport.spec.ts`, not by inspection of the
+    dependency array alone.
 
 ## 9. Test Plan
 
@@ -711,7 +762,7 @@ config, profile)` recomputes its returned report when
   **without** `layoutCardPresent` (simulating a profile persisted before this
   slice), construct the service against that fixture, and assert
   `getProfile()` returns `layoutCardPresent: false` while `capturedAt`,
-  `haVersion`, `cardModPresent` and any `overrides` on the fixture are
+  `haVersion`, `cardModPresent` and any `userOverrides` on the fixture are
   returned unchanged. A second case with the field already present (`true`
   and `false`) confirms normalization does not overwrite a real captured
   value. A third case with no store file at all confirms the untouched
@@ -723,16 +774,27 @@ config, profile)` recomputes its returned report when
   except `cardModPresent === true` and `config`/`deployDialogVisible`
   unchanged — assert the hook's returned report changes (no `card-mod`
   warning, styling preserved) rather than returning the memoized result from
-  `profileA`. A second re-render with every input byte-identical to the
-  previous render asserts the returned report is the **same** reference
-  (memoization is preserved, not defeated). **Proven RED against the
-  pre-repair inline `App.tsx` memo** by the same technique used for the e2e
-  red legs (`git stash push -u src/hooks/useDeployReport.ts` is not
-  applicable pre-repair since the file does not yet exist; the red
+  `profileA`. **A third case (round-2 repair for review Ref P5,
+  `docs/reviews/f9a-spec-codex-followup.md`, confirmed 2026-09-14), testing
+  the OTHER dependency independently:** render with `profileC = defaultCapabilityProfile()`
+  (`capturedAt: null`, `cardModPresent: false` — never captured, permissive),
+  then re-render with `profileD` identical except `capturedAt: '<iso>'`
+  (`cardModPresent` held at `false` throughout) — assert the report now
+  strips and warns. **Why this case is required, not redundant with the
+  first:** the first case varies only `cardModPresent`; a hook whose
+  dependency array included `cardModPresent` but omitted `capturedAt` would
+  pass that case and the unchanged-input control below, yet would remain
+  permissive for this never-connected-to-captured-absent transition — the
+  exact class of bug this hook exists to prevent (D-3). A fourth re-render
+  with every input byte-identical to the previous render asserts the
+  returned report is the **same** reference (memoization is preserved, not
+  defeated). **Proven RED against the pre-repair inline `App.tsx` memo** by
+  the same technique used for the e2e red legs (`git stash push -u src/hooks/useDeployReport.ts`
+  is not applicable pre-repair since the file does not yet exist; the red
   demonstration is instead that the ORIGINAL inline memo's dependency array,
-  `[deployDialogVisible, config]`, provably excludes `profile` — direct
-  quotation, not an executed red run, since the hook this test targets is
-  itself the repair). Proves AC-16.
+  `[deployDialogVisible, config]`, provably excludes both `cardModPresent`
+  and `capturedAt` — direct quotation, not an executed red run, since the
+  hook this test targets is itself the repair). Proves AC-16.
 
 ### e2e (headless — `bash tools/test-headless.sh tests/e2e/export-capability-profile.spec.ts --project=electron-e2e --workers=1`, per the project's standing EVERYTHING-HEADLESS rule)
 
@@ -805,11 +867,31 @@ file.
    profile's `haVersion`). Connect (the existing stubbed connection), then
    perform an actual disconnect through the app's own disconnect action
    (`handleDisconnect`, `App.tsx:2232-2239`) against the stubbed external
-   IPC. Export via `handleExportForHA` (site 2). Assert the exported YAML is
-   still stripped and still carries the warning — the persisted profile
-   survived the real disconnect call, not merely a seeded approximation of
-   its result. **Red on base** for the same reason as Leg 1 (nothing reads
-   the profile pre-repair). Proves AC-4 directly.
+   IPC. **Two independent assertions (round-2 repair for review Ref P4,
+   `docs/reviews/f9a-spec-codex-followup.md`, confirmed 2026-09-14):**
+   (a) export via `handleExportForHA` (site 2) — assert the exported YAML is
+   still stripped and still carries the warning; (b) **read the on-disk
+   store file directly** with a new DSL helper,
+   `readCapabilityProfile(userDataDir)` (symmetric to `seedCapabilityProfile`,
+   §9's e2e preamble) — assert the persisted `capturedAt`, `haVersion` and
+   `cardModPresent` are byte-identical to what was seeded, independent of
+   whatever value the app's `CapabilityProfileContext` currently has cached
+   in memory. **Why both are needed, with evidence:** `CapabilityProfileContext`
+   reads the persisted profile once at mount and again only via its
+   `refresh()` callback (`CapabilityProfileContext.tsx:51-64`); `handleDisconnect`
+   never calls `refresh()` (confirmed: `grep -n "capabilityProfileService\|capability:"
+src/App.tsx` inside its body returns nothing). Assertion (a) alone
+   therefore only proves the app's **already-loaded, cached** profile value
+   survived disconnect — a defect that reset the persisted **file** itself
+   without touching the live context's already-cached state would pass (a)
+   and still be a real regression. Assertion (b) closes that gap by reading
+   the actual file, not the cache. **Red on base** for the same reason as
+   Leg 1 (nothing reads the profile pre-repair for (a); (b) is unaffected by
+   the repair either way, since disconnect never wrote to the store before
+   or after — (b) is included as an always-passing discriminator that would
+   fail only against a disconnect regression, not against the base/repaired
+   feature difference). Proves AC-4 directly, at both the export boundary
+   and the persisted-record boundary.
 6. **Leg 6 — KNOWN-OPEN leg (D-6, boot window).** A focused unit-level test
    (not e2e — the race is at React-context-seed time, not IPC-timing-dependent
    in a way e2e can control deterministically) renders a component consuming
@@ -893,27 +975,110 @@ check for exactly this kind of one-line wiring, **the follow-up review reads
 repair inventing new live-preview drag-simulation infrastructure to prove a
 wiring fact a `path:line` read already settles with certainty.
 
+**Establishing a KNOWN source dashboard, for Legs 9–12 (round-2 repair for
+review Ref P8, `docs/reviews/f9a-spec-codex-followup.md`, confirmed
+2026-09-14).** Round 1's Legs 9–10 reused Leg 7's "create a new dashboard"
+setup. **This is a confirmed defect, not a simplification:** a new dashboard
+has `sourceDashboard === null`, and `resolveLivePreviewDeployTarget(null)`
+returns `{ kind: 'unknown' }` (`livePreviewDeploy.ts:49`) — `App.tsx:2553`'s
+`if (target.kind === 'unknown')` branch then exits live preview and opens
+the **ordinary** DeployDialog instead of ever reaching site 4's confirmation
+flow at all. Independently reproduced 2026-09-14 with an extracted-handler
+probe against the actual `handleDeployFromLivePreview` body: a `null`
+`sourceDashboard` produces `['exit preview', 'ordinary dialog']`; only a
+non-null `sourceDashboard` reaches the confirmation (`['summary dialog']`).
+Legs 9–12 therefore need their **own** setup, establishing a real HA source
+via the app's actual download path rather than "create new":
+
+- Extend the offline harness with a new helper,
+  `stubDashboardBrowser(ctx)`, alongside `stubLivePreviewIpc`: replaces
+  `ha:ws:listDashboards` (→ `{ success: true, dashboards: [] }` — no custom
+  dashboards needed) and `ha:ws:getDashboardConfig` (→
+  `{ success: true, config: <plain object: one view, one button card
+carrying style: 'color: red;'> }`, matching the card content Legs 7–12
+  already use).
+- A new DSL step, `establishKnownSourceDashboard(ctx)`: clicks the toolbar
+  "Download" button (`data-testid="toolbar-download"`, `App.tsx:3290`),
+  waits for the Dashboard Browser dialog, clicks "Download" on the always-present
+  default **Overview** entry (`DashboardBrowser.tsx:126-135`,
+  `DEFAULT_DASHBOARD_ID`), and waits for the dialog to close. This drives
+  `handleDashboardDownload` (`App.tsx:2273`) through its real production
+  path: `loadDashboard(...)` then `setSourceDashboard({ urlPath: null, title: 'Overview' })`
+  (`:2299`, `:2305`) — `urlPath: null` here means the genuine default
+  dashboard, a `{ kind: 'known' }` target, not "no source" (see
+  `livePreviewDeploy.ts:16-22`'s documented distinction). No custom
+  dashboard list, no second dashboard row, and no change to
+  `stubLivePreviewIpc`'s existing four channels are needed.
+
 9. **Leg 9 (RED-BEFORE-GREEN — site 4, words agree with the freshly-written
    bytes; proves the D-5 repair for Ref P2 at the production path, not only
    at the source-reading level).** Seed the absent-card-mod profile as Leg 7.
-   Enter live preview (site 3 writes stripped bytes, as Leg 7 proved). Click
-   "Deploy to Production" (`live-preview-deploy-confirm`). Assert **both**:
-   (a) the confirmation dialog shows the adjusted-styling summary
+   Connect, then `establishKnownSourceDashboard(ctx)` (not "create new").
+   Enter live preview (site 3 writes stripped bytes, using the downloaded
+   dashboard's card, as Leg 7 proved for the mechanism). Click
+   "Deploy to Production" (`live-preview-deploy-confirm`) — with a known
+   source this now reaches the confirmation, not the ordinary dialog. Assert
+   **both**: (a) the confirmation dialog shows the adjusted-styling summary
    (`live-preview-deploy-summary`, not "Nothing had to be adjusted"), and (b)
    the `updateTempDashboard` call recorded **at confirm time** (D-5's
    re-derive-and-rewrite step) is also stripped. **Red on base** — today site
    4 computes no capability-aware warning and never re-sends the temp
-   payload at confirm time, so assertion (a) fails and no re-send exists for
-   (b) to inspect. This is the leg that would fail against a plausible but
-   wrong repair that re-derives the warning text without also re-sending the
-   bytes (D-5's "words and bytes from one call" requirement), closing the gap
-   at the production path that the source-level D-5 argument alone cannot.
-   Proves AC-1, AC-2 and AC-5 for site 4.
-
-10. **Leg 10 (CONTROL — site 4).** Same as Leg 9 with `cardModPresent: true`.
-    Assert "Nothing had to be adjusted for Home Assistant" and a preserved
-    `card_mod` block in the recorded confirm-time `updateTempDashboard` call.
-    Confirmed passing before and after. Proves AC-2 for site 4.
+   payload at confirm time at all, so assertion (a) fails and assertion (b)
+   fails because no such call is ever recorded to inspect. This is the leg
+   that would fail against a plausible but wrong repair that re-derives the
+   warning text without also re-sending the bytes (D-5's "words and bytes
+   from one call" requirement), closing the gap at the production path that
+   the source-level D-5 argument alone cannot. Proves AC-1, AC-2 and AC-5 for
+   site 4.
+10. **Leg 10 (CONTROL — site 4, present case — two assertions with
+    DIFFERENT before/after status, stated honestly).** Same known-source
+    setup as Leg 9, with `cardModPresent: true`. Click "Deploy to
+    Production". **Assertion (a), a genuine regression control:** the
+    confirmation shows "Nothing had to be adjusted for Home Assistant" —
+    **confirmed passing before and after**, because `sanitizeForHAWithReport(config)`
+    with no second argument (today's base behaviour) already produces no
+    warnings regardless of `cardModPresent`, so this text is identical
+    either way. **Assertion (b), new-mechanism verification, evaluated only
+    after the repair:** the confirm-time `updateTempDashboard` call
+    (D-5's new re-derive-and-rewrite step) preserves the `card_mod` block.
+    **This assertion is NOT claimed to pass on base** — round 1 wrongly
+    called it a "before and after" control, but no confirm-time update call
+    of any kind exists on base for it to inspect (the same fact that makes
+    Leg 9 red). Assertion (b) is this leg's own correctness proof for the
+    "present" branch of the brand-new mechanism, paired with Leg 9's
+    red-before-green proof for the "absent" branch — together they cover
+    both values of `cardModAvailable` at the one new call site. Proves AC-2
+    for site 4.
+11. **Leg 11 (RED-BEFORE-GREEN — site 4, a failed confirm-time write must
+    not show a stale-implying warning — round-2 repair for review Ref P2).**
+    Same known-source setup as Leg 9. Stub the confirm-time
+    `updateTempDashboard` call specifically (distinguished from site 3's
+    earlier call by invocation order, or by a stub option set after
+    `enterLivePreview` completes) to resolve `{ success: false, error: 'stub failure' }`.
+    Click "Deploy to Production". Assert: no confirmation dialog is shown;
+    an error message naming the failure is shown instead. **Red on base** —
+    base has no confirm-time write and no corresponding failure handling to
+    trigger this path at all, so the error-message assertion fails (nothing
+    is shown). Proves D-5 step 4 (the failure-stops-here contract) and closes
+    the "no failure outcome is specified" gap the follow-up review named.
+12. **Leg 12 (RED-BEFORE-GREEN — sites 4 and 5, a pending layout write must
+    not silently follow the confirm-time rewrite — round-2 repair for review
+    Ref P2).** Same known-source setup as Leg 9, `cardModPresent: false`.
+    Using the same releasable-gate technique as the follow-up review's own
+    reproduction (a controllable promise gating `haWsIsConnected` inside the
+    stubbed IPC), start a layout-drag update (site 5) and **hold its
+    connection check pending** — do not release it yet. While that write is
+    still in flight, click "Deploy to Production". Assert the recorded IPC
+    call order shows the layout write's `updateTempDashboard` call
+    completing **before** site 4's confirm-time `updateTempDashboard` call —
+    i.e., `handleDeployFromLivePreview` waited for `pendingLayoutWriteRef`
+    (D-5) rather than proceeding immediately. Release the held gate only
+    after starting the deploy click, so the test controls the race
+    deterministically rather than relying on timing. **Red on base** — base
+    has no `pendingLayoutWriteRef` and no confirm-time write to order at
+    all, so the ordering assertion has nothing meaningful to observe and
+    fails. Proves D-5's pending-writer coordination step directly, closing
+    the review's "site 5 can outlive the new rewrite" finding.
 
 **Must not change:** the existing `stubLivePreviewIpc` return shapes and the
 `deleteSucceeds` behaviour Legs prior to this repair already rely on; the
@@ -961,10 +1126,18 @@ this specification owes its own completion statement, which was missing.
    every approved repair is reflected in this document — demonstrated:
    `docs/reviews/f9a-spec-codex-review.md` (round 1), owner rulings and
    repair record in `docs/reviews/f9a-spec-repair-dispositions.md`, this
-   Rev 1.
+   Rev 1 and Rev 2.
 4. The review's scoped follow-up (Operating Agreement §3.4) confirms the
-   claimed closures and its declared radius — pending as of this revision;
-   tracked in `docs/reviews/f9a-spec-codex-followup.md` once filed.
+   claimed closures and its declared radius. **Updated 2026-09-14:** the
+   round-1 follow-up (`docs/reviews/f9a-spec-codex-followup.md`) ran,
+   confirmed four of seven Refs (P1, P3, P6, P7) and found three partially
+   resolved (P2, P4, P5) plus two new Refs (P8 SEV 1, P9 SEV 3) — the
+   round-1 repair's own same-seam sweep was incomplete, not merely awaited.
+   The owner ruled "continue" (P8/P2/P4/P5) and "accept as-is" (P9); this
+   Rev 2 is that continuation. Whether this second pass fully closes the
+   seam is for the **next** scoped follow-up to confirm — item 4 remains
+   **pending** until that round returns with no further live finding in
+   this seam.
 5. The owner signs off on this specification and it is landed on `main` —
    pending as of this revision.
 
@@ -972,10 +1145,20 @@ Items 1–3 are met by this revision; items 4–5 are the remaining steps before
 the specification itself is Done. This is a criterion for the **document**;
 the **product's** DoD (#159's own, unchanged) is met only once the
 implementation built from this specification is reviewed and accepted.
+⚠ **Two follow-up rounds on the same seam (site 4's confirm-time mechanism)
+is itself a signal, not just a cost** (`OPERATING_AGREEMENT.md` §3.4's
+same-seam rule): round 1 fixed the referential-stability race but did not
+sweep its own new mechanism's failure path, the pending-writer race, or the
+route it actually reaches — three gaps in one seam. Rev 2 addresses all
+three found so far; if the next follow-up finds a **fourth**, that is the
+condition under which continuing to patch one instance at a time — rather
+than re-examining the seam's design as a whole — should itself go back to
+the owner as a continue/residual/park choice, not proceed automatically.
 
 ## 11. Revision History & Amendments
 
-| Date       | Rev | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | By              |
-| ---------- | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
-| 2026-09-12 | 0   | Draft                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Claude Sonnet 5 |
-| 2026-09-13 | 1   | Bundled repair for all seven findings in Codex's independent specification review (`docs/reviews/f9a-spec-codex-review.md`), per owner ruling to fix all seven now (`docs/reviews/f9a-spec-repair-dispositions.md`): replaced the disproven "no existing harness" premise and added real e2e coverage for sites 3/4, with site 5 narrowed to a justified review-time check (P1); replaced D-5's disproven referential-stability guarantee with an active re-derive-and-rewrite mechanism at site 4 (P2); added legacy-profile normalization on read (D-2a, P3); corrected Leg 4's claim and added an actual-disconnect Leg 5 (P4); extracted the site-1 memo into a testable, profile-aware hook (D-5a, P5); added this specification's own Definition of Done (§10.1, P6); narrowed AC-13/Leg 6's claim to the context-initialization property it actually tests (P7). No requirement was added beyond closing these seven findings; the locked brief and the cost stop-rule are unchanged. | Claude Sonnet 5 |
+| Date       | Rev | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | By              |
+| ---------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| 2026-09-12 | 0   | Draft                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Claude Sonnet 5 |
+| 2026-09-13 | 1   | Bundled repair for all seven findings in Codex's independent specification review (`docs/reviews/f9a-spec-codex-review.md`), per owner ruling to fix all seven now (`docs/reviews/f9a-spec-repair-dispositions.md`): replaced the disproven "no existing harness" premise and added real e2e coverage for sites 3/4, with site 5 narrowed to a justified review-time check (P1); replaced D-5's disproven referential-stability guarantee with an active re-derive-and-rewrite mechanism at site 4 (P2); added legacy-profile normalization on read (D-2a, P3); corrected Leg 4's claim and added an actual-disconnect Leg 5 (P4); extracted the site-1 memo into a testable, profile-aware hook (D-5a, P5); added this specification's own Definition of Done (§10.1, P6); narrowed AC-13/Leg 6's claim to the context-initialization property it actually tests (P7). No requirement was added beyond closing these seven findings; the locked brief and the cost stop-rule are unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Claude Sonnet 5 |
+| 2026-09-14 | 2   | Scoped follow-up (`docs/reviews/f9a-spec-codex-followup.md`) confirmed P1/P3/P6/P7, found P2/P4/P5 partially resolved and two new findings (P8 SEV 1, P9 SEV 3). Per owner ruling to continue on P8/P2/P4/P5 and accept P9 as-is (`docs/reviews/f9a-spec-repair-dispositions.md` Round 2): redesigned Legs 9–10 and added Legs 11–12 to reach site 4's actual confirmation route via a known (HA-downloaded) source dashboard rather than a new one, and to honestly separate a genuine before/after control from new-mechanism-only verification (P8); extended D-5 with a confirm-time write-failure stop and a `pendingLayoutWriteRef` coordination step closing the site-5 pending-writer race, with new Legs 11–12 proving both (P2); added an independent on-disk read assertion to Leg 5 via a new `readCapabilityProfile` helper, closing the cached-context blind spot (P4); added an independent `capturedAt`-only transition case to the `useDeployReport` unit test plan (P5); corrected `overrides` to `userOverrides` and the `getProfile()` caller inventory throughout (P9, accepted as-is per the owner, correction bundled in since the area was already being edited). No requirement was added beyond closing these five findings; the locked brief and the cost stop-rule are unchanged — the new `pendingLayoutWriteRef`/`onLayoutWriteSettled` mechanism is ordinary callback threading between the two components already on the five call sites' path. | Claude Sonnet 5 |
