@@ -317,3 +317,128 @@ scoped follow-up by the same reviewer** (OpenAI Codex / GPT-6 Astra), scope
 = this round's repair diff **plus its declared blast radius above**,
 confirming the claimed closures, sweeping for introduced defects, and
 independently verifying the radius declaration.
+
+## Round 4 — 2026-09-14
+
+Third scoped follow-up: `docs/reviews/f9a-spec-codex-followup3.md` (commit
+`120a516`), verdict **CLEAR-WITH-FINDINGS** (no SEV 1). Closures confirmed
+by the reviewer: **P5 RESOLVED**. Live: **P2, P8 PARTIALLY RESOLVED (SEV 2
+each)**. New: **P10 (SEV 2)** — round 3's own P8(A) fix, if made effective,
+would change data-sourcing behaviour for existing, unrelated tests.
+
+**Every live and new finding was independently verified against source
+before it was dispositioned.** All four (P2, P8 construction A, P8
+construction B, P10) were confirmed correct.
+
+- **P2 (an issued confirmation outlives the button check):** read
+  `HADashboardIframe.tsx:153-220` (`handleLayoutChange`) and `:226-248`
+  (`handleDeploy`) directly. Confirmed `pendingLayoutWrites` increments only
+  at the **start of `handleLayoutChange`'s own body** — i.e., at drag/resize
+  **stop** (`onDragStop`/`onResizeStop`, `:449-450`), never at drag/resize
+  **start** — and confirmed `handleDeploy`'s first `Modal.confirm` binds
+  `onOk: onDeploy` once, at call time, with nothing between that binding and
+  a click re-checking the count. A gesture already physically in progress
+  when the button is clicked (count still zero) can therefore finish and
+  start a write after the dialog is already showing, with no further gate
+  before `onDeploy` runs. Independently re-ran the follow-up review's own
+  embedded reproduction (`docs/reviews/f9a-spec-codex-followup3.md` §5),
+  observing the exact reported sequence: `['outer OK with pending=1',
+'confirm stripped', 'older write']`.
+- **P8, construction A (effective registration):** read `App.tsx:566-587`
+  and `App.tsx:2172-2187` directly — confirmed there are genuinely **two**
+  effects assigning `window.__testThemeApi`, the second (ungated by
+  `isTestEnv()`, deps `[setAvailableThemes]`) running after the first
+  (gated, deps `[]`) in source order and reassigning the same global with
+  the original, React-state-only callback. Round 3's spec named only the
+  first (`:569-571`) for editing. Confirmed by executing both effects in
+  sequence per the follow-up review's probe: `reactConnected=true;
+serviceConnected=false; registrations=2` — the second overwrites the
+  first's widening every time.
+- **P8, construction B (missing transport stub):** read
+  `DashboardBrowser.tsx:97-123` directly — `loadDashboards()` checks
+  `haConnectionService.isConnected()` first, then calls
+  `window.electronAPI.haWsConnect(...)` (`ha:ws:connect`) **before**
+  `haWsListDashboards()`. Read `tests/e2e/live-preview-deploy.spec.ts:21-49`
+  directly — the existing `stubLivePreviewIpc` stubs four channels
+  (`ha:ws:isConnected`, `ha:ws:createTempDashboard`,
+  `ha:ws:updateTempDashboard`, `ha:ws:deleteTempDashboard`), none of them
+  `ha:ws:connect`; round 3's planned `stubDashboardBrowser` addition
+  (`ha:ws:listDashboards`, `ha:ws:getDashboardConfig`) also omitted it.
+  Confirmed `src/preload.ts:70` and `src/main.ts:460` map `haWsConnect` to
+  the real, unstubbed `ha:ws:connect` IPC handler.
+- **P10 (shared shortcut widening changes unrelated fixtures):** read
+  `src/services/entityPickerSource.ts:54-87` directly — `loadPickerEntities`
+  branches on `haConnectionService.isConnected()`: connected calls the live
+  `haConnectionService.fetchEntities()` (a REST call), disconnected reads
+  the persisted offline cache. Spot-checked three of the four named existing
+  spec files directly: `tests/e2e/multi-entity.spec.ts:165-166`,
+  `tests/e2e/attribute-display.spec.ts:117-118` and
+  `tests/e2e/preset-marketplace.spec.ts:29-30` (plus its DSL helper,
+  `tests/support/dsl/presetMarketplace.ts:6-24`) all call the shared
+  `appDSL.setConnected(true)` step and then seed an offline entity cache (or,
+  for the preset test, open the same Dashboard Browser modal the round-3
+  widening would newly enable to auto-connect-and-list on open) — confirming
+  each currently relies on the shared backdoor staying React-state-only.
+
+**This round reached the same-seam trigger a SECOND time.** Round 3's
+dispositions (above) recorded that a further live defect in this seam would
+be a recurrence, not another routine instance patch. Per
+`OPERATING_AGREEMENT.md` §3.4's same-seam rule, the author put an explicitly
+recurrence-flagged continue/declare-residual/park brief to the owner about
+the seam as a whole — the fourth external review round on one
+specification, three of which have now touched this one mechanism — rather
+than a fourth reflexive "continue." Codex's own review independently
+required the same framing ("the author must flag the recurrence... before
+further repair").
+
+**Owner ruling, 2026-09-14, on the seam as a whole:** the owner selected
+**"Continue, narrower fix"** — fix P8 now with a new, isolated test-only
+connection hook used only by the new Dashboard-Browser legs (Legs 9–12),
+making P10 moot by construction — **and declare P2 a documented residual**
+rather than fund a fourth design iteration on this exact mechanism. The
+owner separately ruled to keep Legs 9–12 as e2e coverage rather than
+descoping them to a review-time check like site 5's.
+
+| Ref | Severity | Owner ruling                                                                            | Disposition           | Repair / reasoning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Blast radius                                                                                                                                                                                                                                                                                     |
+| --- | -------- | --------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P2  | SEV 2    | **Declare residual, seam-wide** (accepted rather than a fourth design iteration)        | **ACCEPTED-RESIDUAL** | An already-shown confirmation dialog is not revoked by a write that begins after it opens, from a gesture already in progress when the button was clicked. D-5 gained a "Declaring the residual — round 4" subsection naming the gap, why it is narrower than what round 3 already closed, and why a fourth iteration is not funded now. Pinned by new Leg 13 (`KNOWN-OPEN:`, §9) and new AC-17 (§8), per `drawer_practice_claims_588b2f2df00141d8f19f9433`'s convention (the same one D-6/Leg 6 already uses).                                                    | **Upstream:** none. **Downstream:** none — no code or test behaviour changes; the residual is documented and pinned, not repaired. Any future repair that closes this gap must update Leg 13 (it will start failing) and D-5's residual section together.                                        |
+| P8  | SEV 2    | **Continue, narrower shape** (isolated hook, not widening the shared backdoor)          | **RESOLVED**          | Withdrew round 3's plan to widen `__testThemeApi.setConnected`. Added a new, isolated test-only hook, `window.__testHAConnectionApi` (`connect`/`disconnect`), registered in its own `useEffect`, gated by `isTestEnv()`, as a **separate object** from `__testThemeApi` — immune to that object's two-registration overwrite by construction. New `stubDashboardBrowser(ctx)` helper also stubs `ha:ws:connect`. `establishKnownSourceDashboard(ctx)` now calls the isolated hook directly; Legs 9–12 no longer call the shared `setConnected(true)` step at all. | **Upstream:** none — `__testThemeApi.setConnected` is byte-unchanged from today. **Downstream:** none beyond Legs 9–12's own new setup — the isolated hook has exactly one caller, so no existing spec file's behaviour changes. This is what makes P10 moot (below), not a separate mitigation. |
+| P10 | SEV 2    | **Resolved by construction** (consequence of the P8 ruling, not a separate disposition) | **RESOLVED**          | P10's root cause — round 3's plan to widen the shared `__testThemeApi.setConnected` backdoor — no longer exists in the specification; the P8 repair above uses an isolated hook with a single caller instead. The ~19 existing spec files P10 named are therefore unaffected: their reliance on the shared backdoor staying React-state-only is undisturbed.                                                                                                                                                                                                       | **Upstream:** none. **Downstream:** none — this Ref requires no independent change of its own; it is closed as a direct consequence of P8's repair shape, not a parallel fix.                                                                                                                    |
+
+### What this round did NOT establish
+
+- No `src/` or test code was written or executed. The isolated
+  `__testHAConnectionApi` hook, the `stubDashboardBrowser` `ha:ws:connect`
+  stub, and the new Leg 13 are design decisions this specification now
+  mandates — they have not themselves been built or run.
+- Whether the isolated hook's single-caller property survives contact with
+  an actual implementation (i.e., that no other test or production code
+  path is later wired to call it) is exactly what the next scoped follow-up
+  must independently verify, not assume from this round's own account.
+- P2's residual is declared, not measured against real Electron
+  keyboard/pointer input — the controlled interleaving used to verify it
+  (and Leg 13's design) models the drag core and IPC layer directly, the
+  same evidence boundary Codex's own review already declared.
+- **Recurrence note, stated plainly for the owner and carried forward:**
+  this round was the **second** firing of the same-seam trigger on this one
+  mechanism (site 4's confirm-time flow and its Dashboard-Browser test
+  setup) across four external review rounds. If the **next** scoped
+  follow-up finds a further live defect in this same seam, that is a
+  **third** occurrence — the author will name it as such explicitly, not as
+  a fifth instance patch, and will state plainly whether the mechanism
+  itself, not merely its latest instance, is what needs to change.
+
+### Follow-up owed
+
+One repair exists this round (P8; P10 closes as its direct consequence; P2
+is a declared residual, not a repair, and per `OPERATING_AGREEMENT.md` §3.4
+"DEFERRED and ACCEPTED-RESIDUAL are owner decisions, not repairs... creates
+no follow-up under STRAT-D7" — but since P8 IS a repair, **§3.4 applies
+again regardless: a scoped follow-up by the same reviewer** (OpenAI Codex /
+GPT-6 Astra), scope = this round's repair diff (the isolated hook, the
+`ha:ws:connect` stub, Leg 13, and the updated Legs 9–12 setup text) **plus
+its declared blast radius above**, confirming the claimed closure,
+independently verifying that P10 is genuinely moot (not merely asserted so),
+and sweeping for introduced defects. Commissioned to
+`prompts/codex/f9a-spec-review-followup4.md` (gitignored, not committed —
+the owner pastes it).
