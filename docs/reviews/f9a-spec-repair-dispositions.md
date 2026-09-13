@@ -212,3 +212,108 @@ a scoped follow-up by the same reviewer** (OpenAI Codex / GPT-6 Astra),
 scope = this round's repair diff **plus its declared blast radius above**,
 confirming the claimed closures, sweeping for introduced defects, and
 independently verifying the radius declaration.
+
+---
+
+## Round 3 — 2026-09-14
+
+Second follow-up: `docs/reviews/f9a-spec-codex-followup2.md` (commit
+`2b5f174`), verdict **CLEAR-WITH-FINDINGS** (no SEV 1 — round 2's SEV 1
+closure of P8 holds). Closures confirmed by the reviewer: **P4, P9
+RESOLVED**. Live: **P2, P5, P8 PARTIALLY RESOLVED (SEV 2 each)**. No new Ref
+this round.
+
+**Every live finding was independently verified against source before it
+was dispositioned.** All three were confirmed correct.
+
+- **P2 (the "latest-only wait" counterexample):** confirmed by re-reading
+  the round-2 design (`pendingLayoutWriteRef`, a single ref replaced on
+  every new invocation) and reasoning through it directly: if two writes
+  are started close together and the **first**-started one resolves
+  **after** the second (async I/O completion order is not guaranteed to
+  match start order), the ref has already been overwritten by the second
+  write's promise, so `await pendingLayoutWriteRef.current` never waits for
+  the first at all. Independently executed the follow-up review's own
+  embedded reproduction, observing the exact reported sequence:
+  `['layout x=4 / 6', 'confirm stripped', 'layout x=1 / 3']` — the
+  confirm-time rewrite is followed by an older write overwriting it.
+- **P8, construction A (connection prerequisite):** read
+  `haConnectionService.ts:73-75` directly — `isConnected()` returns
+  `this.config !== null`, set only via `setConfig(...)`. Read
+  `App.tsx:569-571` directly — the existing `__testThemeApi.setConnected`
+  test backdoor calls only `setIsConnected(connected)` (React state), never
+  `haConnectionService.setConfig(...)`. Read `DashboardBrowser.tsx:97-100`
+  directly — `loadDashboards()` checks `haConnectionService.isConnected()`
+  first and returns immediately if false. Confirmed: the existing "connect"
+  step used throughout Legs 1–12 does not configure the piece of state the
+  Dashboard Browser actually checks, so the round-2 Legs 9–12 would never
+  reach the dashboard list at all.
+- **P8, construction B (two confirmation dialogs):** read
+  `HADashboardIframe.tsx:226-235` directly — clicking "Deploy to
+  Production" calls `handleDeploy`, which shows its **own** `Modal.confirm`
+  ("Deploy Dashboard… Continue?") first; only that dialog's `onOk` calls
+  `onDeploy` (App's `handleDeployFromLivePreview`, site 4). Confirmed the
+  round-2 legs' "Click 'Deploy to Production'" step was ambiguous about
+  which of the two stacked dialogs each assertion targeted.
+- **P5 (evidence rigor):** re-read the round-2 spec text — confirmed it
+  still said "Proven RED" while explicitly defining that as "direct
+  quotation, not an executed red run." Confirmed the technique needed to
+  close this gap is feasible: the follow-up review's own reproduction
+  executed the actual pre-repair inline `deployReport` expression via
+  `renderHook`, observing exactly one sanitizer call across two independent
+  profile changes — i.e., a wrong-dependency-array sibling hook's failure
+  to recompute is directly reproducible, not hypothetical.
+
+**This round reached §10.1's own recorded trigger.** Per
+`OPERATING_AGREEMENT.md` §3.4's same-seam rule and Round 2's own recorded
+note (a third round finding a _new_ defect in the site-4 confirm-time seam
+is the signal to bring the owner a continue/declare-residual/park choice
+about the seam's design as a whole), the author put exactly that choice to
+the owner — not a per-Ref fix-now list — before making any further repair
+in this seam. Codex's own review independently arrived at the identical
+requirement ("The author must put a continue / declare-residual / park
+brief about that design as a whole to the owner before committing a third
+repair in this seam").
+
+**Owner ruling, 2026-09-14, on the seam as a whole:** the owner selected
+**"Continue — one more bounded fix,"** with a specific design change: replace
+the pending-writer coordination with **disabling the trigger while a write
+is pending**, rather than awaiting a tracked promise — the option the
+author recommended as a genuine design improvement (correct for any number
+of concurrent writes regardless of settlement order, and simpler — no
+cross-component wiring — than what it replaces), not merely another patch
+to the same mechanism.
+
+| Ref | Severity | Owner ruling                                                        | Disposition  | Repair                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Blast radius                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --- | -------- | ------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P2  | SEV 2    | **Continue, seam-wide** (design change, not another instance patch) | **RESOLVED** | Round 2's `pendingLayoutWriteRef`/`onLayoutWriteSettled` mechanism is withdrawn. Replaced with a local `pendingLayoutWrites` count in `HADashboardIframe`, incremented at the start of `handleLayoutChange` and decremented in a `finally`; the existing "Deploy to Production" button's `disabled={!tempDashboardPath}` is widened to also require `pendingLayoutWrites === 0`. D-5's step 0 (`await pendingLayoutWriteRef.current`) is removed as unreachable — the button cannot be clicked while any write is pending, for any number of writes in any settlement order. Leg 12 redesigned to prove this directly for the out-of-order case that falsified round 2's design. | **Upstream:** none — reuses the button's existing `disabled` prop and site 5's existing try/finally-shaped error handling. **Downstream:** _less_ than round 2 — the cross-component prop and `App`-level ref are removed, not added to; `HADashboardIframe` is self-contained. The next scoped follow-up should confirm no other trigger into `handleDeployFromLivePreview` exists that bypasses this button. |
+| P8  | SEV 2    | **Continue** (fix now, within the same seam-wide decision)          | **RESOLVED** | Construction A: the existing `__testThemeApi.setConnected` backdoor is widened to also call `haConnectionService.setConfig(...)` / `.disconnect()`. Construction B: Legs 9–12 and the "Establishing a KNOWN source dashboard" preamble now explicitly name both confirmation dialogs and state that every assertion targets the second, `live-preview-deploy-confirm` one.                                                                                                                                                                                                                                                                                                       | **Upstream:** none — reuses the existing backdoor and existing dialog testids. **Downstream:** Legs 9–12's own setup steps only; the next scoped follow-up should confirm the widened backdoor does not affect any other existing test relying on `setConnected`.                                                                                                                                              |
+| P5  | SEV 2    | **Continue** (fix now, within the same seam-wide decision)          | **RESOLVED** | The unit-test plan gains an executed negative control: a deliberately-wrong sibling hook built from the pre-repair dependency array, run against the same transition cases via `renderHook`, asserted to fail them — replacing the citation-only "the old array excludes these fields" claim.                                                                                                                                                                                                                                                                                                                                                                                    | **Upstream:** none — the real `useDeployReport` design (D-5a) is unchanged; only its test plan gains a control. **Downstream:** the unit-test file table row and AC-16 only.                                                                                                                                                                                                                                   |
+
+### What this round did NOT establish
+
+- No `src/` or test code was written or executed. The redesigned
+  `pendingLayoutWrites` counter, the widened test backdoor, and the
+  negative-control unit test are design decisions this specification now
+  mandates — they have not themselves been built or run.
+- Whether disabling the button is itself free of a further edge case (for
+  example, a write that starts _after_ the button is clicked but before the
+  click handler runs) is exactly what the next scoped follow-up must
+  independently verify, not assume from this round's own account.
+- **Recurrence note, stated plainly for the owner:** this round reached the
+  same-seam trigger Round 2 itself recorded, and the owner's decision was
+  "continue, with a design change" rather than "patch the same mechanism
+  again." If the **next** scoped follow-up finds a further live defect in
+  this same seam, that is a **second** occurrence of this trigger firing —
+  the author will flag that explicitly as a recurrence when bringing the
+  owner the next brief, so the owner can weigh whether the seam's design is
+  the right one at all, independently of whether the specific instance is
+  fixable.
+
+### Follow-up owed
+
+Three repairs exist this round (P2, P8, P5), so **§3.4 applies again: a
+scoped follow-up by the same reviewer** (OpenAI Codex / GPT-6 Astra), scope
+= this round's repair diff **plus its declared blast radius above**,
+confirming the claimed closures, sweeping for introduced defects, and
+independently verifying the radius declaration.
