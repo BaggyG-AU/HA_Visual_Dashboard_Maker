@@ -455,3 +455,123 @@ not merely a plausible-sounding one) — a wrong `KNOWN-OPEN:` pin is itself a
 finding, the same as a wrong radius declaration. Commissioned to
 `prompts/codex/f9a-spec-review-followup4.md` (gitignored, not committed —
 the owner pastes it).
+
+## Round 5 — 2026-09-14
+
+Fourth scoped follow-up: `docs/reviews/f9a-spec-codex-followup4.md` (commit
+`c038b87`), verdict **BLOCKED-ON: §9 known-source test setup, §9 Leg 13
+residual pin**. Closures confirmed by the reviewer: **P10 RESOLVED**. Live:
+**P2, P8 PARTIALLY RESOLVED** (their round-4 repairs are sound as far as
+they go, but two new findings block them from being demonstrated). New:
+**P11 (SEV 1)** — the round-4 known-source test setup cannot actually enter
+Live Preview, and its own reproduction technique would delete the new test
+hook it depends on. **P12 (SEV 1)** — round 4's `KNOWN-OPEN:` Leg 13 does
+not pin the residual it was written for.
+
+**Both new findings were independently verified against source before they
+were dispositioned.**
+
+- **P11 construction A (removed React prerequisite):** read
+  `App.tsx:2461-2472` (`handleEnterLivePreview`) directly — confirmed
+  `if (!isConnected || !wsStatus.connected)` gates entry on **React** state
+  (`isConnected`, `App.tsx:337`), which the round-4 isolated hook never
+  touches (it configures only `haConnectionService`). Round 4's own
+  verification checked only the Download button and
+  `handleOpenDashboardBrowser`, neither of which gates on `isConnected`, and
+  missed this later, harder gate entirely.
+- **P11 construction B (hook missing on a reverted base):** confirmed this
+  project's established red-before-green technique (`git stash push -u --
+src/`, cited at spec `:920` for Leg 1) reverts the **whole** uncommitted
+  `src/` diff. Since the isolated hook is itself new, uncommitted `src/`
+  content, a wholesale revert removes it along with whichever site-4/site-5
+  mechanism a given leg targets — independently confirmed by executing the
+  `__testThemeApi` registration effects with the isolated hook's own
+  registration omitted: `window.__testHAConnectionApi` is `undefined`, and
+  the setup's required first call throws `TypeError` before any download is
+  attempted.
+- **P11 construction C (wrong entry-point button):** read `App.tsx:3216`
+  and `:3290` directly — `toolbar-download` renders only inside
+  `{config && (...)}`; read `src/store/dashboardStore.ts:103` — a clean
+  launch starts with `config: null`. Read `App.tsx:3192` directly —
+  `welcome-browse-dashboards` calls the identical `handleOpenDashboardBrowser`
+  handler and is present from launch.
+- **P12 construction A (nonexistent baseline wait event):** re-read Leg
+  13's own text — it claimed to pass "on base," but confirmed by executing
+  the actual, unrepaired `handleDeployFromLivePreview` body that base has
+  no confirm-time `haWsUpdateTempDashboard` call at all, so the leg's
+  release-condition (release the drag's write only after that call
+  completes) has no event to wait for on that literal baseline.
+- **P12 construction B (no observable snapshot difference):** confirmed
+  D-1 requires site 5 to use the same `toExportCapabilityOptions(profile)`
+  derivation as every other call site; re-read Leg 13's own text — it
+  inherited Leg 9's single, unchanging absent-card-mod profile for both the
+  confirm-time write and the delayed drag write, so once site 5 is
+  capability-aware, both writes would produce identical stripped output,
+  making the residual's defining words/bytes mismatch unobservable through
+  this leg's assertions.
+
+**This round reached the same-seam trigger a THIRD time.** Per
+`OPERATING_AGREEMENT.md` §3.4's same-seam rule and the recorded recurrence
+warning in Round 4's dispositions, the author put an explicitly
+third-occurrence-flagged continue/declare-residual/park brief to the owner
+about the seam as a whole — the fifth external review round on one
+specification, four of which have now touched the same mechanism. Unlike
+the first two firings (Rounds 3 and 4, each of which changed the
+**production** mechanism's design), this firing's two findings are both in
+the **test infrastructure** surrounding an already-accepted production
+design; Codex's own review states the production write-counter and the
+owner's accepted P2 residual remain sound and are not reopened by either
+finding.
+
+**Owner ruling, 2026-09-14, on the seam as a whole:** the owner selected
+**"Continue, fix now"** for P11 (all three constructions are bounded,
+well-understood corrections that invent no new test machinery) and
+**"Declare residual"** for P12 (withdraw Leg 13 rather than build the new
+mid-session capability-profile-change mechanism a correct pin would
+require). The owner also declined, for the third time, to descope sites 3/4
+to the review-time check site 5 already uses.
+
+| Ref | Severity | Owner ruling                                                          | Disposition           | Repair / reasoning                                                                                                                                                                                                                                                                                                                                                                                                        | Blast radius                                                                                                                                                                                                                                                                                                        |
+| --- | -------- | --------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P11 | SEV 1    | **Continue, fix now** (bounded corrections, no new test machinery)    | **RESOLVED**          | `establishKnownSourceDashboard` now calls both the existing shared `appDSL.setConnected(true)` step and the isolated hook (construction A); switched its entry point from `toolbar-download` to `welcome-browse-dashboards` (construction C); Legs 9/11/12's red-before-green proof now reverts only the specific site-4/site-5 mechanism each targets, never the isolated hook or setup infrastructure (construction B). | **Upstream:** none — the shared `setConnected` step's contract is unchanged, merely called by more tests as it always could be. **Downstream:** the narrowed-revert technique applies to Legs 9, 11, 12 only; the next scoped follow-up should confirm no other leg's red proof still assumes a whole-`src/` stash. |
+| P12 | SEV 1    | **Declare residual** (would need new test machinery to pin correctly) | **ACCEPTED-RESIDUAL** | Leg 13 withdrawn from the test plan. D-5's "Declaring the residual" subsection revised to state the residual is documented in prose only, not demonstrated by a test; AC-17 revised accordingly. The underlying P2 production risk is unchanged from Round 4's acceptance — this disposition concerns only whether a test also proves it.                                                                                 | **Upstream:** none. **Downstream:** none — Leg 13's removal touches no other leg or production code. A future round wanting an executable pin needs the mid-session profile-change mechanism named in D-5 as a prerequisite.                                                                                        |
+
+### What this round did NOT establish
+
+- No `src/` or test code was written or executed. The corrected
+  `establishKnownSourceDashboard` step, the narrowed red-before-green
+  reproduction technique, and Leg 13's removal are design decisions this
+  specification now mandates — they have not themselves been built or run.
+- Whether the narrowed-revert technique (reverting only a named function's
+  body rather than all of `src/`) is itself mechanically reliable when an
+  implementer actually attempts it is exactly what the next scoped
+  follow-up must independently verify, not assume from this round's own
+  account.
+- **Recurrence note, stated plainly for the owner and carried forward:**
+  this round was the **third** firing of the same-seam trigger on this one
+  mechanism, and — unlike the first two — it found no defect in the
+  production design at all, only in the test infrastructure around it. If a
+  **fourth** occurrence surfaces, the author will name it as such and put
+  to the owner, with a materially different cost argument than any prior
+  round carried, whether continued e2e investment in sites 3/4 is still
+  proportionate given that the production mechanism has now been
+  independently reviewed as sound three times running while its test
+  harness keeps generating SEV 1/2 findings.
+
+### Follow-up owed
+
+**One repair exists this round requiring follow-up: P11.** P12's
+disposition (ACCEPTED-RESIDUAL, Leg 13 withdrawn) is, this time, a genuine
+bare decision with no accompanying safeguard added — nothing is added to
+mitigate or characterise the residual (the opposite of Round 4's P2
+disposition, which added a pin); per `OPERATING_AGREEMENT.md` §3.4 this
+creates no follow-up obligation on its own. **§3.4 applies to P11: a scoped
+follow-up by the same reviewer** (OpenAI Codex / GPT-6 Astra), scope = this
+round's repair diff (the `establishKnownSourceDashboard` fix, the
+welcome-screen entry point, and the narrowed red-before-green technique for
+Legs 9/11/12) **plus its declared blast radius above**, confirming P11's
+claimed closure and independently verifying that the narrowed-revert
+technique actually produces a meaningful red run (not another
+infrastructure crash) for each of Legs 9, 11 and 12. Commissioned to
+`prompts/codex/f9a-spec-review-followup5.md` (gitignored, not committed —
+the owner pastes it).
