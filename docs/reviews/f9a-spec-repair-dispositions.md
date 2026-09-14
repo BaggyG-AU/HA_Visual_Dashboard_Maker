@@ -575,3 +575,95 @@ technique actually produces a meaningful red run (not another
 infrastructure crash) for each of Legs 9, 11 and 12. Commissioned to
 `prompts/codex/f9a-spec-review-followup5.md` (gitignored, not committed —
 the owner pastes it).
+
+## Round 6 — 2026-09-14
+
+Fifth scoped follow-up: `docs/reviews/f9a-spec-codex-followup5.md` (commit
+`eb165cf`), verdict **CLEAR-WITH-FINDINGS — no SEV 1**. Closures confirmed
+by the reviewer: **P11 RESOLVED**; **P8 RESOLVED** (its remaining defects
+were P11, now closed); **P10 RESOLVED, no regression found**. **P12
+PARTIALLY RESOLVED** — its former SEV 1 test obligation is gone (the
+withdrawal is honest and complete in substance), with only a SEV 3
+reference remainder graded separately as P13. Three new findings, all
+non-blocking: **P13 (SEV 3)** — three present-tense "Legs 9–13" references
+in the spec's "Establishing a KNOWN source dashboard" section were not
+updated when Leg 13 was withdrawn; **P14 (SEV 3)** — this file's Round 5
+"Follow-up owed" reasoning incorrectly said P12's disposition needed no
+follow-up because it "added no safeguard," when `OPERATING_AGREEMENT.md`
+§3.4's actual definition of a repair does not require an addition (removing
+Leg 13 and revising D-5/AC-17 to match IS a change to the artifact made to
+resolve a finding, hence a repair by that definition) — though no review
+was actually skipped, since this round's own commission explicitly
+requested and performed exactly that check; **P15 (SEV 2)** — this file's
+Round 5 recurrence note overstated prior reviews, claiming the production
+mechanism had been "independently reviewed as sound three times running,"
+when the cited reviews (`f9a-spec-codex-followup2.md`, `f9a-spec-codex-followup3.md`,
+`f9a-spec-codex-followup4.md`) each state something narrower and more
+qualified (a live SEV 2 gap at the time, an explicit rejection of blanket
+clearance, and "does not require a fourth redesign" respectively — none of
+which supports "reviewed as sound").
+
+**All three new findings were independently verified before disposition.**
+Re-read the spec at the reviewer's cited locations and confirmed all three
+"Legs 9–13" references are present-tense, operative text (not historical
+narrative) that should read "Legs 9–12." Re-read this file's own Round 5
+"Follow-up owed" paragraph and confirmed it argued from "no safeguard
+added" rather than from `OPERATING_AGREEMENT.md`'s actual text (`docs/governance/OPERATING_AGREEMENT.md:301`,
+"a change to the artifact under review, or to a safeguard for it... is a
+repair whatever its disposition row calls it"). Re-read the three cited
+prior reviews at the reviewer's line numbers and confirmed each states a
+narrower claim than "reviewed as sound" (quoted above).
+
+**Codex's own recommendation:** accept all three as-is, with its review
+report standing as the corrective record, rather than editing the
+specification or this file's prior text and thereby committing a repair
+that would owe a sixth scoped follow-up under `OPERATING_AGREEMENT.md`
+§3.4 — for three findings that change no behaviour and block nothing. **P13
+is the commission's FOURTH same-seam occurrence, but Codex's own review
+explicitly distinguishes it from the first three: no defect in the
+production mechanism, no evidence a further test mechanism must be built,
+and its own explicit proportionality judgement is that "retaining sites 3/4
+e2e coverage remains proportionate."** Codex's review also directly
+addressed the recurrence note's own standing question (whether a fourth
+occurrence should prompt reconsidering e2e scope for sites 3/4): it did
+not need to, since P13 supplied no such evidence, and Codex's own
+proportionality judgement answers the question in the negative.
+
+**Owner ruling, 2026-09-14: "Accept as-is (Codex's own pick)."** No edit is
+made to `docs/features/F9A_EXPORT_CAPABILITY_PROFILE_SPEC.md` or to this
+file's prior rounds' text for P13, P14 or P15. This Round 6 entry is the
+sole record of their disposition.
+
+| Ref | Severity | Owner ruling     | Disposition           | Reasoning                                                                                                                                                                                                                                                                            |
+| --- | -------- | ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P13 | SEV 3    | **Accept as-is** | **ACCEPTED-RESIDUAL** | Three stale "Legs 9–13" references remain in spec `:1171`, `:1191`, `:1228`. No leg still depends on Leg 13; the withdrawal's substance is complete. This is the commission's fourth same-seam occurrence, but a purely cosmetic one — Codex's own review is the corrective record.  |
+| P14 | SEV 3    | **Accept as-is** | **ACCEPTED-RESIDUAL** | This file's Round 5 reasoning about why P12 needed no follow-up was wrong (see above); the follow-up happened regardless because this round's commission requested it. No governance rule was actually violated in practice — only the written justification was incorrect.          |
+| P15 | SEV 2    | **Accept as-is** | **ACCEPTED-RESIDUAL** | This file's Round 5 recurrence note overstated three prior reviews' conclusions about production-mechanism soundness. This Round 6 entry, and the reviewer's own quotations in `docs/reviews/f9a-spec-codex-followup5.md` §4 (P15), are the corrective record for any future reader. |
+
+### What this round did NOT establish
+
+- No `src/`, test, or specification-document edit was made or is owed for
+  P13, P14 or P15 — this is a deliberate, recorded exception to a literal
+  "no further live finding" reading of `docs/features/F9A_EXPORT_CAPABILITY_PROFILE_SPEC.md`
+  §10.1 item 4, not a claim that the specification's text is now
+  self-consistent on every point.
+- Per `OPERATING_AGREEMENT.md` §3.4 ("DEFERRED and ACCEPTED-RESIDUAL are
+  owner decisions, not repairs... creates no follow-up under STRAT-D7"),
+  **no further scoped follow-up is owed for this round** — none of the
+  three dispositions changes the artifact or a safeguard for it; each is a
+  bare acceptance.
+- Product unit/integration/e2e suites, `./tools/checks` on production
+  behaviour, and any Electron/UI run remain **UNRUN** and unaffected by
+  this round, which touched only this dispositions file.
+
+### Specification status
+
+Per `docs/features/F9A_EXPORT_CAPABILITY_PROFILE_SPEC.md` §10.1: items 1–3
+were already met; **item 4 (the scoped follow-up confirms no further live
+finding in this seam) is now satisfied via this explicit, recorded owner
+exception** for P13's nonfunctional remainder, rather than a literal
+zero-further-finding state — matching Codex's own recommendation that the
+owner "accept this nonfunctional remainder explicitly under the adopted
+trial" rather than fund a sixth round. **Item 5 — owner sign-off and
+landing on `main` — is the sole remaining step.** No further Codex
+follow-up is commissioned by this round.
